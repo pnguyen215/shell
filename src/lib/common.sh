@@ -294,3 +294,85 @@ function install_package() {
         return 1
     fi
 }
+
+# uninstall_package function
+# Cross-platform package uninstallation function for macOS and Linux.
+#
+# Usage:
+#   uninstall_package <package_name>
+#
+# Parameters:
+#   - <package_name>: The name of the package to uninstall
+#
+# Example usage:
+#   uninstall_package git
+uninstall_package() {
+    local package="$1"
+    local os_type
+    os_type=$(get_os_type)
+
+    if [ "$os_type" = "linux" ]; then
+        if is_command_available apt-get; then
+            if is_package_installed_linux "$package"; then
+                run_cmd_eval "sudo apt-get remove -y $package"
+            else
+                colored_echo "🟡 $package is not installed. Skipping uninstallation." 33
+            fi
+        elif is_command_available yum; then
+            if rpm -q "$package" >/dev/null 2>&1; then
+                run_cmd_eval "sudo yum remove -y $package"
+            else
+                colored_echo "🟡 $package is not installed. Skipping uninstallation." 33
+            fi
+        elif is_command_available dnf; then
+            if rpm -q "$package" >/dev/null 2>&1; then
+                run_cmd_eval "sudo dnf remove -y $package"
+            else
+                colored_echo "🟡 $package is not installed. Skipping uninstallation." 33
+            fi
+        else
+            colored_echo "🔴 Error: Unsupported package manager on Linux." 31
+            return 1
+        fi
+    elif [ "$os_type" = "macos" ]; then
+        if is_command_available brew; then
+            if brew list --versions "$package" >/dev/null 2>&1; then
+                run_cmd_eval "brew uninstall $package"
+            else
+                colored_echo "🟡 $package is not installed. Skipping uninstallation." 33
+            fi
+        else
+            colored_echo "🔴 Error: Homebrew is not installed on macOS." 31
+            return 1
+        fi
+    else
+        colored_echo "🔴 Error: Unsupported operating system." 31
+        return 1
+    fi
+}
+
+# is_package_installed_linux function
+# Checks if a package is installed on Linux.
+#
+# Usage:
+#   is_package_installed_linux <package_name>
+#
+# Parameters:
+#   - <package_name>: The name of the package to check
+#
+# Returns:
+#   0 if the package is installed, 1 otherwise.
+is_package_installed_linux() {
+    local package="$1"
+
+    if is_command_available apt-get; then
+        # Debian-based: Check using dpkg.
+        dpkg -s "$package" >/dev/null 2>&1
+    elif is_command_available rpm; then
+        # RPM-based: Check using rpm query.
+        rpm -q "$package" >/dev/null 2>&1
+    else
+        colored_echo "🔴 Error: Unsupported package manager for Linux." 31
+        return 1
+    fi
+}
