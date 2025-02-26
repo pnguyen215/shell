@@ -12,7 +12,7 @@ done
 # GitHub repo details
 owner="pnguyen215"
 repo="shell"
-zip_file="$repo.zip" # Temporary zip file name
+zip_file="$repo.zip"
 install_dir="$HOME/shell"
 
 # Fetch latest release or fallback to master
@@ -34,7 +34,7 @@ unzip -o "$zip_file" -d "$install_dir" || {
     exit 1
 }
 
-# Dynamically find the extracted folder (e.g., shell-master, shell-main, shell-1.0.0)
+# Dynamically find the extracted folder
 extracted_dir=$(find "$install_dir" -maxdepth 1 -type d -name "$repo-*" | head -n 1)
 if [ -z "$extracted_dir" ]; then
     echo "🚨 Error: Could not locate extracted folder matching '$repo-*'."
@@ -42,8 +42,14 @@ if [ -z "$extracted_dir" ]; then
     exit 1
 fi
 
-# Move contents and clean up
-mv "$extracted_dir"/* "$install_dir/" && rmdir "$extracted_dir"
+# Move all contents (including hidden files) and clean up
+shopt -s dotglob # Enable globbing to include hidden files
+mv "$extracted_dir"/* "$install_dir/" 2>/dev/null || echo "⚠️ Some files couldn’t be moved (possibly empty or hidden files only)."
+shopt -u dotglob # Reset globbing behavior
+rmdir "$extracted_dir" 2>/dev/null || {
+    echo "⚠️ $extracted_dir not empty, removing with rm -rf"
+    rm -rf "$extracted_dir"
+}
 rm "$zip_file"
 
 # Detect shell and update config
