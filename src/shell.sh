@@ -3,9 +3,7 @@
 
 # Define the library directory
 SHELL_DIR="${SHELL_DIR:-$HOME/shell}"
-echo "$SHELL_DIR"
 LIB_DIR="$SHELL_DIR/src/lib"
-echo "$LIB_DIR"
 
 # Source all .sh files in lib/
 if [ -d "$LIB_DIR" ]; then
