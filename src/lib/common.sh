@@ -226,3 +226,66 @@ function run_cmd_eval() {
     colored_echo "$emoji $command" $color_code
     eval "$command"
 }
+
+# is_command_available function
+# Check if a command is available in the system's PATH.
+#
+# Usage:
+#   is_command_available <command>
+#
+# Parameters:
+#   - <command>: The command to check
+#
+# Returns:
+#   0 if the command is available, 1 otherwise
+#
+# Example usage:
+#   if is_command_available git; then
+#     echo "Git is installed"
+#   else
+#     echo "Git is not installed"
+#   fi
+function is_command_available() {
+    command -v "$1" &>/dev/null
+    return $?
+}
+
+# install_package function
+# Cross-platform package installation function that works on both macOS and Linux.
+#
+# Usage:
+#   install_package <package_name>
+#
+# Parameters:
+#   - <package_name>: The name of the package to install
+#
+# Example usage:
+#   install_package git
+function install_package() {
+    local package="$1"
+
+    local os_type
+    os_type=$(get_os_type)
+
+    if [ "$os_type" = "linux" ]; then # Linux
+        if is_command_available apt-get; then
+            run_cmd_eval "sudo apt-get update && sudo apt-get install -y $package"
+        elif is_command_available yum; then
+            run_cmd_eval "sudo yum install -y $package"
+        elif is_command_available dnf; then
+            run_cmd_eval "sudo dnf install -y $package"
+        else
+            colored_echo "🔴 Error: Unsupported package manager on Linux." 31
+            return 1
+        fi
+    elif [ "$os_type" = "macos" ]; then # macOS
+        if ! is_command_available brew; then
+            colored_echo "Homebrew is not installed. Installing Homebrew..." 33
+            run_cmd_eval '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
+        fi
+        run_cmd_eval "brew install $package"
+    else
+        colored_echo "🔴 Error: Unsupported operating system." 31
+        return 1
+    fi
+}
