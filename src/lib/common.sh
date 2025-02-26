@@ -1,5 +1,5 @@
 #!/bin/bash
-# c.sh
+# common.sh
 
 # get_os_type function
 # Determines the current operating system type and outputs a standardized string.
