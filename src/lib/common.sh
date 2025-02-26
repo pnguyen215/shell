@@ -281,7 +281,12 @@ function install_package() {
     elif [ "$os_type" = "macos" ]; then # macOS
         if ! is_command_available brew; then
             colored_echo "Homebrew is not installed. Installing Homebrew..." 33
-            run_cmd_eval '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
+            install_homebrew
+        fi
+        # Check if the package is already installed by Homebrew; skip if installed.
+        if brew list --versions "$package" >/dev/null 2>&1; then
+            colored_echo "🟡 $package is already installed. Skipping." 32
+            return 0
         fi
         run_cmd_eval "brew install $package"
     else
