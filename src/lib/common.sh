@@ -167,7 +167,62 @@ run_cmd() {
         emoji="🍎" # Apple for macOS
     fi
 
-    color_echo "$emoji $command" $color_code
+    colored_echo "$emoji $command" $color_code
     # Execute the command without using eval
     "$@"
+}
+
+# run_cmd_eval function
+# Execute a command using eval and print it for logging purposes.
+#
+# Usage:
+#   run_cmd_eval <command>
+#
+# Parameters:
+#   - <command>: The command to be executed (as a single string).
+#
+# Description:
+#   The 'run_cmd_eval' function executes a command by passing it to the `eval` command.
+#   This allows the execution of complex commands with arguments, pipes, or redirection
+#   that are difficult to handle with standard execution.
+#   It logs the command before execution to provide visibility into what is being run.
+#
+# Options:
+#   None
+#
+# Example usage:
+#   run_cmd_eval "ls -l | grep txt"
+#
+# Instructions:
+#   1. Use 'run_cmd_eval' when executing commands that require interpretation by the shell.
+#   2. It is particularly useful for running dynamically constructed commands or those with special characters.
+#
+# Notes:
+#   - The use of `eval` can be risky if the input command contains untrusted data, as it can lead to
+#     command injection vulnerabilities. Ensure the command is sanitized before using this function.
+#   - Prefer the 'wsd_exe_cmd' function for simpler commands without special characters or pipes.
+function run_cmd_eval() {
+    local command="$*"
+    # Capture the OS type output from get_os_type
+    local os_type
+    os_type=$(get_os_type)
+
+    # Set appropriate color based on OS
+    local color_code=36 # Default cyan
+    if [ "$os_type" = "linux" ]; then
+        color_code=34 # Blue for Linux
+    elif [ "$os_type" = "macos" ]; then
+        color_code=32 # Green for macOS
+    fi
+
+    # Print the command with OS-appropriate emoji
+    local emoji="🔍"
+    if [ "$os_type" = "linux" ]; then
+        emoji="🐧" # Penguin for Linux
+    elif [ "$os_type" = "macos" ]; then
+        emoji="🍎" # Apple for macOS
+    fi
+
+    colored_echo "$emoji $command" $color_code
+    eval "$command"
 }
