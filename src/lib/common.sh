@@ -119,3 +119,57 @@ colored_echo() {
         echo "${message}"
     fi
 }
+
+# run_cmd function
+# Executes a command and prints it for logging purposes.
+#
+# Usage:
+#   run_cmd <command>
+#
+# Parameters:
+#   - <command>: The command to be executed.
+#
+# Description:
+#   The `run_cmd` function prints the command for logging before executing it.
+#
+# Options:
+#   None
+#
+# Example usage:
+#   run_cmd ls -l
+#
+# Instructions:
+#   1. Use `run_cmd` to execute a command.
+#   2. The command will be printed before execution for logging.
+#
+# Notes:
+#   - This function is useful for logging commands prior to execution.
+run_cmd() {
+    local command="$*"
+
+    # Use detect_kernel to determine OS-specific behavior
+    get_os_type
+    local os_type=$?
+
+    # Set appropriate color based on OS
+    local color_code=36 # Default cyan
+    if [ $os_type -eq "linux" ]; then
+        # Linux - use blue
+        color_code=34
+    elif [ $os_type -eq "macos" ]; then
+        # macOS - use green
+        color_code=32
+    fi
+
+    # Print the command with OS-appropriate emoji
+    local emoji="🔍"
+    if [ $os_type -eq 1 ]; then
+        emoji="🐧" # Penguin for Linux
+    elif [ $os_type -eq 2 ]; then
+        emoji="🍎" # Apple for macOS
+    fi
+
+    color_echo "$emoji $command" $color_code
+    # Execute the command without using eval
+    "$@"
+}
