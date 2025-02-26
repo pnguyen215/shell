@@ -147,25 +147,23 @@ colored_echo() {
 run_cmd() {
     local command="$*"
 
-    # Use detect_kernel to determine OS-specific behavior
-    get_os_type
-    local os_type=$?
+    # Capture the OS type output from get_os_type
+    local os_type
+    os_type=$(get_os_type)
 
     # Set appropriate color based on OS
     local color_code=36 # Default cyan
-    if [ $os_type -eq "linux" ]; then
-        # Linux - use blue
-        color_code=34
-    elif [ $os_type -eq "macos" ]; then
-        # macOS - use green
-        color_code=32
+    if [ "$os_type" = "linux" ]; then
+        color_code=34 # Blue for Linux
+    elif [ "$os_type" = "macos" ]; then
+        color_code=32 # Green for macOS
     fi
 
     # Print the command with OS-appropriate emoji
     local emoji="🔍"
-    if [ $os_type -eq 1 ]; then
+    if [ "$os_type" = "linux" ]; then
         emoji="🐧" # Penguin for Linux
-    elif [ $os_type -eq 2 ]; then
+    elif [ "$os_type" = "macos" ]; then
         emoji="🍎" # Apple for macOS
     fi
 
