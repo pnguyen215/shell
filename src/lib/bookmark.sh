@@ -103,16 +103,16 @@ opent() {
     colored_echo "🙂 Opening \"$name\" ..." 5
 }
 
-# bookmark function
+# add_bookmark function
 # Adds a bookmark for the current directory with the specified name.
 #
 # Usage:
-#   bookmark <bookmark name>
+#   add_bookmark <bookmark name>
 #
 # Description:
-#   The 'bookmark' function creates a bookmark for the current directory with the given name.
+#   The 'add_bookmark' function creates a bookmark for the current directory with the given name.
 #   It allows quick navigation to the specified directory using the bookmark name.
-bookmark() {
+add_bookmark() {
     local bookmark_name="$1"
 
     if [[ -z "$bookmark_name" ]]; then
@@ -159,4 +159,36 @@ show_bookmark() {
     yellow=$(tput setaf 3)
     normal=$(tput sgr0)
     awk -v yellow="$yellow" -v normal="$normal" 'BEGIN { FS="|"} { printf "👉 %s%-10s%s %s\n", yellow, $2, normal, $1 }' "$bookmarks_file"
+}
+
+# go_bookmark function
+# Navigates to the directory associated with the specified bookmark name.
+#
+# Usage:
+#   go_bookmark <bookmark name>
+#
+# Description:
+#   The 'go_bookmark' function changes the current working directory to the directory
+#   associated with the given bookmark name. It looks for a line in the bookmarks file
+#   that ends with "|<bookmark name>".
+go_bookmark() {
+    local bookmark_name="$1"
+    local bookmark dir
+
+    # Look for a bookmark that ends with "|<bookmark_name>"
+    bookmark=$(grep "|${bookmark_name}$" "$bookmarks_file")
+
+    if [[ -z "$bookmark" ]]; then
+        colored_echo '🙈 Bookmark not found!' 3
+        return 1
+    else
+        # Extract the directory (the part before the "|")
+        dir=$(echo "$bookmark" | cut -d'|' -f1)
+        if cd "$dir"; then
+            colored_echo "📂 Changed directory to: $dir" 2
+        else
+            colored_echo "🔴 Failed to change directory to: $dir" 1
+            return 1
+        fi
+    fi
 }
