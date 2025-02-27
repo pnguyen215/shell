@@ -162,6 +162,43 @@ add_bookmark() {
 # Notes:
 #   - The bookmarks file is specified by the global variable 'bookmarks_file'.
 #   - A temporary file (located at "$HOME/bookmarks_temp") is used during the removal process.
+# remove_bookmark() {
+#     local bookmark_name="$1"
+
+#     if [[ -z "$bookmark_name" ]]; then
+#         colored_echo "👊 Type bookmark name to remove." 3
+#         return 1
+#     fi
+
+#     local bookmark
+#     bookmark=$(grep "|${bookmark_name}$" "$bookmarks_file")
+
+#     if [[ -z "$bookmark" ]]; then
+#         colored_echo "🙈 Invalid bookmark name." 3
+#         return 1
+#     else
+#         grep -v "|${bookmark_name}$" "$bookmarks_file" >"$HOME/bookmarks_temp" && mv "$HOME/bookmarks_temp" "$bookmarks_file"
+#         colored_echo "🟢 Bookmark '$bookmark_name' removed" 46
+#     fi
+# }
+
+# remove_bookmark function
+# Deletes a bookmark with the specified name from the bookmarks file.
+#
+# Usage:
+#   remove_bookmark <bookmark_name>
+#
+# Parameters:
+#   <bookmark_name> : The name of the bookmark to remove.
+#
+# Description:
+#   This function searches for a bookmark entry in the bookmarks file that ends with "|<bookmark_name>".
+#   If the entry is found, it creates a secure temporary file using mktemp, filters out the matching line,
+#   and then replaces the original bookmarks file with the filtered version.
+#   If the bookmark is not found or removal fails, an error message is displayed.
+#
+# Notes:
+#   - The bookmarks file is specified by the global variable 'bookmarks_file'.
 remove_bookmark() {
     local bookmark_name="$1"
 
@@ -176,11 +213,31 @@ remove_bookmark() {
     if [[ -z "$bookmark" ]]; then
         colored_echo "🙈 Invalid bookmark name." 3
         return 1
-    else
-        # Remove the matching bookmark entry.
-        grep -v "|${bookmark_name}$" "$bookmarks_file" >"$HOME/bookmarks_temp" && mv "$HOME/bookmarks_temp" "$bookmarks_file"
-        colored_echo "🟢 Bookmark '$bookmark_name' removed" 46
     fi
+
+    # Create a secure temporary file.
+    local tmp_file
+    tmp_file=$(mktemp) || {
+        colored_echo "🔴 Failed to create temporary file." 196
+        return 1
+    }
+
+    # Set a trap to ensure the temporary file is removed when the function exits.
+    trap 'rm -f "$tmp_file"' EXIT
+
+    # Construct the command to remove the matching bookmark entry.
+    local cmd="grep -v \"|${bookmark_name}$\" \"$bookmarks_file\" > \"$tmp_file\" && mv \"$tmp_file\" \"$bookmarks_file\""
+
+    # Execute the command using run_cmd_eval.
+    if run_cmd_eval "$cmd"; then
+        colored_echo "🟢 Bookmark '$bookmark_name' removed" 46
+    else
+        colored_echo "🔴 Failed to remove bookmark '$bookmark_name'" 196
+        return 1
+    fi
+
+    # Remove the trap after successful execution (temporary file is already moved).
+    trap - EXIT
 }
 
 # show_bookmark function
