@@ -22,6 +22,7 @@ shell_upgrade() {
     [ -d "$install_dir" ] && rm -rf "$install_dir"
     bash -c "$(curl -fsSL https://raw.githubusercontent.com/pnguyen215/shell/master/install.sh)"
     colored_echo "🍺 shell upgraded. Restart your terminal or run 'source ~/.zshrc' or 'source ~/.bashrc' to apply changes." 46
+    clip_value "source ~/.bashrc"
 }
 
 shell_uninstall() {
