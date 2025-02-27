@@ -357,6 +357,50 @@ uninstall_package() {
     fi
 }
 
+# list_installed_packages function
+# Lists all packages currently installed on Linux or macOS.
+#
+# Usage:
+#   list_installed_packages
+#
+# Description:
+#   On Linux:
+#     - If apt-get is available, it uses dpkg to list installed packages.
+#     - If yum or dnf is available, it uses rpm to list installed packages.
+#   On macOS:
+#     - If Homebrew is available, it lists installed Homebrew packages.
+#
+# Example usage:
+#   list_installed_packages
+list_installed_packages() {
+    local os_type
+    os_type=$(get_os_type)
+
+    if [ "$os_type" = "linux" ]; then
+        if is_command_available apt-get; then
+            colored_echo "Listing installed packages (APT/Debian-based):" 34
+            run_cmd_eval dpkg -l
+        elif is_command_available yum || is_command_available dnf; then
+            colored_echo "Listing installed packages (RPM-based):" 34
+            run_cmd_eval rpm -qa | sort
+        else
+            colored_echo "🔴 Error: Unsupported package manager on Linux." 31
+            return 1
+        fi
+    elif [ "$os_type" = "macos" ]; then
+        if is_command_available brew; then
+            colored_echo "Listing installed packages (Homebrew):" 32
+            run_cmd_eval brew list
+        else
+            colored_echo "🔴 Error: Homebrew is not installed on macOS." 31
+            return 1
+        fi
+    else
+        colored_echo "🔴 Error: Unsupported operating system." 31
+        return 1
+    fi
+}
+
 # is_package_installed_linux function
 # Checks if a package is installed on Linux.
 #
