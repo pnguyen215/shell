@@ -192,3 +192,48 @@ go_bookmark() {
         fi
     fi
 }
+
+# go_back function
+# Navigates to the previous working directory.
+#
+# Usage:
+#   go_back
+#
+# Description:
+#   The 'go_back' function changes the current working directory to the previous directory in the history.
+go_back() {
+    cd $OLDPWD
+}
+
+# clip_cwd function
+# Copies the current directory path to the clipboard.
+#
+# Usage:
+#   clip_cwd
+#
+# Description:
+#   The 'clip_cwd' function copies the current directory path to the clipboard using the 'pbcopy' command.
+clip_cwd() {
+    local adr="$PWD"
+    local os
+    os=$(get_os_type)
+
+    if [[ "$os" == "macos" ]]; then
+        echo -n "$adr" | pbcopy
+        colored_echo "🟢 Path copied to clipboard using pbcopy" 46
+    elif [[ "$os" == "linux" ]]; then
+        if is_command_available xclip; then
+            echo -n "$adr" | xclip -selection clipboard
+            colored_echo "🟢 Path copied to clipboard using xclip" 46
+        elif is_command_available xsel; then
+            echo -n "$adr" | xsel --clipboard --input
+            colored_echo "🟢 Path copied to clipboard using xsel" 46
+        else
+            colored_echo "🔴 Clipboard tool not found. Please install xclip or xsel." 196
+            return 1
+        fi
+    else
+        colored_echo "🔴 Clipboard copying not supported on this OS." 196
+        return 1
+    fi
+}

@@ -13,6 +13,8 @@
     "setaf",
     "softprops",
     "wsdkit",
-    "wsdkitupgrade"
+    "wsdkitupgrade",
+    "xclip",
+    "xsel"
   ]
 }
