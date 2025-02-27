@@ -822,12 +822,79 @@ function get_temp_dir() {
 #
 # Notes:
 #   - Ensure that lsof is installed on your system.
+# function port_check() {
+#     if [ $# -ne 1 ]; then
+#         echo "Usage: port_check <port>"
+#         return 1
+#     fi
+
+#     local port="$1"
+#     run_cmd lsof -nP -iTCP:"$port" | grep LISTEN
+# }
+
+# on_evict function
+# Hook to print a command without executing it.
+#
+# Usage:
+#   on_evict <command>
+#
+# Parameters:
+#   - <command>: The command to be printed.
+#
+# Description:
+#   The 'on_evict' function prints a command without executing it.
+#   It is designed as a hook for logging or displaying commands without actual execution.
+#
+# Example usage:
+#   on_evict ls -l
+#
+# Instructions:
+#   1. Use 'on_evict' to print a command without executing it.
+#
+# Notes:
+#   - This function is useful for displaying commands in logs or hooks without execution.
+function on_evict() {
+    local command="$*"
+    colored_echo "CLI: $command" 3
+}
+
+# port_check function
+# Checks if a specific TCP port is in use (listening).
+#
+# Usage:
+#   port_check <port> [-n]
+#
+# Parameters:
+#   - <port> : The TCP port number to check.
+#   - -n     : Optional flag to enable dry-run mode (prints the command without executing it).
+#
+# Description:
+#   This function uses lsof to determine if any process is actively listening on the specified TCP port.
+#   It filters the output for lines containing "LISTEN", which indicates that the port is in use.
+#   When the dry-run flag (-n) is provided, the command is printed using on_evict instead of being executed.
+#
+# Example:
+#   port_check 8080        # Executes the command.
+#   port_check 8080 -n     # Prints the command (dry-run mode) without executing it.
 function port_check() {
-    if [ $# -ne 1 ]; then
-        echo "Usage: port_check <port>"
+    if [ $# -lt 1 ]; then
+        echo "Usage: port_check <port> [-n]"
         return 1
     fi
 
     local port="$1"
-    run_cmd lsof -nP -iTCP:"$port" | grep LISTEN
+    local dry_run="false"
+
+    # Check if a dry-run flag (-n) is provided.
+    if [ "$2" == "-n" ]; then
+        dry_run="true"
+    fi
+
+    local cmd="lsof -nP -iTCP:\"$port\" | grep LISTEN"
+
+    if [ "$dry_run" = "true" ]; then
+        on_evict "$cmd"
+    else
+        run_cmd lsof -nP -iTCP:"$port" | grep LISTEN
+    fi
 }
