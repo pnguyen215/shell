@@ -241,6 +241,58 @@ remove_bookmark() {
     trap - EXIT
 }
 
+# remove_bookmark_linux function
+# Deletes a bookmark with the specified name from the bookmarks file.
+#
+# Usage:
+#   remove_bookmark_linux <bookmark_name>
+#
+# Parameters:
+#   <bookmark_name> : The name of the bookmark to remove.
+#
+# Description:
+#   This function searches for a bookmark entry in the bookmarks file that ends with "|<bookmark_name>".
+#   If the entry is found, it uses sed to delete the line from the file.
+#   The sed command is constructed differently for macOS and Linux due to differences in the in‑place edit flag.
+#
+# Notes:
+#   - The bookmarks file is specified by the global variable 'bookmarks_file'.
+remove_bookmark_linux() {
+    local bookmark_name="$1"
+
+    if [[ -z "$bookmark_name" ]]; then
+        colored_echo "👊 Type bookmark name to remove." 3
+        return 1
+    fi
+
+    local bookmark
+    bookmark=$(grep "|${bookmark_name}$" "$bookmarks_file")
+    if [[ -z "$bookmark" ]]; then
+        colored_echo "🙈 Invalid bookmark name." 3
+        return 1
+    fi
+
+    # Determine the OS and construct the appropriate sed command.
+    local os
+    os=$(get_os_type)
+    local sed_cmd
+    if [[ "$os" == "macos" ]]; then
+        # On macOS, sed -i requires an empty string argument.
+        sed_cmd="sed -i '' '/|${bookmark_name}\$/d' \"$bookmarks_file\""
+    else
+        # On Linux, sed -i does not require an argument.
+        sed_cmd="sed -i '/|${bookmark_name}\$/d' \"$bookmarks_file\""
+    fi
+
+    # Execute the sed command using run_cmd_eval.
+    if run_cmd_eval "$sed_cmd"; then
+        colored_echo "🟢 Bookmark '$bookmark_name' removed" 46
+    else
+        colored_echo "🔴 Failed to remove bookmark '$bookmark_name'" 196
+        return 1
+    fi
+}
+
 # show_bookmark function
 # Displays a formatted list of all bookmarks.
 #
