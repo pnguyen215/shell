@@ -896,7 +896,8 @@ port_check() {
     if [ "$dry_run" = "true" ]; then
         on_evict "$cmd"
     else
-        run_cmd lsof -nP -iTCP:"$port" | grep LISTEN
+        # run_cmd lsof -nP -iTCP:"$port" | grep LISTEN
+        run_cmd_eval "$cmd"
     fi
 }
 
