@@ -565,11 +565,20 @@ function create_directory_if_not_exists() {
     fi
 
     local dir="$1"
+    local os
+    os=$(get_os_type)
+
+    # On macOS, if the provided path is not absolute, assume it's relative to $HOME.
+    if [[ "$os" == "macos" ]]; then
+        if [[ "$dir" != /* ]]; then
+            dir="$HOME/$dir"
+        fi
+    fi
 
     # Check if the directory exists.
     if [ ! -d "$dir" ]; then
         colored_echo "📁 Directory '$dir' does not exist. Creating the directory (including nested directories) with admin privileges..." 33
-        sudo mkdir -p "$dir" # Use sudo to create the directory and its parent directories.
+        run_cmd_eval 'sudo mkdir -p "$dir"' # Use sudo to create the directory and its parent directories.
         if [ $? -eq 0 ]; then
             colored_echo "🟢 Directory created successfully." 46
             return 0
