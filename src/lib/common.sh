@@ -581,6 +581,7 @@ function create_directory_if_not_exists() {
         run_cmd_eval 'sudo mkdir -p "$dir"' # Use sudo to create the directory and its parent directories.
         if [ $? -eq 0 ]; then
             colored_echo "🟢 Directory created successfully." 46
+            grant777 "$dir"
             return 0
         else
             colored_echo "🔴 Error: Failed to create the directory." 196
@@ -589,4 +590,34 @@ function create_directory_if_not_exists() {
     else
         colored_echo "🟢 Directory '$dir' already exists." 46
     fi
+}
+
+# grant777 function
+# Sets full permissions (read, write, and execute) for the specified file or directory.
+#
+# Usage:
+#   grant777 <file/dir>
+#
+# Parameters:
+#   <file/dir> : The path to the file or directory to modify.
+#
+# Description:
+#   This function sets the permissions of the specified file or directory (and its contents, recursively)
+#   to 777, granting full read, write, and execute access to the owner, group, and others.
+#   It uses run_cmd_eval to log and execute the chmod command.
+#
+# Example:
+#   grant777 ./my_script.sh
+#
+# Recommendations:
+#   Use this function with caution, as setting permissions to 777 can pose security risks.
+function grant777() {
+    if [ $# -lt 1 ]; then
+        echo "Usage: grant777 <file/dir>"
+        return 1
+    fi
+
+    # Execute the chmod command with sudo and log it using run_cmd_eval.
+    run_cmd_eval "sudo chmod -R 777 \"$1\""
+    colored_echo "🟢 Permissions for '$1' set to full (777)" 46
 }
