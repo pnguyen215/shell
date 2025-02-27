@@ -538,3 +538,46 @@ is_package_installed_linux() {
         return 1
     fi
 }
+
+###############################################################################
+# create_directory_if_not_exists function
+###############################################################################
+# Utility function to create a directory (including nested directories) if it
+# doesn't exist.
+#
+# Usage:
+#   create_directory_if_not_exists <directory_path>
+#
+# Parameters:
+#   <directory_path> : The path of the directory to be created.
+#
+# Description:
+#   This function checks if the specified directory exists. If it does not,
+#   it creates the directory (including any necessary parent directories) using
+#   sudo to ensure proper privileges.
+#
+# Example:
+#   create_directory_if_not_exists /path/to/nested/directory
+function create_directory_if_not_exists() {
+    if [ $# -lt 1 ]; then
+        echo "Usage: create_directory_if_not_exists <directory_path>"
+        return 1
+    fi
+
+    local dir="$1"
+
+    # Check if the directory exists.
+    if [ ! -d "$dir" ]; then
+        colored_echo "📁 Directory '$dir' does not exist. Creating the directory (including nested directories) with admin privileges..." 33
+        run_cmd_eval sudo mkdir -p "$dir" # Use sudo to create the directory and its parent directories.
+        if [ $? -eq 0 ]; then
+            colored_echo "🟢 Directory created successfully." 46
+            return 0
+        else
+            colored_echo "🔴 Error: Failed to create the directory." 196
+            return 1
+        fi
+    else
+        colored_echo "🟢 Directory '$dir' already exists." 46
+    fi
+}
