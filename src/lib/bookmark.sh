@@ -225,8 +225,9 @@ remove_bookmark() {
     # Set a trap to ensure the temporary file is removed when the function exits.
     trap 'rm -f "$tmp_file"' EXIT
 
-    # Construct the command to remove the matching bookmark entry.
-    local cmd="grep -v \"|${bookmark_name}$\" \"$bookmarks_file\" > \"$tmp_file\" && mv \"$tmp_file\" \"$bookmarks_file\""
+    # Construct the command using improved quoting.
+    # Using single quotes around the grep pattern helps avoid issues on Linux.
+    local cmd="grep -v '|${bookmark_name}$' \"$bookmarks_file\" > \"$tmp_file\" && mv \"$tmp_file\" \"$bookmarks_file\""
 
     # Execute the command using run_cmd_eval.
     if run_cmd_eval "$cmd"; then
