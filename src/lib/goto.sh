@@ -56,6 +56,11 @@ goto() {
             goto_usage
             break
             ;;
+
+        "back" | "-b")
+            go_back
+            break
+            ;;
         *)
             if [ $# != 1 ]; then
                 colored_echo "🙈 What?!" 3
