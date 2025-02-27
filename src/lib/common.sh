@@ -899,3 +899,60 @@ port_check() {
         run_cmd lsof -nP -iTCP:"$port" | grep LISTEN
     fi
 }
+
+# port_kill function
+# Terminates all processes listening on the specified TCP port(s).
+#
+# Usage:
+#   port_kill [-n] <port> [<port> ...]
+#
+# Parameters:
+#   - -n    : Optional flag to enable dry-run mode (print commands without execution).
+#   - <port>: One or more TCP port numbers.
+#
+# Description:
+#   This function checks each specified port to determine if any processes are listening on it,
+#   using lsof. If any are found, it forcefully terminates them by sending SIGKILL (-9).
+#   In dry-run mode (enabled by the -n flag), the kill command is printed using on_evict instead of executed.
+#
+# Example:
+#   port_kill 8080              # Kills processes on port 8080.
+#   port_kill -n 8080 3000       # Prints the kill commands for ports 8080 and 3000 without executing.
+#
+# Notes:
+#   - Ensure you have the required privileges to kill processes.
+#   - Use with caution, as forcefully terminating processes may cause data loss.
+port_kill() {
+    local dry_run="false"
+
+    # Check for the dry-run flag.
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if [ "$#" -eq 0 ]; then
+        colored_echo "🟡 No ports specified. Usage: port_kill [-n] PORT [PORT...]" 11
+        return 1
+    fi
+
+    for port in "$@"; do
+        # Find PIDs of processes listening on the specified port.
+        local pids
+        pids=$(lsof -ti :"$port")
+
+        if [ -n "$pids" ]; then
+            colored_echo "🟢 Processing port $port with PIDs: $pids" 46
+            for pid in $pids; do
+                local cmd="kill -9 $pid"
+                if [ "$dry_run" = "true" ]; then
+                    on_evict "$cmd"
+                else
+                    run_cmd kill -9 "$pid"
+                fi
+            done
+        else
+            colored_echo "🟠 No processes found on port $port" 11
+        fi
+    done
+}
