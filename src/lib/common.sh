@@ -886,7 +886,7 @@ port_check() {
     local dry_run="false"
 
     # Check if a dry-run flag (-n) is provided.
-    if [ "$2" == "-n" ]; then
+    if [ "$2" = "-n" ]; then
         dry_run="true"
     fi
 
