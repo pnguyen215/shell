@@ -10,8 +10,8 @@ function uninstall_homebrew() {
         echo "🚀 Uninstalling Homebrew..."
         run_cmd_eval '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh)"'
         run_cmd_eval 'sed -i.bak '/# Homebrew/d' "$HOME/.zprofile"' # Remove Homebrew-related lines from the shell profile
-        echo "🟢 Homebrew uninstalled successfully!"
+        colored_echo "🟢 Homebrew uninstalled successfully!" 46
     else
-        echo "🟡 Homebrew is not installed. Nothing to uninstall."
+        colored_echo "🟡 Homebrew is not installed. Nothing to uninstall." 11
     fi
 }
