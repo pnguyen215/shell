@@ -268,6 +268,12 @@ function install_package() {
     os_type=$(get_os_type)
 
     if [ "$os_type" = "linux" ]; then # Linux
+        # Check if the package is already installed on Linux.
+        if is_package_installed_linux "$package"; then
+            colored_echo "🟡 $package is already installed. Skipping." 33
+            return 0
+        fi
+
         if is_command_available apt-get; then
             run_cmd_eval "sudo apt-get update && sudo apt-get install -y $package"
         elif is_command_available yum; then
