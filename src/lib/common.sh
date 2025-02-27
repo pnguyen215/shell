@@ -944,11 +944,15 @@ port_kill() {
         if [ -n "$pids" ]; then
             colored_echo "🟢 Processing port $port with PIDs: $pids" 46
             for pid in $pids; do
-                local cmd="kill -9 $pid"
+                # Construct the kill command as an array to reuse it for both on_evict and run_cmd.
+                local cmd=("kill" "-9" "$pid")
+                # local cmd="kill -9 $pid"
                 if [ "$dry_run" = "true" ]; then
-                    on_evict "$cmd"
+                    # on_evict "$cmd"
+                    on_evict "${cmd[*]}"
                 else
-                    run_cmd kill -9 "$pid"
+                    # run_cmd kill -9 "$pid"
+                    run_cmd "${cmd[@]}"
                 fi
             done
         else
