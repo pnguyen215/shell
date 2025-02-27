@@ -43,7 +43,13 @@ goto() {
             ;;
 
         "-d")
-            remove_bookmark $2
+            local os
+            os=$(get_os_type)
+            if [[ "$os" == "macos" ]]; then
+                remove_bookmark $2
+            else
+                remove_bookmark_linux $2
+            fi
             break
             ;;
 
