@@ -449,6 +449,70 @@ list_path_installed_packages() {
     done
 }
 
+# list_path_installed_packages_details function
+# Lists detailed information (including full path, directory size, and modification date)
+# for all packages installed via directory-based methods on Linux or macOS.
+#
+# Usage:
+#   list_path_installed_packages_details [base_install_path]
+#
+# Parameters:
+#   - [base_install_path]: Optional. The base directory where packages are installed.
+#         Defaults to:
+#           - /usr/local on macOS
+#           - /opt on Linux
+#
+# Example usage:
+#   list_path_installed_packages_details
+#   list_path_installed_packages_details /custom/install/path
+list_path_installed_packages_details() {
+    local base_path="$1"
+    local os_type
+    os_type=$(get_os_type)
+
+    # Set default base path if none is provided.
+    if [ -z "$base_path" ]; then
+        if [ "$os_type" = "macos" ]; then
+            base_path="/usr/local"
+        elif [ "$os_type" = "linux" ]; then
+            base_path="/opt"
+        else
+            colored_echo "🔴 Error: Unsupported operating system for package details listing." 31
+            return 1
+        fi
+    fi
+
+    # Verify that the base installation directory exists.
+    if [ ! -d "$base_path" ]; then
+        colored_echo "🔴 Error: The specified installation path '$base_path' does not exist." 31
+        return 1
+    fi
+
+    colored_echo "Listing details of packages installed in: $base_path" 36
+
+    # Use find to list only subdirectories (assumed to be package folders)
+    find "$base_path" -maxdepth 1 -mindepth 1 -type d | sort | while IFS= read -r package_dir; do
+        local package_name
+        package_name=$(basename "$package_dir")
+        local details
+
+        # Get detailed information using stat, with different formatting for Linux and macOS.
+        if [ "$os_type" = "linux" ]; then
+            # Linux: %n for name, %s for size, %y for last modification date.
+            details=$(stat -c "👉 Path: %n, Size: %s bytes, Modified: %y" "$package_dir")
+        elif [ "$os_type" = "macos" ]; then
+            # macOS: %N for name, %z for size, %Sm for last modification date.
+            details=$(stat -f "👉 Path: %N, Size: %z bytes, Modified: %Sm" "$package_dir")
+        else
+            details="Unsupported OS for detailed stat."
+        fi
+
+        echo "----------------------------------------"
+        echo "📦 Package: $package_name"
+        echo "$details"
+    done
+}
+
 # is_package_installed_linux function
 # Checks if a package is installed on Linux.
 #
