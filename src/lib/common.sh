@@ -856,6 +856,7 @@ get_temp_dir() {
 on_evict() {
     local command="$*"
     colored_echo "CLI: $command" 3
+    clip_value "$command"
 }
 
 # port_check function
