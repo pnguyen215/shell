@@ -961,3 +961,60 @@ port_kill() {
         fi
     done
 }
+
+# copy_files function
+# Copies a source file to one or more destination filenames in the current working directory.
+#
+# Usage:
+#   copy_files [-n] <source_filename> <new_filename1> [<new_filename2> ...]
+#
+# Parameters:
+#   - -n             : Optional dry-run flag. If provided, the command will be printed using on_evict instead of executed.
+#   - <source_filename> : The file to copy.
+#   - <new_filenameX>   : One or more new filenames (within the current working directory) where the source file will be copied.
+#
+# Description:
+#   The function first checks for a dry-run flag (-n). It then verifies that at least two arguments remain.
+#   For each destination filename, it checks if the file already exists in the current working directory.
+#   If not, it builds the command to copy the source file (using sudo) to the destination.
+#   In dry-run mode, the command is printed using on_evict; otherwise, it is executed using run_cmd_eval.
+#
+# Example:
+#   copy_files myfile.txt newfile.txt            # Copies myfile.txt to newfile.txt.
+#   copy_files -n myfile.txt newfile1.txt newfile2.txt  # Prints the copy commands without executing them.
+copy_files() {
+    local dry_run="false"
+
+    # Check for the optional dry-run flag (-n).
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if [ $# -lt 2 ]; then
+        echo "Usage: copy_files [-n] <source_filename> <new_filename1> [<new_filename2> ...]"
+        return 1
+    fi
+
+    local source="$1"
+    shift # Remove the source file from the arguments.
+    local destination="$PWD"
+
+    for filename in "$@"; do
+        local destination_file="$destination/$filename"
+
+        if [ -e "$destination_file" ]; then
+            colored_echo "🔴 Error: Destination file '$filename' already exists." 196
+            continue
+        fi
+
+        # Build the copy command.
+        local cmd="sudo cp \"$source\" \"$destination_file\""
+        if [ "$dry_run" = "true" ]; then
+            on_evict "$cmd"
+        else
+            run_cmd_eval "$cmd"
+            colored_echo "🟢 File copied successfully to $destination_file" 46
+        fi
+    done
+}

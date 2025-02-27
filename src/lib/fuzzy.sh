@@ -56,5 +56,6 @@ function fzf_copy() {
 
     # Execute the command (using run_cmd_eval to log and run it).
     run_cmd_eval "$cmd"
+    clip_value "$cmd"
     colored_echo "🟢 File copied successfully to $destination_file" 46
 }
