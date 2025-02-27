@@ -145,6 +145,44 @@ add_bookmark() {
     fi
 }
 
+# remove_bookmark function
+# Deletes a bookmark with the specified name from the bookmarks file.
+#
+# Usage:
+#   remove_bookmark <bookmark_name>
+#
+# Parameters:
+#   <bookmark_name> : The name of the bookmark to remove.
+#
+# Description:
+#   This function searches for a bookmark entry in the bookmarks file that ends with "|<bookmark_name>".
+#   If the entry is found, it removes the corresponding line from the bookmarks file.
+#   If the bookmark is not found or the name is empty, it prints an error message.
+#
+# Notes:
+#   - The bookmarks file is specified by the global variable 'bookmarks_file'.
+#   - A temporary file (located at "$HOME/bookmarks_temp") is used during the removal process.
+remove_bookmark() {
+    local bookmark_name="$1"
+
+    if [[ -z "$bookmark_name" ]]; then
+        colored_echo "👊 Type bookmark name to remove." 3
+        return 1
+    fi
+
+    local bookmark
+    bookmark=$(grep "|${bookmark_name}$" "$bookmarks_file")
+
+    if [[ -z "$bookmark" ]]; then
+        colored_echo "🙈 Invalid bookmark name." 3
+        return 1
+    else
+        # Remove the matching bookmark entry.
+        grep -v "|${bookmark_name}$" "$bookmarks_file" >"$HOME/bookmarks_temp" && mv "$HOME/bookmarks_temp" "$bookmarks_file"
+        colored_echo "🟢 Bookmark '$bookmark_name' removed" 46
+    fi
+}
+
 # show_bookmark function
 # Displays a formatted list of all bookmarks.
 #
