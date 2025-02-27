@@ -10,7 +10,7 @@ shell/
 ├── upgrade.sh
 ├── uninstall.sh
 └── src/
-    ├── shell.sh  # Main entry point (renamed from wsdkit.sh)
+    ├── shell.sh  # Main entry point
     └── lib/
         ├── utils.sh
         ├── git.sh
