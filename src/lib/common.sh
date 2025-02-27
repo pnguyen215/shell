@@ -569,7 +569,7 @@ function create_directory_if_not_exists() {
     # Check if the directory exists.
     if [ ! -d "$dir" ]; then
         colored_echo "📁 Directory '$dir' does not exist. Creating the directory (including nested directories) with admin privileges..." 33
-        run_cmd_eval sudo mkdir -p "$dir" # Use sudo to create the directory and its parent directories.
+        run_cmd_eval 'sudo mkdir -p "$dir"' # Use sudo to create the directory and its parent directories.
         if [ $? -eq 0 ]; then
             colored_echo "🟢 Directory created successfully." 46
             return 0
