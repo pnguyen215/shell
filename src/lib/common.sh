@@ -803,3 +803,31 @@ function get_temp_dir() {
         echo "/tmp"
     fi
 }
+
+# port_check function
+# Checks if a specific TCP port is in use (listening).
+#
+# Usage:
+#   port_check <port>
+#
+# Parameters:
+#   - <port> : The port number to check.
+#
+# Description:
+#   This function uses lsof to determine if any process is actively listening on the specified
+#   TCP port. It filters the output for lines containing "LISTEN", which indicates that the port is in use.
+#
+# Example:
+#   port_check 8080
+#
+# Notes:
+#   - Ensure that lsof is installed on your system.
+function port_check() {
+    if [ $# -ne 1 ]; then
+        echo "Usage: port_check <port>"
+        return 1
+    fi
+
+    local port="$1"
+    run_cmd lsof -nP -iTCP:"$port" | grep LISTEN
+}
