@@ -794,9 +794,9 @@ function get_temp_dir() {
     get_os_type
     local os=$?
 
-    if [[ "$os" == "linux" ]]; then # Linux
+    if [ "$os" = "linux" ]; then # Linux
         echo "/tmp"
-    elif [[ "$os" == "macos" ]]; then # macOS
+    elif [ "$os" = "macos" ]; then # macOS
         echo "/private/tmp"
     else
         # Fallback to a common temporary directory
