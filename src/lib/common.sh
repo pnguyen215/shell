@@ -790,7 +790,7 @@ clip_value() {
 # Example usage:
 #   TEMP_DIR=$(get_temp_dir)
 #   echo "Using temporary directory: $TEMP_DIR"
-function get_temp_dir() {
+get_temp_dir() {
     get_os_type
     local os=$?
 
@@ -853,7 +853,7 @@ function get_temp_dir() {
 #
 # Notes:
 #   - This function is useful for displaying commands in logs or hooks without execution.
-function on_evict() {
+on_evict() {
     local command="$*"
     colored_echo "CLI: $command" 3
 }
@@ -876,7 +876,7 @@ function on_evict() {
 # Example:
 #   port_check 8080        # Executes the command.
 #   port_check 8080 -n     # Prints the command (dry-run mode) without executing it.
-function port_check() {
+port_check() {
     if [ $# -lt 1 ]; then
         echo "Usage: port_check <port> [-n]"
         return 1
