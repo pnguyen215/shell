@@ -237,3 +237,55 @@ clip_cwd() {
         return 1
     fi
 }
+
+# clip_value function
+# Copies the provided text value into the system clipboard.
+#
+# Usage:
+#   clip_value <text>
+#
+# Parameters:
+#   <text> - The text string or value to copy to the clipboard.
+#
+# Description:
+#   This function first checks if a value has been provided. It then determines the current operating
+#   system using the get_os_type function. On macOS, it uses pbcopy to copy the value to the clipboard.
+#   On Linux, it first checks if xclip is available and uses it; if not, it falls back to xsel.
+#   If no clipboard tool is found or the OS is unsupported, an error message is displayed.
+#
+# Dependencies:
+#   - get_os_type: To detect the operating system.
+#   - is_command_available: To check for the availability of xclip or xsel on Linux.
+#   - colored_echo: To print colored status messages.
+#
+# Example:
+#   clip_value "Hello, World!"
+clip_value() {
+    local value="$1"
+    if [[ -z "$value" ]]; then
+        colored_echo "🔴 Error: No value provided to copy." 196
+        return 1
+    fi
+
+    local os
+    os=$(get_os_type)
+
+    if [[ "$os" == "macos" ]]; then
+        echo -n "$value" | pbcopy
+        colored_echo "🟢 Value copied to clipboard using pbcopy." 46
+    elif [[ "$os" == "linux" ]]; then
+        if is_command_available xclip; then
+            echo -n "$value" | xclip -selection clipboard
+            colored_echo "🟢 Value copied to clipboard using xclip." 46
+        elif is_command_available xsel; then
+            echo -n "$value" | xsel --clipboard --input
+            colored_echo "🟢 Value copied to clipboard using xsel." 46
+        else
+            colored_echo "🔴 Clipboard tool not found. Please install xclip or xsel." 196
+            return 1
+        fi
+    else
+        colored_echo "🔴 Clipboard copying not supported on this OS." 196
+        return 1
+    fi
+}
