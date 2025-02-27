@@ -7,7 +7,10 @@
     "createfileifnotexists",
     "Grayscale",
     "MSYS",
+    "opent",
+    "osascript",
     "pnguyen",
+    "setaf",
     "softprops",
     "wsdkit",
     "wsdkitupgrade"
