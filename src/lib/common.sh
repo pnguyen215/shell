@@ -1131,3 +1131,97 @@ remove_dataset() {
         run_cmd sudo rm -rf "$target"
     fi
 }
+
+# editor function
+# Open a selected file from a specified folder using a chosen text editor.
+#
+# Usage:
+#   editor [-n] <folder>
+#
+# Parameters:
+#   - -n       : Optional dry-run flag. If provided, the command will be printed using on_evict instead of executed.
+#   - <folder> : The directory containing the files you want to edit.
+#
+# Description:
+#   The 'editor' function provides an interactive way to select a file from the specified
+#   folder and open it using a chosen text editor. It uses 'fzf' for fuzzy file and command selection.
+#   The function supports a dry-run mode where the command is printed without execution.
+#
+# Supported Text Editors:
+#   - cat
+#   - less
+#   - more
+#   - vim
+#   - nano
+#
+# Example:
+#   editor ~/documents          # Opens a file in the selected text editor.
+#   editor -n ~/documents       # Prints the command that would be used, without executing it.
+#
+# Requirements:
+#   - fzf must be installed.
+#   - Helper functions: run_cmd, on_evict, colored_echo, and get_os_type.
+editor() {
+    local dry_run="false"
+
+    # Check for the optional dry-run flag (-n).
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if [ $# -lt 1 ]; then
+        echo "Usage: editor [-n] <folder>"
+        return 1
+    fi
+
+    local folder="$1"
+    if [ ! -d "$folder" ]; then
+        colored_echo "🔴 Error: '$folder' is not a valid directory." 196
+        return 1
+    fi
+
+    # Determine absolute path command based on OS.
+    local abs_command
+    if [ "$(get_os_type)" = "macos" ]; then
+        if command -v realpath >/dev/null 2>&1; then
+            abs_command="realpath"
+        else
+            abs_command="echo" # Fallback: use echo (paths will remain relative)
+        fi
+    else
+        abs_command="readlink -f"
+    fi
+
+    # Get list of files with absolute paths.
+    local file_list
+    file_list=$(find "$folder" -type f -exec $abs_command {} \;)
+    if [ -z "$file_list" ]; then
+        colored_echo "🔴 No files found in '$folder'." 196
+        return 1
+    fi
+
+    # Use fzf to select a file.
+    local selected_file
+    selected_file=$(echo "$file_list" | fzf --prompt="Select a file: ")
+    if [ -z "$selected_file" ]; then
+        colored_echo "🔴 No file selected." 196
+        return 1
+    fi
+
+    # Use fzf to select the text editor command.
+    local selected_command
+    selected_command=$(echo "cat;less;more;vim;nano" | tr ';' '\n' | fzf --prompt="Select an action: ")
+    if [ -z "$selected_command" ]; then
+        colored_echo "🔴 No action selected." 196
+        return 1
+    fi
+
+    # Build the command string.
+    local cmd="$selected_command \"$selected_file\""
+    if [ "$dry_run" = "true" ]; then
+        on_evict "$cmd"
+    else
+        run_cmd $selected_command "$selected_file"
+    fi
+}
