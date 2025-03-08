@@ -3,6 +3,7 @@
     "allowexecuteperm",
     "allowfullperm",
     "appleboy",
+    "bunzip",
     "cecho",
     "createfileifnotexists",
     "Grayscale",
@@ -13,9 +14,12 @@
     "pnguyen",
     "setaf",
     "softprops",
+    "unrar",
     "wsdkit",
     "wsdkitupgrade",
     "xclip",
-    "xsel"
+    "xsel",
+    "xvjf",
+    "xvzf"
   ]
 }

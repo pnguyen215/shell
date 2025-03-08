@@ -1315,3 +1315,89 @@ download_dataset() {
         fi
     fi
 }
+
+# unarchive function
+# Extracts a compressed file based on its file extension.
+#
+# Usage:
+#   unarchive [-n] <filename>
+#
+# Parameters:
+#   - -n        : Optional dry-run flag. If provided, the extraction command is printed using on_evict instead of executed.
+#   - <filename>: The compressed file to extract.
+#
+# Description:
+#   The function first checks for an optional dry-run flag (-n) and then verifies that exactly one argument (the filename) is provided.
+#   It checks if the given file exists and, if so, determines the correct extraction command based on the file extension.
+#   In dry-run mode, the command is printed using on_evict; otherwise, it is executed using run_cmd_eval.
+#
+# Example:
+#   unarchive archive.tar.gz           # Extracts archive.tar.gz.
+#   unarchive -n archive.zip           # Prints the unzip command without executing it.
+unarchive() {
+    local dry_run="false"
+
+    # Check for the optional dry-run flag (-n).
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if [ $# -ne 1 ]; then
+        echo "Usage: unarchive [-n] <filename>"
+        return 1
+    fi
+
+    local file="$1"
+
+    if [ -f "$file" ]; then
+        case "$file" in
+        *.tar.bz2)
+            local cmd="tar xvjf \"$file\""
+            ;;
+        *.tar.gz)
+            local cmd="tar xvzf \"$file\""
+            ;;
+        *.bz2)
+            local cmd="bunzip2 \"$file\""
+            ;;
+        *.rar)
+            local cmd="unrar x \"$file\""
+            ;;
+        *.gz)
+            local cmd="gunzip \"$file\""
+            ;;
+        *.tar)
+            local cmd="tar xvf \"$file\""
+            ;;
+        *.tbz2)
+            local cmd="tar xvjf \"$file\""
+            ;;
+        *.tgz)
+            local cmd="tar xvzf \"$file\""
+            ;;
+        *.zip)
+            local cmd="unzip \"$file\""
+            ;;
+        *.Z)
+            local cmd="uncompress \"$file\""
+            ;;
+        *.7z)
+            local cmd="7z x \"$file\""
+            ;;
+        *)
+            colored_echo "🔴 Error: '$file' cannot be extracted via unarchive()" 196
+            return 1
+            ;;
+        esac
+
+        if [ "$dry_run" = "true" ]; then
+            on_evict "$cmd"
+        else
+            run_cmd_eval "$cmd"
+        fi
+    else
+        colored_echo "🔴 Error: '$file' is not a valid file" 196
+        return 1
+    fi
+}
