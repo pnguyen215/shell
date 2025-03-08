@@ -1450,3 +1450,110 @@ list_high_mem_usage() {
         run_cmd_eval "$cmd"
     fi
 }
+
+# open_link function
+# Opens the specified URL in the default web browser.
+#
+# Usage:
+#   open_link [-n] <url>
+#
+# Parameters:
+#   - -n   : Optional dry-run flag. If provided, the command is printed using on_evict instead of executed.
+#   - <url>: The URL to open in the default web browser.
+#
+# Description:
+#   This function determines the current operating system using get_os_type. On macOS, it uses the 'open' command;
+#   on Linux, it uses 'xdg-open' (if available). If the required command is missing on Linux, an error is displayed.
+#   In dry-run mode, the command is printed using on_evict; otherwise, it is executed using run_cmd_eval.
+#
+# Example:
+#   open_link https://example.com         # Opens the URL in the default browser.
+#   open_link -n https://example.com      # Prints the command without executing it.
+open_link() {
+    local dry_run="false"
+
+    # Check for the optional dry-run flag (-n).
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if [ -z "$1" ]; then
+        echo "Usage: open_link [-n] <url>"
+        return 1
+    fi
+
+    local url="$1"
+    local os_type
+    os_type=$(get_os_type)
+    local cmd=""
+
+    if [ "$os_type" = "macos" ]; then
+        cmd="open \"$url\""
+    elif [ "$os_type" = "linux" ]; then
+        if is_command_available xdg-open; then
+            cmd="xdg-open \"$url\""
+        else
+            colored_echo "🔴 Error: xdg-open is not installed on Linux." 196
+            return 1
+        fi
+    else
+        colored_echo "🔴 Error: Unsupported OS for open_link function." 196
+        return 1
+    fi
+
+    if [ "$dry_run" = "true" ]; then
+        on_evict "$cmd"
+    else
+        run_cmd_eval "$cmd"
+    fi
+}
+
+# loading_spinner function
+# Displays a loading spinner in the console for a specified duration.
+#
+# Usage:
+#   loading_spinner [-n] [duration]
+#
+# Parameters:
+#   - -n        : Optional dry-run flag. If provided, the spinner command is printed using on_evict instead of executed.
+#   - [duration]: Optional. The duration in seconds for which the spinner should be displayed. Default is 3 seconds.
+#
+# Description:
+#   The function calculates an end time based on the provided duration and then iterates,
+#   printing a sequence of spinner characters to create a visual loading effect.
+#   In dry-run mode, it uses on_evict to display a message indicating what would be executed,
+#   without actually running the spinner.
+#
+# Example usage:
+#   loading_spinner          # Displays the spinner for 3 seconds.
+#   loading_spinner 10       # Displays the spinner for 10 seconds.
+#   loading_spinner -n 5     # Prints the spinner command for 5 seconds without executing it.
+loading_spinner() {
+    local dry_run="false"
+
+    # Check for the optional dry-run flag (-n)
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    local duration="${1:-3}" # Default duration is 3 seconds
+    local spinner="/-\|"
+    local end_time=$((SECONDS + duration))
+
+    if [ "$dry_run" = "true" ]; then
+        on_evict "Display loading spinner for ${duration} seconds"
+        return 0
+    fi
+
+    while [ $SECONDS -lt $end_time ]; do
+        for i in $(seq 0 3); do
+            echo -n "${spinner:$i:1}"
+            sleep 0.1
+            echo -ne "\b#"
+        done
+    done
+
+    echo -e
+}
