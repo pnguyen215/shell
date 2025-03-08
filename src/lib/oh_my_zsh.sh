@@ -50,3 +50,65 @@ install_oh_my_zsh() {
         colored_echo "🟢 Oh-My-Zsh installed successfully!" 46
     fi
 }
+
+# uninstall_oh_my_zsh function
+# Uninstalls Oh My Zsh by removing its directory and restoring the original .zshrc backup if available.
+#
+# Usage:
+#   uninstall_oh_my_zsh [-n]
+#
+# Parameters:
+#   - -n : Optional dry-run flag. If provided, the uninstallation commands are printed using on_evict instead of executed.
+#
+# Description:
+#   This function checks whether the Oh My Zsh directory ($HOME/.oh-my-zsh) exists.
+#   If it does, the function proceeds to remove it using 'rm -rf'. Additionally, if a backup of the original .zshrc
+#   (stored as $HOME/.zshrc.pre-oh-my-zsh) exists, it restores that backup by moving it back to $HOME/.zshrc.
+#   In dry-run mode, the commands are displayed using on_evict; otherwise, they are executed using run_cmd_eval.
+#
+# Example:
+#   uninstall_oh_my_zsh         # Uninstalls Oh My Zsh if installed.
+#   uninstall_oh_my_zsh -n      # Displays the uninstallation commands without executing them.
+uninstall_oh_my_zsh() {
+    local dry_run="false"
+
+    # Check for the optional dry-run flag (-n)
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    local oh_my_zsh_dir="$HOME/.oh-my-zsh"
+
+    if [ ! -d "$oh_my_zsh_dir" ]; then
+        colored_echo "🍺 Oh My Zsh is not installed." 46
+        return 0
+    fi
+
+    colored_echo "🚀 Uninstalling Oh My Zsh..." 33
+
+    # Remove the Oh My Zsh directory
+    local remove_cmd="rm -rf \"$oh_my_zsh_dir\""
+    if [ "$dry_run" = "true" ]; then
+        on_evict "$remove_cmd"
+    else
+        run_cmd_eval "$remove_cmd"
+    fi
+
+    # Restore the original .zshrc from backup if available
+    local backup_zshrc="$HOME/.zshrc.pre-oh-my-zsh"
+    local zshrc="$HOME/.zshrc"
+    if [ -f "$backup_zshrc" ]; then
+        local restore_cmd="mv \"$backup_zshrc\" \"$zshrc\""
+        if [ "$dry_run" = "true" ]; then
+            on_evict "$restore_cmd"
+        else
+            run_cmd_eval "$restore_cmd"
+        fi
+        colored_echo "🟢 Original .zshrc restored from backup." 46
+    else
+        colored_echo "🍺 No backup .zshrc found. Please manually update your .zshrc if necessary." 33
+    fi
+
+    colored_echo "🟢 Oh My Zsh uninstalled successfully!" 46
+}
