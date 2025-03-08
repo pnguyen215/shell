@@ -1401,3 +1401,52 @@ unarchive() {
         return 1
     fi
 }
+
+# list_high_mem_usage function
+# Displays processes with high memory consumption.
+#
+# Usage:
+#   list_high_mem_usage [-n]
+#
+# Parameters:
+#   - -n : Optional dry-run flag. If provided, the command is printed using on_evict instead of executed.
+#
+# Description:
+#   This function retrieves the operating system type using get_os_type. For macOS, it uses 'top' to sort processes by resident size (RSIZE)
+#   and filters the output to display processes consuming at least 100 MB. For Linux, it uses 'ps' to list processes sorted by memory usage.
+#   In dry-run mode, the constructed command is printed using on_evict; otherwise, it is executed using run_cmd_eval.
+#
+# Example:
+#   list_high_mem_usage       # Displays processes with high memory consumption.
+#   list_high_mem_usage -n    # Prints the command without executing it.
+list_high_mem_usage() {
+    local dry_run="false"
+
+    # Check for the optional dry-run flag (-n)
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    # Determine the OS type using get_os_type
+    local os_type
+    os_type=$(get_os_type)
+
+    local cmd=""
+    if [ "$os_type" = "macos" ]; then
+        # Build the command string for macOS
+        cmd="top -o RSIZE -n 10 -l 1 | grep -E '^\s*[0-9]+ (root|[^r])' | awk '{if (\$3 >= 100) print \"PID: \" \$1 \", Application: \" \$2}'"
+    elif [ "$os_type" = "linux" ]; then
+        # Build the command string for Linux
+        cmd="ps -axo pid,user,%mem,command --sort=-%mem | head -n 11 | tail -n +2"
+    else
+        colored_echo "🔴 Error: Unsupported OS for list_high_mem_usage function." 196
+        return 1
+    fi
+
+    if [ "$dry_run" = "true" ]; then
+        on_evict "$cmd"
+    else
+        run_cmd_eval "$cmd"
+    fi
+}
