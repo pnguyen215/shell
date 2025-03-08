@@ -1557,3 +1557,107 @@ loading_spinner() {
 
     echo -e
 }
+
+# measure_time function
+# Measures the execution time of a command and displays the elapsed time.
+#
+# Usage:
+#   measure_time <command> [arguments...]
+#
+# Parameters:
+#   - <command> [arguments...]: The command (with its arguments) to execute.
+#
+# Description:
+#   This function captures the start time, executes the provided command, and then captures the end time.
+#   It calculates the elapsed time in milliseconds and displays the result in seconds and milliseconds.
+#   On macOS, if GNU date (gdate) is available, it is used for millisecond precision; otherwise, it falls back
+#   to the built-in SECONDS variable (providing second-level precision). On Linux, it uses date +%s%3N.
+#
+# Example:
+#   measure_time sleep 2    # Executes 'sleep 2' and displays the execution time.
+measure_time() {
+    local os_type
+    os_type=$(get_os_type)
+
+    local exit_code
+
+    if [ "$os_type" = "macos" ]; then
+        if is_command_available gdate; then
+            local start_time
+            start_time=$(gdate +%s%3N)
+            "$@"
+            exit_code=$?
+            local end_time
+            end_time=$(gdate +%s%3N)
+            local elapsed=$((end_time - start_time))
+            local seconds=$((elapsed / 1000))
+            local milliseconds=$((elapsed % 1000))
+            colored_echo "🕒 Execution time: ${seconds}s ${milliseconds}ms" 33
+            return $exit_code
+        else
+            # Fallback: use SECONDS (resolution in seconds)
+            local start_seconds=$SECONDS
+            "$@"
+            exit_code=$?
+            local end_seconds=$SECONDS
+            local elapsed_seconds=$((end_seconds - start_seconds))
+            colored_echo "🕒 Execution time: ${elapsed_seconds}s" 33
+            return $exit_code
+        fi
+    else
+        # For Linux: use date with millisecond precision
+        local start_time
+        start_time=$(date +%s%3N)
+        "$@"
+        exit_code=$?
+        local end_time
+        end_time=$(date +%s%3N)
+        local elapsed=$((end_time - start_time))
+        local seconds=$((elapsed / 1000))
+        local milliseconds=$((elapsed % 1000))
+        colored_echo "🕒 Execution time: ${seconds}s ${milliseconds}ms" 33
+        return $exit_code
+    fi
+}
+
+# async function
+# Executes a command or function asynchronously (in the background).
+#
+# Usage:
+#   async [-n] <command> [arguments...]
+#
+# Parameters:
+#   - -n        : Optional dry-run flag. If provided, the command is printed using on_evict instead of executed.
+#   - <command> [arguments...]: The command (or function) with its arguments to be executed asynchronously.
+#
+# Description:
+#   The async function builds the command from the provided arguments and runs it in the background.
+#   If the optional dry-run flag (-n) is provided, the command is printed using on_evict instead of executing it.
+#   Otherwise, the command is executed asynchronously using eval, and the process ID (PID) is displayed.
+#
+# Example:
+#   async my_function arg1 arg2      # Executes my_function with arguments asynchronously.
+#   async -n ls -l                   # Prints the 'ls -l' command that would be executed in the background.
+async() {
+    local dry_run="false"
+
+    # Check for the optional dry-run flag (-n).
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    # Build the command string from all arguments.
+    local cmd="$*"
+
+    if [ "$dry_run" = "true" ]; then
+        on_evict "$cmd &"
+        return 0
+    else
+        # Execute the command asynchronously (in the background)
+        eval "$cmd" &
+        local pid=$!
+        colored_echo "🕒 Async process started with PID: $pid" 33
+        return 0
+    fi
+}
