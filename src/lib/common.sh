@@ -201,7 +201,7 @@ run_cmd() {
 #   - The use of `eval` can be risky if the input command contains untrusted data, as it can lead to
 #     command injection vulnerabilities. Ensure the command is sanitized before using this function.
 #   - Prefer the 'wsd_exe_cmd' function for simpler commands without special characters or pipes.
-function run_cmd_eval() {
+run_cmd_eval() {
     local command="$*"
     # Capture the OS type output from get_os_type
     local os_type
@@ -245,7 +245,7 @@ function run_cmd_eval() {
 #   else
 #     echo "Git is not installed"
 #   fi
-function is_command_available() {
+is_command_available() {
     command -v "$1" &>/dev/null
     return $?
 }
@@ -261,7 +261,7 @@ function is_command_available() {
 #
 # Example usage:
 #   install_package git
-function install_package() {
+install_package() {
     local package="$1"
 
     local os_type
@@ -558,7 +558,7 @@ is_package_installed_linux() {
 #
 # Example:
 #   create_directory_if_not_exists /path/to/nested/directory
-function create_directory_if_not_exists() {
+create_directory_if_not_exists() {
     if [ $# -lt 1 ]; then
         echo "Usage: create_directory_if_not_exists <directory_path>"
         return 1
@@ -611,7 +611,7 @@ function create_directory_if_not_exists() {
 # Example usage:
 #   create_file_if_not_exists /path/to/file.txt
 #   create_file_if_not_exists demo/file.txt   (On macOS, this creates "$HOME/demo/file.txt")
-function create_file_if_not_exists() {
+create_file_if_not_exists() {
     if [ $# -lt 1 ]; then
         echo "Usage: create_file_if_not_exists <filename>"
         return 1
