@@ -682,7 +682,7 @@ function create_file_if_not_exists() {
 #
 # Recommendations:
 #   Use this function with caution, as setting permissions to 777 can pose security risks.
-function grant777() {
+grant777() {
     if [ $# -lt 1 ]; then
         echo "Usage: grant777 <file/dir>"
         return 1
@@ -1223,5 +1223,95 @@ editor() {
         on_evict "$cmd"
     else
         run_cmd $selected_command "$selected_file"
+    fi
+}
+
+# download_dataset function
+# Downloads a dataset file from a provided download link.
+#
+# Usage:
+#   download_dataset [-n] <filename_with_extension> <download_link>
+#
+# Parameters:
+#   - -n                     : Optional dry-run flag. If provided, commands are printed using on_evict instead of executed.
+#   - <filename_with_extension> : The target filename (with path) where the dataset will be saved.
+#   - <download_link>         : The URL from which the dataset will be downloaded.
+#
+# Description:
+#   This function downloads a file from a given URL and saves it under the specified filename.
+#   It extracts the directory from the filename, ensures the directory exists, and changes to that directory
+#   before attempting the download. If the file already exists, it prompts the user for confirmation before
+#   overwriting it. In dry-run mode, the function uses on_evict to display the commands without executing them.
+#
+# Example:
+#   download_dataset mydata.zip https://example.com/mydata.zip
+#   download_dataset -n mydata.zip https://example.com/mydata.zip  # Displays the commands without executing them.
+download_dataset() {
+    local dry_run="false"
+
+    # Check for the optional dry-run flag (-n)
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if [ $# -ne 2 ]; then
+        echo "Usage: download_dataset [-n] <filename_store_with_extension> <download_link>"
+        return 1
+    fi
+
+    local filename="$1"
+    local link="$2"
+
+    # Extract the directory path from the filename
+    local directory
+    directory=$(dirname "$filename")
+
+    # Ensure the directory exists; create it if it doesn't
+    create_file_if_not_exists "$directory"
+
+    # Change to the directory for downloading the file
+    cd "$directory" || return 1
+
+    local base="$directory/$(basename "$filename")"
+    # Check if the file already exists
+    if [ -e "$base" ]; then
+        local confirm=""
+        while [ -z "$confirm" ]; do
+            echo -n "❓ Do you want to overwrite the existing file? (y/n): "
+            read confirm
+            if [ -z "$confirm" ]; then
+                colored_echo "🔴 Invalid input. Please enter y or n." 196
+            fi
+        done
+
+        if [ "$confirm" != "y" ]; then
+            colored_echo "🍌 Download canceled. The file already exists." 11
+            return 1
+        fi
+
+        # Remove the existing file before downloading (using on_evict in dry-run mode)
+        if [ "$dry_run" = "true" ]; then
+            on_evict "sudo rm \"$base\""
+        else
+            run_cmd sudo rm "$base"
+        fi
+    fi
+
+    # Return to the original directory
+    cd - >/dev/null || return 1
+
+    # Build the download command
+    local download_cmd="curl -LJ \"$link\" -o \"$filename\""
+    if [ "$dry_run" = "true" ]; then
+        on_evict "$download_cmd"
+        colored_echo "💡 Dry-run mode: Displayed download command for $filename" 11
+    else
+        run_cmd curl -LJ "$link" -o "$filename"
+        if [ $? -eq 0 ]; then
+            colored_echo "🟢 Successfully downloaded: $filename" 46
+        else
+            colored_echo "🔴 Error: Download failed for $link" 196
+        fi
     fi
 }
