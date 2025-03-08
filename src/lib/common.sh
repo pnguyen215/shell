@@ -1089,3 +1089,45 @@ move_files() {
         fi
     done
 }
+
+# remove_dataset function
+# Removes a file or directory using sudo rm -rf.
+#
+# Usage:
+#   remove_dataset [-n] <filename/dir>
+#
+# Parameters:
+#   - -n           : Optional dry-run flag. If provided, the command will be printed using on_evict instead of executed.
+#   - <filename/dir>: The file or directory to remove.
+#
+# Description:
+#   The function first checks for an optional dry-run flag (-n). It then verifies that a target argument is provided.
+#   It builds the command to remove the specified target using "sudo rm -rf".
+#   In dry-run mode, the command is printed using on_evict; otherwise, it is executed using run_cmd.
+#
+# Example:
+#   remove_dataset my-dir          # Removes the directory 'my-dir'.
+#   remove_dataset -n myfile.txt  # Prints the removal command without executing it.
+remove_dataset() {
+    local dry_run="false"
+
+    # Check for the optional dry-run flag (-n).
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if [ -z "$1" ]; then
+        echo "Usage: remove_dataset [-n] <filename/dir>"
+        return 1
+    fi
+
+    local target="$1"
+    local cmd="sudo rm -rf \"$target\""
+
+    if [ "$dry_run" = "true" ]; then
+        on_evict "$cmd"
+    else
+        run_cmd sudo rm -rf "$target"
+    fi
+}

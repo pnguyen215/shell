@@ -20,7 +20,7 @@
 # Requirements:
 #   - fzf must be installed.
 #   - Helper functions: run_cmd_eval, colored_echo, and get_os_type.
-function fzf_copy() {
+fzf_copy() {
     # Check if fzf is installed.
     install_package fzf
 
@@ -79,7 +79,7 @@ function fzf_copy() {
 # Requirements:
 #   - fzf must be installed.
 #   - Helper functions: run_cmd_eval, colored_echo, get_os_type, install_package, and clip_value.
-function fzf_move() {
+fzf_move() {
     # Check if fzf is installed.
     install_package fzf
 
@@ -117,4 +117,43 @@ function fzf_move() {
     run_cmd_eval "$cmd"
     clip_value "$cmd"
     colored_echo "🟢 File moved successfully to $destination_file" 46
+}
+
+# fzf_remove function
+# Interactively selects a file or directory to remove using fzf,
+# then removes the selected file or directory.
+#
+# Usage:
+#   fzf_remove
+#
+# Description:
+#   This function leverages fzf to provide an interactive interface for choosing:
+#     1. A file or directory (from the current directory and subdirectories).
+#   It then removes the selected file or directory using the original path.
+#
+# Example:
+#   fzf_remove
+#
+# Requirements:
+#   - fzf must be installed.
+#   - Helper functions: run_cmd_eval, colored_echo, get_os_type, install_package, and clip_value.
+fzf_remove() {
+    # Check if fzf is installed.
+    install_package fzf
+
+    # Use find and fzf to select the target file or directory.
+    local target
+    target=$(find . -mindepth 1 | fzf --prompt="Select file/directory to remove: ")
+    if [ -z "$target" ]; then
+        colored_echo "🔴 No file or directory selected." 196
+        return 1
+    fi
+
+    # Build the removal command.
+    local cmd="sudo rm -rf \"$target\""
+
+    # Execute the command (using run_cmd_eval to log and run it).
+    run_cmd_eval "$cmd"
+    clip_value "$cmd"
+    colored_echo "🟢 Removed successfully: $target" 46
 }
