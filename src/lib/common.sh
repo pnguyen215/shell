@@ -1018,3 +1018,74 @@ copy_files() {
         fi
     done
 }
+
+# move_files function
+# Moves one or more files to a destination folder.
+#
+# Usage:
+#   move_files [-n] <destination_folder> <file1> <file2> ... <fileN>
+#
+# Parameters:
+#   - -n                  : Optional dry-run flag. If provided, the command will be printed using on_evict instead of executed.
+#   - <destination_folder>: The target directory where the files will be moved.
+#   - <fileX>             : One or more source files to be moved.
+#
+# Description:
+#   The function first checks for an optional dry-run flag (-n). It then verifies that the destination folder exists.
+#   For each source file provided:
+#     - It checks whether the source file exists.
+#     - It verifies that the destination file (using the basename of the source) does not already exist in the destination folder.
+#     - It builds the command to move the file (using sudo mv).
+#   In dry-run mode, the command is printed using on_evict; otherwise, the command is executed using run_cmd.
+#   If an error occurs for a particular file (e.g., missing source or destination file conflict), the error is logged and the function continues with the next file.
+#
+# Example:
+#   move_files /path/to/dest file1.txt file2.txt              # Moves file1.txt and file2.txt to /path/to/dest.
+#   move_files -n /path/to/dest file1.txt file2.txt             # Prints the move commands without executing them.
+move_files() {
+    local dry_run="false"
+
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if [ $# -lt 2 ]; then
+        echo "Usage: move_files [-n] <destination_folder> <file1> <file2> ... <fileN>"
+        return 1
+    fi
+
+    local destination_folder="$1"
+    shift
+
+    if [ ! -d "$destination_folder" ]; then
+        colored_echo "🔴 Error: Destination folder '$destination_folder' does not exist." 196
+        return 1
+    fi
+
+    for source in "$@"; do
+        if [ ! -e "$source" ]; then
+            colored_echo "🔴 Error: Source file '$source' does not exist." 196
+            continue
+        fi
+
+        local destination="$destination_folder/$(basename "$source")"
+
+        if [ -e "$destination" ]; then
+            colored_echo "🔴 Error: Destination file '$destination' already exists." 196
+            continue
+        fi
+
+        local cmd="sudo mv \"$source\" \"$destination\""
+        if [ "$dry_run" = "true" ]; then
+            on_evict "$cmd"
+        else
+            run_cmd sudo mv "$source" "$destination"
+            if [ $? -eq 0 ]; then
+                colored_echo "🟢 File '$source' moved successfully to $destination" 46
+            else
+                colored_echo "🔴 Error moving file '$source'." 196
+            fi
+        fi
+    done
+}
