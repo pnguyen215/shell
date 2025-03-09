@@ -310,6 +310,62 @@ update_conf() {
     fi
 }
 
+# exist_key_conf function
+# Checks if a configuration key exists in the key configuration file.
+#
+# Usage:
+#   exist_key_conf <key>
+#
+# Parameters:
+#   - <key>: The configuration key to check.
+#
+# Description:
+#   This function searches for the specified key in the configuration file defined by SHELL_KEY_CONF_FILE.
+#   The configuration file should have entries in the format:
+#       key=encoded_value
+#   If a line starting with "key=" is found, the function echoes "true" and returns 0.
+#   Otherwise, it echoes "false" and returns 1.
+#
+# Sample Usage:
+#   # Using the exit status:
+#   if exist_key_conf my_setting; then
+#       echo "Key 'my_setting' exists."
+#   else
+#       echo "Key 'my_setting' does not exist."
+#   fi
+#
+#   # Capturing the output:
+#   result=$(exist_key_conf my_setting)
+#   if [ "$result" = "true" ]; then
+#       echo "Key 'my_setting' exists."
+#   else
+#       echo "Key 'my_setting' does not exist."
+#   fi
+#
+# Example:
+#   exist_key_conf my_setting   # Echoes "true" and returns 0 if 'my_setting' exists; otherwise, echoes "false" and returns 1.
+exist_key_conf() {
+    if [ $# -lt 1 ]; then
+        echo "Usage: exist_key_conf <key>"
+        return 1
+    fi
+
+    local key="$1"
+
+    if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
+        colored_echo "🔴 Error: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
+        return 1
+    fi
+
+    if grep -q "^${key}=" "$SHELL_KEY_CONF_FILE"; then
+        echo "true"
+        return 0
+    else
+        echo "false"
+        return 1
+    fi
+}
+
 # add_group function
 # Groups selected configuration keys under a specified group name.
 #
