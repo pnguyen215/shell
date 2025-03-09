@@ -640,7 +640,7 @@ create_file_if_not_exists() {
         run_cmd_eval "sudo mkdir -p \"$directory\""
         if [ $? -eq 0 ]; then
             colored_echo "🟢 Directory created successfully." 46
-            run_cmd_eval "sudo chmod 700 \"$directory\"" # Set directory permissions to 700 (owner can read, write, and execute)
+            # run_cmd_eval "sudo chmod 700 \"$directory\"" # Set directory permissions to 700 (owner can read, write, and execute)
         else
             colored_echo "🔴 Error: Failed to create the directory." 196
             return 1
