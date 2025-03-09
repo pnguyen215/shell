@@ -102,7 +102,7 @@ add_conf() {
     if [ "$dry_run" = "true" ]; then
         on_evict "$cmd"
     else
-        run_cmd "$cmd"
+        run_cmd_eval "$cmd"
         colored_echo "🟢 Added configuration: $key (encoded value)" 46
     fi
 }

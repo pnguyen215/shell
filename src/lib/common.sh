@@ -653,7 +653,7 @@ create_file_if_not_exists() {
         run_cmd_eval "sudo touch \"$filename\""
         if [ $? -eq 0 ]; then
             colored_echo "🟢 File created successfully." 46
-            run_cmd_eval "sudo chmod 600 \"$filename\"" # Set file permissions to 600 (owner can read and write; no permissions for others)
+            # run_cmd_eval "sudo chmod 600 \"$filename\"" # Set file permissions to 600 (owner can read and write; no permissions for others)
             return 0
         else
             colored_echo "🔴 Error: Failed to create the file." 196
