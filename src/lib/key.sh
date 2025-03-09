@@ -481,6 +481,135 @@ read_group() {
     colored_echo "$json_obj" 33
 }
 
+# remove_group function
+# Interactively selects a group name from the group configuration file using fzf,
+# then removes the corresponding group entry.
+#
+# Usage:
+#   remove_group [-n]
+#
+# Parameters:
+#   - -n : Optional dry-run flag. If provided, the removal command is printed using on_evict instead of executed.
+#
+# Description:
+#   The function extracts group names from GROUP_CONF_FILE and uses fzf for interactive selection.
+#   Once a group is selected, it constructs a sed command (with appropriate in-place options for macOS or Linux)
+#   to remove the line that starts with "group_name=".
+#   If the file is not writable, sudo is prepended. In dry-run mode, the command is printed via on_evict.
+#
+# Example:
+#   remove_group         # Interactively select a group and remove its entry.
+#   remove_group -n      # Prints the removal command without executing it.
+remove_group() {
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if [ ! -f "$GROUP_CONF_FILE" ]; then
+        colored_echo "🔴 Error: Group configuration file '$GROUP_CONF_FILE' not found." 196
+        return 1
+    fi
+
+    local selected_group
+    selected_group=$(cut -d '=' -f 1 "$GROUP_CONF_FILE" | fzf --prompt="Select a group to remove: ")
+    if [ -z "$selected_group" ]; then
+        colored_echo "🔴 No group selected." 196
+        return 1
+    fi
+
+    local os_type
+    os_type=$(get_os_type)
+    local sed_cmd=""
+    local use_sudo="sudo "
+
+    if [ "$os_type" = "macos" ]; then
+        sed_cmd="${use_sudo}sed -i '' \"/^${selected_group}=/d\" \"$GROUP_CONF_FILE\""
+    else
+        sed_cmd="${use_sudo}sed -i \"/^${selected_group}=/d\" \"$GROUP_CONF_FILE\""
+    fi
+
+    if [ "$dry_run" = "true" ]; then
+        on_evict "$sed_cmd"
+    else
+        run_cmd_eval "$sed_cmd"
+        colored_echo "🟢 Removed group: $selected_group" 46
+    fi
+}
+
+# update_group function
+# Interactively updates an existing group by letting you select new keys for that group.
+#
+# Usage:
+#   update_group [-n]
+#
+# Parameters:
+#   - -n : Optional dry-run flag. If provided, the update command is printed using on_evict instead of executed.
+#
+# Description:
+#   The function reads GROUP_CONF_FILE and uses fzf to let you select an existing group.
+#   It then presents all available keys from SHELL_CONF_FILE (via fzf with multi-select) for you to choose the new group membership.
+#   The selected keys are converted into a comma-separated list, and the group entry is updated in GROUP_CONF_FILE
+#   (using sed with options appropriate for macOS or Linux). If the file is not writable, sudo is used.
+#
+# Example:
+#   update_group         # Interactively select a group, update its keys, and update the group entry.
+#   update_group -n      # Prints the update command without executing it.
+update_group() {
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if [ ! -f "$GROUP_CONF_FILE" ]; then
+        colored_echo "🔴 Error: Group configuration file '$GROUP_CONF_FILE' not found." 196
+        return 1
+    fi
+
+    # Select the group to update.
+    local selected_group
+    selected_group=$(cut -d '=' -f 1 "$GROUP_CONF_FILE" | fzf --prompt="Select a group to update: ")
+    if [ -z "$selected_group" ]; then
+        colored_echo "🔴 No group selected." 196
+        return 1
+    fi
+
+    # Ensure the individual configuration file exists.
+    if [ ! -f "$SHELL_CONF_FILE" ]; then
+        colored_echo "🔴 Error: Configuration file '$SHELL_CONF_FILE' not found." 196
+        return 1
+    fi
+
+    # Let the user select new keys for the group from all available keys.
+    local new_keys
+    new_keys=$(cut -d '=' -f 1 "$SHELL_CONF_FILE" | fzf --multi --prompt="Select new keys for group '$selected_group': " | paste -sd "," -)
+    if [ -z "$new_keys" ]; then
+        colored_echo "🔴 No keys selected. Aborting update." 196
+        return 1
+    fi
+
+    local new_group_entry="${selected_group}=${new_keys}"
+    local os_type
+    os_type=$(get_os_type)
+    local sed_cmd=""
+    local use_sudo="sudo "
+
+    if [ "$os_type" = "macos" ]; then
+        sed_cmd="${use_sudo}sed -i '' \"s/^${selected_group}=.*/${new_group_entry}/\" \"$GROUP_CONF_FILE\""
+    else
+        sed_cmd="${use_sudo}sed -i \"s/^${selected_group}=.*/${new_group_entry}/\" \"$GROUP_CONF_FILE\""
+    fi
+
+    if [ "$dry_run" = "true" ]; then
+        on_evict "$sed_cmd"
+    else
+        run_cmd_eval "$sed_cmd"
+        colored_echo "🟢 Updated group '$selected_group' with new keys: $new_keys" 46
+    fi
+}
+
 # list_groups function
 # Lists all group names defined in the group configuration file.
 #
