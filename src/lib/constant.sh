@@ -11,3 +11,6 @@
 # Example:
 #   SHELL_CONF_FILE="$HOME/.my_config.conf"
 SHELL_CONF_FILE="$HOME/.shell-config/key.conf"
+
+# Define the configuration file for group definitions.
+GROUP_CONF_FILE="$HOME/.shell-config/group.conf"

@@ -309,3 +309,169 @@ update_conf() {
         colored_echo "🟢 Updated configuration for key: $selected_key" 46
     fi
 }
+
+# add_group function
+# Groups selected configuration keys under a specified group name.
+#
+# Usage:
+#   add_group [-n]
+#
+# Description:
+#   This function prompts you to enter a group name, then uses fzf (with multi-select) to let you choose
+#   one or more configuration keys (from SHELL_CONF_FILE). It then stores the group in GROUP_CONF_FILE in the format:
+#       group_name=key1,key2,...,keyN
+#   If the group name already exists, the group entry is updated with the new selection.
+#   An optional dry-run flag (-n) can be used to print the command via on_evict instead of executing it.
+#
+# Example:
+#   add_group         # Prompts for a group name and lets you select keys to group.
+#   add_group -n      # Prints the command for creating/updating the group without executing it.
+add_group() {
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    # Ensure the group configuration file exists.
+    create_file_if_not_exists "$GROUP_CONF_FILE"
+    grant777 "$GROUP_CONF_FILE"
+
+    # Prompt the user for a group name.
+    colored_echo "Enter group name:" 33
+    read -r group_name
+    if [ -z "$group_name" ]; then
+        colored_echo "🔴 No group name entered. Aborting." 196
+        return 1
+    fi
+
+    # Ensure the individual configuration file exists.
+    if [ ! -f "$SHELL_CONF_FILE" ]; then
+        colored_echo "🔴 Error: Configuration file '$SHELL_CONF_FILE' not found." 196
+        return 1
+    fi
+
+    # Use fzf with multi-select to choose keys from SHELL_CONF_FILE.
+    local selected_keys
+    selected_keys=$(cut -d '=' -f 1 "$SHELL_CONF_FILE" | fzf --multi --prompt="Select config keys for group '$group_name': ")
+    if [ -z "$selected_keys" ]; then
+        colored_echo "🔴 No keys selected. Aborting group creation." 196
+        return 1
+    fi
+
+    # Convert the multi-line selection to a comma-separated list.
+    local keys_csv
+    keys_csv=$(echo "$selected_keys" | paste -sd "," -)
+
+    # Construct the group entry in the format: group_name=key1,key2,...,keyN
+    local group_entry="${group_name}=${keys_csv}"
+
+    # If the group already exists, update it; otherwise, append it.
+    if grep -q "^${group_name}=" "$GROUP_CONF_FILE"; then
+        local os_type
+        os_type=$(get_os_type)
+        local sed_cmd=""
+        if [ "$os_type" = "macos" ]; then
+            sed_cmd="sed -i '' \"s/^${group_name}=.*/${group_entry}/\" \"$GROUP_CONF_FILE\""
+        else
+            sed_cmd="sed -i \"s/^${group_name}=.*/${group_entry}/\" \"$GROUP_CONF_FILE\""
+        fi
+        if [ "$dry_run" = "true" ]; then
+            on_evict "$sed_cmd"
+        else
+            run_cmd_eval "$sed_cmd"
+            colored_echo "🟢 Updated group '$group_name' with keys: $keys_csv" 46
+        fi
+    else
+        local cmd="echo \"$group_entry\" >> \"$GROUP_CONF_FILE\""
+        if [ "$dry_run" = "true" ]; then
+            on_evict "$cmd"
+        else
+            run_cmd_eval "$cmd"
+            colored_echo "🟢 Created group '$group_name' with keys: $keys_csv" 46
+        fi
+    fi
+}
+
+# read_group function
+# Reads and displays the configurations for a given group by group name.
+#
+# Usage:
+#   read_group <group_name>
+#
+# Description:
+#   This function looks up the group entry in GROUP_CONF_FILE for the specified group name.
+#   The group entry is expected to be in the format:
+#       group_name=key1,key2,...,keyN
+#   For each key in the group, the function retrieves the corresponding configuration entry from SHELL_CONF_FILE,
+#   decodes the Base64-encoded value (using -D on macOS and -d on Linux), and then groups the key-value pairs
+#   into a JSON object which is displayed.
+#
+# Example:
+#   read_group my_group   # Displays the configurations for the keys in the group 'my_group'.
+read_group() {
+    if [ $# -lt 1 ]; then
+        echo "Usage: read_group <group_name>"
+        return 1
+    fi
+
+    local group_name="$1"
+
+    if [ ! -f "$GROUP_CONF_FILE" ]; then
+        colored_echo "🔴 Error: Group configuration file '$GROUP_CONF_FILE' not found." 196
+        return 1
+    fi
+
+    # Retrieve the group entry for the specified group name.
+    local group_entry
+    group_entry=$(grep "^${group_name}=" "$GROUP_CONF_FILE")
+    if [ -z "$group_entry" ]; then
+        colored_echo "🔴 Error: Group '$group_name' not found." 196
+        return 1
+    fi
+
+    # Extract the comma-separated list of keys.
+    local keys_csv
+    keys_csv=$(echo "$group_entry" | cut -d '=' -f 2-)
+    if [ -z "$keys_csv" ]; then
+        colored_echo "🔴 Error: No keys defined in group '$group_name'." 196
+        return 1
+    fi
+
+    local os_type
+    os_type=$(get_os_type)
+    local json_obj="{"
+    local first=1
+
+    # Split the comma-separated keys into an array.
+    IFS=',' read -ra keys_array <<<"$keys_csv"
+    for key in "${keys_array[@]}"; do
+        # Retrieve the configuration entry from SHELL_CONF_FILE for each key.
+        local conf_line
+        conf_line=$(grep "^${key}=" "$SHELL_CONF_FILE")
+        if [ -z "$conf_line" ]; then
+            continue
+        fi
+
+        local encoded_value
+        encoded_value=$(echo "$conf_line" | cut -d '=' -f 2-)
+        local decoded_value
+        if [ "$os_type" = "macos" ]; then
+            decoded_value=$(echo "$encoded_value" | base64 -D)
+        else
+            decoded_value=$(echo "$encoded_value" | base64 -d)
+        fi
+
+        # Append comma if not the first key.
+        if [ $first -eq 0 ]; then
+            json_obj+=","
+        else
+            first=0
+        fi
+
+        json_obj+="\"$key\":\"$decoded_value\""
+    done
+
+    json_obj+="}"
+    colored_echo "$json_obj" 33
+}
