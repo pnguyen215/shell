@@ -209,12 +209,12 @@ remove_conf() {
     local os_type
     os_type=$(get_os_type)
     local sed_cmd=""
-    local use_sudo=""
+    local use_sudo="sudo "
 
     # Check if the configuration file is writable; if not, use sudo.
-    if [ ! -w "$SHELL_CONF_FILE" ]; then
-        use_sudo="sudo "
-    fi
+    # if [ ! -w "$SHELL_CONF_FILE" ]; then
+    #     use_sudo="sudo "
+    # fi
 
     # Construct the sed command to remove the line starting with "selected_key="
     if [ "$os_type" = "macos" ]; then
