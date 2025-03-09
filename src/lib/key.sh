@@ -232,3 +232,80 @@ remove_conf() {
         colored_echo "🟢 Removed configuration for key: $selected_key" 46
     fi
 }
+
+# update_conf function
+# Interactively updates the value for a configuration key in a constant configuration file.
+# The new value is encoded using Base64 before updating the file.
+#
+# Usage:
+#   update_conf [-n]
+#
+# Parameters:
+#   - -n : Optional dry-run flag. If provided, the update command is printed using on_evict instead of executed.
+#
+# Description:
+#   The function reads the configuration file defined by SHELL_CONF_FILE, which contains entries in the format:
+#       key=encoded_value
+#   It extracts only the keys and uses fzf to allow interactive selection.
+#   Once a key is selected, the function prompts for a new value, encodes it using Base64 (with newlines removed),
+#   and then updates the corresponding configuration entry in the file by replacing the line starting with "key=".
+#   The sed command used for in-place update differs between macOS and Linux.
+#
+# Example:
+#   update_conf       # Interactively select a key, enter a new value, and update its entry.
+#   update_conf -n    # Prints the update command without executing it.
+update_conf() {
+    local dry_run="false"
+
+    # Check for the optional dry-run flag (-n)
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if [ ! -f "$SHELL_CONF_FILE" ]; then
+        colored_echo "🔴 Error: Configuration file '$SHELL_CONF_FILE' not found." 196
+        return 1
+    fi
+
+    # Extract only the keys from the configuration file and select one using fzf.
+    local selected_key
+    selected_key=$(cut -d '=' -f 1 "$SHELL_CONF_FILE" | fzf --prompt="Select config key to update: ")
+    if [ -z "$selected_key" ]; then
+        colored_echo "🔴 No configuration selected." 196
+        return 1
+    fi
+
+    # Prompt the user for the new value.
+    colored_echo ">> Enter new value for key '$selected_key':" 33
+    read -r new_value
+    if [ -z "$new_value" ]; then
+        colored_echo "🔴 No new value entered. Update aborted." 196
+        return 1
+    fi
+
+    # Encode the new value using Base64 and remove any newline characters.
+    local encoded_value
+    encoded_value=$(echo -n "$new_value" | base64 | tr -d '\n')
+
+    local os_type
+    os_type=$(get_os_type)
+    local sed_cmd=""
+    local use_sudo="sudo "
+
+    # Construct the sed command to update the line starting with "selected_key=".
+    if [ "$os_type" = "macos" ]; then
+        # For macOS, use sed -i '' for in-place editing.
+        sed_cmd="${use_sudo}sed -i '' \"s/^${selected_key}=.*/${selected_key}=${encoded_value}/\" \"$SHELL_CONF_FILE\""
+    else
+        # For Linux, use sed -i for in-place editing.
+        sed_cmd="${use_sudo}sed -i \"s/^${selected_key}=.*/${selected_key}=${encoded_value}/\" \"$SHELL_CONF_FILE\""
+    fi
+
+    if [ "$dry_run" = "true" ]; then
+        on_evict "$sed_cmd"
+    else
+        run_cmd_eval "$sed_cmd"
+        colored_echo "🟢 Updated configuration for key: $selected_key" 46
+    fi
+}
