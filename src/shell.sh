@@ -25,8 +25,10 @@ shell_upgrade() {
     # Check if the shell source command is in .zshrc or .bashrc and copy the appropriate command.
     if [ -f "$HOME/.zshrc" ] && grep -q "source $install_dir/src/shell.sh" "$HOME/.zshrc"; then
         clip_value "source ~/.zshrc"
+        return 1
     elif [ -f "$HOME/.bashrc" ] && grep -q "source $install_dir/src/shell.sh" "$HOME/.bashrc"; then
         clip_value "source ~/.bashrc"
+        return 1
     else
         # Fallback: default to .bashrc if none found.
         clip_value "source ~/.bashrc"
