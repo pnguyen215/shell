@@ -107,52 +107,6 @@ add_conf() {
     fi
 }
 
-# # get_conf function
-# # Interactively selects a configuration key from a constant configuration file using fzf,
-# # then decodes and displays its corresponding value.
-# #
-# # Usage:
-# #   get_conf
-# #
-# # Description:
-# #   The function reads the configuration file defined by the constant SHELL_CONF_FILE, where each line is in the format:
-# #       key=encoded_value
-# #   It uses fzf to allow interactive selection of one entry. Once a key is selected, the function extracts the encoded value,
-# #   decodes it using Base64 (using -D on macOS and -d on Linux), and then displays the key and the decoded value.
-# #
-# # Example:
-# #   get_conf      # Interactively select a key and display its decoded value.
-# get_conf() {
-#     if [ ! -f "$SHELL_CONF_FILE" ]; then
-#         colored_echo "🔴 Error: Configuration file '$SHELL_CONF_FILE' not found." 196
-#         return 1
-#     fi
-
-#     local selected_line
-#     selected_line=$(cat "$SHELL_CONF_FILE" | fzf --prompt="Select config key: ")
-#     if [ -z "$selected_line" ]; then
-#         colored_echo "🔴 No configuration selected." 196
-#         return 1
-#     fi
-
-#     local key
-#     key=$(echo "$selected_line" | cut -d '=' -f 1)
-#     local encoded_value
-#     encoded_value=$(echo "$selected_line" | cut -d '=' -f 2-)
-
-#     local os_type
-#     os_type=$(get_os_type)
-#     local decoded_value
-#     if [ "$os_type" = "macos" ]; then
-#         decoded_value=$(echo "$encoded_value" | base64 -D)
-#     else
-#         decoded_value=$(echo "$encoded_value" | base64 -d)
-#     fi
-
-#     colored_echo "🔑 Key: $key" 33
-#     colored_echo "🔓 Value: $decoded_value" 33
-# }
-
 # get_conf function
 # Interactively selects a configuration key from a constant configuration file using fzf,
 # then decodes and displays its corresponding value.
@@ -207,4 +161,68 @@ get_conf() {
 
     colored_echo "🔑 Key: $selected_key" 33
     clip_value "$decoded_value"
+}
+
+# remove_conf function
+# Interactively selects a configuration key from a constant configuration file using fzf,
+# then removes the corresponding entry from the configuration file.
+#
+# Usage:
+#   remove_conf [-n]
+#
+# Parameters:
+#   - -n : Optional dry-run flag. If provided, the removal command is printed using on_evict instead of executed.
+#
+# Description:
+#   The function reads the configuration file defined by the constant SHELL_CONF_FILE, where each entry is in the format:
+#       key=encoded_value
+#   It extracts only the keys (before the '=') and uses fzf for interactive selection.
+#   Once a key is selected, it constructs a command to remove the line that starts with "key=" from the configuration file.
+#   The command uses sed with different options depending on the operating system (macOS or Linux).
+#   In dry-run mode, the command is printed using on_evict; otherwise, it is executed using run_cmd_eval.
+#
+# Example:
+#   remove_conf         # Interactively select a key and remove its configuration entry.
+#   remove_conf -n      # Prints the removal command without executing it.
+remove_conf() {
+    local dry_run="false"
+
+    # Check for the optional dry-run flag (-n)
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if [ ! -f "$SHELL_CONF_FILE" ]; then
+        colored_echo "🔴 Error: Configuration file '$SHELL_CONF_FILE' not found." 196
+        return 1
+    fi
+
+    # Extract only the keys from the configuration file and select one using fzf.
+    local selected_key
+    selected_key=$(cut -d '=' -f 1 "$SHELL_CONF_FILE" | fzf --prompt="Select config key to remove: ")
+    if [ -z "$selected_key" ]; then
+        colored_echo "🔴 No configuration selected." 196
+        return 1
+    fi
+
+    local os_type
+    os_type=$(get_os_type)
+    local sed_cmd=""
+
+    # Construct the sed command to remove the line starting with "selected_key="
+    if [ "$os_type" = "macos" ]; then
+        # On macOS, use sed -i '' for in-place editing.
+        sed_cmd="sed -i '' \"/^${selected_key}=/d\" \"$SHELL_CONF_FILE\""
+    else
+        # On Linux, use sed -i for in-place editing.
+        sed_cmd="sed -i \"/^${selected_key}=/d\" \"$SHELL_CONF_FILE\""
+    fi
+
+    if [ "$dry_run" = "true" ]; then
+        on_evict "$sed_cmd"
+    else
+        run_cmd_eval "$sed_cmd"
+        colored_echo "🟢 Removed configuration for key: $selected_key" 46
+    fi
 }
