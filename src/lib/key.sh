@@ -611,6 +611,76 @@ update_group() {
     fi
 }
 
+# rename_group function
+# Renames an existing group in the group configuration file.
+#
+# Usage:
+#   rename_group [-n]
+#
+# Parameters:
+#   - -n : Optional dry-run flag. If provided, the renaming command is printed using on_evict instead of executed.
+#
+# Description:
+#   The function reads the group configuration file (GROUP_CONF_FILE) where each line is in the format:
+#       group_name=key1,key2,...,keyN
+#   It uses fzf to let you select an existing group to rename.
+#   After selection, the function prompts for a new group name.
+#   It then constructs a sed command to replace the old group name with the new one in the configuration file.
+#   The sed command uses in-place editing options appropriate for macOS (sed -i '') or Linux (sed -i).
+#   In dry-run mode, the command is printed using on_evict; otherwise, it is executed using run_cmd_eval.
+#
+# Example:
+#   rename_group         # Interactively select a group and rename it.
+#   rename_group -n      # Prints the renaming command without executing it.
+rename_group() {
+    local dry_run="false"
+    # Check for the optional dry-run flag (-n)
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if [ ! -f "$GROUP_CONF_FILE" ]; then
+        colored_echo "🔴 Error: Group configuration file '$GROUP_CONF_FILE' not found." 196
+        return 1
+    fi
+
+    # Use fzf to let the user select an existing group.
+    local old_group
+    old_group=$(cut -d '=' -f 1 "$GROUP_CONF_FILE" | fzf --prompt="Select group to rename: ")
+    if [ -z "$old_group" ]; then
+        colored_echo "🔴 No group selected. Aborting rename." 196
+        return 1
+    fi
+
+    # Prompt for the new group name.
+    colored_echo "Enter new name for group '$old_group':" 33
+    read -r new_group
+    if [ -z "$new_group" ]; then
+        colored_echo "🔴 No new group name entered. Aborting rename." 196
+        return 1
+    fi
+
+    # Construct the sed command to update the group name while preserving the keys.
+    local os_type
+    os_type=$(get_os_type)
+    local sed_cmd=""
+    local use_sudo="sudo "
+
+    if [ "$os_type" = "macos" ]; then
+        sed_cmd="${use_sudo}sed -i '' \"s/^${old_group}=/${new_group}=/\" \"$GROUP_CONF_FILE\""
+    else
+        sed_cmd="${use_sudo}sed -i \"s/^${old_group}=/${new_group}=/\" \"$GROUP_CONF_FILE\""
+    fi
+
+    if [ "$dry_run" = "true" ]; then
+        on_evict "$sed_cmd"
+    else
+        run_cmd_eval "$sed_cmd"
+        colored_echo "🟢 Renamed group '$old_group' to '$new_group'" 46
+    fi
+}
+
 # list_groups function
 # Lists all group names defined in the group configuration file.
 #
@@ -736,4 +806,89 @@ select_group() {
     colored_echo "📁 Group: $selected_group" 33
     colored_echo "🔑 Key: $selected_key" 33
     clip_value "$decoded_value"
+}
+
+# clone_group function
+# Clones an existing group by creating a new group with the same keys.
+#
+# Usage:
+#   clone_group [-n]
+#
+# Parameters:
+#   - -n : Optional dry-run flag. If provided, the cloning command is printed using on_evict instead of executed.
+#
+# Description:
+#   The function reads the group configuration file (GROUP_CONF_FILE) where each line is in the format:
+#       group_name=key1,key2,...,keyN
+#   It uses fzf to interactively select an existing group.
+#   After selection, it prompts for a new group name.
+#   The new group entry is then constructed with the new group name and the same comma-separated keys
+#   as the selected group, and appended to GROUP_CONF_FILE.
+#   In dry-run mode, the final command is printed using on_evict; otherwise, it is executed using run_cmd_eval.
+#
+# Example:
+#   clone_group         # Interactively select a group and create a clone with a new group name.
+#   clone_group -n      # Prints the cloning command without executing it.
+clone_group() {
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    # Ensure the group configuration file exists.
+    if [ ! -f "$GROUP_CONF_FILE" ]; then
+        colored_echo "🔴 Error: Group configuration file '$GROUP_CONF_FILE' not found." 196
+        return 1
+    fi
+
+    # Use fzf to let the user select an existing group.
+    local selected_group
+    selected_group=$(cut -d '=' -f 1 "$GROUP_CONF_FILE" | fzf --prompt="Select a group to clone: ")
+    if [ -z "$selected_group" ]; then
+        colored_echo "🔴 No group selected. Aborting clone." 196
+        return 1
+    fi
+
+    # Retrieve the group entry to get the keys.
+    local group_entry
+    group_entry=$(grep "^${selected_group}=" "$GROUP_CONF_FILE")
+    if [ -z "$group_entry" ]; then
+        colored_echo "🔴 Error: Group '$selected_group' not found." 196
+        return 1
+    fi
+
+    local keys_csv
+    keys_csv=$(echo "$group_entry" | cut -d '=' -f 2-)
+    if [ -z "$keys_csv" ]; then
+        colored_echo "🔴 Error: No keys defined in group '$selected_group'." 196
+        return 1
+    fi
+
+    # Prompt for the new group name.
+    colored_echo "Enter new group name for the clone of '$selected_group':" 33
+    read -r new_group
+    if [ -z "$new_group" ]; then
+        colored_echo "🔴 No new group name entered. Aborting clone." 196
+        return 1
+    fi
+
+    # Check if the new group name already exists.
+    if grep -q "^${new_group}=" "$GROUP_CONF_FILE"; then
+        colored_echo "🔴 Error: Group '$new_group' already exists." 196
+        return 1
+    fi
+
+    # Construct the new group entry.
+    local new_group_entry="${new_group}=${keys_csv}"
+
+    # Build the command to append the new group entry.
+    local cmd="echo \"$new_group_entry\" >> \"$GROUP_CONF_FILE\""
+
+    if [ "$dry_run" = "true" ]; then
+        on_evict "$cmd"
+    else
+        run_cmd_eval "$cmd"
+        colored_echo "🟢 Created new group '$new_group' as a clone of '$selected_group' with keys: $keys_csv" 46
+    fi
 }
