@@ -53,22 +53,41 @@ rmdir "$extracted_dir" 2>/dev/null || {
 rm "$zip_file"
 
 # Detect shell and update config
+# shell_config=""
+# if [ -n "$ZSH_VERSION" ]; then
+#     shell_config="$HOME/.zshrc"
+# elif [ -n "$BASH_VERSION" ]; then
+#     shell_config="$HOME/.bashrc"
+# else
+#     echo "🟡 Unsupported shell. Please manually add 'source $install_dir/src/shell.sh' to your shell config."
+#     exit 0
+# fi
+
+# Update shell configuration file with priority: .zshrc > .bashrc
 shell_config=""
-if [ -n "$ZSH_VERSION" ]; then
+if [ -f "$HOME/.zshrc" ]; then
     shell_config="$HOME/.zshrc"
-elif [ -n "$BASH_VERSION" ]; then
+elif [ -f "$HOME/.bashrc" ]; then
     shell_config="$HOME/.bashrc"
 else
-    echo "🟡 Unsupported shell. Please manually add 'source $install_dir/src/shell.sh' to your shell config."
+    echo "🟡 No .zshrc or .bashrc found. Please manually add 'source $install_dir/src/shell.sh' to your shell config."
     exit 0
 fi
 
+# line="source $install_dir/src/shell.sh"
+# if ! grep -q "$line" "$shell_config" 2>/dev/null; then
+#     echo "$line" >>"$shell_config"
+#     echo "🟢 Added shell to $shell_config"
+# else
+#     echo "🟡 shell already in $shell_config"
+# fi
+
 line="source $install_dir/src/shell.sh"
-if ! grep -q "$line" "$shell_config" 2>/dev/null; then
+if ! grep -qF "$line" "$shell_config" 2>/dev/null; then
     echo "$line" >>"$shell_config"
     echo "🟢 Added shell to $shell_config"
 else
-    echo "🟡 shell already in $shell_config"
+    echo "🟡 Shell already sourced in $shell_config"
 fi
 
 echo "🟢 shell installed. Restart your terminal or run 'source $shell_config' to apply changes."
