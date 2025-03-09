@@ -32,3 +32,12 @@ SHELL_KEY_CONF_FILE="$HOME/.shell-config/key.conf"
 # Example:
 #   SHELL_GROUP_CONF_FILE="$HOME/.shell-config/group.conf"
 SHELL_GROUP_CONF_FILE="$HOME/.shell-config/group.conf"
+
+# SHELL_GH_CONF_FILE constant
+# This variable defines the path to the GitHub configuration file used by the shell bash library.
+# The file is intended to store settings related to GitHub or git activity, such as API tokens,
+# repository preferences, or other git-related configurations.
+#
+# Example:
+#   SHELL_GH_CONF_FILE="$HOME/.shell-config/gh.conf"
+SHELL_GH_CONF_FILE="$HOME/.shell-config/gh.conf"
