@@ -479,6 +479,7 @@ read_group() {
 
     json_obj+="}"
     colored_echo "$json_obj" 33
+    clip_value "$json_obj"
 }
 
 # remove_group function
