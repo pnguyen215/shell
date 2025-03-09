@@ -211,6 +211,11 @@ remove_conf() {
         return 1
     fi
 
+    if [ "$(is_protected_key "$selected_key")" = "true" ]; then
+        colored_echo "🔴 Error: '$selected_key' is a protected key and cannot be modified." 196
+        return 1
+    fi
+
     local os_type
     os_type=$(get_os_type)
     local sed_cmd=""
@@ -412,6 +417,11 @@ rename_key_conf() {
         return 1
     fi
 
+    if [ "$(is_protected_key "$old_key")" = "true" ]; then
+        colored_echo "🔴 Error: '$old_key' is a protected key and cannot be modified." 196
+        return 1
+    fi
+
     # Prompt for the new key name.
     colored_echo "Enter new key name for '$old_key':" 33
     read -r new_key
@@ -446,6 +456,43 @@ rename_key_conf() {
         run_cmd_eval "$sed_cmd"
         colored_echo "🟢 Renamed key '$old_key' to '$new_key'" 46
     fi
+}
+
+# is_protected_key function
+# Checks if the specified configuration key is protected.
+#
+# Usage:
+#   is_protected_key <key>
+#
+# Parameters:
+#   - <key>: The configuration key to check.
+#
+# Description:
+#   This function iterates over the SHELL_PROTECTED_KEYS array to determine if the given key is marked as protected.
+#   If the key is found in the array, the function echoes "true" and returns 0.
+#   Otherwise, it echoes "false" and returns 1.
+#
+# Example:
+#   if is_protected_key "HOST"; then
+#       colored_echo "🔴 Error: 'HOST' is a protected key and cannot be modified." 196
+#       return 1
+#   fi
+is_protected_key() {
+    if [ $# -lt 1 ]; then
+        echo "Usage: is_protected_key <key>"
+        return 1
+    fi
+
+    local key="$1"
+    for protected in "${SHELL_PROTECTED_KEYS[@]}"; do
+        if [ "$protected" = "$key" ]; then
+            echo "true"
+            return 0
+        fi
+    done
+
+    echo "false"
+    return 1
 }
 
 # add_group function

@@ -41,3 +41,13 @@ SHELL_GROUP_CONF_FILE="$HOME/.shell-config/group.conf"
 # Example:
 #   SHELL_GH_CONF_FILE="$HOME/.shell-config/gh.conf"
 SHELL_GH_CONF_FILE="$HOME/.shell-config/gh.conf"
+
+# SHELL_PROTECTED_KEYS array
+# This array lists configuration keys that are considered constant and must not be removed, updated,
+# or renamed through interactive functions.
+#
+# You can include keys that are critical for the shell's operation, security, or stability.
+#
+# Example:
+#   SHELL_PROTECTED_KEYS=("HOST" "PORT" "API_TOKEN")
+SHELL_PROTECTED_KEYS=("HOST" "PORT" "API_TOKEN" "SHELL_API_KEY")
