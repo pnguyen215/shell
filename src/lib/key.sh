@@ -404,7 +404,7 @@ add_group() {
 #   The group entry is expected to be in the format:
 #       group_name=key1,key2,...,keyN
 #   For each key in the group, the function retrieves the corresponding configuration entry from SHELL_CONF_FILE,
-#   decodes the Base64-encoded value (using -D on macOS and -d on Linux), and then groups the key-value pairs
+#   decodes the Base64-encoded value (using -D on macOS and -d on Linux), and groups the key-value pairs
 #   into a JSON object which is displayed.
 #
 # Example:
@@ -443,8 +443,13 @@ read_group() {
     local json_obj="{"
     local first=1
 
-    # Split the comma-separated keys into an array.
-    IFS=',' read -ra keys_array <<<"$keys_csv"
+    # Convert the comma-separated keys to an array in a way compatible with both Bash and zsh.
+    if [ -n "$BASH_VERSION" ]; then
+        IFS=',' read -r -a keys_array <<<"$keys_csv"
+    else
+        IFS=',' read -rA keys_array <<<"$keys_csv"
+    fi
+
     for key in "${keys_array[@]}"; do
         # Retrieve the configuration entry from SHELL_CONF_FILE for each key.
         local conf_line
@@ -462,7 +467,7 @@ read_group() {
             decoded_value=$(echo "$encoded_value" | base64 -d)
         fi
 
-        # Append comma if not the first key.
+        # Append a comma if not the first key.
         if [ $first -eq 0 ]; then
             json_obj+=","
         else
