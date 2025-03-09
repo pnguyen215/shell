@@ -107,6 +107,52 @@ add_conf() {
     fi
 }
 
+# # get_conf function
+# # Interactively selects a configuration key from a constant configuration file using fzf,
+# # then decodes and displays its corresponding value.
+# #
+# # Usage:
+# #   get_conf
+# #
+# # Description:
+# #   The function reads the configuration file defined by the constant SHELL_CONF_FILE, where each line is in the format:
+# #       key=encoded_value
+# #   It uses fzf to allow interactive selection of one entry. Once a key is selected, the function extracts the encoded value,
+# #   decodes it using Base64 (using -D on macOS and -d on Linux), and then displays the key and the decoded value.
+# #
+# # Example:
+# #   get_conf      # Interactively select a key and display its decoded value.
+# get_conf() {
+#     if [ ! -f "$SHELL_CONF_FILE" ]; then
+#         colored_echo "🔴 Error: Configuration file '$SHELL_CONF_FILE' not found." 196
+#         return 1
+#     fi
+
+#     local selected_line
+#     selected_line=$(cat "$SHELL_CONF_FILE" | fzf --prompt="Select config key: ")
+#     if [ -z "$selected_line" ]; then
+#         colored_echo "🔴 No configuration selected." 196
+#         return 1
+#     fi
+
+#     local key
+#     key=$(echo "$selected_line" | cut -d '=' -f 1)
+#     local encoded_value
+#     encoded_value=$(echo "$selected_line" | cut -d '=' -f 2-)
+
+#     local os_type
+#     os_type=$(get_os_type)
+#     local decoded_value
+#     if [ "$os_type" = "macos" ]; then
+#         decoded_value=$(echo "$encoded_value" | base64 -D)
+#     else
+#         decoded_value=$(echo "$encoded_value" | base64 -d)
+#     fi
+
+#     colored_echo "🔑 Key: $key" 33
+#     colored_echo "🔓 Value: $decoded_value" 33
+# }
+
 # get_conf function
 # Interactively selects a configuration key from a constant configuration file using fzf,
 # then decodes and displays its corresponding value.
@@ -115,10 +161,13 @@ add_conf() {
 #   get_conf
 #
 # Description:
-#   The function reads the configuration file defined by the constant SHELL_CONF_FILE, where each line is in the format:
+#   The function reads the configuration file defined by the constant SHELL_CONF_FILE,
+#   which is expected to have entries in the format:
 #       key=encoded_value
-#   It uses fzf to allow interactive selection of one entry. Once a key is selected, the function extracts the encoded value,
-#   decodes it using Base64 (using -D on macOS and -d on Linux), and then displays the key and the decoded value.
+#   Instead of listing the entire line, it extracts only the keys (before the '=') and uses fzf
+#   for interactive selection. Once a key is selected, it looks up the full entry,
+#   decodes the Base64-encoded value (using -D on macOS and -d on Linux), and then displays the key
+#   and its decoded value.
 #
 # Example:
 #   get_conf      # Interactively select a key and display its decoded value.
@@ -128,15 +177,22 @@ get_conf() {
         return 1
     fi
 
-    local selected_line
-    selected_line=$(cat "$SHELL_CONF_FILE" | fzf --prompt="Select config key: ")
-    if [ -z "$selected_line" ]; then
+    # Extract only the keys from the configuration file and select one using fzf.
+    local selected_key
+    selected_key=$(cut -d '=' -f 1 "$SHELL_CONF_FILE" | fzf --prompt="Select config key: ")
+    if [ -z "$selected_key" ]; then
         colored_echo "🔴 No configuration selected." 196
         return 1
     fi
 
-    local key
-    key=$(echo "$selected_line" | cut -d '=' -f 1)
+    # Retrieve the full line corresponding to the selected key.
+    local selected_line
+    selected_line=$(grep "^${selected_key}=" "$SHELL_CONF_FILE")
+    if [ -z "$selected_line" ]; then
+        colored_echo "🔴 Error: Selected key '$selected_key' not found in configuration." 196
+        return 1
+    fi
+
     local encoded_value
     encoded_value=$(echo "$selected_line" | cut -d '=' -f 2-)
 
@@ -149,6 +205,6 @@ get_conf() {
         decoded_value=$(echo "$encoded_value" | base64 -d)
     fi
 
-    colored_echo "🔑 Key: $key" 33
-    colored_echo "🔓 Value: $decoded_value" 33
+    colored_echo "🔑 Key: $selected_key" 33
+    clip_value "$decoded_value"
 }
