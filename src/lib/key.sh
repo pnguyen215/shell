@@ -168,6 +168,59 @@ get_conf() {
     clip_value "$decoded_value"
 }
 
+# get_value_conf function
+# Retrieves and outputs the decoded value for a given configuration key from the key configuration file.
+#
+# Usage:
+#   get_value_conf <key>
+#
+# Parameters:
+#   - <key>: The configuration key whose value should be retrieved.
+#
+# Description:
+#   This function searches for the specified key in the configuration file defined by SHELL_KEY_CONF_FILE.
+#   The configuration file is expected to have entries in the format:
+#       key=encoded_value
+#   If the key is found, the function decodes the associated Base64‑encoded value (using -D on macOS and -d on Linux)
+#   and outputs the decoded value to standard output.
+#
+# Example:
+#   get_value_conf my_setting   # Outputs the decoded value for the key 'my_setting'.
+get_value_conf() {
+    if [ $# -lt 1 ]; then
+        echo "Usage: get_value_conf <key>"
+        return 1
+    fi
+
+    local key="$1"
+
+    if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
+        colored_echo "🔴 Error: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
+        return 1
+    fi
+
+    local conf_line
+    conf_line=$(grep "^${key}=" "$SHELL_KEY_CONF_FILE")
+    if [ -z "$conf_line" ]; then
+        colored_echo "🔴 Error: Key '$key' not found in configuration." 196
+        return 1
+    fi
+
+    local encoded_value
+    encoded_value=$(echo "$conf_line" | cut -d '=' -f 2-)
+
+    local os_type
+    os_type=$(get_os_type)
+    local decoded_value
+    if [ "$os_type" = "macos" ]; then
+        decoded_value=$(echo "$encoded_value" | base64 -D)
+    else
+        decoded_value=$(echo "$encoded_value" | base64 -d)
+    fi
+
+    echo "$decoded_value"
+}
+
 # remove_conf function
 # Interactively selects a configuration key from a constant configuration file using fzf,
 # then removes the corresponding entry from the configuration file.
