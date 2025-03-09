@@ -1182,20 +1182,22 @@ editor() {
     fi
 
     # Determine absolute path command based on OS.
-    local abs_command
-    if [ "$(get_os_type)" = "macos" ]; then
+    local os_type
+    os_type=$(get_os_type)
+    local abs_command=()
+    if [ "$os_type" = "macos" ]; then
         if command -v realpath >/dev/null 2>&1; then
-            abs_command="realpath"
+            abs_command=(realpath)
         else
-            abs_command="echo" # Fallback: use echo (paths will remain relative)
+            abs_command=(echo) # Fallback: use echo (paths will remain relative)
         fi
     else
-        abs_command="readlink -f"
+        abs_command=(readlink -f)
     fi
 
     # Get list of files with absolute paths.
     local file_list
-    file_list=$(find "$folder" -type f -exec $abs_command {} \;)
+    file_list=$(find "$folder" -type f -exec "${abs_command[@]}" {} \;)
     if [ -z "$file_list" ]; then
         colored_echo "🔴 No files found in '$folder'." 196
         return 1
