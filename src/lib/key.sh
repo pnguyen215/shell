@@ -104,7 +104,7 @@ add_conf() {
     else
         result=$(exist_key_conf $key)
         if [ "$result" = "true" ]; then
-            colored_echo "🟡 The key $key exists. Please consider updating it by using update_conf" 33
+            colored_echo "🟡 The key '$key' exists. Please consider updating it by using update_conf" 11
             return 0
         fi
         run_cmd_eval "$cmd"
