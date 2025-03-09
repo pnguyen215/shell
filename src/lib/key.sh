@@ -66,7 +66,7 @@ read_conf() {
 #   The function first checks for an optional dry-run flag (-n) and verifies that both key and value are provided.
 #   It encodes the value using Base64 (with newline characters removed) and then appends a line in the format:
 #       key=encoded_value
-#   to a constant configuration file (defined by SHELL_CONF_FILE). If the configuration file does not exist, it is created.
+#   to a constant configuration file (defined by SHELL_KEY_CONF_FILE). If the configuration file does not exist, it is created.
 #
 # Example:
 #   add_conf my_setting "some secret value"         # Encodes the value and adds the entry.
@@ -93,11 +93,11 @@ add_conf() {
     encoded_value=$(echo -n "$value" | base64 | tr -d '\n')
 
     # Ensure the configuration file exists.
-    create_file_if_not_exists "$SHELL_CONF_FILE"
-    grant777 "$SHELL_CONF_FILE"
+    create_file_if_not_exists "$SHELL_KEY_CONF_FILE"
+    grant777 "$SHELL_KEY_CONF_FILE"
 
     # Build the command to append the key and encoded value to the configuration file.
-    local cmd="echo \"$key=$encoded_value\" >> \"$SHELL_CONF_FILE\""
+    local cmd="echo \"$key=$encoded_value\" >> \"$SHELL_KEY_CONF_FILE\""
 
     if [ "$dry_run" = "true" ]; then
         on_evict "$cmd"
@@ -115,7 +115,7 @@ add_conf() {
 #   get_conf
 #
 # Description:
-#   The function reads the configuration file defined by the constant SHELL_CONF_FILE,
+#   The function reads the configuration file defined by the constant SHELL_KEY_CONF_FILE,
 #   which is expected to have entries in the format:
 #       key=encoded_value
 #   Instead of listing the entire line, it extracts only the keys (before the '=') and uses fzf
@@ -126,14 +126,14 @@ add_conf() {
 # Example:
 #   get_conf      # Interactively select a key and display its decoded value.
 get_conf() {
-    if [ ! -f "$SHELL_CONF_FILE" ]; then
-        colored_echo "🔴 Error: Configuration file '$SHELL_CONF_FILE' not found." 196
+    if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
+        colored_echo "🔴 Error: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
         return 1
     fi
 
     # Extract only the keys from the configuration file and select one using fzf.
     local selected_key
-    selected_key=$(cut -d '=' -f 1 "$SHELL_CONF_FILE" | fzf --prompt="Select config key: ")
+    selected_key=$(cut -d '=' -f 1 "$SHELL_KEY_CONF_FILE" | fzf --prompt="Select config key: ")
     if [ -z "$selected_key" ]; then
         colored_echo "🔴 No configuration selected." 196
         return 1
@@ -141,7 +141,7 @@ get_conf() {
 
     # Retrieve the full line corresponding to the selected key.
     local selected_line
-    selected_line=$(grep "^${selected_key}=" "$SHELL_CONF_FILE")
+    selected_line=$(grep "^${selected_key}=" "$SHELL_KEY_CONF_FILE")
     if [ -z "$selected_line" ]; then
         colored_echo "🔴 Error: Selected key '$selected_key' not found in configuration." 196
         return 1
@@ -174,7 +174,7 @@ get_conf() {
 #   - -n : Optional dry-run flag. If provided, the removal command is printed using on_evict instead of executed.
 #
 # Description:
-#   The function reads the configuration file defined by the constant SHELL_CONF_FILE, where each entry is in the format:
+#   The function reads the configuration file defined by the constant SHELL_KEY_CONF_FILE, where each entry is in the format:
 #       key=encoded_value
 #   It extracts only the keys (before the '=') and uses fzf for interactive selection.
 #   Once a key is selected, it constructs a command to remove the line that starts with "key=" from the configuration file.
@@ -193,14 +193,14 @@ remove_conf() {
         shift
     fi
 
-    if [ ! -f "$SHELL_CONF_FILE" ]; then
-        colored_echo "🔴 Error: Configuration file '$SHELL_CONF_FILE' not found." 196
+    if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
+        colored_echo "🔴 Error: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
         return 1
     fi
 
     # Extract only the keys from the configuration file and select one using fzf.
     local selected_key
-    selected_key=$(cut -d '=' -f 1 "$SHELL_CONF_FILE" | fzf --prompt="Select config key to remove: ")
+    selected_key=$(cut -d '=' -f 1 "$SHELL_KEY_CONF_FILE" | fzf --prompt="Select config key to remove: ")
     if [ -z "$selected_key" ]; then
         colored_echo "🔴 No configuration selected." 196
         return 1
@@ -212,17 +212,17 @@ remove_conf() {
     local use_sudo="sudo "
 
     # Check if the configuration file is writable; if not, use sudo.
-    # if [ ! -w "$SHELL_CONF_FILE" ]; then
+    # if [ ! -w "$SHELL_KEY_CONF_FILE" ]; then
     #     use_sudo="sudo "
     # fi
 
     # Construct the sed command to remove the line starting with "selected_key="
     if [ "$os_type" = "macos" ]; then
         # On macOS, use sed -i '' for in-place editing.
-        sed_cmd="${use_sudo}sed -i '' \"/^${selected_key}=/d\" \"$SHELL_CONF_FILE\""
+        sed_cmd="${use_sudo}sed -i '' \"/^${selected_key}=/d\" \"$SHELL_KEY_CONF_FILE\""
     else
         # On Linux, use sed -i for in-place editing.
-        sed_cmd="${use_sudo}sed -i \"/^${selected_key}=/d\" \"$SHELL_CONF_FILE\""
+        sed_cmd="${use_sudo}sed -i \"/^${selected_key}=/d\" \"$SHELL_KEY_CONF_FILE\""
     fi
 
     if [ "$dry_run" = "true" ]; then
@@ -244,7 +244,7 @@ remove_conf() {
 #   - -n : Optional dry-run flag. If provided, the update command is printed using on_evict instead of executed.
 #
 # Description:
-#   The function reads the configuration file defined by SHELL_CONF_FILE, which contains entries in the format:
+#   The function reads the configuration file defined by SHELL_KEY_CONF_FILE, which contains entries in the format:
 #       key=encoded_value
 #   It extracts only the keys and uses fzf to allow interactive selection.
 #   Once a key is selected, the function prompts for a new value, encodes it using Base64 (with newlines removed),
@@ -263,14 +263,14 @@ update_conf() {
         shift
     fi
 
-    if [ ! -f "$SHELL_CONF_FILE" ]; then
-        colored_echo "🔴 Error: Configuration file '$SHELL_CONF_FILE' not found." 196
+    if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
+        colored_echo "🔴 Error: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
         return 1
     fi
 
     # Extract only the keys from the configuration file and select one using fzf.
     local selected_key
-    selected_key=$(cut -d '=' -f 1 "$SHELL_CONF_FILE" | fzf --prompt="Select config key to update: ")
+    selected_key=$(cut -d '=' -f 1 "$SHELL_KEY_CONF_FILE" | fzf --prompt="Select config key to update: ")
     if [ -z "$selected_key" ]; then
         colored_echo "🔴 No configuration selected." 196
         return 1
@@ -296,10 +296,10 @@ update_conf() {
     # Construct the sed command to update the line starting with "selected_key=".
     if [ "$os_type" = "macos" ]; then
         # For macOS, use sed -i '' for in-place editing.
-        sed_cmd="${use_sudo}sed -i '' \"s/^${selected_key}=.*/${selected_key}=${encoded_value}/\" \"$SHELL_CONF_FILE\""
+        sed_cmd="${use_sudo}sed -i '' \"s/^${selected_key}=.*/${selected_key}=${encoded_value}/\" \"$SHELL_KEY_CONF_FILE\""
     else
         # For Linux, use sed -i for in-place editing.
-        sed_cmd="${use_sudo}sed -i \"s/^${selected_key}=.*/${selected_key}=${encoded_value}/\" \"$SHELL_CONF_FILE\""
+        sed_cmd="${use_sudo}sed -i \"s/^${selected_key}=.*/${selected_key}=${encoded_value}/\" \"$SHELL_KEY_CONF_FILE\""
     fi
 
     if [ "$dry_run" = "true" ]; then
@@ -318,7 +318,7 @@ update_conf() {
 #
 # Description:
 #   This function prompts you to enter a group name, then uses fzf (with multi-select) to let you choose
-#   one or more configuration keys (from SHELL_CONF_FILE). It then stores the group in GROUP_CONF_FILE in the format:
+#   one or more configuration keys (from SHELL_KEY_CONF_FILE). It then stores the group in SHELL_GROUP_CONF_FILE in the format:
 #       group_name=key1,key2,...,keyN
 #   If the group name already exists, the group entry is updated with the new selection.
 #   An optional dry-run flag (-n) can be used to print the command via on_evict instead of executing it.
@@ -334,8 +334,8 @@ add_group() {
     fi
 
     # Ensure the group configuration file exists.
-    create_file_if_not_exists "$GROUP_CONF_FILE"
-    grant777 "$GROUP_CONF_FILE"
+    create_file_if_not_exists "$SHELL_GROUP_CONF_FILE"
+    grant777 "$SHELL_GROUP_CONF_FILE"
 
     # Prompt the user for a group name.
     colored_echo "Enter group name:" 33
@@ -346,14 +346,14 @@ add_group() {
     fi
 
     # Ensure the individual configuration file exists.
-    if [ ! -f "$SHELL_CONF_FILE" ]; then
-        colored_echo "🔴 Error: Configuration file '$SHELL_CONF_FILE' not found." 196
+    if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
+        colored_echo "🔴 Error: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
         return 1
     fi
 
-    # Use fzf with multi-select to choose keys from SHELL_CONF_FILE.
+    # Use fzf with multi-select to choose keys from SHELL_KEY_CONF_FILE.
     local selected_keys
-    selected_keys=$(cut -d '=' -f 1 "$SHELL_CONF_FILE" | fzf --multi --prompt="Select config keys for group '$group_name': ")
+    selected_keys=$(cut -d '=' -f 1 "$SHELL_KEY_CONF_FILE" | fzf --multi --prompt="Select config keys for group '$group_name': ")
     if [ -z "$selected_keys" ]; then
         colored_echo "🔴 No keys selected. Aborting group creation." 196
         return 1
@@ -367,14 +367,14 @@ add_group() {
     local group_entry="${group_name}=${keys_csv}"
 
     # If the group already exists, update it; otherwise, append it.
-    if grep -q "^${group_name}=" "$GROUP_CONF_FILE"; then
+    if grep -q "^${group_name}=" "$SHELL_GROUP_CONF_FILE"; then
         local os_type
         os_type=$(get_os_type)
         local sed_cmd=""
         if [ "$os_type" = "macos" ]; then
-            sed_cmd="sed -i '' \"s/^${group_name}=.*/${group_entry}/\" \"$GROUP_CONF_FILE\""
+            sed_cmd="sed -i '' \"s/^${group_name}=.*/${group_entry}/\" \"$SHELL_GROUP_CONF_FILE\""
         else
-            sed_cmd="sed -i \"s/^${group_name}=.*/${group_entry}/\" \"$GROUP_CONF_FILE\""
+            sed_cmd="sed -i \"s/^${group_name}=.*/${group_entry}/\" \"$SHELL_GROUP_CONF_FILE\""
         fi
         if [ "$dry_run" = "true" ]; then
             on_evict "$sed_cmd"
@@ -383,7 +383,7 @@ add_group() {
             colored_echo "🟢 Updated group '$group_name' with keys: $keys_csv" 46
         fi
     else
-        local cmd="echo \"$group_entry\" >> \"$GROUP_CONF_FILE\""
+        local cmd="echo \"$group_entry\" >> \"$SHELL_GROUP_CONF_FILE\""
         if [ "$dry_run" = "true" ]; then
             on_evict "$cmd"
         else
@@ -400,10 +400,10 @@ add_group() {
 #   read_group <group_name>
 #
 # Description:
-#   This function looks up the group entry in GROUP_CONF_FILE for the specified group name.
+#   This function looks up the group entry in SHELL_GROUP_CONF_FILE for the specified group name.
 #   The group entry is expected to be in the format:
 #       group_name=key1,key2,...,keyN
-#   For each key in the group, the function retrieves the corresponding configuration entry from SHELL_CONF_FILE,
+#   For each key in the group, the function retrieves the corresponding configuration entry from SHELL_KEY_CONF_FILE,
 #   decodes the Base64-encoded value (using -D on macOS and -d on Linux), and groups the key-value pairs
 #   into a JSON object which is displayed.
 #
@@ -417,14 +417,14 @@ read_group() {
 
     local group_name="$1"
 
-    if [ ! -f "$GROUP_CONF_FILE" ]; then
-        colored_echo "🔴 Error: Group configuration file '$GROUP_CONF_FILE' not found." 196
+    if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
+        colored_echo "🔴 Error: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
         return 1
     fi
 
     # Retrieve the group entry for the specified group name.
     local group_entry
-    group_entry=$(grep "^${group_name}=" "$GROUP_CONF_FILE")
+    group_entry=$(grep "^${group_name}=" "$SHELL_GROUP_CONF_FILE")
     if [ -z "$group_entry" ]; then
         colored_echo "🔴 Error: Group '$group_name' not found." 196
         return 1
@@ -451,9 +451,9 @@ read_group() {
     fi
 
     for key in "${keys_array[@]}"; do
-        # Retrieve the configuration entry from SHELL_CONF_FILE for each key.
+        # Retrieve the configuration entry from SHELL_KEY_CONF_FILE for each key.
         local conf_line
-        conf_line=$(grep "^${key}=" "$SHELL_CONF_FILE")
+        conf_line=$(grep "^${key}=" "$SHELL_KEY_CONF_FILE")
         if [ -z "$conf_line" ]; then
             continue
         fi
@@ -493,7 +493,7 @@ read_group() {
 #   - -n : Optional dry-run flag. If provided, the removal command is printed using on_evict instead of executed.
 #
 # Description:
-#   The function extracts group names from GROUP_CONF_FILE and uses fzf for interactive selection.
+#   The function extracts group names from SHELL_GROUP_CONF_FILE and uses fzf for interactive selection.
 #   Once a group is selected, it constructs a sed command (with appropriate in-place options for macOS or Linux)
 #   to remove the line that starts with "group_name=".
 #   If the file is not writable, sudo is prepended. In dry-run mode, the command is printed via on_evict.
@@ -508,13 +508,13 @@ remove_group() {
         shift
     fi
 
-    if [ ! -f "$GROUP_CONF_FILE" ]; then
-        colored_echo "🔴 Error: Group configuration file '$GROUP_CONF_FILE' not found." 196
+    if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
+        colored_echo "🔴 Error: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
         return 1
     fi
 
     local selected_group
-    selected_group=$(cut -d '=' -f 1 "$GROUP_CONF_FILE" | fzf --prompt="Select a group to remove: ")
+    selected_group=$(cut -d '=' -f 1 "$SHELL_GROUP_CONF_FILE" | fzf --prompt="Select a group to remove: ")
     if [ -z "$selected_group" ]; then
         colored_echo "🔴 No group selected." 196
         return 1
@@ -526,9 +526,9 @@ remove_group() {
     local use_sudo="sudo "
 
     if [ "$os_type" = "macos" ]; then
-        sed_cmd="${use_sudo}sed -i '' \"/^${selected_group}=/d\" \"$GROUP_CONF_FILE\""
+        sed_cmd="${use_sudo}sed -i '' \"/^${selected_group}=/d\" \"$SHELL_GROUP_CONF_FILE\""
     else
-        sed_cmd="${use_sudo}sed -i \"/^${selected_group}=/d\" \"$GROUP_CONF_FILE\""
+        sed_cmd="${use_sudo}sed -i \"/^${selected_group}=/d\" \"$SHELL_GROUP_CONF_FILE\""
     fi
 
     if [ "$dry_run" = "true" ]; then
@@ -549,9 +549,9 @@ remove_group() {
 #   - -n : Optional dry-run flag. If provided, the update command is printed using on_evict instead of executed.
 #
 # Description:
-#   The function reads GROUP_CONF_FILE and uses fzf to let you select an existing group.
-#   It then presents all available keys from SHELL_CONF_FILE (via fzf with multi-select) for you to choose the new group membership.
-#   The selected keys are converted into a comma-separated list, and the group entry is updated in GROUP_CONF_FILE
+#   The function reads SHELL_GROUP_CONF_FILE and uses fzf to let you select an existing group.
+#   It then presents all available keys from SHELL_KEY_CONF_FILE (via fzf with multi-select) for you to choose the new group membership.
+#   The selected keys are converted into a comma-separated list, and the group entry is updated in SHELL_GROUP_CONF_FILE
 #   (using sed with options appropriate for macOS or Linux). If the file is not writable, sudo is used.
 #
 # Example:
@@ -564,28 +564,28 @@ update_group() {
         shift
     fi
 
-    if [ ! -f "$GROUP_CONF_FILE" ]; then
-        colored_echo "🔴 Error: Group configuration file '$GROUP_CONF_FILE' not found." 196
+    if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
+        colored_echo "🔴 Error: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
         return 1
     fi
 
     # Select the group to update.
     local selected_group
-    selected_group=$(cut -d '=' -f 1 "$GROUP_CONF_FILE" | fzf --prompt="Select a group to update: ")
+    selected_group=$(cut -d '=' -f 1 "$SHELL_GROUP_CONF_FILE" | fzf --prompt="Select a group to update: ")
     if [ -z "$selected_group" ]; then
         colored_echo "🔴 No group selected." 196
         return 1
     fi
 
     # Ensure the individual configuration file exists.
-    if [ ! -f "$SHELL_CONF_FILE" ]; then
-        colored_echo "🔴 Error: Configuration file '$SHELL_CONF_FILE' not found." 196
+    if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
+        colored_echo "🔴 Error: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
         return 1
     fi
 
     # Let the user select new keys for the group from all available keys.
     local new_keys
-    new_keys=$(cut -d '=' -f 1 "$SHELL_CONF_FILE" | fzf --multi --prompt="Select new keys for group '$selected_group': " | paste -sd "," -)
+    new_keys=$(cut -d '=' -f 1 "$SHELL_KEY_CONF_FILE" | fzf --multi --prompt="Select new keys for group '$selected_group': " | paste -sd "," -)
     if [ -z "$new_keys" ]; then
         colored_echo "🔴 No keys selected. Aborting update." 196
         return 1
@@ -598,9 +598,9 @@ update_group() {
     local use_sudo="sudo "
 
     if [ "$os_type" = "macos" ]; then
-        sed_cmd="${use_sudo}sed -i '' \"s/^${selected_group}=.*/${new_group_entry}/\" \"$GROUP_CONF_FILE\""
+        sed_cmd="${use_sudo}sed -i '' \"s/^${selected_group}=.*/${new_group_entry}/\" \"$SHELL_GROUP_CONF_FILE\""
     else
-        sed_cmd="${use_sudo}sed -i \"s/^${selected_group}=.*/${new_group_entry}/\" \"$GROUP_CONF_FILE\""
+        sed_cmd="${use_sudo}sed -i \"s/^${selected_group}=.*/${new_group_entry}/\" \"$SHELL_GROUP_CONF_FILE\""
     fi
 
     if [ "$dry_run" = "true" ]; then
@@ -621,7 +621,7 @@ update_group() {
 #   - -n : Optional dry-run flag. If provided, the renaming command is printed using on_evict instead of executed.
 #
 # Description:
-#   The function reads the group configuration file (GROUP_CONF_FILE) where each line is in the format:
+#   The function reads the group configuration file (SHELL_GROUP_CONF_FILE) where each line is in the format:
 #       group_name=key1,key2,...,keyN
 #   It uses fzf to let you select an existing group to rename.
 #   After selection, the function prompts for a new group name.
@@ -640,14 +640,14 @@ rename_group() {
         shift
     fi
 
-    if [ ! -f "$GROUP_CONF_FILE" ]; then
-        colored_echo "🔴 Error: Group configuration file '$GROUP_CONF_FILE' not found." 196
+    if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
+        colored_echo "🔴 Error: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
         return 1
     fi
 
     # Use fzf to let the user select an existing group.
     local old_group
-    old_group=$(cut -d '=' -f 1 "$GROUP_CONF_FILE" | fzf --prompt="Select group to rename: ")
+    old_group=$(cut -d '=' -f 1 "$SHELL_GROUP_CONF_FILE" | fzf --prompt="Select group to rename: ")
     if [ -z "$old_group" ]; then
         colored_echo "🔴 No group selected. Aborting rename." 196
         return 1
@@ -668,9 +668,9 @@ rename_group() {
     local use_sudo="sudo "
 
     if [ "$os_type" = "macos" ]; then
-        sed_cmd="${use_sudo}sed -i '' \"s/^${old_group}=/${new_group}=/\" \"$GROUP_CONF_FILE\""
+        sed_cmd="${use_sudo}sed -i '' \"s/^${old_group}=/${new_group}=/\" \"$SHELL_GROUP_CONF_FILE\""
     else
-        sed_cmd="${use_sudo}sed -i \"s/^${old_group}=/${new_group}=/\" \"$GROUP_CONF_FILE\""
+        sed_cmd="${use_sudo}sed -i \"s/^${old_group}=/${new_group}=/\" \"$SHELL_GROUP_CONF_FILE\""
     fi
 
     if [ "$dry_run" = "true" ]; then
@@ -688,7 +688,7 @@ rename_group() {
 #   list_groups
 #
 # Description:
-#   This function reads the configuration file defined by GROUP_CONF_FILE,
+#   This function reads the configuration file defined by SHELL_GROUP_CONF_FILE,
 #   where each line is in the format:
 #       group_name=key1,key2,...,keyN
 #   It extracts and displays the group names (the part before the '=')
@@ -697,16 +697,16 @@ rename_group() {
 # Example:
 #   list_groups       # Displays all group names.
 list_groups() {
-    if [ ! -f "$GROUP_CONF_FILE" ]; then
-        colored_echo "🔴 Error: Group configuration file '$GROUP_CONF_FILE' not found." 196
+    if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
+        colored_echo "🔴 Error: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
         return 1
     fi
 
     # Extract group names from the configuration file.
     local groups
-    groups=$(cut -d '=' -f 1 "$GROUP_CONF_FILE")
+    groups=$(cut -d '=' -f 1 "$SHELL_GROUP_CONF_FILE")
     if [ -z "$groups" ]; then
-        colored_echo "🔴 No groups found in '$GROUP_CONF_FILE'." 196
+        colored_echo "🔴 No groups found in '$SHELL_GROUP_CONF_FILE'." 196
         return 1
     fi
 
@@ -723,26 +723,26 @@ list_groups() {
 #   select_group
 #
 # Description:
-#   The function reads the configuration file defined by GROUP_CONF_FILE, where each line is in the format:
+#   The function reads the configuration file defined by SHELL_GROUP_CONF_FILE, where each line is in the format:
 #       group_name=key1,key2,...,keyN
 #   It first uses fzf to allow interactive selection of a group name.
 #   Once a group is selected, the function extracts the comma-separated list of keys,
 #   converts them into a list (one per line), and uses fzf again to let you choose one key.
-#   It then retrieves the corresponding configuration entry from SHELL_CONF_FILE (which stores entries as key=encoded_value),
+#   It then retrieves the corresponding configuration entry from SHELL_KEY_CONF_FILE (which stores entries as key=encoded_value),
 #   decodes the Base64-encoded value (using -D on macOS and -d on Linux), and displays the group name, key, and decoded value.
 #
 # Example:
 #   select_group   # Prompts to select a group, then a key within that group, and displays the decoded value.
 select_group() {
     # Ensure the group configuration file exists.
-    if [ ! -f "$GROUP_CONF_FILE" ]; then
-        colored_echo "🔴 Error: Group configuration file '$GROUP_CONF_FILE' not found." 196
+    if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
+        colored_echo "🔴 Error: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
         return 1
     fi
 
-    # Extract group names from GROUP_CONF_FILE and let the user select one.
+    # Extract group names from SHELL_GROUP_CONF_FILE and let the user select one.
     local groups
-    groups=$(cut -d '=' -f 1 "$GROUP_CONF_FILE")
+    groups=$(cut -d '=' -f 1 "$SHELL_GROUP_CONF_FILE")
     local selected_group
     selected_group=$(echo "$groups" | fzf --prompt="Select a group name: ")
     if [ -z "$selected_group" ]; then
@@ -752,7 +752,7 @@ select_group() {
 
     # Retrieve the group entry for the selected group.
     local group_entry
-    group_entry=$(grep "^${selected_group}=" "$GROUP_CONF_FILE")
+    group_entry=$(grep "^${selected_group}=" "$SHELL_GROUP_CONF_FILE")
     if [ -z "$group_entry" ]; then
         colored_echo "🔴 Error: Group '$selected_group' not found in configuration." 196
         return 1
@@ -775,14 +775,14 @@ select_group() {
     fi
 
     # Ensure the individual configuration file exists.
-    if [ ! -f "$SHELL_CONF_FILE" ]; then
-        colored_echo "🔴 Error: Configuration file '$SHELL_CONF_FILE' not found." 196
+    if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
+        colored_echo "🔴 Error: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
         return 1
     fi
 
     # Retrieve the configuration entry corresponding to the selected key.
     local conf_line
-    conf_line=$(grep "^${selected_key}=" "$SHELL_CONF_FILE")
+    conf_line=$(grep "^${selected_key}=" "$SHELL_KEY_CONF_FILE")
     if [ -z "$conf_line" ]; then
         colored_echo "🔴 Error: Key '$selected_key' not found in configuration." 196
         return 1
@@ -818,12 +818,12 @@ select_group() {
 #   - -n : Optional dry-run flag. If provided, the cloning command is printed using on_evict instead of executed.
 #
 # Description:
-#   The function reads the group configuration file (GROUP_CONF_FILE) where each line is in the format:
+#   The function reads the group configuration file (SHELL_GROUP_CONF_FILE) where each line is in the format:
 #       group_name=key1,key2,...,keyN
 #   It uses fzf to interactively select an existing group.
 #   After selection, it prompts for a new group name.
 #   The new group entry is then constructed with the new group name and the same comma-separated keys
-#   as the selected group, and appended to GROUP_CONF_FILE.
+#   as the selected group, and appended to SHELL_GROUP_CONF_FILE.
 #   In dry-run mode, the final command is printed using on_evict; otherwise, it is executed using run_cmd_eval.
 #
 # Example:
@@ -837,14 +837,14 @@ clone_group() {
     fi
 
     # Ensure the group configuration file exists.
-    if [ ! -f "$GROUP_CONF_FILE" ]; then
-        colored_echo "🔴 Error: Group configuration file '$GROUP_CONF_FILE' not found." 196
+    if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
+        colored_echo "🔴 Error: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
         return 1
     fi
 
     # Use fzf to let the user select an existing group.
     local selected_group
-    selected_group=$(cut -d '=' -f 1 "$GROUP_CONF_FILE" | fzf --prompt="Select a group to clone: ")
+    selected_group=$(cut -d '=' -f 1 "$SHELL_GROUP_CONF_FILE" | fzf --prompt="Select a group to clone: ")
     if [ -z "$selected_group" ]; then
         colored_echo "🔴 No group selected. Aborting clone." 196
         return 1
@@ -852,7 +852,7 @@ clone_group() {
 
     # Retrieve the group entry to get the keys.
     local group_entry
-    group_entry=$(grep "^${selected_group}=" "$GROUP_CONF_FILE")
+    group_entry=$(grep "^${selected_group}=" "$SHELL_GROUP_CONF_FILE")
     if [ -z "$group_entry" ]; then
         colored_echo "🔴 Error: Group '$selected_group' not found." 196
         return 1
@@ -874,7 +874,7 @@ clone_group() {
     fi
 
     # Check if the new group name already exists.
-    if grep -q "^${new_group}=" "$GROUP_CONF_FILE"; then
+    if grep -q "^${new_group}=" "$SHELL_GROUP_CONF_FILE"; then
         colored_echo "🔴 Error: Group '$new_group' already exists." 196
         return 1
     fi
@@ -883,7 +883,7 @@ clone_group() {
     local new_group_entry="${new_group}=${keys_csv}"
 
     # Build the command to append the new group entry.
-    local cmd="echo \"$new_group_entry\" >> \"$GROUP_CONF_FILE\""
+    local cmd="echo \"$new_group_entry\" >> \"$SHELL_GROUP_CONF_FILE\""
 
     if [ "$dry_run" = "true" ]; then
         on_evict "$cmd"
