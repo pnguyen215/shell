@@ -94,6 +94,7 @@ add_conf() {
 
     # Ensure the configuration file exists.
     create_file_if_not_exists "$SHELL_CONF_FILE"
+    grant777 "$SHELL_CONF_FILE"
 
     # Build the command to append the key and encoded value to the configuration file.
     local cmd="echo \"$key=$encoded_value\" >> \"$SHELL_CONF_FILE\""
