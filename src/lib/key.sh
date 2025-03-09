@@ -371,6 +371,83 @@ exist_key_conf() {
     fi
 }
 
+# rename_key_conf function
+# Renames an existing configuration key in the key configuration file.
+#
+# Usage:
+#   rename_key_conf [-n]
+#
+# Parameters:
+#   - -n : Optional dry-run flag. If provided, the renaming command is printed using on_evict instead of executed.
+#
+# Description:
+#   The function reads the configuration file defined by SHELL_KEY_CONF_FILE, which stores entries in the format:
+#       key=encoded_value
+#   It uses fzf to interactively select an existing key.
+#   After selection, the function prompts for a new key name and checks if the new key already exists.
+#   If the new key does not exist, it constructs a sed command to replace the old key with the new key in the file.
+#   The sed command uses in-place editing options appropriate for macOS (sed -i '') or Linux (sed -i).
+#   In dry-run mode, the command is printed via on_evict; otherwise, it is executed using run_cmd_eval.
+#
+# Example:
+#   rename_key_conf         # Interactively select a key and rename it.
+#   rename_key_conf -n      # Prints the renaming command without executing it.
+rename_key_conf() {
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
+        colored_echo "🔴 Error: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
+        return 1
+    fi
+
+    # Use fzf to select an existing key.
+    local old_key
+    old_key=$(cut -d '=' -f 1 "$SHELL_KEY_CONF_FILE" | fzf --prompt="Select a key to rename: ")
+    if [ -z "$old_key" ]; then
+        colored_echo "🔴 No key selected. Aborting rename." 196
+        return 1
+    fi
+
+    # Prompt for the new key name.
+    colored_echo "Enter new key name for '$old_key':" 33
+    read -r new_key
+    if [ -z "$new_key" ]; then
+        colored_echo "🔴 No new key name entered. Aborting rename." 196
+        return 1
+    fi
+
+    # Check if the new key already exists.
+    local exist
+    exist=$(exist_key_conf "$new_key")
+    if [ "$exist" = "true" ]; then
+        colored_echo "🔴 Error: Key '$new_key' already exists. Aborting rename." 196
+        return 1
+    fi
+
+    local os_type
+    os_type=$(get_os_type)
+    local sed_cmd=""
+    local use_sudo="sudo "
+
+    # Construct the sed command to replace the key name.
+    if [ "$os_type" = "macos" ]; then
+        sed_cmd="${use_sudo}sed -i '' \"s/^${old_key}=/${new_key}=/\" \"$SHELL_KEY_CONF_FILE\""
+    else
+        sed_cmd="${use_sudo}sed -i \"s/^${old_key}=/${new_key}=/\" \"$SHELL_KEY_CONF_FILE\""
+    fi
+
+    if [ "$dry_run" = "true" ]; then
+        on_evict "$sed_cmd"
+    else
+        run_cmd_eval "$sed_cmd"
+        colored_echo "🟢 Renamed key '$old_key' to '$new_key'" 46
+    fi
+}
+
 # add_group function
 # Groups selected configuration keys under a specified group name.
 #
