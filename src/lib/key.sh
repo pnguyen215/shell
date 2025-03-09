@@ -102,6 +102,11 @@ add_conf() {
     if [ "$dry_run" = "true" ]; then
         on_evict "$cmd"
     else
+        result=$(exist_key_conf $key)
+        if [ "$result" = "true" ]; then
+            colored_echo "🟡 The key $key exists. Please consider updating it by using update_conf" 33
+            return 0
+        fi
         run_cmd_eval "$cmd"
         colored_echo "🟢 Added configuration: $key (encoded value)" 46
     fi
