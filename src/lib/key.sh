@@ -206,6 +206,8 @@ remove_conf() {
         return 1
     fi
 
+    grant777 "$SHELL_CONF_FILE"
+
     local os_type
     os_type=$(get_os_type)
     local sed_cmd=""
