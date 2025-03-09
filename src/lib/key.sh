@@ -515,35 +515,34 @@ list_groups() {
 }
 
 # select_group function
-# Interactively selects a group name from the group configuration file using fzf.
+# Interactively selects a group name from the group configuration file using fzf,
+# then lists all keys belonging to the selected group and uses fzf to choose one key,
+# finally displaying the decoded value for the selected key.
 #
 # Usage:
 #   select_group
 #
 # Description:
-#   The function reads the configuration file defined by GROUP_CONF_FILE,
-#   where each line is in the format:
+#   The function reads the configuration file defined by GROUP_CONF_FILE, where each line is in the format:
 #       group_name=key1,key2,...,keyN
-#   It extracts the group names (using cut) and then uses fzf to allow interactive selection.
-#   The selected group name is printed to standard output.
+#   It first uses fzf to allow interactive selection of a group name.
+#   Once a group is selected, the function extracts the comma-separated list of keys,
+#   converts them into a list (one per line), and uses fzf again to let you choose one key.
+#   It then retrieves the corresponding configuration entry from SHELL_CONF_FILE (which stores entries as key=encoded_value),
+#   decodes the Base64-encoded value (using -D on macOS and -d on Linux), and displays the group name, key, and decoded value.
 #
 # Example:
-#   selected=$(select_group)   # Prompts for group selection and stores the selected group name in 'selected'.
+#   select_group   # Prompts to select a group, then a key within that group, and displays the decoded value.
 select_group() {
+    # Ensure the group configuration file exists.
     if [ ! -f "$GROUP_CONF_FILE" ]; then
         colored_echo "🔴 Error: Group configuration file '$GROUP_CONF_FILE' not found." 196
         return 1
     fi
 
-    # Extract group names from the configuration file.
+    # Extract group names from GROUP_CONF_FILE and let the user select one.
     local groups
     groups=$(cut -d '=' -f 1 "$GROUP_CONF_FILE")
-    if [ -z "$groups" ]; then
-        colored_echo "🔴 No groups found in '$GROUP_CONF_FILE'." 196
-        return 1
-    fi
-
-    # Use fzf to allow interactive selection of a group name.
     local selected_group
     selected_group=$(echo "$groups" | fzf --prompt="Select a group name: ")
     if [ -z "$selected_group" ]; then
@@ -551,5 +550,60 @@ select_group() {
         return 1
     fi
 
-    echo "$selected_group"
+    # Retrieve the group entry for the selected group.
+    local group_entry
+    group_entry=$(grep "^${selected_group}=" "$GROUP_CONF_FILE")
+    if [ -z "$group_entry" ]; then
+        colored_echo "🔴 Error: Group '$selected_group' not found in configuration." 196
+        return 1
+    fi
+
+    # Extract the comma-separated list of keys.
+    local keys_csv
+    keys_csv=$(echo "$group_entry" | cut -d '=' -f 2-)
+    if [ -z "$keys_csv" ]; then
+        colored_echo "🔴 Error: No keys defined in group '$selected_group'." 196
+        return 1
+    fi
+
+    # Convert the comma-separated keys into a list (one per line) and use fzf to select one key.
+    local selected_key
+    selected_key=$(echo "$keys_csv" | tr ',' '\n' | fzf --prompt="Select a key from group '$selected_group': ")
+    if [ -z "$selected_key" ]; then
+        colored_echo "🔴 No key selected from group '$selected_group'." 196
+        return 1
+    fi
+
+    # Ensure the individual configuration file exists.
+    if [ ! -f "$SHELL_CONF_FILE" ]; then
+        colored_echo "🔴 Error: Configuration file '$SHELL_CONF_FILE' not found." 196
+        return 1
+    fi
+
+    # Retrieve the configuration entry corresponding to the selected key.
+    local conf_line
+    conf_line=$(grep "^${selected_key}=" "$SHELL_CONF_FILE")
+    if [ -z "$conf_line" ]; then
+        colored_echo "🔴 Error: Key '$selected_key' not found in configuration." 196
+        return 1
+    fi
+
+    # Extract the encoded value.
+    local encoded_value
+    encoded_value=$(echo "$conf_line" | cut -d '=' -f 2-)
+
+    # Decode the value based on the operating system.
+    local os_type
+    os_type=$(get_os_type)
+    local decoded_value
+    if [ "$os_type" = "macos" ]; then
+        decoded_value=$(echo "$encoded_value" | base64 -D)
+    else
+        decoded_value=$(echo "$encoded_value" | base64 -d)
+    fi
+
+    # Display the results.
+    colored_echo "📁 Group: $selected_group" 33
+    colored_echo "🔑 Key: $selected_key" 33
+    clip_value "$decoded_value"
 }
