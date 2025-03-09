@@ -480,3 +480,76 @@ read_group() {
     json_obj+="}"
     colored_echo "$json_obj" 33
 }
+
+# list_groups function
+# Lists all group names defined in the group configuration file.
+#
+# Usage:
+#   list_groups
+#
+# Description:
+#   This function reads the configuration file defined by GROUP_CONF_FILE,
+#   where each line is in the format:
+#       group_name=key1,key2,...,keyN
+#   It extracts and displays the group names (the part before the '=')
+#   using the 'cut' command.
+#
+# Example:
+#   list_groups       # Displays all group names.
+list_groups() {
+    if [ ! -f "$GROUP_CONF_FILE" ]; then
+        colored_echo "🔴 Error: Group configuration file '$GROUP_CONF_FILE' not found." 196
+        return 1
+    fi
+
+    # Extract group names from the configuration file.
+    local groups
+    groups=$(cut -d '=' -f 1 "$GROUP_CONF_FILE")
+    if [ -z "$groups" ]; then
+        colored_echo "🔴 No groups found in '$GROUP_CONF_FILE'." 196
+        return 1
+    fi
+
+    colored_echo "📁 Group Names:" 33
+    echo "$groups"
+}
+
+# select_group function
+# Interactively selects a group name from the group configuration file using fzf.
+#
+# Usage:
+#   select_group
+#
+# Description:
+#   The function reads the configuration file defined by GROUP_CONF_FILE,
+#   where each line is in the format:
+#       group_name=key1,key2,...,keyN
+#   It extracts the group names (using cut) and then uses fzf to allow interactive selection.
+#   The selected group name is printed to standard output.
+#
+# Example:
+#   selected=$(select_group)   # Prompts for group selection and stores the selected group name in 'selected'.
+select_group() {
+    if [ ! -f "$GROUP_CONF_FILE" ]; then
+        colored_echo "🔴 Error: Group configuration file '$GROUP_CONF_FILE' not found." 196
+        return 1
+    fi
+
+    # Extract group names from the configuration file.
+    local groups
+    groups=$(cut -d '=' -f 1 "$GROUP_CONF_FILE")
+    if [ -z "$groups" ]; then
+        colored_echo "🔴 No groups found in '$GROUP_CONF_FILE'." 196
+        return 1
+    fi
+
+    # Use fzf to allow interactive selection of a group name.
+    local selected_group
+    selected_group=$(echo "$groups" | fzf --prompt="Select a group name: ")
+    if [ -z "$selected_group" ]; then
+        colored_echo "🔴 No group selected." 196
+        return 1
+    fi
+
+    echo "$selected_group"
+}
