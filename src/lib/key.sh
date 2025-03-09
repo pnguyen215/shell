@@ -206,19 +206,23 @@ remove_conf() {
         return 1
     fi
 
-    grant777 "$SHELL_CONF_FILE"
-
     local os_type
     os_type=$(get_os_type)
     local sed_cmd=""
+    local use_sudo=""
+
+    # Check if the configuration file is writable; if not, use sudo.
+    if [ ! -w "$SHELL_CONF_FILE" ]; then
+        use_sudo="sudo "
+    fi
 
     # Construct the sed command to remove the line starting with "selected_key="
     if [ "$os_type" = "macos" ]; then
         # On macOS, use sed -i '' for in-place editing.
-        sed_cmd="sed -i '' \"/^${selected_key}=/d\" \"$SHELL_CONF_FILE\""
+        sed_cmd="${use_sudo}sed -i '' \"/^${selected_key}=/d\" \"$SHELL_CONF_FILE\""
     else
         # On Linux, use sed -i for in-place editing.
-        sed_cmd="sed -i \"/^${selected_key}=/d\" \"$SHELL_CONF_FILE\""
+        sed_cmd="${use_sudo}sed -i \"/^${selected_key}=/d\" \"$SHELL_CONF_FILE\""
     fi
 
     if [ "$dry_run" = "true" ]; then
