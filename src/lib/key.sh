@@ -1205,7 +1205,7 @@ sync_key_group_conf() {
     done <"$SHELL_GROUP_CONF_FILE"
 
     if [ "$dry_run" = "true" ]; then
-        colored_echo "🔍 New group configuration:" 33
+        colored_echo "🔍 View in clipboard" 33
         clip_value "$(cat "$temp_file")"
         run_cmd_eval "sudo rm $temp_file"
     else
