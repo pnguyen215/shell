@@ -1209,10 +1209,10 @@ sync_key_group_conf() {
     # If dry-run is enabled, show the new configuration and do not overwrite.
     if [ "$dry_run" = "true" ]; then
         on_evict "New group configuration:\n$(cat "$temp_file")"
-        run_cmd_eval rm "$temp_file"
+        run_cmd_eval sudo rm "$temp_file"
     else
         # Overwrite the original group configuration file with the updated content.
-        run_cmd_eval mv "$temp_file" "$SHELL_GROUP_CONF_FILE" || {
+        run_cmd_eval sudo mv "$temp_file" "$SHELL_GROUP_CONF_FILE" || {
             colored_echo "🔴 Error: Unable to update '$SHELL_GROUP_CONF_FILE'." 196
             return 1
         }
