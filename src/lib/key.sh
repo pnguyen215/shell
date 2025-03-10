@@ -1132,9 +1132,9 @@ clone_group() {
 }
 
 # sync_key_group_conf function
-# Synchronizes group configurations by ensuring that each group's keys actually exist in the key configuration file.
+# Synchronizes group configurations by ensuring that each group's keys exist in the key configuration file.
 # If a key listed in a group does not exist, it is removed from that group.
-# If a group ends up with no keys, the group entry is removed.
+# If a group ends up with no valid keys, that group entry is removed.
 #
 # Usage:
 #   sync_key_group_conf [-n]
@@ -1143,10 +1143,11 @@ clone_group() {
 #   - -n : Optional dry-run flag. If provided, the new group configuration is printed using on_evict instead of being applied.
 #
 # Description:
-#   The function reads each group entry from SHELL_GROUP_CONF_FILE (entries in the format: group_name=key1,key2,...,keyN),
-#   splits the list of keys, and checks each key using the exist_key_conf function.
-#   It builds a new list of valid keys. If the new list is non-empty, the group entry is updated; if it is empty, the group is removed.
-#   In dry-run mode, the new group configuration (the complete file content) is printed using on_evict instead of overwriting the file.
+#   The function reads each group entry from SHELL_GROUP_CONF_FILE (entries in the format: group_name=key1,key2,...,keyN).
+#   For each group, it splits the comma‑separated list of keys and checks each key using exist_key_conf.
+#   It builds a new list of valid keys. If the new list is non‑empty, the group entry is updated;
+#   if it is empty, the group entry is omitted.
+#   In dry‑run mode, the new group configuration is printed via on_evict without modifying the file.
 #
 # Example:
 #   sync_key_group_conf         # Synchronizes the group configuration file.
@@ -1163,7 +1164,9 @@ sync_key_group_conf() {
         return 1
     fi
 
-    # Create a temporary file to store the updated group configuration.
+    colored_echo "🔄 Syncing group configuration..." 33
+
+    # Create a temporary file for the updated configuration.
     local temp_file
     temp_file=$(mktemp) || {
         colored_echo "🔴 Error: Unable to create temporary file." 196
@@ -1179,16 +1182,12 @@ sync_key_group_conf() {
         local group_name keys_csv
         group_name=$(echo "$line" | cut -d '=' -f 1)
         keys_csv=$(echo "$line" | cut -d '=' -f 2-)
-
-        # Skip if group_name is empty.
         [ -z "$group_name" ] && continue
 
-        # Split the comma-separated keys into an array.
-        IFS=',' read -r -a keys_array <<<"$keys_csv"
+        # Build a new comma-separated list of valid keys.
         local new_keys=""
-        local key
-        for key in "${keys_array[@]}"; do
-            # Check if the key exists in the key configuration file.
+        # Use a portable loop to split keys_csv.
+        while IFS= read -r key; do
             if [ "$(exist_key_conf "$key")" = "true" ]; then
                 if [ -z "$new_keys" ]; then
                     new_keys="$key"
@@ -1196,9 +1195,8 @@ sync_key_group_conf() {
                     new_keys="${new_keys},${key}"
                 fi
             fi
-        done
+        done <<<"$(echo "$keys_csv" | tr ',' '\n')"
 
-        # If there are valid keys, write the updated group entry.
         if [ -n "$new_keys" ]; then
             echo "${group_name}=${new_keys}" >>"$temp_file"
         else
@@ -1206,16 +1204,14 @@ sync_key_group_conf() {
         fi
     done <"$SHELL_GROUP_CONF_FILE"
 
-    # If dry-run is enabled, show the new configuration and do not overwrite.
     if [ "$dry_run" = "true" ]; then
-        on_evict "New group configuration:\n$(cat "$temp_file")"
-        run_cmd_eval sudo rm "$temp_file"
+        on_evict "🔍 New group configuration:\n$(cat "$temp_file")"
+        run_cmd_eval "sudo rm $temp_file"
     else
-        # Overwrite the original group configuration file with the updated content.
-        run_cmd_eval sudo mv "$temp_file" "$SHELL_GROUP_CONF_FILE" || {
-            colored_echo "🔴 Error: Unable to update '$SHELL_GROUP_CONF_FILE'." 196
-            return 1
-        }
-        colored_echo "🟢 Group configuration synchronized." 46
+        local backup_file="${SHELL_GROUP_CONF_FILE}.bak"
+        run_cmd_eval "sudo cp $SHELL_GROUP_CONF_FILE $backup_file"
+        run_cmd_eval "sudo mv $temp_file $SHELL_GROUP_CONF_FILE"
+
+        colored_echo "🟢 Group configuration synchronized successfully." 46
     fi
 }
