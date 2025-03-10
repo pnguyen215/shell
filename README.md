@@ -399,3 +399,16 @@ Access the shell library by opening your terminal and using the commands below. 
     - message : The message text to send.
 
   - `send_telegram_historical_gh_message [-n] <message>`
+
+- **`send_telegram_attachment`**
+  Sends one or more attachments (files) via Telegram using the Bot API asynchronously.
+
+  - _Parameters_:
+
+  - -n : Optional dry-run flag. If provided, the command is printed using on_evict instead of executed.
+  - token : The Telegram Bot API token.
+  - chat_id : The chat identifier where the message should be sent.
+  - description: A text description that is appended to each attachment's caption along with a timestamp.
+  - filename_X: One or more filenames of the attachments to send.
+
+  - `send_telegram_attachment [-n] <token> <chat_id> <description> [filename_1] [filename_2] [filename_3] ...`

@@ -85,3 +85,64 @@ send_telegram_message() {
         colored_echo "🟢 Telegram message sent." 46
     fi
 }
+
+# send_telegram_attachment function
+# Sends one or more attachments (files) via Telegram using the Bot API asynchronously.
+#
+# Usage:
+#   send_telegram_attachment [-n] <token> <chat_id> <description> [filename_1] [filename_2] [filename_3] ...
+#
+# Parameters:
+#   - -n           : Optional dry-run flag. If provided, the command is printed using on_evict instead of executed.
+#   - <token>      : The Telegram Bot API token.
+#   - <chat_id>    : The chat identifier to which the attachments are sent.
+#   - <description>: A text description that is appended to each attachment's caption along with a timestamp.
+#   - [filename_X] : One or more filenames of the attachments to send.
+#
+# Description:
+#   The function first checks for an optional dry-run flag (-n) and verifies that the required parameters
+#   are provided. For each provided file, if the file exists, it builds a curl command to send the file
+#   asynchronously via Telegram's API. In dry-run mode, the command is printed using on_evict.
+#
+# Example:
+#   send_telegram_attachment 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Report" file1.pdf file2.pdf
+#   send_telegram_attachment -n 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Report" file1.pdf
+send_telegram_attachment() {
+    local dry_run="false"
+
+    # Check for the optional dry-run flag (-n)
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    # Ensure that at least four arguments remain: token, chat_id, description, and at least one filename.
+    if [ $# -lt 4 ]; then
+        echo "Usage: send_telegram_attachment [-n] <token> <chat_id> <description> [filename_1] [filename_2] [filename_3] ..."
+        return 1
+    fi
+
+    # Retrieve parameters.
+    local token="$1"
+    local chatID="$2"
+    local description="$3"
+    local files=("${@:4}")
+    local timestamp
+    timestamp=$(date +"%Y-%m-%d %H:%M:%S")
+
+    # Iterate over each file and send as an attachment asynchronously.
+    for filename in "${files[@]}"; do
+        if [ -f "$filename" ]; then
+            # Build the curl command to send the attachment.
+            local cmd="curl -s -F chat_id=\"$chatID\" -F document=@\"$filename\" -F caption=\"$description ($timestamp)\" \"https://api.telegram.org/bot${token}/sendDocument\" >/dev/null"
+            if [ "$dry_run" = "true" ]; then
+                on_evict "$cmd &"
+            else
+                async "$cmd"
+                colored_echo "🟢 Async: Attachment '$filename' is being sent." 46
+            fi
+        else
+            colored_echo "🔴 Attachment '$filename' not found. Skipping." 196
+        fi
+    done
+}
