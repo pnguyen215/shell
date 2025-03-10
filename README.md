@@ -200,3 +200,180 @@ Access the shell library by opening your terminal and using the commands below. 
 - **`fzf_remove`**  
   Interactively selects a file or directory to remove using `fzf`.  
   _Example:_ `fzf_remove`
+
+- **`add_bookmark`**
+  Adds a bookmark for the current directory with the specified name.
+  _Example:_
+
+  - `add_bookmark <bookmark name>`
+
+- **`remove_bookmark`**
+  Deletes a bookmark with the specified name from the bookmarks file.
+  _Example:_
+
+  - `remove_bookmark <bookmark_name>`
+
+- **`remove_bookmark_linux`**
+  Deletes a bookmark with the specified name from the bookmarks file.
+  _Example:_
+
+  - `remove_bookmark_linux <bookmark_name>`
+
+- **`show_bookmark`**
+  Displays a formatted list of all bookmarks.
+  _Example:_ `show_bookmark`
+
+- **`go_bookmark`**
+  Navigates to the directory associated with the specified bookmark name.
+  _Example:_
+
+  - `go_bookmark <bookmark name>`
+
+- **`go_back`**
+  Navigates to the previous working directory.
+
+- **`goto_version`**
+  Displays the version of the goto script.
+
+- **`goto`**
+  Main function to handle user commands and navigate directories.
+  _Example:_
+
+  - `goto [command]`
+  - `goto_usage`
+
+- **`install_homebrew`**
+  Installs Homebrew using the official installation script.
+
+- **`uninstall_homebrew`**
+  Uninstalls Homebrew from the system.
+
+- **`install_oh_my_zsh`**
+  Installs Oh My Zsh if it is not already present on the system.
+  _Example:_
+
+  - `install_oh_my_zsh`
+  - `install_oh_my_zsh -n`
+
+- **`uninstall_oh_my_zsh`**
+  Uninstalls Oh My Zsh by removing its directory and restoring the original .zshrc backup if available.
+  _Example:_
+
+  - `uninstall_oh_my_zsh`
+  - `uninstall_oh_my_zsh -n`
+
+- **`read_conf`**
+  Sources a configuration file, allowing its variables and functions to be loaded into the current shell.
+  _Example:_
+
+  - `read_conf [-n] <filename>`
+  - `read_conf ~/.my-config`
+  - `read_conf -n ~/.my-config `
+
+- **`add_conf`**
+  Adds a configuration entry (key=value) to a constant configuration file.
+  The value is encoded using Base64 before being saved.
+  _Example:_
+
+  - `add_conf [-n] <key> <value>`
+  - `add_conf my_setting "some secret value" `
+  - `add_conf -n my_setting "some secret value"`
+
+- **`get_conf`**
+  Interactively selects a configuration key from a constant configuration file using fzf,
+  then decodes and displays its corresponding value.
+
+- **`get_value_conf`**
+  Retrieves and outputs the decoded value for a given configuration key from the key configuration file.
+  _Example:_
+
+  - `get_value_conf my_setting`
+
+- **`remove_conf`**
+  Interactively selects a configuration key from a constant configuration file using fzf,
+  then removes the corresponding entry from the configuration file.
+  _Example:_
+
+  - `remove_conf`
+  - `remove_conf -n`
+
+- **`update_conf`**
+  Interactively updates the value for a configuration key in a constant configuration file.
+  The new value is encoded using Base64 before updating the file.
+  _Example:_
+
+  - `update_conf`
+  - `update_conf -n`
+
+- **`exist_key_conf`**
+  Checks if a configuration key exists in the key configuration file.
+  _Example:_
+
+  - `exist_key_conf <key>`
+  - `exist_key_conf my_setting`
+
+- **`rename_key_conf`**
+  Renames an existing configuration key in the key configuration file.
+  _Example:_
+
+  - `rename_key_conf [-n]`
+
+- **`is_protected_key`**
+  Checks if the specified configuration key is protected.
+  _Example:_
+
+  - `is_protected_key <key>`
+
+- **`add_group`**
+  Groups selected configuration keys under a specified group name.
+  _Example:_
+
+  - `add_group [-n]`
+
+- **`read_group`**
+  Reads and displays the configurations for a given group by group name.
+  _Example:_
+
+  - `read_group <group_name>`
+  - `read_group my_group`
+
+- **`remove_group`**
+  Interactively selects a group name from the group configuration file using fzf,
+  then removes the corresponding group entry.
+  _Example:_
+
+  - `remove_group [-n]`
+
+- **`update_group`**
+  Interactively updates an existing group by letting you select new keys for that group.
+  _Example:_
+
+  - `update_group [-n]`
+
+- **`rename_group`**
+  Renames an existing group in the group configuration file.
+  _Example:_
+
+  - `rename_group [-n]`
+
+- **`list_groups`**
+  Lists all group names defined in the group configuration file.
+
+- **`select_group`**
+  Interactively selects a group name from the group configuration file using fzf,
+  then lists all keys belonging to the selected group and uses fzf to choose one key,
+  finally displaying the decoded value for the selected key.
+
+- **`clone_group`**
+  Clones an existing group by creating a new group with the same keys.
+  _Example:_
+
+  - `clone_group [-n]`
+
+- **`sync_key_group_conf`**
+  Synchronizes group configurations by ensuring that each group's keys exist in the key configuration file.
+  If a key listed in a group does not exist, it is removed from that group.
+  If a group ends up with no valid keys, that group entry is removed.
+  _Example:_
+
+  - `sync_key_group_conf [-n]`
