@@ -377,3 +377,15 @@ Access the shell library by opening your terminal and using the commands below. 
   _Example:_
 
   - `sync_key_group_conf [-n]`
+
+- **`send_telegram_message`**
+  Sends a message via the Telegram Bot API.
+
+  - _Parameters_:
+
+    - -n : Optional dry-run flag. If provided, the command is printed using on_evict instead of executed.
+    - <token> : The Telegram Bot API token.
+    - <chat_id> : The chat identifier where the message should be sent.
+    - <message> : The message text to send.
+
+  - `send_telegram_message [-n] <token> <chat_id> <message>`
