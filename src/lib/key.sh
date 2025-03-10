@@ -1206,13 +1206,12 @@ sync_key_group_conf() {
 
     if [ "$dry_run" = "true" ]; then
         colored_echo "🔍 New group configuration:" 33
-        on_evict "$(cat "$temp_file")"
+        clip_value "$(cat "$temp_file")"
         run_cmd_eval "sudo rm $temp_file"
     else
         local backup_file="${SHELL_GROUP_CONF_FILE}.bak"
         run_cmd_eval "sudo cp $SHELL_GROUP_CONF_FILE $backup_file"
         run_cmd_eval "sudo mv $temp_file $SHELL_GROUP_CONF_FILE"
-
         colored_echo "🟢 Group configuration synchronized successfully." 46
     fi
 }
