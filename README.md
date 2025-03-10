@@ -384,9 +384,9 @@ Access the shell library by opening your terminal and using the commands below. 
   - _Parameters_:
 
     - -n : Optional dry-run flag. If provided, the command is printed using on_evict instead of executed.
-    - <token> : The Telegram Bot API token.
-    - <chat_id> : The chat identifier where the message should be sent.
-    - <message> : The message text to send.
+    - token : The Telegram Bot API token.
+    - chat_id : The chat identifier where the message should be sent.
+    - message : The message text to send.
 
   - `send_telegram_message [-n] <token> <chat_id> <message>`
 
@@ -396,6 +396,6 @@ Access the shell library by opening your terminal and using the commands below. 
   - _Parameters_:
 
     - -n : Optional dry-run flag. If provided, the command is printed using on_evict instead of executed.
-    - <message> : The message text to send.
+    - message : The message text to send.
 
   - `send_telegram_historical_gh_message [-n] <message>`
