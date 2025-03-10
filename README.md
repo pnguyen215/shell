@@ -389,3 +389,13 @@ Access the shell library by opening your terminal and using the commands below. 
     - <message> : The message text to send.
 
   - `send_telegram_message [-n] <token> <chat_id> <message>`
+
+- **`send_telegram_historical_gh_message`**
+  Sends a historical GitHub-related message via Telegram using stored configuration keys.
+
+  - _Parameters_:
+
+    - -n : Optional dry-run flag. If provided, the command is printed using on_evict instead of executed.
+    - <message> : The message text to send.
+
+  - `send_telegram_historical_gh_message [-n] <message>`
