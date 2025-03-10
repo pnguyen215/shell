@@ -1130,3 +1130,92 @@ clone_group() {
         colored_echo "🟢 Created new group '$new_group' as a clone of '$selected_group' with keys: $keys_csv" 46
     fi
 }
+
+# sync_key_group_conf function
+# Synchronizes group configurations by ensuring that each group's keys actually exist in the key configuration file.
+# If a key listed in a group does not exist, it is removed from that group.
+# If a group ends up with no keys, the group entry is removed.
+#
+# Usage:
+#   sync_key_group_conf [-n]
+#
+# Parameters:
+#   - -n : Optional dry-run flag. If provided, the new group configuration is printed using on_evict instead of being applied.
+#
+# Description:
+#   The function reads each group entry from SHELL_GROUP_CONF_FILE (entries in the format: group_name=key1,key2,...,keyN),
+#   splits the list of keys, and checks each key using the exist_key_conf function.
+#   It builds a new list of valid keys. If the new list is non-empty, the group entry is updated; if it is empty, the group is removed.
+#   In dry-run mode, the new group configuration (the complete file content) is printed using on_evict instead of overwriting the file.
+#
+# Example:
+#   sync_key_group_conf         # Synchronizes the group configuration file.
+#   sync_key_group_conf -n      # Displays the updated group configuration without modifying the file.
+sync_key_group_conf() {
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
+        colored_echo "🔴 Error: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
+        return 1
+    fi
+
+    # Create a temporary file to store the updated group configuration.
+    local temp_file
+    temp_file=$(mktemp) || {
+        colored_echo "🔴 Error: Unable to create temporary file." 196
+        return 1
+    }
+
+    # Process each group entry.
+    while IFS= read -r line || [ -n "$line" ]; do
+        # Skip empty lines.
+        [ -z "$line" ] && continue
+
+        # Extract group name and keys.
+        local group_name keys_csv
+        group_name=$(echo "$line" | cut -d '=' -f 1)
+        keys_csv=$(echo "$line" | cut -d '=' -f 2-)
+
+        # Skip if group_name is empty.
+        [ -z "$group_name" ] && continue
+
+        # Split the comma-separated keys into an array.
+        IFS=',' read -r -a keys_array <<<"$keys_csv"
+        local new_keys=""
+        local key
+        for key in "${keys_array[@]}"; do
+            # Check if the key exists in the key configuration file.
+            if [ "$(exist_key_conf "$key")" = "true" ]; then
+                if [ -z "$new_keys" ]; then
+                    new_keys="$key"
+                else
+                    new_keys="${new_keys},${key}"
+                fi
+            fi
+        done
+
+        # If there are valid keys, write the updated group entry.
+        if [ -n "$new_keys" ]; then
+            echo "${group_name}=${new_keys}" >>"$temp_file"
+        else
+            colored_echo "🟡 Group '$group_name' has no valid keys and will be removed." 33
+        fi
+    done <"$SHELL_GROUP_CONF_FILE"
+
+    # If dry-run is enabled, show the new configuration and do not overwrite.
+    if [ "$dry_run" = "true" ]; then
+        on_evict "New group configuration:\n$(cat "$temp_file")"
+        run_cmd_eval rm "$temp_file"
+    else
+        # Overwrite the original group configuration file with the updated content.
+        run_cmd_eval mv "$temp_file" "$SHELL_GROUP_CONF_FILE" || {
+            colored_echo "🔴 Error: Unable to update '$SHELL_GROUP_CONF_FILE'." 196
+            return 1
+        }
+        colored_echo "🟢 Group configuration synchronized." 46
+    fi
+}
