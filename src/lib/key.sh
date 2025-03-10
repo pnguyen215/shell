@@ -1205,7 +1205,8 @@ sync_key_group_conf() {
     done <"$SHELL_GROUP_CONF_FILE"
 
     if [ "$dry_run" = "true" ]; then
-        on_evict "🔍 New group configuration:\n$(cat "$temp_file")"
+        colored_echo "🔍 New group configuration:" 33
+        on_evict "$(cat "$temp_file")"
         run_cmd_eval "sudo rm $temp_file"
     else
         local backup_file="${SHELL_GROUP_CONF_FILE}.bak"
