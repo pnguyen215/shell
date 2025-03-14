@@ -79,9 +79,9 @@ send_telegram_message() {
 
     # Execute the command in dry-run mode or actually send the message.
     if [ "$dry_run" = "true" ]; then
-        on_evict "$cmd"
+        on_evict "$cmd &"
     else
-        run_cmd_eval "$cmd"
+        async "$cmd"
         colored_echo "🟢 Telegram message sent." 46
     fi
 }
