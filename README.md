@@ -412,3 +412,22 @@ Access the shell library by opening your terminal and using the commands below. 
     - filename_X: One or more filenames of the attachments to send.
 
   - `send_telegram_attachment [-n] <token> <chat_id> <description> [filename_1] [filename_2] [filename_3] ...`
+
+- **`fzf_zip_attachment`**
+  Zips selected files from a specified folder and outputs the absolute path of the created zip file.
+
+  - _Parameters_:
+
+    - -n : Optional dry-run flag. If provided, the command is printed using on_evict instead of executed.
+    - folder_path : The folder (directory) from which to select files for zipping.
+
+  - `fzf_zip_attachment [-n] <folder_path>`
+
+- **`fzf_current_zip_attachment`**
+  Reuses fzf_zip_attachment to zip selected files from the current directory, then renames the resulting zip file to use the current directory's basename and places it inside the current directory.
+
+  - _Parameters_:
+
+    - -n : Optional dry-run flag. If provided, the command is printed using on_evict instead of executed.
+
+  - `fzf_current_zip_attachment [-n]`
