@@ -180,6 +180,9 @@ fzf_remove() {
 #   fzf_zip_attachment /path/to/folder
 #   fzf_zip_attachment -n /path/to/folder  # Dry-run: prints the command without executing it.
 fzf_zip_attachment() {
+    # Check if fzf is installed.
+    install_package fzf
+
     local dry_run="false"
 
     # Check for the optional dry-run flag (-n).
@@ -323,6 +326,9 @@ fzf_current_zip_attachment() {
 #   fzf_send_telegram_attachment 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Report"
 #   fzf_send_telegram_attachment -n 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Test" /path/to/folder
 fzf_send_telegram_attachment() {
+    # Check if fzf is installed.
+    install_package fzf
+
     local dry_run="false"
     # Check for the optional dry-run flag (-n).
     if [ "$1" = "-n" ]; then
