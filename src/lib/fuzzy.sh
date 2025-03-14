@@ -206,18 +206,20 @@ fzf_zip_attachment() {
         return 1
     fi
 
-    # Build the zip command with proper quoting for each file.
-    local files_str=""
+    # Build the zip command as an array.
+    local cmd=(sudo zip -r "$zip_filename")
     for file in "${selected_files_arr[@]}"; do
-        files_str+=" $(printf '%q' "$file")"
+        cmd+=("$file")
     done
-    local cmd="sudo zip -r $(printf '%q' "$zip_filename") $files_str"
 
     if [ "$dry_run" = "true" ]; then
-        on_evict "$cmd"
+        # Construct a log-friendly command string (using proper quoting).
+        local cmd_str
+        cmd_str=$(printf '%q ' "${cmd[@]}")
+        on_evict "$cmd_str"
         return 0
     else
-        run_cmd_eval "$cmd"
+        run_cmd "${cmd[@]}"
         colored_echo "🟢 Zipping selected files from '$folder_path'" 46
     fi
 
@@ -247,7 +249,7 @@ fzf_zip_attachment() {
 #   - -n         : Optional dry-run flag. If provided, the command is printed using on_evict instead of executed.
 #
 # Description:
-#   This function obtains the current directory’s name and its parent directory.
+#   This function obtains the current directory's name and its parent directory.
 #   It then changes to the parent directory and calls fzf_zip_attachment on the folder name.
 #   This ensures that the zip command is run with relative paths so that the resulting archive
 #   contains only one top-level folder (the folder name). After zipping, it moves the zip file
