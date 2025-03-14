@@ -238,7 +238,7 @@ fzf_zip_attachment() {
 
 # fzf_current_zip_attachment function
 # Reuses fzf_zip_attachment to zip selected files from the current directory,
-# then renames the resulting zip file to use the current directory's basename and places it inside the current directory.
+# ensuring that when unzipped, the archive creates a single top-level folder.
 #
 # Usage:
 #   fzf_current_zip_attachment [-n]
@@ -247,10 +247,11 @@ fzf_zip_attachment() {
 #   - -n         : Optional dry-run flag. If provided, the command is printed using on_evict instead of executed.
 #
 # Description:
-#   The function sets the folder to the current working directory and computes the desired zip filename as "<basename_of_pwd>.zip" in the current directory.
-#   It then calls fzf_zip_attachment with the current directory.
-#   If not in dry-run mode, after zipping, the function renames the generated zip file from "<PWD>.zip" to "<PWD>/<basename_of_pwd>.zip".
-#   Finally, it echoes the absolute path of the renamed zip file.
+#   This function obtains the current directory’s name and its parent directory.
+#   It then changes to the parent directory and calls fzf_zip_attachment on the folder name.
+#   This ensures that the zip command is run with relative paths so that the resulting archive
+#   contains only one top-level folder (the folder name). After zipping, it moves the zip file
+#   back to the original (current) directory, echoes its absolute path, and copies the value to the clipboard.
 #
 # Example:
 #   fzf_current_zip_attachment
@@ -262,34 +263,37 @@ fzf_current_zip_attachment() {
         shift
     fi
 
-    # Set folder_path to current working directory.
-    local folder_path="$PWD"
-    # Compute the desired zip filename: current directory's basename with .zip, placed inside $PWD.
+    # Save the original directory (the folder to be zipped).
+    local orig_dir="$PWD"
     local current_dir
     current_dir=$(basename "$PWD")
-    local desired_zip_filename="$PWD/${current_dir}.zip"
+    local parent_dir
+    parent_dir=$(dirname "$PWD")
 
+    # Change to the parent directory so that the folder is referenced by its name only.
+    pushd "$parent_dir" >/dev/null || return 1
+
+    local zip_file
     if [ "$dry_run" = "true" ]; then
-        fzf_zip_attachment -n "$folder_path"
+        fzf_zip_attachment -n "$current_dir"
+        popd >/dev/null
         return 0
     else
-        # Call fzf_zip_attachment with the current working directory.
-        # It will create a zip file named as "<folder_path>.zip", which expands to "$PWD.zip".
-        local original_abs_zip_filename
-        original_abs_zip_filename=$(fzf_zip_attachment "$folder_path")
+        zip_file=$(fzf_zip_attachment "$current_dir")
     fi
 
-    # The zip file created by fzf_zip_attachment is expected to be "$folder_path.zip".
-    local expected_zip_filename="$folder_path.zip"
+    # fzf_zip_attachment will create a zip file named "<folder_name>.zip" in the parent directory.
+    local created_zip="${parent_dir}/${current_dir}.zip"
+    popd >/dev/null
 
-    # If the file exists, rename it to the desired name.
-    if [ -f "$expected_zip_filename" ]; then
-        mv "$expected_zip_filename" "$desired_zip_filename"
-        colored_echo "🟢 Renamed zip file to '$desired_zip_filename'" 46
-        colored_echo "$desired_zip_filename" 245
-        clip_value "$desired_zip_filename"
+    # Move the zip file into the original directory.
+    local desired_zip="${orig_dir}/${current_dir}.zip"
+    if [ -f "$created_zip" ]; then
+        mv "$created_zip" "$desired_zip"
+        colored_echo "🟢 Renamed zip file to '$desired_zip'" 46
+        clip_value "$desired_zip"
     else
-        # If for some reason the file wasn't found, fall back to echoing the original output.
-        colored_echo "$original_abs_zip_filename" 245
+        colored_echo "🔴 Expected zip file not found." 196
+        return 1
     fi
 }
