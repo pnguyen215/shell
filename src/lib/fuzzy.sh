@@ -281,7 +281,7 @@ fzf_current_zip_attachment() {
         popd >/dev/null
         return 0
     else
-        zip_file=$(fzf_zip_attachment "$current_dir")
+        fzf_zip_attachment "$current_dir"
     fi
 
     # fzf_zip_attachment will create a zip file named "<folder_name>.zip" in the parent directory.
