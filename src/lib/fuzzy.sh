@@ -196,23 +196,26 @@ fzf_zip_attachment() {
     local folder_path="$1"
     local zip_filename="${folder_path}.zip"
 
-    # Use fzf to allow the user to interactively select files from the folder.
-    local selected_files
-    selected_files=$(find "$folder_path" -type f | fzf --multi --prompt="Select files to zip:")
+    # Capture selected files into an array (splitting on newline only).
+    local IFS=$'\n'
+    local selected_files_arr=($(find "$folder_path" -type f | fzf --multi --prompt="Select files to zip:"))
 
     # Check if any files were selected.
-    if [ -z "$selected_files" ]; then
+    if [ ${#selected_files_arr[@]} -eq 0 ]; then
         colored_echo "🔴 No files selected. Aborting." 196
         return 1
     fi
 
-    # Construct the zip command.
-    local cmd="sudo zip -r \"$zip_filename\" $selected_files"
+    # Build the zip command with proper quoting for each file.
+    local files_str=""
+    for file in "${selected_files_arr[@]}"; do
+        files_str+=" $(printf '%q' "$file")"
+    done
+    local cmd="sudo zip -r $(printf '%q' "$zip_filename") $files_str"
 
-    # Execute the command in dry-run mode or actually perform the zipping.
     if [ "$dry_run" = "true" ]; then
         on_evict "$cmd"
-        return 1
+        return 0
     else
         run_cmd_eval "$cmd"
         colored_echo "🟢 Zipping selected files from '$folder_path'" 46
@@ -223,7 +226,6 @@ fzf_zip_attachment() {
     if command -v realpath >/dev/null 2>&1; then
         abs_zip_filename=$(realpath "$zip_filename")
     else
-        # Fallback: if zip_filename is relative, prepend the current working directory.
         case "$zip_filename" in
         /*) abs_zip_filename="$zip_filename" ;;
         *) abs_zip_filename="$PWD/$zip_filename" ;;
