@@ -299,3 +299,69 @@ fzf_current_zip_attachment() {
         return 1
     fi
 }
+
+# fzf_send_telegram_attachment function
+# Uses fzf to interactively select one or more files from a folder (default: current directory)
+# and sends them as attachments via the Telegram Bot API by reusing send_telegram_attachment.
+#
+# Usage:
+#   fzf_send_telegram_attachment [-n] <token> <chat_id> <description> [folder_path]
+#
+# Parameters:
+#   - -n           : Optional dry-run flag. If provided, commands are printed using on_evict instead of executed.
+#   - <token>      : The Telegram Bot API token.
+#   - <chat_id>    : The chat identifier where the attachments are sent.
+#   - <description>: A text description appended to each attachment's caption along with a timestamp.
+#   - [folder_path]: (Optional) The folder to search for files; defaults to the current directory if not provided.
+#
+# Description:
+#   This function checks that the required parameters are provided and sets the folder path to the current directory if none is given.
+#   It then uses the 'find' command and fzf (in multi-select mode) to let the user choose one or more files.
+#   If files are selected, it calls send_telegram_attachment (passing the dry-run flag if needed) with the selected filenames.
+#
+# Example:
+#   fzf_send_telegram_attachment 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Report"
+#   fzf_send_telegram_attachment -n 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Test" /path/to/folder
+fzf_send_telegram_attachment() {
+    local dry_run="false"
+    # Check for the optional dry-run flag (-n).
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    # Ensure that at least three arguments remain: token, chat_id, description.
+    if [ $# -lt 3 ]; then
+        echo "Usage: fzf_send_telegram_attachment [-n] <token> <chat_id> <description> [folder_path]"
+        return 1
+    fi
+
+    local token="$1"
+    local chatID="$2"
+    local description="$3"
+    shift 3
+
+    # Use provided folder path or default to current directory.
+    local folder_path="${1:-$PWD}"
+    if [ ! -d "$folder_path" ]; then
+        colored_echo "🔴 Error: '$folder_path' is not a valid directory." 196
+        return 1
+    fi
+
+    # Capture selected files into an array using fzf.
+    local IFS=$'\n'
+    local selected_files_arr=($(find "$folder_path" -type f | fzf --multi --prompt="Select attachments to send: "))
+
+    # Check if any files were selected.
+    if [ ${#selected_files_arr[@]} -eq 0 ]; then
+        colored_echo "🔴 No attachments selected. Aborting." 196
+        return 1
+    fi
+
+    # Call send_telegram_attachment with the selected files.
+    if [ "$dry_run" = "true" ]; then
+        send_telegram_attachment -n "$token" "$chatID" "$description" "${selected_files_arr[@]}"
+    else
+        send_telegram_attachment "$token" "$chatID" "$description" "${selected_files_arr[@]}"
+    fi
+}

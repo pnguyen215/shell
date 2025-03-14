@@ -431,3 +431,16 @@ Access the shell library by opening your terminal and using the commands below. 
     - -n : Optional dry-run flag. If provided, the command is printed using on_evict instead of executed.
 
   - `fzf_current_zip_attachment [-n]`
+
+- **`fzf_send_telegram_attachment`**
+  Uses fzf to interactively select one or more files from a folder (default: current directory), and sends them as attachments via the Telegram Bot API by reusing send_telegram_attachment.
+
+  - _Parameters_:
+
+    - -n : Optional dry-run flag. If provided, the command is printed using on_evict instead of executed.
+    - token: The Telegram Bot API token.
+    - chat_id: The chat identifier where the attachments are sent.
+    - description: A text description appended to each attachment's caption along with a timestamp.
+    - folder_path: (Optional) The folder to search for files; defaults to the current directory if not provided.
+
+  - `fzf_send_telegram_attachment [-n] <token> <chat_id> <description> [folder_path]`
