@@ -380,7 +380,7 @@ add_conf_profile() {
     encoded_value=$(echo -n "$value" | base64 | tr -d '\n')
 
     # Build the command to append the key and encoded value to the profile.conf file
-    local cmd="echo \"$key=$encoded_value\" >> \"$profile_conf\""
+    local cmd="sudo echo \"$key=$encoded_value\" >> \"$profile_conf\""
 
     # Execute or print the command based on dry-run mode
     if [ "$dry_run" = "true" ]; then
