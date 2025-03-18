@@ -1663,3 +1663,25 @@ async() {
         return 0
     fi
 }
+
+# execute_or_evict function
+# Executes a command or prints it based on dry-run mode.
+#
+# Usage:
+#   execute_or_evict <dry_run> <command>
+#
+# Parameters:
+#   - <dry_run>: "true" to print the command, "false" to execute it.
+#   - <command>: The command to execute or print.
+#
+# Example:
+#   execute_or_evict "true" "echo Hello"
+execute_or_evict() {
+    local dry_run="$1"
+    local command="$2"
+    if [ "$dry_run" = "true" ]; then
+        on_evict "$command"
+    else
+        run_cmd_eval "$command"
+    fi
+}
