@@ -510,3 +510,68 @@ get_value_conf_profile() {
     fi
     echo "$decoded_value"
 }
+
+# remove_conf_profile function
+# Removes a configuration key from a given profile's configuration file.
+#
+# Usage:
+#   remove_conf_profile [-n] <profile_name>
+#
+# Parameters:
+#   - -n (optional): Dry-run mode. Instead of executing commands, prints them using on_evict.
+#   - <profile_name>: The name of the configuration profile.
+#
+# Description:
+#   This function locates the profile directory and its configuration file, verifies their existence,
+#   and then uses fzf to let the user select a configuration key to remove.
+#   It builds an OS-specific sed command to delete the line containing the selected key.
+#   In dry-run mode, the command is printed using on_evict; otherwise, it is executed asynchronously
+#   using async with run_cmd_eval.
+#
+# Example:
+#   remove_conf_profile myprofile
+#   remove_conf_profile -n myprofile   # Dry-run: prints the removal command without executing.
+remove_conf_profile() {
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+    if [ $# -lt 1 ]; then
+        echo "Usage: remove_conf_profile [-n] <profile_name>"
+        return 1
+    fi
+    ensure_workspace
+    local profile_name="$1"
+    local profile_dir=$(get_profile_dir "$profile_name")
+    local profile_conf="$profile_dir/profile.conf"
+    if [ ! -d "$profile_dir" ]; then
+        colored_echo "🔴 Profile '$profile_name' does not exist." 196
+        return 1
+    fi
+    if [ ! -f "$profile_conf" ]; then
+        colored_echo "🔴 Profile configuration file '$profile_conf' not found." 196
+        return 1
+    fi
+    install_package fzf
+    local selected_key
+    selected_key=$(cut -d '=' -f 1 "$profile_conf" | fzf --prompt="Select config key to remove from profile '$profile_name': ")
+    if [ -z "$selected_key" ]; then
+        colored_echo "🔴 No configuration selected." 196
+        return 1
+    fi
+    local os_type
+    os_type=$(get_os_type)
+    local sed_cmd=""
+    if [ "$os_type" = "macos" ]; then
+        sed_cmd="sed -i '' \"/^${selected_key}=/d\" \"$profile_conf\""
+    else
+        sed_cmd="sed -i \"/^${selected_key}=/d\" \"$profile_conf\""
+    fi
+    if [ "$dry_run" = "true" ]; then
+        on_evict "$sed_cmd"
+    else
+        run_cmd_eval "$sed_cmd"
+        colored_echo "🟢 Removed configuration for key: $selected_key from profile '$profile_name'" 46
+    fi
+}
