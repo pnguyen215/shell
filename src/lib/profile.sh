@@ -39,6 +39,6 @@ get_profile_dir() {
 #   ensure_workspace
 ensure_workspace() {
     if [ ! -d "$SHELL_CONF_WORKING_WORKSPACE" ]; then
-        run_cmd mkdir -p "$SHELL_CONF_WORKING_WORKSPACE"
+        run_cmd sudo mkdir -p "$SHELL_CONF_WORKING_WORKSPACE"
     fi
 }
