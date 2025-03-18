@@ -171,7 +171,7 @@ update_profile() {
         return 1
     fi
     local editor="${EDITOR:-vim}"
-    local cmd="$editor \"$profile_conf\""
+    local cmd="sudo $editor \"$profile_conf\""
     if [ "$dry_run" = "true" ]; then
         on_evict "$cmd"
     else
