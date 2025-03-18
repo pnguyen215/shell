@@ -86,3 +86,49 @@ add_profile() {
         colored_echo "🟢 Created profile '$profile_name'." 46
     fi
 }
+
+# read_profile function
+# Sources the profile.conf file from the specified profile directory.
+#
+# Usage:
+#   read_profile [-n] <profile_name>
+#
+# Parameters:
+#   - -n             : Optional dry-run flag. If provided, the command is printed using on_evict instead of executed.
+#   - <profile_name> : The name of the profile to read.
+#
+# Description:
+#   Checks if the specified profile exists and sources its profile.conf file to load configurations
+#   into the current shell session. If the profile or file does not exist, it prints an error.
+#
+# Example:
+#   read_profile my_profile         # Sources profile.conf from my_profile.
+#   read_profile -n my_profile      # Prints the sourcing command without executing it.
+read_profile() {
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+    if [ $# -lt 1 ]; then
+        echo "Usage: read_profile [-n] <profile_name>"
+        return 1
+    fi
+    local profile_name="$1"
+    local profile_dir=$(get_profile_dir "$profile_name")
+    local profile_conf="$profile_dir/profile.conf"
+    if [ ! -d "$profile_dir" ]; then
+        colored_echo "🔴 Profile '$profile_name' does not exist." 196
+        return 1
+    fi
+    if [ ! -f "$profile_conf" ]; then
+        colored_echo "🔴 Profile configuration file '$profile_conf' not found." 196
+        return 1
+    fi
+    local cmd="source \"$profile_conf\""
+    if [ "$dry_run" = "true" ]; then
+        read_conf -n "$cmd"
+    else
+        read_conf "$cmd"
+    fi
+}
