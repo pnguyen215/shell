@@ -683,15 +683,6 @@ create_file_if_not_exists() {
 #   grant777 ./my_script.sh
 #   grant777 -n ./my_script.sh  # Dry-run: prints the command without executing.
 grant777() {
-    # if [ $# -lt 1 ]; then
-    #     echo "Usage: grant777 <file/dir>"
-    #     return 1
-    # fi
-
-    # # Execute the chmod command with sudo and log it using run_cmd_eval.
-    # run_cmd_eval "sudo chmod -R 777 \"$1\""
-    # colored_echo "🟢 Permissions for '$1' set to full (777)" 46
-
     local dry_run="false"
 
     # Check for the optional dry-run flag (-n)
@@ -723,12 +714,6 @@ grant777() {
         current_perm=$(stat -c "%a" "$target")
     fi
 
-    # If the target already has 777 permissions, skip execution.
-    if [ "$current_perm" -eq 777 ]; then
-        # colored_echo "🟡 Permissions for '$target' already set to full (777)" 33
-        return 0
-    fi
-
     # Build the chmod command
     local chmod_cmd="sudo chmod -R 777 \"$target\""
 
@@ -736,8 +721,13 @@ grant777() {
     if [ "$dry_run" = "true" ]; then
         on_evict "$chmod_cmd"
     else
+        # If the target already has 777 permissions, skip execution.
+        if [ "$current_perm" -eq 777 ]; then
+            # colored_echo "🟡 Permissions for '$target' already set to full (777)" 33
+            return 0
+        fi
         run_cmd_eval "$chmod_cmd"
-        colored_echo "🟢 Permissions for '$target' set to full (777)" 46
+        colored_echo "🟢 Permissions for '$target' set to full (read, write, and execute - 777)" 46
     fi
 }
 
