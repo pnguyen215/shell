@@ -125,10 +125,9 @@ read_profile() {
         colored_echo "🔴 Profile configuration file '$profile_conf' not found." 196
         return 1
     fi
-    local cmd="source \"$profile_conf\""
     if [ "$dry_run" = "true" ]; then
-        read_conf -n "$cmd"
+        read_conf -n "$profile_conf"
     else
-        read_conf "$cmd"
+        read_conf "$profile_conf"
     fi
 }
