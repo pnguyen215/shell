@@ -560,6 +560,7 @@ remove_conf_profile() {
         colored_echo "🔴 No configuration selected." 196
         return 1
     fi
+    grant777 "$profile_conf"
     local os_type
     os_type=$(get_os_type)
     local sed_cmd=""
