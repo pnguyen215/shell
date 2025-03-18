@@ -42,3 +42,47 @@ ensure_workspace() {
         run_cmd_eval sudo mkdir -p "$SHELL_CONF_WORKING_WORKSPACE"
     fi
 }
+
+# add_profile function
+# Creates a new profile directory and initializes it with a profile.conf file.
+#
+# Usage:
+#   add_profile [-n] <profile_name>
+#
+# Parameters:
+#   - -n             : Optional dry-run flag. If provided, commands are printed using on_evict instead of executed.
+#   - <profile_name> : The name of the profile to create.
+#
+# Description:
+#   Ensures the workspace directory exists, then creates a new directory for the specified profile
+#   and initializes it with an empty profile.conf file. If the profile already exists, it prints a warning.
+#
+# Example:
+#   add_profile my_profile         # Creates the profile directory and profile.conf.
+#   add_profile -n my_profile      # Prints the commands without executing them.
+add_profile() {
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+    if [ $# -lt 1 ]; then
+        echo "Usage: add_profile [-n] <profile_name>"
+        return 1
+    fi
+    local profile_name="$1"
+    local profile_dir=$(get_profile_dir "$profile_name")
+    if [ -d "$profile_dir" ]; then
+        colored_echo "🟡 Profile '$profile_name' already exists." 11
+        return 1
+    fi
+
+    local cmd="sudo mkdir -p \"$profile_dir\" && sudo touch \"$profile_dir/profile.conf\""
+    if [ "$dry_run" = "true" ]; then
+        on_evict "$cmd"
+    else
+        ensure_workspace
+        run_cmd_eval "$cmd"
+        colored_echo "🟢 Created profile '$profile_name'." 46
+    fi
+}
