@@ -225,3 +225,38 @@ remove_profile() {
         fi
     fi
 }
+
+# get_profile function
+# Displays the contents of the profile.conf file for the specified profile.
+#
+# Usage:
+#   get_profile <profile_name>
+#
+# Parameters:
+#   - <profile_name> : The name of the profile to display.
+#
+# Description:
+#   Checks if the specified profile exists and displays the contents of its profile.conf file.
+#   If the profile or file does not exist, it prints an error.
+#
+# Example:
+#   get_profile my_profile         # Displays the contents of profile.conf for my_profile.
+get_profile() {
+    if [ $# -lt 1 ]; then
+        echo "Usage: get_profile <profile_name>"
+        return 1
+    fi
+    local profile_name="$1"
+    local profile_dir=$(get_profile_dir "$profile_name")
+    local profile_conf="$profile_dir/profile.conf"
+    if [ ! -d "$profile_dir" ]; then
+        colored_echo "🔴 Profile '$profile_name' does not exist." 196
+        return 1
+    fi
+    if [ ! -f "$profile_conf" ]; then
+        colored_echo "🔴 Profile configuration file '$profile_conf' not found." 196
+        return 1
+    fi
+    colored_echo "📄 Contents of '$profile_conf':" 33
+    run_cmd_eval cat "$profile_conf"
+}
