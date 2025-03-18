@@ -367,20 +367,14 @@ add_conf_profile() {
     local profile_conf="$profile_dir/profile.conf"
 
     # Ensure the profile.conf file exists
-    if [ ! -f "$profile_conf" ]; then
-        if [ "$dry_run" = "true" ]; then
-            on_evict "sudo touch \"$profile_conf\""
-        else
-            run_cmd_eval sudo touch "$profile_conf"
-        fi
-    fi
+    create_file_if_not_exists "$profile_conf"
 
     # Encode the value using Base64 and remove any newlines
     local encoded_value
     encoded_value=$(echo -n "$value" | base64 | tr -d '\n')
 
     # Build the command to append the key and encoded value to the profile.conf file
-    local cmd="sudo echo \"$key=$encoded_value\" >> \"$profile_conf\""
+    local cmd="echo \"$key=$encoded_value\" >> \"$profile_conf\""
 
     # Execute or print the command based on dry-run mode
     if [ "$dry_run" = "true" ]; then
@@ -391,6 +385,7 @@ add_conf_profile() {
             colored_echo "🟡 The key '$key' already exists in profile '$profile_name'. Consider updating it using update_conf_profile." 11
             return 0
         fi
+        grant777 "$profile_conf"
         run_cmd_eval "$cmd"
         colored_echo "🟢 Added configuration to profile '$profile_name': $key (encoded value)" 46
     fi
