@@ -667,30 +667,78 @@ create_file_if_not_exists() {
 # Sets full permissions (read, write, and execute) for the specified file or directory.
 #
 # Usage:
-#   grant777 <file/dir>
+#   grant777 [-n] <file/dir>
 #
 # Parameters:
-#   <file/dir> : The path to the file or directory to modify.
+#   - -n (optional): Dry-run mode. Instead of executing the command, prints it using on_evict.
+#   - <file/dir> : The path to the file or directory to modify.
 #
 # Description:
-#   This function sets the permissions of the specified file or directory (and its contents, recursively)
-#   to 777, granting full read, write, and execute access to the owner, group, and others.
-#   It uses run_cmd_eval to log and execute the chmod command.
+#   This function checks the current permission of the target. If it is already set to 777,
+#   it logs a message and exits without making any changes.
+#   Otherwise, it builds and executes (or prints, in dry-run mode) the chmod command asynchronously
+#   to grant full permissions recursively.
 #
 # Example:
 #   grant777 ./my_script.sh
-#
-# Recommendations:
-#   Use this function with caution, as setting permissions to 777 can pose security risks.
+#   grant777 -n ./my_script.sh  # Dry-run: prints the command without executing.
 grant777() {
+    # if [ $# -lt 1 ]; then
+    #     echo "Usage: grant777 <file/dir>"
+    #     return 1
+    # fi
+
+    # # Execute the chmod command with sudo and log it using run_cmd_eval.
+    # run_cmd_eval "sudo chmod -R 777 \"$1\""
+    # colored_echo "🟢 Permissions for '$1' set to full (777)" 46
+
+    local dry_run="false"
+
+    # Check for the optional dry-run flag (-n)
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
     if [ $# -lt 1 ]; then
-        echo "Usage: grant777 <file/dir>"
+        echo "Usage: grant777 [-n] <file/dir>"
         return 1
     fi
 
-    # Execute the chmod command with sudo and log it using run_cmd_eval.
-    run_cmd_eval "sudo chmod -R 777 \"$1\""
-    colored_echo "🟢 Permissions for '$1' set to full (777)" 46
+    local target="$1"
+
+    # Verify that the target exists
+    if [ ! -e "$target" ]; then
+        colored_echo "🔴 Target '$target' does not exist." 196
+        return 1
+    fi
+
+    # Determine the current permission of the target
+    local current_perm=""
+    local os_type
+    os_type=$(get_os_type)
+    if [ "$os_type" = "macos" ]; then
+        current_perm=$(stat -f "%Lp" "$target")
+    else
+        current_perm=$(stat -c "%a" "$target")
+    fi
+
+    # If the target already has 777 permissions, skip execution.
+    if [ "$current_perm" -eq 777 ]; then
+        # colored_echo "🟡 Permissions for '$target' already set to full (777)" 33
+        return 0
+    fi
+
+    # Build the chmod command
+    local chmod_cmd="sudo chmod -R 777 \"$target\""
+
+    # Execute the chmod command asynchronously or print it in dry-run mode
+    if [ "$dry_run" = "true" ]; then
+        on_evict "$chmod_cmd"
+    else
+        run_cmd_eval "$chmod_cmd"
+        colored_echo "🟢 Permissions for '$target' set to full (777)" 46
+    fi
 }
 
 # clip_cwd function
