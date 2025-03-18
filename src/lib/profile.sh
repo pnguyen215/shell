@@ -309,3 +309,89 @@ rename_profile() {
         colored_echo "🟢 Renamed profile '$old_name' to '$new_name'." 46
     fi
 }
+
+# add_conf_profile function
+# Adds a configuration entry (key=value) to the profile.conf file of a specified profile.
+# The value is encoded using Base64 before being saved.
+#
+# Usage:
+#   add_conf_profile [-n] <profile_name> <key> <value>
+#
+# Parameters:
+#   -n             : Optional dry-run flag. If provided, the command is printed using on_evict instead of executed.
+#   <profile_name> : The name of the profile.
+#   <key>          : The configuration key.
+#   <value>        : The configuration value to be encoded and saved.
+#
+# Description:
+#   The function checks for an optional dry-run flag (-n) and ensures that the profile name, key, and value are provided.
+#   It encodes the value using Base64 (with newline characters removed) and appends a line in the format:
+#       key=encoded_value
+#   to the profile.conf file in the specified profile directory. If the profile directory or the profile.conf file does not exist, they are created.
+#
+# Example:
+#   add_conf_profile my_profile my_setting "some secret value"         # Encodes the value and adds the entry to my_profile/profile.conf
+#   add_conf_profile -n my_profile my_setting "some secret value"      # Prints the command without executing it
+add_conf_profile() {
+    local dry_run="false"
+
+    # Check for the optional dry-run flag (-n)
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    # Validate the number of arguments
+    if [ $# -lt 3 ]; then
+        echo "Usage: add_conf_profile [-n] <profile_name> <key> <value>"
+        return 1
+    fi
+
+    local profile_name="$1"
+    local key="$2"
+    local value="$3"
+
+    # Get the profile directory (assumes get_profile_dir is defined elsewhere)
+    local profile_dir=$(get_profile_dir "$profile_name")
+
+    # Ensure the profile directory exists
+    if [ ! -d "$profile_dir" ]; then
+        if [ "$dry_run" = "true" ]; then
+            on_evict "sudo mkdir -p \"$profile_dir\""
+        else
+            run_cmd_eval sudo mkdir -p "$profile_dir"
+        fi
+    fi
+
+    # Define the profile.conf file path
+    local profile_conf="$profile_dir/profile.conf"
+
+    # Ensure the profile.conf file exists
+    if [ ! -f "$profile_conf" ]; then
+        if [ "$dry_run" = "true" ]; then
+            on_evict "sudo touch \"$profile_conf\""
+        else
+            run_cmd_eval sudo touch "$profile_conf"
+        fi
+    fi
+
+    # Encode the value using Base64 and remove any newlines
+    local encoded_value
+    encoded_value=$(echo -n "$value" | base64 | tr -d '\n')
+
+    # Build the command to append the key and encoded value to the profile.conf file
+    local cmd="echo \"$key=$encoded_value\" >> \"$profile_conf\""
+
+    # Execute or print the command based on dry-run mode
+    if [ "$dry_run" = "true" ]; then
+        on_evict "$cmd"
+    else
+        # Check if the key already exists in the profile.conf
+        if grep -q "^${key}=" "$profile_conf"; then
+            colored_echo "🟡 The key '$key' already exists in profile '$profile_name'. Consider updating it using update_conf_profile." 11
+            return 0
+        fi
+        run_cmd_eval "$cmd"
+        colored_echo "🟢 Added configuration to profile '$profile_name': $key (encoded value)" 46
+    fi
+}
