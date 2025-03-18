@@ -178,3 +178,50 @@ update_profile() {
         run_cmd_eval "$cmd"
     fi
 }
+
+# remove_profile function
+# Deletes the specified profile directory after user confirmation.
+#
+# Usage:
+#   remove_profile [-n] <profile_name>
+#
+# Parameters:
+#   - -n             : Optional dry-run flag. If provided, the command is printed using on_evict instead of executed.
+#   - <profile_name> : The name of the profile to remove.
+#
+# Description:
+#   Prompts for confirmation before deleting the profile directory and its contents.
+#   If confirmed, removes the directory; otherwise, aborts the operation.
+#
+# Example:
+#   remove_profile my_profile         # Prompts to confirm deletion of my_profile.
+#   remove_profile -n my_profile      # Prints the removal command without executing it.
+remove_profile() {
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+    if [ $# -lt 1 ]; then
+        echo "Usage: remove_profile [-n] <profile_name>"
+        return 1
+    fi
+    local profile_name="$1"
+    local profile_dir=$(get_profile_dir "$profile_name")
+    if [ ! -d "$profile_dir" ]; then
+        colored_echo "🔴 Profile '$profile_name' does not exist." 196
+        return 1
+    fi
+    if [ "$dry_run" = "true" ]; then
+        on_evict "sudo rm -rf \"$profile_dir\""
+    else
+        colored_echo "Are you sure you want to remove profile '$profile_name'? [y/N]" 33
+        read -r confirm
+        if [[ "$confirm" =~ ^[Yy]$ ]]; then
+            run_cmd_eval sudo rm -rf "$profile_dir"
+            colored_echo "🟢 Removed profile '$profile_name'." 46
+        else
+            colored_echo "🟡 Removal aborted." 11
+        fi
+    fi
+}
