@@ -131,3 +131,50 @@ read_profile() {
         read_conf "$profile_conf"
     fi
 }
+
+# update_profile function
+# Opens the profile.conf file of the specified profile in the default editor.
+#
+# Usage:
+#   update_profile [-n] <profile_name>
+#
+# Parameters:
+#   - -n             : Optional dry-run flag. If provided, the command is printed using on_evict instead of executed.
+#   - <profile_name> : The name of the profile to update.
+#
+# Description:
+#   Checks if the specified profile exists and opens its profile.conf file in the editor specified
+#   by the EDITOR environment variable (defaults to 'nano' if unset).
+#
+# Example:
+#   update_profile my_profile         # Opens profile.conf in the default editor.
+#   update_profile -n my_profile      # Prints the editor command without executing it.
+update_profile() {
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+    if [ $# -lt 1 ]; then
+        echo "Usage: update_profile [-n] <profile_name>"
+        return 1
+    fi
+    local profile_name="$1"
+    local profile_dir=$(get_profile_dir "$profile_name")
+    local profile_conf="$profile_dir/profile.conf"
+    if [ ! -d "$profile_dir" ]; then
+        colored_echo "🔴 Profile '$profile_name' does not exist." 196
+        return 1
+    fi
+    if [ ! -f "$profile_conf" ]; then
+        colored_echo "🔴 Profile configuration file '$profile_conf' not found." 196
+        return 1
+    fi
+    local editor="${EDITOR:-vim}"
+    local cmd="$editor \"$profile_conf\""
+    if [ "$dry_run" = "true" ]; then
+        on_evict "$cmd"
+    else
+        run_cmd_eval "$cmd"
+    fi
+}

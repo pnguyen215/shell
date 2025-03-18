@@ -30,6 +30,15 @@ SHELL_CONF_WORKING_WORKSPACE="$SHELL_CONF_WORKING/workspace"
 #   SHELL_KEY_CONF_FILE="$HOME/.shell-config/key.conf"
 SHELL_KEY_CONF_FILE="$SHELL_CONF_WORKING/key.conf"
 
+# SHELL_KEY_CONF_FILE_WORKSPACE constant
+# This variable defines the path to the profile-specific configuration file within the workspace directory.
+# It is used to store configuration settings specific to a user's profile, allowing for personalized shell environments.
+# This file typically contains settings that override or complement the main key configuration file.
+#
+# Example:
+#   SHELL_KEY_CONF_FILE_WORKSPACE="$SHELL_CONF_WORKING_WORKSPACE/profile.conf"
+SHELL_KEY_CONF_FILE_WORKSPACE="$SHELL_CONF_WORKING_WORKSPACE/profile.conf"
+
 # SHELL_GROUP_CONF_FILE constant
 # This variable defines the path to the group configuration file used by the shell bash library.
 # The file stores group definitions in the following format:
