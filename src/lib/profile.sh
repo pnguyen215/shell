@@ -15,7 +15,7 @@
 #   located at $SHELL_CONF_WORKING/workspace.
 #
 # Example:
-#   profile_dir=$(get_profile_dir "neyu")  # Returns "$SHELL_CONF_WORKING/workspace/neyu"
+#   profile_dir=$(get_profile_dir "my_profile")  # Returns "$SHELL_CONF_WORKING/workspace/my_profile"
 get_profile_dir() {
     if [ $# -lt 1 ]; then
         echo "Usage: get_profile_dir <profile_name>"
@@ -408,8 +408,8 @@ add_conf_profile() {
 #   and finally copies the decoded value to the clipboard asynchronously.
 #
 # Example:
-#   get_conf_profile neyu          # Retrieves and processes the 'neyu' profile.
-#   get_conf_profile -n neyu       # Dry-run mode: prints the commands without executing them.
+#   get_conf_profile my_profile          # Retrieves and processes the 'my_profile' profile.
+#   get_conf_profile -n my_profile       # Dry-run mode: prints the commands without executing them.
 get_conf_profile() {
     if [ $# -lt 1 ]; then
         echo "Usage: get_conf_profile <profile_name>"
@@ -472,8 +472,8 @@ get_conf_profile() {
 #   asynchronously copies the decoded value to the clipboard, and finally outputs the decoded value.
 #
 # Example:
-#   get_value_conf_profile myprofile API_KEY
-#   get_value_conf_profile -n myprofile API_KEY   # Dry-run: prints commands without executing them.
+#   get_value_conf_profile my_profile API_KEY
+#   get_value_conf_profile -n my_profile API_KEY   # Dry-run: prints commands without executing them.
 get_value_conf_profile() {
     if [ $# -lt 2 ]; then
         echo "Usage: get_value_conf_profile <profile_name> <key>"
@@ -529,8 +529,8 @@ get_value_conf_profile() {
 #   using async with run_cmd_eval.
 #
 # Example:
-#   remove_conf_profile myprofile
-#   remove_conf_profile -n myprofile   # Dry-run: prints the removal command without executing.
+#   remove_conf_profile my_profile
+#   remove_conf_profile -n my_profile   # Dry-run: prints the removal command without executing.
 remove_conf_profile() {
     local dry_run="false"
     if [ "$1" = "-n" ]; then
@@ -573,5 +573,172 @@ remove_conf_profile() {
     else
         run_cmd_eval "$sed_cmd"
         colored_echo "🟢 Removed configuration for key: $selected_key from profile '$profile_name'" 46
+    fi
+}
+
+update_conf_profile() {
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+    if [ $# -lt 1 ]; then
+        echo "Usage: update_conf_profile [-n] <profile_name>"
+        return 1
+    fi
+    local profile_name="$1"
+    local profile_dir=$(get_profile_dir "$profile_name")
+    local profile_conf="$profile_dir/profile.conf"
+    if [ ! -d "$profile_dir" ]; then
+        colored_echo "🔴 Profile '$profile_name' does not exist." 196
+        return 1
+    fi
+    if [ ! -f "$profile_conf" ]; then
+        colored_echo "🔴 Profile configuration file '$profile_conf' not found." 196
+        return 1
+    fi
+    install_package fzf
+    local selected_key
+    selected_key=$(cut -d '=' -f 1 "$profile_conf" | fzf --prompt="Select config key to update in profile '$profile_name': ")
+    if [ -z "$selected_key" ]; then
+        colored_echo "🔴 No configuration selected." 196
+        return 1
+    fi
+    colored_echo ">> Enter new value for key '$selected_key' in profile '$profile_name':" 33
+    read -r new_value
+    if [ -z "$new_value" ]; then
+        colored_echo "🔴 No new value entered. Update aborted." 196
+        return 1
+    fi
+    local encoded_value
+    encoded_value=$(echo -n "$new_value" | base64 | tr -d '\n')
+    local os_type
+    os_type=$(get_os_type)
+    local sed_cmd=""
+    if [ "$os_type" = "macos" ]; then
+        sed_cmd="sed -i '' \"s/^${selected_key}=.*/${selected_key}=${encoded_value}/\" \"$profile_conf\""
+    else
+        sed_cmd="sed -i \"s/^${selected_key}=.*/${selected_key}=${encoded_value}/\" \"$profile_conf\""
+    fi
+    if [ "$dry_run" = "true" ]; then
+        on_evict "$sed_cmd"
+    else
+        run_cmd_eval "$sed_cmd"
+        colored_echo "🟢 Updated configuration for key: $selected_key in profile '$profile_name'" 46
+    fi
+}
+
+exist_key_conf_profile() {
+    if [ $# -lt 2 ]; then
+        echo "Usage: exist_key_conf_profile <profile_name> <key>"
+        return 1
+    fi
+    local profile_name="$1"
+    local key="$2"
+    local profile_dir=$(get_profile_dir "$profile_name")
+    local profile_conf="$profile_dir/profile.conf"
+    if [ ! -d "$profile_dir" ]; then
+        colored_echo "🔴 Profile '$profile_name' does not exist." 196
+        return 1
+    fi
+    if [ ! -f "$profile_conf" ]; then
+        echo "false"
+        return 1
+    fi
+    if grep -q "^${key}=" "$profile_conf"; then
+        echo "true"
+    else
+        echo "false"
+    fi
+}
+
+rename_key_conf_profile() {
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+    if [ $# -lt 1 ]; then
+        echo "Usage: rename_key_conf_profile [-n] <profile_name>"
+        return 1
+    fi
+    local profile_name="$1"
+    local profile_dir=$(get_profile_dir "$profile_name")
+    local profile_conf="$profile_dir/profile.conf"
+    if [ ! -d "$profile_dir" ]; then
+        colored_echo "🔴 Profile '$profile_name' does not exist." 196
+        return 1
+    fi
+    if [ ! -f "$profile_conf" ]; then
+        colored_echo "🔴 Profile configuration file '$profile_conf' not found." 196
+        return 1
+    fi
+    install_package fzf
+    local old_key
+    old_key=$(cut -d '=' -f 1 "$profile_conf" | fzf --prompt="Select a key to rename in profile '$profile_name': ")
+    if [ -z "$old_key" ]; then
+        colored_echo "🔴 No key selected. Aborting rename." 196
+        return 1
+    fi
+    colored_echo "Enter new key name for '$old_key' in profile '$profile_name':" 33
+    read -r new_key
+    if [ -z "$new_key" ]; then
+        colored_echo "🔴 No new key name entered. Aborting rename." 196
+        return 1
+    fi
+    if grep -q "^${new_key}=" "$profile_conf"; then
+        colored_echo "🔴 Error: Key '$new_key' already exists in profile '$profile_name'." 196
+        return 1
+    fi
+    local os_type
+    os_type=$(get_os_type)
+    local sed_cmd=""
+    if [ "$os_type" = "macos" ]; then
+        sed_cmd="sed -i '' \"s/^${old_key}=/${new_key}=/\" \"$profile_conf\""
+    else
+        sed_cmd="sed -i \"s/^${old_key}=/${new_key}=/\" \"$profile_conf\""
+    fi
+    if [ "$dry_run" = "true" ]; then
+        on_evict "$sed_cmd"
+    else
+        run_cmd_eval "$sed_cmd"
+        colored_echo "🟢 Renamed key '$old_key' to '$new_key' in profile '$profile_name'" 46
+    fi
+}
+
+clone_conf_profile() {
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+    if [ $# -lt 2 ]; then
+        echo "Usage: clone_conf_profile [-n] <source_profile> <destination_profile>"
+        return 1
+    fi
+    local source_profile="$1"
+    local destination_profile="$2"
+    local source_dir=$(get_profile_dir "$source_profile")
+    local destination_dir=$(get_profile_dir "$destination_profile")
+    local source_conf="$source_dir/profile.conf"
+    local destination_conf="$destination_dir/profile.conf"
+    if [ ! -d "$source_dir" ]; then
+        colored_echo "🔴 Source profile '$source_profile' does not exist." 196
+        return 1
+    fi
+    if [ ! -f "$source_conf" ]; then
+        colored_echo "🔴 Source profile configuration file '$source_conf' not found." 196
+        return 1
+    fi
+    if [ -d "$destination_dir" ]; then
+        colored_echo "🔴 Destination profile '$destination_profile' already exists." 196
+        return 1
+    fi
+    local cmd="mkdir -p \"$destination_dir\" && cp \"$source_conf\" \"$destination_conf\""
+    if [ "$dry_run" = "true" ]; then
+        on_evict "$cmd"
+    else
+        run_cmd_eval "$cmd"
+        colored_echo "🟢 Cloned profile.conf from '$source_profile' to '$destination_profile'" 46
     fi
 }
