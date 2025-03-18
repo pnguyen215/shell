@@ -453,3 +453,60 @@ get_conf_profile() {
     colored_echo "🔑 Key: $selected_key" 33
     clip_value "$decoded_value"
 }
+
+# get_value_conf_profile function
+# Retrieves a configuration value for a given profile and key by decoding its base64-encoded value.
+#
+# Usage:
+#   get_value_conf_profile [-n] <profile_name> <key>
+#
+# Parameters:
+#   - -n (optional): Dry-run mode. Instead of executing commands, prints them using on_evict.
+#   - <profile_name>: The name of the configuration profile.
+#   - <key>: The configuration key whose value will be retrieved.
+#
+# Description:
+#   This function ensures that the workspace exists and locates the profile directory
+#   and configuration file. It then extracts the configuration line matching the provided key,
+#   decodes the associated base64-encoded value (using the appropriate flag for macOS or Linux),
+#   asynchronously copies the decoded value to the clipboard, and finally outputs the decoded value.
+#
+# Example:
+#   get_value_conf_profile myprofile API_KEY
+#   get_value_conf_profile -n myprofile API_KEY   # Dry-run: prints commands without executing them.
+get_value_conf_profile() {
+    if [ $# -lt 2 ]; then
+        echo "Usage: get_value_conf_profile <profile_name> <key>"
+        return 1
+    fi
+    ensure_workspace
+    local profile_name="$1"
+    local key="$2"
+    local profile_dir=$(get_profile_dir "$profile_name")
+    local profile_conf="$profile_dir/profile.conf"
+    if [ ! -d "$profile_dir" ]; then
+        colored_echo "🔴 Profile '$profile_name' does not exist." 196
+        return 1
+    fi
+    if [ ! -f "$profile_conf" ]; then
+        colored_echo "🔴 Profile configuration file '$profile_conf' not found." 196
+        return 1
+    fi
+    local conf_line
+    conf_line=$(grep "^${key}=" "$profile_conf")
+    if [ -z "$conf_line" ]; then
+        colored_echo "🔴 Error: Key '$key' not found in profile '$profile_name'." 196
+        return 1
+    fi
+    local encoded_value
+    encoded_value=$(echo "$conf_line" | cut -d '=' -f 2-)
+    local os_type
+    os_type=$(get_os_type)
+    local decoded_value
+    if [ "$os_type" = "macos" ]; then
+        decoded_value=$(echo "$encoded_value" | base64 -D)
+    else
+        decoded_value=$(echo "$encoded_value" | base64 -d)
+    fi
+    echo "$decoded_value"
+}
