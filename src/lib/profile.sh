@@ -560,14 +560,13 @@ remove_conf_profile() {
         colored_echo "🔴 No configuration selected." 196
         return 1
     fi
-    grant777 "$profile_conf"
     local os_type
     os_type=$(get_os_type)
     local sed_cmd=""
     if [ "$os_type" = "macos" ]; then
-        sed_cmd="sed -i '' \"/^${selected_key}=/d\" \"$profile_conf\""
+        sed_cmd="sudo sed -i '' \"/^${selected_key}=/d\" \"$profile_conf\""
     else
-        sed_cmd="sed -i \"/^${selected_key}=/d\" \"$profile_conf\""
+        sed_cmd="sudo sed -i \"/^${selected_key}=/d\" \"$profile_conf\""
     fi
     if [ "$dry_run" = "true" ]; then
         on_evict "$sed_cmd"
