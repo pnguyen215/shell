@@ -260,3 +260,52 @@ get_profile() {
     colored_echo "📄 Contents of '$profile_conf':" 33
     run_cmd_eval cat "$profile_conf"
 }
+
+# rename_profile function
+# Renames the specified profile directory.
+#
+# Usage:
+#   rename_profile [-n] <old_name> <new_name>
+#
+# Parameters:
+#   - -n             : Optional dry-run flag. If provided, the command is printed using on_evict instead of executed.
+#   - <old_name>     : The current name of the profile.
+#   - <new_name>     : The new name for the profile.
+#
+# Description:
+#   Checks if the old profile exists and the new profile name does not already exist,
+#   then renames the directory accordingly.
+#
+# Example:
+#   rename_profile old_profile new_profile         # Renames old_profile to new_profile.
+#   rename_profile -n old_profile new_profile      # Prints the rename command without executing it.
+rename_profile() {
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+    if [ $# -lt 2 ]; then
+        echo "Usage: rename_profile [-n] <old_name> <new_name>"
+        return 1
+    fi
+    local old_name="$1"
+    local new_name="$2"
+    local old_dir=$(get_profile_dir "$old_name")
+    local new_dir=$(get_profile_dir "$new_name")
+    if [ ! -d "$old_dir" ]; then
+        colored_echo "🔴 Profile '$old_name' does not exist." 196
+        return 1
+    fi
+    if [ -d "$new_dir" ]; then
+        colored_echo "🔴 Profile '$new_name' already exists." 196
+        return 1
+    fi
+    local cmd="sudo mv \"$old_dir\" \"$new_dir\""
+    if [ "$dry_run" = "true" ]; then
+        on_evict "$cmd"
+    else
+        run_cmd_eval "$cmd"
+        colored_echo "🟢 Renamed profile '$old_name' to '$new_name'." 46
+    fi
+}
