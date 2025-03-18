@@ -170,7 +170,7 @@ update_profile() {
         colored_echo "🔴 Profile configuration file '$profile_conf' not found." 196
         return 1
     fi
-    local editor="${EDITOR:-vim}"
+    local editor="${EDITOR:-vi}"
     local cmd="sudo $editor \"$profile_conf\""
     if [ "$dry_run" = "true" ]; then
         on_evict "$cmd"
