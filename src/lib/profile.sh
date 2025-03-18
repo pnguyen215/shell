@@ -390,3 +390,66 @@ add_conf_profile() {
         colored_echo "🟢 Added configuration to profile '$profile_name': $key (encoded value)" 46
     fi
 }
+
+# get_conf_profile function
+# Retrieves a configuration profile value by prompting the user to select a config key from the profile's configuration file.
+#
+# Usage:
+#   get_conf_profile [-n] <profile_name>
+#
+# Parameters:
+#   - -n (optional): Dry-run mode. Instead of executing commands, prints them using on_evict.
+#   - <profile_name>: The name of the configuration profile.
+#
+# Description:
+#   This function locates the profile directory and its configuration file, verifies that the profile exists,
+#   and then ensures that the interactive fuzzy finder (fzf) is installed. It uses fzf to let the user select a configuration key,
+#   decodes its base64-encoded value (using the appropriate flag for macOS or Linux), displays the selected key,
+#   and finally copies the decoded value to the clipboard asynchronously.
+#
+# Example:
+#   get_conf_profile neyu          # Retrieves and processes the 'neyu' profile.
+#   get_conf_profile -n neyu       # Dry-run mode: prints the commands without executing them.
+get_conf_profile() {
+    if [ $# -lt 1 ]; then
+        echo "Usage: get_conf_profile <profile_name>"
+        return 1
+    fi
+    ensure_workspace
+    local profile_name="$1"
+    local profile_dir=$(get_profile_dir "$profile_name")
+    local profile_conf="$profile_dir/profile.conf"
+    if [ ! -d "$profile_dir" ]; then
+        colored_echo "🔴 Profile '$profile_name' does not exist." 196
+        return 1
+    fi
+    if [ ! -f "$profile_conf" ]; then
+        colored_echo "🔴 Profile configuration file '$profile_conf' not found." 196
+        return 1
+    fi
+    install_package fzf
+    local selected_key
+    selected_key=$(cut -d '=' -f 1 "$profile_conf" | fzf --prompt="Select config key for profile '$profile_name': ")
+    if [ -z "$selected_key" ]; then
+        colored_echo "🔴 No configuration selected." 196
+        return 1
+    fi
+    local selected_line
+    selected_line=$(grep "^${selected_key}=" "$profile_conf")
+    if [ -z "$selected_line" ]; then
+        colored_echo "🔴 Error: Selected key '$selected_key' not found in configuration." 196
+        return 1
+    fi
+    local encoded_value
+    encoded_value=$(echo "$selected_line" | cut -d '=' -f 2-)
+    local os_type
+    os_type=$(get_os_type)
+    local decoded_value
+    if [ "$os_type" = "macos" ]; then
+        decoded_value=$(echo "$encoded_value" | base64 -D)
+    else
+        decoded_value=$(echo "$encoded_value" | base64 -d)
+    fi
+    colored_echo "🔑 Key: $selected_key" 33
+    clip_value "$decoded_value"
+}
