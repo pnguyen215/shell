@@ -19,7 +19,7 @@ SHELL_CONF_WORKING="$HOME/.shell-config"
 #
 # Example:
 #   SHELL_KEY_CONF_FILE="$HOME/.shell-config/key.conf"
-SHELL_KEY_CONF_FILE="$HOME/.shell-config/key.conf"
+SHELL_KEY_CONF_FILE="$SHELL_CONF_WORKING/key.conf"
 
 # SHELL_GROUP_CONF_FILE constant
 # This variable defines the path to the group configuration file used by the shell bash library.
@@ -31,7 +31,7 @@ SHELL_KEY_CONF_FILE="$HOME/.shell-config/key.conf"
 #
 # Example:
 #   SHELL_GROUP_CONF_FILE="$HOME/.shell-config/group.conf"
-SHELL_GROUP_CONF_FILE="$HOME/.shell-config/group.conf"
+SHELL_GROUP_CONF_FILE="$SHELL_CONF_WORKING/group.conf"
 
 # SHELL_GH_CONF_FILE constant
 # This variable defines the path to the GitHub configuration file used by the shell bash library.
@@ -40,7 +40,7 @@ SHELL_GROUP_CONF_FILE="$HOME/.shell-config/group.conf"
 #
 # Example:
 #   SHELL_GH_CONF_FILE="$HOME/.shell-config/gh.conf"
-SHELL_GH_CONF_FILE="$HOME/.shell-config/gh.conf"
+SHELL_GH_CONF_FILE="$SHELL_CONF_WORKING/gh.conf"
 
 # SHELL_PROTECTED_KEYS array
 # This array lists configuration keys that are considered constant and must not be removed, updated,
