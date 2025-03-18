@@ -10,6 +10,15 @@
 #   SHELL_CONF_WORKING="$HOME/.shell-config"
 SHELL_CONF_WORKING="$HOME/.shell-config"
 
+# SHELL_CONF_WORKING_WORKSPACE constant
+# This variable defines the path to the workspace directory within the shell configuration working directory.
+# It is used to store user-specific or profile-specific configurations and data.
+# This separation helps in organizing configuration files related to different profiles or projects.
+#
+# Example:
+#   SHELL_CONF_WORKING_WORKSPACE="$SHELL_CONF_WORKING/workspace"
+SHELL_CONF_WORKING_WORKSPACE="$SHELL_CONF_WORKING/workspace"
+
 # SHELL_KEY_CONF_FILE constant
 # This variable defines the path to the key configuration file used by the shell bash library.
 # The file stores individual configuration entries in the following format:
