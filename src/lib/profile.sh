@@ -689,6 +689,26 @@ exist_key_conf_profile() {
     fi
 }
 
+# rename_key_conf_profile function
+# Renames an existing configuration key in a given profile.
+#
+# Usage:
+#   rename_key_conf_profile [-n] <profile_name>
+#
+# Parameters:
+#   - -n            : Optional dry-run flag. If provided, prints the sed command using on_evict without executing.
+#   - <profile_name>: The name of the profile whose key should be renamed.
+#
+# Description:
+#   The function checks that the profile directory and configuration file exist.
+#   It then uses fzf to allow the user to select the existing key to rename.
+#   After prompting for a new key name and verifying that it does not already exist,
+#   the function constructs an OS-specific sed command to replace the old key with the new one.
+#   In dry-run mode, the command is printed via on_evict; otherwise, it is executed using run_cmd_eval.
+#
+# Example:
+#   rename_key_conf_profile my_profile
+#   rename_key_conf_profile -n my_profile   # dry-run mode
 rename_key_conf_profile() {
     local dry_run="false"
     if [ "$1" = "-n" ]; then
@@ -731,9 +751,9 @@ rename_key_conf_profile() {
     os_type=$(get_os_type)
     local sed_cmd=""
     if [ "$os_type" = "macos" ]; then
-        sed_cmd="sed -i '' \"s/^${old_key}=/${new_key}=/\" \"$profile_conf\""
+        sed_cmd="sudo sed -i '' \"s/^${old_key}=/${new_key}=/\" \"$profile_conf\""
     else
-        sed_cmd="sed -i \"s/^${old_key}=/${new_key}=/\" \"$profile_conf\""
+        sed_cmd="sudo sed -i \"s/^${old_key}=/${new_key}=/\" \"$profile_conf\""
     fi
     if [ "$dry_run" = "true" ]; then
         on_evict "$sed_cmd"
