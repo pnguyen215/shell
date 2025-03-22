@@ -763,6 +763,26 @@ rename_key_conf_profile() {
     fi
 }
 
+# clone_conf_profile function
+# Clones a configuration profile by copying its profile.conf from a source profile to a destination profile.
+#
+# Usage:
+#   clone_conf_profile [-n] <source_profile> <destination_profile>
+#
+# Parameters:
+#   - -n               : (Optional) Dry-run flag. If provided, the command is printed but not executed.
+#   - <source_profile> : The name of the source profile.
+#   - <destination_profile> : The name of the destination profile.
+#
+# Description:
+#   This function retrieves the source and destination profile directories using get_profile_dir,
+#   verifies that the source profile exists and has a profile.conf file, and ensures that the destination
+#   profile does not already exist. If validations pass, it clones the configuration by creating the destination
+#   directory and copying the profile.conf file from the source to the destination. When the dry-run flag (-n)
+#   is provided, it prints the command without executing it.
+#
+# Example:
+#   clone_conf_profile my_profile backup_profile   # Clones profile.conf from 'my_profile' to 'backup_profile'
 clone_conf_profile() {
     local dry_run="false"
     if [ "$1" = "-n" ]; then
@@ -791,7 +811,7 @@ clone_conf_profile() {
         colored_echo "🔴 Destination profile '$destination_profile' already exists." 196
         return 1
     fi
-    local cmd="mkdir -p \"$destination_dir\" && cp \"$source_conf\" \"$destination_conf\""
+    local cmd="sudo mkdir -p \"$destination_dir\" && sudo cp \"$source_conf\" \"$destination_conf\""
     if [ "$dry_run" = "true" ]; then
         on_evict "$cmd"
     else
