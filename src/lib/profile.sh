@@ -592,8 +592,8 @@ remove_conf_profile() {
 #   The sed command is executed asynchronously via the async function (unless in dry-run mode).
 #
 # Example:
-#   update_conf_profile myprofile
-#   update_conf_profile -n myprofile   # dry-run mode
+#   update_conf_profile my_profile
+#   update_conf_profile -n my_profile   # dry-run mode
 update_conf_profile() {
     local dry_run="false"
     if [ "$1" = "-n" ]; then
@@ -646,6 +646,23 @@ update_conf_profile() {
     fi
 }
 
+# exist_key_conf_profile function
+# Checks whether a specified key exists in the configuration file of a given profile.
+#
+# Usage:
+#   exist_key_conf_profile <profile_name> <key>
+#
+# Parameters:
+#   - <profile_name>: The name of the profile.
+#   - <key>         : The configuration key to search for.
+#
+# Description:
+#   The function constructs the path to the profile's configuration file and verifies that the profile directory exists.
+#   It then checks if the configuration file exists. If both exist, it searches for the specified key using grep.
+#   The function outputs "true" if the key is found and "false" otherwise.
+#
+# Example:
+#   exist_key_conf_profile my_profile my_key
 exist_key_conf_profile() {
     if [ $# -lt 2 ]; then
         echo "Usage: exist_key_conf_profile <profile_name> <key>"
@@ -665,8 +682,10 @@ exist_key_conf_profile() {
     fi
     if grep -q "^${key}=" "$profile_conf"; then
         echo "true"
+        return 0
     else
         echo "false"
+        return 1
     fi
 }
 
