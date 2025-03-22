@@ -819,3 +819,42 @@ clone_conf_profile() {
         colored_echo "🟢 Cloned profile.conf from '$source_profile' to '$destination_profile'" 46
     fi
 }
+
+# list_conf_profile function
+# Lists all available configuration profiles in the workspace.
+#
+# Usage:
+#   list_conf_profile
+#
+# Description:
+#   This function checks that the workspace directory ($SHELL_CONF_WORKING/workspace) exists.
+#   It then finds all subdirectories (each representing a profile) and prints their names.
+#   If no profiles are found, an appropriate message is displayed.
+#
+# Example:
+#   list_conf_profile       # Displays the names of all profiles in the workspace.
+list_conf_profile() {
+    # Ensure that the workspace exists.
+    ensure_workspace
+
+    # Check if the workspace directory exists.
+    if [ ! -d "$SHELL_CONF_WORKING_WORKSPACE" ]; then
+        colored_echo "🔴 Workspace directory '$SHELL_CONF_WORKING_WORKSPACE' does not exist." 196
+        return 1
+    fi
+
+    # Find all subdirectories (profiles) in the workspace.
+    local profiles
+    profiles=$(find "$SHELL_CONF_WORKING_WORKSPACE" -mindepth 1 -maxdepth 1 -type d 2>/dev/null)
+
+    # Check if any profiles were found.
+    if [ -z "$profiles" ]; then
+        colored_echo "🔴 No profiles found in workspace." 196
+        return 1
+    fi
+
+    colored_echo "📄 Available profiles:" 33
+
+    # List profile names by extracting the basename from each directory path.
+    echo "$profiles" | xargs -n 1 basename
+}
