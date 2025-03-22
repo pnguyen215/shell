@@ -576,6 +576,24 @@ remove_conf_profile() {
     fi
 }
 
+# update_conf_profile function
+# Updates a specified configuration key in a given profile by replacing its value.
+#
+# Usage:
+#   update_conf_profile [-n] <profile_name>
+#
+# Parameters:
+#   - -n              : Optional dry-run flag. If provided, the update command is printed using on_evict without executing.
+#   - <profile_name>  : The name of the profile to update.
+#
+# Description:
+#   The function retrieves the profile configuration file, prompts the user to select a key (using fzf),
+#   asks for the new value, encodes it in base64, and constructs a sed command to update the key.
+#   The sed command is executed asynchronously via the async function (unless in dry-run mode).
+#
+# Example:
+#   update_conf_profile myprofile
+#   update_conf_profile -n myprofile   # dry-run mode
 update_conf_profile() {
     local dry_run="false"
     if [ "$1" = "-n" ]; then
