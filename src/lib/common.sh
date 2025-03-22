@@ -1723,3 +1723,66 @@ execute_or_evict() {
         run_cmd_eval "$command"
     fi
 }
+
+# list function
+# Displays detailed information of files and directories.
+#
+# Usage:
+#   list [directory]
+#
+# Parameters:
+#   - [directory]: (Optional) The directory to list. Defaults to the current directory.
+#
+# Description:
+#   The function prints a header and iterates over each file/directory in the specified (or current)
+#   directory. It displays:
+#     - Detailed privileges (permissions)
+#     - Owner (user)
+#     - Created at timestamp
+#     - Modified at timestamp
+#
+#   OS-specific commands are used:
+#     - macOS: Uses "stat -f" with format "%Sp" (permissions), "%Su" (owner),
+#       "%SB" (creation date), and "%Sm" (modification date).
+#     - Linux: Uses "stat -c" with format "%A" (permissions), "%U" (owner),
+#       "%w" (creation date, if available; otherwise "N/A"), and "%y" (modification date).
+#
+# Example:
+#   list
+#   list /path/to/directory
+list() {
+    # Use the provided directory or default to current directory
+    local target="${1:-.}"
+    local os_type
+    os_type=$(get_os_type)
+
+    # Print header with aligned columns
+    printf "%-12s %-12s %-25s %-25s\n" "Privileges" "Owner" "Created At" "Modified At"
+    printf "%-12s %-12s %-25s %-25s\n" "----------" "-----" "----------" "-----------"
+
+    # Loop over each file/directory in the target directory
+    for entry in "$target"/*; do
+        # Skip if no files are found
+        [ -e "$entry" ] || continue
+
+        local details=""
+        if [ "$os_type" = "macos" ]; then
+            # macOS: Use stat with format: permissions, owner, creation time, modification time
+            details=$(stat -f "%Sp;%Su;%SB;%Sm" "$entry")
+        else
+            # Linux: Use stat with format: permissions, owner, creation time, modification time
+            details=$(stat -c "%A;%U;%w;%y" "$entry")
+        fi
+
+        # Split the details using semicolon as delimiter
+        IFS=";" read -r privileges owner created modified <<<"$details"
+
+        # If creation time is not available, indicate "N/A"
+        if [ "$created" = "-" ] || [ -z "$created" ]; then
+            created="N/A"
+        fi
+
+        # Print the file details in aligned columns
+        printf "%-12s %-12s %-25s %-25s\n" "$privileges" "$owner" "$created" "$modified"
+    done
+}
