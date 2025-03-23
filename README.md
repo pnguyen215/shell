@@ -232,7 +232,7 @@ Access the shell library by opening your terminal and using the commands below. 
 - **`shell::go_back`**
   Navigates to the previous working directory.
 
-- **`goto_version`**
+- **`shell::goto_version`**
   Displays the version of the goto script.
 
 - **`goto`**

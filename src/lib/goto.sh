@@ -1,14 +1,14 @@
 #!/bin/bash
 # goto.sh
 
-# goto_version function
+# shell::goto_version function
 # Displays the version of the goto script.
 #
 # Usage:
-#   goto_version
+#   shell::goto_version
 #
 # Description:
-goto_version() {
+shell::goto_version() {
     echo "goto v0.0.1"
 }
 
@@ -28,7 +28,7 @@ goto() {
         arg=$1
         case $arg in
         "-ver" | "--version" | "-v")
-            goto_version
+            shell::goto_version
             break
             ;;
 
