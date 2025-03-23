@@ -1442,11 +1442,11 @@ shell::unarchive() {
     fi
 }
 
-# list_high_mem_usage function
+# shell::list_high_mem_usage function
 # Displays processes with high memory consumption.
 #
 # Usage:
-#   list_high_mem_usage [-n]
+#   shell::list_high_mem_usage [-n]
 #
 # Parameters:
 #   - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
@@ -1457,9 +1457,9 @@ shell::unarchive() {
 #   In dry-run mode, the constructed command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
 #
 # Example:
-#   list_high_mem_usage       # Displays processes with high memory consumption.
-#   list_high_mem_usage -n    # Prints the command without executing it.
-list_high_mem_usage() {
+#   shell::list_high_mem_usage       # Displays processes with high memory consumption.
+#   shell::list_high_mem_usage -n    # Prints the command without executing it.
+shell::list_high_mem_usage() {
     local dry_run="false"
 
     # Check for the optional dry-run flag (-n)
@@ -1480,7 +1480,7 @@ list_high_mem_usage() {
         # Build the command string for Linux
         cmd="ps -axo pid,user,%mem,command --sort=-%mem | head -n 11 | tail -n +2"
     else
-        shell::colored_echo "🔴 Error: Unsupported OS for list_high_mem_usage function." 196
+        shell::colored_echo "🔴 Error: Unsupported OS for shell::list_high_mem_usage function." 196
         return 1
     fi
 

@@ -160,9 +160,9 @@ Access the shell library by opening your terminal and using the commands below. 
   - `shell::unarchive archive.zip`
   - `shell::unarchive -n archive.tar.gz`
 
-- **`list_high_mem_usage`**  
+- **`shell::list_high_mem_usage`**  
   Displays processes consuming significant memory, sorted by usage.  
-  _Example:_ `list_high_mem_usage`
+  _Example:_ `shell::list_high_mem_usage`
 
 - **`open_link`**  
   Opens a URL in the default web browser. Use `-n` for silent operation (no output).  
