@@ -235,11 +235,11 @@ Access the shell library by opening your terminal and using the commands below. 
 - **`shell::goto_version`**
   Displays the version of the goto script.
 
-- **`goto`**
+- **`shell::goto`**
   Main function to handle user commands and navigate directories.
   _Example:_
 
-  - `goto [command]`
+  - `shell::goto [command]`
   - `shell::goto_usage`
 
 - **`install_homebrew`**
