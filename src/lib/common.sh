@@ -269,7 +269,7 @@ shell::install_package() {
 
     if [ "$os_type" = "linux" ]; then # Linux
         # Check if the package is already installed on Linux.
-        if is_package_installed_linux "$package"; then
+        if shell::is_package_installed_linux "$package"; then
             shell::colored_echo "🟡 $package is already installed. Skipping." 33
             return 0
         fi
@@ -319,7 +319,7 @@ shell::removal_package() {
 
     if [ "$os_type" = "linux" ]; then
         if shell::is_command_available apt-get; then
-            if is_package_installed_linux "$package"; then
+            if shell::is_package_installed_linux "$package"; then
                 shell::run_cmd_eval "sudo apt-get remove -y $package"
             else
                 shell::colored_echo "🟡 $package is not installed. Skipping uninstallation." 33
@@ -513,18 +513,18 @@ shell::list_path_installed_packages_details() {
     done
 }
 
-# is_package_installed_linux function
+# shell::is_package_installed_linux function
 # Checks if a package is installed on Linux.
 #
 # Usage:
-#   is_package_installed_linux <package_name>
+#   shell::is_package_installed_linux <package_name>
 #
 # Parameters:
 #   - <package_name>: The name of the package to check
 #
 # Returns:
 #   0 if the package is installed, 1 otherwise.
-is_package_installed_linux() {
+shell::is_package_installed_linux() {
     local package="$1"
 
     if shell::is_command_available apt-get; then
