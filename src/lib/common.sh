@@ -301,18 +301,18 @@ install_package() {
     fi
 }
 
-# shell::uninstall_package function
+# shell::removal_package function
 # Cross-platform package uninstallation function for macOS and Linux.
 #
 # Usage:
-#   shell::uninstall_package <package_name>
+#   shell::removal_package <package_name>
 #
 # Parameters:
 #   - <package_name>: The name of the package to uninstall
 #
 # Example usage:
-#   shell::uninstall_package git
-shell::uninstall_package() {
+#   shell::removal_package git
+shell::removal_package() {
     local package="$1"
     local os_type
     os_type=$(shell::get_os_type)
