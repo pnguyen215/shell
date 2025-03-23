@@ -71,7 +71,7 @@ goto() {
             if [ $# != 1 ]; then
                 shell::colored_echo "🙈 What?!" 3
             else
-                go_bookmark $1
+                shell::go_bookmark $1
             fi
             break
             ;;

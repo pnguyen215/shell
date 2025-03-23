@@ -223,11 +223,11 @@ Access the shell library by opening your terminal and using the commands below. 
   Displays a formatted list of all bookmarks.
   _Example:_ `shell::show_bookmark`
 
-- **`go_bookmark`**
+- **`shell::go_bookmark`**
   Navigates to the directory associated with the specified bookmark name.
   _Example:_
 
-  - `go_bookmark <bookmark name>`
+  - `shell::go_bookmark <bookmark name>`
 
 - **`go_back`**
   Navigates to the previous working directory.

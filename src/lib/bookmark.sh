@@ -309,17 +309,17 @@ shell::show_bookmark() {
     awk -v yellow="$yellow" -v normal="$normal" 'BEGIN { FS="|"} { printf "👉 %s%-10s%s %s\n", yellow, $2, normal, $1 }' "$bookmarks_file"
 }
 
-# go_bookmark function
+# shell::go_bookmark function
 # Navigates to the directory associated with the specified bookmark name.
 #
 # Usage:
-#   go_bookmark <bookmark name>
+#   shell::go_bookmark <bookmark name>
 #
 # Description:
-#   The 'go_bookmark' function changes the current working directory to the directory
+#   The 'shell::go_bookmark' function changes the current working directory to the directory
 #   associated with the given bookmark name. It looks for a line in the bookmarks file
 #   that ends with "|<bookmark name>".
-go_bookmark() {
+shell::go_bookmark() {
     local bookmark_name="$1"
     local bookmark dir
 
