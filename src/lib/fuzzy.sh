@@ -22,7 +22,7 @@
 #   - Helper functions: shell::run_cmd_eval, shell::colored_echo, and shell::get_os_type.
 fzf_copy() {
     # Check if fzf is installed.
-    install_package fzf
+    shell::install_package fzf
 
     # Use find and fzf to select the source file.
     local source_file
@@ -78,10 +78,10 @@ fzf_copy() {
 #
 # Requirements:
 #   - fzf must be installed.
-#   - Helper functions: shell::run_cmd_eval, shell::colored_echo, shell::get_os_type, install_package, and clip_value.
+#   - Helper functions: shell::run_cmd_eval, shell::colored_echo, shell::get_os_type, shell::install_package, and clip_value.
 fzf_move() {
     # Check if fzf is installed.
-    install_package fzf
+    shell::install_package fzf
 
     # Use find and fzf to select the source file.
     local source_file
@@ -136,10 +136,10 @@ fzf_move() {
 #
 # Requirements:
 #   - fzf must be installed.
-#   - Helper functions: shell::run_cmd_eval, shell::colored_echo, shell::get_os_type, install_package, and clip_value.
+#   - Helper functions: shell::run_cmd_eval, shell::colored_echo, shell::get_os_type, shell::install_package, and clip_value.
 fzf_remove() {
     # Check if fzf is installed.
-    install_package fzf
+    shell::install_package fzf
 
     # Use find and fzf to select the target file or directory.
     local target
@@ -181,7 +181,7 @@ fzf_remove() {
 #   fzf_zip_attachment -n /path/to/folder  # Dry-run: prints the command without executing it.
 fzf_zip_attachment() {
     # Check if fzf is installed.
-    install_package fzf
+    shell::install_package fzf
 
     local dry_run="false"
 
@@ -327,7 +327,7 @@ fzf_current_zip_attachment() {
 #   fzf_send_telegram_attachment -n 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Test" /path/to/folder
 fzf_send_telegram_attachment() {
     # Check if fzf is installed.
-    install_package fzf
+    shell::install_package fzf
 
     local dry_run="false"
     # Check for the optional dry-run flag (-n).

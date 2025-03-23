@@ -427,7 +427,7 @@ get_conf_profile() {
         shell::colored_echo "🔴 Profile configuration file '$profile_conf' not found." 196
         return 1
     fi
-    install_package fzf
+    shell::install_package fzf
     local selected_key
     selected_key=$(cut -d '=' -f 1 "$profile_conf" | fzf --prompt="Select config key for profile '$profile_name': ")
     if [ -z "$selected_key" ]; then
@@ -553,7 +553,7 @@ remove_conf_profile() {
         shell::colored_echo "🔴 Profile configuration file '$profile_conf' not found." 196
         return 1
     fi
-    install_package fzf
+    shell::install_package fzf
     local selected_key
     selected_key=$(cut -d '=' -f 1 "$profile_conf" | fzf --prompt="Select config key to remove from profile '$profile_name': ")
     if [ -z "$selected_key" ]; then
@@ -615,7 +615,7 @@ update_conf_profile() {
         shell::colored_echo "🔴 Profile configuration file '$profile_conf' not found." 196
         return 1
     fi
-    install_package fzf
+    shell::install_package fzf
     local selected_key
     selected_key=$(cut -d '=' -f 1 "$profile_conf" | fzf --prompt="Select config key to update in profile '$profile_name': ")
     if [ -z "$selected_key" ]; then
@@ -730,7 +730,7 @@ rename_key_conf_profile() {
         shell::colored_echo "🔴 Profile configuration file '$profile_conf' not found." 196
         return 1
     fi
-    install_package fzf
+    shell::install_package fzf
     local old_key
     old_key=$(cut -d '=' -f 1 "$profile_conf" | fzf --prompt="Select a key to rename in profile '$profile_name': ")
     if [ -z "$old_key" ]; then

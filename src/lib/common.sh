@@ -250,18 +250,18 @@ shell::is_command_available() {
     return $?
 }
 
-# install_package function
+# shell::install_package function
 # Cross-platform package installation function that works on both macOS and Linux.
 #
 # Usage:
-#   install_package <package_name>
+#   shell::install_package <package_name>
 #
 # Parameters:
 #   - <package_name>: The name of the package to install
 #
 # Example usage:
-#   install_package git
-install_package() {
+#   shell::install_package git
+shell::install_package() {
     local package="$1"
 
     local os_type

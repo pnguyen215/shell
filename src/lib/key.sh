@@ -136,7 +136,7 @@ get_conf() {
         return 1
     fi
 
-    install_package fzf
+    shell::install_package fzf
 
     # Extract only the keys from the configuration file and select one using fzf.
     local selected_key
@@ -258,7 +258,7 @@ remove_conf() {
         return 1
     fi
 
-    install_package fzf
+    shell::install_package fzf
 
     # Extract only the keys from the configuration file and select one using fzf.
     local selected_key
@@ -335,7 +335,7 @@ update_conf() {
         return 1
     fi
 
-    install_package fzf
+    shell::install_package fzf
 
     # Extract only the keys from the configuration file and select one using fzf.
     local selected_key
@@ -468,7 +468,7 @@ rename_key_conf() {
         return 1
     fi
 
-    install_package fzf
+    shell::install_package fzf
 
     # Use fzf to select an existing key.
     local old_key
@@ -597,7 +597,7 @@ add_group() {
         return 1
     fi
 
-    install_package fzf
+    shell::install_package fzf
 
     # Use fzf with multi-select to choose keys from SHELL_KEY_CONF_FILE.
     local selected_keys
@@ -761,7 +761,7 @@ remove_group() {
         return 1
     fi
 
-    install_package fzf
+    shell::install_package fzf
 
     local selected_group
     selected_group=$(cut -d '=' -f 1 "$SHELL_GROUP_CONF_FILE" | fzf --prompt="Select a group to remove: ")
@@ -819,7 +819,7 @@ update_group() {
         return 1
     fi
 
-    install_package fzf
+    shell::install_package fzf
 
     # Select the group to update.
     local selected_group
@@ -897,7 +897,7 @@ rename_group() {
         return 1
     fi
 
-    install_package fzf
+    shell::install_package fzf
 
     # Use fzf to let the user select an existing group.
     local old_group
@@ -994,7 +994,7 @@ select_group() {
         return 1
     fi
 
-    install_package fzf
+    shell::install_package fzf
 
     # Extract group names from SHELL_GROUP_CONF_FILE and let the user select one.
     local groups
@@ -1098,7 +1098,7 @@ clone_group() {
         return 1
     fi
 
-    install_package fzf
+    shell::install_package fzf
 
     # Use fzf to let the user select an existing group.
     local selected_group
