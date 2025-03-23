@@ -1,11 +1,11 @@
 #!/bin/bash
 # git.sh
 
-# send_telegram_historical_gh_message function
+# shell::send_telegram_historical_gh_message function
 # Sends a historical GitHub-related message via Telegram using stored configuration keys.
 #
 # Usage:
-#   send_telegram_historical_gh_message [-n] <message>
+#   shell::send_telegram_historical_gh_message [-n] <message>
 #
 # Parameters:
 #   - -n         : Optional dry-run flag. If provided, the command will be printed using shell::on_evict instead of executed.
@@ -19,9 +19,9 @@
 #   calls send_telegram_message (with the dry-run flag, if enabled) to send the message.
 #
 # Example:
-#   send_telegram_historical_gh_message "Historical message text"
-#   send_telegram_historical_gh_message -n "Dry-run historical message text"
-send_telegram_historical_gh_message() {
+#   shell::send_telegram_historical_gh_message "Historical message text"
+#   shell::send_telegram_historical_gh_message -n "Dry-run historical message text"
+shell::send_telegram_historical_gh_message() {
     local dry_run="false"
 
     # Check for the optional dry-run flag (-n)
@@ -32,7 +32,7 @@ send_telegram_historical_gh_message() {
 
     # Ensure that a message argument is provided.
     if [ $# -lt 1 ]; then
-        echo "Usage: send_telegram_historical_gh_message [-n] <message>"
+        echo "Usage: shell::send_telegram_historical_gh_message [-n] <message>"
         return 1
     fi
 

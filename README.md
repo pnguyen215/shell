@@ -390,7 +390,7 @@ Access the shell library by opening your terminal and using the commands below. 
 
   - `send_telegram_message [-n] <token> <chat_id> <message>`
 
-- **`send_telegram_historical_gh_message`**
+- **`shell::send_telegram_historical_gh_message`**
   Sends a historical GitHub-related message via Telegram using stored configuration keys.
 
   - _Parameters_:
@@ -398,7 +398,7 @@ Access the shell library by opening your terminal and using the commands below. 
     - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
     - message : The message text to send.
 
-  - `send_telegram_historical_gh_message [-n] <message>`
+  - `shell::send_telegram_historical_gh_message [-n] <message>`
 
 - **`send_telegram_attachment`**
   Sends one or more attachments (files) via Telegram using the Bot API asynchronously.
