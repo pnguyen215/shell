@@ -1,11 +1,11 @@
 #!/bin/bash
 # oh_my_zsh.sh
 
-# install_oh_my_zsh function
+# shell::install_oh_my_zsh function
 # Installs Oh My Zsh if it is not already present on the system.
 #
 # Usage:
-#   install_oh_my_zsh [-n]
+#   shell::install_oh_my_zsh [-n]
 #
 # Parameters:
 #   - -n : Optional dry-run flag. If provided, the installation command is printed using shell::on_evict instead of executed.
@@ -17,9 +17,9 @@
 #   In dry-run mode, the command is displayed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
 #
 # Example:
-#   install_oh_my_zsh         # Installs Oh My Zsh if needed.
-#   install_oh_my_zsh -n      # Prints the installation command without executing it.
-install_oh_my_zsh() {
+#   shell::install_oh_my_zsh         # Installs Oh My Zsh if needed.
+#   shell::install_oh_my_zsh -n      # Prints the installation command without executing it.
+shell::install_oh_my_zsh() {
     local dry_run="false"
 
     # Check for the optional dry-run flag (-n)

@@ -248,12 +248,12 @@ Access the shell library by opening your terminal and using the commands below. 
 - **`shell::removal_homebrew`**
   Uninstalls Homebrew from the system.
 
-- **`install_oh_my_zsh`**
+- **`shell::install_oh_my_zsh`**
   Installs Oh My Zsh if it is not already present on the system.
   _Example:_
 
-  - `install_oh_my_zsh`
-  - `install_oh_my_zsh -n`
+  - `shell::install_oh_my_zsh`
+  - `shell::install_oh_my_zsh -n`
 
 - **`shell::removal_oh_my_zsh`**
   Uninstalls Oh My Zsh by removing its directory and restoring the original .zshrc backup if available.
