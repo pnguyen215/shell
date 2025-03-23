@@ -245,7 +245,7 @@ Access the shell library by opening your terminal and using the commands below. 
 - **`install_homebrew`**
   Installs Homebrew using the official installation script.
 
-- **`uninstall_homebrew`**
+- **`shell::removal_homebrew`**
   Uninstalls Homebrew from the system.
 
 - **`install_oh_my_zsh`**

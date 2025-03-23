@@ -26,12 +26,12 @@ function install_homebrew() {
     shell::run_cmd_eval '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
 }
 
-# uninstall_homebrew function
+# shell::removal_homebrew function
 # ---------------------------
 # Uninstalls Homebrew from the system.
 #
 # Usage:
-#   uninstall_homebrew
+#   shell::removal_homebrew
 #
 # Description:
 #   This function first checks if Homebrew is installed using shell::is_command_available.
@@ -46,8 +46,8 @@ function install_homebrew() {
 #   - shell::colored_echo: Displays colored messages to the terminal.
 #
 # Example:
-#   uninstall_homebrew
-function uninstall_homebrew() {
+#   shell::removal_homebrew
+function shell::removal_homebrew() {
     if shell::is_command_available brew; then
         echo "🚀 Uninstalling Homebrew..."
         shell::run_cmd_eval '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh)"'
