@@ -939,11 +939,11 @@ shell::port_check() {
     fi
 }
 
-# port_kill function
+# shell::port_kill function
 # Terminates all processes listening on the specified TCP port(s).
 #
 # Usage:
-#   port_kill [-n] <port> [<port> ...]
+#   shell::port_kill [-n] <port> [<port> ...]
 #
 # Parameters:
 #   - -n    : Optional flag to enable dry-run mode (print commands without execution).
@@ -955,13 +955,13 @@ shell::port_check() {
 #   In dry-run mode (enabled by the -n flag), the kill command is printed using shell::on_evict instead of executed.
 #
 # Example:
-#   port_kill 8080              # Kills processes on port 8080.
-#   port_kill -n 8080 3000       # Prints the kill commands for ports 8080 and 3000 without executing.
+#   shell::port_kill 8080              # Kills processes on port 8080.
+#   shell::port_kill -n 8080 3000       # Prints the kill commands for ports 8080 and 3000 without executing.
 #
 # Notes:
 #   - Ensure you have the required privileges to kill processes.
 #   - Use with caution, as forcefully terminating processes may cause data loss.
-port_kill() {
+shell::port_kill() {
     local dry_run="false"
 
     # Check for the dry-run flag.
@@ -971,7 +971,7 @@ port_kill() {
     fi
 
     if [ "$#" -eq 0 ]; then
-        shell::colored_echo "🟡 No ports specified. Usage: port_kill [-n] PORT [PORT...]" 11
+        shell::colored_echo "🟡 No ports specified. Usage: shell::port_kill [-n] PORT [PORT...]" 11
         return 1
     fi
 
