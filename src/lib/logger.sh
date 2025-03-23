@@ -1,5 +1,5 @@
 #!/bin/bash
-# fatal.sh
+# logger.sh
 
 # shell::fatal function
 # Prints a fatal error message along with the function call stack, then exits the script.
