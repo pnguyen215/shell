@@ -303,12 +303,12 @@ shell::fzf_current_zip_attachment() {
     fi
 }
 
-# fzf_send_telegram_attachment function
+# shell::fzf_send_telegram_attachment function
 # Uses fzf to interactively select one or more files from a folder (default: current directory)
 # and sends them as attachments via the Telegram Bot API by reusing send_telegram_attachment.
 #
 # Usage:
-#   fzf_send_telegram_attachment [-n] <token> <chat_id> <description> [folder_path]
+#   shell::fzf_send_telegram_attachment [-n] <token> <chat_id> <description> [folder_path]
 #
 # Parameters:
 #   - -n           : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
@@ -323,9 +323,9 @@ shell::fzf_current_zip_attachment() {
 #   If files are selected, it calls send_telegram_attachment (passing the dry-run flag if needed) with the selected filenames.
 #
 # Example:
-#   fzf_send_telegram_attachment 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Report"
-#   fzf_send_telegram_attachment -n 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Test" /path/to/folder
-fzf_send_telegram_attachment() {
+#   shell::fzf_send_telegram_attachment 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Report"
+#   shell::fzf_send_telegram_attachment -n 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Test" /path/to/folder
+shell::fzf_send_telegram_attachment() {
     # Check if fzf is installed.
     shell::install_package fzf
 
@@ -338,7 +338,7 @@ fzf_send_telegram_attachment() {
 
     # Ensure that at least three arguments remain: token, chat_id, description.
     if [ $# -lt 3 ]; then
-        echo "Usage: fzf_send_telegram_attachment [-n] <token> <chat_id> <description> [folder_path]"
+        echo "Usage: shell::fzf_send_telegram_attachment [-n] <token> <chat_id> <description> [folder_path]"
         return 1
     fi
 
