@@ -1660,25 +1660,25 @@ shell::measure_time() {
     fi
 }
 
-# async function
+# shell::async function
 # Executes a command or function asynchronously (in the background).
 #
 # Usage:
-#   async [-n] <command> [arguments...]
+#   shell::async [-n] <command> [arguments...]
 #
 # Parameters:
 #   - -n        : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
 #   - <command> [arguments...]: The command (or function) with its arguments to be executed asynchronously.
 #
 # Description:
-#   The async function builds the command from the provided arguments and runs it in the background.
+#   The shell::async function builds the command from the provided arguments and runs it in the background.
 #   If the optional dry-run flag (-n) is provided, the command is printed using shell::on_evict instead of executing it.
 #   Otherwise, the command is executed asynchronously using eval, and the process ID (PID) is displayed.
 #
 # Example:
-#   async my_function arg1 arg2      # Executes my_function with arguments asynchronously.
-#   async -n ls -l                   # Prints the 'ls -l' command that would be executed in the background.
-async() {
+#   shell::async my_function arg1 arg2      # Executes my_function with arguments asynchronously.
+#   shell::async -n ls -l                   # Prints the 'ls -l' command that would be executed in the background.
+shell::async() {
     local dry_run="false"
 
     # Check for the optional dry-run flag (-n).

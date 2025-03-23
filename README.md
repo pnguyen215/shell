@@ -182,12 +182,12 @@ Access the shell library by opening your terminal and using the commands below. 
   Measures and reports the execution time of a command in seconds.  
   _Example:_ `shell::measure_time sleep 2`
 
-- **`async`**  
+- **`shell::async`**  
   Runs a command or function asynchronously in the background. Use `-n` for no output.  
   _Examples:_
 
-  - `async my_function arg1 arg2`
-  - `async -n ls`
+  - `shell::async my_function arg1 arg2`
+  - `shell::async -n ls`
 
 - **`fzf_copy`**  
   Interactively selects a file to copy and a destination directory using `fzf` for fuzzy finding.  

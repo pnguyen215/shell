@@ -81,7 +81,7 @@ send_telegram_message() {
     if [ "$dry_run" = "true" ]; then
         shell::on_evict "$cmd &"
     else
-        async "$cmd"
+        shell::async "$cmd"
         shell::colored_echo "🟢 Telegram message sent." 46
     fi
 }
@@ -138,7 +138,7 @@ send_telegram_attachment() {
             if [ "$dry_run" = "true" ]; then
                 shell::on_evict "$cmd &"
             else
-                async "$cmd"
+                shell::async "$cmd"
                 shell::colored_echo "🟢 Async: Attachment '$filename' is being sent." 46
             fi
         else

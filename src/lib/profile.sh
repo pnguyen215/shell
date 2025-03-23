@@ -526,7 +526,7 @@ get_value_conf_profile() {
 #   and then uses fzf to let the user select a configuration key to remove.
 #   It builds an OS-specific sed command to delete the line containing the selected key.
 #   In dry-run mode, the command is printed using shell::on_evict; otherwise, it is executed asynchronously
-#   using async with shell::run_cmd_eval.
+#   using shell::async with shell::run_cmd_eval.
 #
 # Example:
 #   remove_conf_profile my_profile
@@ -589,7 +589,7 @@ remove_conf_profile() {
 # Description:
 #   The function retrieves the profile configuration file, prompts the user to select a key (using fzf),
 #   asks for the new value, encodes it in base64, and constructs a sed command to update the key.
-#   The sed command is executed asynchronously via the async function (unless in dry-run mode).
+#   The sed command is executed asynchronously via the shell::async function (unless in dry-run mode).
 #
 # Example:
 #   update_conf_profile my_profile
