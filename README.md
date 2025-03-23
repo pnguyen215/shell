@@ -400,7 +400,7 @@ Access the shell library by opening your terminal and using the commands below. 
 
   - `shell::send_telegram_historical_gh_message [-n] <message>`
 
-- **`send_telegram_attachment`**
+- **`shell::send_telegram_attachment`**
   Sends one or more attachments (files) via Telegram using the Bot API asynchronously.
 
   - _Parameters_:
@@ -411,7 +411,7 @@ Access the shell library by opening your terminal and using the commands below. 
     - description: A text description that is appended to each attachment's caption along with a timestamp.
     - filename_X: One or more filenames of the attachments to send.
 
-  - `send_telegram_attachment [-n] <token> <chat_id> <description> [filename_1] [filename_2] [filename_3] ...`
+  - `shell::send_telegram_attachment [-n] <token> <chat_id> <description> [filename_1] [filename_2] [filename_3] ...`
 
 - **`shell::fzf_zip_attachment`**
   Zips selected files from a specified folder and outputs the absolute path of the created zip file.
@@ -433,7 +433,7 @@ Access the shell library by opening your terminal and using the commands below. 
   - `shell::fzf_current_zip_attachment [-n]`
 
 - **`shell::fzf_send_telegram_attachment`**
-  Uses fzf to interactively select one or more files from a folder (default: current directory), and sends them as attachments via the Telegram Bot API by reusing send_telegram_attachment.
+  Uses fzf to interactively select one or more files from a folder (default: current directory), and sends them as attachments via the Telegram Bot API by reusing shell::send_telegram_attachment.
 
   - _Parameters_:
 

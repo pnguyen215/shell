@@ -86,11 +86,11 @@ shell::send_telegram_message() {
     fi
 }
 
-# send_telegram_attachment function
+# shell::send_telegram_attachment function
 # Sends one or more attachments (files) via Telegram using the Bot API asynchronously.
 #
 # Usage:
-#   send_telegram_attachment [-n] <token> <chat_id> <description> [filename_1] [filename_2] [filename_3] ...
+#   shell::send_telegram_attachment [-n] <token> <chat_id> <description> [filename_1] [filename_2] [filename_3] ...
 #
 # Parameters:
 #   - -n           : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
@@ -105,9 +105,9 @@ shell::send_telegram_message() {
 #   asynchronously via Telegram's API. In dry-run mode, the command is printed using shell::on_evict.
 #
 # Example:
-#   send_telegram_attachment 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Report" file1.pdf file2.pdf
-#   send_telegram_attachment -n 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Report" file1.pdf
-send_telegram_attachment() {
+#   shell::send_telegram_attachment 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Report" file1.pdf file2.pdf
+#   shell::send_telegram_attachment -n 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Report" file1.pdf
+shell::send_telegram_attachment() {
     local dry_run="false"
 
     # Check for the optional dry-run flag (-n)
@@ -118,7 +118,7 @@ send_telegram_attachment() {
 
     # Ensure that at least four arguments remain: token, chat_id, description, and at least one filename.
     if [ $# -lt 4 ]; then
-        echo "Usage: send_telegram_attachment [-n] <token> <chat_id> <description> [filename_1] [filename_2] [filename_3] ..."
+        echo "Usage: shell::send_telegram_attachment [-n] <token> <chat_id> <description> [filename_1] [filename_2] [filename_3] ..."
         return 1
     fi
 
