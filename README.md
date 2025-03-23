@@ -80,9 +80,9 @@ Access the shell library by opening your terminal and using the commands below. 
   Uninstalls a package using the OS-appropriate package manager.  
   _Example:_ `shell::removal_package git`
 
-- **`list_installed_packages`**  
+- **`shell::list_installed_packages`**  
   Lists all packages installed on the system via the native package manager.  
-  _Example:_ `list_installed_packages`
+  _Example:_ `shell::list_installed_packages`
 
 - **`list_path_installed_packages`**  
   Lists packages installed in directory-based locations (e.g., `/usr/local`).  

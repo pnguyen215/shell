@@ -357,11 +357,11 @@ shell::removal_package() {
     fi
 }
 
-# list_installed_packages function
+# shell::list_installed_packages function
 # Lists all packages currently installed on Linux or macOS.
 #
 # Usage:
-#   list_installed_packages
+#   shell::list_installed_packages
 #
 # Description:
 #   On Linux:
@@ -371,8 +371,8 @@ shell::removal_package() {
 #     - If Homebrew is available, it lists installed Homebrew packages.
 #
 # Example usage:
-#   list_installed_packages
-list_installed_packages() {
+#   shell::list_installed_packages
+shell::list_installed_packages() {
     local os_type
     os_type=$(shell::get_os_type)
 
