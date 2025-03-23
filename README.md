@@ -112,9 +112,9 @@ Access the shell library by opening your terminal and using the commands below. 
   Returns the OS-appropriate temporary directory path (e.g., `/tmp` on Linux).  
   _Example:_ `TEMP_DIR=$(shell::get_temp_dir)`
 
-- **`on_evict`**  
+- **`shell::on_evict`**  
   Prints a command to the terminal without executing it, useful for debugging or logging.  
-  _Example:_ `on_evict ls -l`
+  _Example:_ `shell::on_evict ls -l`
 
 - **`shell::port_check`**  
   Checks if a TCP port is in use (listening). Use `-n` to suppress output and return a status only.  
@@ -383,7 +383,7 @@ Access the shell library by opening your terminal and using the commands below. 
 
   - _Parameters_:
 
-    - -n : Optional dry-run flag. If provided, the command is printed using on_evict instead of executed.
+    - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
     - token : The Telegram Bot API token.
     - chat_id : The chat identifier where the message should be sent.
     - message : The message text to send.
@@ -395,7 +395,7 @@ Access the shell library by opening your terminal and using the commands below. 
 
   - _Parameters_:
 
-    - -n : Optional dry-run flag. If provided, the command is printed using on_evict instead of executed.
+    - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
     - message : The message text to send.
 
   - `send_telegram_historical_gh_message [-n] <message>`
@@ -405,7 +405,7 @@ Access the shell library by opening your terminal and using the commands below. 
 
   - _Parameters_:
 
-    - -n : Optional dry-run flag. If provided, the command is printed using on_evict instead of executed.
+    - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
     - token : The Telegram Bot API token.
     - chat_id : The chat identifier where the message should be sent.
     - description: A text description that is appended to each attachment's caption along with a timestamp.
@@ -418,7 +418,7 @@ Access the shell library by opening your terminal and using the commands below. 
 
   - _Parameters_:
 
-    - -n : Optional dry-run flag. If provided, the command is printed using on_evict instead of executed.
+    - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
     - folder_path : The folder (directory) from which to select files for zipping.
 
   - `fzf_zip_attachment [-n] <folder_path>`
@@ -428,7 +428,7 @@ Access the shell library by opening your terminal and using the commands below. 
 
   - _Parameters_:
 
-    - -n : Optional dry-run flag. If provided, the command is printed using on_evict instead of executed.
+    - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
 
   - `fzf_current_zip_attachment [-n]`
 
@@ -437,7 +437,7 @@ Access the shell library by opening your terminal and using the commands below. 
 
   - _Parameters_:
 
-    - -n : Optional dry-run flag. If provided, the command is printed using on_evict instead of executed.
+    - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
     - token: The Telegram Bot API token.
     - chat_id: The chat identifier where the attachments are sent.
     - description: A text description appended to each attachment's caption along with a timestamp.

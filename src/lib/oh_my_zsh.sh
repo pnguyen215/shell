@@ -8,13 +8,13 @@
 #   install_oh_my_zsh [-n]
 #
 # Parameters:
-#   - -n : Optional dry-run flag. If provided, the installation command is printed using on_evict instead of executed.
+#   - -n : Optional dry-run flag. If provided, the installation command is printed using shell::on_evict instead of executed.
 #
 # Description:
 #   The function checks whether the Oh My Zsh directory ($HOME/.oh-my-zsh) exists.
 #   If it exists, it prints a message indicating that Oh My Zsh is already installed.
 #   Otherwise, it proceeds to install Oh My Zsh by executing the installation script fetched via curl.
-#   In dry-run mode, the command is displayed using on_evict; otherwise, it is executed using shell::run_cmd_eval.
+#   In dry-run mode, the command is displayed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
 #
 # Example:
 #   install_oh_my_zsh         # Installs Oh My Zsh if needed.
@@ -38,7 +38,7 @@ install_oh_my_zsh() {
         local install_cmd="sh -c \"\$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)\""
 
         if [ "$dry_run" = "true" ]; then
-            on_evict "$install_cmd"
+            shell::on_evict "$install_cmd"
         else
             shell::run_cmd_eval "$install_cmd"
         fi
@@ -58,13 +58,13 @@ install_oh_my_zsh() {
 #   uninstall_oh_my_zsh [-n]
 #
 # Parameters:
-#   - -n : Optional dry-run flag. If provided, the uninstallation commands are printed using on_evict instead of executed.
+#   - -n : Optional dry-run flag. If provided, the uninstallation commands are printed using shell::on_evict instead of executed.
 #
 # Description:
 #   This function checks whether the Oh My Zsh directory ($HOME/.oh-my-zsh) exists.
 #   If it does, the function proceeds to remove it using 'rm -rf'. Additionally, if a backup of the original .zshrc
 #   (stored as $HOME/.zshrc.pre-oh-my-zsh) exists, it restores that backup by moving it back to $HOME/.zshrc.
-#   In dry-run mode, the commands are displayed using on_evict; otherwise, they are executed using shell::run_cmd_eval.
+#   In dry-run mode, the commands are displayed using shell::on_evict; otherwise, they are executed using shell::run_cmd_eval.
 #
 # Example:
 #   uninstall_oh_my_zsh         # Uninstalls Oh My Zsh if installed.
@@ -90,7 +90,7 @@ uninstall_oh_my_zsh() {
     # Remove the Oh My Zsh directory
     local remove_cmd="rm -rf \"$oh_my_zsh_dir\""
     if [ "$dry_run" = "true" ]; then
-        on_evict "$remove_cmd"
+        shell::on_evict "$remove_cmd"
     else
         shell::run_cmd_eval "$remove_cmd"
     fi
@@ -101,7 +101,7 @@ uninstall_oh_my_zsh() {
     if [ -f "$backup_zshrc" ]; then
         local restore_cmd="mv \"$backup_zshrc\" \"$zshrc\""
         if [ "$dry_run" = "true" ]; then
-            on_evict "$restore_cmd"
+            shell::on_evict "$restore_cmd"
         else
             shell::run_cmd_eval "$restore_cmd"
         fi

@@ -8,7 +8,7 @@
 #   send_telegram_historical_gh_message [-n] <message>
 #
 # Parameters:
-#   - -n         : Optional dry-run flag. If provided, the command will be printed using on_evict instead of executed.
+#   - -n         : Optional dry-run flag. If provided, the command will be printed using shell::on_evict instead of executed.
 #   - <message>  : The message text to send.
 #
 # Description:

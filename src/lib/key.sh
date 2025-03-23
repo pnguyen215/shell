@@ -8,13 +8,13 @@
 #   read_conf [-n] <filename>
 #
 # Parameters:
-#   - -n       : Optional dry-run flag. If provided, the command is printed using on_evict instead of executed.
+#   - -n       : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
 #   - <filename>: The configuration file to source.
 #
 # Description:
 #   The function checks that a filename is provided and that the specified file exists.
 #   If the file is not found, an error message is displayed.
-#   In dry-run mode, the command "source <filename>" is printed using on_evict.
+#   In dry-run mode, the command "source <filename>" is printed using shell::on_evict.
 #   Otherwise, the file is sourced using shell::run_cmd to log the execution.
 #
 # Example:
@@ -44,7 +44,7 @@ read_conf() {
 
     # Build and execute (or print) the command to source the configuration file.
     if [ "$dry_run" = "true" ]; then
-        on_evict "source \"$filename\""
+        shell::on_evict "source \"$filename\""
     else
         shell::run_cmd source "$filename"
     fi
@@ -58,7 +58,7 @@ read_conf() {
 #   add_conf [-n] <key> <value>
 #
 # Parameters:
-#   - -n       : Optional dry-run flag. If provided, the command is printed using on_evict instead of executed.
+#   - -n       : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
 #   - <key>    : The configuration key.
 #   - <value>  : The configuration value to be encoded and saved.
 #
@@ -100,7 +100,7 @@ add_conf() {
     local cmd="echo \"$key=$encoded_value\" >> \"$SHELL_KEY_CONF_FILE\""
 
     if [ "$dry_run" = "true" ]; then
-        on_evict "$cmd"
+        shell::on_evict "$cmd"
     else
         result=$(exist_key_conf $key)
         if [ "$result" = "true" ]; then
@@ -231,7 +231,7 @@ get_value_conf() {
 #   remove_conf [-n]
 #
 # Parameters:
-#   - -n : Optional dry-run flag. If provided, the removal command is printed using on_evict instead of executed.
+#   - -n : Optional dry-run flag. If provided, the removal command is printed using shell::on_evict instead of executed.
 #
 # Description:
 #   The function reads the configuration file defined by the constant SHELL_KEY_CONF_FILE, where each entry is in the format:
@@ -239,7 +239,7 @@ get_value_conf() {
 #   It extracts only the keys (before the '=') and uses fzf for interactive selection.
 #   Once a key is selected, it constructs a command to remove the line that starts with "key=" from the configuration file.
 #   The command uses sed with different options depending on the operating system (macOS or Linux).
-#   In dry-run mode, the command is printed using on_evict; otherwise, it is executed using shell::run_cmd_eval.
+#   In dry-run mode, the command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
 #
 # Example:
 #   remove_conf         # Interactively select a key and remove its configuration entry.
@@ -293,7 +293,7 @@ remove_conf() {
     fi
 
     if [ "$dry_run" = "true" ]; then
-        on_evict "$sed_cmd"
+        shell::on_evict "$sed_cmd"
     else
         shell::run_cmd_eval "$sed_cmd"
         shell::colored_echo "🟢 Removed configuration for key: $selected_key" 46
@@ -308,7 +308,7 @@ remove_conf() {
 #   update_conf [-n]
 #
 # Parameters:
-#   - -n : Optional dry-run flag. If provided, the update command is printed using on_evict instead of executed.
+#   - -n : Optional dry-run flag. If provided, the update command is printed using shell::on_evict instead of executed.
 #
 # Description:
 #   The function reads the configuration file defined by SHELL_KEY_CONF_FILE, which contains entries in the format:
@@ -372,7 +372,7 @@ update_conf() {
     fi
 
     if [ "$dry_run" = "true" ]; then
-        on_evict "$sed_cmd"
+        shell::on_evict "$sed_cmd"
     else
         shell::run_cmd_eval "$sed_cmd"
         shell::colored_echo "🟢 Updated configuration for key: $selected_key" 46
@@ -442,7 +442,7 @@ exist_key_conf() {
 #   rename_key_conf [-n]
 #
 # Parameters:
-#   - -n : Optional dry-run flag. If provided, the renaming command is printed using on_evict instead of executed.
+#   - -n : Optional dry-run flag. If provided, the renaming command is printed using shell::on_evict instead of executed.
 #
 # Description:
 #   The function reads the configuration file defined by SHELL_KEY_CONF_FILE, which stores entries in the format:
@@ -451,7 +451,7 @@ exist_key_conf() {
 #   After selection, the function prompts for a new key name and checks if the new key already exists.
 #   If the new key does not exist, it constructs a sed command to replace the old key with the new key in the file.
 #   The sed command uses in-place editing options appropriate for macOS (sed -i '') or Linux (sed -i).
-#   In dry-run mode, the command is printed via on_evict; otherwise, it is executed using shell::run_cmd_eval.
+#   In dry-run mode, the command is printed via shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
 #
 # Example:
 #   rename_key_conf         # Interactively select a key and rename it.
@@ -512,7 +512,7 @@ rename_key_conf() {
     fi
 
     if [ "$dry_run" = "true" ]; then
-        on_evict "$sed_cmd"
+        shell::on_evict "$sed_cmd"
     else
         shell::run_cmd_eval "$sed_cmd"
         shell::colored_echo "🟢 Renamed key '$old_key' to '$new_key'" 46
@@ -567,7 +567,7 @@ is_protected_key() {
 #   one or more configuration keys (from SHELL_KEY_CONF_FILE). It then stores the group in SHELL_GROUP_CONF_FILE in the format:
 #       group_name=key1,key2,...,keyN
 #   If the group name already exists, the group entry is updated with the new selection.
-#   An optional dry-run flag (-n) can be used to print the command via on_evict instead of executing it.
+#   An optional dry-run flag (-n) can be used to print the command via shell::on_evict instead of executing it.
 #
 # Example:
 #   add_group         # Prompts for a group name and lets you select keys to group.
@@ -625,7 +625,7 @@ add_group() {
             sed_cmd="sed -i \"s/^${group_name}=.*/${group_entry}/\" \"$SHELL_GROUP_CONF_FILE\""
         fi
         if [ "$dry_run" = "true" ]; then
-            on_evict "$sed_cmd"
+            shell::on_evict "$sed_cmd"
         else
             shell::run_cmd_eval "$sed_cmd"
             shell::colored_echo "🟢 Updated group '$group_name' with keys: $keys_csv" 46
@@ -633,7 +633,7 @@ add_group() {
     else
         local cmd="echo \"$group_entry\" >> \"$SHELL_GROUP_CONF_FILE\""
         if [ "$dry_run" = "true" ]; then
-            on_evict "$cmd"
+            shell::on_evict "$cmd"
         else
             shell::run_cmd_eval "$cmd"
             shell::colored_echo "🟢 Created group '$group_name' with keys: $keys_csv" 46
@@ -738,13 +738,13 @@ read_group() {
 #   remove_group [-n]
 #
 # Parameters:
-#   - -n : Optional dry-run flag. If provided, the removal command is printed using on_evict instead of executed.
+#   - -n : Optional dry-run flag. If provided, the removal command is printed using shell::on_evict instead of executed.
 #
 # Description:
 #   The function extracts group names from SHELL_GROUP_CONF_FILE and uses fzf for interactive selection.
 #   Once a group is selected, it constructs a sed command (with appropriate in-place options for macOS or Linux)
 #   to remove the line that starts with "group_name=".
-#   If the file is not writable, sudo is prepended. In dry-run mode, the command is printed via on_evict.
+#   If the file is not writable, sudo is prepended. In dry-run mode, the command is printed via shell::on_evict.
 #
 # Example:
 #   remove_group         # Interactively select a group and remove its entry.
@@ -782,7 +782,7 @@ remove_group() {
     fi
 
     if [ "$dry_run" = "true" ]; then
-        on_evict "$sed_cmd"
+        shell::on_evict "$sed_cmd"
     else
         shell::run_cmd_eval "$sed_cmd"
         shell::colored_echo "🟢 Removed group: $selected_group" 46
@@ -796,7 +796,7 @@ remove_group() {
 #   update_group [-n]
 #
 # Parameters:
-#   - -n : Optional dry-run flag. If provided, the update command is printed using on_evict instead of executed.
+#   - -n : Optional dry-run flag. If provided, the update command is printed using shell::on_evict instead of executed.
 #
 # Description:
 #   The function reads SHELL_GROUP_CONF_FILE and uses fzf to let you select an existing group.
@@ -856,7 +856,7 @@ update_group() {
     fi
 
     if [ "$dry_run" = "true" ]; then
-        on_evict "$sed_cmd"
+        shell::on_evict "$sed_cmd"
     else
         shell::run_cmd_eval "$sed_cmd"
         shell::colored_echo "🟢 Updated group '$selected_group' with new keys: $new_keys" 46
@@ -870,7 +870,7 @@ update_group() {
 #   rename_group [-n]
 #
 # Parameters:
-#   - -n : Optional dry-run flag. If provided, the renaming command is printed using on_evict instead of executed.
+#   - -n : Optional dry-run flag. If provided, the renaming command is printed using shell::on_evict instead of executed.
 #
 # Description:
 #   The function reads the group configuration file (SHELL_GROUP_CONF_FILE) where each line is in the format:
@@ -879,7 +879,7 @@ update_group() {
 #   After selection, the function prompts for a new group name.
 #   It then constructs a sed command to replace the old group name with the new one in the configuration file.
 #   The sed command uses in-place editing options appropriate for macOS (sed -i '') or Linux (sed -i).
-#   In dry-run mode, the command is printed using on_evict; otherwise, it is executed using shell::run_cmd_eval.
+#   In dry-run mode, the command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
 #
 # Example:
 #   rename_group         # Interactively select a group and rename it.
@@ -928,7 +928,7 @@ rename_group() {
     fi
 
     if [ "$dry_run" = "true" ]; then
-        on_evict "$sed_cmd"
+        shell::on_evict "$sed_cmd"
     else
         shell::run_cmd_eval "$sed_cmd"
         shell::colored_echo "🟢 Renamed group '$old_group' to '$new_group'" 46
@@ -1071,7 +1071,7 @@ select_group() {
 #   clone_group [-n]
 #
 # Parameters:
-#   - -n : Optional dry-run flag. If provided, the cloning command is printed using on_evict instead of executed.
+#   - -n : Optional dry-run flag. If provided, the cloning command is printed using shell::on_evict instead of executed.
 #
 # Description:
 #   The function reads the group configuration file (SHELL_GROUP_CONF_FILE) where each line is in the format:
@@ -1080,7 +1080,7 @@ select_group() {
 #   After selection, it prompts for a new group name.
 #   The new group entry is then constructed with the new group name and the same comma-separated keys
 #   as the selected group, and appended to SHELL_GROUP_CONF_FILE.
-#   In dry-run mode, the final command is printed using on_evict; otherwise, it is executed using shell::run_cmd_eval.
+#   In dry-run mode, the final command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
 #
 # Example:
 #   clone_group         # Interactively select a group and create a clone with a new group name.
@@ -1144,7 +1144,7 @@ clone_group() {
     local cmd="echo \"$new_group_entry\" >> \"$SHELL_GROUP_CONF_FILE\""
 
     if [ "$dry_run" = "true" ]; then
-        on_evict "$cmd"
+        shell::on_evict "$cmd"
     else
         shell::run_cmd_eval "$cmd"
         shell::colored_echo "🟢 Created new group '$new_group' as a clone of '$selected_group' with keys: $keys_csv" 46
@@ -1160,14 +1160,14 @@ clone_group() {
 #   sync_key_group_conf [-n]
 #
 # Parameters:
-#   - -n : Optional dry-run flag. If provided, the new group configuration is printed using on_evict instead of being applied.
+#   - -n : Optional dry-run flag. If provided, the new group configuration is printed using shell::on_evict instead of being applied.
 #
 # Description:
 #   The function reads each group entry from SHELL_GROUP_CONF_FILE (entries in the format: group_name=key1,key2,...,keyN).
 #   For each group, it splits the comma‑separated list of keys and checks each key using exist_key_conf.
 #   It builds a new list of valid keys. If the new list is non‑empty, the group entry is updated;
 #   if it is empty, the group entry is omitted.
-#   In dry‑run mode, the new group configuration is printed via on_evict without modifying the file.
+#   In dry‑run mode, the new group configuration is printed via shell::on_evict without modifying the file.
 #
 # Example:
 #   sync_key_group_conf         # Synchronizes the group configuration file.
