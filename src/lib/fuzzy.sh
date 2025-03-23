@@ -60,12 +60,12 @@ shell::fzf_copy() {
     shell::colored_echo "🟢 File copied successfully to $destination_file" 46
 }
 
-# fzf_move function
+# shell::fzf_move function
 # Interactively selects a file to move and a destination directory using fzf,
 # then moves the selected file to the destination directory.
 #
 # Usage:
-#   fzf_move
+#   shell::fzf_move
 #
 # Description:
 #   This function leverages fzf to provide an interactive interface for choosing:
@@ -74,12 +74,12 @@ shell::fzf_copy() {
 #   It then moves the source file to the destination directory using the original filename.
 #
 # Example:
-#   fzf_move
+#   shell::fzf_move
 #
 # Requirements:
 #   - fzf must be installed.
 #   - Helper functions: shell::run_cmd_eval, shell::colored_echo, shell::get_os_type, shell::install_package, and shell::clip_value.
-fzf_move() {
+shell::fzf_move() {
     # Check if fzf is installed.
     shell::install_package fzf
 

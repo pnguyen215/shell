@@ -193,9 +193,9 @@ Access the shell library by opening your terminal and using the commands below. 
   Interactively selects a file to copy and a destination directory using `fzf` for fuzzy finding.  
   _Example:_ `shell::fzf_copy`
 
-- **`fzf_move`**  
+- **`shell::fzf_move`**  
   Interactively selects a file to move and a destination directory using `fzf`.  
-  _Example:_ `fzf_move`
+  _Example:_ `shell::fzf_move`
 
 - **`fzf_remove`**  
   Interactively selects a file or directory to remove using `fzf`.  
