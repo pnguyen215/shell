@@ -401,12 +401,12 @@ shell::list_installed_packages() {
     fi
 }
 
-# list_path_installed_packages function
+# shell::list_path_installed_packages function
 # Lists all packages installed via directory-based package installation on Linux or macOS,
 # along with their installation paths.
 #
 # Usage:
-#   list_path_installed_packages [base_install_path]
+#   shell::list_path_installed_packages [base_install_path]
 #
 # Parameters:
 #   - [base_install_path]: Optional. The base directory where packages are installed.
@@ -415,9 +415,9 @@ shell::list_installed_packages() {
 #           - /opt on Linux
 #
 # Example usage:
-#   list_path_installed_packages
-#   list_path_installed_packages /custom/install/path
-list_path_installed_packages() {
+#   shell::list_path_installed_packages
+#   shell::list_path_installed_packages /custom/install/path
+shell::list_path_installed_packages() {
     local base_path="$1"
     local os_type
     os_type=$(shell::get_os_type)
@@ -449,12 +449,12 @@ list_path_installed_packages() {
     done
 }
 
-# list_path_installed_packages_details function
+# shell::list_path_installed_packages_details function
 # Lists detailed information (including full path, directory size, and modification date)
 # for all packages installed via directory-based methods on Linux or macOS.
 #
 # Usage:
-#   list_path_installed_packages_details [base_install_path]
+#   shell::list_path_installed_packages_details [base_install_path]
 #
 # Parameters:
 #   - [base_install_path]: Optional. The base directory where packages are installed.
@@ -463,9 +463,9 @@ list_path_installed_packages() {
 #           - /opt on Linux
 #
 # Example usage:
-#   list_path_installed_packages_details
-#   list_path_installed_packages_details /custom/install/path
-list_path_installed_packages_details() {
+#   shell::list_path_installed_packages_details
+#   shell::list_path_installed_packages_details /custom/install/path
+shell::list_path_installed_packages_details() {
     local base_path="$1"
     local os_type
     os_type=$(shell::get_os_type)

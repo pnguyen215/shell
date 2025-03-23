@@ -84,9 +84,9 @@ Access the shell library by opening your terminal and using the commands below. 
   Lists all packages installed on the system via the native package manager.  
   _Example:_ `shell::list_installed_packages`
 
-- **`list_path_installed_packages`**  
+- **`shell::list_path_installed_packages`**  
   Lists packages installed in directory-based locations (e.g., `/usr/local`).  
-  _Example:_ `list_path_installed_packages`
+  _Example:_ `shell::list_path_installed_packages`
 
 - **`create_directory_if_not_exists`**  
   Creates a directory (including nested paths) if it does not already exist.  
