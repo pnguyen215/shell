@@ -207,17 +207,17 @@ Access the shell library by opening your terminal and using the commands below. 
 
   - `shell::add_bookmark <bookmark name>`
 
-- **`remove_bookmark`**
+- **`shell::remove_bookmark`**
   Deletes a bookmark with the specified name from the bookmarks file.
   _Example:_
 
-  - `remove_bookmark <bookmark_name>`
+  - `shell::remove_bookmark <bookmark_name>`
 
-- **`remove_bookmark_linux`**
+- **`shell::remove_bookmark_linux`**
   Deletes a bookmark with the specified name from the bookmarks file.
   _Example:_
 
-  - `remove_bookmark_linux <bookmark_name>`
+  - `shell::remove_bookmark_linux <bookmark_name>`
 
 - **`show_bookmark`**
   Displays a formatted list of all bookmarks.

@@ -145,11 +145,11 @@ shell::add_bookmark() {
     fi
 }
 
-# remove_bookmark function
+# shell::remove_bookmark function
 # Deletes a bookmark with the specified name from the bookmarks file.
 #
 # Usage:
-#   remove_bookmark <bookmark_name>
+#   shell::remove_bookmark <bookmark_name>
 #
 # Parameters:
 #   <bookmark_name> : The name of the bookmark to remove.
@@ -162,7 +162,7 @@ shell::add_bookmark() {
 # Notes:
 #   - The bookmarks file is specified by the global variable 'bookmarks_file'.
 #   - A temporary file (located at "$HOME/bookmarks_temp") is used during the removal process.
-# remove_bookmark() {
+# shell::remove_bookmark() {
 #     local bookmark_name="$1"
 
 #     if [[ -z "$bookmark_name" ]]; then
@@ -182,11 +182,11 @@ shell::add_bookmark() {
 #     fi
 # }
 
-# remove_bookmark function
+# shell::remove_bookmark function
 # Deletes a bookmark with the specified name from the bookmarks file.
 #
 # Usage:
-#   remove_bookmark <bookmark_name>
+#   shell::remove_bookmark <bookmark_name>
 #
 # Parameters:
 #   <bookmark_name> : The name of the bookmark to remove.
@@ -199,7 +199,7 @@ shell::add_bookmark() {
 #
 # Notes:
 #   - The bookmarks file is specified by the global variable 'bookmarks_file'.
-remove_bookmark() {
+shell::remove_bookmark() {
     local bookmark_name="$1"
 
     if [[ -z "$bookmark_name" ]]; then
@@ -241,11 +241,11 @@ remove_bookmark() {
     trap - EXIT
 }
 
-# remove_bookmark_linux function
+# shell::remove_bookmark_linux function
 # Deletes a bookmark with the specified name from the bookmarks file.
 #
 # Usage:
-#   remove_bookmark_linux <bookmark_name>
+#   shell::remove_bookmark_linux <bookmark_name>
 #
 # Parameters:
 #   <bookmark_name> : The name of the bookmark to remove.
@@ -257,7 +257,7 @@ remove_bookmark() {
 #
 # Notes:
 #   - The bookmarks file is specified by the global variable 'bookmarks_file'.
-remove_bookmark_linux() {
+shell::remove_bookmark_linux() {
     local bookmark_name="$1"
 
     if [[ -z "$bookmark_name" ]]; then
