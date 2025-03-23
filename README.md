@@ -138,9 +138,9 @@ Access the shell library by opening your terminal and using the commands below. 
   Moves one or more files to a specified destination directory.  
   _Example:_ `shell::move_files /path/to/dest file1.txt file2.txt`
 
-- **`remove_dataset`**  
+- **`shell::remove_dataset`**  
   Deletes a file or directory recursively with elevated privileges (`sudo rm -rf`). Use with caution.  
-  _Example:_ `remove_dataset obsolete-dir`
+  _Example:_ `shell::remove_dataset obsolete-dir`
 
 - **`editor`**  
   Opens a file from a specified directory in a chosen text editor. Use `-n` to open in a new instance (if supported).  

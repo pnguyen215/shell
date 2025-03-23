@@ -1128,11 +1128,11 @@ shell::move_files() {
     done
 }
 
-# remove_dataset function
+# shell::remove_dataset function
 # Removes a file or directory using sudo rm -rf.
 #
 # Usage:
-#   remove_dataset [-n] <filename/dir>
+#   shell::remove_dataset [-n] <filename/dir>
 #
 # Parameters:
 #   - -n           : Optional dry-run flag. If provided, the command will be printed using shell::on_evict instead of executed.
@@ -1144,9 +1144,9 @@ shell::move_files() {
 #   In dry-run mode, the command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd.
 #
 # Example:
-#   remove_dataset my-dir          # Removes the directory 'my-dir'.
-#   remove_dataset -n myfile.txt  # Prints the removal command without executing it.
-remove_dataset() {
+#   shell::remove_dataset my-dir          # Removes the directory 'my-dir'.
+#   shell::remove_dataset -n myfile.txt  # Prints the removal command without executing it.
+shell::remove_dataset() {
     local dry_run="false"
 
     # Check for the optional dry-run flag (-n).
@@ -1156,7 +1156,7 @@ remove_dataset() {
     fi
 
     if [ -z "$1" ]; then
-        echo "Usage: remove_dataset [-n] <filename/dir>"
+        echo "Usage: shell::remove_dataset [-n] <filename/dir>"
         return 1
     fi
 
