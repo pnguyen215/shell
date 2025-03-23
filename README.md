@@ -164,12 +164,12 @@ Access the shell library by opening your terminal and using the commands below. 
   Displays processes consuming significant memory, sorted by usage.  
   _Example:_ `shell::list_high_mem_usage`
 
-- **`open_link`**  
+- **`shell::open_link`**  
   Opens a URL in the default web browser. Use `-n` for silent operation (no output).  
   _Examples:_
 
-  - `open_link https://example.com`
-  - `open_link -n https://example.com`
+  - `shell::open_link https://example.com`
+  - `shell::open_link -n https://example.com`
 
 - **`loading_spinner`**  
   Displays a console loading spinner for a specified duration (in seconds). Use `-n` to run indefinitely until stopped.  

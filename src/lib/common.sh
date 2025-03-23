@@ -1491,11 +1491,11 @@ shell::list_high_mem_usage() {
     fi
 }
 
-# open_link function
+# shell::open_link function
 # Opens the specified URL in the default web browser.
 #
 # Usage:
-#   open_link [-n] <url>
+#   shell::open_link [-n] <url>
 #
 # Parameters:
 #   - -n   : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
@@ -1507,9 +1507,9 @@ shell::list_high_mem_usage() {
 #   In dry-run mode, the command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
 #
 # Example:
-#   open_link https://example.com         # Opens the URL in the default browser.
-#   open_link -n https://example.com      # Prints the command without executing it.
-open_link() {
+#   shell::open_link https://example.com         # Opens the URL in the default browser.
+#   shell::open_link -n https://example.com      # Prints the command without executing it.
+shell::open_link() {
     local dry_run="false"
 
     # Check for the optional dry-run flag (-n).
@@ -1519,7 +1519,7 @@ open_link() {
     fi
 
     if [ -z "$1" ]; then
-        echo "Usage: open_link [-n] <url>"
+        echo "Usage: shell::open_link [-n] <url>"
         return 1
     fi
 
@@ -1538,7 +1538,7 @@ open_link() {
             return 1
         fi
     else
-        shell::colored_echo "🔴 Error: Unsupported OS for open_link function." 196
+        shell::colored_echo "🔴 Error: Unsupported OS for shell::open_link function." 196
         return 1
     fi
 
