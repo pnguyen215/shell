@@ -51,11 +51,11 @@ install_oh_my_zsh() {
     fi
 }
 
-# uninstall_oh_my_zsh function
+# shell::removal_oh_my_zsh function
 # Uninstalls Oh My Zsh by removing its directory and restoring the original .zshrc backup if available.
 #
 # Usage:
-#   uninstall_oh_my_zsh [-n]
+#   shell::removal_oh_my_zsh [-n]
 #
 # Parameters:
 #   - -n : Optional dry-run flag. If provided, the uninstallation commands are printed using shell::on_evict instead of executed.
@@ -67,9 +67,9 @@ install_oh_my_zsh() {
 #   In dry-run mode, the commands are displayed using shell::on_evict; otherwise, they are executed using shell::run_cmd_eval.
 #
 # Example:
-#   uninstall_oh_my_zsh         # Uninstalls Oh My Zsh if installed.
-#   uninstall_oh_my_zsh -n      # Displays the uninstallation commands without executing them.
-uninstall_oh_my_zsh() {
+#   shell::removal_oh_my_zsh         # Uninstalls Oh My Zsh if installed.
+#   shell::removal_oh_my_zsh -n      # Displays the uninstallation commands without executing them.
+shell::removal_oh_my_zsh() {
     local dry_run="false"
 
     # Check for the optional dry-run flag (-n)
@@ -102,6 +102,7 @@ uninstall_oh_my_zsh() {
         local restore_cmd="mv \"$backup_zshrc\" \"$zshrc\""
         if [ "$dry_run" = "true" ]; then
             shell::on_evict "$restore_cmd"
+            return 0
         else
             shell::run_cmd_eval "$restore_cmd"
         fi

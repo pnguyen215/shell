@@ -255,12 +255,12 @@ Access the shell library by opening your terminal and using the commands below. 
   - `install_oh_my_zsh`
   - `install_oh_my_zsh -n`
 
-- **`uninstall_oh_my_zsh`**
+- **`shell::removal_oh_my_zsh`**
   Uninstalls Oh My Zsh by removing its directory and restoring the original .zshrc backup if available.
   _Example:_
 
-  - `uninstall_oh_my_zsh`
-  - `uninstall_oh_my_zsh -n`
+  - `shell::removal_oh_my_zsh`
+  - `shell::removal_oh_my_zsh -n`
 
 - **`read_conf`**
   Sources a configuration file, allowing its variables and functions to be loaded into the current shell.
