@@ -142,12 +142,12 @@ Access the shell library by opening your terminal and using the commands below. 
   Deletes a file or directory recursively with elevated privileges (`sudo rm -rf`). Use with caution.  
   _Example:_ `shell::remove_dataset obsolete-dir`
 
-- **`editor`**  
+- **`shell::editor`**  
   Opens a file from a specified directory in a chosen text editor. Use `-n` to open in a new instance (if supported).  
   _Examples:_
 
-  - `editor ~/documents`
-  - `editor -n ~/documents`
+  - `shell::editor ~/documents`
+  - `shell::editor -n ~/documents`
 
 - **`download_dataset`**  
   Downloads a file from a URL and saves it with the specified filename.  

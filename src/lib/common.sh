@@ -1170,18 +1170,18 @@ shell::remove_dataset() {
     fi
 }
 
-# editor function
+# shell::editor function
 # Open a selected file from a specified folder using a chosen text editor.
 #
 # Usage:
-#   editor [-n] <folder>
+#   shell::editor [-n] <folder>
 #
 # Parameters:
 #   - -n       : Optional dry-run flag. If provided, the command will be printed using shell::on_evict instead of executed.
 #   - <folder> : The directory containing the files you want to edit.
 #
 # Description:
-#   The 'editor' function provides an interactive way to select a file from the specified
+#   The 'shell::editor' function provides an interactive way to select a file from the specified
 #   folder and open it using a chosen text editor. It uses 'fzf' for fuzzy file and command selection.
 #   The function supports a dry-run mode where the command is printed without execution.
 #
@@ -1193,13 +1193,13 @@ shell::remove_dataset() {
 #   - nano
 #
 # Example:
-#   editor ~/documents          # Opens a file in the selected text editor.
-#   editor -n ~/documents       # Prints the command that would be used, without executing it.
+#   shell::editor ~/documents          # Opens a file in the selected text editor.
+#   shell::editor -n ~/documents       # Prints the command that would be used, without executing it.
 #
 # Requirements:
 #   - fzf must be installed.
 #   - Helper functions: shell::run_cmd, shell::on_evict, shell::colored_echo, and shell::get_os_type.
-editor() {
+shell::editor() {
     local dry_run="false"
 
     # Check for the optional dry-run flag (-n).
@@ -1209,7 +1209,7 @@ editor() {
     fi
 
     if [ $# -lt 1 ]; then
-        echo "Usage: editor [-n] <folder>"
+        echo "Usage: shell::editor [-n] <folder>"
         return 1
     fi
 
