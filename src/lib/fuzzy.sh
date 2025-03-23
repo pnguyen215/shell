@@ -1,12 +1,12 @@
 #!/bin/bash
 # fuzzy.sh
 
-# fzf_copy function
+# shell::fzf_copy function
 # Interactively selects a file to copy and a destination directory using fzf,
 # then copies the selected file to the destination directory.
 #
 # Usage:
-#   fzf_copy
+#   shell::fzf_copy
 #
 # Description:
 #   This function leverages fzf to provide an interactive interface for choosing:
@@ -15,12 +15,12 @@
 #   It then copies the source file to the destination directory using the original filename.
 #
 # Example:
-#   fzf_copy
+#   shell::fzf_copy
 #
 # Requirements:
 #   - fzf must be installed.
 #   - Helper functions: shell::run_cmd_eval, shell::colored_echo, and shell::get_os_type.
-fzf_copy() {
+shell::fzf_copy() {
     # Check if fzf is installed.
     shell::install_package fzf
 

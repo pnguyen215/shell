@@ -189,9 +189,9 @@ Access the shell library by opening your terminal and using the commands below. 
   - `shell::async my_function arg1 arg2`
   - `shell::async -n ls`
 
-- **`fzf_copy`**  
+- **`shell::fzf_copy`**  
   Interactively selects a file to copy and a destination directory using `fzf` for fuzzy finding.  
-  _Example:_ `fzf_copy`
+  _Example:_ `shell::fzf_copy`
 
 - **`fzf_move`**  
   Interactively selects a file to move and a destination directory using `fzf`.  
