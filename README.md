@@ -68,9 +68,9 @@ Access the shell library by opening your terminal and using the commands below. 
   Executes a command using `eval` and logs it, useful for dynamic command construction.  
   _Example:_ `shell::run_cmd_eval ls -l`
 
-- **`is_command_available`**  
+- **`shell::is_command_available`**  
   Checks if a given command exists in the system's PATH, returning a success or failure status.  
-  _Example:_ `is_command_available git`
+  _Example:_ `shell::is_command_available git`
 
 - **`install_package`**  
   Installs a package using the appropriate package manager for the OS (e.g., `apt` for Linux, `brew` for macOS).  

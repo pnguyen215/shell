@@ -34,21 +34,21 @@ function install_homebrew() {
 #   uninstall_homebrew
 #
 # Description:
-#   This function first checks if Homebrew is installed using is_command_available.
+#   This function first checks if Homebrew is installed using shell::is_command_available.
 #   If Homebrew is detected, it uninstalls Homebrew by running the official uninstall
 #   script. Additionally, it removes Homebrew-related lines from the user's shell
 #   profile (e.g., $HOME/.zprofile) using sed. The commands are executed via
 #   shell::run_cmd_eval to ensure they are logged prior to execution.
 #
 # Dependencies:
-#   - is_command_available: Checks if the 'brew' command is available in the PATH.
+#   - shell::is_command_available: Checks if the 'brew' command is available in the PATH.
 #   - shell::run_cmd_eval: Executes shell commands with logging.
 #   - shell::colored_echo: Displays colored messages to the terminal.
 #
 # Example:
 #   uninstall_homebrew
 function uninstall_homebrew() {
-    if is_command_available brew; then
+    if shell::is_command_available brew; then
         echo "🚀 Uninstalling Homebrew..."
         shell::run_cmd_eval '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh)"'
         shell::run_cmd_eval 'sed -i.bak '/# Homebrew/d' "$HOME/.zprofile"' # Remove Homebrew-related lines from the shell profile

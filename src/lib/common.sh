@@ -227,11 +227,11 @@ shell::run_cmd_eval() {
     eval "$command"
 }
 
-# is_command_available function
+# shell::is_command_available function
 # Check if a command is available in the system's PATH.
 #
 # Usage:
-#   is_command_available <command>
+#   shell::is_command_available <command>
 #
 # Parameters:
 #   - <command>: The command to check
@@ -240,12 +240,12 @@ shell::run_cmd_eval() {
 #   0 if the command is available, 1 otherwise
 #
 # Example usage:
-#   if is_command_available git; then
+#   if shell::is_command_available git; then
 #     echo "Git is installed"
 #   else
 #     echo "Git is not installed"
 #   fi
-is_command_available() {
+shell::is_command_available() {
     command -v "$1" &>/dev/null
     return $?
 }
@@ -274,18 +274,18 @@ install_package() {
             return 0
         fi
 
-        if is_command_available apt-get; then
+        if shell::is_command_available apt-get; then
             shell::run_cmd_eval "sudo apt-get update && sudo apt-get install -y $package"
-        elif is_command_available yum; then
+        elif shell::is_command_available yum; then
             shell::run_cmd_eval "sudo yum install -y $package"
-        elif is_command_available dnf; then
+        elif shell::is_command_available dnf; then
             shell::run_cmd_eval "sudo dnf install -y $package"
         else
             shell::colored_echo "🔴 Error: Unsupported package manager on Linux." 31
             return 1
         fi
     elif [ "$os_type" = "macos" ]; then # macOS
-        if ! is_command_available brew; then
+        if ! shell::is_command_available brew; then
             shell::colored_echo "Homebrew is not installed. Installing Homebrew..." 33
             install_homebrew
         fi
@@ -318,19 +318,19 @@ uninstall_package() {
     os_type=$(shell::get_os_type)
 
     if [ "$os_type" = "linux" ]; then
-        if is_command_available apt-get; then
+        if shell::is_command_available apt-get; then
             if is_package_installed_linux "$package"; then
                 shell::run_cmd_eval "sudo apt-get remove -y $package"
             else
                 shell::colored_echo "🟡 $package is not installed. Skipping uninstallation." 33
             fi
-        elif is_command_available yum; then
+        elif shell::is_command_available yum; then
             if rpm -q "$package" >/dev/null 2>&1; then
                 shell::run_cmd_eval "sudo yum remove -y $package"
             else
                 shell::colored_echo "🟡 $package is not installed. Skipping uninstallation." 33
             fi
-        elif is_command_available dnf; then
+        elif shell::is_command_available dnf; then
             if rpm -q "$package" >/dev/null 2>&1; then
                 shell::run_cmd_eval "sudo dnf remove -y $package"
             else
@@ -341,7 +341,7 @@ uninstall_package() {
             return 1
         fi
     elif [ "$os_type" = "macos" ]; then
-        if is_command_available brew; then
+        if shell::is_command_available brew; then
             if brew list --versions "$package" >/dev/null 2>&1; then
                 shell::run_cmd_eval "brew uninstall $package"
             else
@@ -377,10 +377,10 @@ list_installed_packages() {
     os_type=$(shell::get_os_type)
 
     if [ "$os_type" = "linux" ]; then
-        if is_command_available apt-get; then
+        if shell::is_command_available apt-get; then
             shell::colored_echo "Listing installed packages (APT/Debian-based):" 34
             shell::run_cmd_eval dpkg -l
-        elif is_command_available yum || is_command_available dnf; then
+        elif shell::is_command_available yum || shell::is_command_available dnf; then
             shell::colored_echo "Listing installed packages (RPM-based):" 34
             shell::run_cmd_eval rpm -qa | sort
         else
@@ -388,7 +388,7 @@ list_installed_packages() {
             return 1
         fi
     elif [ "$os_type" = "macos" ]; then
-        if is_command_available brew; then
+        if shell::is_command_available brew; then
             shell::colored_echo "Listing installed packages (Homebrew):" 32
             shell::run_cmd_eval brew list
         else
@@ -527,10 +527,10 @@ list_path_installed_packages_details() {
 is_package_installed_linux() {
     local package="$1"
 
-    if is_command_available apt-get; then
+    if shell::is_command_available apt-get; then
         # Debian-based: Check using dpkg.
         dpkg -s "$package" >/dev/null 2>&1
-    elif is_command_available rpm; then
+    elif shell::is_command_available rpm; then
         # RPM-based: Check using rpm query.
         rpm -q "$package" >/dev/null 2>&1
     else
@@ -748,10 +748,10 @@ clip_cwd() {
         echo -n "$adr" | pbcopy
         shell::colored_echo "🟢 Path copied to clipboard using pbcopy" 46
     elif [[ "$os" == "linux" ]]; then
-        if is_command_available xclip; then
+        if shell::is_command_available xclip; then
             echo -n "$adr" | xclip -selection clipboard
             shell::colored_echo "🟢 Path copied to clipboard using xclip" 46
-        elif is_command_available xsel; then
+        elif shell::is_command_available xsel; then
             echo -n "$adr" | xsel --clipboard --input
             shell::colored_echo "🟢 Path copied to clipboard using xsel" 46
         else
@@ -781,7 +781,7 @@ clip_cwd() {
 #
 # Dependencies:
 #   - shell::get_os_type: To detect the operating system.
-#   - is_command_available: To check for the availability of xclip or xsel on Linux.
+#   - shell::is_command_available: To check for the availability of xclip or xsel on Linux.
 #   - shell::colored_echo: To print colored status messages.
 #
 # Example:
@@ -800,10 +800,10 @@ clip_value() {
         echo -n "$value" | pbcopy
         shell::colored_echo "🟢 Value copied to clipboard using pbcopy." 46
     elif [[ "$os" == "linux" ]]; then
-        if is_command_available xclip; then
+        if shell::is_command_available xclip; then
             echo -n "$value" | xclip -selection clipboard
             shell::colored_echo "🟢 Value copied to clipboard using xclip." 46
-        elif is_command_available xsel; then
+        elif shell::is_command_available xsel; then
             echo -n "$value" | xsel --clipboard --input
             shell::colored_echo "🟢 Value copied to clipboard using xsel." 46
         else
@@ -1531,7 +1531,7 @@ open_link() {
     if [ "$os_type" = "macos" ]; then
         cmd="open \"$url\""
     elif [ "$os_type" = "linux" ]; then
-        if is_command_available xdg-open; then
+        if shell::is_command_available xdg-open; then
             cmd="xdg-open \"$url\""
         else
             shell::colored_echo "🔴 Error: xdg-open is not installed on Linux." 196
@@ -1622,7 +1622,7 @@ measure_time() {
     local exit_code
 
     if [ "$os_type" = "macos" ]; then
-        if is_command_available gdate; then
+        if shell::is_command_available gdate; then
             local start_time
             start_time=$(gdate +%s%3N)
             "$@"
