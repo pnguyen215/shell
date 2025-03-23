@@ -158,11 +158,11 @@ shell::fzf_remove() {
     shell::colored_echo "🟢 Removed successfully: $target" 46
 }
 
-# fzf_zip_attachment function
+# shell::fzf_zip_attachment function
 # Zips selected files from a specified folder and outputs the absolute path of the created zip file.
 #
 # Usage:
-#   fzf_zip_attachment [-n] <folder_path>
+#   shell::fzf_zip_attachment [-n] <folder_path>
 #
 # Parameters:
 #   - -n          : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
@@ -177,9 +177,9 @@ shell::fzf_remove() {
 #   Finally, the absolute path of the created zip file is echoed.
 #
 # Example:
-#   fzf_zip_attachment /path/to/folder
-#   fzf_zip_attachment -n /path/to/folder  # Dry-run: prints the command without executing it.
-fzf_zip_attachment() {
+#   shell::fzf_zip_attachment /path/to/folder
+#   shell::fzf_zip_attachment -n /path/to/folder  # Dry-run: prints the command without executing it.
+shell::fzf_zip_attachment() {
     # Check if fzf is installed.
     shell::install_package fzf
 
@@ -192,7 +192,7 @@ fzf_zip_attachment() {
     fi
 
     if [ $# -lt 1 ]; then
-        echo "Usage: fzf_zip_attachment [-n] <folder_path>"
+        echo "Usage: shell::fzf_zip_attachment [-n] <folder_path>"
         return 1
     fi
 
@@ -242,7 +242,7 @@ fzf_zip_attachment() {
 }
 
 # fzf_current_zip_attachment function
-# Reuses fzf_zip_attachment to zip selected files from the current directory,
+# Reuses shell::fzf_zip_attachment to zip selected files from the current directory,
 # ensuring that when unzipped, the archive creates a single top-level folder.
 #
 # Usage:
@@ -253,7 +253,7 @@ fzf_zip_attachment() {
 #
 # Description:
 #   This function obtains the current directory's name and its parent directory.
-#   It then changes to the parent directory and calls fzf_zip_attachment on the folder name.
+#   It then changes to the parent directory and calls shell::fzf_zip_attachment on the folder name.
 #   This ensures that the zip command is run with relative paths so that the resulting archive
 #   contains only one top-level folder (the folder name). After zipping, it moves the zip file
 #   back to the original (current) directory, echoes its absolute path, and copies the value to the clipboard.
@@ -280,14 +280,14 @@ fzf_current_zip_attachment() {
 
     local zip_file
     if [ "$dry_run" = "true" ]; then
-        fzf_zip_attachment -n "$current_dir"
+        shell::fzf_zip_attachment -n "$current_dir"
         popd >/dev/null
         return 0
     else
-        fzf_zip_attachment "$current_dir"
+        shell::fzf_zip_attachment "$current_dir"
     fi
 
-    # fzf_zip_attachment will create a zip file named "<folder_name>.zip" in the parent directory.
+    # shell::fzf_zip_attachment will create a zip file named "<folder_name>.zip" in the parent directory.
     local created_zip="${parent_dir}/${current_dir}.zip"
     popd >/dev/null
 
