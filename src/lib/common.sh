@@ -1057,11 +1057,11 @@ shell::copy_files() {
     done
 }
 
-# move_files function
+# shell::move_files function
 # Moves one or more files to a destination folder.
 #
 # Usage:
-#   move_files [-n] <destination_folder> <file1> <file2> ... <fileN>
+#   shell::move_files [-n] <destination_folder> <file1> <file2> ... <fileN>
 #
 # Parameters:
 #   - -n                  : Optional dry-run flag. If provided, the command will be printed using shell::on_evict instead of executed.
@@ -1078,9 +1078,9 @@ shell::copy_files() {
 #   If an error occurs for a particular file (e.g., missing source or destination file conflict), the error is logged and the function continues with the next file.
 #
 # Example:
-#   move_files /path/to/dest file1.txt file2.txt              # Moves file1.txt and file2.txt to /path/to/dest.
-#   move_files -n /path/to/dest file1.txt file2.txt             # Prints the move commands without executing them.
-move_files() {
+#   shell::move_files /path/to/dest file1.txt file2.txt              # Moves file1.txt and file2.txt to /path/to/dest.
+#   shell::move_files -n /path/to/dest file1.txt file2.txt             # Prints the move commands without executing them.
+shell::move_files() {
     local dry_run="false"
 
     if [ "$1" = "-n" ]; then
@@ -1089,7 +1089,7 @@ move_files() {
     fi
 
     if [ $# -lt 2 ]; then
-        echo "Usage: move_files [-n] <destination_folder> <file1> <file2> ... <fileN>"
+        echo "Usage: shell::move_files [-n] <destination_folder> <file1> <file2> ... <fileN>"
         return 1
     fi
 

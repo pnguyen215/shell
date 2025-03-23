@@ -134,9 +134,9 @@ Access the shell library by opening your terminal and using the commands below. 
   Copies a source file to one or more destination filenames in the current directory.  
   _Example:_ `shell::copy_files source.txt dest1.txt dest2.txt`
 
-- **`move_files`**  
+- **`shell::move_files`**  
   Moves one or more files to a specified destination directory.  
-  _Example:_ `move_files /path/to/dest file1.txt file2.txt`
+  _Example:_ `shell::move_files /path/to/dest file1.txt file2.txt`
 
 - **`remove_dataset`**  
   Deletes a file or directory recursively with elevated privileges (`sudo rm -rf`). Use with caution.  
