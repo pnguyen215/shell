@@ -39,6 +39,15 @@ declare -r SHELL_KEY_CONF_FILE="$SHELL_CONF_WORKING/key.conf"
 #   SHELL_KEY_CONF_FILE_WORKSPACE="$SHELL_CONF_WORKING_WORKSPACE/profile.conf"
 declare -r SHELL_KEY_CONF_FILE_WORKSPACE="$SHELL_CONF_WORKING_WORKSPACE/profile.conf"
 
+# SHELL_KEY_CONF_SETTING_WORKSPACE constant
+# This variable defines the path to the settings configuration file within the workspace directory.
+# It is used to store user-specific settings that may affect the behavior of the shell environment.
+# This file can include various configurations that are not tied to specific keys or groups.
+#
+# Example:
+#   SHELL_KEY_CONF_SETTING_WORKSPACE="$SHELL_CONF_WORKING_WORKSPACE/settings.conf"
+declare -r SHELL_KEY_CONF_SETTING_WORKSPACE="$SHELL_CONF_WORKING_WORKSPACE/settings.conf"
+
 # SHELL_GROUP_CONF_FILE constant
 # This variable defines the path to the group configuration file used by the shell bash library.
 # The file stores group definitions in the following format:
