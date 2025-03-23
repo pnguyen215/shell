@@ -96,18 +96,18 @@ shell::goto_usage() {
     echo "    shell::opent                             # (Mac Only) Open current directory in new Finder Tab."
     echo "    shell::opent <location>                  # (Mac Only) Open location in new Finder Tab."
     echo
-    echo "    goto                              # Shows help."
-    echo "    goto /User/ ./Home ~/help         # Goes to directory."
-    echo "    goto -all | -list                 # Shows all bookmarks."
-    echo "    goto <bookmark name>              # Goes to bookmarked directory."
-    echo "    goto -s <bookmark name>           # Saves current directory to bookmarks with given name"
-    echo "    goto back                         # Goes back in history"
-    echo "    goto -cp                          # Copy address to clipboard"
-    echo "    goto -d                           # Deletes bookmark"
+    echo "    shell::goto                              # Shows help."
+    echo "    shell::goto /User/ ./Home ~/help         # Goes to directory."
+    echo "    shell::goto -all | -list                 # Shows all bookmarks."
+    echo "    shell::goto <bookmark name>              # Goes to bookmarked directory."
+    echo "    shell::goto -s <bookmark name>           # Saves current directory to bookmarks with given name"
+    echo "    shell::goto back                         # Goes back in history"
+    echo "    shell::goto -cp                          # Copy address to clipboard"
+    echo "    shell::goto -d                           # Deletes bookmark"
     echo
     echo
-    echo "    goto help | -h                     # show help file."
-    echo "    goto -ver | --version | -v         # Show version."
+    echo "    shell::goto help | -h                     # show help file."
+    echo "    shell::goto -ver | --version | -v         # Show version."
     echo
     echo
 }
