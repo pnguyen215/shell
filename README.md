@@ -197,9 +197,9 @@ Access the shell library by opening your terminal and using the commands below. 
   Interactively selects a file to move and a destination directory using `fzf`.  
   _Example:_ `shell::fzf_move`
 
-- **`fzf_remove`**  
+- **`shell::fzf_remove`**  
   Interactively selects a file or directory to remove using `fzf`.  
-  _Example:_ `fzf_remove`
+  _Example:_ `shell::fzf_remove`
 
 - **`shell::add_bookmark`**
   Adds a bookmark for the current directory with the specified name.

@@ -119,12 +119,12 @@ shell::fzf_move() {
     shell::colored_echo "🟢 File moved successfully to $destination_file" 46
 }
 
-# fzf_remove function
+# shell::fzf_remove function
 # Interactively selects a file or directory to remove using fzf,
 # then removes the selected file or directory.
 #
 # Usage:
-#   fzf_remove
+#   shell::fzf_remove
 #
 # Description:
 #   This function leverages fzf to provide an interactive interface for choosing:
@@ -132,12 +132,12 @@ shell::fzf_move() {
 #   It then removes the selected file or directory using the original path.
 #
 # Example:
-#   fzf_remove
+#   shell::fzf_remove
 #
 # Requirements:
 #   - fzf must be installed.
 #   - Helper functions: shell::run_cmd_eval, shell::colored_echo, shell::get_os_type, shell::install_package, and shell::clip_value.
-fzf_remove() {
+shell::fzf_remove() {
     # Check if fzf is installed.
     shell::install_package fzf
 
