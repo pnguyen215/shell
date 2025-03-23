@@ -1,7 +1,7 @@
 #!/bin/bash
 # common.sh
 
-# get_os_type function
+# shell::get_os_type function
 # Determines the current operating system type and outputs a standardized string.
 #
 # Outputs:
@@ -11,7 +11,7 @@
 #   "unknown"  - For unrecognized operating systems
 #
 # Example usage:
-# os_type=$(get_os_type)
+# os_type=$(shell::get_os_type)
 # case "$os_type" in
 #   "linux")
 #     echo "Linux system detected"
@@ -26,7 +26,7 @@
 #     echo "Unrecognized system"
 #     ;;
 # esac
-get_os_type() {
+shell::get_os_type() {
     local os_name
     os_name=$(uname -s | tr '[:upper:]' '[:lower:]')
 
@@ -147,9 +147,9 @@ colored_echo() {
 run_cmd() {
     local command="$*"
 
-    # Capture the OS type output from get_os_type
+    # Capture the OS type output from shell::get_os_type
     local os_type
-    os_type=$(get_os_type)
+    os_type=$(shell::get_os_type)
 
     # Set appropriate color based on OS
     local color_code=36 # Default cyan
@@ -203,9 +203,9 @@ run_cmd() {
 #   - Prefer the 'wsd_exe_cmd' function for simpler commands without special characters or pipes.
 run_cmd_eval() {
     local command="$*"
-    # Capture the OS type output from get_os_type
+    # Capture the OS type output from shell::get_os_type
     local os_type
-    os_type=$(get_os_type)
+    os_type=$(shell::get_os_type)
 
     # Set appropriate color based on OS
     local color_code=36 # Default cyan
@@ -265,7 +265,7 @@ install_package() {
     local package="$1"
 
     local os_type
-    os_type=$(get_os_type)
+    os_type=$(shell::get_os_type)
 
     if [ "$os_type" = "linux" ]; then # Linux
         # Check if the package is already installed on Linux.
@@ -315,7 +315,7 @@ install_package() {
 uninstall_package() {
     local package="$1"
     local os_type
-    os_type=$(get_os_type)
+    os_type=$(shell::get_os_type)
 
     if [ "$os_type" = "linux" ]; then
         if is_command_available apt-get; then
@@ -374,7 +374,7 @@ uninstall_package() {
 #   list_installed_packages
 list_installed_packages() {
     local os_type
-    os_type=$(get_os_type)
+    os_type=$(shell::get_os_type)
 
     if [ "$os_type" = "linux" ]; then
         if is_command_available apt-get; then
@@ -420,7 +420,7 @@ list_installed_packages() {
 list_path_installed_packages() {
     local base_path="$1"
     local os_type
-    os_type=$(get_os_type)
+    os_type=$(shell::get_os_type)
 
     # Set default installation directory if not provided.
     if [ -z "$base_path" ]; then
@@ -468,7 +468,7 @@ list_path_installed_packages() {
 list_path_installed_packages_details() {
     local base_path="$1"
     local os_type
-    os_type=$(get_os_type)
+    os_type=$(shell::get_os_type)
 
     # Set default base path if none is provided.
     if [ -z "$base_path" ]; then
@@ -566,7 +566,7 @@ create_directory_if_not_exists() {
 
     local dir="$1"
     local os
-    os=$(get_os_type)
+    os=$(shell::get_os_type)
 
     # On macOS, if the provided path is not absolute, assume it's relative to $HOME.
     if [[ "$os" == "macos" ]]; then
@@ -621,7 +621,7 @@ create_file_if_not_exists() {
     local directory
     directory="$(dirname "$filename")"
     local os
-    os=$(get_os_type)
+    os=$(shell::get_os_type)
 
     # On macOS, if the provided directory path is not absolute, assume it's relative to $HOME.
     if [[ "$os" == "macos" ]]; then
@@ -707,7 +707,7 @@ grant777() {
     # Determine the current permission of the target
     local current_perm=""
     local os_type
-    os_type=$(get_os_type)
+    os_type=$(shell::get_os_type)
     if [ "$os_type" = "macos" ]; then
         current_perm=$(stat -f "%Lp" "$target")
     else
@@ -742,7 +742,7 @@ grant777() {
 clip_cwd() {
     local adr="$PWD"
     local os
-    os=$(get_os_type)
+    os=$(shell::get_os_type)
 
     if [[ "$os" == "macos" ]]; then
         echo -n "$adr" | pbcopy
@@ -775,12 +775,12 @@ clip_cwd() {
 #
 # Description:
 #   This function first checks if a value has been provided. It then determines the current operating
-#   system using the get_os_type function. On macOS, it uses pbcopy to copy the value to the clipboard.
+#   system using the shell::get_os_type function. On macOS, it uses pbcopy to copy the value to the clipboard.
 #   On Linux, it first checks if xclip is available and uses it; if not, it falls back to xsel.
 #   If no clipboard tool is found or the OS is unsupported, an error message is displayed.
 #
 # Dependencies:
-#   - get_os_type: To detect the operating system.
+#   - shell::get_os_type: To detect the operating system.
 #   - is_command_available: To check for the availability of xclip or xsel on Linux.
 #   - colored_echo: To print colored status messages.
 #
@@ -794,7 +794,7 @@ clip_value() {
     fi
 
     local os
-    os=$(get_os_type)
+    os=$(shell::get_os_type)
 
     if [[ "$os" == "macos" ]]; then
         echo -n "$value" | pbcopy
@@ -829,7 +829,7 @@ clip_value() {
 #   TEMP_DIR=$(get_temp_dir)
 #   echo "Using temporary directory: $TEMP_DIR"
 get_temp_dir() {
-    get_os_type
+    shell::get_os_type
     local os=$?
 
     if [ "$os" = "linux" ]; then # Linux
@@ -1198,7 +1198,7 @@ remove_dataset() {
 #
 # Requirements:
 #   - fzf must be installed.
-#   - Helper functions: run_cmd, on_evict, colored_echo, and get_os_type.
+#   - Helper functions: run_cmd, on_evict, colored_echo, and shell::get_os_type.
 editor() {
     local dry_run="false"
 
@@ -1221,7 +1221,7 @@ editor() {
 
     # Determine absolute path command based on OS.
     local os_type
-    os_type=$(get_os_type)
+    os_type=$(shell::get_os_type)
     local abs_command=()
     if [ "$os_type" = "macos" ]; then
         if command -v realpath >/dev/null 2>&1; then
@@ -1452,7 +1452,7 @@ unarchive() {
 #   - -n : Optional dry-run flag. If provided, the command is printed using on_evict instead of executed.
 #
 # Description:
-#   This function retrieves the operating system type using get_os_type. For macOS, it uses 'top' to sort processes by resident size (RSIZE)
+#   This function retrieves the operating system type using shell::get_os_type. For macOS, it uses 'top' to sort processes by resident size (RSIZE)
 #   and filters the output to display processes consuming at least 100 MB. For Linux, it uses 'ps' to list processes sorted by memory usage.
 #   In dry-run mode, the constructed command is printed using on_evict; otherwise, it is executed using run_cmd_eval.
 #
@@ -1468,9 +1468,9 @@ list_high_mem_usage() {
         shift
     fi
 
-    # Determine the OS type using get_os_type
+    # Determine the OS type using shell::get_os_type
     local os_type
-    os_type=$(get_os_type)
+    os_type=$(shell::get_os_type)
 
     local cmd=""
     if [ "$os_type" = "macos" ]; then
@@ -1502,7 +1502,7 @@ list_high_mem_usage() {
 #   - <url>: The URL to open in the default web browser.
 #
 # Description:
-#   This function determines the current operating system using get_os_type. On macOS, it uses the 'open' command;
+#   This function determines the current operating system using shell::get_os_type. On macOS, it uses the 'open' command;
 #   on Linux, it uses 'xdg-open' (if available). If the required command is missing on Linux, an error is displayed.
 #   In dry-run mode, the command is printed using on_evict; otherwise, it is executed using run_cmd_eval.
 #
@@ -1525,7 +1525,7 @@ open_link() {
 
     local url="$1"
     local os_type
-    os_type=$(get_os_type)
+    os_type=$(shell::get_os_type)
     local cmd=""
 
     if [ "$os_type" = "macos" ]; then
@@ -1617,7 +1617,7 @@ loading_spinner() {
 #   measure_time sleep 2    # Executes 'sleep 2' and displays the execution time.
 measure_time() {
     local os_type
-    os_type=$(get_os_type)
+    os_type=$(shell::get_os_type)
 
     local exit_code
 

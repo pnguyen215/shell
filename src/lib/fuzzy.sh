@@ -19,7 +19,7 @@
 #
 # Requirements:
 #   - fzf must be installed.
-#   - Helper functions: run_cmd_eval, colored_echo, and get_os_type.
+#   - Helper functions: run_cmd_eval, colored_echo, and shell::get_os_type.
 fzf_copy() {
     # Check if fzf is installed.
     install_package fzf
@@ -78,7 +78,7 @@ fzf_copy() {
 #
 # Requirements:
 #   - fzf must be installed.
-#   - Helper functions: run_cmd_eval, colored_echo, get_os_type, install_package, and clip_value.
+#   - Helper functions: run_cmd_eval, colored_echo, shell::get_os_type, install_package, and clip_value.
 fzf_move() {
     # Check if fzf is installed.
     install_package fzf
@@ -136,7 +136,7 @@ fzf_move() {
 #
 # Requirements:
 #   - fzf must be installed.
-#   - Helper functions: run_cmd_eval, colored_echo, get_os_type, install_package, and clip_value.
+#   - Helper functions: run_cmd_eval, colored_echo, shell::get_os_type, install_package, and clip_value.
 fzf_remove() {
     # Check if fzf is installed.
     install_package fzf

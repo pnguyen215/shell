@@ -52,9 +52,9 @@ Access the shell library by opening your terminal and using the commands below. 
   Removes the shell CLI and its associated files from the system.  
   _Example:_ `shell_uninstall`
 
-- **`get_os_type`**  
+- **`shell::get_os_type`**  
   Identifies and returns the current operating system type as a standardized string (e.g., "linux" or "macos").  
-  _Example:_ `get_os_type`
+  _Example:_ `shell::get_os_type`
 
 - **`colored_echo`**  
   Outputs text to the terminal with customizable foreground colors using `tput` and ANSI escape sequences. Requires a message and a color code (e.g., 46 for cyan).  

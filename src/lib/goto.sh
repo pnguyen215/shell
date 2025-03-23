@@ -44,7 +44,7 @@ goto() {
 
         "-d")
             local os
-            os=$(get_os_type)
+            os=$(shell::get_os_type)
             if [[ "$os" == "macos" ]]; then
                 remove_bookmark $2
             else

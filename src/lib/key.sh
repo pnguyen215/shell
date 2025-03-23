@@ -158,7 +158,7 @@ get_conf() {
     encoded_value=$(echo "$selected_line" | cut -d '=' -f 2-)
 
     local os_type
-    os_type=$(get_os_type)
+    os_type=$(shell::get_os_type)
     local decoded_value
     if [ "$os_type" = "macos" ]; then
         decoded_value=$(echo "$encoded_value" | base64 -D)
@@ -212,7 +212,7 @@ get_value_conf() {
     encoded_value=$(echo "$conf_line" | cut -d '=' -f 2-)
 
     local os_type
-    os_type=$(get_os_type)
+    os_type=$(shell::get_os_type)
     local decoded_value
     if [ "$os_type" = "macos" ]; then
         decoded_value=$(echo "$encoded_value" | base64 -D)
@@ -274,7 +274,7 @@ remove_conf() {
     fi
 
     local os_type
-    os_type=$(get_os_type)
+    os_type=$(shell::get_os_type)
     local sed_cmd=""
     local use_sudo="sudo "
 
@@ -358,7 +358,7 @@ update_conf() {
     encoded_value=$(echo -n "$new_value" | base64 | tr -d '\n')
 
     local os_type
-    os_type=$(get_os_type)
+    os_type=$(shell::get_os_type)
     local sed_cmd=""
     local use_sudo="sudo "
 
@@ -500,7 +500,7 @@ rename_key_conf() {
     fi
 
     local os_type
-    os_type=$(get_os_type)
+    os_type=$(shell::get_os_type)
     local sed_cmd=""
     local use_sudo="sudo "
 
@@ -617,7 +617,7 @@ add_group() {
     # If the group already exists, update it; otherwise, append it.
     if grep -q "^${group_name}=" "$SHELL_GROUP_CONF_FILE"; then
         local os_type
-        os_type=$(get_os_type)
+        os_type=$(shell::get_os_type)
         local sed_cmd=""
         if [ "$os_type" = "macos" ]; then
             sed_cmd="sed -i '' \"s/^${group_name}=.*/${group_entry}/\" \"$SHELL_GROUP_CONF_FILE\""
@@ -687,7 +687,7 @@ read_group() {
     fi
 
     local os_type
-    os_type=$(get_os_type)
+    os_type=$(shell::get_os_type)
     local json_obj="{"
     local first=1
 
@@ -771,7 +771,7 @@ remove_group() {
     fi
 
     local os_type
-    os_type=$(get_os_type)
+    os_type=$(shell::get_os_type)
     local sed_cmd=""
     local use_sudo="sudo "
 
@@ -845,7 +845,7 @@ update_group() {
 
     local new_group_entry="${selected_group}=${new_keys}"
     local os_type
-    os_type=$(get_os_type)
+    os_type=$(shell::get_os_type)
     local sed_cmd=""
     local use_sudo="sudo "
 
@@ -917,7 +917,7 @@ rename_group() {
 
     # Construct the sed command to update the group name while preserving the keys.
     local os_type
-    os_type=$(get_os_type)
+    os_type=$(shell::get_os_type)
     local sed_cmd=""
     local use_sudo="sudo "
 
@@ -1050,7 +1050,7 @@ select_group() {
 
     # Decode the value based on the operating system.
     local os_type
-    os_type=$(get_os_type)
+    os_type=$(shell::get_os_type)
     local decoded_value
     if [ "$os_type" = "macos" ]; then
         decoded_value=$(echo "$encoded_value" | base64 -D)

@@ -443,7 +443,7 @@ get_conf_profile() {
     local encoded_value
     encoded_value=$(echo "$selected_line" | cut -d '=' -f 2-)
     local os_type
-    os_type=$(get_os_type)
+    os_type=$(shell::get_os_type)
     local decoded_value
     if [ "$os_type" = "macos" ]; then
         decoded_value=$(echo "$encoded_value" | base64 -D)
@@ -501,7 +501,7 @@ get_value_conf_profile() {
     local encoded_value
     encoded_value=$(echo "$conf_line" | cut -d '=' -f 2-)
     local os_type
-    os_type=$(get_os_type)
+    os_type=$(shell::get_os_type)
     local decoded_value
     if [ "$os_type" = "macos" ]; then
         decoded_value=$(echo "$encoded_value" | base64 -D)
@@ -561,7 +561,7 @@ remove_conf_profile() {
         return 1
     fi
     local os_type
-    os_type=$(get_os_type)
+    os_type=$(shell::get_os_type)
     local sed_cmd=""
     if [ "$os_type" = "macos" ]; then
         sed_cmd="sudo sed -i '' \"/^${selected_key}=/d\" \"$profile_conf\""
@@ -631,7 +631,7 @@ update_conf_profile() {
     local encoded_value
     encoded_value=$(echo -n "$new_value" | base64 | tr -d '\n')
     local os_type
-    os_type=$(get_os_type)
+    os_type=$(shell::get_os_type)
     local sed_cmd=""
     if [ "$os_type" = "macos" ]; then
         sed_cmd="sudo sed -i '' \"s/^${selected_key}=.*/${selected_key}=${encoded_value}/\" \"$profile_conf\""
@@ -748,7 +748,7 @@ rename_key_conf_profile() {
         return 1
     fi
     local os_type
-    os_type=$(get_os_type)
+    os_type=$(shell::get_os_type)
     local sed_cmd=""
     if [ "$os_type" = "macos" ]; then
         sed_cmd="sudo sed -i '' \"s/^${old_key}=/${new_key}=/\" \"$profile_conf\""

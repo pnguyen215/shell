@@ -69,7 +69,7 @@ uplink() {
 #   - The 'osascript' command for AppleScript support.
 opent() {
     local os
-    os=$(get_os_type)
+    os=$(shell::get_os_type)
 
     local dir
     local name
@@ -274,7 +274,7 @@ remove_bookmark_linux() {
 
     # Determine the OS and construct the appropriate sed command.
     local os
-    os=$(get_os_type)
+    os=$(shell::get_os_type)
     local sed_cmd
     if [[ "$os" == "macos" ]]; then
         # On macOS, sed -i requires an empty string argument.
