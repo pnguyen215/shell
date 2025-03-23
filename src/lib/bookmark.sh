@@ -293,16 +293,16 @@ shell::remove_bookmark_linux() {
     fi
 }
 
-# show_bookmark function
+# shell::show_bookmark function
 # Displays a formatted list of all bookmarks.
 #
 # Usage:
-#   show_bookmark
+#   shell::show_bookmark
 #
 # Description:
-#   The 'show_bookmark' function lists all bookmarks in a formatted manner,
+#   The 'shell::show_bookmark' function lists all bookmarks in a formatted manner,
 #   showing the bookmark name (field 2) in yellow and the associated directory (field 1) in default color.
-show_bookmark() {
+shell::show_bookmark() {
     local yellow normal
     yellow=$(tput setaf 3)
     normal=$(tput sgr0)
