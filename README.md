@@ -242,7 +242,7 @@ Access the shell library by opening your terminal and using the commands below. 
   - `shell::goto [command]`
   - `shell::goto_usage`
 
-- **`install_homebrew`**
+- **`shell::install_homebrew`**
   Installs Homebrew using the official installation script.
 
 - **`shell::removal_homebrew`**

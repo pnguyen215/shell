@@ -287,7 +287,7 @@ shell::install_package() {
     elif [ "$os_type" = "macos" ]; then # macOS
         if ! shell::is_command_available brew; then
             shell::colored_echo "Homebrew is not installed. Installing Homebrew..." 33
-            install_homebrew
+            shell::install_homebrew
         fi
         # Check if the package is already installed by Homebrew; skip if installed.
         if brew list --versions "$package" >/dev/null 2>&1; then

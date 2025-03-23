@@ -5,12 +5,12 @@
 # streamlining the process of managing Homebrew as part of your development
 # environment setup on macOS (and Linux if supported).
 
-# install_homebrew function
+# shell::install_homebrew function
 # -------------------------
 # Installs Homebrew using the official installation script.
 #
 # Usage:
-#   install_homebrew
+#   shell::install_homebrew
 #
 # Description:
 #   This function downloads and executes the official Homebrew installation
@@ -21,8 +21,8 @@
 #   - shell::run_cmd_eval: A helper function that logs and executes shell commands.
 #
 # Example:
-#   install_homebrew
-function install_homebrew() {
+#   shell::install_homebrew
+shell::install_homebrew() {
     shell::run_cmd_eval '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
 }
 
@@ -47,7 +47,7 @@ function install_homebrew() {
 #
 # Example:
 #   shell::removal_homebrew
-function shell::removal_homebrew() {
+shell::removal_homebrew() {
     if shell::is_command_available brew; then
         echo "🚀 Uninstalling Homebrew..."
         shell::run_cmd_eval '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh)"'
