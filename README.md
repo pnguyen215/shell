@@ -100,9 +100,9 @@ Access the shell library by opening your terminal and using the commands below. 
   Assigns full permissions (read, write, execute; `chmod 777`) to a file or directory.  
   _Example:_ `shell::setPerms::777 ./my_script.sh`
 
-- **`clip_cwd`**  
+- **`shell::clip_cwd`**  
   Copies the current working directory path to the system clipboard.  
-  _Example:_ `clip_cwd`
+  _Example:_ `shell::clip_cwd`
 
 - **`clip_value`**  
   Copies a specified text string to the system clipboard.  

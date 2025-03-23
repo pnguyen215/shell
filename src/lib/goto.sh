@@ -33,7 +33,7 @@ goto() {
             ;;
 
         "-cp")
-            clip_cwd
+            shell::clip_cwd
             break
             ;;
 

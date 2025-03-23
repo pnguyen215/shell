@@ -731,15 +731,15 @@ shell::setPerms::777() {
     fi
 }
 
-# clip_cwd function
+# shell::clip_cwd function
 # Copies the current directory path to the clipboard.
 #
 # Usage:
-#   clip_cwd
+#   shell::clip_cwd
 #
 # Description:
-#   The 'clip_cwd' function copies the current directory path to the clipboard using the 'pbcopy' command.
-clip_cwd() {
+#   The 'shell::clip_cwd' function copies the current directory path to the clipboard using the 'pbcopy' command.
+shell::clip_cwd() {
     local adr="$PWD"
     local os
     os=$(shell::get_os_type)
