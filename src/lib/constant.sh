@@ -81,7 +81,7 @@ declare -r -a SHELL_PROTECTED_KEYS=("HOST" "PORT" "SHELL_DEVELOPER" "SHELL_HISTO
 
 # SHELL_C_AES_RED constant
 # This variable defines the ANSI escape code for red text color. It is used to highlight error messages or critical alerts in the shell.
-declare -gr SHELL_C_AES_RED="\\033[0;31m"
+declare -g SHELL_C_AES_RED="\\033[0;31m"
 
 # SHELL_C_AES_RESET constant
 # This variable defines the ANSI escape code to reset text formatting to default. It is used to clear any previous text color or style.
