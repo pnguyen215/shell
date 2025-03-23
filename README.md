@@ -240,7 +240,7 @@ Access the shell library by opening your terminal and using the commands below. 
   _Example:_
 
   - `goto [command]`
-  - `goto_usage`
+  - `shell::goto_usage`
 
 - **`install_homebrew`**
   Installs Homebrew using the official installation script.

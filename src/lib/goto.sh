@@ -12,15 +12,15 @@ shell::goto_version() {
     echo "goto v0.0.1"
 }
 
-# goto function
+# shell::goto function
 # Main function to handle user commands and navigate directories.
 #
 # Usage:
-#   goto [command]
+#   shell::goto [command]
 #
 # Description:
-#   The 'goto' function processes user commands to navigate directories, manage bookmarks,
-goto() {
+#   The 'shell::goto' function processes user commands to navigate directories, manage bookmarks,
+shell::goto() {
     if [ $# -eq 0 ]; then
         shell::show_bookmark
     fi
@@ -59,7 +59,7 @@ goto() {
             ;;
 
         "help" | "-h")
-            goto_usage
+            shell::goto_usage
             break
             ;;
 
@@ -79,14 +79,14 @@ goto() {
     done
 }
 
-# goto_usage function
+# shell::goto_usage function
 # Displays the help information for the goto script.
 #
 # Usage:
-#   goto_usage
+#   shell::goto_usage
 #
 # Description:
-goto_usage() {
+shell::goto_usage() {
     echo "  USAGE:"
     echo
     echo "    Goto <command>"
