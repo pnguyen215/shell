@@ -116,12 +116,12 @@ Access the shell library by opening your terminal and using the commands below. 
   Prints a command to the terminal without executing it, useful for debugging or logging.  
   _Example:_ `on_evict ls -l`
 
-- **`port_check`**  
+- **`shell::port_check`**  
   Checks if a TCP port is in use (listening). Use `-n` to suppress output and return a status only.  
   _Examples:_
 
-  - `port_check 8080`
-  - `port_check 8080 -n`
+  - `shell::port_check 8080`
+  - `shell::port_check 8080 -n`
 
 - **`port_kill`**  
   Terminates all processes listening on a specified TCP port. Use `-n` for silent operation.  

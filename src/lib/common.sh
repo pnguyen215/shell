@@ -842,11 +842,11 @@ shell::get_temp_dir() {
     fi
 }
 
-# port_check function
+# shell::port_check function
 # Checks if a specific TCP port is in use (listening).
 #
 # Usage:
-#   port_check <port>
+#   shell::port_check <port>
 #
 # Parameters:
 #   - <port> : The port number to check.
@@ -856,13 +856,13 @@ shell::get_temp_dir() {
 #   TCP port. It filters the output for lines containing "LISTEN", which indicates that the port is in use.
 #
 # Example:
-#   port_check 8080
+#   shell::port_check 8080
 #
 # Notes:
 #   - Ensure that lsof is installed on your system.
-# function port_check() {
+# function shell::port_check() {
 #     if [ $# -ne 1 ]; then
-#         echo "Usage: port_check <port>"
+#         echo "Usage: shell::port_check <port>"
 #         return 1
 #     fi
 
@@ -897,11 +897,11 @@ on_evict() {
     shell::clip_value "$command"
 }
 
-# port_check function
+# shell::port_check function
 # Checks if a specific TCP port is in use (listening).
 #
 # Usage:
-#   port_check <port> [-n]
+#   shell::port_check <port> [-n]
 #
 # Parameters:
 #   - <port> : The TCP port number to check.
@@ -913,11 +913,11 @@ on_evict() {
 #   When the dry-run flag (-n) is provided, the command is printed using on_evict instead of being executed.
 #
 # Example:
-#   port_check 8080        # Executes the command.
-#   port_check 8080 -n     # Prints the command (dry-run mode) without executing it.
-port_check() {
+#   shell::port_check 8080        # Executes the command.
+#   shell::port_check 8080 -n     # Prints the command (dry-run mode) without executing it.
+shell::port_check() {
     if [ $# -lt 1 ]; then
-        echo "Usage: port_check <port> [-n]"
+        echo "Usage: shell::port_check <port> [-n]"
         return 1
     fi
 
