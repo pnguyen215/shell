@@ -581,7 +581,7 @@ shell::create_directory_if_not_exists() {
         shell::run_cmd_eval 'sudo mkdir -p "$dir"' # Use sudo to create the directory and its parent directories.
         if [ $? -eq 0 ]; then
             shell::colored_echo "🟢 Directory created successfully." 46
-            grant777 "$dir"
+            shell::setPerms::777 "$dir"
             return 0
         else
             shell::colored_echo "🔴 Error: Failed to create the directory." 196
@@ -663,11 +663,11 @@ shell::create_file_if_not_exists() {
     return 0
 }
 
-# grant777 function
+# shell::setPerms::777 function
 # Sets full permissions (read, write, and execute) for the specified file or directory.
 #
 # Usage:
-#   grant777 [-n] <file/dir>
+#   shell::setPerms::777 [-n] <file/dir>
 #
 # Parameters:
 #   - -n (optional): Dry-run mode. Instead of executing the command, prints it using on_evict.
@@ -680,9 +680,9 @@ shell::create_file_if_not_exists() {
 #   to grant full permissions recursively.
 #
 # Example:
-#   grant777 ./my_script.sh
-#   grant777 -n ./my_script.sh  # Dry-run: prints the command without executing.
-grant777() {
+#   shell::setPerms::777 ./my_script.sh
+#   shell::setPerms::777 -n ./my_script.sh  # Dry-run: prints the command without executing.
+shell::setPerms::777() {
     local dry_run="false"
 
     # Check for the optional dry-run flag (-n)
@@ -692,7 +692,7 @@ grant777() {
     fi
 
     if [ $# -lt 1 ]; then
-        echo "Usage: grant777 [-n] <file/dir>"
+        echo "Usage: shell::setPerms::777 [-n] <file/dir>"
         return 1
     fi
 

@@ -94,7 +94,7 @@ add_conf() {
 
     # Ensure the configuration file exists.
     shell::create_file_if_not_exists "$SHELL_KEY_CONF_FILE"
-    grant777 "$SHELL_KEY_CONF_FILE"
+    shell::setPerms::777 "$SHELL_KEY_CONF_FILE"
 
     # Build the command to append the key and encoded value to the configuration file.
     local cmd="echo \"$key=$encoded_value\" >> \"$SHELL_KEY_CONF_FILE\""
@@ -581,7 +581,7 @@ add_group() {
 
     # Ensure the group configuration file exists.
     shell::create_file_if_not_exists "$SHELL_GROUP_CONF_FILE"
-    grant777 "$SHELL_GROUP_CONF_FILE"
+    shell::setPerms::777 "$SHELL_GROUP_CONF_FILE"
 
     # Prompt the user for a group name.
     shell::colored_echo "Enter group name:" 33

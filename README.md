@@ -96,9 +96,9 @@ Access the shell library by opening your terminal and using the commands below. 
   Creates a file if it does not exist, leaving existing files unchanged.  
   _Example:_ `shell::create_file_if_not_exists config.txt`
 
-- **`grant777`**  
+- **`shell::setPerms::777`**  
   Assigns full permissions (read, write, execute; `chmod 777`) to a file or directory.  
-  _Example:_ `grant777 ./my_script.sh`
+  _Example:_ `shell::setPerms::777 ./my_script.sh`
 
 - **`clip_cwd`**  
   Copies the current working directory path to the system clipboard.  
