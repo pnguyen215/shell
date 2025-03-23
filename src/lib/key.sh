@@ -93,7 +93,7 @@ add_conf() {
     encoded_value=$(echo -n "$value" | base64 | tr -d '\n')
 
     # Ensure the configuration file exists.
-    create_file_if_not_exists "$SHELL_KEY_CONF_FILE"
+    shell::create_file_if_not_exists "$SHELL_KEY_CONF_FILE"
     grant777 "$SHELL_KEY_CONF_FILE"
 
     # Build the command to append the key and encoded value to the configuration file.
@@ -580,7 +580,7 @@ add_group() {
     fi
 
     # Ensure the group configuration file exists.
-    create_file_if_not_exists "$SHELL_GROUP_CONF_FILE"
+    shell::create_file_if_not_exists "$SHELL_GROUP_CONF_FILE"
     grant777 "$SHELL_GROUP_CONF_FILE"
 
     # Prompt the user for a group name.

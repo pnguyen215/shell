@@ -92,9 +92,9 @@ Access the shell library by opening your terminal and using the commands below. 
   Creates a directory (including nested paths) if it does not already exist.  
   _Example:_ `shell::create_directory_if_not_exists /path/to/dir`
 
-- **`create_file_if_not_exists`**  
+- **`shell::create_file_if_not_exists`**  
   Creates a file if it does not exist, leaving existing files unchanged.  
-  _Example:_ `create_file_if_not_exists config.txt`
+  _Example:_ `shell::create_file_if_not_exists config.txt`
 
 - **`grant777`**  
   Assigns full permissions (read, write, execute; `chmod 777`) to a file or directory.  

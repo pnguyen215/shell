@@ -367,7 +367,7 @@ add_conf_profile() {
     local profile_conf="$profile_dir/profile.conf"
 
     # Ensure the profile.conf file exists
-    create_file_if_not_exists "$profile_conf"
+    shell::create_file_if_not_exists "$profile_conf"
 
     # Encode the value using Base64 and remove any newlines
     local encoded_value

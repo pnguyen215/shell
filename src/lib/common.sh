@@ -592,11 +592,11 @@ shell::create_directory_if_not_exists() {
     fi
 }
 
-# create_file_if_not_exists function
+# shell::create_file_if_not_exists function
 # Utility function to create a file if it doesn't exist.
 #
 # Usage:
-#   create_file_if_not_exists <filename>
+#   shell::create_file_if_not_exists <filename>
 #
 # Parameters:
 #   - <filename>: The name (or path) of the file to be created.
@@ -609,11 +609,11 @@ shell::create_directory_if_not_exists() {
 #   allowing read and write access only for the owner.
 #
 # Example usage:
-#   create_file_if_not_exists /path/to/file.txt
-#   create_file_if_not_exists demo/file.txt   (On macOS, this creates "$HOME/demo/file.txt")
-create_file_if_not_exists() {
+#   shell::create_file_if_not_exists /path/to/file.txt
+#   shell::create_file_if_not_exists demo/file.txt   (On macOS, this creates "$HOME/demo/file.txt")
+shell::create_file_if_not_exists() {
     if [ $# -lt 1 ]; then
-        echo "Usage: create_file_if_not_exists <filename>"
+        echo "Usage: shell::create_file_if_not_exists <filename>"
         return 1
     fi
 
@@ -1308,7 +1308,7 @@ download_dataset() {
     directory=$(dirname "$filename")
 
     # Ensure the directory exists; create it if it doesn't
-    create_file_if_not_exists "$directory"
+    shell::create_file_if_not_exists "$directory"
 
     # Change to the directory for downloading the file
     cd "$directory" || return 1
