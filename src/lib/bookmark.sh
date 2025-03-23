@@ -341,14 +341,14 @@ shell::go_bookmark() {
     fi
 }
 
-# go_back function
+# shell::go_back function
 # Navigates to the previous working directory.
 #
 # Usage:
-#   go_back
+#   shell::go_back
 #
 # Description:
-#   The 'go_back' function changes the current working directory to the previous directory in the history.
-go_back() {
+#   The 'shell::go_back' function changes the current working directory to the previous directory in the history.
+shell::go_back() {
     cd $OLDPWD
 }

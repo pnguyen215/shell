@@ -64,7 +64,7 @@ goto() {
             ;;
 
         "back" | "-b")
-            go_back
+            shell::go_back
             break
             ;;
         *)

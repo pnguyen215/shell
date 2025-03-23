@@ -229,7 +229,7 @@ Access the shell library by opening your terminal and using the commands below. 
 
   - `shell::go_bookmark <bookmark name>`
 
-- **`go_back`**
+- **`shell::go_back`**
   Navigates to the previous working directory.
 
 - **`goto_version`**
