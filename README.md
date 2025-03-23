@@ -378,7 +378,7 @@ Access the shell library by opening your terminal and using the commands below. 
 
   - `sync_key_group_conf [-n]`
 
-- **`send_telegram_message`**
+- **`shell::send_telegram_message`**
   Sends a message via the Telegram Bot API.
 
   - _Parameters_:
@@ -388,7 +388,7 @@ Access the shell library by opening your terminal and using the commands below. 
     - chat_id : The chat identifier where the message should be sent.
     - message : The message text to send.
 
-  - `send_telegram_message [-n] <token> <chat_id> <message>`
+  - `shell::send_telegram_message [-n] <token> <chat_id> <message>`
 
 - **`shell::send_telegram_historical_gh_message`**
   Sends a historical GitHub-related message via Telegram using stored configuration keys.

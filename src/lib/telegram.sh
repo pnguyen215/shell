@@ -26,11 +26,11 @@ shell::gen_markdown_message() {
     printf "%b" "$message"
 }
 
-# send_telegram_message function
+# shell::send_telegram_message function
 # Sends a message via the Telegram Bot API.
 #
 # Usage:
-#   send_telegram_message [-n] <token> <chat_id> <message>
+#   shell::send_telegram_message [-n] <token> <chat_id> <message>
 #
 # Parameters:
 #   - -n          : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
@@ -44,9 +44,9 @@ shell::gen_markdown_message() {
 #   the message via Telegram's API. In dry-run mode, the command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
 #
 # Example:
-#   send_telegram_message 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Hello, World!"
-#   send_telegram_message -n 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Dry-run: Hello, World!"
-send_telegram_message() {
+#   shell::send_telegram_message 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Hello, World!"
+#   shell::send_telegram_message -n 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Dry-run: Hello, World!"
+shell::send_telegram_message() {
     local dry_run="false"
 
     # Check for the optional dry-run flag (-n).
@@ -57,7 +57,7 @@ send_telegram_message() {
 
     # Ensure that at least three arguments remain.
     if [ $# -lt 3 ]; then
-        echo "Usage: send_telegram_message [-n] <token> <chat_id> <message>"
+        echo "Usage: shell::send_telegram_message [-n] <token> <chat_id> <message>"
         return 1
     fi
 

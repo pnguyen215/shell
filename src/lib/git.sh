@@ -16,7 +16,7 @@
 #   configuration keys "SHELL_HISTORICAL_GH_TELEGRAM_BOT_TOKEN" and "SHELL_HISTORICAL_GH_TELEGRAM_CHAT_ID".
 #   If either key is missing, a warning is printed and the corresponding key is copied to the clipboard
 #   to prompt the user to add it using add_conf. If both keys exist, it retrieves their values and
-#   calls send_telegram_message (with the dry-run flag, if enabled) to send the message.
+#   calls shell::send_telegram_message (with the dry-run flag, if enabled) to send the message.
 #
 # Example:
 #   shell::send_telegram_historical_gh_message "Historical message text"
@@ -61,10 +61,10 @@ shell::send_telegram_historical_gh_message() {
     local chatID
     chatID=$(get_value_conf "SHELL_HISTORICAL_GH_TELEGRAM_CHAT_ID")
 
-    # Call send_telegram_message with or without dry-run flag.
+    # Call shell::send_telegram_message with or without dry-run flag.
     if [ "$dry_run" = "true" ]; then
-        send_telegram_message -n "$token" "$chatID" "$message"
+        shell::send_telegram_message -n "$token" "$chatID" "$message"
     else
-        send_telegram_message "$token" "$chatID" "$message"
+        shell::send_telegram_message "$token" "$chatID" "$message"
     fi
 }
