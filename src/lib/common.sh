@@ -1549,11 +1549,11 @@ shell::open_link() {
     fi
 }
 
-# loading_spinner function
+# shell::loading_spinner function
 # Displays a loading spinner in the console for a specified duration.
 #
 # Usage:
-#   loading_spinner [-n] [duration]
+#   shell::loading_spinner [-n] [duration]
 #
 # Parameters:
 #   - -n        : Optional dry-run flag. If provided, the spinner command is printed using shell::on_evict instead of executed.
@@ -1566,10 +1566,10 @@ shell::open_link() {
 #   without actually running the spinner.
 #
 # Example usage:
-#   loading_spinner          # Displays the spinner for 3 seconds.
-#   loading_spinner 10       # Displays the spinner for 10 seconds.
-#   loading_spinner -n 5     # Prints the spinner command for 5 seconds without executing it.
-loading_spinner() {
+#   shell::loading_spinner          # Displays the spinner for 3 seconds.
+#   shell::loading_spinner 10       # Displays the spinner for 10 seconds.
+#   shell::loading_spinner -n 5     # Prints the spinner command for 5 seconds without executing it.
+shell::loading_spinner() {
     local dry_run="false"
 
     # Check for the optional dry-run flag (-n)

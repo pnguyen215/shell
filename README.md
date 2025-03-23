@@ -171,12 +171,12 @@ Access the shell library by opening your terminal and using the commands below. 
   - `shell::open_link https://example.com`
   - `shell::open_link -n https://example.com`
 
-- **`loading_spinner`**  
+- **`shell::loading_spinner`**  
   Displays a console loading spinner for a specified duration (in seconds). Use `-n` to run indefinitely until stopped.  
   _Examples:_
 
-  - `loading_spinner 10`
-  - `loading_spinner -n 10`
+  - `shell::loading_spinner 10`
+  - `shell::loading_spinner -n 10`
 
 - **`measure_time`**  
   Measures and reports the execution time of a command in seconds.  
