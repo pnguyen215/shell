@@ -9,20 +9,20 @@ if [[ ! -f $bookmarks_file ]]; then
     touch $bookmarks_file
 fi
 
-# uplink function
+# shell::uplink function
 # Creates a hard link between the specified source and destination.
 #
 # Usage:
-#   uplink <source name> <destination name>
+#   shell::uplink <source name> <destination name>
 #
 # Description:
-#   The 'uplink' function creates a hard link between the specified source file and destination file.
+#   The 'shell::uplink' function creates a hard link between the specified source file and destination file.
 #   This allows multiple file names to refer to the same file content.
 #
 # Dependencies:
 #   - The 'ln' command for creating hard links.
 #   - The 'chmod' command to modify file permissions.
-uplink() {
+shell::uplink() {
     # If two arguments are provided, use them as source and destination.
     if [ "$#" -eq 2 ]; then
         local src="$1"
