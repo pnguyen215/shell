@@ -38,7 +38,7 @@ goto() {
             ;;
 
         "-s" | "-b")
-            add_bookmark $2
+            shell::add_bookmark $2
             break
             ;;
 

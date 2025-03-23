@@ -201,11 +201,11 @@ Access the shell library by opening your terminal and using the commands below. 
   Interactively selects a file or directory to remove using `fzf`.  
   _Example:_ `fzf_remove`
 
-- **`add_bookmark`**
+- **`shell::add_bookmark`**
   Adds a bookmark for the current directory with the specified name.
   _Example:_
 
-  - `add_bookmark <bookmark name>`
+  - `shell::add_bookmark <bookmark name>`
 
 - **`remove_bookmark`**
   Deletes a bookmark with the specified name from the bookmarks file.

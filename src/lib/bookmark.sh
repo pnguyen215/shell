@@ -103,16 +103,16 @@ shell::opent() {
     shell::colored_echo "🙂 Opening \"$name\" ..." 5
 }
 
-# add_bookmark function
+# shell::add_bookmark function
 # Adds a bookmark for the current directory with the specified name.
 #
 # Usage:
-#   add_bookmark <bookmark name>
+#   shell::add_bookmark <bookmark name>
 #
 # Description:
-#   The 'add_bookmark' function creates a bookmark for the current directory with the given name.
+#   The 'shell::add_bookmark' function creates a bookmark for the current directory with the given name.
 #   It allows quick navigation to the specified directory using the bookmark name.
-add_bookmark() {
+shell::add_bookmark() {
     local bookmark_name="$1"
 
     if [[ -z "$bookmark_name" ]]; then
