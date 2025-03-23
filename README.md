@@ -423,14 +423,14 @@ Access the shell library by opening your terminal and using the commands below. 
 
   - `shell::fzf_zip_attachment [-n] <folder_path>`
 
-- **`fzf_current_zip_attachment`**
+- **`shell::fzf_current_zip_attachment`**
   Reuses shell::fzf_zip_attachment to zip selected files from the current directory, then renames the resulting zip file to use the current directory's basename and places it inside the current directory.
 
   - _Parameters_:
 
     - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
 
-  - `fzf_current_zip_attachment [-n]`
+  - `shell::fzf_current_zip_attachment [-n]`
 
 - **`fzf_send_telegram_attachment`**
   Uses fzf to interactively select one or more files from a folder (default: current directory), and sends them as attachments via the Telegram Bot API by reusing send_telegram_attachment.

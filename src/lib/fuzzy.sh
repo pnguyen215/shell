@@ -241,12 +241,12 @@ shell::fzf_zip_attachment() {
     shell::clip_value "$abs_zip_filename"
 }
 
-# fzf_current_zip_attachment function
+# shell::fzf_current_zip_attachment function
 # Reuses shell::fzf_zip_attachment to zip selected files from the current directory,
 # ensuring that when unzipped, the archive creates a single top-level folder.
 #
 # Usage:
-#   fzf_current_zip_attachment [-n]
+#   shell::fzf_current_zip_attachment [-n]
 #
 # Parameters:
 #   - -n         : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
@@ -259,9 +259,9 @@ shell::fzf_zip_attachment() {
 #   back to the original (current) directory, echoes its absolute path, and copies the value to the clipboard.
 #
 # Example:
-#   fzf_current_zip_attachment
-#   fzf_current_zip_attachment -n  # Dry-run: prints the command without executing it.
-fzf_current_zip_attachment() {
+#   shell::fzf_current_zip_attachment
+#   shell::fzf_current_zip_attachment -n  # Dry-run: prints the command without executing it.
+shell::fzf_current_zip_attachment() {
     local dry_run="false"
     if [ "$1" = "-n" ]; then
         dry_run="true"
