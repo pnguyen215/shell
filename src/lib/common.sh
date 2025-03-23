@@ -1000,11 +1000,11 @@ shell::port_kill() {
     done
 }
 
-# copy_files function
+# shell::copy_files function
 # Copies a source file to one or more destination filenames in the current working directory.
 #
 # Usage:
-#   copy_files [-n] <source_filename> <new_filename1> [<new_filename2> ...]
+#   shell::copy_files [-n] <source_filename> <new_filename1> [<new_filename2> ...]
 #
 # Parameters:
 #   - -n             : Optional dry-run flag. If provided, the command will be printed using shell::on_evict instead of executed.
@@ -1018,9 +1018,9 @@ shell::port_kill() {
 #   In dry-run mode, the command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
 #
 # Example:
-#   copy_files myfile.txt newfile.txt            # Copies myfile.txt to newfile.txt.
-#   copy_files -n myfile.txt newfile1.txt newfile2.txt  # Prints the copy commands without executing them.
-copy_files() {
+#   shell::copy_files myfile.txt newfile.txt            # Copies myfile.txt to newfile.txt.
+#   shell::copy_files -n myfile.txt newfile1.txt newfile2.txt  # Prints the copy commands without executing them.
+shell::copy_files() {
     local dry_run="false"
 
     # Check for the optional dry-run flag (-n).
@@ -1030,7 +1030,7 @@ copy_files() {
     fi
 
     if [ $# -lt 2 ]; then
-        echo "Usage: copy_files [-n] <source_filename> <new_filename1> [<new_filename2> ...]"
+        echo "Usage: shell::copy_files [-n] <source_filename> <new_filename1> [<new_filename2> ...]"
         return 1
     fi
 

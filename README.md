@@ -130,9 +130,9 @@ Access the shell library by opening your terminal and using the commands below. 
   - `shell::port_kill 8080`
   - `shell::port_kill 8080 -n`
 
-- **`copy_files`**  
+- **`shell::copy_files`**  
   Copies a source file to one or more destination filenames in the current directory.  
-  _Example:_ `copy_files source.txt dest1.txt dest2.txt`
+  _Example:_ `shell::copy_files source.txt dest1.txt dest2.txt`
 
 - **`move_files`**  
   Moves one or more files to a specified destination directory.  
