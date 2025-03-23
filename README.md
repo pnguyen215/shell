@@ -88,9 +88,9 @@ Access the shell library by opening your terminal and using the commands below. 
   Lists packages installed in directory-based locations (e.g., `/usr/local`).  
   _Example:_ `shell::list_path_installed_packages`
 
-- **`create_directory_if_not_exists`**  
+- **`shell::create_directory_if_not_exists`**  
   Creates a directory (including nested paths) if it does not already exist.  
-  _Example:_ `create_directory_if_not_exists /path/to/dir`
+  _Example:_ `shell::create_directory_if_not_exists /path/to/dir`
 
 - **`create_file_if_not_exists`**  
   Creates a file if it does not exist, leaving existing files unchanged.  
