@@ -149,9 +149,9 @@ Access the shell library by opening your terminal and using the commands below. 
   - `shell::editor ~/documents`
   - `shell::editor -n ~/documents`
 
-- **`download_dataset`**  
+- **`shell::download_dataset`**  
   Downloads a file from a URL and saves it with the specified filename.  
-  _Example:_ `download_dataset data.zip https://example.com/data.zip`
+  _Example:_ `shell::download_dataset data.zip https://example.com/data.zip`
 
 - **`unarchive`**  
   Extracts a compressed file based on its extension (e.g., `.zip`, `.tar.gz`). Use `-n` for no-overwrite mode.  

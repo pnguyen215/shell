@@ -1266,11 +1266,11 @@ shell::editor() {
     fi
 }
 
-# download_dataset function
+# shell::download_dataset function
 # Downloads a dataset file from a provided download link.
 #
 # Usage:
-#   download_dataset [-n] <filename_with_extension> <download_link>
+#   shell::download_dataset [-n] <filename_with_extension> <download_link>
 #
 # Parameters:
 #   - -n                     : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
@@ -1284,9 +1284,9 @@ shell::editor() {
 #   overwriting it. In dry-run mode, the function uses shell::on_evict to display the commands without executing them.
 #
 # Example:
-#   download_dataset mydata.zip https://example.com/mydata.zip
-#   download_dataset -n mydata.zip https://example.com/mydata.zip  # Displays the commands without executing them.
-download_dataset() {
+#   shell::download_dataset mydata.zip https://example.com/mydata.zip
+#   shell::download_dataset -n mydata.zip https://example.com/mydata.zip  # Displays the commands without executing them.
+shell::download_dataset() {
     local dry_run="false"
 
     # Check for the optional dry-run flag (-n)
@@ -1296,7 +1296,7 @@ download_dataset() {
     fi
 
     if [ $# -ne 2 ]; then
-        echo "Usage: download_dataset [-n] <filename_store_with_extension> <download_link>"
+        echo "Usage: shell::download_dataset [-n] <filename_store_with_extension> <download_link>"
         return 1
     fi
 
