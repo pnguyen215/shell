@@ -1,11 +1,11 @@
 #!/bin/bash
 # telegram.sh
 
-# build_markdown_message function
+# shell::gen_markdown_message function
 # Constructs a Markdown-formatted message from multiple input lines.
 #
 # Usage:
-#   build_markdown_message <line1> <line2> ...
+#   shell::gen_markdown_message <line1> <line2> ...
 #
 # Parameters:
 #   - <line1>, <line2>, ... : Lines to be concatenated into a single Markdown message.
@@ -15,9 +15,9 @@
 #   You can use standard Markdown syntax (e.g., *bold*, _italic_, `code`) to format your text.
 #
 # Example:
-#   message=$(build_markdown_message "*Hello*, this is a test message." "Here is some code:" "```bash\necho Hello\n```")
+#   message=$(shell::gen_markdown_message "*Hello*, this is a test message." "Here is some code:" "```bash\necho Hello\n```")
 #   echo "$message"
-build_markdown_message() {
+shell::gen_markdown_message() {
     local message=""
     for line in "$@"; do
         message+="$line\n"
