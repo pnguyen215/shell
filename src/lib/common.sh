@@ -120,31 +120,31 @@ shell::colored_echo() {
     fi
 }
 
-# run_cmd function
+# shell::run_cmd function
 # Executes a command and prints it for logging purposes.
 #
 # Usage:
-#   run_cmd <command>
+#   shell::run_cmd <command>
 #
 # Parameters:
 #   - <command>: The command to be executed.
 #
 # Description:
-#   The `run_cmd` function prints the command for logging before executing it.
+#   The `shell::run_cmd` function prints the command for logging before executing it.
 #
 # Options:
 #   None
 #
 # Example usage:
-#   run_cmd ls -l
+#   shell::run_cmd ls -l
 #
 # Instructions:
-#   1. Use `run_cmd` to execute a command.
+#   1. Use `shell::run_cmd` to execute a command.
 #   2. The command will be printed before execution for logging.
 #
 # Notes:
 #   - This function is useful for logging commands prior to execution.
-run_cmd() {
+shell::run_cmd() {
     local command="$*"
 
     # Capture the OS type output from shell::get_os_type
@@ -172,17 +172,17 @@ run_cmd() {
     "$@"
 }
 
-# run_cmd_eval function
+# shell::run_cmd_eval function
 # Execute a command using eval and print it for logging purposes.
 #
 # Usage:
-#   run_cmd_eval <command>
+#   shell::run_cmd_eval <command>
 #
 # Parameters:
 #   - <command>: The command to be executed (as a single string).
 #
 # Description:
-#   The 'run_cmd_eval' function executes a command by passing it to the `eval` command.
+#   The 'shell::run_cmd_eval' function executes a command by passing it to the `eval` command.
 #   This allows the execution of complex commands with arguments, pipes, or redirection
 #   that are difficult to handle with standard execution.
 #   It logs the command before execution to provide visibility into what is being run.
@@ -191,17 +191,17 @@ run_cmd() {
 #   None
 #
 # Example usage:
-#   run_cmd_eval "ls -l | grep txt"
+#   shell::run_cmd_eval "ls -l | grep txt"
 #
 # Instructions:
-#   1. Use 'run_cmd_eval' when executing commands that require interpretation by the shell.
+#   1. Use 'shell::run_cmd_eval' when executing commands that require interpretation by the shell.
 #   2. It is particularly useful for running dynamically constructed commands or those with special characters.
 #
 # Notes:
 #   - The use of `eval` can be risky if the input command contains untrusted data, as it can lead to
 #     command injection vulnerabilities. Ensure the command is sanitized before using this function.
 #   - Prefer the 'wsd_exe_cmd' function for simpler commands without special characters or pipes.
-run_cmd_eval() {
+shell::run_cmd_eval() {
     local command="$*"
     # Capture the OS type output from shell::get_os_type
     local os_type
@@ -275,11 +275,11 @@ install_package() {
         fi
 
         if is_command_available apt-get; then
-            run_cmd_eval "sudo apt-get update && sudo apt-get install -y $package"
+            shell::run_cmd_eval "sudo apt-get update && sudo apt-get install -y $package"
         elif is_command_available yum; then
-            run_cmd_eval "sudo yum install -y $package"
+            shell::run_cmd_eval "sudo yum install -y $package"
         elif is_command_available dnf; then
-            run_cmd_eval "sudo dnf install -y $package"
+            shell::run_cmd_eval "sudo dnf install -y $package"
         else
             shell::colored_echo "🔴 Error: Unsupported package manager on Linux." 31
             return 1
@@ -294,7 +294,7 @@ install_package() {
             shell::colored_echo "🟡 $package is already installed. Skipping." 32
             return 0
         fi
-        run_cmd_eval "brew install $package"
+        shell::run_cmd_eval "brew install $package"
     else
         shell::colored_echo "🔴 Error: Unsupported operating system." 31
         return 1
@@ -320,19 +320,19 @@ uninstall_package() {
     if [ "$os_type" = "linux" ]; then
         if is_command_available apt-get; then
             if is_package_installed_linux "$package"; then
-                run_cmd_eval "sudo apt-get remove -y $package"
+                shell::run_cmd_eval "sudo apt-get remove -y $package"
             else
                 shell::colored_echo "🟡 $package is not installed. Skipping uninstallation." 33
             fi
         elif is_command_available yum; then
             if rpm -q "$package" >/dev/null 2>&1; then
-                run_cmd_eval "sudo yum remove -y $package"
+                shell::run_cmd_eval "sudo yum remove -y $package"
             else
                 shell::colored_echo "🟡 $package is not installed. Skipping uninstallation." 33
             fi
         elif is_command_available dnf; then
             if rpm -q "$package" >/dev/null 2>&1; then
-                run_cmd_eval "sudo dnf remove -y $package"
+                shell::run_cmd_eval "sudo dnf remove -y $package"
             else
                 shell::colored_echo "🟡 $package is not installed. Skipping uninstallation." 33
             fi
@@ -343,7 +343,7 @@ uninstall_package() {
     elif [ "$os_type" = "macos" ]; then
         if is_command_available brew; then
             if brew list --versions "$package" >/dev/null 2>&1; then
-                run_cmd_eval "brew uninstall $package"
+                shell::run_cmd_eval "brew uninstall $package"
             else
                 shell::colored_echo "🟡 $package is not installed. Skipping uninstallation." 33
             fi
@@ -379,10 +379,10 @@ list_installed_packages() {
     if [ "$os_type" = "linux" ]; then
         if is_command_available apt-get; then
             shell::colored_echo "Listing installed packages (APT/Debian-based):" 34
-            run_cmd_eval dpkg -l
+            shell::run_cmd_eval dpkg -l
         elif is_command_available yum || is_command_available dnf; then
             shell::colored_echo "Listing installed packages (RPM-based):" 34
-            run_cmd_eval rpm -qa | sort
+            shell::run_cmd_eval rpm -qa | sort
         else
             shell::colored_echo "🔴 Error: Unsupported package manager on Linux." 31
             return 1
@@ -390,7 +390,7 @@ list_installed_packages() {
     elif [ "$os_type" = "macos" ]; then
         if is_command_available brew; then
             shell::colored_echo "Listing installed packages (Homebrew):" 32
-            run_cmd_eval brew list
+            shell::run_cmd_eval brew list
         else
             shell::colored_echo "🔴 Error: Homebrew is not installed on macOS." 31
             return 1
@@ -578,7 +578,7 @@ create_directory_if_not_exists() {
     # Check if the directory exists.
     if [ ! -d "$dir" ]; then
         shell::colored_echo "📁 Directory '$dir' does not exist. Creating the directory (including nested directories) with admin privileges..." 11
-        run_cmd_eval 'sudo mkdir -p "$dir"' # Use sudo to create the directory and its parent directories.
+        shell::run_cmd_eval 'sudo mkdir -p "$dir"' # Use sudo to create the directory and its parent directories.
         if [ $? -eq 0 ]; then
             shell::colored_echo "🟢 Directory created successfully." 46
             grant777 "$dir"
@@ -637,10 +637,10 @@ create_file_if_not_exists() {
     # Check if the parent directory exists.
     if [ ! -d "$directory" ]; then
         shell::colored_echo "📁 Directory '$directory' does not exist. Creating with admin privileges..." 11
-        run_cmd_eval "sudo mkdir -p \"$directory\""
+        shell::run_cmd_eval "sudo mkdir -p \"$directory\""
         if [ $? -eq 0 ]; then
             shell::colored_echo "🟢 Directory created successfully." 46
-            # run_cmd_eval "sudo chmod 700 \"$directory\"" # Set directory permissions to 700 (owner can read, write, and execute)
+            # shell::run_cmd_eval "sudo chmod 700 \"$directory\"" # Set directory permissions to 700 (owner can read, write, and execute)
         else
             shell::colored_echo "🔴 Error: Failed to create the directory." 196
             return 1
@@ -650,10 +650,10 @@ create_file_if_not_exists() {
     # Check if the file exists.
     if [ ! -e "$filename" ]; then
         shell::colored_echo "📄 File '$filename' does not exist. Creating with admin privileges..." 11
-        run_cmd_eval "sudo touch \"$filename\""
+        shell::run_cmd_eval "sudo touch \"$filename\""
         if [ $? -eq 0 ]; then
             shell::colored_echo "🟢 File created successfully." 46
-            # run_cmd_eval "sudo chmod 600 \"$filename\"" # Set file permissions to 600 (owner can read and write; no permissions for others)
+            # shell::run_cmd_eval "sudo chmod 600 \"$filename\"" # Set file permissions to 600 (owner can read and write; no permissions for others)
             return 0
         else
             shell::colored_echo "🔴 Error: Failed to create the file." 196
@@ -726,7 +726,7 @@ grant777() {
             # shell::colored_echo "🟡 Permissions for '$target' already set to full (777)" 33
             return 0
         fi
-        run_cmd_eval "$chmod_cmd"
+        shell::run_cmd_eval "$chmod_cmd"
         shell::colored_echo "🟢 Permissions for '$target' set to full (read, write, and execute - 777)" 46
     fi
 }
@@ -867,7 +867,7 @@ get_temp_dir() {
 #     fi
 
 #     local port="$1"
-#     run_cmd lsof -nP -iTCP:"$port" | grep LISTEN
+#     shell::run_cmd lsof -nP -iTCP:"$port" | grep LISTEN
 # }
 
 # on_evict function
@@ -934,8 +934,8 @@ port_check() {
     if [ "$dry_run" = "true" ]; then
         on_evict "$cmd"
     else
-        # run_cmd lsof -nP -iTCP:"$port" | grep LISTEN
-        run_cmd_eval "$cmd"
+        # shell::run_cmd lsof -nP -iTCP:"$port" | grep LISTEN
+        shell::run_cmd_eval "$cmd"
     fi
 }
 
@@ -983,15 +983,15 @@ port_kill() {
         if [ -n "$pids" ]; then
             shell::colored_echo "🟢 Processing port $port with PIDs: $pids" 46
             for pid in $pids; do
-                # Construct the kill command as an array to reuse it for both on_evict and run_cmd.
+                # Construct the kill command as an array to reuse it for both on_evict and shell::run_cmd.
                 local cmd=("kill" "-9" "$pid")
                 # local cmd="kill -9 $pid"
                 if [ "$dry_run" = "true" ]; then
                     # on_evict "$cmd"
                     on_evict "${cmd[*]}"
                 else
-                    # run_cmd kill -9 "$pid"
-                    run_cmd "${cmd[@]}"
+                    # shell::run_cmd kill -9 "$pid"
+                    shell::run_cmd "${cmd[@]}"
                 fi
             done
         else
@@ -1015,7 +1015,7 @@ port_kill() {
 #   The function first checks for a dry-run flag (-n). It then verifies that at least two arguments remain.
 #   For each destination filename, it checks if the file already exists in the current working directory.
 #   If not, it builds the command to copy the source file (using sudo) to the destination.
-#   In dry-run mode, the command is printed using on_evict; otherwise, it is executed using run_cmd_eval.
+#   In dry-run mode, the command is printed using on_evict; otherwise, it is executed using shell::run_cmd_eval.
 #
 # Example:
 #   copy_files myfile.txt newfile.txt            # Copies myfile.txt to newfile.txt.
@@ -1051,7 +1051,7 @@ copy_files() {
         if [ "$dry_run" = "true" ]; then
             on_evict "$cmd"
         else
-            run_cmd_eval "$cmd"
+            shell::run_cmd_eval "$cmd"
             shell::colored_echo "🟢 File copied successfully to $destination_file" 46
         fi
     done
@@ -1074,7 +1074,7 @@ copy_files() {
 #     - It checks whether the source file exists.
 #     - It verifies that the destination file (using the basename of the source) does not already exist in the destination folder.
 #     - It builds the command to move the file (using sudo mv).
-#   In dry-run mode, the command is printed using on_evict; otherwise, the command is executed using run_cmd.
+#   In dry-run mode, the command is printed using on_evict; otherwise, the command is executed using shell::run_cmd.
 #   If an error occurs for a particular file (e.g., missing source or destination file conflict), the error is logged and the function continues with the next file.
 #
 # Example:
@@ -1118,7 +1118,7 @@ move_files() {
         if [ "$dry_run" = "true" ]; then
             on_evict "$cmd"
         else
-            run_cmd sudo mv "$source" "$destination"
+            shell::run_cmd sudo mv "$source" "$destination"
             if [ $? -eq 0 ]; then
                 shell::colored_echo "🟢 File '$source' moved successfully to $destination" 46
             else
@@ -1141,7 +1141,7 @@ move_files() {
 # Description:
 #   The function first checks for an optional dry-run flag (-n). It then verifies that a target argument is provided.
 #   It builds the command to remove the specified target using "sudo rm -rf".
-#   In dry-run mode, the command is printed using on_evict; otherwise, it is executed using run_cmd.
+#   In dry-run mode, the command is printed using on_evict; otherwise, it is executed using shell::run_cmd.
 #
 # Example:
 #   remove_dataset my-dir          # Removes the directory 'my-dir'.
@@ -1166,7 +1166,7 @@ remove_dataset() {
     if [ "$dry_run" = "true" ]; then
         on_evict "$cmd"
     else
-        run_cmd sudo rm -rf "$target"
+        shell::run_cmd sudo rm -rf "$target"
     fi
 }
 
@@ -1198,7 +1198,7 @@ remove_dataset() {
 #
 # Requirements:
 #   - fzf must be installed.
-#   - Helper functions: run_cmd, on_evict, shell::colored_echo, and shell::get_os_type.
+#   - Helper functions: shell::run_cmd, on_evict, shell::colored_echo, and shell::get_os_type.
 editor() {
     local dry_run="false"
 
@@ -1262,7 +1262,7 @@ editor() {
     if [ "$dry_run" = "true" ]; then
         on_evict "$cmd"
     else
-        run_cmd $selected_command "$selected_file"
+        shell::run_cmd $selected_command "$selected_file"
     fi
 }
 
@@ -1334,7 +1334,7 @@ download_dataset() {
         if [ "$dry_run" = "true" ]; then
             on_evict "sudo rm \"$base\""
         else
-            run_cmd sudo rm "$base"
+            shell::run_cmd sudo rm "$base"
         fi
     fi
 
@@ -1347,7 +1347,7 @@ download_dataset() {
         on_evict "$download_cmd"
         shell::colored_echo "💡 Dry-run mode: Displayed download command for $filename" 11
     else
-        run_cmd curl -LJ "$link" -o "$filename"
+        shell::run_cmd curl -LJ "$link" -o "$filename"
         if [ $? -eq 0 ]; then
             shell::colored_echo "🟢 Successfully downloaded: $filename" 46
         else
@@ -1369,7 +1369,7 @@ download_dataset() {
 # Description:
 #   The function first checks for an optional dry-run flag (-n) and then verifies that exactly one argument (the filename) is provided.
 #   It checks if the given file exists and, if so, determines the correct extraction command based on the file extension.
-#   In dry-run mode, the command is printed using on_evict; otherwise, it is executed using run_cmd_eval.
+#   In dry-run mode, the command is printed using on_evict; otherwise, it is executed using shell::run_cmd_eval.
 #
 # Example:
 #   unarchive archive.tar.gz           # Extracts archive.tar.gz.
@@ -1434,7 +1434,7 @@ unarchive() {
         if [ "$dry_run" = "true" ]; then
             on_evict "$cmd"
         else
-            run_cmd_eval "$cmd"
+            shell::run_cmd_eval "$cmd"
         fi
     else
         shell::colored_echo "🔴 Error: '$file' is not a valid file" 196
@@ -1454,7 +1454,7 @@ unarchive() {
 # Description:
 #   This function retrieves the operating system type using shell::get_os_type. For macOS, it uses 'top' to sort processes by resident size (RSIZE)
 #   and filters the output to display processes consuming at least 100 MB. For Linux, it uses 'ps' to list processes sorted by memory usage.
-#   In dry-run mode, the constructed command is printed using on_evict; otherwise, it is executed using run_cmd_eval.
+#   In dry-run mode, the constructed command is printed using on_evict; otherwise, it is executed using shell::run_cmd_eval.
 #
 # Example:
 #   list_high_mem_usage       # Displays processes with high memory consumption.
@@ -1487,7 +1487,7 @@ list_high_mem_usage() {
     if [ "$dry_run" = "true" ]; then
         on_evict "$cmd"
     else
-        run_cmd_eval "$cmd"
+        shell::run_cmd_eval "$cmd"
     fi
 }
 
@@ -1504,7 +1504,7 @@ list_high_mem_usage() {
 # Description:
 #   This function determines the current operating system using shell::get_os_type. On macOS, it uses the 'open' command;
 #   on Linux, it uses 'xdg-open' (if available). If the required command is missing on Linux, an error is displayed.
-#   In dry-run mode, the command is printed using on_evict; otherwise, it is executed using run_cmd_eval.
+#   In dry-run mode, the command is printed using on_evict; otherwise, it is executed using shell::run_cmd_eval.
 #
 # Example:
 #   open_link https://example.com         # Opens the URL in the default browser.
@@ -1545,7 +1545,7 @@ open_link() {
     if [ "$dry_run" = "true" ]; then
         on_evict "$cmd"
     else
-        run_cmd_eval "$cmd"
+        shell::run_cmd_eval "$cmd"
     fi
 }
 
@@ -1720,6 +1720,6 @@ execute_or_evict() {
     if [ "$dry_run" = "true" ]; then
         on_evict "$command"
     else
-        run_cmd_eval "$command"
+        shell::run_cmd_eval "$command"
     fi
 }

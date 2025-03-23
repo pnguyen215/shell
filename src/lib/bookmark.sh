@@ -132,7 +132,7 @@ add_bookmark() {
         while read -r replace; do
             if [[ "$replace" == "y" ]]; then
                 # Delete existing bookmark and save the new one.
-                run_cmd_eval "sed '/.*|$bookmark_name/d' \"$bookmarks_file\" > ~/.tmp && mv ~/.tmp \"$bookmarks_file\""
+                shell::run_cmd_eval "sed '/.*|$bookmark_name/d' \"$bookmarks_file\" > ~/.tmp && mv ~/.tmp \"$bookmarks_file\""
                 echo "$bookmark" >>"$bookmarks_file"
                 shell::colored_echo "🟢 Bookmark '$bookmark_name' saved" 46
                 break
@@ -229,8 +229,8 @@ remove_bookmark() {
     # Using single quotes around the grep pattern helps avoid issues on Linux.
     local cmd="grep -v '|${bookmark_name}$' \"$bookmarks_file\" > \"$tmp_file\" && mv \"$tmp_file\" \"$bookmarks_file\""
 
-    # Execute the command using run_cmd_eval.
-    if run_cmd_eval "$cmd"; then
+    # Execute the command using shell::run_cmd_eval.
+    if shell::run_cmd_eval "$cmd"; then
         shell::colored_echo "🟢 Bookmark '$bookmark_name' removed" 46
     else
         shell::colored_echo "🔴 Failed to remove bookmark '$bookmark_name'" 196
@@ -284,8 +284,8 @@ remove_bookmark_linux() {
         sed_cmd="sed -i '/|${bookmark_name}\$/d' \"$bookmarks_file\""
     fi
 
-    # Execute the sed command using run_cmd_eval.
-    if run_cmd_eval "$sed_cmd"; then
+    # Execute the sed command using shell::run_cmd_eval.
+    if shell::run_cmd_eval "$sed_cmd"; then
         shell::colored_echo "🟢 Bookmark '$bookmark_name' removed" 46
     else
         shell::colored_echo "🔴 Failed to remove bookmark '$bookmark_name'" 196

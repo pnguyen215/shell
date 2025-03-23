@@ -14,16 +14,16 @@
 #
 # Description:
 #   This function downloads and executes the official Homebrew installation
-#   script via curl. The command is executed using run_cmd_eval, which logs
+#   script via curl. The command is executed using shell::run_cmd_eval, which logs
 #   the command before executing it.
 #
 # Dependencies:
-#   - run_cmd_eval: A helper function that logs and executes shell commands.
+#   - shell::run_cmd_eval: A helper function that logs and executes shell commands.
 #
 # Example:
 #   install_homebrew
 function install_homebrew() {
-    run_cmd_eval '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
+    shell::run_cmd_eval '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
 }
 
 # uninstall_homebrew function
@@ -38,11 +38,11 @@ function install_homebrew() {
 #   If Homebrew is detected, it uninstalls Homebrew by running the official uninstall
 #   script. Additionally, it removes Homebrew-related lines from the user's shell
 #   profile (e.g., $HOME/.zprofile) using sed. The commands are executed via
-#   run_cmd_eval to ensure they are logged prior to execution.
+#   shell::run_cmd_eval to ensure they are logged prior to execution.
 #
 # Dependencies:
 #   - is_command_available: Checks if the 'brew' command is available in the PATH.
-#   - run_cmd_eval: Executes shell commands with logging.
+#   - shell::run_cmd_eval: Executes shell commands with logging.
 #   - shell::colored_echo: Displays colored messages to the terminal.
 #
 # Example:
@@ -50,8 +50,8 @@ function install_homebrew() {
 function uninstall_homebrew() {
     if is_command_available brew; then
         echo "🚀 Uninstalling Homebrew..."
-        run_cmd_eval '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh)"'
-        run_cmd_eval 'sed -i.bak '/# Homebrew/d' "$HOME/.zprofile"' # Remove Homebrew-related lines from the shell profile
+        shell::run_cmd_eval '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh)"'
+        shell::run_cmd_eval 'sed -i.bak '/# Homebrew/d' "$HOME/.zprofile"' # Remove Homebrew-related lines from the shell profile
         shell::colored_echo "🟢 Homebrew uninstalled successfully!" 46
     else
         shell::colored_echo "🟡 Homebrew is not installed. Nothing to uninstall." 11

@@ -60,13 +60,13 @@ Access the shell library by opening your terminal and using the commands below. 
   Outputs text to the terminal with customizable foreground colors using `tput` and ANSI escape sequences. Requires a message and a color code (e.g., 46 for cyan).  
   _Example:_ `shell::colored_echo "Task completed" 46`
 
-- **`run_cmd`**  
+- **`shell::run_cmd`**  
   Executes a specified command and logs it to the terminal for tracking purposes.  
-  _Example:_ `run_cmd ls -l`
+  _Example:_ `shell::run_cmd ls -l`
 
-- **`run_cmd_eval`**  
+- **`shell::run_cmd_eval`**  
   Executes a command using `eval` and logs it, useful for dynamic command construction.  
-  _Example:_ `run_cmd_eval ls -l`
+  _Example:_ `shell::run_cmd_eval ls -l`
 
 - **`is_command_available`**  
   Checks if a given command exists in the system's PATH, returning a success or failure status.  

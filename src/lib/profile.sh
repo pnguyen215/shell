@@ -39,7 +39,7 @@ get_profile_dir() {
 #   ensure_workspace
 ensure_workspace() {
     if [ ! -d "$SHELL_CONF_WORKING_WORKSPACE" ]; then
-        run_cmd_eval sudo mkdir -p "$SHELL_CONF_WORKING_WORKSPACE"
+        shell::run_cmd_eval sudo mkdir -p "$SHELL_CONF_WORKING_WORKSPACE"
     fi
 }
 
@@ -82,7 +82,7 @@ add_profile() {
         on_evict "$cmd"
     else
         ensure_workspace
-        run_cmd_eval "$cmd"
+        shell::run_cmd_eval "$cmd"
         shell::colored_echo "🟢 Created profile '$profile_name'." 46
     fi
 }
@@ -175,7 +175,7 @@ update_profile() {
     if [ "$dry_run" = "true" ]; then
         on_evict "$cmd"
     else
-        run_cmd_eval "$cmd"
+        shell::run_cmd_eval "$cmd"
     fi
 }
 
@@ -218,7 +218,7 @@ remove_profile() {
         shell::colored_echo "Are you sure you want to remove profile '$profile_name'? [y/N]" 33
         read -r confirm
         if [[ "$confirm" =~ ^[Yy]$ ]]; then
-            run_cmd_eval sudo rm -rf "$profile_dir"
+            shell::run_cmd_eval sudo rm -rf "$profile_dir"
             shell::colored_echo "🟢 Removed profile '$profile_name'." 46
         else
             shell::colored_echo "🟡 Removal aborted." 11
@@ -258,7 +258,7 @@ get_profile() {
         return 1
     fi
     shell::colored_echo "📄 Contents of '$profile_conf':" 33
-    run_cmd_eval cat "$profile_conf"
+    shell::run_cmd_eval cat "$profile_conf"
 }
 
 # rename_profile function
@@ -305,7 +305,7 @@ rename_profile() {
     if [ "$dry_run" = "true" ]; then
         on_evict "$cmd"
     else
-        run_cmd_eval "$cmd"
+        shell::run_cmd_eval "$cmd"
         shell::colored_echo "🟢 Renamed profile '$old_name' to '$new_name'." 46
     fi
 }
@@ -359,7 +359,7 @@ add_conf_profile() {
         if [ "$dry_run" = "true" ]; then
             on_evict "sudo mkdir -p \"$profile_dir\""
         else
-            run_cmd_eval sudo mkdir -p "$profile_dir"
+            shell::run_cmd_eval sudo mkdir -p "$profile_dir"
         fi
     fi
 
@@ -386,7 +386,7 @@ add_conf_profile() {
             return 0
         fi
         grant777 "$profile_conf"
-        run_cmd_eval "$cmd"
+        shell::run_cmd_eval "$cmd"
         shell::colored_echo "🟢 Added configuration to profile '$profile_name': $key (encoded value)" 46
     fi
 }
@@ -526,7 +526,7 @@ get_value_conf_profile() {
 #   and then uses fzf to let the user select a configuration key to remove.
 #   It builds an OS-specific sed command to delete the line containing the selected key.
 #   In dry-run mode, the command is printed using on_evict; otherwise, it is executed asynchronously
-#   using async with run_cmd_eval.
+#   using async with shell::run_cmd_eval.
 #
 # Example:
 #   remove_conf_profile my_profile
@@ -571,7 +571,7 @@ remove_conf_profile() {
     if [ "$dry_run" = "true" ]; then
         on_evict "$sed_cmd"
     else
-        run_cmd_eval "$sed_cmd"
+        shell::run_cmd_eval "$sed_cmd"
         shell::colored_echo "🟢 Removed configuration for key: $selected_key from profile '$profile_name'" 46
     fi
 }
@@ -641,7 +641,7 @@ update_conf_profile() {
     if [ "$dry_run" = "true" ]; then
         on_evict "$sed_cmd"
     else
-        run_cmd_eval "$sed_cmd"
+        shell::run_cmd_eval "$sed_cmd"
         shell::colored_echo "🟢 Updated configuration for key: $selected_key in profile '$profile_name'" 46
     fi
 }
@@ -704,7 +704,7 @@ exist_key_conf_profile() {
 #   It then uses fzf to allow the user to select the existing key to rename.
 #   After prompting for a new key name and verifying that it does not already exist,
 #   the function constructs an OS-specific sed command to replace the old key with the new one.
-#   In dry-run mode, the command is printed via on_evict; otherwise, it is executed using run_cmd_eval.
+#   In dry-run mode, the command is printed via on_evict; otherwise, it is executed using shell::run_cmd_eval.
 #
 # Example:
 #   rename_key_conf_profile my_profile
@@ -758,7 +758,7 @@ rename_key_conf_profile() {
     if [ "$dry_run" = "true" ]; then
         on_evict "$sed_cmd"
     else
-        run_cmd_eval "$sed_cmd"
+        shell::run_cmd_eval "$sed_cmd"
         shell::colored_echo "🟢 Renamed key '$old_key' to '$new_key' in profile '$profile_name'" 46
     fi
 }
@@ -815,7 +815,7 @@ clone_conf_profile() {
     if [ "$dry_run" = "true" ]; then
         on_evict "$cmd"
     else
-        run_cmd_eval "$cmd"
+        shell::run_cmd_eval "$cmd"
         shell::colored_echo "🟢 Cloned profile.conf from '$source_profile' to '$destination_profile'" 46
     fi
 }

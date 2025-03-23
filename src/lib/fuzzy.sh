@@ -19,7 +19,7 @@
 #
 # Requirements:
 #   - fzf must be installed.
-#   - Helper functions: run_cmd_eval, shell::colored_echo, and shell::get_os_type.
+#   - Helper functions: shell::run_cmd_eval, shell::colored_echo, and shell::get_os_type.
 fzf_copy() {
     # Check if fzf is installed.
     install_package fzf
@@ -54,8 +54,8 @@ fzf_copy() {
     # Build the copy command.
     local cmd="sudo cp \"$source_file\" \"$destination_file\""
 
-    # Execute the command (using run_cmd_eval to log and run it).
-    run_cmd_eval "$cmd"
+    # Execute the command (using shell::run_cmd_eval to log and run it).
+    shell::run_cmd_eval "$cmd"
     clip_value "$cmd"
     shell::colored_echo "🟢 File copied successfully to $destination_file" 46
 }
@@ -78,7 +78,7 @@ fzf_copy() {
 #
 # Requirements:
 #   - fzf must be installed.
-#   - Helper functions: run_cmd_eval, shell::colored_echo, shell::get_os_type, install_package, and clip_value.
+#   - Helper functions: shell::run_cmd_eval, shell::colored_echo, shell::get_os_type, install_package, and clip_value.
 fzf_move() {
     # Check if fzf is installed.
     install_package fzf
@@ -113,8 +113,8 @@ fzf_move() {
     # Build the move command.
     local cmd="sudo mv \"$source_file\" \"$destination_file\""
 
-    # Execute the command (using run_cmd_eval to log and run it).
-    run_cmd_eval "$cmd"
+    # Execute the command (using shell::run_cmd_eval to log and run it).
+    shell::run_cmd_eval "$cmd"
     clip_value "$cmd"
     shell::colored_echo "🟢 File moved successfully to $destination_file" 46
 }
@@ -136,7 +136,7 @@ fzf_move() {
 #
 # Requirements:
 #   - fzf must be installed.
-#   - Helper functions: run_cmd_eval, shell::colored_echo, shell::get_os_type, install_package, and clip_value.
+#   - Helper functions: shell::run_cmd_eval, shell::colored_echo, shell::get_os_type, install_package, and clip_value.
 fzf_remove() {
     # Check if fzf is installed.
     install_package fzf
@@ -152,8 +152,8 @@ fzf_remove() {
     # Build the removal command.
     local cmd="sudo rm -rf \"$target\""
 
-    # Execute the command (using run_cmd_eval to log and run it).
-    run_cmd_eval "$cmd"
+    # Execute the command (using shell::run_cmd_eval to log and run it).
+    shell::run_cmd_eval "$cmd"
     clip_value "$cmd"
     shell::colored_echo "🟢 Removed successfully: $target" 46
 }
@@ -173,7 +173,7 @@ fzf_remove() {
 #   and then launches 'fzf' in multi-select mode to allow interactive file selection.
 #   If one or more files are selected, a zip command is constructed to compress those files.
 #   In dry-run mode (-n), the command is printed (via on_evict) without execution;
-#   otherwise, it is executed using run_cmd_eval.
+#   otherwise, it is executed using shell::run_cmd_eval.
 #   Finally, the absolute path of the created zip file is echoed.
 #
 # Example:
@@ -222,7 +222,7 @@ fzf_zip_attachment() {
         on_evict "$cmd_str"
         return 0
     else
-        run_cmd "${cmd[@]}"
+        shell::run_cmd "${cmd[@]}"
         shell::colored_echo "🟢 Zipping selected files from '$folder_path'" 46
     fi
 

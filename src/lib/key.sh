@@ -15,7 +15,7 @@
 #   The function checks that a filename is provided and that the specified file exists.
 #   If the file is not found, an error message is displayed.
 #   In dry-run mode, the command "source <filename>" is printed using on_evict.
-#   Otherwise, the file is sourced using run_cmd to log the execution.
+#   Otherwise, the file is sourced using shell::run_cmd to log the execution.
 #
 # Example:
 #   read_conf ~/.my-config                # Sources the configuration file.
@@ -46,7 +46,7 @@ read_conf() {
     if [ "$dry_run" = "true" ]; then
         on_evict "source \"$filename\""
     else
-        run_cmd source "$filename"
+        shell::run_cmd source "$filename"
     fi
 }
 
@@ -107,7 +107,7 @@ add_conf() {
             shell::colored_echo "🟡 The key '$key' exists. Please consider updating it by using update_conf" 11
             return 0
         fi
-        run_cmd_eval "$cmd"
+        shell::run_cmd_eval "$cmd"
         shell::colored_echo "🟢 Added configuration: $key (encoded value)" 46
     fi
 }
@@ -239,7 +239,7 @@ get_value_conf() {
 #   It extracts only the keys (before the '=') and uses fzf for interactive selection.
 #   Once a key is selected, it constructs a command to remove the line that starts with "key=" from the configuration file.
 #   The command uses sed with different options depending on the operating system (macOS or Linux).
-#   In dry-run mode, the command is printed using on_evict; otherwise, it is executed using run_cmd_eval.
+#   In dry-run mode, the command is printed using on_evict; otherwise, it is executed using shell::run_cmd_eval.
 #
 # Example:
 #   remove_conf         # Interactively select a key and remove its configuration entry.
@@ -295,7 +295,7 @@ remove_conf() {
     if [ "$dry_run" = "true" ]; then
         on_evict "$sed_cmd"
     else
-        run_cmd_eval "$sed_cmd"
+        shell::run_cmd_eval "$sed_cmd"
         shell::colored_echo "🟢 Removed configuration for key: $selected_key" 46
     fi
 }
@@ -374,7 +374,7 @@ update_conf() {
     if [ "$dry_run" = "true" ]; then
         on_evict "$sed_cmd"
     else
-        run_cmd_eval "$sed_cmd"
+        shell::run_cmd_eval "$sed_cmd"
         shell::colored_echo "🟢 Updated configuration for key: $selected_key" 46
     fi
 }
@@ -451,7 +451,7 @@ exist_key_conf() {
 #   After selection, the function prompts for a new key name and checks if the new key already exists.
 #   If the new key does not exist, it constructs a sed command to replace the old key with the new key in the file.
 #   The sed command uses in-place editing options appropriate for macOS (sed -i '') or Linux (sed -i).
-#   In dry-run mode, the command is printed via on_evict; otherwise, it is executed using run_cmd_eval.
+#   In dry-run mode, the command is printed via on_evict; otherwise, it is executed using shell::run_cmd_eval.
 #
 # Example:
 #   rename_key_conf         # Interactively select a key and rename it.
@@ -514,7 +514,7 @@ rename_key_conf() {
     if [ "$dry_run" = "true" ]; then
         on_evict "$sed_cmd"
     else
-        run_cmd_eval "$sed_cmd"
+        shell::run_cmd_eval "$sed_cmd"
         shell::colored_echo "🟢 Renamed key '$old_key' to '$new_key'" 46
     fi
 }
@@ -627,7 +627,7 @@ add_group() {
         if [ "$dry_run" = "true" ]; then
             on_evict "$sed_cmd"
         else
-            run_cmd_eval "$sed_cmd"
+            shell::run_cmd_eval "$sed_cmd"
             shell::colored_echo "🟢 Updated group '$group_name' with keys: $keys_csv" 46
         fi
     else
@@ -635,7 +635,7 @@ add_group() {
         if [ "$dry_run" = "true" ]; then
             on_evict "$cmd"
         else
-            run_cmd_eval "$cmd"
+            shell::run_cmd_eval "$cmd"
             shell::colored_echo "🟢 Created group '$group_name' with keys: $keys_csv" 46
         fi
     fi
@@ -784,7 +784,7 @@ remove_group() {
     if [ "$dry_run" = "true" ]; then
         on_evict "$sed_cmd"
     else
-        run_cmd_eval "$sed_cmd"
+        shell::run_cmd_eval "$sed_cmd"
         shell::colored_echo "🟢 Removed group: $selected_group" 46
     fi
 }
@@ -858,7 +858,7 @@ update_group() {
     if [ "$dry_run" = "true" ]; then
         on_evict "$sed_cmd"
     else
-        run_cmd_eval "$sed_cmd"
+        shell::run_cmd_eval "$sed_cmd"
         shell::colored_echo "🟢 Updated group '$selected_group' with new keys: $new_keys" 46
     fi
 }
@@ -879,7 +879,7 @@ update_group() {
 #   After selection, the function prompts for a new group name.
 #   It then constructs a sed command to replace the old group name with the new one in the configuration file.
 #   The sed command uses in-place editing options appropriate for macOS (sed -i '') or Linux (sed -i).
-#   In dry-run mode, the command is printed using on_evict; otherwise, it is executed using run_cmd_eval.
+#   In dry-run mode, the command is printed using on_evict; otherwise, it is executed using shell::run_cmd_eval.
 #
 # Example:
 #   rename_group         # Interactively select a group and rename it.
@@ -930,7 +930,7 @@ rename_group() {
     if [ "$dry_run" = "true" ]; then
         on_evict "$sed_cmd"
     else
-        run_cmd_eval "$sed_cmd"
+        shell::run_cmd_eval "$sed_cmd"
         shell::colored_echo "🟢 Renamed group '$old_group' to '$new_group'" 46
     fi
 }
@@ -1080,7 +1080,7 @@ select_group() {
 #   After selection, it prompts for a new group name.
 #   The new group entry is then constructed with the new group name and the same comma-separated keys
 #   as the selected group, and appended to SHELL_GROUP_CONF_FILE.
-#   In dry-run mode, the final command is printed using on_evict; otherwise, it is executed using run_cmd_eval.
+#   In dry-run mode, the final command is printed using on_evict; otherwise, it is executed using shell::run_cmd_eval.
 #
 # Example:
 #   clone_group         # Interactively select a group and create a clone with a new group name.
@@ -1146,7 +1146,7 @@ clone_group() {
     if [ "$dry_run" = "true" ]; then
         on_evict "$cmd"
     else
-        run_cmd_eval "$cmd"
+        shell::run_cmd_eval "$cmd"
         shell::colored_echo "🟢 Created new group '$new_group' as a clone of '$selected_group' with keys: $keys_csv" 46
     fi
 }
@@ -1227,11 +1227,11 @@ sync_key_group_conf() {
     if [ "$dry_run" = "true" ]; then
         shell::colored_echo "🔍 View in clipboard" 33
         clip_value "$(cat "$temp_file")"
-        run_cmd_eval "sudo rm $temp_file"
+        shell::run_cmd_eval "sudo rm $temp_file"
     else
         local backup_file="${SHELL_GROUP_CONF_FILE}.bak"
-        run_cmd_eval "sudo cp $SHELL_GROUP_CONF_FILE $backup_file"
-        run_cmd_eval "sudo mv $temp_file $SHELL_GROUP_CONF_FILE"
+        shell::run_cmd_eval "sudo cp $SHELL_GROUP_CONF_FILE $backup_file"
+        shell::run_cmd_eval "sudo mv $temp_file $SHELL_GROUP_CONF_FILE"
         shell::colored_echo "🟢 Group configuration synchronized successfully." 46
     fi
 }

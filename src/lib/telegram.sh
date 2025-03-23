@@ -41,7 +41,7 @@ build_markdown_message() {
 # Description:
 #   The function first checks for an optional dry-run flag. It then verifies that at least three arguments are provided.
 #   If the bot token or chat ID is missing, it prints an error message. Otherwise, it constructs a curl command to send
-#   the message via Telegram's API. In dry-run mode, the command is printed using on_evict; otherwise, it is executed using run_cmd_eval.
+#   the message via Telegram's API. In dry-run mode, the command is printed using on_evict; otherwise, it is executed using shell::run_cmd_eval.
 #
 # Example:
 #   send_telegram_message 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Hello, World!"
