@@ -104,9 +104,9 @@ Access the shell library by opening your terminal and using the commands below. 
   Copies the current working directory path to the system clipboard.  
   _Example:_ `shell::clip_cwd`
 
-- **`clip_value`**  
+- **`shell::clip_value`**  
   Copies a specified text string to the system clipboard.  
-  _Example:_ `clip_value "Hello, World!"`
+  _Example:_ `shell::clip_value "Hello, World!"`
 
 - **`get_temp_dir`**  
   Returns the OS-appropriate temporary directory path (e.g., `/tmp` on Linux).  

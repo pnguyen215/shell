@@ -167,7 +167,7 @@ get_conf() {
     fi
 
     shell::colored_echo "🔑 Key: $selected_key" 33
-    clip_value "$decoded_value"
+    shell::clip_value "$decoded_value"
 }
 
 # get_value_conf function
@@ -727,7 +727,7 @@ read_group() {
 
     json_obj+="}"
     shell::colored_echo "$json_obj" 33
-    clip_value "$json_obj"
+    shell::clip_value "$json_obj"
 }
 
 # remove_group function
@@ -1061,7 +1061,7 @@ select_group() {
     # Display the results.
     shell::colored_echo "📁 Group: $selected_group" 33
     shell::colored_echo "🔑 Key: $selected_key" 33
-    clip_value "$decoded_value"
+    shell::clip_value "$decoded_value"
 }
 
 # clone_group function
@@ -1226,7 +1226,7 @@ sync_key_group_conf() {
 
     if [ "$dry_run" = "true" ]; then
         shell::colored_echo "🔍 View in clipboard" 33
-        clip_value "$(cat "$temp_file")"
+        shell::clip_value "$(cat "$temp_file")"
         shell::run_cmd_eval "sudo rm $temp_file"
     else
         local backup_file="${SHELL_GROUP_CONF_FILE}.bak"

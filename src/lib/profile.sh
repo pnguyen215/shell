@@ -451,7 +451,7 @@ get_conf_profile() {
         decoded_value=$(echo "$encoded_value" | base64 -d)
     fi
     shell::colored_echo "🔑 Key: $selected_key" 33
-    clip_value "$decoded_value"
+    shell::clip_value "$decoded_value"
 }
 
 # get_value_conf_profile function

@@ -56,7 +56,7 @@ fzf_copy() {
 
     # Execute the command (using shell::run_cmd_eval to log and run it).
     shell::run_cmd_eval "$cmd"
-    clip_value "$cmd"
+    shell::clip_value "$cmd"
     shell::colored_echo "🟢 File copied successfully to $destination_file" 46
 }
 
@@ -78,7 +78,7 @@ fzf_copy() {
 #
 # Requirements:
 #   - fzf must be installed.
-#   - Helper functions: shell::run_cmd_eval, shell::colored_echo, shell::get_os_type, shell::install_package, and clip_value.
+#   - Helper functions: shell::run_cmd_eval, shell::colored_echo, shell::get_os_type, shell::install_package, and shell::clip_value.
 fzf_move() {
     # Check if fzf is installed.
     shell::install_package fzf
@@ -115,7 +115,7 @@ fzf_move() {
 
     # Execute the command (using shell::run_cmd_eval to log and run it).
     shell::run_cmd_eval "$cmd"
-    clip_value "$cmd"
+    shell::clip_value "$cmd"
     shell::colored_echo "🟢 File moved successfully to $destination_file" 46
 }
 
@@ -136,7 +136,7 @@ fzf_move() {
 #
 # Requirements:
 #   - fzf must be installed.
-#   - Helper functions: shell::run_cmd_eval, shell::colored_echo, shell::get_os_type, shell::install_package, and clip_value.
+#   - Helper functions: shell::run_cmd_eval, shell::colored_echo, shell::get_os_type, shell::install_package, and shell::clip_value.
 fzf_remove() {
     # Check if fzf is installed.
     shell::install_package fzf
@@ -154,7 +154,7 @@ fzf_remove() {
 
     # Execute the command (using shell::run_cmd_eval to log and run it).
     shell::run_cmd_eval "$cmd"
-    clip_value "$cmd"
+    shell::clip_value "$cmd"
     shell::colored_echo "🟢 Removed successfully: $target" 46
 }
 
@@ -238,7 +238,7 @@ fzf_zip_attachment() {
     fi
 
     shell::colored_echo "$abs_zip_filename" 245
-    clip_value "$abs_zip_filename"
+    shell::clip_value "$abs_zip_filename"
 }
 
 # fzf_current_zip_attachment function
@@ -296,7 +296,7 @@ fzf_current_zip_attachment() {
     if [ -f "$created_zip" ]; then
         mv "$created_zip" "$desired_zip"
         shell::colored_echo "🟢 Renamed zip file to '$desired_zip'" 46
-        clip_value "$desired_zip"
+        shell::clip_value "$desired_zip"
     else
         shell::colored_echo "🔴 Expected zip file not found." 196
         return 1

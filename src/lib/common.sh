@@ -764,11 +764,11 @@ shell::clip_cwd() {
     fi
 }
 
-# clip_value function
+# shell::clip_value function
 # Copies the provided text value into the system clipboard.
 #
 # Usage:
-#   clip_value <text>
+#   shell::clip_value <text>
 #
 # Parameters:
 #   <text> - The text string or value to copy to the clipboard.
@@ -785,8 +785,8 @@ shell::clip_cwd() {
 #   - shell::colored_echo: To print colored status messages.
 #
 # Example:
-#   clip_value "Hello, World!"
-clip_value() {
+#   shell::clip_value "Hello, World!"
+shell::clip_value() {
     local value="$1"
     if [[ -z "$value" ]]; then
         shell::colored_echo "🔴 Error: No value provided to copy." 196
@@ -894,7 +894,7 @@ get_temp_dir() {
 on_evict() {
     local command="$*"
     shell::colored_echo "CLI: $command" 3
-    clip_value "$command"
+    shell::clip_value "$command"
 }
 
 # port_check function

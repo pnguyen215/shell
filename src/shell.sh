@@ -24,16 +24,16 @@ shell_upgrade() {
     shell::colored_echo "🟢 shell upgraded. Restart your terminal or run 'source ~/.zshrc' or 'source ~/.bashrc' to apply changes." 46
     # Check if the shell source command is in .zshrc or .bashrc and copy the appropriate command.
     if [ -f "$HOME/.zshrc" ] && grep -q "source $install_dir/src/shell.sh" "$HOME/.zshrc"; then
-        clip_value "source ~/.zshrc"
+        shell::clip_value "source ~/.zshrc"
         shell::run_cmd_eval "source ~/.zshrc"
         return 0
     elif [ -f "$HOME/.bashrc" ] && grep -q "source $install_dir/src/shell.sh" "$HOME/.bashrc"; then
-        clip_value "source ~/.bashrc"
+        shell::clip_value "source ~/.bashrc"
         shell::run_cmd_eval "source ~/.bashrc"
         return 0
     else
         # Fallback: default to .bashrc if none found.
-        clip_value "source ~/.bashrc"
+        shell::clip_value "source ~/.bashrc"
         shell::run_cmd_eval "source ~/.bashrc"
     fi
 }
