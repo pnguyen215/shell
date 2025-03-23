@@ -816,19 +816,19 @@ shell::clip_value() {
     fi
 }
 
-# get_temp_dir function
+# shell::get_temp_dir function
 # Returns the appropriate temporary directory based on the detected kernel.
 #
 # Usage:
-#   get_temp_dir
+#   shell::get_temp_dir
 #
 # Returns:
 #   The path to the temporary directory for the current operating system.
 #
 # Example usage:
-#   TEMP_DIR=$(get_temp_dir)
+#   TEMP_DIR=$(shell::get_temp_dir)
 #   echo "Using temporary directory: $TEMP_DIR"
-get_temp_dir() {
+shell::get_temp_dir() {
     shell::get_os_type
     local os=$?
 

@@ -108,9 +108,9 @@ Access the shell library by opening your terminal and using the commands below. 
   Copies a specified text string to the system clipboard.  
   _Example:_ `shell::clip_value "Hello, World!"`
 
-- **`get_temp_dir`**  
+- **`shell::get_temp_dir`**  
   Returns the OS-appropriate temporary directory path (e.g., `/tmp` on Linux).  
-  _Example:_ `TEMP_DIR=$(get_temp_dir)`
+  _Example:_ `TEMP_DIR=$(shell::get_temp_dir)`
 
 - **`on_evict`**  
   Prints a command to the terminal without executing it, useful for debugging or logging.  
