@@ -93,8 +93,8 @@ goto_usage() {
     echo
     echo "  COMMANDS:"
     echo
-    echo "    opent                             # (Mac Only) Open current directory in new Finder Tab."
-    echo "    opent <location>                  # (Mac Only) Open location in new Finder Tab."
+    echo "    shell::opent                             # (Mac Only) Open current directory in new Finder Tab."
+    echo "    shell::opent <location>                  # (Mac Only) Open location in new Finder Tab."
     echo
     echo "    goto                              # Shows help."
     echo "    goto /User/ ./Home ~/help         # Goes to directory."

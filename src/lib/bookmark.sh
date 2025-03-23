@@ -55,19 +55,19 @@ shell::uplink() {
     done <"$link_file"
 }
 
-# opent function
+# shell::opent function
 # Opens the specified directory in a new Finder tab (Mac OS only).
 #
 # Usage:
-#   opent [directory]
+#   shell::opent [directory]
 #
 # Description:
-#   The 'opent' function opens the specified directory in a new Finder tab on Mac OS.
+#   The 'shell::opent' function opens the specified directory in a new Finder tab on Mac OS.
 #   If no directory is specified, it opens the current directory.
 #
 # Dependencies:
 #   - The 'osascript' command for AppleScript support.
-opent() {
+shell::opent() {
     local os
     os=$(shell::get_os_type)
 
@@ -96,7 +96,7 @@ opent() {
         # Use xdg-open to open the directory in the default file manager.
         xdg-open "$dir"
     else
-        shell::colored_echo "🔴 Unsupported operating system for opent function." 196
+        shell::colored_echo "🔴 Unsupported operating system for shell::opent function." 196
         return 1
     fi
 
