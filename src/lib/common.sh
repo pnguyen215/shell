@@ -1598,11 +1598,11 @@ shell::loading_spinner() {
     echo -e
 }
 
-# measure_time function
+# shell::measure_time function
 # Measures the execution time of a command and displays the elapsed time.
 #
 # Usage:
-#   measure_time <command> [arguments...]
+#   shell::measure_time <command> [arguments...]
 #
 # Parameters:
 #   - <command> [arguments...]: The command (with its arguments) to execute.
@@ -1614,8 +1614,8 @@ shell::loading_spinner() {
 #   to the built-in SECONDS variable (providing second-level precision). On Linux, it uses date +%s%3N.
 #
 # Example:
-#   measure_time sleep 2    # Executes 'sleep 2' and displays the execution time.
-measure_time() {
+#   shell::measure_time sleep 2    # Executes 'sleep 2' and displays the execution time.
+shell::measure_time() {
     local os_type
     os_type=$(shell::get_os_type)
 

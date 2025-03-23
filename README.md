@@ -178,9 +178,9 @@ Access the shell library by opening your terminal and using the commands below. 
   - `shell::loading_spinner 10`
   - `shell::loading_spinner -n 10`
 
-- **`measure_time`**  
+- **`shell::measure_time`**  
   Measures and reports the execution time of a command in seconds.  
-  _Example:_ `measure_time sleep 2`
+  _Example:_ `shell::measure_time sleep 2`
 
 - **`async`**  
   Runs a command or function asynchronously in the background. Use `-n` for no output.  
