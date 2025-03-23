@@ -51,11 +51,11 @@ shell::get_os_type() {
     esac
 }
 
-# colored_echo function
+# shell::colored_echo function
 # Prints text to the terminal with customizable colors using `tput` and ANSI escape sequences.
 #
 # Usage:
-#   colored_echo <message> [color_code]
+#   shell::colored_echo <message> [color_code]
 #
 # Parameters:
 #   - <message>: The text message to display.
@@ -65,22 +65,22 @@ shell::get_os_type() {
 #       - 232-255: Grayscale shades
 #
 # Description:
-#   The `colored_echo` function prints a message in bold and a specific color, if a valid color code is provided.
+#   The `shell::colored_echo` function prints a message in bold and a specific color, if a valid color code is provided.
 #   It uses ANSI escape sequences for 256-color support. If no color code is specified, it defaults to blue (code 4).
 #
 # Options:
 #   None
 #
 # Example usage:
-#   colored_echo "Hello, World!"          # Prints in default blue (code 4).
-#   colored_echo "Error occurred" 196     # Prints in bright red.
-#   colored_echo "Task completed" 46      # Prints in vibrant green.
-#   colored_echo "Shades of gray" 245     # Prints in a mid-gray shade.
+#   shell::colored_echo "Hello, World!"          # Prints in default blue (code 4).
+#   shell::colored_echo "Error occurred" 196     # Prints in bright red.
+#   shell::colored_echo "Task completed" 46      # Prints in vibrant green.
+#   shell::colored_echo "Shades of gray" 245     # Prints in a mid-gray shade.
 #
 # Notes:
 #   - Requires a terminal with 256-color support.
 #   - Use ANSI color codes for finer control over colors.
-colored_echo() {
+shell::colored_echo() {
     local message=$1
     local color_code=${2:-4} # Default to blue (ANSI color code 4)
 
@@ -167,7 +167,7 @@ run_cmd() {
         emoji="🍎" # Apple for macOS
     fi
 
-    colored_echo "$emoji $command" $color_code
+    shell::colored_echo "$emoji $command" $color_code
     # Execute the command without using eval
     "$@"
 }
@@ -223,7 +223,7 @@ run_cmd_eval() {
         emoji="🍎" # Apple for macOS
     fi
 
-    colored_echo "$emoji $command" $color_code
+    shell::colored_echo "$emoji $command" $color_code
     eval "$command"
 }
 
@@ -270,7 +270,7 @@ install_package() {
     if [ "$os_type" = "linux" ]; then # Linux
         # Check if the package is already installed on Linux.
         if is_package_installed_linux "$package"; then
-            colored_echo "🟡 $package is already installed. Skipping." 33
+            shell::colored_echo "🟡 $package is already installed. Skipping." 33
             return 0
         fi
 
@@ -281,22 +281,22 @@ install_package() {
         elif is_command_available dnf; then
             run_cmd_eval "sudo dnf install -y $package"
         else
-            colored_echo "🔴 Error: Unsupported package manager on Linux." 31
+            shell::colored_echo "🔴 Error: Unsupported package manager on Linux." 31
             return 1
         fi
     elif [ "$os_type" = "macos" ]; then # macOS
         if ! is_command_available brew; then
-            colored_echo "Homebrew is not installed. Installing Homebrew..." 33
+            shell::colored_echo "Homebrew is not installed. Installing Homebrew..." 33
             install_homebrew
         fi
         # Check if the package is already installed by Homebrew; skip if installed.
         if brew list --versions "$package" >/dev/null 2>&1; then
-            colored_echo "🟡 $package is already installed. Skipping." 32
+            shell::colored_echo "🟡 $package is already installed. Skipping." 32
             return 0
         fi
         run_cmd_eval "brew install $package"
     else
-        colored_echo "🔴 Error: Unsupported operating system." 31
+        shell::colored_echo "🔴 Error: Unsupported operating system." 31
         return 1
     fi
 }
@@ -322,22 +322,22 @@ uninstall_package() {
             if is_package_installed_linux "$package"; then
                 run_cmd_eval "sudo apt-get remove -y $package"
             else
-                colored_echo "🟡 $package is not installed. Skipping uninstallation." 33
+                shell::colored_echo "🟡 $package is not installed. Skipping uninstallation." 33
             fi
         elif is_command_available yum; then
             if rpm -q "$package" >/dev/null 2>&1; then
                 run_cmd_eval "sudo yum remove -y $package"
             else
-                colored_echo "🟡 $package is not installed. Skipping uninstallation." 33
+                shell::colored_echo "🟡 $package is not installed. Skipping uninstallation." 33
             fi
         elif is_command_available dnf; then
             if rpm -q "$package" >/dev/null 2>&1; then
                 run_cmd_eval "sudo dnf remove -y $package"
             else
-                colored_echo "🟡 $package is not installed. Skipping uninstallation." 33
+                shell::colored_echo "🟡 $package is not installed. Skipping uninstallation." 33
             fi
         else
-            colored_echo "🔴 Error: Unsupported package manager on Linux." 31
+            shell::colored_echo "🔴 Error: Unsupported package manager on Linux." 31
             return 1
         fi
     elif [ "$os_type" = "macos" ]; then
@@ -345,14 +345,14 @@ uninstall_package() {
             if brew list --versions "$package" >/dev/null 2>&1; then
                 run_cmd_eval "brew uninstall $package"
             else
-                colored_echo "🟡 $package is not installed. Skipping uninstallation." 33
+                shell::colored_echo "🟡 $package is not installed. Skipping uninstallation." 33
             fi
         else
-            colored_echo "🔴 Error: Homebrew is not installed on macOS." 31
+            shell::colored_echo "🔴 Error: Homebrew is not installed on macOS." 31
             return 1
         fi
     else
-        colored_echo "🔴 Error: Unsupported operating system." 31
+        shell::colored_echo "🔴 Error: Unsupported operating system." 31
         return 1
     fi
 }
@@ -378,25 +378,25 @@ list_installed_packages() {
 
     if [ "$os_type" = "linux" ]; then
         if is_command_available apt-get; then
-            colored_echo "Listing installed packages (APT/Debian-based):" 34
+            shell::colored_echo "Listing installed packages (APT/Debian-based):" 34
             run_cmd_eval dpkg -l
         elif is_command_available yum || is_command_available dnf; then
-            colored_echo "Listing installed packages (RPM-based):" 34
+            shell::colored_echo "Listing installed packages (RPM-based):" 34
             run_cmd_eval rpm -qa | sort
         else
-            colored_echo "🔴 Error: Unsupported package manager on Linux." 31
+            shell::colored_echo "🔴 Error: Unsupported package manager on Linux." 31
             return 1
         fi
     elif [ "$os_type" = "macos" ]; then
         if is_command_available brew; then
-            colored_echo "Listing installed packages (Homebrew):" 32
+            shell::colored_echo "Listing installed packages (Homebrew):" 32
             run_cmd_eval brew list
         else
-            colored_echo "🔴 Error: Homebrew is not installed on macOS." 31
+            shell::colored_echo "🔴 Error: Homebrew is not installed on macOS." 31
             return 1
         fi
     else
-        colored_echo "🔴 Error: Unsupported operating system." 31
+        shell::colored_echo "🔴 Error: Unsupported operating system." 31
         return 1
     fi
 }
@@ -429,23 +429,23 @@ list_path_installed_packages() {
         elif [ "$os_type" = "linux" ]; then
             base_path="/opt"
         else
-            colored_echo "🔴 Error: Unsupported operating system for package path listing." 31
+            shell::colored_echo "🔴 Error: Unsupported operating system for package path listing." 31
             return 1
         fi
     fi
 
     # Verify the base installation directory exists.
     if [ ! -d "$base_path" ]; then
-        colored_echo "🔴 Error: The specified installation path '$base_path' does not exist." 31
+        shell::colored_echo "🔴 Error: The specified installation path '$base_path' does not exist." 31
         return 1
     fi
 
-    colored_echo "Listing packages installed in: $base_path" 36
+    shell::colored_echo "Listing packages installed in: $base_path" 36
     # List only directories (assumed to be package folders) at one level below base_path.
     find "$base_path" -maxdepth 1 -mindepth 1 -type d | sort | while read -r package_dir; do
         local package_name
         package_name=$(basename "$package_dir")
-        colored_echo "📦 Package: $package_name 👉 Path: $package_dir"
+        shell::colored_echo "📦 Package: $package_name 👉 Path: $package_dir"
     done
 }
 
@@ -477,18 +477,18 @@ list_path_installed_packages_details() {
         elif [ "$os_type" = "linux" ]; then
             base_path="/opt"
         else
-            colored_echo "🔴 Error: Unsupported operating system for package details listing." 31
+            shell::colored_echo "🔴 Error: Unsupported operating system for package details listing." 31
             return 1
         fi
     fi
 
     # Verify that the base installation directory exists.
     if [ ! -d "$base_path" ]; then
-        colored_echo "🔴 Error: The specified installation path '$base_path' does not exist." 31
+        shell::colored_echo "🔴 Error: The specified installation path '$base_path' does not exist." 31
         return 1
     fi
 
-    colored_echo "Listing details of packages installed in: $base_path" 36
+    shell::colored_echo "Listing details of packages installed in: $base_path" 36
 
     # Use find to list only subdirectories (assumed to be package folders)
     find "$base_path" -maxdepth 1 -mindepth 1 -type d | sort | while IFS= read -r package_dir; do
@@ -534,7 +534,7 @@ is_package_installed_linux() {
         # RPM-based: Check using rpm query.
         rpm -q "$package" >/dev/null 2>&1
     else
-        colored_echo "🔴 Error: Unsupported package manager for Linux." 31
+        shell::colored_echo "🔴 Error: Unsupported package manager for Linux." 31
         return 1
     fi
 }
@@ -577,18 +577,18 @@ create_directory_if_not_exists() {
 
     # Check if the directory exists.
     if [ ! -d "$dir" ]; then
-        colored_echo "📁 Directory '$dir' does not exist. Creating the directory (including nested directories) with admin privileges..." 11
+        shell::colored_echo "📁 Directory '$dir' does not exist. Creating the directory (including nested directories) with admin privileges..." 11
         run_cmd_eval 'sudo mkdir -p "$dir"' # Use sudo to create the directory and its parent directories.
         if [ $? -eq 0 ]; then
-            colored_echo "🟢 Directory created successfully." 46
+            shell::colored_echo "🟢 Directory created successfully." 46
             grant777 "$dir"
             return 0
         else
-            colored_echo "🔴 Error: Failed to create the directory." 196
+            shell::colored_echo "🔴 Error: Failed to create the directory." 196
             return 1
         fi
     else
-        colored_echo "🟢 Directory '$dir' already exists." 46
+        shell::colored_echo "🟢 Directory '$dir' already exists." 46
     fi
 }
 
@@ -636,27 +636,27 @@ create_file_if_not_exists() {
 
     # Check if the parent directory exists.
     if [ ! -d "$directory" ]; then
-        colored_echo "📁 Directory '$directory' does not exist. Creating with admin privileges..." 11
+        shell::colored_echo "📁 Directory '$directory' does not exist. Creating with admin privileges..." 11
         run_cmd_eval "sudo mkdir -p \"$directory\""
         if [ $? -eq 0 ]; then
-            colored_echo "🟢 Directory created successfully." 46
+            shell::colored_echo "🟢 Directory created successfully." 46
             # run_cmd_eval "sudo chmod 700 \"$directory\"" # Set directory permissions to 700 (owner can read, write, and execute)
         else
-            colored_echo "🔴 Error: Failed to create the directory." 196
+            shell::colored_echo "🔴 Error: Failed to create the directory." 196
             return 1
         fi
     fi
 
     # Check if the file exists.
     if [ ! -e "$filename" ]; then
-        colored_echo "📄 File '$filename' does not exist. Creating with admin privileges..." 11
+        shell::colored_echo "📄 File '$filename' does not exist. Creating with admin privileges..." 11
         run_cmd_eval "sudo touch \"$filename\""
         if [ $? -eq 0 ]; then
-            colored_echo "🟢 File created successfully." 46
+            shell::colored_echo "🟢 File created successfully." 46
             # run_cmd_eval "sudo chmod 600 \"$filename\"" # Set file permissions to 600 (owner can read and write; no permissions for others)
             return 0
         else
-            colored_echo "🔴 Error: Failed to create the file." 196
+            shell::colored_echo "🔴 Error: Failed to create the file." 196
             return 1
         fi
     fi
@@ -700,7 +700,7 @@ grant777() {
 
     # Verify that the target exists
     if [ ! -e "$target" ]; then
-        colored_echo "🔴 Target '$target' does not exist." 196
+        shell::colored_echo "🔴 Target '$target' does not exist." 196
         return 1
     fi
 
@@ -723,11 +723,11 @@ grant777() {
     else
         # If the target already has 777 permissions, skip execution.
         if [ "$current_perm" -eq 777 ]; then
-            # colored_echo "🟡 Permissions for '$target' already set to full (777)" 33
+            # shell::colored_echo "🟡 Permissions for '$target' already set to full (777)" 33
             return 0
         fi
         run_cmd_eval "$chmod_cmd"
-        colored_echo "🟢 Permissions for '$target' set to full (read, write, and execute - 777)" 46
+        shell::colored_echo "🟢 Permissions for '$target' set to full (read, write, and execute - 777)" 46
     fi
 }
 
@@ -746,20 +746,20 @@ clip_cwd() {
 
     if [[ "$os" == "macos" ]]; then
         echo -n "$adr" | pbcopy
-        colored_echo "🟢 Path copied to clipboard using pbcopy" 46
+        shell::colored_echo "🟢 Path copied to clipboard using pbcopy" 46
     elif [[ "$os" == "linux" ]]; then
         if is_command_available xclip; then
             echo -n "$adr" | xclip -selection clipboard
-            colored_echo "🟢 Path copied to clipboard using xclip" 46
+            shell::colored_echo "🟢 Path copied to clipboard using xclip" 46
         elif is_command_available xsel; then
             echo -n "$adr" | xsel --clipboard --input
-            colored_echo "🟢 Path copied to clipboard using xsel" 46
+            shell::colored_echo "🟢 Path copied to clipboard using xsel" 46
         else
-            colored_echo "🔴 Clipboard tool not found. Please install xclip or xsel." 196
+            shell::colored_echo "🔴 Clipboard tool not found. Please install xclip or xsel." 196
             return 1
         fi
     else
-        colored_echo "🔴 Clipboard copying not supported on this OS." 196
+        shell::colored_echo "🔴 Clipboard copying not supported on this OS." 196
         return 1
     fi
 }
@@ -782,14 +782,14 @@ clip_cwd() {
 # Dependencies:
 #   - shell::get_os_type: To detect the operating system.
 #   - is_command_available: To check for the availability of xclip or xsel on Linux.
-#   - colored_echo: To print colored status messages.
+#   - shell::colored_echo: To print colored status messages.
 #
 # Example:
 #   clip_value "Hello, World!"
 clip_value() {
     local value="$1"
     if [[ -z "$value" ]]; then
-        colored_echo "🔴 Error: No value provided to copy." 196
+        shell::colored_echo "🔴 Error: No value provided to copy." 196
         return 1
     fi
 
@@ -798,20 +798,20 @@ clip_value() {
 
     if [[ "$os" == "macos" ]]; then
         echo -n "$value" | pbcopy
-        colored_echo "🟢 Value copied to clipboard using pbcopy." 46
+        shell::colored_echo "🟢 Value copied to clipboard using pbcopy." 46
     elif [[ "$os" == "linux" ]]; then
         if is_command_available xclip; then
             echo -n "$value" | xclip -selection clipboard
-            colored_echo "🟢 Value copied to clipboard using xclip." 46
+            shell::colored_echo "🟢 Value copied to clipboard using xclip." 46
         elif is_command_available xsel; then
             echo -n "$value" | xsel --clipboard --input
-            colored_echo "🟢 Value copied to clipboard using xsel." 46
+            shell::colored_echo "🟢 Value copied to clipboard using xsel." 46
         else
-            colored_echo "🔴 Clipboard tool not found. Please install xclip or xsel." 196
+            shell::colored_echo "🔴 Clipboard tool not found. Please install xclip or xsel." 196
             return 1
         fi
     else
-        colored_echo "🔴 Clipboard copying not supported on this OS." 196
+        shell::colored_echo "🔴 Clipboard copying not supported on this OS." 196
         return 1
     fi
 }
@@ -893,7 +893,7 @@ get_temp_dir() {
 #   - This function is useful for displaying commands in logs or hooks without execution.
 on_evict() {
     local command="$*"
-    colored_echo "CLI: $command" 3
+    shell::colored_echo "CLI: $command" 3
     clip_value "$command"
 }
 
@@ -971,7 +971,7 @@ port_kill() {
     fi
 
     if [ "$#" -eq 0 ]; then
-        colored_echo "🟡 No ports specified. Usage: port_kill [-n] PORT [PORT...]" 11
+        shell::colored_echo "🟡 No ports specified. Usage: port_kill [-n] PORT [PORT...]" 11
         return 1
     fi
 
@@ -981,7 +981,7 @@ port_kill() {
         pids=$(lsof -ti :"$port")
 
         if [ -n "$pids" ]; then
-            colored_echo "🟢 Processing port $port with PIDs: $pids" 46
+            shell::colored_echo "🟢 Processing port $port with PIDs: $pids" 46
             for pid in $pids; do
                 # Construct the kill command as an array to reuse it for both on_evict and run_cmd.
                 local cmd=("kill" "-9" "$pid")
@@ -995,7 +995,7 @@ port_kill() {
                 fi
             done
         else
-            colored_echo "🟠 No processes found on port $port" 11
+            shell::colored_echo "🟠 No processes found on port $port" 11
         fi
     done
 }
@@ -1042,7 +1042,7 @@ copy_files() {
         local destination_file="$destination/$filename"
 
         if [ -e "$destination_file" ]; then
-            colored_echo "🔴 Error: Destination file '$filename' already exists." 196
+            shell::colored_echo "🔴 Error: Destination file '$filename' already exists." 196
             continue
         fi
 
@@ -1052,7 +1052,7 @@ copy_files() {
             on_evict "$cmd"
         else
             run_cmd_eval "$cmd"
-            colored_echo "🟢 File copied successfully to $destination_file" 46
+            shell::colored_echo "🟢 File copied successfully to $destination_file" 46
         fi
     done
 }
@@ -1097,20 +1097,20 @@ move_files() {
     shift
 
     if [ ! -d "$destination_folder" ]; then
-        colored_echo "🔴 Error: Destination folder '$destination_folder' does not exist." 196
+        shell::colored_echo "🔴 Error: Destination folder '$destination_folder' does not exist." 196
         return 1
     fi
 
     for source in "$@"; do
         if [ ! -e "$source" ]; then
-            colored_echo "🔴 Error: Source file '$source' does not exist." 196
+            shell::colored_echo "🔴 Error: Source file '$source' does not exist." 196
             continue
         fi
 
         local destination="$destination_folder/$(basename "$source")"
 
         if [ -e "$destination" ]; then
-            colored_echo "🔴 Error: Destination file '$destination' already exists." 196
+            shell::colored_echo "🔴 Error: Destination file '$destination' already exists." 196
             continue
         fi
 
@@ -1120,9 +1120,9 @@ move_files() {
         else
             run_cmd sudo mv "$source" "$destination"
             if [ $? -eq 0 ]; then
-                colored_echo "🟢 File '$source' moved successfully to $destination" 46
+                shell::colored_echo "🟢 File '$source' moved successfully to $destination" 46
             else
-                colored_echo "🔴 Error moving file '$source'." 196
+                shell::colored_echo "🔴 Error moving file '$source'." 196
             fi
         fi
     done
@@ -1198,7 +1198,7 @@ remove_dataset() {
 #
 # Requirements:
 #   - fzf must be installed.
-#   - Helper functions: run_cmd, on_evict, colored_echo, and shell::get_os_type.
+#   - Helper functions: run_cmd, on_evict, shell::colored_echo, and shell::get_os_type.
 editor() {
     local dry_run="false"
 
@@ -1215,7 +1215,7 @@ editor() {
 
     local folder="$1"
     if [ ! -d "$folder" ]; then
-        colored_echo "🔴 Error: '$folder' is not a valid directory." 196
+        shell::colored_echo "🔴 Error: '$folder' is not a valid directory." 196
         return 1
     fi
 
@@ -1237,7 +1237,7 @@ editor() {
     local file_list
     file_list=$(find "$folder" -type f -exec "${abs_command[@]}" {} \;)
     if [ -z "$file_list" ]; then
-        colored_echo "🔴 No files found in '$folder'." 196
+        shell::colored_echo "🔴 No files found in '$folder'." 196
         return 1
     fi
 
@@ -1245,7 +1245,7 @@ editor() {
     local selected_file
     selected_file=$(echo "$file_list" | fzf --prompt="Select a file: ")
     if [ -z "$selected_file" ]; then
-        colored_echo "🔴 No file selected." 196
+        shell::colored_echo "🔴 No file selected." 196
         return 1
     fi
 
@@ -1253,7 +1253,7 @@ editor() {
     local selected_command
     selected_command=$(echo "cat;less;more;vim;nano" | tr ';' '\n' | fzf --prompt="Select an action: ")
     if [ -z "$selected_command" ]; then
-        colored_echo "🔴 No action selected." 196
+        shell::colored_echo "🔴 No action selected." 196
         return 1
     fi
 
@@ -1321,12 +1321,12 @@ download_dataset() {
             echo -n "❓ Do you want to overwrite the existing file? (y/n): "
             read confirm
             if [ -z "$confirm" ]; then
-                colored_echo "🔴 Invalid input. Please enter y or n." 196
+                shell::colored_echo "🔴 Invalid input. Please enter y or n." 196
             fi
         done
 
         if [ "$confirm" != "y" ]; then
-            colored_echo "🍌 Download canceled. The file already exists." 11
+            shell::colored_echo "🍌 Download canceled. The file already exists." 11
             return 1
         fi
 
@@ -1345,13 +1345,13 @@ download_dataset() {
     local download_cmd="curl -LJ \"$link\" -o \"$filename\""
     if [ "$dry_run" = "true" ]; then
         on_evict "$download_cmd"
-        colored_echo "💡 Dry-run mode: Displayed download command for $filename" 11
+        shell::colored_echo "💡 Dry-run mode: Displayed download command for $filename" 11
     else
         run_cmd curl -LJ "$link" -o "$filename"
         if [ $? -eq 0 ]; then
-            colored_echo "🟢 Successfully downloaded: $filename" 46
+            shell::colored_echo "🟢 Successfully downloaded: $filename" 46
         else
-            colored_echo "🔴 Error: Download failed for $link" 196
+            shell::colored_echo "🔴 Error: Download failed for $link" 196
         fi
     fi
 }
@@ -1426,7 +1426,7 @@ unarchive() {
             local cmd="7z x \"$file\""
             ;;
         *)
-            colored_echo "🔴 Error: '$file' cannot be extracted via unarchive()" 196
+            shell::colored_echo "🔴 Error: '$file' cannot be extracted via unarchive()" 196
             return 1
             ;;
         esac
@@ -1437,7 +1437,7 @@ unarchive() {
             run_cmd_eval "$cmd"
         fi
     else
-        colored_echo "🔴 Error: '$file' is not a valid file" 196
+        shell::colored_echo "🔴 Error: '$file' is not a valid file" 196
         return 1
     fi
 }
@@ -1480,7 +1480,7 @@ list_high_mem_usage() {
         # Build the command string for Linux
         cmd="ps -axo pid,user,%mem,command --sort=-%mem | head -n 11 | tail -n +2"
     else
-        colored_echo "🔴 Error: Unsupported OS for list_high_mem_usage function." 196
+        shell::colored_echo "🔴 Error: Unsupported OS for list_high_mem_usage function." 196
         return 1
     fi
 
@@ -1534,11 +1534,11 @@ open_link() {
         if is_command_available xdg-open; then
             cmd="xdg-open \"$url\""
         else
-            colored_echo "🔴 Error: xdg-open is not installed on Linux." 196
+            shell::colored_echo "🔴 Error: xdg-open is not installed on Linux." 196
             return 1
         fi
     else
-        colored_echo "🔴 Error: Unsupported OS for open_link function." 196
+        shell::colored_echo "🔴 Error: Unsupported OS for open_link function." 196
         return 1
     fi
 
@@ -1632,7 +1632,7 @@ measure_time() {
             local elapsed=$((end_time - start_time))
             local seconds=$((elapsed / 1000))
             local milliseconds=$((elapsed % 1000))
-            colored_echo "🕒 Execution time: ${seconds}s ${milliseconds}ms" 33
+            shell::colored_echo "🕒 Execution time: ${seconds}s ${milliseconds}ms" 33
             return $exit_code
         else
             # Fallback: use SECONDS (resolution in seconds)
@@ -1641,7 +1641,7 @@ measure_time() {
             exit_code=$?
             local end_seconds=$SECONDS
             local elapsed_seconds=$((end_seconds - start_seconds))
-            colored_echo "🕒 Execution time: ${elapsed_seconds}s" 33
+            shell::colored_echo "🕒 Execution time: ${elapsed_seconds}s" 33
             return $exit_code
         fi
     else
@@ -1655,7 +1655,7 @@ measure_time() {
         local elapsed=$((end_time - start_time))
         local seconds=$((elapsed / 1000))
         local milliseconds=$((elapsed % 1000))
-        colored_echo "🕒 Execution time: ${seconds}s ${milliseconds}ms" 33
+        shell::colored_echo "🕒 Execution time: ${seconds}s ${milliseconds}ms" 33
         return $exit_code
     fi
 }
@@ -1697,7 +1697,7 @@ async() {
         # Execute the command asynchronously (in the background)
         eval "$cmd" &
         local pid=$!
-        colored_echo "🕒 Async process started with PID: $pid" 33
+        shell::colored_echo "🕒 Async process started with PID: $pid" 33
         return 0
     fi
 }

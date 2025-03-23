@@ -67,7 +67,7 @@ send_telegram_message() {
 
     # Verify that both token and chatID are defined.
     if [ -z "$token" ] || [ -z "$chatID" ]; then
-        colored_echo "🔴 Error: Bot Token or Chat ID is not defined." 196
+        shell::colored_echo "🔴 Error: Bot Token or Chat ID is not defined." 196
         return 1
     fi
 
@@ -82,7 +82,7 @@ send_telegram_message() {
         on_evict "$cmd &"
     else
         async "$cmd"
-        colored_echo "🟢 Telegram message sent." 46
+        shell::colored_echo "🟢 Telegram message sent." 46
     fi
 }
 
@@ -139,10 +139,10 @@ send_telegram_attachment() {
                 on_evict "$cmd &"
             else
                 async "$cmd"
-                colored_echo "🟢 Async: Attachment '$filename' is being sent." 46
+                shell::colored_echo "🟢 Async: Attachment '$filename' is being sent." 46
             fi
         else
-            colored_echo "🔴 Attachment '$filename' not found. Skipping." 196
+            shell::colored_echo "🔴 Attachment '$filename' not found. Skipping." 196
         fi
     done
 }

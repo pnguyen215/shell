@@ -34,7 +34,7 @@ uplink() {
     # Otherwise, expect a .link file containing link pairs separated by "→".
     local link_file=".link"
     if [[ ! -f $link_file ]]; then
-        colored_echo "No link file found" 196
+        shell::colored_echo "No link file found" 196
         return 1
     fi
 
@@ -49,7 +49,7 @@ uplink() {
             if [ -n "$src" ] && [ -n "$dest" ]; then
                 ln -vif "$src" "$dest" && chmod +x "$dest"
             else
-                colored_echo "🔴 Error: Invalid link specification in .link: $line" 196
+                shell::colored_echo "🔴 Error: Invalid link specification in .link: $line" 196
             fi
         fi
     done <"$link_file"
@@ -96,11 +96,11 @@ opent() {
         # Use xdg-open to open the directory in the default file manager.
         xdg-open "$dir"
     else
-        colored_echo "🔴 Unsupported operating system for opent function." 196
+        shell::colored_echo "🔴 Unsupported operating system for opent function." 196
         return 1
     fi
 
-    colored_echo "🙂 Opening \"$name\" ..." 5
+    shell::colored_echo "🙂 Opening \"$name\" ..." 5
 }
 
 # add_bookmark function
@@ -116,7 +116,7 @@ add_bookmark() {
     local bookmark_name="$1"
 
     if [[ -z "$bookmark_name" ]]; then
-        colored_echo "🔴 Please type a valid name for your bookmark." 3
+        shell::colored_echo "🔴 Please type a valid name for your bookmark." 3
         return 1
     fi
 
@@ -126,20 +126,20 @@ add_bookmark() {
     # Check if the bookmark already exists.
     if [[ -z $(grep "|$bookmark_name" "$bookmarks_file") ]]; then
         echo "$bookmark" >>"$bookmarks_file"
-        colored_echo "🟢 Bookmark '$bookmark_name' saved" 46
+        shell::colored_echo "🟢 Bookmark '$bookmark_name' saved" 46
     else
-        colored_echo "🟠 Bookmark '$bookmark_name' already exists. Replace it? (y or n)" 5
+        shell::colored_echo "🟠 Bookmark '$bookmark_name' already exists. Replace it? (y or n)" 5
         while read -r replace; do
             if [[ "$replace" == "y" ]]; then
                 # Delete existing bookmark and save the new one.
                 run_cmd_eval "sed '/.*|$bookmark_name/d' \"$bookmarks_file\" > ~/.tmp && mv ~/.tmp \"$bookmarks_file\""
                 echo "$bookmark" >>"$bookmarks_file"
-                colored_echo "🟢 Bookmark '$bookmark_name' saved" 46
+                shell::colored_echo "🟢 Bookmark '$bookmark_name' saved" 46
                 break
             elif [[ "$replace" == "n" ]]; then
                 break
             else
-                colored_echo "🟡 Please type 'y' or 'n':" 5
+                shell::colored_echo "🟡 Please type 'y' or 'n':" 5
             fi
         done
     fi
@@ -166,7 +166,7 @@ add_bookmark() {
 #     local bookmark_name="$1"
 
 #     if [[ -z "$bookmark_name" ]]; then
-#         colored_echo "👊 Type bookmark name to remove." 3
+#         shell::colored_echo "👊 Type bookmark name to remove." 3
 #         return 1
 #     fi
 
@@ -174,11 +174,11 @@ add_bookmark() {
 #     bookmark=$(grep "|${bookmark_name}$" "$bookmarks_file")
 
 #     if [[ -z "$bookmark" ]]; then
-#         colored_echo "🙈 Invalid bookmark name." 3
+#         shell::colored_echo "🙈 Invalid bookmark name." 3
 #         return 1
 #     else
 #         grep -v "|${bookmark_name}$" "$bookmarks_file" >"$HOME/bookmarks_temp" && mv "$HOME/bookmarks_temp" "$bookmarks_file"
-#         colored_echo "🟢 Bookmark '$bookmark_name' removed" 46
+#         shell::colored_echo "🟢 Bookmark '$bookmark_name' removed" 46
 #     fi
 # }
 
@@ -203,7 +203,7 @@ remove_bookmark() {
     local bookmark_name="$1"
 
     if [[ -z "$bookmark_name" ]]; then
-        colored_echo "👊 Type bookmark name to remove." 3
+        shell::colored_echo "👊 Type bookmark name to remove." 3
         return 1
     fi
 
@@ -211,14 +211,14 @@ remove_bookmark() {
     bookmark=$(grep "|${bookmark_name}$" "$bookmarks_file")
 
     if [[ -z "$bookmark" ]]; then
-        colored_echo "🙈 Invalid bookmark name." 3
+        shell::colored_echo "🙈 Invalid bookmark name." 3
         return 1
     fi
 
     # Create a secure temporary file.
     local tmp_file
     tmp_file=$(mktemp) || {
-        colored_echo "🔴 Failed to create temporary file." 196
+        shell::colored_echo "🔴 Failed to create temporary file." 196
         return 1
     }
 
@@ -231,9 +231,9 @@ remove_bookmark() {
 
     # Execute the command using run_cmd_eval.
     if run_cmd_eval "$cmd"; then
-        colored_echo "🟢 Bookmark '$bookmark_name' removed" 46
+        shell::colored_echo "🟢 Bookmark '$bookmark_name' removed" 46
     else
-        colored_echo "🔴 Failed to remove bookmark '$bookmark_name'" 196
+        shell::colored_echo "🔴 Failed to remove bookmark '$bookmark_name'" 196
         return 1
     fi
 
@@ -261,14 +261,14 @@ remove_bookmark_linux() {
     local bookmark_name="$1"
 
     if [[ -z "$bookmark_name" ]]; then
-        colored_echo "👊 Type bookmark name to remove." 3
+        shell::colored_echo "👊 Type bookmark name to remove." 3
         return 1
     fi
 
     local bookmark
     bookmark=$(grep "|${bookmark_name}$" "$bookmarks_file")
     if [[ -z "$bookmark" ]]; then
-        colored_echo "🙈 Invalid bookmark name." 3
+        shell::colored_echo "🙈 Invalid bookmark name." 3
         return 1
     fi
 
@@ -286,9 +286,9 @@ remove_bookmark_linux() {
 
     # Execute the sed command using run_cmd_eval.
     if run_cmd_eval "$sed_cmd"; then
-        colored_echo "🟢 Bookmark '$bookmark_name' removed" 46
+        shell::colored_echo "🟢 Bookmark '$bookmark_name' removed" 46
     else
-        colored_echo "🔴 Failed to remove bookmark '$bookmark_name'" 196
+        shell::colored_echo "🔴 Failed to remove bookmark '$bookmark_name'" 196
         return 1
     fi
 }
@@ -327,15 +327,15 @@ go_bookmark() {
     bookmark=$(grep "|${bookmark_name}$" "$bookmarks_file")
 
     if [[ -z "$bookmark" ]]; then
-        colored_echo '🙈 Bookmark not found!' 3
+        shell::colored_echo '🙈 Bookmark not found!' 3
         return 1
     else
         # Extract the directory (the part before the "|")
         dir=$(echo "$bookmark" | cut -d'|' -f1)
         if cd "$dir"; then
-            colored_echo "📂 Changed directory to: $dir" 2
+            shell::colored_echo "📂 Changed directory to: $dir" 2
         else
-            colored_echo "🔴 Failed to change directory to: $dir" 1
+            shell::colored_echo "🔴 Failed to change directory to: $dir" 1
             return 1
         fi
     fi

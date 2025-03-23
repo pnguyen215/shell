@@ -56,9 +56,9 @@ Access the shell library by opening your terminal and using the commands below. 
   Identifies and returns the current operating system type as a standardized string (e.g., "linux" or "macos").  
   _Example:_ `shell::get_os_type`
 
-- **`colored_echo`**  
+- **`shell::colored_echo`**  
   Outputs text to the terminal with customizable foreground colors using `tput` and ANSI escape sequences. Requires a message and a color code (e.g., 46 for cyan).  
-  _Example:_ `colored_echo "Task completed" 46`
+  _Example:_ `shell::colored_echo "Task completed" 46`
 
 - **`run_cmd`**  
   Executes a specified command and logs it to the terminal for tracking purposes.  

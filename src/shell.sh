@@ -21,7 +21,7 @@ shell_upgrade() {
     install_dir="$HOME/shell"
     [ -d "$install_dir" ] && rm -rf "$install_dir"
     bash -c "$(curl -fsSL https://raw.githubusercontent.com/pnguyen215/shell/master/install.sh)"
-    colored_echo "🟢 shell upgraded. Restart your terminal or run 'source ~/.zshrc' or 'source ~/.bashrc' to apply changes." 46
+    shell::colored_echo "🟢 shell upgraded. Restart your terminal or run 'source ~/.zshrc' or 'source ~/.bashrc' to apply changes." 46
     # Check if the shell source command is in .zshrc or .bashrc and copy the appropriate command.
     if [ -f "$HOME/.zshrc" ] && grep -q "source $install_dir/src/shell.sh" "$HOME/.zshrc"; then
         clip_value "source ~/.zshrc"
@@ -42,5 +42,5 @@ shell_uninstall() {
     echo "🚀 Uninstalling shell..."
     install_dir="$HOME/shell"
     [ -d "$install_dir" ] && rm -rf "$install_dir"
-    colored_echo "🟢 shell uninstalled. Please remove 'source $install_dir/src/shell.sh' from your shell config (e.g., ~/.zshrc or ~/.bashrc)." 46
+    shell::colored_echo "🟢 shell uninstalled. Please remove 'source $install_dir/src/shell.sh' from your shell config (e.g., ~/.zshrc or ~/.bashrc)." 46
 }

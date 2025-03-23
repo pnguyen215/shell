@@ -43,7 +43,7 @@ function install_homebrew() {
 # Dependencies:
 #   - is_command_available: Checks if the 'brew' command is available in the PATH.
 #   - run_cmd_eval: Executes shell commands with logging.
-#   - colored_echo: Displays colored messages to the terminal.
+#   - shell::colored_echo: Displays colored messages to the terminal.
 #
 # Example:
 #   uninstall_homebrew
@@ -52,8 +52,8 @@ function uninstall_homebrew() {
         echo "🚀 Uninstalling Homebrew..."
         run_cmd_eval '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh)"'
         run_cmd_eval 'sed -i.bak '/# Homebrew/d' "$HOME/.zprofile"' # Remove Homebrew-related lines from the shell profile
-        colored_echo "🟢 Homebrew uninstalled successfully!" 46
+        shell::colored_echo "🟢 Homebrew uninstalled successfully!" 46
     else
-        colored_echo "🟡 Homebrew is not installed. Nothing to uninstall." 11
+        shell::colored_echo "🟡 Homebrew is not installed. Nothing to uninstall." 11
     fi
 }

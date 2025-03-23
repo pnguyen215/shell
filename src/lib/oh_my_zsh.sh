@@ -31,9 +31,9 @@ install_oh_my_zsh() {
     local oh_my_zsh_dir="$HOME/.oh-my-zsh"
 
     if [ -d "$oh_my_zsh_dir" ]; then
-        colored_echo "🍺 Oh My Zsh is already installed." 46
+        shell::colored_echo "🍺 Oh My Zsh is already installed." 46
     else
-        colored_echo "🚀 Installing Oh My Zsh..." 33
+        shell::colored_echo "🚀 Installing Oh My Zsh..." 33
         # Build the installation command
         local install_cmd="sh -c \"\$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)\""
 
@@ -47,7 +47,7 @@ install_oh_my_zsh() {
         # sed -i.bak 's/ZSH_THEME="robbyrussell"/ZSH_THEME="your_custom_theme"/' "$HOME/.zshrc"
         # plugins=(your_plugin1 your_plugin2)
         # sed -i.bak '/^plugins=(/a \ \ your_custom_plugin' "$HOME/.zshrc"
-        colored_echo "🟢 Oh-My-Zsh installed successfully!" 46
+        shell::colored_echo "🟢 Oh-My-Zsh installed successfully!" 46
     fi
 }
 
@@ -81,11 +81,11 @@ uninstall_oh_my_zsh() {
     local oh_my_zsh_dir="$HOME/.oh-my-zsh"
 
     if [ ! -d "$oh_my_zsh_dir" ]; then
-        colored_echo "🍺 Oh My Zsh is not installed." 46
+        shell::colored_echo "🍺 Oh My Zsh is not installed." 46
         return 0
     fi
 
-    colored_echo "🚀 Uninstalling Oh My Zsh..." 33
+    shell::colored_echo "🚀 Uninstalling Oh My Zsh..." 33
 
     # Remove the Oh My Zsh directory
     local remove_cmd="rm -rf \"$oh_my_zsh_dir\""
@@ -105,10 +105,10 @@ uninstall_oh_my_zsh() {
         else
             run_cmd_eval "$restore_cmd"
         fi
-        colored_echo "🟢 Original .zshrc restored from backup." 46
+        shell::colored_echo "🟢 Original .zshrc restored from backup." 46
     else
-        colored_echo "🍺 No backup .zshrc found. Please manually update your .zshrc if necessary." 33
+        shell::colored_echo "🍺 No backup .zshrc found. Please manually update your .zshrc if necessary." 33
     fi
 
-    colored_echo "🟢 Oh My Zsh uninstalled successfully!" 46
+    shell::colored_echo "🟢 Oh My Zsh uninstalled successfully!" 46
 }

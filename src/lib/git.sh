@@ -40,7 +40,7 @@ send_telegram_historical_gh_message() {
     local hasToken
     hasToken=$(exist_key_conf "SHELL_HISTORICAL_GH_TELEGRAM_BOT_TOKEN")
     if [ "$hasToken" = "false" ]; then
-        colored_echo "🟡 The key 'SHELL_HISTORICAL_GH_TELEGRAM_BOT_TOKEN' does not exist. Please consider adding it by using add_conf" 11
+        shell::colored_echo "🟡 The key 'SHELL_HISTORICAL_GH_TELEGRAM_BOT_TOKEN' does not exist. Please consider adding it by using add_conf" 11
         clip_value "SHELL_HISTORICAL_GH_TELEGRAM_BOT_TOKEN"
         return 1
     fi
@@ -49,7 +49,7 @@ send_telegram_historical_gh_message() {
     local hasChatID
     hasChatID=$(exist_key_conf "SHELL_HISTORICAL_GH_TELEGRAM_CHAT_ID")
     if [ "$hasChatID" = "false" ]; then
-        colored_echo "🟡 The key 'SHELL_HISTORICAL_GH_TELEGRAM_CHAT_ID' does not exist. Please consider adding it by using add_conf" 11
+        shell::colored_echo "🟡 The key 'SHELL_HISTORICAL_GH_TELEGRAM_CHAT_ID' does not exist. Please consider adding it by using add_conf" 11
         clip_value "SHELL_HISTORICAL_GH_TELEGRAM_CHAT_ID"
         return 1
     fi
