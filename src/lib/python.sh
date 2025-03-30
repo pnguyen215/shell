@@ -85,11 +85,11 @@ shell::install_python() {
     fi
 }
 
-# shell::removal_python function
+# shell::uninstall_python function
 # Removes Python (python3) and its core components from the system.
 #
 # Usage:
-#   shell::removal_python [-n]
+#   shell::uninstall_python [-n]
 #
 # Parameters:
 #   - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
@@ -101,13 +101,13 @@ shell::install_python() {
 #   Warns about potential system impact on Linux due to Python dependencies.
 #
 # Example:
-#   shell::removal_python       # Removes Python 3.
-#   shell::removal_python -n    # Prints the removal command without executing it.
+#   shell::uninstall_python       # Removes Python 3.
+#   shell::uninstall_python -n    # Prints the removal command without executing it.
 #
 # Notes:
 #   - Requires sudo privileges.
 #   - On Linux, system tools may break if Python is a core dependency; use with caution.
-shell::removal_python() {
+shell::uninstall_python() {
     local dry_run="false"
     if [ "$1" = "-n" ]; then
         dry_run="true"
@@ -165,63 +165,11 @@ shell::removal_python() {
     fi
 }
 
-# shell::removal_python_pip_deps() {
-#     echo "WARNING: This will uninstall ALL pip and pip3 packages, including system packages."
-#     echo "This is potentially dangerous and could break your system Python installation."
-#     echo "Are you absolutely sure you want to proceed? (yes/no)"
-#     read confirmation
-#     if [[ $confirmation == "y" || $confirmation == "Y" ]]; then
-#         echo "Uninstalling pip packages..."
-
-#         # For pip (Python 2)
-#         if command -v pip &>/dev/null; then
-#             # Create a temporary file to store package names
-#             PIP_PACKAGES=$(mktemp)
-#             pip freeze --break-system-packages | grep -v "^-e" | grep -v "@" | cut -d= -f1 >"$PIP_PACKAGES"
-
-#             if [ -s "$PIP_PACKAGES" ]; then
-#                 xargs pip uninstall --break-system-packages -y <"$PIP_PACKAGES"
-#                 echo "All pip packages have been uninstalled."
-#             else
-#                 echo "No valid pip packages found to uninstall."
-#             fi
-
-#             # Clean up
-#             rm "$PIP_PACKAGES"
-#         else
-#             echo "pip is not installed."
-#         fi
-
-#         # For pip3 (Python 3)
-#         if command -v pip3 &>/dev/null; then
-#             # Create a temporary file to store package names
-#             PIP3_PACKAGES=$(mktemp)
-#             pip3 freeze --break-system-packages | grep -v "^-e" | grep -v "@" | cut -d= -f1 >"$PIP3_PACKAGES"
-
-#             if [ -s "$PIP3_PACKAGES" ]; then
-#                 xargs pip3 uninstall --break-system-packages -y <"$PIP3_PACKAGES"
-#                 echo "All pip3 packages have been uninstalled."
-#             else
-#                 echo "No valid pip3 packages found to uninstall."
-#             fi
-
-#             # Clean up
-#             rm "$PIP3_PACKAGES"
-#         else
-#             echo "pip3 is not installed."
-#         fi
-
-#         echo "Operation completed."
-#     else
-#         echo "Operation canceled."
-#     fi
-# }
-
-# shell::removal_python_pip_deps function
+# shell::uninstall_python_pip_deps function
 # Uninstalls all pip and pip3 packages with user confirmation and optional dry-run.
 #
 # Usage:
-#   shell::removal_python_pip_deps [-n]
+#   shell::uninstall_python_pip_deps [-n]
 #
 # Parameters:
 #   -n: Optional flag to perform a dry-run (uses shell::on_evict to print commands without executing).
@@ -232,8 +180,8 @@ shell::removal_python() {
 #   and enhanced logging using shell::run_cmd_eval.
 #
 # Example usage:
-#   shell::removal_python_pip_deps       # Uninstalls all pip/pip3 packages after confirmation
-#   shell::removal_python_pip_deps -n    # Dry-run to preview commands
+#   shell::uninstall_python_pip_deps       # Uninstalls all pip/pip3 packages after confirmation
+#   shell::uninstall_python_pip_deps -n    # Dry-run to preview commands
 #
 # Instructions:
 #   1. Run the function with or without the -n flag.
@@ -243,16 +191,16 @@ shell::removal_python() {
 #   - Use with caution: Uninstalling system packages may break your Python environment.
 #   - Supports asynchronous execution via shell::async, though kept synchronous for user feedback.
 #   - Temporary files are cleaned up automatically.
-shell::removal_python_pip_deps() {
+shell::uninstall_python_pip_deps() {
     local dry_run="false"
     if [ "$1" = "-n" ]; then
         dry_run="true"
         shift
     fi
 
-    shell::colored_echo "🟡 WARNING: This will uninstall all pip and pip3 packages, including system packages." 33
-    shell::colored_echo "🟡 This is potentially dangerous and could break your system Python installation." 33
-    shell::colored_echo "🟡 Are you absolutely sure you want to proceed? (yes/no)" 33
+    shell::colored_echo "🟡 WARNING: This will uninstall all pip and pip3 packages, including system packages." 11
+    shell::colored_echo "🟡 This is potentially dangerous and could break your system Python installation." 11
+    shell::colored_echo "🟡 Are you absolutely sure you want to proceed? (yes/no)" 11
     read -r confirmation
     if [[ $confirmation =~ ^[Yy](es)?$ ]]; then
         shell::colored_echo "🟢 Proceeding with uninstallation..." 32
@@ -276,24 +224,24 @@ shell::removal_python_pip_deps() {
                     if [ -s "$packages_file" ]; then
                         shell::run_cmd_eval "$uninstall_cmd"
                         if [ $? -eq 0 ]; then
-                            shell::colored_echo "🟢 All $pip_cmd packages uninstalled successfully." 32
+                            shell::colored_echo "🟢 All $pip_cmd packages uninstalled successfully." 46
                         else
-                            shell::colored_echo "🔴 Errors occurred while uninstalling $pip_cmd packages." 31
+                            shell::colored_echo "🔴 Errors occurred while uninstalling $pip_cmd packages." 196
                         fi
                     else
-                        shell::colored_echo "🟡 No valid $pip_cmd packages found to uninstall." 33
+                        shell::colored_echo "🟡 No valid $pip_cmd packages found to uninstall." 11
                     fi
                     rm "$packages_file"
                 fi
             else
-                shell::colored_echo "🟡 $pip_cmd is not installed." 33
+                shell::colored_echo "🟡 $pip_cmd is not installed." 11
             fi
         }
 
         # Check if pip and pip3 are the same to avoid redundant uninstallation
         if shell::is_command_available pip && shell::is_command_available pip3; then
             if [ "$(command -v pip)" = "$(command -v pip3)" ]; then
-                shell::colored_echo "🟡 pip and pip3 are the same; uninstalling once." 33
+                shell::colored_echo "🟡 pip and pip3 are the same; uninstalling once." 11
                 uninstall_packages "pip"
             else
                 uninstall_packages "pip"
@@ -304,11 +252,11 @@ shell::removal_python_pip_deps() {
         elif shell::is_command_available pip3; then
             uninstall_packages "pip3"
         else
-            shell::colored_echo "🟡 Neither pip nor pip3 is installed." 33
+            shell::colored_echo "🟡 Neither pip nor pip3 is installed." 11
         fi
 
-        shell::colored_echo "🟢 Operation completed." 32
+        shell::colored_echo "🟢 Operation completed." 46
     else
-        shell::colored_echo "🔴 Operation canceled by user." 31
+        shell::colored_echo "🔴 Operation canceled by user." 196
     fi
 }
