@@ -250,3 +250,30 @@ shell::removal_python_deps() {
         shell::colored_echo "🟢 All Python dependencies removed." 46
     fi
 }
+
+uninstall_all_pip_packages() {
+    local pip_cmds=("pip" "pip3")
+
+    for pip_cmd in "${pip_cmds[@]}"; do
+        if command -v "$pip_cmd" >/dev/null 2>&1; then
+            echo "Using $pip_cmd..."
+            # List installed packages, extract package names (cut at the '==' separator)
+            packages=$("$pip_cmd" freeze | awk -F'==' '{print $1}')
+
+            if [ -z "$packages" ]; then
+                echo "No packages found for $pip_cmd."
+            else
+                for package in $packages; do
+                    # Some lines could be empty; skip them.
+                    [ -z "$package" ] && continue
+                    echo "Uninstalling $package using $pip_cmd..."
+                    "$pip_cmd" uninstall -y "$package"
+                done
+            fi
+        else
+            echo "$pip_cmd is not installed or not found. Skipping."
+        fi
+    done
+
+    echo "All pip-installed packages have been removed (if they were found)."
+}
