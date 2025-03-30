@@ -252,7 +252,9 @@ shell::removal_python_deps() {
 }
 
 uninstall_all_pip_packages() {
-    echo "This will uninstall ALL pip and pip3 packages. Are you sure? (y/n)"
+    echo "WARNING: This will uninstall ALL pip and pip3 packages, including system packages."
+    echo "This is potentially dangerous and could break your system Python installation."
+    echo "Are you absolutely sure you want to proceed? (yes/no)"
     read confirmation
     if [[ $confirmation == "y" || $confirmation == "Y" ]]; then
         echo "Uninstalling pip packages..."
@@ -261,10 +263,10 @@ uninstall_all_pip_packages() {
         if command -v pip &>/dev/null; then
             # Create a temporary file to store package names
             PIP_PACKAGES=$(mktemp)
-            pip freeze | grep -v "^-e" | grep -v "@" | cut -d= -f1 >"$PIP_PACKAGES"
+            pip freeze --break-system-packages | grep -v "^-e" | grep -v "@" | cut -d= -f1 >"$PIP_PACKAGES"
 
             if [ -s "$PIP_PACKAGES" ]; then
-                xargs pip uninstall -y <"$PIP_PACKAGES"
+                xargs pip uninstall --break-system-packages -y <"$PIP_PACKAGES"
                 echo "All pip packages have been uninstalled."
             else
                 echo "No valid pip packages found to uninstall."
@@ -280,10 +282,10 @@ uninstall_all_pip_packages() {
         if command -v pip3 &>/dev/null; then
             # Create a temporary file to store package names
             PIP3_PACKAGES=$(mktemp)
-            pip3 freeze | grep -v "^-e" | grep -v "@" | cut -d= -f1 >"$PIP3_PACKAGES"
+            pip3 freeze --break-system-packages | grep -v "^-e" | grep -v "@" | cut -d= -f1 >"$PIP3_PACKAGES"
 
             if [ -s "$PIP3_PACKAGES" ]; then
-                xargs pip3 uninstall -y <"$PIP3_PACKAGES"
+                xargs pip3 uninstall --break-system-packages -y <"$PIP3_PACKAGES"
                 echo "All pip3 packages have been uninstalled."
             else
                 echo "No valid pip3 packages found to uninstall."
