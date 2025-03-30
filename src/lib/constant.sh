@@ -8,7 +8,7 @@
 #
 # Example:
 #   SHELL_CONF_WORKING="$HOME/.shell-config"
-SHELL_CONF_WORKING="$HOME/.shell-config"
+readonly SHELL_CONF_WORKING="$HOME/.shell-config"
 
 # SHELL_CONF_WORKING_WORKSPACE constant
 # This variable defines the path to the workspace directory within the shell configuration working directory.
