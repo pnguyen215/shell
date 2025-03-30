@@ -216,9 +216,9 @@ shell::uninstall_python_pip_deps() {
                 local uninstall_cmd="xargs $pip_cmd uninstall --break-system-packages -y < $packages_file"
 
                 if [ "$dry_run" = "true" ]; then
-                    shell::on_evict "$freeze_cmd"
-                    shell::on_evict "$uninstall_cmd"
-                    shell::on_evict "rm $packages_file"
+                    shell::on_evict "$freeze_cmd && $uninstall_cmd && rm $packages_file"
+                    # shell::on_evict "$uninstall_cmd"
+                    # shell::on_evict "rm $packages_file"
                 else
                     shell::run_cmd_eval "$freeze_cmd"
                     if [ -s "$packages_file" ]; then
