@@ -252,28 +252,29 @@ shell::removal_python_deps() {
 }
 
 uninstall_all_pip_packages() {
-    local pip_cmds=("pip" "pip3")
+    echo "This will uninstall ALL pip and pip3 packages. Are you sure? (y/n)"
+    read confirmation
+    if [[ $confirmation == "y" || $confirmation == "Y" ]]; then
+        echo "Uninstalling pip packages..."
 
-    for pip_cmd in "${pip_cmds[@]}"; do
-        if command -v "$pip_cmd" >/dev/null 2>&1; then
-            echo "Using $pip_cmd..."
-            # List installed packages, extract package names (cut at the '==' separator)
-            packages=$("$pip_cmd" freeze | awk -F'==' '{print $1}')
-
-            if [ -z "$packages" ]; then
-                echo "No packages found for $pip_cmd."
-            else
-                for package in $packages; do
-                    # Some lines could be empty; skip them.
-                    [ -z "$package" ] && continue
-                    echo "Uninstalling $package using $pip_cmd..."
-                    "$pip_cmd" uninstall -y "$package"
-                done
-            fi
+        # For pip (Python 2)
+        if command -v pip &>/dev/null; then
+            pip freeze | grep -v "^-e" | xargs pip uninstall -y
+            echo "All pip packages have been uninstalled."
         else
-            echo "$pip_cmd is not installed or not found. Skipping."
+            echo "pip is not installed."
         fi
-    done
 
-    echo "All pip-installed packages have been removed (if they were found)."
+        # For pip3 (Python 3)
+        if command -v pip3 &>/dev/null; then
+            pip3 freeze | grep -v "^-e" | xargs pip3 uninstall -y
+            echo "All pip3 packages have been uninstalled."
+        else
+            echo "pip3 is not installed."
+        fi
+
+        echo "Operation completed."
+    else
+        echo "Operation canceled."
+    fi
 }
