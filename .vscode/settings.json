@@ -6,6 +6,7 @@
     "bunzip",
     "cecho",
     "createfileifnotexists",
+    "ensurepip",
     "gdate",
     "Grayscale",
     "MSYS",

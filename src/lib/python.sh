@@ -164,3 +164,89 @@ shell::removal_python() {
         shell::colored_echo "🟡 Python3 binary still detected. Manual cleanup may be required." 33
     fi
 }
+
+# shell::upgrade_pip function
+# Upgrades pip to the latest version for the installed Python 3.
+#
+# Usage:
+#   shell::upgrade_pip [-n]
+#
+# Parameters:
+#   - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+#
+# Description:
+#   Ensures pip is upgraded asynchronously to minimize wait time.
+#   Checks for Python and pip availability before proceeding.
+#
+# Example:
+#   shell::upgrade_pip       # Upgrades pip.
+#   shell::upgrade_pip -n    # Prints the upgrade command without executing it.
+shell::upgrade_pip() {
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if ! shell::is_command_available python3; then
+        shell::colored_echo "🔴 Error: Python 3 is not installed." 31
+        return 1
+    fi
+
+    if ! python3 -m pip --version >/dev/null 2>&1; then
+        shell::colored_echo "🔴 Error: pip is not installed. Installing it first..." 31
+        shell::execute_or_evict "$dry_run" "python3 -m ensurepip --upgrade"
+    fi
+
+    local cmd="python3 -m pip install --upgrade pip"
+    shell::async "$dry_run" "$cmd"
+    if [ "$dry_run" = "false" ]; then
+        shell::colored_echo "🟢 pip upgrade started in the background." 46
+    fi
+}
+
+# shell::removal_python_deps function
+# Removes all Python 3 dependencies installed via pip.
+#
+# Usage:
+#   shell::removal_python_deps [-n]
+#
+# Parameters:
+#   - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+#
+# Description:
+#   Uninstalls all packages listed by pip, excluding pip itself to avoid breaking the tool.
+#
+# Example:
+#   shell::removal_python_deps       # Removes all pip-installed dependencies.
+#   shell::removal_python_deps -n    # Prints the removal command without executing it.
+shell::removal_python_deps() {
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if ! shell::is_command_available python3; then
+        shell::colored_echo "🔴 Error: Python 3 is not installed." 31
+        return 1
+    fi
+
+    if ! python3 -m pip --version >/dev/null 2>&1; then
+        shell::colored_echo "🟡 No pip dependencies to remove (pip not installed)." 33
+        return 0
+    fi
+
+    local packages
+    packages=$(python3 -m pip list --format=freeze | grep -v "^pip=" | cut -d '=' -f 1)
+    if [ -z "$packages" ]; then
+        shell::colored_echo "🟡 No Python dependencies installed via pip." 33
+        return 0
+    fi
+
+    local cmd="python3 -m pip uninstall -y $packages"
+    shell::execute_or_evict "$dry_run" "$cmd"
+    if [ "$dry_run" = "false" ]; then
+        shell::colored_echo "🟢 All Python dependencies removed." 46
+    fi
+}
