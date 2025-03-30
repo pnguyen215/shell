@@ -259,16 +259,38 @@ uninstall_all_pip_packages() {
 
         # For pip (Python 2)
         if command -v pip &>/dev/null; then
-            pip freeze | grep -v "^-e" | xargs pip uninstall -y
-            echo "All pip packages have been uninstalled."
+            # Create a temporary file to store package names
+            PIP_PACKAGES=$(mktemp)
+            pip freeze | grep -v "^-e" | grep -v "@" | cut -d= -f1 >"$PIP_PACKAGES"
+
+            if [ -s "$PIP_PACKAGES" ]; then
+                xargs pip uninstall -y <"$PIP_PACKAGES"
+                echo "All pip packages have been uninstalled."
+            else
+                echo "No valid pip packages found to uninstall."
+            fi
+
+            # Clean up
+            rm "$PIP_PACKAGES"
         else
             echo "pip is not installed."
         fi
 
         # For pip3 (Python 3)
         if command -v pip3 &>/dev/null; then
-            pip3 freeze | grep -v "^-e" | xargs pip3 uninstall -y
-            echo "All pip3 packages have been uninstalled."
+            # Create a temporary file to store package names
+            PIP3_PACKAGES=$(mktemp)
+            pip3 freeze | grep -v "^-e" | grep -v "@" | cut -d= -f1 >"$PIP3_PACKAGES"
+
+            if [ -s "$PIP3_PACKAGES" ]; then
+                xargs pip3 uninstall -y <"$PIP3_PACKAGES"
+                echo "All pip3 packages have been uninstalled."
+            else
+                echo "No valid pip3 packages found to uninstall."
+            fi
+
+            # Clean up
+            rm "$PIP3_PACKAGES"
         else
             echo "pip3 is not installed."
         fi
