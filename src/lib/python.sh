@@ -355,3 +355,130 @@ shell::uninstall_python_pip_deps::latest() {
         shell::colored_echo "🔴 Operation canceled by user." 196
     fi
 }
+
+# shell::python_env function
+# Creates a Python virtual environment for development, isolating it from system packages.
+#
+# Usage:
+#   shell::python_env [-n] [-p <path>] [-v <version>]
+#
+# Parameters:
+#   - -n          : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+#   - -p <path>   : Optional. Specifies the path where the virtual environment will be created (defaults to ./venv).
+#   - -v <version>: Optional. Specifies the Python version (e.g., 3.10); defaults to system Python3.
+#
+# Description:
+#   This function sets up a Python virtual environment to avoid package conflicts with the system OS:
+#   - Ensures Python3 and pip are installed using shell::install_python.
+#   - Creates a virtual environment at the specified or default path using the specified or default Python version.
+#   - Upgrades pip and installs basic tools (wheel, setuptools) in the virtual environment.
+#   - Supports asynchronous execution for pip upgrades to speed up setup.
+#   - Verifies the environment and provides activation instructions.
+#
+# Example:
+#   shell::python_env                # Creates a virtual env at ./venv with default Python3.
+#   shell::python_env -n             # Prints commands without executing them.
+#   shell::python_env -p ~/my_env     # Creates a virtual env at ~/my_env.
+#   shell::python_env -v 3.10        # Uses Python 3.10 for the virtual env.
+#
+# Notes:
+#   - Requires Python3 to be available on the system.
+#   - On Linux, uses python3-venv package if needed.
+#   - Activation command is copied to clipboard for convenience.
+shell::python_env() {
+    local dry_run="false"
+    local venv_path="./venv"
+    local python_version="python3"
+
+    # Parse optional arguments
+    while [ $# -gt 0 ]; do
+        case "$1" in
+        -n)
+            dry_run="true"
+            shift
+            ;;
+        -p)
+            venv_path="$2"
+            shift 2
+            ;;
+        -v)
+            python_version="python$2"
+            shift 2
+            ;;
+        *)
+            shell::colored_echo "🔴 Error: Unknown option '$1'. Usage: shell::python_env [-n] [-p <path>] [-v <version>]" 196
+            return 1
+            ;;
+        esac
+    done
+
+    local os_type
+    os_type=$(shell::get_os_type)
+
+    # Ensure Python is installed
+    if ! shell::is_command_available "$python_version"; then
+        shell::colored_echo "🔍 Installing $python_version..." 36
+        if [ "$os_type" = "linux" ]; then
+            shell::execute_or_evict "$dry_run" "shell::install_python"
+            # Ensure python3-venv is installed on Linux for virtual env support
+            if ! shell::is_package_installed_linux "$python_version-venv"; then
+                shell::execute_or_evict "$dry_run" "shell::install_package $python_version-venv"
+            fi
+        elif [ "$os_type" = "macos" ]; then
+            shell::execute_or_evict "$dry_run" "shell::install_python"
+        else
+            shell::colored_echo "🔴 Error: Unsupported operating system." 31
+            return 1
+        fi
+    fi
+
+    # Check if virtual environment already exists
+    if [ -d "$venv_path" ] && [ "$dry_run" = "false" ]; then
+        shell::colored_echo "🟡 Virtual environment already exists at '$venv_path'. Skipping creation." 33
+    else
+        # Create the virtual environment
+        local create_cmd="$python_version -m venv \"$venv_path\""
+        shell::colored_echo "🔍 Creating virtual environment at '$venv_path' with $python_version..." 36
+        shell::execute_or_evict "$dry_run" "$create_cmd"
+    fi
+
+    # Define activation path based on OS
+    local activate_cmd
+    if [ "$os_type" = "macos" ] || [ "$os_type" = "linux" ]; then
+        activate_cmd="source \"$venv_path/bin/activate\""
+    else
+        shell::colored_echo "🔴 Error: Unsupported OS for activation path." 31
+        return 1
+    fi
+
+    # Upgrade pip and install basic tools asynchronously
+    if [ "$dry_run" = "false" ] && [ -d "$venv_path" ]; then
+        local pip_cmd="$venv_path/bin/pip"
+        if shell::is_command_available "$pip_cmd"; then
+            shell::colored_echo "🔍 Upgrading pip and installing basic tools in the virtual environment..." 36
+            local upgrade_cmd="$pip_cmd install --upgrade pip wheel setuptools"
+            shell::async "$upgrade_cmd" &
+            wait $! # Wait for async process to complete
+            if [ $? -eq 0 ]; then
+                shell::colored_echo "🟢 Pip and tools upgraded successfully." 46
+            else
+                shell::colored_echo "🔴 Warning: Failed to upgrade pip/tools." 31
+            fi
+        else
+            shell::colored_echo "🔴 Error: pip not found in virtual environment." 31
+            return 1
+        fi
+    elif [ "$dry_run" = "true" ]; then
+        shell::on_evict "$venv_path/bin/pip install --upgrade pip wheel setuptools"
+    fi
+
+    # Verify and provide activation instructions
+    if [ "$dry_run" = "false" ] && [ -f "$venv_path/bin/activate" ]; then
+        shell::colored_echo "🟢 Virtual environment created successfully at '$venv_path'." 46
+        shell::colored_echo "🔑 To activate, run: $activate_cmd" 33
+        shell::clip_value "$activate_cmd"
+    elif [ "$dry_run" = "false" ]; then
+        shell::colored_echo "🔴 Error: Failed to create virtual environment." 31
+        return 1
+    fi
+}
