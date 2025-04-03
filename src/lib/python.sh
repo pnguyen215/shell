@@ -878,3 +878,108 @@ shell::fzf_use_python_env() {
         shell::colored_echo "🟢 Virtual environment activated." 46
     fi
 }
+
+# shell::fzf_upgrade_pkg_python_env function
+# Interactively upgrades Python packages in a virtual environment using fzf for package selection.
+#
+# Usage:
+#   shell::fzf_upgrade_pkg_python_env [-n] [-p <path>]
+#
+# Parameters:
+#   - -n          : Optional dry-run flag.
+#                     If provided, commands are printed using shell::on_evict
+#                     instead of executed.
+#   - -p <path>   : Optional.
+#                     Specifies the path to the virtual environment (defaults to ./venv).
+#
+# Description:
+#   This function provides an interactive way to upgrade Python packages within a virtual environment by:
+#   - Using fzf to allow selection of packages to upgrade.
+#   - Constructing and executing pip upgrade commands.
+#   - Supporting dry-run mode to preview commands.
+#
+# Example:
+#   shell::fzf_upgrade_pkg_python_env          # Upgrades packages in ./venv after interactive selection.
+#   shell::fzf_upgrade_pkg_python_env -n -p ~/my_env  # Prints upgrade commands for ~/my_env without executing.
+#
+# Notes:
+#   - Requires fzf and an existing virtual environment.
+shell::fzf_upgrade_pkg_python_env() {
+    local dry_run="false"
+    local venv_path="./venv"
+
+    # Parse optional arguments
+    while [ $# -gt 0 ]; do
+        case "$1" in
+        -n)
+            dry_run="true"
+            shift
+            ;;
+        -p)
+            venv_path="$2"
+            shift 2
+            ;;
+        *)
+            shell::colored_echo "🔴 Error: Unknown option '$1'. Usage: shell::fzf_upgrade_pkg_python_env [-n] [-p <path>]" 31
+            return 1
+            ;;
+        esac
+    done
+
+    # Check if fzf is installed
+    shell::install_package fzf
+
+    # Check if the virtual environment exists
+    if [ ! -d "$venv_path" ] || [ ! -f "$venv_path/bin/pip" ]; then
+        shell::colored_echo "🔴 Error: Virtual environment at '$venv_path' does not exist or is invalid." 31
+        return 1
+    fi
+
+    local pip_cmd="$venv_path/bin/pip"
+
+    # Ensure pip command is available
+    if ! shell::is_command_available "$pip_cmd"; then
+        shell::colored_echo "🔴 Error: pip not found in virtual environment at '$venv_path'." 31
+        return 1
+    fi
+
+    # Get list of installed packages
+    local installed_packages
+    installed_packages="$("$pip_cmd" freeze | grep -v '^-e' | grep -v '@' | cut -d= -f1)"
+
+    # Use fzf to select packages to upgrade
+    local selected_packages
+    selected_packages=$(echo "$installed_packages" | fzf --multi --prompt="Select packages to upgrade: ")
+
+    # Handle no selection
+    if [ -z "$selected_packages" ]; then
+        shell::colored_echo "🟡 No packages selected for upgrade." 33
+        return 0
+    fi
+
+    # Prepare upgrade commands
+    local upgrade_commands=()
+    IFS=$'\n'
+    local selected_packages_array=()
+    while IFS= read -r package; do
+        selected_packages_array+=("$package")
+    done <<<"$selected_packages"
+    unset IFS
+
+    for pkg in "${selected_packages_array[@]}"; do
+        upgrade_commands+=("$pip_cmd install --upgrade \"$pkg\"")
+    done
+
+    # Execute or preview upgrade commands
+    shell::colored_echo "🔍 Upgrading selected packages..." 36
+    if [ "$dry_run" = "true" ]; then
+        for cmd in "${upgrade_commands[@]}"; do
+            shell::on_evict "$cmd"
+        done
+    else
+        for cmd in "${upgrade_commands[@]}"; do
+            shell::run_cmd_eval "$cmd"
+        done
+        shell::colored_echo "🟢 Packages upgraded successfully." 46
+    fi
+}
