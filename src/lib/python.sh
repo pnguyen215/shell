@@ -261,11 +261,11 @@ shell::uninstall_python_pip_deps() {
     fi
 }
 
-# shell::uninstall_python_pip_deps function
+# shell::uninstall_python_pip_deps::latest function
 # Uninstalls all pip and pip3 packages with user confirmation and optional dry-run.
 #
 # Usage:
-#   shell::uninstall_python_pip_deps [-n]
+#   shell::uninstall_python_pip_deps::latest [-n]
 #
 # Parameters:
 #   -n: Optional flag to perform a dry-run (uses shell::on_evict to print commands without executing).
@@ -277,8 +277,8 @@ shell::uninstall_python_pip_deps() {
 #   ensuring that the function returns once the background process completes.
 #
 # Example usage:
-#   shell::uninstall_python_pip_deps       # Uninstalls all pip/pip3 packages after confirmation
-#   shell::uninstall_python_pip_deps -n    # Dry-run to preview commands
+#   shell::uninstall_python_pip_deps::latest       # Uninstalls all pip/pip3 packages after confirmation
+#   shell::uninstall_python_pip_deps::latest -n    # Dry-run to preview commands
 #
 # Notes:
 #   - Use with caution: Uninstalling system packages may break your Python environment.
