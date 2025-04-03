@@ -784,3 +784,96 @@ shell::fzf_uninstall_pkg_python_env() {
     shell::colored_echo "🔍 Uninstalling selected packages..." 36
     shell::uninstall_pkg_python_env "${uninstall_args[@]}"
 }
+
+# shell::fzf_use_python_env function
+# Interactively selects a Python virtual environment using fzf and activates/deactivates it.
+#
+# Usage:
+#   shell::fzf_use_python_env [-n] [-p <path>]
+#
+# Parameters:
+#   - -n          : Optional dry-run flag.
+#                     If provided, commands are printed using shell::on_evict
+#                     instead of executed.
+#   - -p <path>   : Optional.
+#                     Specifies the parent path to search for virtual environments (defaults to current directory).
+#
+# Description:
+#   This function enhances virtual environment management by:
+#   - Using fzf to allow interactive selection of a virtual environment.
+#   - Activating the selected virtual environment.
+#   - Providing an option to deactivate the current environment.
+#   - Supports dry-run.
+#
+# Example:
+#   shell::fzf_use_python_env          # Select and activate a venv from the current directory.
+#   shell::fzf_use_python_env -n -p ~/projects  # Prints activation command for a venv in ~/projects without executing.
+#
+# Notes:
+#   - Requires fzf.
+shell::fzf_use_python_env() {
+    local dry_run="false"
+    local parent_path="." # Default to current directory
+
+    # Parse optional arguments
+    while [ $# -gt 0 ]; do
+        case "$1" in
+        -n)
+            dry_run="true"
+            shift
+            ;;
+        -p)
+            parent_path="$2"
+            shift 2
+            ;;
+        *)
+            shell::colored_echo "🔴 Error: Unknown option '$1'. Usage: shell::fzf_use_python_env [-n] [-p <path>]" 31
+            return 1
+            ;;
+        esac
+    done
+
+    # Check if fzf is installed
+    shell::install_package fzf
+
+    # Find virtual environments
+    local venv_dirs
+    venv_dirs=$(find "$parent_path" -type d -name "bin" -print0 | xargs -0 -I {} dirname {} | grep -v "__pycache__")
+
+    # Use fzf to select a virtual environment
+    local selected_venv
+    selected_venv=$(echo "$venv_dirs" | fzf --prompt="Select a virtual environment: ")
+
+    # Handle no selection
+    if [ -z "$selected_venv" ]; then
+        shell::colored_echo "🟡 No virtual environment selected." 33
+        return 0
+    fi
+
+    # Construct the activation command
+    local activate_cmd="source \"$selected_venv/bin/activate\""
+
+    # Handle deactivation if already in a virtual environment
+    if [ -n "$VIRTUAL_ENV" ]; then
+        shell::colored_echo "🟡 Current virtual environment: $VIRTUAL_ENV" 33
+        shell::colored_echo "❓ Do you want to deactivate it first? (y/n)" 33
+        read -r deactivate_choice
+        if [[ "$deactivate_choice" =~ ^[Yy](es)?$ ]]; then
+            local deactivate_cmd="deactivate"
+            if [ "$dry_run" = "true" ]; then
+                shell::on_evict "$deactivate_cmd"
+            else
+                shell::run_cmd_eval "$deactivate_cmd"
+            fi
+        fi
+    fi
+
+    # Activate the selected virtual environment
+    shell::colored_echo "🔍 Activating virtual environment: $selected_venv" 36
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "$activate_cmd"
+    else
+        shell::run_cmd_eval "$activate_cmd"
+        shell::colored_echo "🟢 Virtual environment activated." 46
+    fi
+}
