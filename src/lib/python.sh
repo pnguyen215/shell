@@ -683,3 +683,98 @@ shell::uninstall_pkg_python_env() {
         fi
     fi
 }
+
+# shell::fzf_uninstall_pkg_python_env function
+# Interactively uninstalls Python packages from a virtual environment using fzf for package selection.
+#
+# Usage:
+#   shell::fzf_uninstall_pkg_python_env [-n] [-p <path>]
+#
+# Parameters:
+#   - -n          : Optional dry-run flag.
+#                     If provided, commands are printed using shell::on_evict
+#                     instead of executed.
+#   - -p <path>   : Optional.
+#                     Specifies the path to the virtual environment (defaults to ./venv).
+#
+# Description:
+#   This function enhances Python package uninstallation by:
+#   - Using fzf to allow interactive selection of packages to uninstall.
+#   - Reusing shell::uninstall_pkg_python_env to perform the actual uninstallation.
+#   - Supports dry-run and asynchronous execution.
+#
+# Example:
+#   shell::fzf_uninstall_pkg_python_env          # Uninstalls packages from ./venv after interactive selection.
+#   shell::fzf_uninstall_pkg_python_env -n -p ~/my_env  # Prints uninstallation commands for ~/my_env without executing.
+#
+# Notes:
+#   - Requires fzf and an existing virtual environment.
+shell::fzf_uninstall_pkg_python_env() {
+    local dry_run="false"
+    local venv_path="./venv"
+
+    # Parse optional arguments
+    while [ $# -gt 0 ]; do
+        case "$1" in
+        -n)
+            dry_run="true"
+            shift
+            ;;
+        -p)
+            venv_path="$2"
+            shift 2
+            ;;
+        *)
+            shell::colored_echo "🔴 Error: Unknown option '$1'. Usage: shell::fzf_uninstall_pkg_python_env [-n] [-p <path>]" 31
+            return 1
+            ;;
+        esac
+    done
+
+    # Check if fzf is installed
+    shell::install_package fzf
+
+    # Check if the virtual environment exists
+    if [ ! -d "$venv_path" ] || [ ! -f "$venv_path/bin/pip" ]; then
+        shell::colored_echo "🔴 Error: Virtual environment at '$venv_path' does not exist or is invalid." 31
+        return 1
+    fi
+
+    local pip_cmd="$venv_path/bin/pip"
+
+    # Ensure pip command is available
+    if ! shell::is_command_available "$pip_cmd"; then
+        shell::colored_echo "🔴 Error: pip not found in virtual environment at '$venv_path'." 31
+        return 1
+    fi
+
+    # Get list of installed packages
+    local installed_packages
+    installed_packages=$("$pip_cmd" freeze --break-system-packages | grep -v '^-e' | grep -v '@' | cut -d= -f1)
+
+    # Use fzf to select packages to uninstall
+    local selected_packages
+    selected_packages=$(echo "$installed_packages" | fzf --multi --prompt="Select packages to uninstall: ")
+
+    # Handle no selection
+    if [ -z "$selected_packages" ]; then
+        shell::colored_echo "🟡 No packages selected for uninstallation." 33
+        return 0
+    fi
+
+    # Prepare arguments for shell::uninstall_pkg_python_env
+    local uninstall_args=()
+    if [ "$dry_run" = "true" ]; then
+        uninstall_args+=("-n")
+    fi
+    uninstall_args+=("-p")
+    uninstall_args+=("$venv_path")
+
+    # Add selected packages to the arguments
+    IFS=$'\n' read -r -d '' -a selected_packages_array <<<"$selected_packages"
+    uninstall_args+=("${selected_packages_array[@]}")
+
+    # Execute uninstallation using shell::uninstall_pkg_python_env
+    shell::colored_echo "🔍 Uninstalling selected packages..." 36
+    shell::uninstall_pkg_python_env "${uninstall_args[@]}"
+}
