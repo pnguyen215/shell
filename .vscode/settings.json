@@ -10,6 +10,7 @@
     "gdate",
     "Grayscale",
     "MSYS",
+    "numpy",
     "opent",
     "osascript",
     "pids",

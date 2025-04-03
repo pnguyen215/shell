@@ -482,3 +482,99 @@ shell::create_python_env() {
         return 1
     fi
 }
+
+# shell::install_pkg_python_env function
+# Installs Python packages into an existing virtual environment using pip, avoiding system package conflicts.
+#
+# Usage:
+#   shell::install_pkg_python_env [-n] [-p <path>] <package1> [package2 ...]
+#
+# Parameters:
+#   - -n          : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+#   - -p <path>   : Optional. Specifies the path to the virtual environment (defaults to ./venv).
+#   - <package1> [package2 ...] : One or more Python package names to install (e.g., numpy, requests).
+#
+# Description:
+#   This function installs specified Python packages into an existing virtual environment:
+#   - Verifies the virtual environment exists at the specified or default path.
+#   - Uses the virtual environment's pip to install packages, ensuring isolation from system Python.
+#   - Supports asynchronous execution for package installation to improve performance.
+#   - Provides feedback on success or failure, with dry-run support for previewing commands.
+#
+# Example:
+#   shell::install_pkg_python_env numpy pandas    # Installs numpy and pandas in ./venv.
+#   shell::install_pkg_python_env -n requests     # Prints installation command without executing.
+#   shell::install_pkg_python_env -p ~/my_env flask  # Installs flask in ~/my_env.
+#
+# Notes:
+#   - Requires an existing virtual environment (use shell::create_python_env to create one if needed).
+#   - Assumes pip is available in the virtual environment (upgraded by shell::create_python_env).
+#   - Compatible with both Linux (Ubuntu 22.04 LTS) and macOS.
+shell::install_pkg_python_env() {
+    local dry_run="false"
+    local venv_path="./venv"
+    local packages=()
+
+    # Parse optional arguments
+    while [ $# -gt 0 ]; do
+        case "$1" in
+        -n)
+            dry_run="true"
+            shift
+            ;;
+        -p)
+            venv_path="$2"
+            shift 2
+            ;;
+        *)
+            packages+=("$1")
+            shift
+            ;;
+        esac
+    done
+
+    # Validate that at least one package is specified
+    if [ ${#packages[@]} -eq 0 ]; then
+        shell::colored_echo "🔴 Error: No packages specified. Usage: shell::install_pkg_python_env [-n] [-p <path>] <package1> [package2 ...]" 31
+        return 1
+    fi
+
+    # Check if the virtual environment exists
+    if [ ! -d "$venv_path" ] || [ ! -f "$venv_path/bin/pip" ]; then
+        shell::colored_echo "🔴 Error: Virtual environment at '$venv_path' does not exist or is invalid. Create it with shell::create_python_env first." 31
+        return 1
+    fi
+
+    local os_type
+    os_type=$(shell::get_os_type)
+    local pip_cmd="$venv_path/bin/pip"
+
+    # Ensure pip command is available
+    if ! shell::is_command_available "$pip_cmd"; then
+        shell::colored_echo "🔴 Error: pip not found in virtual environment at '$venv_path'." 31
+        return 1
+    fi
+
+    # Construct the install command
+    local install_cmd="$pip_cmd install"
+    for pkg in "${packages[@]}"; do
+        install_cmd="$install_cmd \"$pkg\""
+    done
+
+    # Execute or preview the installation
+    shell::colored_echo "🔍 Installing packages (${packages[*]}) into virtual environment at '$venv_path'..." 36
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "$install_cmd"
+    else
+        # Run the installation asynchronously
+        shell::async "$install_cmd" &
+        local pid=$!
+        wait $pid
+        if [ $? -eq 0 ]; then
+            shell::colored_echo "🟢 Packages installed successfully: ${packages[*]}" 46
+        else
+            shell::colored_echo "🔴 Error: Failed to install one or more packages." 31
+            return 1
+        fi
+    fi
+}
