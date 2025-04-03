@@ -356,11 +356,11 @@ shell::uninstall_python_pip_deps::latest() {
     fi
 }
 
-# shell::python_env function
+# shell::create_python_env function
 # Creates a Python virtual environment for development, isolating it from system packages.
 #
 # Usage:
-#   shell::python_env [-n] [-p <path>] [-v <version>]
+#   shell::create_python_env [-n] [-p <path>] [-v <version>]
 #
 # Parameters:
 #   - -n          : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
@@ -376,16 +376,16 @@ shell::uninstall_python_pip_deps::latest() {
 #   - Verifies the environment and provides activation instructions.
 #
 # Example:
-#   shell::python_env                # Creates a virtual env at ./venv with default Python3.
-#   shell::python_env -n             # Prints commands without executing them.
-#   shell::python_env -p ~/my_env     # Creates a virtual env at ~/my_env.
-#   shell::python_env -v 3.10        # Uses Python 3.10 for the virtual env.
+#   shell::create_python_env                # Creates a virtual env at ./venv with default Python3.
+#   shell::create_python_env -n             # Prints commands without executing them.
+#   shell::create_python_env -p ~/my_env     # Creates a virtual env at ~/my_env.
+#   shell::create_python_env -v 3.10        # Uses Python 3.10 for the virtual env.
 #
 # Notes:
 #   - Requires Python3 to be available on the system.
 #   - On Linux, uses python3-venv package if needed.
 #   - Activation command is copied to clipboard for convenience.
-shell::python_env() {
+shell::create_python_env() {
     local dry_run="false"
     local venv_path="./venv"
     local python_version="python3"
@@ -406,7 +406,7 @@ shell::python_env() {
             shift 2
             ;;
         *)
-            shell::colored_echo "🔴 Error: Unknown option '$1'. Usage: shell::python_env [-n] [-p <path>] [-v <version>]" 196
+            shell::colored_echo "🔴 Error: Unknown option '$1'. Usage: shell::create_python_env [-n] [-p <path>] [-v <version>]" 196
             return 1
             ;;
         esac
