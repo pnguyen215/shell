@@ -750,7 +750,7 @@ shell::fzf_uninstall_pkg_python_env() {
 
     # Get list of installed packages
     local installed_packages
-    installed_packages=$("$pip_cmd" freeze --break-system-packages | grep -v '^-e' | grep -v '@' | cut -d= -f1)
+    installed_packages=$("$pip_cmd" freeze | grep -v '^-e' | grep -v '@' | cut -d= -f1)
 
     # Use fzf to select packages to uninstall
     local selected_packages
