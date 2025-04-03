@@ -771,7 +771,13 @@ shell::fzf_uninstall_pkg_python_env() {
     uninstall_args+=("$venv_path")
 
     # Add selected packages to the arguments
-    IFS=$'\n' read -r -d '' -a selected_packages_array <<<"$selected_packages"
+    IFS=$'\n'
+    local selected_packages_array=()
+    while IFS= read -r package; do
+        selected_packages_array+=("$package")
+    done <<<"$selected_packages"
+    unset IFS
+
     uninstall_args+=("${selected_packages_array[@]}")
 
     # Execute uninstallation using shell::uninstall_pkg_python_env
