@@ -260,3 +260,98 @@ shell::uninstall_python_pip_deps() {
         shell::colored_echo "🔴 Operation canceled by user." 196
     fi
 }
+
+# shell::uninstall_python_pip_deps function
+# Uninstalls all pip and pip3 packages with user confirmation and optional dry-run.
+#
+# Usage:
+#   shell::uninstall_python_pip_deps [-n]
+#
+# Parameters:
+#   -n: Optional flag to perform a dry-run (uses shell::on_evict to print commands without executing).
+#
+# Description:
+#   This function uninstalls all packages installed via pip and pip3, including system packages,
+#   after user confirmation. It is designed to work on both Linux and macOS, with safety checks.
+#   In non-dry-run mode, it executes the uninstallation commands asynchronously using shell::async,
+#   ensuring that the function returns once the background process completes.
+#
+# Example usage:
+#   shell::uninstall_python_pip_deps       # Uninstalls all pip/pip3 packages after confirmation
+#   shell::uninstall_python_pip_deps -n    # Dry-run to preview commands
+#
+# Notes:
+#   - Use with caution: Uninstalling system packages may break your Python environment.
+#   - Supports asynchronous execution via shell::async for non-blocking uninstallation.
+shell::uninstall_python_pip_deps::latest() {
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    shell::colored_echo "🟡 WARNING: This will uninstall all pip and pip3 packages, including system packages." 11
+    shell::colored_echo "🟡 This is potentially dangerous and could break your system Python installation." 11
+    shell::colored_echo "🟡 Are you absolutely sure you want to proceed? (yes/no)" 11
+    read -r confirmation
+    if [[ $confirmation =~ ^[Yy](es)?$ ]]; then
+        shell::colored_echo "🟢 Proceeding with uninstallation..." 32
+
+        # Helper function to uninstall packages for a given pip command asynchronously.
+        uninstall_packages() {
+            local pip_cmd="$1"
+            if shell::is_command_available "$pip_cmd"; then
+                shell::colored_echo "🔍 Processing $pip_cmd packages asynchronously..." 36
+                local packages_file
+                packages_file=$(mktemp)
+                # Build command to capture installed packages (ignoring editable installs and VCS links)
+                local freeze_cmd="$pip_cmd freeze --break-system-packages | grep -v '^-e' | grep -v '@' | cut -d= -f1 > $packages_file"
+                # Build uninstallation command that reads the package list and removes packages
+                local uninstall_cmd="xargs $pip_cmd uninstall --break-system-packages -y < $packages_file"
+                if [ "$dry_run" = "true" ]; then
+                    shell::on_evict "$freeze_cmd && $uninstall_cmd && rm $packages_file"
+                else
+                    # Execute the freeze command synchronously to capture the list of packages
+                    shell::run_cmd_eval "$freeze_cmd"
+                    if [ -s "$packages_file" ]; then
+                        # Run the uninstallation command asynchronously
+                        shell::async "$uninstall_cmd && rm $packages_file" &
+                        wait $! # Wait for the asynchronous process to finish
+                        if [ $? -eq 0 ]; then
+                            shell::colored_echo "🟢 All $pip_cmd packages uninstalled successfully." 46
+                        else
+                            shell::colored_echo "🔴 Errors occurred while uninstalling $pip_cmd packages." 196
+                        fi
+                    else
+                        shell::colored_echo "🟡 No valid $pip_cmd packages found to uninstall." 11
+                    fi
+                    # Clean up the temporary file if it still exists
+                    [ -f "$packages_file" ] && rm "$packages_file"
+                fi
+            else
+                shell::colored_echo "🟡 $pip_cmd is not installed." 11
+            fi
+        }
+
+        # Check if pip and pip3 are the same to avoid redundant uninstallation
+        if shell::is_command_available pip && shell::is_command_available pip3; then
+            if [ "$(command -v pip)" = "$(command -v pip3)" ]; then
+                shell::colored_echo "🟡 pip and pip3 are the same; uninstalling once." 11
+                uninstall_packages "pip"
+            else
+                uninstall_packages "pip"
+                uninstall_packages "pip3"
+            fi
+        elif shell::is_command_available pip; then
+            uninstall_packages "pip"
+        elif shell::is_command_available pip3; then
+            uninstall_packages "pip3"
+        else
+            shell::colored_echo "🟡 Neither pip nor pip3 is installed." 11
+        fi
+
+        shell::colored_echo "🟢 Operation completed." 46
+    else
+        shell::colored_echo "🔴 Operation canceled by user." 196
+    fi
+}
