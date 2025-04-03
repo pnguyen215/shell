@@ -865,6 +865,7 @@ shell::fzf_use_python_env() {
             else
                 shell::run_cmd_eval "$deactivate_cmd"
             fi
+            return 0
         fi
     fi
 
