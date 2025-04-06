@@ -273,11 +273,9 @@ shell::create_go_app() {
     # If it's a URL, extract the module name
     if [ "$is_url" = "true" ]; then
         # Remove "http://" or "https://"
-        # module_name="${app_name//http:\/\/|https:\/\///}"
         module_name="${module_name#http://}"
         module_name="${module_name#https://}"
         # Remove trailing slashes
-        # module_name=$(echo "$module_name" | sed 's/\/*$//')
         module_name="${module_name%/}"
     fi
 
