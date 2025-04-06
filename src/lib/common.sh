@@ -708,7 +708,7 @@ shell::create_file_if_not_exists2() {
         if [ $? -eq 0 ]; then
             shell::colored_echo "🟢 Directory created successfully." 46
             # Optionally set directory permissions
-            # shell::run_cmd_eval "sudo chmod 700 \"$directory\""
+            shell::setPerms::777 "$directory" # # shell::run_cmd_eval "sudo chmod 700 \"$directory\""
         else
             shell::colored_echo "🔴 Error: Failed to create the directory." 196
             return 1
@@ -722,7 +722,7 @@ shell::create_file_if_not_exists2() {
         if [ $? -eq 0 ]; then
             shell::colored_echo "🟢 File created successfully." 46
             # Optionally set file permissions
-            # shell::run_cmd_eval "sudo chmod 600 \"$abs_filename\""
+            shell::setPerms::777 "$abs_filename" # shell::run_cmd_eval "sudo chmod 600 \"$abs_filename\""
             return 0
         else
             shell::colored_echo "🔴 Error: Failed to create the file." 196
