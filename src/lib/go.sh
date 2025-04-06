@@ -304,6 +304,7 @@ shell::fzf_remove_go_privates() {
     done
     unset IFS
 
+    echo "DEBUG:updated_go_private values: $updated_go_private "
     # Construct the command to update GOPRIVATE
     local cmd="go env -w GOPRIVATE=\"$updated_go_private\""
 
