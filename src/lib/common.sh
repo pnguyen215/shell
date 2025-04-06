@@ -1365,24 +1365,17 @@ shell::download_dataset() {
     fi
 
     if [ $# -ne 2 ]; then
-        echo "Usage: shell::download_dataset [-n] <filename_store_with_extension> <download_link>"
+        echo "Usage: shell::download_dataset [-n] <filename_with_extension> <download_link>"
         return 1
     fi
 
     local filename="$1"
     local link="$2"
 
-    # Extract the directory path from the filename
-    local directory
-    directory=$(dirname "$filename")
-
     # Ensure the directory exists; create it if it doesn't
-    shell::create_file_if_not_exists "$directory"
+    shell::create_file_if_not_exists "$filename"
 
-    # Change to the directory for downloading the file
-    cd "$directory" || return 1
-
-    local base="$directory/$(basename "$filename")"
+    local base="$filename"
     # Check if the file already exists
     if [ -e "$base" ]; then
         local confirm=""
