@@ -8,6 +8,7 @@
     "createfileifnotexists",
     "ensurepip",
     "gdate",
+    "GOPRIVATE",
     "Grayscale",
     "MSYS",
     "numpy",
