@@ -1159,3 +1159,93 @@ shell::freeze_pkg_python_env() {
         fi
     fi
 }
+
+# shell::pip_install_requirements_env function
+# Installs Python packages from a requirements.txt file into a virtual environment.
+#
+# Usage:
+#   shell::pip_install_requirements_env [-n] [-p <path>]
+#
+# Parameters:
+#   - -n          : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+#   - -p <path>   : Optional. Specifies the path to the virtual environment (defaults to ./venv).
+#
+# Description:
+#   This function uses pip install -r to install packages from a requirements.txt file into the specified virtual environment.
+#   - It checks for the existence of the virtual environment and the requirements.txt file.
+#   - It constructs the appropriate pip install command.
+#   - It supports dry-run mode to preview the command.
+#   - It implements asynchronous execution for the installation process.
+#
+# Example:
+#   shell::pip_install_requirements_env         # Installs from requirements.txt in ./venv.
+#   shell::pip_install_requirements_env -n -p ~/my_env  # Prints the installation command for ~/my_env without executing.
+#
+# Notes:
+#   - Requires an existing virtual environment and a requirements.txt file.
+#   - Assumes pip is available in the virtual environment.
+shell::pip_install_requirements_env() {
+    local dry_run="false"
+    local venv_path="./venv"
+
+    # Parse optional arguments
+    while [ $# -gt 0 ]; do
+        case "$1" in
+        -n)
+            dry_run="true"
+            shift
+            ;;
+        -p)
+            venv_path="$2"
+            shift 2
+            ;;
+        *)
+            shell::colored_echo "🔴 Error: Unknown option '$1'. Usage: shell::pip_install_requirements_env [-n] [-p <path>]" 31
+            return 1
+            ;;
+        esac
+    done
+
+    # Check if the virtual environment exists
+    if [ ! -d "$venv_path" ] || [ ! -f "$venv_path/bin/pip" ]; then
+        shell::colored_echo "🔴 Error: Virtual environment at '$venv_path' does not exist or is invalid." 31
+        return 1
+    fi
+
+    # Construct path to requirements.txt
+    local requirements_file="$venv_path/requirements.txt"
+
+    # Check if the requirements.txt file exists
+    if [ ! -f "$requirements_file" ]; then
+        shell::colored_echo "🔴 Error: requirements.txt file not found at '$requirements_file'." 31
+        return 1
+    fi
+
+    local pip_cmd="$venv_path/bin/pip"
+
+    # Ensure pip command is available
+    if ! shell::is_command_available "$pip_cmd"; then
+        shell::colored_echo "🔴 Error: pip not found in virtual environment at '$venv_path'." 31
+        return 1
+    fi
+
+    # Construct the install command
+    local install_cmd="$pip_cmd install -r $requirements_file"
+
+    # Execute or preview the install command
+    shell::colored_echo "🔍 Installing packages from $requirements_file into $venv_path..." 36
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "$install_cmd"
+    else
+        # Execute the install command asynchronously
+        shell::async "$install_cmd" &
+        local pid=$!
+        wait $pid
+        if [ $? -eq 0 ]; then
+            shell::colored_echo "🟢 Packages installed successfully from $requirements_file." 46
+        else
+            shell::colored_echo "🔴 Error: Failed to install packages." 31
+            return 1
+        fi
+    fi
+}
