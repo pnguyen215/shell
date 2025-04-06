@@ -315,6 +315,19 @@ shell::create_go_app() {
 shell::add_go_app_settings() {
     shell::download_dataset "docs/VERSION_RELEASE.md" $SHELL_PROJECT_DOC_VERSION_RELEASE
     shell::download_dataset "Makefile" $SHELL_PROJECT_GO_MAKEFILE
+    shell::download_dataset ".gitignore" $SHELL_PROJECT_GITIGNORE_GO
     shell::download_dataset ".github/workflows/ci.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_CI
     shell::download_dataset ".github/workflows/ci_notify.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_CI_NOTIFICATION
+}
+
+# shell::add_go_gitignore function
+# This function downloads the .gitignore file for a Go project.
+#
+# It utilizes the shell::download_dataset function to fetch the .gitignore file
+# from the specified URL and saves it in the appropriate location within the project structure.
+#
+# The .gitignore file is essential for specifying which files and directories
+# should be ignored by Git, helping to keep the repository clean and free of unnecessary files.
+shell::add_go_gitignore() {
+    shell::download_dataset ".gitignore" $SHELL_PROJECT_GITIGNORE_GO
 }
