@@ -295,16 +295,25 @@ shell::fzf_remove_go_privates() {
     fi
 
     # Remove selected entries from the GOPRIVATE value
-    local updated_go_private=""
+    local updated_go_private="$current_go_private"
     local entry
+
     IFS=$'\n'
     for entry in $entries_to_remove; do
-        updated_go_private=$(echo "$current_go_private" | sed "s/,$entry//g" | sed "s/$entry,//g" | sed "s/$entry//g")
-        current_go_private="$updated_go_private" # Update current value for subsequent removals
+        # Safely construct patterns for removal, handling edge cases
+        local pattern
+        pattern="(,$entry\\b)|(\\b$entry,)|(\\b$entry\\b)"
+
+        # Use sed to remove matching entries and surrounding commas
+        updated_go_private=$(echo "$updated_go_private" | sed -E "s/$pattern//g")
+
+        # Remove any double commas or leading/trailing commas
+        updated_go_private=$(echo "$updated_go_private" | sed -E "s/,+/,/g;s/^,//;s/,$//")
+
     done
     unset IFS
 
-    echo "DEBUG:updated_go_private values: $updated_go_private "
+    echo "DEBUG:updated_go_private values: $updated_go_private"
     # Construct the command to update GOPRIVATE
     local cmd="go env -w GOPRIVATE=\"$updated_go_private\""
 
