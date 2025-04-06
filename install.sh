@@ -16,12 +16,15 @@ zip_file="$repo.zip"
 install_dir="$HOME/shell"
 
 # Fetch latest release or fallback to master
-release_url=$(curl -s "https://api.github.com/repos/$owner/$repo/releases/latest")
-zip_url=$(echo "$release_url" | grep -o '"browser_download_url": ".*shell.*.zip"' | cut -d'"' -f4)
-if [ -z "$zip_url" ]; then
-    echo "👉 Latest release not found. Downloading from master branch."
-    zip_url="https://github.com/$owner/$repo/archive/master.zip"
-fi
+# release_url=$(curl -s "https://api.github.com/repos/$owner/$repo/releases/latest")
+# zip_url=$(echo "$release_url" | grep -o '"browser_download_url": ".*shell.*.zip"' | cut -d'"' -f4)
+# if [ -z "$zip_url" ]; then
+#     echo "👉 Latest release not found. Downloading from master branch."
+#     zip_url="https://github.com/$owner/$repo/archive/master.zip"
+# fi
+# Download from the master branch only
+echo "👉 Downloading from master branch."
+zip_url="https://github.com/$owner/$repo/archive/master.zip"
 
 # Download and extract
 curl -s -L -o "$zip_file" "$zip_url" || {
