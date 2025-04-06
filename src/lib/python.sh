@@ -1,6 +1,9 @@
 #!/bin/bash
 # python.sh
 
+# Install packages in a virtual environment using pip and venv
+# Link: https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/
+
 # shell::install_python function
 # Installs Python (python3) on macOS or Linux.
 #
