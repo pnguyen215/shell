@@ -611,57 +611,57 @@ shell::create_directory_if_not_exists() {
 # Example usage:
 #   shell::create_file_if_not_exists /path/to/file.txt
 #   shell::create_file_if_not_exists demo/file.txt   (On macOS, this creates "$HOME/demo/file.txt")
-shell::create_file_if_not_exists() {
-    if [ $# -lt 1 ]; then
-        echo "Usage: shell::create_file_if_not_exists <filename>"
-        return 1
-    fi
+# shell::create_file_if_not_exists() {
+#     if [ $# -lt 1 ]; then
+#         echo "Usage: shell::create_file_if_not_exists <filename>"
+#         return 1
+#     fi
 
-    local filename="$1"
-    local directory
-    directory="$(dirname "$filename")"
-    local os
-    os=$(shell::get_os_type)
+#     local filename="$1"
+#     local directory
+#     directory="$(dirname "$filename")"
+#     local os
+#     os=$(shell::get_os_type)
 
-    # On macOS, if the provided directory path is not absolute, assume it's relative to $HOME.
-    if [[ "$os" == "macos" ]]; then
-        if [[ "$directory" != /* ]]; then
-            directory="$HOME/$directory"
-        fi
-        # Also, if the filename itself is relative, update it.
-        if [[ "$filename" != /* ]]; then
-            filename="$HOME/$filename"
-        fi
-    fi
+#     # On macOS, if the provided directory path is not absolute, assume it's relative to $HOME.
+#     if [[ "$os" == "macos" ]]; then
+#         if [[ "$directory" != /* ]]; then
+#             directory="$HOME/$directory"
+#         fi
+#         # Also, if the filename itself is relative, update it.
+#         if [[ "$filename" != /* ]]; then
+#             filename="$HOME/$filename"
+#         fi
+#     fi
 
-    # Check if the parent directory exists.
-    if [ ! -d "$directory" ]; then
-        shell::colored_echo "📁 Directory '$directory' does not exist. Creating with admin privileges..." 11
-        shell::run_cmd_eval "sudo mkdir -p \"$directory\""
-        if [ $? -eq 0 ]; then
-            shell::colored_echo "🟢 Directory created successfully." 46
-            # shell::run_cmd_eval "sudo chmod 700 \"$directory\"" # Set directory permissions to 700 (owner can read, write, and execute)
-        else
-            shell::colored_echo "🔴 Error: Failed to create the directory." 196
-            return 1
-        fi
-    fi
+#     # Check if the parent directory exists.
+#     if [ ! -d "$directory" ]; then
+#         shell::colored_echo "📁 Directory '$directory' does not exist. Creating with admin privileges..." 11
+#         shell::run_cmd_eval "sudo mkdir -p \"$directory\""
+#         if [ $? -eq 0 ]; then
+#             shell::colored_echo "🟢 Directory created successfully." 46
+#             # shell::run_cmd_eval "sudo chmod 700 \"$directory\"" # Set directory permissions to 700 (owner can read, write, and execute)
+#         else
+#             shell::colored_echo "🔴 Error: Failed to create the directory." 196
+#             return 1
+#         fi
+#     fi
 
-    # Check if the file exists.
-    if [ ! -e "$filename" ]; then
-        shell::colored_echo "📄 File '$filename' does not exist. Creating with admin privileges..." 11
-        shell::run_cmd_eval "sudo touch \"$filename\""
-        if [ $? -eq 0 ]; then
-            shell::colored_echo "🟢 File created successfully." 46
-            # shell::run_cmd_eval "sudo chmod 600 \"$filename\"" # Set file permissions to 600 (owner can read and write; no permissions for others)
-            return 0
-        else
-            shell::colored_echo "🔴 Error: Failed to create the file." 196
-            return 1
-        fi
-    fi
-    return 0
-}
+#     # Check if the file exists.
+#     if [ ! -e "$filename" ]; then
+#         shell::colored_echo "📄 File '$filename' does not exist. Creating with admin privileges..." 11
+#         shell::run_cmd_eval "sudo touch \"$filename\""
+#         if [ $? -eq 0 ]; then
+#             shell::colored_echo "🟢 File created successfully." 46
+#             # shell::run_cmd_eval "sudo chmod 600 \"$filename\"" # Set file permissions to 600 (owner can read and write; no permissions for others)
+#             return 0
+#         else
+#             shell::colored_echo "🔴 Error: Failed to create the file." 196
+#             return 1
+#         fi
+#     fi
+#     return 0
+# }
 
 # shell::create_file_if_not_exists function
 # Utility function to create a file if it doesn't exist, ensuring all parent directories are created.
@@ -682,7 +682,7 @@ shell::create_file_if_not_exists() {
 # Example usage:
 #   shell::create_file_if_not_exists ./demo/sub/text.txt   # Creates all necessary directories and the file relative to the current directory.
 #   shell::create_file_if_not_exists /absolute/path/to/file.txt
-shell::create_file_if_not_exists2() {
+shell::create_file_if_not_exists() {
     if [ $# -lt 1 ]; then
         echo "Usage: shell::create_file_if_not_exists <filename>"
         return 1
