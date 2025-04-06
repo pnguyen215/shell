@@ -5,12 +5,19 @@
 # This variable sets the path to the shell library directory, defaulting to $HOME/shell if not already defined.
 SHELL_DIR="${SHELL_DIR:-$HOME/shell}"
 LIB_DIR="$SHELL_DIR/src/lib"
+LANG_DIR="$SHELL_DIR/src/lang"
 
 # Source all .sh files in lib/
 # This block checks if the library directory exists. If it does, it iterates over all .sh files in that directory
 # and sources them, making their functions and variables available in the current shell environment.
 if [ -d "$LIB_DIR" ]; then
     for script in "$LIB_DIR"/*.sh; do
+        [ -f "$script" ] && source "$script"
+    done
+fi
+
+if [ -d "$LANG_DIR" ]; then
+    for script in "$LANG_DIR"/*.sh; do
         [ -f "$script" ] && source "$script"
     done
 fi
