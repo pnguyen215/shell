@@ -120,3 +120,26 @@ readonly SHELL_PROJECT_GITIGNORE_NODEJS="https://raw.githubusercontent.com/pnguy
 # SHELL_PROJECT_GITIGNORE_PYTHON constant
 # This variable holds the URL to the Python .gitignore template. It is used to provide a standard .gitignore file for Python projects.
 readonly SHELL_PROJECT_GITIGNORE_PYTHON="https://raw.githubusercontent.com/pnguyen215/wsdkit.keys/master/gitignores/python3_gitignore.txt"
+
+# SHELL_PROJECT_GITHUB_WORKFLOW_CI constant
+# This variable holds the URL to the GitHub Actions CI workflow configuration file.
+# It is used to define the continuous integration process for projects using GitHub.
+readonly SHELL_PROJECT_GITHUB_WORKFLOW_CI="https://raw.githubusercontent.com/pnguyen215/wsdkit.keys/master/devops/github_workflow/ci.yml"
+
+# SHELL_PROJECT_GITHUB_WORKFLOW_CI_NOTIFICATION constant
+# This variable holds the URL to the GitHub Actions CI notification workflow configuration file.
+# It is used to define the notification process for projects using GitHub Actions,
+# allowing for automated notifications based on CI events.
+readonly SHELL_PROJECT_GITHUB_WORKFLOW_CI_NOTIFICATION="https://raw.githubusercontent.com/pnguyen215/wsdkit.keys/master/devops/github_workflow/ci_notify.yml"
+
+# SHELL_PROJECT_DOC_VERSION_RELEASE constant
+# This variable holds the URL to the documentation release notes.
+# It is used to provide access to the latest release information for the project,
+# allowing developers and users to stay informed about updates and changes.
+readonly SHELL_PROJECT_DOC_VERSION_RELEASE="https://raw.githubusercontent.com/pnguyen215/wsdkit.keys/master/docs/RELEASE.md"
+
+# SHELL_PROJECT_GO_MAKEFILE constant
+# This variable holds the URL to the Makefile template for Go projects.
+# It is used to provide a standard Makefile configuration, which can help automate
+# the build process and other tasks for Go applications.
+readonly SHELL_PROJECT_GO_MAKEFILE="https://raw.githubusercontent.com/pnguyen215/wsdkit.keys/master/cmd/go/Makefile"
