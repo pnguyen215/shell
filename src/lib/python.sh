@@ -1078,3 +1078,84 @@ shell::upgrade_pkg_python_env() {
         fi
     fi
 }
+
+# shell::freeze_pkg_python_env function
+# Exports a list of installed packages and their versions from a Python virtual environment to a requirements.txt file.
+#
+# Usage:
+#   shell::freeze_pkg_python_env [-n] [-p <path>]
+#
+# Parameters:
+#   - -n          : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+#   - -p <path>   : Optional. Specifies the path to the virtual environment (defaults to ./venv).
+#
+# Description:
+#   This function uses pip freeze to generate a requirements.txt file, capturing the current state of the virtual environment's packages.
+#   - It checks for the existence of the virtual environment.
+#   - It constructs the appropriate pip freeze command.
+#   - It supports dry-run mode to preview the command.
+#   - It implements asynchronous execution for the freeze operation.
+#
+# Example:
+#   shell::freeze_pkg_python_env         # Exports requirements from ./venv.
+#   shell::freeze_pkg_python_env -n -p ~/my_env  # Prints the export command for ~/my_env without executing.
+#
+# Notes:
+#   - Requires an existing virtual environment.
+#   - Assumes pip is available in the virtual environment.
+shell::freeze_pkg_python_env() {
+    local dry_run="false"
+    local venv_path="./venv"
+
+    # Parse optional arguments
+    while [ $# -gt 0 ]; do
+        case "$1" in
+        -n)
+            dry_run="true"
+            shift
+            ;;
+        -p)
+            venv_path="$2"
+            shift 2
+            ;;
+        *)
+            shell::colored_echo "🔴 Error: Unknown option '$1'. Usage: shell::freeze_pkg_python_env [-n] [-p <path>]" 31
+            return 1
+            ;;
+        esac
+    done
+
+    # Check if the virtual environment exists
+    if [ ! -d "$venv_path" ] || [ ! -f "$venv_path/bin/pip" ]; then
+        shell::colored_echo "🔴 Error: Virtual environment at '$venv_path' does not exist or is invalid." 31
+        return 1
+    fi
+
+    local pip_cmd="$venv_path/bin/pip"
+
+    # Ensure pip command is available
+    if ! shell::is_command_available "$pip_cmd"; then
+        shell::colored_echo "🔴 Error: pip not found in virtual environment at '$venv_path'." 31
+        return 1
+    fi
+
+    # Construct the freeze command
+    local freeze_cmd="$pip_cmd freeze > $venv_path/requirements.txt"
+
+    # Execute or preview the freeze command
+    shell::colored_echo "🔍 Exporting installed packages to $venv_path/requirements.txt..." 36
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "$freeze_cmd"
+    else
+        # Execute the freeze command asynchronously
+        shell::async "$freeze_cmd" &
+        local pid=$!
+        wait $pid
+        if [ $? -eq 0 ]; then
+            shell::colored_echo "🟢 Packages exported successfully to $venv_path/requirements.txt" 46
+        else
+            shell::colored_echo "🔴 Error: Failed to export packages." 31
+            return 1
+        fi
+    fi
+}
