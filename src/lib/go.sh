@@ -137,138 +137,95 @@ shell::set_go_privates() {
 }
 
 # shell::fzf_remove_go_privates function
-#
-# Description:
-#   Interactively removes entries from the GOPRIVATE environment variable using fzf for selection.
-#   This allows the user to choose which private modules to exclude from GOPRIVATE.
+# Interactively removes selected entries from the GOPRIVATE environment variable using fzf.
 #
 # Usage:
 #   shell::fzf_remove_go_privates [-n]
 #
 # Parameters:
-#   -n: Optional.
-#   If provided, the command is printed using shell::on_evict instead of executed.
+#   - -n          : Optional dry-run flag.
+#                   If provided, the command is printed using shell::on_evict instead of executed.
 #
-# Options:
-#   None
+# Description:
+#   This function enhances GOPRIVATE management by:
+#   - Retrieving the current GOPRIVATE value using go env
+#   - Using fzf to interactively select entries for removal
+#   - Updating GOPRIVATE with the remaining entries
+#   - Supporting dry-run mode and asynchronous execution
 #
 # Example:
-#   shell::fzf_remove_go_privates
-#   shell::fzf_remove_go_privates -n
-#
-# Instructions:
-#   1.  Run `shell::fzf_remove_go_privates` to interactively select and remove GOPRIVATE entries.
-#   2.  Use `shell::fzf_remove_go_privates -n` to preview the command.
+#   shell::fzf_remove_go_privates     # Interactively remove GOPRIVATE entries
+#   shell::fzf_remove_go_privates -n  # Preview the removal command
 #
 # Notes:
-#   -   This function requires fzf to be installed.
-#   -   It supports dry-run and asynchronous execution.
+#   - Requires fzf and Go environment tools
+#   - Maintains existing entries not selected for removal
+#   - Handles comma-separated GOPRIVATE format automatically
 shell::fzf_remove_go_privates() {
     local dry_run="false"
 
     # Check for dry-run option
-    if [ "$1" = "-n" ]; then
+    if [[ "$1" == "-n" ]]; then
         dry_run="true"
         shift
     fi
 
-    # Check if fzf is installed
+    # Install fzf if not available
     shell::install_package fzf
 
-    # Get the current GOPRIVATE value
-    local current_go_private=$(go env GOPRIVATE)
+    # Get current GOPRIVATE value
+    local current_privates
+    current_privates=$(go env GOPRIVATE 2>/dev/null)
 
-    # Handle the case where GOPRIVATE is empty
-    if [ -z "$current_go_private" ]; then
-        shell::colored_echo "🟡 GOPRIVATE is currently empty. Nothing to remove." 33
+    # Handle empty GOPRIVATE
+    if [[ -z "$current_privates" ]]; then
+        shell::colored_echo "🟢 GOPRIVATE is already empty" 46
         return 0
     fi
 
-    # Use fzf to select entries to remove
-    local selected_entries
-    selected_entries=$(echo "$current_go_private" | tr ',' '\n' | fzf --multi --prompt="Select entries to remove: ")
+    # Convert to array
+    local -a private_array
+    IFS=',' read -ra private_array <<<"$current_privates"
 
-    # Handle no selection
-    if [ -z "$selected_entries" ]; then
-        shell::colored_echo "🟡 No entries selected for removal." 33
+    # Select entries to remove using fzf
+    local selected
+    selected=$(printf "%s\n" "${private_array[@]}" | fzf --multi --prompt="Select entries to remove: ")
+
+    # Exit if no selection
+    if [[ -z "$selected" ]]; then
+        shell::colored_echo "🟡 No entries selected for removal" 33
         return 0
     fi
 
-    # Debugging: Print initial values
-    echo "DEBUG: current_go_private: '$current_go_private'"
-    echo "DEBUG: selected_entries: '$selected_entries'"
-
-    # Split the current GOPRIVATE string into an array
-    local go_private_array=()
-    IFS=','
-    if [[ -n "$current_go_private" ]]; then
-        readarray -d ',' go_private_array < <(echo "$current_go_private,")
-    fi
-    unset IFS
-
-    # Split the selected entries string into an array
-    local selected_array=()
-    IFS=$'\n'
-    if [[ -n "$selected_entries" ]]; then
-        readarray -d '\n' selected_array < <(echo "$selected_entries")
-    fi
-    unset IFS
-
-    # Debugging: Print arrays
-    echo "DEBUG: go_private_array: ${go_private_array[@]}"
-    echo "DEBUG: selected_array: ${selected_array[@]}"
-
-    # Create an array to hold the updated GOPRIVATE entries
-    local updated_go_private_array=()
-
-    # Iterate through the current GOPRIVATE entries
-    for entry in "${go_private_array[@]}"; do
-        # Trim whitespace from entry for comparison
-        entry=$(echo "$entry" | xargs)
-        # Check if the current entry is in the selected entries
-        local found=false
-        for selected in "${selected_array[@]}"; do
-            # Trim whitespace from selected for comparison
-            selected=$(echo "$selected" | xargs)
-            if [ "$entry" = "$selected" ]; then
-                found=true
-                break
-            fi
-        done
-        # If the entry was not selected for removal, add it to the updated array
-        if [ "$found" = "false" ]; then
-            updated_go_private_array+=("$entry")
+    # Filter out selected entries
+    local -a new_privates
+    for entry in "${private_array[@]}"; do
+        if ! grep -qxF "$entry" <<<"$selected"; then
+            new_privates+=("$entry")
         fi
     done
 
-    # Debugging: Print updated array
-    echo "DEBUG: updated_go_private_array: ${updated_go_private_array[@]}"
-
-    # Join the updated GOPRIVATE entries back into a comma-separated string
-    IFS=','
-    local updated_go_private="${updated_go_private_array[*]}"
+    # Join remaining entries
+    local new_value
+    IFS=',' new_value="${new_privates[*]}"
     unset IFS
 
-    # Remove trailing comma if it exists (a common artifact of the process)
-    updated_go_private=$(echo "$updated_go_private" | sed 's/,$//')
+    # Build update command
+    local cmd="go env -w GOPRIVATE=\"$new_value\""
 
-    # Debugging: Print final value
-    echo "DEBUG: updated_go_private: '$updated_go_private'"
-
-    # Construct the command to set the updated GOPRIVATE value
-    local cmd="go env -w GOPRIVATE=\"$updated_go_private\""
-
-    if [ "$dry_run" = "true" ]; then
+    # Execute or preview
+    if [[ "$dry_run" == "true" ]]; then
         shell::on_evict "$cmd"
     else
+        shell::colored_echo "🔍 Updating GOPRIVATE..." 36
         shell::async "$cmd" &
         local pid=$!
         wait $pid
 
-        if [ $? -eq 0 ]; then
-            shell::colored_echo "🟢 GOPRIVATE updated successfully." 46
+        if [[ $? -eq 0 ]]; then
+            shell::colored_echo "🟢 GOPRIVATE updated successfully" 46
         else
-            shell::colored_echo "🔴 Error: Failed to update GOPRIVATE." 31
+            shell::colored_echo "🔴 Failed to update GOPRIVATE" 196
             return 1
         fi
     fi
