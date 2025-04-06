@@ -382,7 +382,7 @@ shell::fzf_remove_go_privates() {
     fi
 
     # Split GOPRIVATE into an array of entries
-    IFS=',' read -ra entries <<<"$current_goprivate"
+    IFS=',' read -r entries <<<"$current_goprivate"
 
     # Use fzf to select entries to remove (multi-select enabled)
     local selected=$(printf "%s\n" "${entries[@]}" | fzf --multi --prompt="Select entries to remove: ")
