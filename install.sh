@@ -23,8 +23,8 @@ install_dir="$HOME/shell"
 #     zip_url="https://github.com/$owner/$repo/archive/master.zip"
 # fi
 # Download from the master branch only
-echo "👉 Downloading from master branch."
 zip_url="https://github.com/$owner/$repo/archive/master.zip"
+echo "👉 Downloading from master branch ($zip_url)"
 
 # Download and extract
 curl -s -L -o "$zip_file" "$zip_url" || {
