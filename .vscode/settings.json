@@ -6,6 +6,7 @@
     "bunzip",
     "cecho",
     "createfileifnotexists",
+    "dotglob",
     "ensurepip",
     "gdate",
     "GOPRIVATE",
