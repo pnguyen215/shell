@@ -663,6 +663,75 @@ shell::create_file_if_not_exists() {
     return 0
 }
 
+# shell::create_file_if_not_exists function
+# Utility function to create a file if it doesn't exist, ensuring all parent directories are created.
+#
+# Usage:
+#   shell::create_file_if_not_exists <filename>
+#
+# Parameters:
+#   - <filename>: The name (or path) of the file to be created. Can be relative or absolute.
+#
+# Description:
+#   This function converts the provided filename to an absolute path based on the current working directory
+#   if it is not already absolute. It then extracts the parent directory path and ensures it exists,
+#   creating it with admin privileges using `sudo mkdir -p` if necessary. Finally, it creates the file
+#   using `sudo touch` if it does not already exist. Optional permission settings for the directory
+#   and file are included but commented out.
+#
+# Example usage:
+#   shell::create_file_if_not_exists ./demo/sub/text.txt   # Creates all necessary directories and the file relative to the current directory.
+#   shell::create_file_if_not_exists /absolute/path/to/file.txt
+shell::create_file_if_not_exists2() {
+    if [ $# -lt 1 ]; then
+        echo "Usage: shell::create_file_if_not_exists <filename>"
+        return 1
+    fi
+
+    local filename="$1"
+    local abs_filename
+
+    # Convert filename to absolute path
+    if [[ "$filename" = /* ]]; then
+        abs_filename="$filename"
+    else
+        abs_filename="$PWD/$filename"
+    fi
+
+    local directory
+    directory="$(dirname "$abs_filename")"
+
+    # Check if the parent directory exists.
+    if [ ! -d "$directory" ]; then
+        shell::colored_echo "📁 Creating directory '$directory'..." 11
+        shell::run_cmd_eval "sudo mkdir -p \"$directory\""
+        if [ $? -eq 0 ]; then
+            shell::colored_echo "🟢 Directory created successfully." 46
+            # Optionally set directory permissions
+            # shell::run_cmd_eval "sudo chmod 700 \"$directory\""
+        else
+            shell::colored_echo "🔴 Error: Failed to create the directory." 196
+            return 1
+        fi
+    fi
+
+    # Check if the file exists.
+    if [ ! -e "$abs_filename" ]; then
+        shell::colored_echo "📄 Creating file '$abs_filename'..." 11
+        shell::run_cmd_eval "sudo touch \"$abs_filename\""
+        if [ $? -eq 0 ]; then
+            shell::colored_echo "🟢 File created successfully." 46
+            # Optionally set file permissions
+            # shell::run_cmd_eval "sudo chmod 600 \"$abs_filename\""
+            return 0
+        else
+            shell::colored_echo "🔴 Error: Failed to create the file." 196
+            return 1
+        fi
+    fi
+    return 0
+}
+
 # shell::setPerms::777 function
 # Sets full permissions (read, write, and execute) for the specified file or directory.
 #
