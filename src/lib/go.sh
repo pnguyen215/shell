@@ -194,16 +194,36 @@ shell::fzf_remove_go_privates() {
         return 0
     fi
 
-    # Remove selected entries from the GOPRIVATE value
-    local updated_go_private="$current_go_private"
-    IFS=$'\n'
-    for entry in $selected_entries; do
-        updated_go_private=$(echo "$updated_go_private" | sed "s/,$entry/,/g;s/$entry,//g")
-    done
+    # Convert the current GOPRIVATE string to an array
+    IFS=',' read -ra go_private_array <<<"$current_go_private"
+
+    # Convert the selected entries string to an array
+    IFS=$'\n' read -ra selected_array <<<"$selected_entries"
     unset IFS
 
-    # Remove leading/trailing comma if any
-    updated_go_private=$(echo "$updated_go_private" | sed -e 's/^,//' -e 's/,$/ /')
+    # Create an array to hold the updated GOPRIVATE entries
+    local updated_go_private_array=()
+
+    # Iterate through the current GOPRIVATE entries
+    for entry in "${go_private_array[@]}"; do
+        # Check if the current entry is in the selected entries
+        local found=false
+        for selected in "${selected_array[@]}"; do
+            if [ "$entry" = "$selected" ]; then
+                found=true
+                break
+            fi
+        done
+        # If the entry was not selected for removal, add it to the updated array
+        if [ "$found" = "false" ]; then
+            updated_go_private_array+=("$entry")
+        fi
+    done
+
+    # Join the updated GOPRIVATE entries back into a comma-separated string
+    IFS=','
+    local updated_go_private="${updated_go_private_array[*]}"
+    unset IFS
 
     # Construct the command to set the updated GOPRIVATE value
     local cmd="go env -w GOPRIVATE=\"$updated_go_private\""
