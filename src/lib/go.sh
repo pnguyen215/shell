@@ -135,3 +135,91 @@ shell::set_go_privates() {
         fi
     fi
 }
+
+# shell::fzf_remove_go_privates function
+#
+# Description:
+#   Interactively removes entries from the GOPRIVATE environment variable using fzf for selection.
+#   This allows the user to choose which private modules to exclude from GOPRIVATE.
+#
+# Usage:
+#   shell::fzf_remove_go_privates [-n]
+#
+# Parameters:
+#   -n: Optional.
+#   If provided, the command is printed using shell::on_evict instead of executed.
+#
+# Options:
+#   None
+#
+# Example:
+#   shell::fzf_remove_go_privates
+#   shell::fzf_remove_go_privates -n
+#
+# Instructions:
+#   1.  Run `shell::fzf_remove_go_privates` to interactively select and remove GOPRIVATE entries.
+#   2.  Use `shell::fzf_remove_go_privates -n` to preview the command.
+#
+# Notes:
+#   -   This function requires fzf to be installed.
+#   -   It supports dry-run and asynchronous execution.
+shell::fzf_remove_go_privates() {
+    local dry_run="false"
+
+    # Check for dry-run option
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    # Check if fzf is installed
+    shell::install_package fzf
+
+    # Get the current GOPRIVATE value
+    local current_go_private=$(go env GOPRIVATE)
+
+    # Handle the case where GOPRIVATE is empty
+    if [ -z "$current_go_private" ]; then
+        shell::colored_echo "🟡 GOPRIVATE is currently empty. Nothing to remove." 33
+        return 0
+    fi
+
+    # Use fzf to select entries to remove
+    local selected_entries
+    selected_entries=$(echo "$current_go_private" | tr ',' '\n' | fzf --multi --prompt="Select entries to remove: ")
+
+    # Handle no selection
+    if [ -z "$selected_entries" ]; then
+        shell::colored_echo "🟡 No entries selected for removal." 33
+        return 0
+    fi
+
+    # Remove selected entries from the GOPRIVATE value
+    local updated_go_private="$current_go_private"
+    IFS=$'\n'
+    for entry in $selected_entries; do
+        updated_go_private=$(echo "$updated_go_private" | sed "s/,$entry/,/g;s/$entry,//g")
+    done
+    unset IFS
+
+    # Remove leading/trailing comma if any
+    updated_go_private=$(echo "$updated_go_private" | sed -e 's/^,//' -e 's/,$/ /')
+
+    # Construct the command to set the updated GOPRIVATE value
+    local cmd="go env -w GOPRIVATE=\"$updated_go_private\""
+
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "$cmd"
+    else
+        shell::async "$cmd" &
+        local pid=$!
+        wait $pid
+
+        if [ $? -eq 0 ]; then
+            shell::colored_echo "🟢 GOPRIVATE updated successfully." 46
+        else
+            shell::colored_echo "🔴 Error: Failed to update GOPRIVATE." 31
+            return 1
+        fi
+    fi
+}
