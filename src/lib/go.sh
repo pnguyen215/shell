@@ -49,7 +49,7 @@ shell::get_go_privates() {
         if [ $? -eq 0 ]; then
             shell::colored_echo "🟢 Go privates setting retrieved successfully: ${cmd}" 46
         else
-            shell::colored_echo "🔴 Error: Failed to retrieve GOPRIVATE." 31
+            shell::colored_echo "🔴 Error: Failed to retrieve GOPRIVATE." 196
             return 1
         fi
     fi
@@ -99,7 +99,7 @@ shell::set_go_privates() {
 
     # Handle no arguments provided
     if [ $# -eq 0 ]; then
-        shell::colored_echo "🔴 Error: No repositories provided." 31
+        shell::colored_echo "🔴 Error: No repositories provided." 196
         echo "Usage: shell::set_go_privates [-n] <repository1> [repository2] ..."
         return 1
     fi
@@ -130,7 +130,7 @@ shell::set_go_privates() {
         if [ $? -eq 0 ]; then
             shell::colored_echo "🟢 GOPRIVATE set successfully to: $repositories_by_comma" 46
         else
-            shell::colored_echo "🔴 Error: Failed to set GOPRIVATE." 31
+            shell::colored_echo "🔴 Error: Failed to set GOPRIVATE." 196
             return 1
         fi
     fi
@@ -220,7 +220,7 @@ shell::fzf_remove_go_privates() {
         if [ $? -eq 0 ]; then
             shell::colored_echo "🟢 Removed selected entries from GOPRIVATE." 46
         else
-            shell::colored_echo "🔴 Error: Failed to update GOPRIVATE." 31
+            shell::colored_echo "🔴 Error: Failed to update GOPRIVATE." 196
             return 1
         fi
     fi
@@ -257,7 +257,7 @@ shell::create_go_app() {
 
     # Validate app name
     if [ -z "$app_name" ]; then
-        shell::colored_echo "🔴 Error: Application name is required." 31
+        shell::colored_echo "🔴 Error: Application name is required." 196
         shell::colored_echo "Usage: shell::create_go_app [-n] <app_name|github_url>"
         return 1
     fi
