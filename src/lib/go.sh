@@ -194,11 +194,20 @@ shell::fzf_remove_go_privates() {
         return 0
     fi
 
-    # Convert the current GOPRIVATE string to an array
-    IFS=',' read -ra go_private_array <<<"$current_go_private"
+    # Split the current GOPRIVATE string into an array
+    local go_private_array=()
+    IFS=','
+    for entry in $current_go_private; do
+        go_private_array+=("$entry")
+    done
+    unset IFS
 
-    # Convert the selected entries string to an array
-    IFS=$'\n' read -ra selected_array <<<"$selected_entries"
+    # Split the selected entries string into an array
+    local selected_array=()
+    IFS=$'\n'
+    for entry in $selected_entries; do
+        selected_array+=("$entry")
+    done
     unset IFS
 
     # Create an array to hold the updated GOPRIVATE entries
@@ -224,6 +233,9 @@ shell::fzf_remove_go_privates() {
     IFS=','
     local updated_go_private="${updated_go_private_array[*]}"
     unset IFS
+
+    # Remove trailing comma if it exists (a common artifact of the process)
+    updated_go_private=$(echo "$updated_go_private" | sed '$s/,$//')
 
     # Construct the command to set the updated GOPRIVATE value
     local cmd="go env -w GOPRIVATE=\"$updated_go_private\""
