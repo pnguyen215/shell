@@ -191,8 +191,7 @@ shell::fzf_remove_go_privates() {
     IFS=',' read -r -a goprivate_array <<<"$current_goprivate"
 
     # Use fzf to select entries to remove
-    local selected_array
-    mapfile -t selected_array < <(printf "%s\n" "${goprivate_array[@]}" | fzf --multi --prompt="Select GOPRIVATE entries to remove: ")
+    local selected_array = $(echo "$current_goprivate" | tr ',' '\n' | fzf --multi --prompt="Select entries to remove: ")
 
     # Check if any entries were selected
     if [ ${#selected_array[@]} -eq 0 ]; then
