@@ -29,7 +29,7 @@ curl -s -L -o "$zip_file" "$zip_url" || {
     exit 1
 }
 mkdir -p "$install_dir"
-unzip -o "$zip_file" -d "$install_dir" || {
+unzip -qq -o "$zip_file" -d "$install_dir" || {
     echo "🔴 Extraction failed."
     exit 1
 }
