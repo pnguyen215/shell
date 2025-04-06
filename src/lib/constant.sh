@@ -96,3 +96,27 @@ fi
 if [ -z "${SHELL_C_AES_YELLOW+x}" ]; then
     declare -gr SHELL_C_AES_YELLOW="\\033[0;33m"
 fi
+
+##########Developers Settings#############
+######### Aris Nguyen 2025 ###############
+##########Developers Settings#############
+
+# SHELL_PROJECT_GITIGNORE_GO constant
+# This variable holds the URL to the Go .gitignore template. It is used to provide a standard .gitignore file for Go projects.
+readonly SHELL_PROJECT_GITIGNORE_GO="https://raw.githubusercontent.com/pnguyen215/wsdkit.keys/master/gitignores/go_gitignore.txt"
+
+# SHELL_PROJECT_GITIGNORE_JAVA constant
+# This variable holds the URL to the Java .gitignore template. It is used to provide a standard .gitignore file for Java projects.
+readonly SHELL_PROJECT_GITIGNORE_JAVA="https://raw.githubusercontent.com/pnguyen215/wsdkit.keys/master/gitignores/java_gitignore.txt"
+
+# SHELL_PROJECT_GITIGNORE_ANGULAR constant
+# This variable holds the URL to the Angular .gitignore template. It is used to provide a standard .gitignore file for Angular projects.
+readonly SHELL_PROJECT_GITIGNORE_ANGULAR="https://raw.githubusercontent.com/pnguyen215/wsdkit.keys/master/gitignores/angular_gitignore.txt"
+
+# SHELL_PROJECT_GITIGNORE_NODEJS constant
+# This variable holds the URL to the Node.js .gitignore template. It is used to provide a standard .gitignore file for Node.js projects.
+readonly SHELL_PROJECT_GITIGNORE_NODEJS="https://raw.githubusercontent.com/pnguyen215/wsdkit.keys/master/gitignores/node.js_gitignore.txt"
+
+# SHELL_PROJECT_GITIGNORE_PYTHON constant
+# This variable holds the URL to the Python .gitignore template. It is used to provide a standard .gitignore file for Python projects.
+readonly SHELL_PROJECT_GITIGNORE_PYTHON="https://raw.githubusercontent.com/pnguyen215/wsdkit.keys/master/gitignores/python3_gitignore.txt"
