@@ -302,7 +302,7 @@ shell::create_go_app() {
 }
 
 shell::add_go_app_settings() {
-    shell::download_dataset "./docs/VERSION_RELEASE.md" "$SHELL_PROJECT_DOC_VERSION_RELEASE"
+    shell::download_dataset "docs/VERSION_RELEASE.md" $SHELL_PROJECT_DOC_VERSION_RELEASE
     # shell::download_dataset "" ""
     # shell::download_dataset "" ""
     # shell::download_dataset "" ""
