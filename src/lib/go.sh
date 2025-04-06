@@ -301,11 +301,20 @@ shell::create_go_app() {
     shell::colored_echo "🟢 Go application initialized successfully." 46
 }
 
+# shell::add_go_app_settings function
+# This function downloads essential configuration files for a Go application.
+#
+# It retrieves the following files:
+# - VERSION_RELEASE.md: Contains the version release information for the application.
+# - Makefile: A build script that defines how to compile and manage the application.
+# - ci.yml: A GitHub Actions workflow configuration for continuous integration.
+# - ci_notify.yml: A GitHub Actions workflow configuration for notifications related to CI events.
+#
+# Each file is downloaded using the shell::download_dataset function, which ensures that the files are
+# fetched from the specified URLs and saved in the appropriate locations.
 shell::add_go_app_settings() {
     shell::download_dataset "docs/VERSION_RELEASE.md" $SHELL_PROJECT_DOC_VERSION_RELEASE
-    # shell::download_dataset "" ""
-    # shell::download_dataset "" ""
-    # shell::download_dataset "" ""
-    # shell::download_dataset "" ""
-    # shell::download_dataset "" ""
+    shell::download_dataset "Makefile" $SHELL_PROJECT_GO_MAKEFILE
+    shell::download_dataset ".github/workflows/ci.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_CI
+    shell::download_dataset ".github/workflows/ci_notify.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_CI_NOTIFICATION
 }
