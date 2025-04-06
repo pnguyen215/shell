@@ -50,7 +50,7 @@ fi
 mv "$extracted_dir"/* "$install_dir/" 2>/dev/null || echo "🟡 Some files couldn't be moved (possibly empty or hidden files only)."
 # shopt -u dotglob # Reset globbing behavior
 rmdir "$extracted_dir" 2>/dev/null || {
-    echo "🟡 $extracted_dir not empty, removing with rm -rf"
+    # echo "🟡 $extracted_dir not empty, removing with rm -rf"
     rm -rf "$extracted_dir"
 }
 rm "$zip_file"

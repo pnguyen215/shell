@@ -1408,8 +1408,9 @@ shell::download_dataset() {
     if [ "$dry_run" = "true" ]; then
         shell::on_evict "$download_cmd"
         shell::colored_echo "💡 Dry-run mode: Displayed download command for $filename" 11
+        return 0
     else
-        shell::run_cmd curl -LJ "$link" -o "$filename"
+        shell::run_cmd curl -s -LJ "$link" -o "$filename"
         if [ $? -eq 0 ]; then
             shell::colored_echo "🟢 Successfully downloaded: $filename" 46
         else
