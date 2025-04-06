@@ -194,30 +194,42 @@ shell::fzf_remove_go_privates() {
         return 0
     fi
 
+    # Debugging: Print initial values
+    echo "DEBUG: current_go_private: '$current_go_private'"
+    echo "DEBUG: selected_entries: '$selected_entries'"
+
     # Split the current GOPRIVATE string into an array
     local go_private_array=()
     IFS=','
-    for entry in $current_go_private; do
-        go_private_array+=("$entry")
-    done
+    if [[ -n "$current_go_private" ]]; then
+        readarray -d ',' go_private_array < <(echo "$current_go_private,")
+    fi
     unset IFS
 
     # Split the selected entries string into an array
     local selected_array=()
     IFS=$'\n'
-    for entry in $selected_entries; do
-        selected_array+=("$entry")
-    done
+    if [[ -n "$selected_entries" ]]; then
+        readarray -d '\n' selected_array < <(echo "$selected_entries")
+    fi
     unset IFS
+
+    # Debugging: Print arrays
+    echo "DEBUG: go_private_array: ${go_private_array[@]}"
+    echo "DEBUG: selected_array: ${selected_array[@]}"
 
     # Create an array to hold the updated GOPRIVATE entries
     local updated_go_private_array=()
 
     # Iterate through the current GOPRIVATE entries
     for entry in "${go_private_array[@]}"; do
+        # Trim whitespace from entry for comparison
+        entry=$(echo "$entry" | xargs)
         # Check if the current entry is in the selected entries
         local found=false
         for selected in "${selected_array[@]}"; do
+            # Trim whitespace from selected for comparison
+            selected=$(echo "$selected" | xargs)
             if [ "$entry" = "$selected" ]; then
                 found=true
                 break
@@ -229,13 +241,19 @@ shell::fzf_remove_go_privates() {
         fi
     done
 
+    # Debugging: Print updated array
+    echo "DEBUG: updated_go_private_array: ${updated_go_private_array[@]}"
+
     # Join the updated GOPRIVATE entries back into a comma-separated string
     IFS=','
     local updated_go_private="${updated_go_private_array[*]}"
     unset IFS
 
     # Remove trailing comma if it exists (a common artifact of the process)
-    updated_go_private=$(echo "$updated_go_private" | sed '$s/,$//')
+    updated_go_private=$(echo "$updated_go_private" | sed 's/,$//')
+
+    # Debugging: Print final value
+    echo "DEBUG: updated_go_private: '$updated_go_private'"
 
     # Construct the command to set the updated GOPRIVATE value
     local cmd="go env -w GOPRIVATE=\"$updated_go_private\""
