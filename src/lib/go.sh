@@ -275,7 +275,8 @@ shell::create_go_app() {
         # Remove "http://" or "https://"
         module_name="${app_name//http:\/\/|https:\/\///}"
         # Remove trailing slashes
-        module_name=$(echo "$module_name" | sed 's/\/*$//')
+        # module_name=$(echo "$module_name" | sed 's/\/*$//')
+        module_name="${module_name%/}"
     fi
 
     local init_cmd="go mod init $module_name"
