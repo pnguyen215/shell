@@ -24,7 +24,7 @@ if [ -z "$zip_url" ]; then
 fi
 
 # Download and extract
-curl -L -o "$zip_file" "$zip_url" || {
+curl -s -L -o "$zip_file" "$zip_url" || {
     echo "🔴 Download failed."
     exit 1
 }
@@ -44,7 +44,7 @@ fi
 
 # Move all contents (including hidden files) and clean up
 shopt -s dotglob # Enable globbing to include hidden files
-mv "$extracted_dir"/* "$install_dir/" 2>/dev/null || echo "⚠️ Some files couldn’t be moved (possibly empty or hidden files only)."
+mv "$extracted_dir"/* "$install_dir/" 2>/dev/null || echo "🟡 Some files couldn't be moved (possibly empty or hidden files only)."
 shopt -u dotglob # Reset globbing behavior
 rmdir "$extracted_dir" 2>/dev/null || {
     echo "🟡 $extracted_dir not empty, removing with rm -rf"
