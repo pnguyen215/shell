@@ -281,7 +281,7 @@ shell::install_package() {
         elif shell::is_command_available dnf; then
             shell::run_cmd_eval "sudo dnf install -y $package"
         else
-            shell::colored_echo "🔴 Error: Unsupported package manager on Linux." 31
+            shell::colored_echo "🔴 Error: Unsupported package manager on Linux." 196
             return 1
         fi
     elif [ "$os_type" = "macos" ]; then # macOS
@@ -296,7 +296,7 @@ shell::install_package() {
         fi
         shell::run_cmd_eval "brew install $package"
     else
-        shell::colored_echo "🔴 Error: Unsupported operating system." 31
+        shell::colored_echo "🔴 Error: Unsupported operating system." 196
         return 1
     fi
 }
@@ -337,7 +337,7 @@ shell::removal_package() {
                 shell::colored_echo "🟡 $package is not installed. Skipping uninstallation." 33
             fi
         else
-            shell::colored_echo "🔴 Error: Unsupported package manager on Linux." 31
+            shell::colored_echo "🔴 Error: Unsupported package manager on Linux." 196
             return 1
         fi
     elif [ "$os_type" = "macos" ]; then
@@ -348,11 +348,11 @@ shell::removal_package() {
                 shell::colored_echo "🟡 $package is not installed. Skipping uninstallation." 33
             fi
         else
-            shell::colored_echo "🔴 Error: Homebrew is not installed on macOS." 31
+            shell::colored_echo "🔴 Error: Homebrew is not installed on macOS." 196
             return 1
         fi
     else
-        shell::colored_echo "🔴 Error: Unsupported operating system." 31
+        shell::colored_echo "🔴 Error: Unsupported operating system." 196
         return 1
     fi
 }
@@ -384,7 +384,7 @@ shell::list_installed_packages() {
             shell::colored_echo "Listing installed packages (RPM-based):" 34
             shell::run_cmd_eval rpm -qa | sort
         else
-            shell::colored_echo "🔴 Error: Unsupported package manager on Linux." 31
+            shell::colored_echo "🔴 Error: Unsupported package manager on Linux." 196
             return 1
         fi
     elif [ "$os_type" = "macos" ]; then
@@ -392,11 +392,11 @@ shell::list_installed_packages() {
             shell::colored_echo "Listing installed packages (Homebrew):" 32
             shell::run_cmd_eval brew list
         else
-            shell::colored_echo "🔴 Error: Homebrew is not installed on macOS." 31
+            shell::colored_echo "🔴 Error: Homebrew is not installed on macOS." 196
             return 1
         fi
     else
-        shell::colored_echo "🔴 Error: Unsupported operating system." 31
+        shell::colored_echo "🔴 Error: Unsupported operating system." 196
         return 1
     fi
 }
@@ -429,14 +429,14 @@ shell::list_path_installed_packages() {
         elif [ "$os_type" = "linux" ]; then
             base_path="/opt"
         else
-            shell::colored_echo "🔴 Error: Unsupported operating system for package path listing." 31
+            shell::colored_echo "🔴 Error: Unsupported operating system for package path listing." 196
             return 1
         fi
     fi
 
     # Verify the base installation directory exists.
     if [ ! -d "$base_path" ]; then
-        shell::colored_echo "🔴 Error: The specified installation path '$base_path' does not exist." 31
+        shell::colored_echo "🔴 Error: The specified installation path '$base_path' does not exist." 196
         return 1
     fi
 
@@ -477,14 +477,14 @@ shell::list_path_installed_packages_details() {
         elif [ "$os_type" = "linux" ]; then
             base_path="/opt"
         else
-            shell::colored_echo "🔴 Error: Unsupported operating system for package details listing." 31
+            shell::colored_echo "🔴 Error: Unsupported operating system for package details listing." 196
             return 1
         fi
     fi
 
     # Verify that the base installation directory exists.
     if [ ! -d "$base_path" ]; then
-        shell::colored_echo "🔴 Error: The specified installation path '$base_path' does not exist." 31
+        shell::colored_echo "🔴 Error: The specified installation path '$base_path' does not exist." 196
         return 1
     fi
 
@@ -534,7 +534,7 @@ shell::is_package_installed_linux() {
         # RPM-based: Check using rpm query.
         rpm -q "$package" >/dev/null 2>&1
     else
-        shell::colored_echo "🔴 Error: Unsupported package manager for Linux." 31
+        shell::colored_echo "🔴 Error: Unsupported package manager for Linux." 196
         return 1
     fi
 }
