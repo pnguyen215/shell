@@ -48,9 +48,9 @@ Access the shell library by opening your terminal and using the commands below. 
   Upgrades the shell CLI to the latest version available.  
   _Example:_ `shell::upgrade`
 
-- **`shell_uninstall`**  
+- **`shell::uninstall`**  
   Removes the shell CLI and its associated files from the system.  
-  _Example:_ `shell_uninstall`
+  _Example:_ `shell::uninstall`
 
 - **`shell::get_os_type`**  
   Identifies and returns the current operating system type as a standardized string (e.g., "linux" or "macos").  

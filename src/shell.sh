@@ -71,12 +71,12 @@ shell::upgrade() {
     fi
 }
 
-# shell_uninstall function
+# shell::uninstall function
 # This function uninstalls the shell library by removing the installation directory
 # and informing the user about the uninstallation process.
 #
 # Usage:
-#   shell_uninstall
+#   shell::uninstall
 #
 # Description:
 #   - Displays a message indicating that the uninstallation process has started.
@@ -85,7 +85,7 @@ shell::upgrade() {
 #   - Informs the user that the shell has been uninstalled and provides instructions
 #     to manually remove the source command from their shell configuration file
 #     (e.g., ~/.zshrc or ~/.bashrc).
-shell_uninstall() {
+shell::uninstall() {
     echo "🚀 Uninstalling shell..."
     install_dir="$HOME/shell"
     [ -d "$install_dir" ] && rm -rf "$install_dir"
