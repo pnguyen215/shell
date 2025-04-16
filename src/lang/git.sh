@@ -68,3 +68,44 @@ shell::send_telegram_historical_gh_message() {
         shell::send_telegram_message "$token" "$chatID" "$message"
     fi
 }
+
+# shell::retrieve_gh_latest_release function
+# Retrieves the latest release tag from a GitHub repository using the GitHub API.
+#
+# Usage:
+#   shell::retrieve_gh_latest_release <owner/repo>
+#
+# Parameters:
+#   - <owner/repo>: GitHub repository in the format 'owner/repo'
+#
+# Returns:
+#   Outputs the latest release tag (e.g., v1.2.3), or an error message if failed.
+#
+# Example:
+#   shell::retrieve_gh_latest_release "cli/cli"
+#
+# Dependencies:
+#   - curl
+#   - jq (optional): For better JSON parsing. Falls back to grep/sed if unavailable.
+#
+# Notes:
+#   - Requires internet access.
+#   - Works on both macOS and Linux.
+shell::retrieve_gh_latest_release() {
+    if [ -z "$1" ]; then
+        shell::colored_echo "🔴 Usage: shell::retrieve_gh_latest_release <owner/repo>" 196
+        return 1
+    fi
+
+    local repo="$1"
+    local api_url="https://api.github.com/repos/${repo}/releases/latest"
+
+    shell::colored_echo "📡 Fetching latest release for $repo..." 36
+
+    # Use jq if available, otherwise fallback
+    if shell::is_command_available jq; then
+        curl --silent "$api_url" | jq -r '.tag_name'
+    else
+        curl --silent "$api_url" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/'
+    fi
+}

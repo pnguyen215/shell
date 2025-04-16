@@ -50,7 +50,7 @@ shell::__source_async_with_callback "$LANG_DIR" ""
 # Example:
 #   shell::version  # Outputs: shell v0.0.1
 shell::version() {
-    echo "shell v0.0.1"
+    shell::retrieve_gh_latest_release "pnguyen215/shell"
 }
 
 # shell::upgrade function
