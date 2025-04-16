@@ -39,7 +39,7 @@ shell::__source_async_with_callback() {
     if [ -d "$dir" ]; then
         for script in "$dir"/*.sh; do
             if [ -f "$script" ]; then
-                source "$script" &
+                source "$script" &>/dev/null
                 # pids+=("$!")
             fi
         done
