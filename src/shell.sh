@@ -45,9 +45,9 @@ shell::__source_async_with_callback() {
         done
     fi
 
-    # Wait for all background processes to finish
+    # Wait for all background processes to finish and discard any output
     for pid in "${pids[@]}"; do
-        wait "$pid"
+        wait "$pid" &>/dev/null
     done
 
     # Execute the callback function
