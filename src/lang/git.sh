@@ -100,7 +100,7 @@ shell::retrieve_gh_latest_release() {
     local repo="$1"
     local api_url="https://api.github.com/repos/${repo}/releases/latest"
 
-    shell::colored_echo "📡 Fetching latest release for $repo..." 36
+    shell::colored_echo "🧪 Fetching latest release for $repo..." 36
 
     # Use jq if available, otherwise fallback
     if shell::is_command_available jq; then
