@@ -262,13 +262,13 @@ Access the shell library by opening your terminal and using the commands below. 
   - `shell::removal_oh_my_zsh`
   - `shell::removal_oh_my_zsh -n`
 
-- **`read_conf`**
+- **`shell::read_conf`**
   Sources a configuration file, allowing its variables and functions to be loaded into the current shell.
   _Example:_
 
-  - `read_conf [-n] <filename>`
-  - `read_conf ~/.my-config`
-  - `read_conf -n ~/.my-config `
+  - `shell::read_conf [-n] <filename>`
+  - `shell::read_conf ~/.my-config`
+  - `shell::read_conf -n ~/.my-config `
 
 - **`add_conf`**
   Adds a configuration entry (key=value) to a constant configuration file.

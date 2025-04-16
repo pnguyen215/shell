@@ -1,11 +1,11 @@
 #!/bin/bash
 # key.sh
 
-# read_conf function
+# shell::read_conf function
 # Sources a configuration file, allowing its variables and functions to be loaded into the current shell.
 #
 # Usage:
-#   read_conf [-n] <filename>
+#   shell::read_conf [-n] <filename>
 #
 # Parameters:
 #   - -n       : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
@@ -18,9 +18,9 @@
 #   Otherwise, the file is sourced using shell::run_cmd to log the execution.
 #
 # Example:
-#   read_conf ~/.my-config                # Sources the configuration file.
-#   read_conf -n ~/.my-config             # Prints the sourcing command without executing it.
-read_conf() {
+#   shell::read_conf ~/.my-config                # Sources the configuration file.
+#   shell::read_conf -n ~/.my-config             # Prints the sourcing command without executing it.
+shell::read_conf() {
     local dry_run="false"
 
     # Check for the optional dry-run flag (-n)
@@ -30,7 +30,7 @@ read_conf() {
     fi
 
     if [ $# -lt 1 ]; then
-        echo "Usage: read_conf [-n] <filename>"
+        echo "Usage: shell::read_conf [-n] <filename>"
         return 1
     fi
 

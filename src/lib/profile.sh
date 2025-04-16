@@ -126,9 +126,9 @@ read_profile() {
         return 1
     fi
     if [ "$dry_run" = "true" ]; then
-        read_conf -n "$profile_conf"
+        shell::read_conf -n "$profile_conf"
     else
-        read_conf "$profile_conf"
+        shell::read_conf "$profile_conf"
     fi
 }
 
