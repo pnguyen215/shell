@@ -22,14 +22,14 @@ if [ -d "$LANG_DIR" ]; then
     done
 fi
 
-# shell_version function
+# shell::version function
 # This function outputs the current version of the shell library.
 # It is useful for users to check which version they are running.
 # Usage:
-#   shell_version
+#   shell::version
 # Example:
-#   shell_version  # Outputs: shell v0.0.1
-shell_version() {
+#   shell::version  # Outputs: shell v0.0.1
+shell::version() {
     echo "shell v0.0.1"
 }
 

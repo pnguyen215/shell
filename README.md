@@ -40,9 +40,9 @@ shell/
 
 Access the shell library by opening your terminal and using the commands below. Each command is designed to streamline development environment management on Linux and macOS. Examples are provided where applicable.
 
-- **`shell_version`**  
+- **`shell::version`**  
   Displays the current version of the shell library.  
-  _Example:_ `shell_version`
+  _Example:_ `shell::version`
 
 - **`shell_upgrade`**  
   Upgrades the shell CLI to the latest version available.  
