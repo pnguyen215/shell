@@ -7,27 +7,6 @@ SHELL_DIR="${SHELL_DIR:-$HOME/shell}"
 LIB_DIR="$SHELL_DIR/src/lib"
 LANG_DIR="$SHELL_DIR/src/lang"
 
-# Source all .sh files in lib/
-# This block checks if the library directory exists. If it does, it iterates over all .sh files in that directory
-# and sources them, making their functions and variables available in the current shell environment.
-# if [ -d "$LIB_DIR" ]; then
-#     for script in "$LIB_DIR"/*.sh; do
-#         [ -f "$script" ] && source "$script"
-#     done
-# fi
-
-# if [ -d "$LANG_DIR" ]; then
-#     for script in "$LANG_DIR"/*.sh; do
-#         [ -f "$script" ] && source "$script"
-#     done
-# fi
-
-# This function is called after all library and language scripts have been sourced.
-# It notifies the user that the sourcing process is complete.
-shell::emit() {
-    echo "Finished sourcing all library and language scripts."
-}
-
 # This function sources all .sh scripts in the specified directory asynchronously.
 # It takes two arguments: the directory containing the scripts and a callback function to execute after sourcing.
 # It collects the process IDs of the background sourcing processes and waits for them to finish before executing the callback.
@@ -57,7 +36,8 @@ shell::__source_async_with_callback() {
 }
 
 # Source library scripts asynchronously and then execute the callback
-shell::__source_async_with_callback "$LIB_DIR" shell::emit
+# Example: shell::__source_async_with_callback "$LIB_DIR" shell::emit
+shell::__source_async_with_callback "$LIB_DIR" ""
 
 # Source language scripts asynchronously (no specific callback here, the main callback handles both)
 shell::__source_async_with_callback "$LANG_DIR" ""
