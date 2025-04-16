@@ -33,12 +33,12 @@ shell::version() {
     echo "shell v0.0.1"
 }
 
-# shell_upgrade function
+# shell::upgrade function
 # This function upgrades the shell library by removing the existing installation
 # and downloading the latest version from the specified GitHub repository.
 #
 # Usage:
-#   shell_upgrade
+#   shell::upgrade
 #
 # Description:
 #   - Displays a message indicating the upgrade process has started.
@@ -50,7 +50,7 @@ shell::version() {
 #
 #   It checks for the presence of the source command in the user's .zshrc or .bashrc
 #   files and executes the appropriate command to ensure the new version is loaded.
-shell_upgrade() {
+shell::upgrade() {
     echo "🚀 Upgrading shell..."
     install_dir="$HOME/shell"
     [ -d "$install_dir" ] && rm -rf "$install_dir"

@@ -44,9 +44,9 @@ Access the shell library by opening your terminal and using the commands below. 
   Displays the current version of the shell library.  
   _Example:_ `shell::version`
 
-- **`shell_upgrade`**  
+- **`shell::upgrade`**  
   Upgrades the shell CLI to the latest version available.  
-  _Example:_ `shell_upgrade`
+  _Example:_ `shell::upgrade`
 
 - **`shell_uninstall`**  
   Removes the shell CLI and its associated files from the system.  
