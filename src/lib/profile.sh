@@ -382,7 +382,7 @@ shell::add_conf_profile() {
     else
         # Check if the key already exists in the profile.conf
         if grep -q "^${key}=" "$profile_conf"; then
-            shell::colored_echo "🟡 The key '$key' already exists in profile '$profile_name'. Consider updating it using update_conf_profile." 11
+            shell::colored_echo "🟡 The key '$key' already exists in profile '$profile_name'. Consider updating it using shell::update_conf_profile." 11
             return 0
         fi
         shell::setPerms::777 "$profile_conf"
@@ -576,11 +576,11 @@ shell::remove_conf_profile() {
     fi
 }
 
-# update_conf_profile function
+# shell::update_conf_profile function
 # Updates a specified configuration key in a given profile by replacing its value.
 #
 # Usage:
-#   update_conf_profile [-n] <profile_name>
+#   shell::update_conf_profile [-n] <profile_name>
 #
 # Parameters:
 #   - -n              : Optional dry-run flag. If provided, the update command is printed using shell::on_evict without executing.
@@ -592,16 +592,16 @@ shell::remove_conf_profile() {
 #   The sed command is executed asynchronously via the shell::async function (unless in dry-run mode).
 #
 # Example:
-#   update_conf_profile my_profile
-#   update_conf_profile -n my_profile   # dry-run mode
-update_conf_profile() {
+#   shell::update_conf_profile my_profile
+#   shell::update_conf_profile -n my_profile   # dry-run mode
+shell::update_conf_profile() {
     local dry_run="false"
     if [ "$1" = "-n" ]; then
         dry_run="true"
         shift
     fi
     if [ $# -lt 1 ]; then
-        echo "Usage: update_conf_profile [-n] <profile_name>"
+        echo "Usage: shell::update_conf_profile [-n] <profile_name>"
         return 1
     fi
     local profile_name="$1"
