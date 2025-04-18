@@ -132,11 +132,11 @@ shell::read_profile() {
     fi
 }
 
-# update_profile function
+# shell::update_profile function
 # Opens the profile.conf file of the specified profile in the default editor.
 #
 # Usage:
-#   update_profile [-n] <profile_name>
+#   shell::update_profile [-n] <profile_name>
 #
 # Parameters:
 #   - -n             : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
@@ -147,16 +147,16 @@ shell::read_profile() {
 #   by the EDITOR environment variable (defaults to 'nano' if unset).
 #
 # Example:
-#   update_profile my_profile         # Opens profile.conf in the default editor.
-#   update_profile -n my_profile      # Prints the editor command without executing it.
-update_profile() {
+#   shell::update_profile my_profile         # Opens profile.conf in the default editor.
+#   shell::update_profile -n my_profile      # Prints the editor command without executing it.
+shell::update_profile() {
     local dry_run="false"
     if [ "$1" = "-n" ]; then
         dry_run="true"
         shift
     fi
     if [ $# -lt 1 ]; then
-        echo "Usage: update_profile [-n] <profile_name>"
+        echo "Usage: shell::update_profile [-n] <profile_name>"
         return 1
     fi
     local profile_name="$1"
