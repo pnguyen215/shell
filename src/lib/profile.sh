@@ -820,11 +820,11 @@ shell::clone_conf_profile() {
     fi
 }
 
-# list_conf_profile function
+# shell::list_conf_profile function
 # Lists all available configuration profiles in the workspace.
 #
 # Usage:
-#   list_conf_profile
+#   shell::list_conf_profile
 #
 # Description:
 #   This function checks that the workspace directory ($SHELL_CONF_WORKING/workspace) exists.
@@ -832,8 +832,8 @@ shell::clone_conf_profile() {
 #   If no profiles are found, an appropriate message is displayed.
 #
 # Example:
-#   list_conf_profile       # Displays the names of all profiles in the workspace.
-list_conf_profile() {
+#   shell::list_conf_profile       # Displays the names of all profiles in the workspace.
+shell::list_conf_profile() {
     # Ensure that the workspace exists.
     shell::ensure_workspace
 
