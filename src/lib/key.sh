@@ -435,11 +435,11 @@ shell::exist_key_conf() {
     fi
 }
 
-# rename_key_conf function
+# shell::rename_key_conf function
 # Renames an existing configuration key in the key configuration file.
 #
 # Usage:
-#   rename_key_conf [-n]
+#   shell::rename_key_conf [-n]
 #
 # Parameters:
 #   - -n : Optional dry-run flag. If provided, the renaming command is printed using shell::on_evict instead of executed.
@@ -454,9 +454,9 @@ shell::exist_key_conf() {
 #   In dry-run mode, the command is printed via shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
 #
 # Example:
-#   rename_key_conf         # Interactively select a key and rename it.
-#   rename_key_conf -n      # Prints the renaming command without executing it.
-rename_key_conf() {
+#   shell::rename_key_conf         # Interactively select a key and rename it.
+#   shell::rename_key_conf -n      # Prints the renaming command without executing it.
+shell::rename_key_conf() {
     local dry_run="false"
     if [ "$1" = "-n" ]; then
         dry_run="true"
