@@ -4,7 +4,7 @@
 # Shell aliases
 alias sve="shell::version"
 alias sup="shell::upgrade"
-alias sac="add_conf"
+alias sac="shell::add_conf"
 alias sgc="get_conf"
 
 # Kernel alias

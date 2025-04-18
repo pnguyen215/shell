@@ -270,14 +270,14 @@ Access the shell library by opening your terminal and using the commands below. 
   - `shell::read_conf ~/.my-config`
   - `shell::read_conf -n ~/.my-config `
 
-- **`add_conf`**
+- **`shell::add_conf`**
   Adds a configuration entry (key=value) to a constant configuration file.
   The value is encoded using Base64 before being saved.
   _Example:_
 
-  - `add_conf [-n] <key> <value>`
-  - `add_conf my_setting "some secret value" `
-  - `add_conf -n my_setting "some secret value"`
+  - `shell::add_conf [-n] <key> <value>`
+  - `shell::add_conf my_setting "some secret value" `
+  - `shell::add_conf -n my_setting "some secret value"`
 
 - **`get_conf`**
   Interactively selects a configuration key from a constant configuration file using fzf,

@@ -50,12 +50,12 @@ shell::read_conf() {
     fi
 }
 
-# add_conf function
+# shell::add_conf function
 # Adds a configuration entry (key=value) to a constant configuration file.
 # The value is encoded using Base64 before being saved.
 #
 # Usage:
-#   add_conf [-n] <key> <value>
+#   shell::add_conf [-n] <key> <value>
 #
 # Parameters:
 #   - -n       : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
@@ -69,9 +69,9 @@ shell::read_conf() {
 #   to a constant configuration file (defined by SHELL_KEY_CONF_FILE). If the configuration file does not exist, it is created.
 #
 # Example:
-#   add_conf my_setting "some secret value"         # Encodes the value and adds the entry.
-#   add_conf -n my_setting "some secret value"      # Prints the command without executing it.
-add_conf() {
+#   shell::add_conf my_setting "some secret value"         # Encodes the value and adds the entry.
+#   shell::add_conf -n my_setting "some secret value"      # Prints the command without executing it.
+shell::add_conf() {
     local dry_run="false"
 
     # Check for the optional dry-run flag (-n)
@@ -81,7 +81,7 @@ add_conf() {
     fi
 
     if [ $# -lt 2 ]; then
-        echo "Usage: add_conf [-n] <key> <value>"
+        echo "Usage: shell::add_conf [-n] <key> <value>"
         return 1
     fi
 
