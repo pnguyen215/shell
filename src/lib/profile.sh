@@ -261,11 +261,11 @@ shell::get_profile() {
     shell::run_cmd_eval cat "$profile_conf"
 }
 
-# rename_profile function
+# shell::rename_profile function
 # Renames the specified profile directory.
 #
 # Usage:
-#   rename_profile [-n] <old_name> <new_name>
+#   shell::rename_profile [-n] <old_name> <new_name>
 #
 # Parameters:
 #   - -n             : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
@@ -277,16 +277,16 @@ shell::get_profile() {
 #   then renames the directory accordingly.
 #
 # Example:
-#   rename_profile old_profile new_profile         # Renames old_profile to new_profile.
-#   rename_profile -n old_profile new_profile      # Prints the rename command without executing it.
-rename_profile() {
+#   shell::rename_profile old_profile new_profile         # Renames old_profile to new_profile.
+#   shell::rename_profile -n old_profile new_profile      # Prints the rename command without executing it.
+shell::rename_profile() {
     local dry_run="false"
     if [ "$1" = "-n" ]; then
         dry_run="true"
         shift
     fi
     if [ $# -lt 2 ]; then
-        echo "Usage: rename_profile [-n] <old_name> <new_name>"
+        echo "Usage: shell::rename_profile [-n] <old_name> <new_name>"
         return 1
     fi
     local old_name="$1"
