@@ -318,11 +318,11 @@ Access the shell library by opening your terminal and using the commands below. 
 
   - `shell::rename_key_conf [-n]`
 
-- **`is_protected_key`**
+- **`shell::is_protected_key`**
   Checks if the specified configuration key is protected.
   _Example:_
 
-  - `is_protected_key <key>`
+  - `shell::is_protected_key <key>`
 
 - **`add_group`**
   Groups selected configuration keys under a specified group name.

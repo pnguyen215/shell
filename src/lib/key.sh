@@ -268,7 +268,7 @@ shell::remove_conf() {
         return 1
     fi
 
-    if [ "$(is_protected_key "$selected_key")" = "true" ]; then
+    if [ "$(shell::is_protected_key "$selected_key")" = "true" ]; then
         shell::colored_echo "🔴 Error: '$selected_key' is a protected key and cannot be modified." 196
         return 1
     fi
@@ -478,7 +478,7 @@ shell::rename_key_conf() {
         return 1
     fi
 
-    if [ "$(is_protected_key "$old_key")" = "true" ]; then
+    if [ "$(shell::is_protected_key "$old_key")" = "true" ]; then
         shell::colored_echo "🔴 Error: '$old_key' is a protected key and cannot be modified." 196
         return 1
     fi
@@ -519,11 +519,11 @@ shell::rename_key_conf() {
     fi
 }
 
-# is_protected_key function
+# shell::is_protected_key function
 # Checks if the specified configuration key is protected.
 #
 # Usage:
-#   is_protected_key <key>
+#   shell::is_protected_key <key>
 #
 # Parameters:
 #   - <key>: The configuration key to check.
@@ -534,13 +534,13 @@ shell::rename_key_conf() {
 #   Otherwise, it echoes "false" and returns 1.
 #
 # Example:
-#   if is_protected_key "HOST"; then
+#   if shell::is_protected_key "HOST"; then
 #       shell::colored_echo "🔴 Error: 'HOST' is a protected key and cannot be modified." 196
 #       return 1
 #   fi
-is_protected_key() {
+shell::is_protected_key() {
     if [ $# -lt 1 ]; then
-        echo "Usage: is_protected_key <key>"
+        echo "Usage: shell::is_protected_key <key>"
         return 1
     fi
 
