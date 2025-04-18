@@ -305,12 +305,12 @@ Access the shell library by opening your terminal and using the commands below. 
   - `shell::update_conf`
   - `shell::update_conf -n`
 
-- **`exist_key_conf`**
+- **`shell::exist_key_conf`**
   Checks if a configuration key exists in the key configuration file.
   _Example:_
 
-  - `exist_key_conf <key>`
-  - `exist_key_conf my_setting`
+  - `shell::exist_key_conf <key>`
+  - `shell::exist_key_conf my_setting`
 
 - **`rename_key_conf`**
   Renames an existing configuration key in the key configuration file.

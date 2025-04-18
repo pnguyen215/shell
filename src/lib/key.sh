@@ -102,7 +102,7 @@ shell::add_conf() {
     if [ "$dry_run" = "true" ]; then
         shell::on_evict "$cmd"
     else
-        result=$(exist_key_conf $key)
+        result=$(shell::exist_key_conf $key)
         if [ "$result" = "true" ]; then
             shell::colored_echo "🟡 The key '$key' exists. Please consider updating it by using shell::update_conf" 11
             return 0
@@ -379,11 +379,11 @@ shell::update_conf() {
     fi
 }
 
-# exist_key_conf function
+# shell::exist_key_conf function
 # Checks if a configuration key exists in the key configuration file.
 #
 # Usage:
-#   exist_key_conf <key>
+#   shell::exist_key_conf <key>
 #
 # Parameters:
 #   - <key>: The configuration key to check.
@@ -397,14 +397,14 @@ shell::update_conf() {
 #
 # Sample Usage:
 #   # Using the exit status:
-#   if exist_key_conf my_setting; then
+#   if shell::exist_key_conf my_setting; then
 #       echo "Key 'my_setting' exists."
 #   else
 #       echo "Key 'my_setting' does not exist."
 #   fi
 #
 #   # Capturing the output:
-#   result=$(exist_key_conf my_setting)
+#   result=$(shell::exist_key_conf my_setting)
 #   if [ "$result" = "true" ]; then
 #       echo "Key 'my_setting' exists."
 #   else
@@ -412,10 +412,10 @@ shell::update_conf() {
 #   fi
 #
 # Example:
-#   exist_key_conf my_setting   # Echoes "true" and returns 0 if 'my_setting' exists; otherwise, echoes "false" and returns 1.
-exist_key_conf() {
+#   shell::exist_key_conf my_setting   # Echoes "true" and returns 0 if 'my_setting' exists; otherwise, echoes "false" and returns 1.
+shell::exist_key_conf() {
     if [ $# -lt 1 ]; then
-        echo "Usage: exist_key_conf <key>"
+        echo "Usage: shell::exist_key_conf <key>"
         return 1
     fi
 
@@ -493,7 +493,7 @@ rename_key_conf() {
 
     # Check if the new key already exists.
     local exist
-    exist=$(exist_key_conf "$new_key")
+    exist=$(shell::exist_key_conf "$new_key")
     if [ "$exist" = "true" ]; then
         shell::colored_echo "🔴 Error: Key '$new_key' already exists. Aborting rename." 196
         return 1
@@ -1164,7 +1164,7 @@ clone_group() {
 #
 # Description:
 #   The function reads each group entry from SHELL_GROUP_CONF_FILE (entries in the format: group_name=key1,key2,...,keyN).
-#   For each group, it splits the comma‑separated list of keys and checks each key using exist_key_conf.
+#   For each group, it splits the comma‑separated list of keys and checks each key using shell::exist_key_conf.
 #   It builds a new list of valid keys. If the new list is non‑empty, the group entry is updated;
 #   if it is empty, the group entry is omitted.
 #   In dry‑run mode, the new group configuration is printed via shell::on_evict without modifying the file.
@@ -1208,7 +1208,7 @@ sync_key_group_conf() {
         local new_keys=""
         # Use a portable loop to split keys_csv.
         while IFS= read -r key; do
-            if [ "$(exist_key_conf "$key")" = "true" ]; then
+            if [ "$(shell::exist_key_conf "$key")" = "true" ]; then
                 if [ -z "$new_keys" ]; then
                     new_keys="$key"
                 else

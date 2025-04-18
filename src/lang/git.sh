@@ -38,7 +38,7 @@ shell::send_telegram_historical_gh_message() {
 
     # Verify that the Telegram Bot token configuration exists.
     local hasToken
-    hasToken=$(exist_key_conf "SHELL_HISTORICAL_GH_TELEGRAM_BOT_TOKEN")
+    hasToken=$(shell::exist_key_conf "SHELL_HISTORICAL_GH_TELEGRAM_BOT_TOKEN")
     if [ "$hasToken" = "false" ]; then
         shell::colored_echo "🟡 The key 'SHELL_HISTORICAL_GH_TELEGRAM_BOT_TOKEN' does not exist. Please consider adding it by using shell::add_conf" 11
         shell::clip_value "SHELL_HISTORICAL_GH_TELEGRAM_BOT_TOKEN"
@@ -47,7 +47,7 @@ shell::send_telegram_historical_gh_message() {
 
     # Verify that the Telegram Chat ID configuration exists.
     local hasChatID
-    hasChatID=$(exist_key_conf "SHELL_HISTORICAL_GH_TELEGRAM_CHAT_ID")
+    hasChatID=$(shell::exist_key_conf "SHELL_HISTORICAL_GH_TELEGRAM_CHAT_ID")
     if [ "$hasChatID" = "false" ]; then
         shell::colored_echo "🟡 The key 'SHELL_HISTORICAL_GH_TELEGRAM_CHAT_ID' does not exist. Please consider adding it by using shell::add_conf" 11
         shell::clip_value "SHELL_HISTORICAL_GH_TELEGRAM_CHAT_ID"
