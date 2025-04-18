@@ -87,11 +87,11 @@ shell::add_profile() {
     fi
 }
 
-# read_profile function
+# shell::read_profile function
 # Sources the profile.conf file from the specified profile directory.
 #
 # Usage:
-#   read_profile [-n] <profile_name>
+#   shell::read_profile [-n] <profile_name>
 #
 # Parameters:
 #   - -n             : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
@@ -102,16 +102,16 @@ shell::add_profile() {
 #   into the current shell session. If the profile or file does not exist, it prints an error.
 #
 # Example:
-#   read_profile my_profile         # Sources profile.conf from my_profile.
-#   read_profile -n my_profile      # Prints the sourcing command without executing it.
-read_profile() {
+#   shell::read_profile my_profile         # Sources profile.conf from my_profile.
+#   shell::read_profile -n my_profile      # Prints the sourcing command without executing it.
+shell::read_profile() {
     local dry_run="false"
     if [ "$1" = "-n" ]; then
         dry_run="true"
         shift
     fi
     if [ $# -lt 1 ]; then
-        echo "Usage: read_profile [-n] <profile_name>"
+        echo "Usage: shell::read_profile [-n] <profile_name>"
         return 1
     fi
     local profile_name="$1"
