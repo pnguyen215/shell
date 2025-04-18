@@ -179,11 +179,11 @@ shell::update_profile() {
     fi
 }
 
-# remove_profile function
+# shell::remove_profile function
 # Deletes the specified profile directory after user confirmation.
 #
 # Usage:
-#   remove_profile [-n] <profile_name>
+#   shell::remove_profile [-n] <profile_name>
 #
 # Parameters:
 #   - -n             : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
@@ -194,16 +194,16 @@ shell::update_profile() {
 #   If confirmed, removes the directory; otherwise, aborts the operation.
 #
 # Example:
-#   remove_profile my_profile         # Prompts to confirm deletion of my_profile.
-#   remove_profile -n my_profile      # Prints the removal command without executing it.
-remove_profile() {
+#   shell::remove_profile my_profile         # Prompts to confirm deletion of my_profile.
+#   shell::remove_profile -n my_profile      # Prints the removal command without executing it.
+shell::remove_profile() {
     local dry_run="false"
     if [ "$1" = "-n" ]; then
         dry_run="true"
         shift
     fi
     if [ $# -lt 1 ]; then
-        echo "Usage: remove_profile [-n] <profile_name>"
+        echo "Usage: shell::remove_profile [-n] <profile_name>"
         return 1
     fi
     local profile_name="$1"
