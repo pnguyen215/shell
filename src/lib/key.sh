@@ -223,12 +223,12 @@ shell::get_value_conf() {
     echo "$decoded_value"
 }
 
-# remove_conf function
+# shell::remove_conf function
 # Interactively selects a configuration key from a constant configuration file using fzf,
 # then removes the corresponding entry from the configuration file.
 #
 # Usage:
-#   remove_conf [-n]
+#   shell::remove_conf [-n]
 #
 # Parameters:
 #   - -n : Optional dry-run flag. If provided, the removal command is printed using shell::on_evict instead of executed.
@@ -242,9 +242,9 @@ shell::get_value_conf() {
 #   In dry-run mode, the command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
 #
 # Example:
-#   remove_conf         # Interactively select a key and remove its configuration entry.
-#   remove_conf -n      # Prints the removal command without executing it.
-remove_conf() {
+#   shell::remove_conf         # Interactively select a key and remove its configuration entry.
+#   shell::remove_conf -n      # Prints the removal command without executing it.
+shell::remove_conf() {
     local dry_run="false"
 
     # Check for the optional dry-run flag (-n)

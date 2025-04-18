@@ -289,13 +289,13 @@ Access the shell library by opening your terminal and using the commands below. 
 
   - `shell::get_value_conf my_setting`
 
-- **`remove_conf`**
+- **`shell::remove_conf`**
   Interactively selects a configuration key from a constant configuration file using fzf,
   then removes the corresponding entry from the configuration file.
   _Example:_
 
-  - `remove_conf`
-  - `remove_conf -n`
+  - `shell::remove_conf`
+  - `shell::remove_conf -n`
 
 - **`update_conf`**
   Interactively updates the value for a configuration key in a constant configuration file.
