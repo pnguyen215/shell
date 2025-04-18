@@ -25,19 +25,19 @@ shell::get_profile_dir() {
     echo "$SHELL_CONF_WORKING_WORKSPACE/$profile_name"
 }
 
-# ensure_workspace function
+# shell::ensure_workspace function
 # Ensures that the workspace directory exists.
 #
 # Usage:
-#   ensure_workspace
+#   shell::ensure_workspace
 #
 # Description:
 #   Checks if the workspace directory ($SHELL_CONF_WORKING/workspace) exists.
 #   If it does not exist, creates it using mkdir -p.
 #
 # Example:
-#   ensure_workspace
-ensure_workspace() {
+#   shell::ensure_workspace
+shell::ensure_workspace() {
     if [ ! -d "$SHELL_CONF_WORKING_WORKSPACE" ]; then
         shell::run_cmd_eval sudo mkdir -p "$SHELL_CONF_WORKING_WORKSPACE"
     fi
@@ -81,7 +81,7 @@ add_profile() {
     if [ "$dry_run" = "true" ]; then
         shell::on_evict "$cmd"
     else
-        ensure_workspace
+        shell::ensure_workspace
         shell::run_cmd_eval "$cmd"
         shell::colored_echo "🟢 Created profile '$profile_name'." 46
     fi
@@ -415,7 +415,7 @@ get_conf_profile() {
         echo "Usage: get_conf_profile <profile_name>"
         return 1
     fi
-    ensure_workspace
+    shell::ensure_workspace
     local profile_name="$1"
     local profile_dir=$(shell::get_profile_dir "$profile_name")
     local profile_conf="$profile_dir/profile.conf"
@@ -479,7 +479,7 @@ get_value_conf_profile() {
         echo "Usage: get_value_conf_profile <profile_name> <key>"
         return 1
     fi
-    ensure_workspace
+    shell::ensure_workspace
     local profile_name="$1"
     local key="$2"
     local profile_dir=$(shell::get_profile_dir "$profile_name")
@@ -541,7 +541,7 @@ remove_conf_profile() {
         echo "Usage: remove_conf_profile [-n] <profile_name>"
         return 1
     fi
-    ensure_workspace
+    shell::ensure_workspace
     local profile_name="$1"
     local profile_dir=$(shell::get_profile_dir "$profile_name")
     local profile_conf="$profile_dir/profile.conf"
@@ -835,7 +835,7 @@ clone_conf_profile() {
 #   list_conf_profile       # Displays the names of all profiles in the workspace.
 list_conf_profile() {
     # Ensure that the workspace exists.
-    ensure_workspace
+    shell::ensure_workspace
 
     # Check if the workspace directory exists.
     if [ ! -d "$SHELL_CONF_WORKING_WORKSPACE" ]; then
