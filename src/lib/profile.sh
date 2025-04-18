@@ -226,11 +226,11 @@ shell::remove_profile() {
     fi
 }
 
-# get_profile function
+# shell::get_profile function
 # Displays the contents of the profile.conf file for the specified profile.
 #
 # Usage:
-#   get_profile <profile_name>
+#   shell::get_profile <profile_name>
 #
 # Parameters:
 #   - <profile_name> : The name of the profile to display.
@@ -240,10 +240,10 @@ shell::remove_profile() {
 #   If the profile or file does not exist, it prints an error.
 #
 # Example:
-#   get_profile my_profile         # Displays the contents of profile.conf for my_profile.
-get_profile() {
+#   shell::get_profile my_profile         # Displays the contents of profile.conf for my_profile.
+shell::get_profile() {
     if [ $# -lt 1 ]; then
-        echo "Usage: get_profile <profile_name>"
+        echo "Usage: shell::get_profile <profile_name>"
         return 1
     fi
     local profile_name="$1"
