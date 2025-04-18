@@ -170,11 +170,11 @@ shell::get_conf() {
     shell::clip_value "$decoded_value"
 }
 
-# get_value_conf function
+# shell::get_value_conf function
 # Retrieves and outputs the decoded value for a given configuration key from the key configuration file.
 #
 # Usage:
-#   get_value_conf <key>
+#   shell::get_value_conf <key>
 #
 # Parameters:
 #   - <key>: The configuration key whose value should be retrieved.
@@ -187,10 +187,10 @@ shell::get_conf() {
 #   and outputs the decoded value to standard output.
 #
 # Example:
-#   get_value_conf my_setting   # Outputs the decoded value for the key 'my_setting'.
-get_value_conf() {
+#   shell::get_value_conf my_setting   # Outputs the decoded value for the key 'my_setting'.
+shell::get_value_conf() {
     if [ $# -lt 1 ]; then
-        echo "Usage: get_value_conf <key>"
+        echo "Usage: shell::get_value_conf <key>"
         return 1
     fi
 

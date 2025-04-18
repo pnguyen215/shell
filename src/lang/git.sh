@@ -57,9 +57,9 @@ shell::send_telegram_historical_gh_message() {
     # Retrieve the configuration values.
     local message="$1"
     local token
-    token=$(get_value_conf "SHELL_HISTORICAL_GH_TELEGRAM_BOT_TOKEN")
+    token=$(shell::get_value_conf "SHELL_HISTORICAL_GH_TELEGRAM_BOT_TOKEN")
     local chatID
-    chatID=$(get_value_conf "SHELL_HISTORICAL_GH_TELEGRAM_CHAT_ID")
+    chatID=$(shell::get_value_conf "SHELL_HISTORICAL_GH_TELEGRAM_CHAT_ID")
 
     # Call shell::send_telegram_message with or without dry-run flag.
     if [ "$dry_run" = "true" ]; then
