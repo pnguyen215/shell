@@ -689,11 +689,11 @@ shell::exist_key_conf_profile() {
     fi
 }
 
-# rename_key_conf_profile function
+# shell::rename_key_conf_profile function
 # Renames an existing configuration key in a given profile.
 #
 # Usage:
-#   rename_key_conf_profile [-n] <profile_name>
+#   shell::rename_key_conf_profile [-n] <profile_name>
 #
 # Parameters:
 #   - -n            : Optional dry-run flag. If provided, prints the sed command using shell::on_evict without executing.
@@ -707,16 +707,16 @@ shell::exist_key_conf_profile() {
 #   In dry-run mode, the command is printed via shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
 #
 # Example:
-#   rename_key_conf_profile my_profile
-#   rename_key_conf_profile -n my_profile   # dry-run mode
-rename_key_conf_profile() {
+#   shell::rename_key_conf_profile my_profile
+#   shell::rename_key_conf_profile -n my_profile   # dry-run mode
+shell::rename_key_conf_profile() {
     local dry_run="false"
     if [ "$1" = "-n" ]; then
         dry_run="true"
         shift
     fi
     if [ $# -lt 1 ]; then
-        echo "Usage: rename_key_conf_profile [-n] <profile_name>"
+        echo "Usage: shell::rename_key_conf_profile [-n] <profile_name>"
         return 1
     fi
     local profile_name="$1"
