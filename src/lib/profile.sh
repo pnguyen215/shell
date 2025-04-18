@@ -43,11 +43,11 @@ shell::ensure_workspace() {
     fi
 }
 
-# add_profile function
+# shell::add_profile function
 # Creates a new profile directory and initializes it with a profile.conf file.
 #
 # Usage:
-#   add_profile [-n] <profile_name>
+#   shell::add_profile [-n] <profile_name>
 #
 # Parameters:
 #   - -n             : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
@@ -58,16 +58,16 @@ shell::ensure_workspace() {
 #   and initializes it with an empty profile.conf file. If the profile already exists, it prints a warning.
 #
 # Example:
-#   add_profile my_profile         # Creates the profile directory and profile.conf.
-#   add_profile -n my_profile      # Prints the commands without executing them.
-add_profile() {
+#   shell::add_profile my_profile         # Creates the profile directory and profile.conf.
+#   shell::add_profile -n my_profile      # Prints the commands without executing them.
+shell::add_profile() {
     local dry_run="false"
     if [ "$1" = "-n" ]; then
         dry_run="true"
         shift
     fi
     if [ $# -lt 1 ]; then
-        echo "Usage: add_profile [-n] <profile_name>"
+        echo "Usage: shell::add_profile [-n] <profile_name>"
         return 1
     fi
     local profile_name="$1"
