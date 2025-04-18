@@ -324,11 +324,11 @@ Access the shell library by opening your terminal and using the commands below. 
 
   - `shell::is_protected_key <key>`
 
-- **`add_group`**
+- **`shell::add_group`**
   Groups selected configuration keys under a specified group name.
   _Example:_
 
-  - `add_group [-n]`
+  - `shell::add_group [-n]`
 
 - **`read_group`**
   Reads and displays the configurations for a given group by group name.

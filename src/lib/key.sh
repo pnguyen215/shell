@@ -556,11 +556,11 @@ shell::is_protected_key() {
     return 1
 }
 
-# add_group function
+# shell::add_group function
 # Groups selected configuration keys under a specified group name.
 #
 # Usage:
-#   add_group [-n]
+#   shell::add_group [-n]
 #
 # Description:
 #   This function prompts you to enter a group name, then uses fzf (with multi-select) to let you choose
@@ -570,9 +570,9 @@ shell::is_protected_key() {
 #   An optional dry-run flag (-n) can be used to print the command via shell::on_evict instead of executing it.
 #
 # Example:
-#   add_group         # Prompts for a group name and lets you select keys to group.
-#   add_group -n      # Prints the command for creating/updating the group without executing it.
-add_group() {
+#   shell::add_group         # Prompts for a group name and lets you select keys to group.
+#   shell::add_group -n      # Prints the command for creating/updating the group without executing it.
+shell::add_group() {
     local dry_run="false"
     if [ "$1" = "-n" ]; then
         dry_run="true"
