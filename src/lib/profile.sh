@@ -511,11 +511,11 @@ shell::get_value_conf_profile() {
     echo "$decoded_value"
 }
 
-# remove_conf_profile function
+# shell::remove_conf_profile function
 # Removes a configuration key from a given profile's configuration file.
 #
 # Usage:
-#   remove_conf_profile [-n] <profile_name>
+#   shell::remove_conf_profile [-n] <profile_name>
 #
 # Parameters:
 #   - -n (optional): Dry-run mode. Instead of executing commands, prints them using shell::on_evict.
@@ -529,16 +529,16 @@ shell::get_value_conf_profile() {
 #   using shell::async with shell::run_cmd_eval.
 #
 # Example:
-#   remove_conf_profile my_profile
-#   remove_conf_profile -n my_profile   # Dry-run: prints the removal command without executing.
-remove_conf_profile() {
+#   shell::remove_conf_profile my_profile
+#   shell::remove_conf_profile -n my_profile   # Dry-run: prints the removal command without executing.
+shell::remove_conf_profile() {
     local dry_run="false"
     if [ "$1" = "-n" ]; then
         dry_run="true"
         shift
     fi
     if [ $# -lt 1 ]; then
-        echo "Usage: remove_conf_profile [-n] <profile_name>"
+        echo "Usage: shell::remove_conf_profile [-n] <profile_name>"
         return 1
     fi
     shell::ensure_workspace
