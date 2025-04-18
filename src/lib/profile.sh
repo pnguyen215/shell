@@ -310,12 +310,12 @@ shell::rename_profile() {
     fi
 }
 
-# add_conf_profile function
+# shell::add_conf_profile function
 # Adds a configuration entry (key=value) to the profile.conf file of a specified profile.
 # The value is encoded using Base64 before being saved.
 #
 # Usage:
-#   add_conf_profile [-n] <profile_name> <key> <value>
+#   shell::add_conf_profile [-n] <profile_name> <key> <value>
 #
 # Parameters:
 #   -n             : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
@@ -330,9 +330,9 @@ shell::rename_profile() {
 #   to the profile.conf file in the specified profile directory. If the profile directory or the profile.conf file does not exist, they are created.
 #
 # Example:
-#   add_conf_profile my_profile my_setting "some secret value"         # Encodes the value and adds the entry to my_profile/profile.conf
-#   add_conf_profile -n my_profile my_setting "some secret value"      # Prints the command without executing it
-add_conf_profile() {
+#   shell::add_conf_profile my_profile my_setting "some secret value"         # Encodes the value and adds the entry to my_profile/profile.conf
+#   shell::add_conf_profile -n my_profile my_setting "some secret value"      # Prints the command without executing it
+shell::add_conf_profile() {
     local dry_run="false"
 
     # Check for the optional dry-run flag (-n)
@@ -343,7 +343,7 @@ add_conf_profile() {
 
     # Validate the number of arguments
     if [ $# -lt 3 ]; then
-        echo "Usage: add_conf_profile [-n] <profile_name> <key> <value>"
+        echo "Usage: shell::add_conf_profile [-n] <profile_name> <key> <value>"
         return 1
     fi
 
