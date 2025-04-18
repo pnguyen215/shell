@@ -297,13 +297,13 @@ Access the shell library by opening your terminal and using the commands below. 
   - `shell::remove_conf`
   - `shell::remove_conf -n`
 
-- **`update_conf`**
+- **`shell::update_conf`**
   Interactively updates the value for a configuration key in a constant configuration file.
   The new value is encoded using Base64 before updating the file.
   _Example:_
 
-  - `update_conf`
-  - `update_conf -n`
+  - `shell::update_conf`
+  - `shell::update_conf -n`
 
 - **`exist_key_conf`**
   Checks if a configuration key exists in the key configuration file.

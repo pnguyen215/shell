@@ -24,7 +24,7 @@ readonly SHELL_CONF_WORKING_WORKSPACE="$SHELL_CONF_WORKING/workspace"
 # The file stores individual configuration entries in the following format:
 #   key=encoded_value
 # where each value is encoded using Base64 (with newlines removed).
-# Functions such as shell::add_conf, shell::get_conf, update_conf, and shell::remove_conf use this file to store and manage configuration settings.
+# Functions such as shell::add_conf, shell::get_conf, shell::update_conf, and shell::remove_conf use this file to store and manage configuration settings.
 #
 # Example:
 #   SHELL_KEY_CONF_FILE="$HOME/.shell-config/key.conf"
