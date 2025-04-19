@@ -1064,11 +1064,11 @@ shell::select_group() {
     shell::clip_value "$decoded_value"
 }
 
-# clone_group function
+# shell::clone_group function
 # Clones an existing group by creating a new group with the same keys.
 #
 # Usage:
-#   clone_group [-n]
+#   shell::clone_group [-n]
 #
 # Parameters:
 #   - -n : Optional dry-run flag. If provided, the cloning command is printed using shell::on_evict instead of executed.
@@ -1083,9 +1083,9 @@ shell::select_group() {
 #   In dry-run mode, the final command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
 #
 # Example:
-#   clone_group         # Interactively select a group and create a clone with a new group name.
-#   clone_group -n      # Prints the cloning command without executing it.
-clone_group() {
+#   shell::clone_group         # Interactively select a group and create a clone with a new group name.
+#   shell::clone_group -n      # Prints the cloning command without executing it.
+shell::clone_group() {
     local dry_run="false"
     if [ "$1" = "-n" ]; then
         dry_run="true"
