@@ -210,6 +210,22 @@ shell::list_ssh_tunnel() {
         echo "└──────────┴──────────┴────────────────────┴────────────────────┴────────────────────┴──────────┴────────────────────┴────────────────────┴────────────────────┘"
     fi
 
+    # Alternative output formatting method using simple columns
+    if [ -s "$results_file" ]; then
+        # Print header with background color if supported
+        echo ""
+        shell::colored_echo "PID        USER       START                TIME                 COMMAND              LOCAL_PORT  FORWARD_TYPE         REMOTE_PORT         REMOTE_HOST" 33
+        echo "---------- ---------- -------------------- -------------------- -------------------- ---------- -------------------- -------------------- --------------------"
+
+        # Print each line of results with nice formatting
+        while IFS='|' read -r pid user start_time elapsed_time cmd local_port forward_type remote_port remote_host; do
+            # Pad fields to fixed width
+            printf "%-10s %-10s %-20s %-20s %-20s %-10s %-20s %-20s %-20s\n" \
+                "$pid" "$user" "$start_time" "$elapsed_time" "$cmd" "$local_port" "$forward_type" "$remote_port" "$remote_host"
+        done <"$results_file"
+        echo ""
+    fi
+
     # Clean up
     rm -f "$temp_file" "$results_file"
 }
