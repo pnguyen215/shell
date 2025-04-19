@@ -350,11 +350,11 @@ Access the shell library by opening your terminal and using the commands below. 
 
   - `shell::update_group [-n]`
 
-- **`rename_group`**
+- **`shell::rename_group`**
   Renames an existing group in the group configuration file.
   _Example:_
 
-  - `rename_group [-n]`
+  - `shell::rename_group [-n]`
 
 - **`list_groups`**
   Lists all group names defined in the group configuration file.

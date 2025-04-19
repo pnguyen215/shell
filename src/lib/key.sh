@@ -863,11 +863,11 @@ shell::update_group() {
     fi
 }
 
-# rename_group function
+# shell::rename_group function
 # Renames an existing group in the group configuration file.
 #
 # Usage:
-#   rename_group [-n]
+#   shell::rename_group [-n]
 #
 # Parameters:
 #   - -n : Optional dry-run flag. If provided, the renaming command is printed using shell::on_evict instead of executed.
@@ -882,9 +882,9 @@ shell::update_group() {
 #   In dry-run mode, the command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
 #
 # Example:
-#   rename_group         # Interactively select a group and rename it.
-#   rename_group -n      # Prints the renaming command without executing it.
-rename_group() {
+#   shell::rename_group         # Interactively select a group and rename it.
+#   shell::rename_group -n      # Prints the renaming command without executing it.
+shell::rename_group() {
     local dry_run="false"
     # Check for the optional dry-run flag (-n)
     if [ "$1" = "-n" ]; then
