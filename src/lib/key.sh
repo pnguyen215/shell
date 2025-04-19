@@ -968,13 +968,13 @@ shell::list_groups() {
     echo "$groups"
 }
 
-# select_group function
+# shell::select_group function
 # Interactively selects a group name from the group configuration file using fzf,
 # then lists all keys belonging to the selected group and uses fzf to choose one key,
 # finally displaying the decoded value for the selected key.
 #
 # Usage:
-#   select_group
+#   shell::select_group
 #
 # Description:
 #   The function reads the configuration file defined by SHELL_GROUP_CONF_FILE, where each line is in the format:
@@ -986,8 +986,8 @@ shell::list_groups() {
 #   decodes the Base64-encoded value (using -D on macOS and -d on Linux), and displays the group name, key, and decoded value.
 #
 # Example:
-#   select_group   # Prompts to select a group, then a key within that group, and displays the decoded value.
-select_group() {
+#   shell::select_group   # Prompts to select a group, then a key within that group, and displays the decoded value.
+shell::select_group() {
     # Ensure the group configuration file exists.
     if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
         shell::colored_echo "🔴 Error: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
