@@ -730,12 +730,12 @@ shell::read_group() {
     shell::clip_value "$json_obj"
 }
 
-# remove_group function
+# shell::remove_group function
 # Interactively selects a group name from the group configuration file using fzf,
 # then removes the corresponding group entry.
 #
 # Usage:
-#   remove_group [-n]
+#   shell::remove_group [-n]
 #
 # Parameters:
 #   - -n : Optional dry-run flag. If provided, the removal command is printed using shell::on_evict instead of executed.
@@ -747,9 +747,9 @@ shell::read_group() {
 #   If the file is not writable, sudo is prepended. In dry-run mode, the command is printed via shell::on_evict.
 #
 # Example:
-#   remove_group         # Interactively select a group and remove its entry.
-#   remove_group -n      # Prints the removal command without executing it.
-remove_group() {
+#   shell::remove_group         # Interactively select a group and remove its entry.
+#   shell::remove_group -n      # Prints the removal command without executing it.
+shell::remove_group() {
     local dry_run="false"
     if [ "$1" = "-n" ]; then
         dry_run="true"

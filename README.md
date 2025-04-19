@@ -337,12 +337,12 @@ Access the shell library by opening your terminal and using the commands below. 
   - `shell::read_group <group_name>`
   - `shell::read_group my_group`
 
-- **`remove_group`**
+- **`shell::remove_group`**
   Interactively selects a group name from the group configuration file using fzf,
   then removes the corresponding group entry.
   _Example:_
 
-  - `remove_group [-n]`
+  - `shell::remove_group [-n]`
 
 - **`update_group`**
   Interactively updates an existing group by letting you select new keys for that group.
