@@ -205,3 +205,245 @@ shell::list_ssh_tunnel() {
     # Clean up
     shell::run_cmd_eval rm -f "$temp_file"
 }
+
+# shell::list_ssh_tunnel function
+# Lists active SSH tunnels with detailed information in a line-by-line format.
+#
+# Usage:
+#   shell::list_ssh_tunnel [-n]
+#
+# Parameters:
+#   - -n : Optional dry-run flag.
+#          If provided, commands are printed using shell::on_evict instead of executed.
+#
+# Description:
+#   This function identifies and displays all SSH processes that are using port forwarding options
+#   (-L, -R, or -D). It shows detailed information about each process including PID, username,
+#   start time, elapsed time, command, and specific forwarding details (local port, forwarding type,
+#   remote port, remote host).
+#   The function works cross-platform on both macOS and Linux systems.
+#
+# Output Fields:
+#   - PID: Process ID of the SSH tunnel
+#   - USER: Username running the SSH tunnel
+#   - START: Start time of the process
+#   - TIME: Elapsed time the process has been running
+#   - COMMAND: The SSH command path
+#   - LOCAL_PORT: The local port being forwarded
+#   - FORWARD_TYPE: Type of forwarding (-L for local, -R for remote, -D for dynamic)
+#   - REMOTE_PORT: The remote port
+#   - REMOTE_HOST: The remote host
+#
+# Example usage:
+#   shell::list_ssh_tunnel       # Display active SSH tunnels
+#   shell::list_ssh_tunnel -n        # Show commands that would be executed (dry-run mode)
+#
+# Notes:
+#   - Requires 'ps', 'grep', and 'awk' to be available in the system's PATH.
+#   - The output columns are based on the 'ps aux' or 'ps -ax -o' format, which might vary
+#     slightly across different Linux distributions and macOS versions,
+#     though the common fields should be consistent.
+#   - The 'LOCAL_PORT', 'FORWARD_TYPE', 'REMOTE_PORT', and 'REMOTE_HOST'
+#     are extracted based on their expected position in the 'ps' command
+#     output for SSH tunnel commands. This might not be accurate for all
+#     possible SSH command variations.
+#   - The direct execution of the 'ps' command is not logged by shell::run_cmd_eval
+#     to prevent printing the complex command string in the standard output during normal execution.
+#     Other operations like temporary file cleanup are still logged via shell::run_cmd_eval.
+#
+shell::list_ssh_tunnel2() {
+    local dry_run="false"
+
+    # Check for the optional dry-run flag (-n)
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    # Check if required commands are available
+    if ! shell::is_command_available ps || ! shell::is_command_available grep || ! shell::is_command_available awk; then
+        shell::colored_echo "🔴 Error: Required commands (ps, grep, awk) are not available." 196
+        return 1
+    fi
+
+    shell::colored_echo "Listing active SSH tunnels:" 33
+
+    # Get the operating system type
+    local os_type
+    os_type=$(shell::get_os_type)
+
+    # Create a temporary file for processing
+    local temp_file
+    temp_file=$(mktemp)
+
+    # Base command for finding SSH tunnels differs by OS
+    local ps_cmd=""
+    if [ "$os_type" = "linux" ]; then
+        # Linux processing: Use ps aux format
+        ps_cmd="ps aux | grep ssh | grep -v grep | grep -E -- '-[DLR]'"
+    elif [ "$os_type" = "macos" ]; then
+        # macOS processing: Use specified columns for consistency
+        ps_cmd="ps -ax -o pid,user,start,time,command | grep ssh | grep -v grep | grep -E -- '-[DLR]'"
+    else
+        shell::colored_echo "🔴 Unsupported operating system: $os_type" 196
+        rm -f "$temp_file"
+        return 1
+    fi
+
+    # Execute or display the command based on dry-run flag
+    if [ "$dry_run" = "true" ]; then
+        # In dry-run mode, show the full command pipe including redirection
+        shell::on_evict "$ps_cmd > \"$temp_file\""
+        # Also show the cleanup command
+        shell::on_evict "rm -f \"$temp_file\""
+        rm -f "$temp_file"
+        return 0
+    else
+        # Execute the ps command directly and redirect output to temp file
+        # This prevents shell::run_cmd_eval from printing the complex ps_cmd
+        eval "$ps_cmd > \"$temp_file\""
+        # Check the exit status of the command pipe
+        if [ $? -ne 0 ]; then
+            shell::colored_echo "🔴 Error executing ps command to list SSH tunnels." 196
+            shell::run_cmd_eval rm -f "$temp_file"
+            return 1
+        fi
+    fi
+
+    # If no SSH tunnels were found, display a message and exit
+    if [ ! -s "$temp_file" ]; then
+        shell::colored_echo "🟡 No active SSH tunnels found." 11
+        shell::run_cmd_eval rm -f "$temp_file"
+        return 0
+    fi
+
+    # Process each line from the temporary file and extract SSH tunnel information
+    local tunnel_count=0
+
+    # Print a header
+    shell::colored_echo "SSH TUNNELS" 33
+    echo "==========================================================="
+
+    while IFS= read -r line; do
+        # Extract the base process information
+        local pid user start_time elapsed_time command_full
+
+        if [ "$os_type" = "linux" ]; then
+            # Extract the basic process information for Linux (ps aux format)
+            user=$(echo "$line" | awk '{print $1}')
+            pid=$(echo "$line" | awk '{print $2}')
+            start_time=$(echo "$line" | awk '{print $9}')
+            elapsed_time=$(echo "$line" | awk '{print $10}')
+            # Extract SSH command (everything after the 10th field)
+            command_full=$(echo "$line" | awk '{for(i=11;i<=NF;i++) printf "%s ", $i}' | sed 's/ *$//') # Remove trailing space
+        elif [ "$os_type" = "macos" ]; then
+            # Extract the basic process information for macOS (ps -ax -o format)
+            pid=$(echo "$line" | awk '{print $1}')
+            user=$(echo "$line" | awk '{print $2}')
+            start_time=$(echo "$line" | awk '{print $3}')
+            elapsed_time=$(echo "$line" | awk '{print $4}')
+            # Extract SSH command (everything after the 4th field)
+            command_full=$(echo "$line" | awk '{for(i=5;i<=NF;i++) printf "%s ", $i}' | sed 's/ *$//') # Remove trailing space
+        fi
+
+        # Now parse the full command to extract port forwarding information
+        local forward_type="N/A"
+        local local_port="N/A"
+        local remote_port="N/A"
+        local remote_host="N/A"
+        local ssh_command_only=$(echo "$command_full" | awk '{print $1}') # Get just the command like 'ssh'
+
+        # Use grep to find the forwarding option and its arguments
+        local forwarding_spec=$(echo "$command_full" | grep -oE -- '-[DLR] ([^ ]+)')
+
+        if [ -n "$forwarding_spec" ]; then
+            forward_type=$(echo "$forwarding_spec" | cut -d ' ' -f 1)
+            local port_spec=$(echo "$forwarding_spec" | cut -d ' ' -f 2)
+
+            case "$forward_type" in
+            "-D")
+                # Dynamic forwarding: -D [bind_address:]port
+                local_port="$port_spec" # Port or bind_address:port
+                remote_port="N/A"
+                remote_host="N/A"
+                ;;
+            "-L" | "-R")
+                # Local or remote forwarding: -L/-R [bind_address:]port:host:host_port
+                # or -L/-R port:host:host_port
+                # or -L/-R bind_address:port:host:host_port (less common but possible)
+
+                local IFS=':' read -r bind_addr_or_port port_or_host host_or_port host_port_only <<<"$port_spec"
+
+                if [ -z "$host_port_only" ]; then
+                    # Format: port:host:host_port or bind_address:port:host
+                    if [ -z "$host_or_port" ]; then
+                        # Format: port or bind_address:port (handle cases like -L 8080 or -L 127.0.0.1:8080)
+                        if [[ "$bind_addr_or_port" == *:* ]]; then
+                            # Format: bind_address:port
+                            local_port=$(echo "$bind_addr_or_port" | cut -d ':' -f 2)
+                            remote_host="Unknown"
+                            remote_port="Unknown"
+                        else
+                            # Format: port
+                            local_port="$bind_addr_or_port"
+                            remote_host="Unknown"
+                            remote_port="Unknown"
+                        fi
+                    else
+                        # Format: port:host:host_port or bind_address:port:host
+                        local_port="$bind_addr_or_port"
+                        remote_host="$port_or_host"
+                        remote_port="$host_or_port"
+                    fi
+                else
+                    # Format: bind_address:port:host:host_port
+                    local_port="$port_or_host"
+                    remote_host="$host_or_host"
+                    remote_port="$host_port_only"
+                fi
+                ;;
+            *)
+                # Fallback for unexpected format
+                local_port="Unknown"
+                remote_port="Unknown"
+                remote_host="Unknown"
+                ;;
+            esac
+
+        fi
+
+        # Increment the tunnel count
+        ((tunnel_count++))
+
+        # Print the tunnel information with clear labels in a line-by-line format
+        echo "-----------------------------------------------------------"
+        shell::colored_echo "TUNNEL #$tunnel_count" 46
+        echo "PID:           $pid"
+        echo "USER:          $user"
+        echo "START:         $start_time"
+        echo "RUNTIME:       $elapsed_time"
+        echo "COMMAND:       $ssh_command_only" # Print only the command part
+        echo "LOCAL PORT:    $local_port"
+        if [ "$forward_type" = "-L" ]; then
+            echo "FORWARD TYPE:  Local ($forward_type)"
+        elif [ "$forward_type" = "-R" ]; then
+            echo "FORWARD TYPE:  Remote ($forward_type)"
+        elif [ "$forward_type" = "-D" ]; then
+            echo "FORWARD TYPE:  Dynamic ($forward_type)"
+        else
+            echo "FORWARD TYPE:  $forward_type"
+        fi
+        echo "REMOTE PORT:   $remote_port"
+        echo "REMOTE HOST:   $remote_host"
+
+    done <"$temp_file"
+
+    # Print a summary if tunnels were found
+    if [ "$tunnel_count" -gt 0 ]; then
+        echo "==========================================================="
+        shell::colored_echo "🔍 Found $tunnel_count active SSH tunnel(s)" 46
+    fi
+
+    # Clean up the temporary file using shell::run_cmd_eval to log this step
+    shell::run_cmd_eval rm -f "$temp_file"
+}
