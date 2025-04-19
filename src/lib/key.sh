@@ -789,11 +789,11 @@ shell::remove_group() {
     fi
 }
 
-# update_group function
+# shell::update_group function
 # Interactively updates an existing group by letting you select new keys for that group.
 #
 # Usage:
-#   update_group [-n]
+#   shell::update_group [-n]
 #
 # Parameters:
 #   - -n : Optional dry-run flag. If provided, the update command is printed using shell::on_evict instead of executed.
@@ -805,9 +805,9 @@ shell::remove_group() {
 #   (using sed with options appropriate for macOS or Linux). If the file is not writable, sudo is used.
 #
 # Example:
-#   update_group         # Interactively select a group, update its keys, and update the group entry.
-#   update_group -n      # Prints the update command without executing it.
-update_group() {
+#   shell::update_group         # Interactively select a group, update its keys, and update the group entry.
+#   shell::update_group -n      # Prints the update command without executing it.
+shell::update_group() {
     local dry_run="false"
     if [ "$1" = "-n" ]; then
         dry_run="true"

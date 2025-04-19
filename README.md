@@ -344,11 +344,11 @@ Access the shell library by opening your terminal and using the commands below. 
 
   - `shell::remove_group [-n]`
 
-- **`update_group`**
+- **`shell::update_group`**
   Interactively updates an existing group by letting you select new keys for that group.
   _Example:_
 
-  - `update_group [-n]`
+  - `shell::update_group [-n]`
 
 - **`rename_group`**
   Renames an existing group in the group configuration file.
