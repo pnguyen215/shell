@@ -36,265 +36,172 @@
 #   - Works on both macOS and Linux systems
 #   - Uses different parsing approaches based on the detected operating system
 #   - Leverages shell::run_cmd_eval for command execution and shell::on_evict for dry-run mode
-# shell::list_ssh_tunnel() {
-#     local dry_run="false"
-
-#     # Check for the optional dry-run flag (-n)
-#     if [ "$1" = "-n" ]; then
-#         dry_run="true"
-#         shift
-#     fi
-
-#     # Get the operating system type
-#     local os_type
-#     os_type=$(shell::get_os_type)
-
-#     # Create a temporary file for processing
-#     local temp_file
-#     temp_file=$(mktemp)
-
-#     # Base command for finding SSH tunnels differs by OS
-#     local cmd=""
-#     if [ "$os_type" = "linux" ]; then
-#         # Linux processing
-#         cmd="ps aux | grep ssh | grep -v grep | grep -E -- '-[DLR]' > \"$temp_file\""
-#     elif [ "$os_type" = "macos" ]; then
-#         # macOS processing
-#         cmd="ps -ax -o pid,user,start,time,command | grep ssh | grep -v grep | grep -E -- '-[DLR]' > \"$temp_file\""
-#     else
-#         shell::colored_echo "🔴 Unsupported operating system: $os_type" 196
-#         rm -f "$temp_file"
-#         return 1
-#     fi
-
-#     # Execute or display the command based on dry-run flag
-#     if [ "$dry_run" = "true" ]; then
-#         shell::on_evict "$cmd"
-#         rm -f "$temp_file"
-#         return 0
-#     else
-#         shell::run_cmd_eval "$cmd"
-#     fi
-
-#     # If no SSH tunnels were found, display a message and exit
-#     if [ ! -s "$temp_file" ]; then
-#         shell::colored_echo "🟡 No active SSH tunnels found." 11
-#         rm -f "$temp_file"
-#         return 0
-#     fi
-
-#     # Process each line and extract SSH tunnel information
-#     local tunnel_count=0
-
-#     # Print a header
-#     shell::colored_echo "SSH TUNNELS" 33
-#     echo "==========================================================="
-
-#     while IFS= read -r line; do
-#         # Extract the base process information
-#         local pid user start_time elapsed_time cmd forward_type local_port remote_port remote_host
-
-#         if [ "$os_type" = "linux" ]; then
-#             # Extract the basic process information for Linux
-#             user=$(echo "$line" | awk '{print $1}')
-#             pid=$(echo "$line" | awk '{print $2}')
-#             start_time=$(echo "$line" | awk '{print $9}')
-#             elapsed_time=$(echo "$line" | awk '{print $10}')
-#             # Extract SSH command (everything after the 10th field)
-#             cmd=$(echo "$line" | awk '{for(i=11;i<=NF;i++) printf "%s ", $i}')
-#         elif [ "$os_type" = "macos" ]; then
-#             # Extract the basic process information for macOS
-#             pid=$(echo "$line" | awk '{print $1}')
-#             user=$(echo "$line" | awk '{print $2}')
-#             start_time=$(echo "$line" | awk '{print $3}')
-#             elapsed_time=$(echo "$line" | awk '{print $4}')
-#             # Extract SSH command (everything after the 4th field)
-#             cmd=$(echo "$line" | awk '{for(i=5;i<=NF;i++) printf "%s ", $i}')
-#         fi
-
-#         # Now parse the command to extract port forwarding information
-#         local ssh_options
-#         ssh_options=$(echo "$cmd" | grep -oE -- '-[DLR] [^ ]+' | head -1)
-
-#         if [ -n "$ssh_options" ]; then
-#             # Extract the forwarding type (-L, -R, or -D)
-#             forward_type=$(echo "$ssh_options" | cut -d ' ' -f 1)
-
-#             # Parse the port specifications based on the forwarding type
-#             case "$forward_type" in
-#             "-D")
-#                 # Dynamic forwarding: -D [bind_address:]port
-#                 local_port=$(echo "$ssh_options" | cut -d ' ' -f 2 | awk -F: '{print $NF}')
-#                 remote_port="N/A"
-#                 remote_host="N/A"
-#                 ;;
-#             "-L" | "-R")
-#                 # Local or remote forwarding: -L/-R [bind_address:]port:host:host_port
-#                 local port_spec
-#                 port_spec=$(echo "$ssh_options" | cut -d ' ' -f 2)
-
-#                 # Extract the local port (for -L) or remote port (for -R)
-#                 if [[ "$port_spec" == *:*:* ]]; then
-#                     # Format with bind address: [bind_address:]port:host:host_port
-#                     if [[ "$port_spec" == *:*:*:* ]]; then
-#                         # Has bind address
-#                         local_port=$(echo "$port_spec" | awk -F: '{print $2}')
-#                     else
-#                         # No bind address
-#                         local_port=$(echo "$port_spec" | awk -F: '{print $1}')
-#                     fi
-
-#                     # Extract the remote host and port
-#                     if [[ "$port_spec" == *:*:*:* ]]; then
-#                         remote_host=$(echo "$port_spec" | awk -F: '{print $3}')
-#                         remote_port=$(echo "$port_spec" | awk -F: '{print $4}')
-#                     else
-#                         remote_host=$(echo "$port_spec" | awk -F: '{print $2}')
-#                         remote_port=$(echo "$port_spec" | awk -F: '{print $3}')
-#                     fi
-#                 else
-#                     # Simple format: port
-#                     local_port="$port_spec"
-#                     remote_port="Unknown"
-#                     remote_host="Unknown"
-#                 fi
-#                 ;;
-#             *)
-#                 # Fallback for unexpected format
-#                 local_port="Unknown"
-#                 remote_port="Unknown"
-#                 remote_host="Unknown"
-#                 ;;
-#             esac
-
-#             # Extract just the SSH command without arguments for cleaner display
-#             cmd=$(echo "$cmd" | awk '{print $1}')
-
-#             # Increment the tunnel count
-#             ((tunnel_count++))
-
-#             # Print the tunnel information with clear labels in a line-by-line format
-#             echo "-----------------------------------------------------------"
-#             shell::colored_echo "TUNNEL #$tunnel_count" 46
-#             echo "PID:           $pid"
-#             echo "USER:          $user"
-#             echo "START:         $start_time"
-#             echo "RUNTIME:       $elapsed_time"
-#             echo "COMMAND:       $cmd"
-#             echo "LOCAL PORT:    $local_port"
-#             if [ "$forward_type" = "-L" ]; then
-#                 echo "FORWARD TYPE:  Local ($forward_type)"
-#             elif [ "$forward_type" = "-R" ]; then
-#                 echo "FORWARD TYPE:  Remote ($forward_type)"
-#             elif [ "$forward_type" = "-D" ]; then
-#                 echo "FORWARD TYPE:  Dynamic ($forward_type)"
-#             else
-#                 echo "FORWARD TYPE:  $forward_type"
-#             fi
-#             echo "REMOTE PORT:   $remote_port"
-#             echo "REMOTE HOST:   $remote_host"
-#         fi
-#     done <"$temp_file"
-
-#     # Print a summary if tunnels were found
-#     if [ "$tunnel_count" -gt 0 ]; then
-#         echo "==========================================================="
-#         shell::colored_echo "🔍 Found $tunnel_count active SSH tunnel(s)" 46
-#     fi
-
-#     # Clean up
-#     shell::run_cmd_eval rm -f "$temp_file"
-# }
-
-# shell::list_ssh_tunnel function
-# Displays active SSH tunnel forwarding processes with details, supporting both macOS and Linux.
-#
-# Usage:
-#   shell::list_ssh_tunnel [-n]
-#
-# Parameters:
-#   - -n : Optional dry-run flag. If set, prints the underlying command using shell::on_evict.
-#
-# Output Fields:
-#   - PID: Process ID
-#   - USER: Username
-#   - START: Start time
-#   - TIME: Elapsed runtime
-#   - COMMAND: SSH binary path
-#   - LOCAL_PORT: Local forwarded port
-#   - FORWARD_TYPE: -L (local), -R (remote), -D (dynamic)
-#   - REMOTE_PORT: Remote forwarded port
-#   - REMOTE_HOST: Remote host
 shell::list_ssh_tunnel() {
     local dry_run="false"
-    [[ "$1" == "-n" ]] && dry_run="true" && shift
 
-    local ps_cmd="ps -eo pid,user,lstart,etime,command | grep '[s]sh' | grep -E -- '-[DLR]'"
-    [[ "$dry_run" == "true" ]] && {
-        shell::on_evict "$ps_cmd"
+    # Check for the optional dry-run flag (-n)
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    # Get the operating system type
+    local os_type
+    os_type=$(shell::get_os_type)
+
+    # Create a temporary file for processing
+    local temp_file
+    temp_file=$(mktemp)
+
+    # Base command for finding SSH tunnels differs by OS
+    local cmd=""
+    if [ "$os_type" = "linux" ]; then
+        # Linux processing
+        cmd="ps aux | grep ssh | grep -v grep | grep -E -- '-[DLR]' > \"$temp_file\""
+    elif [ "$os_type" = "macos" ]; then
+        # macOS processing
+        cmd="ps -ax -o pid,user,start,time,command | grep ssh | grep -v grep | grep -E -- '-[DLR]' > \"$temp_file\""
+    else
+        shell::colored_echo "🔴 Unsupported operating system: $os_type" 196
+        rm -f "$temp_file"
+        return 1
+    fi
+
+    # Execute or display the command based on dry-run flag
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "$cmd"
+        rm -f "$temp_file"
         return 0
-    }
+    else
+        shell::run_cmd_eval "$cmd"
+    fi
 
-    local output
-    output=$(eval "$ps_cmd")
-    if [[ -z "$output" ]]; then
+    # If no SSH tunnels were found, display a message and exit
+    if [ ! -s "$temp_file" ]; then
         shell::colored_echo "🟡 No active SSH tunnels found." 11
+        rm -f "$temp_file"
         return 0
     fi
 
+    # Process each line and extract SSH tunnel information
+    local tunnel_count=0
+
+    # Print a header
     shell::colored_echo "SSH TUNNELS" 33
     echo "==========================================================="
-    local count=0
+
     while IFS= read -r line; do
-        ((count++))
-        local pid user start_time elapsed_time cmd
-        pid=$(echo "$line" | awk '{print $1}')
-        user=$(echo "$line" | awk '{print $2}')
-        start_time=$(echo "$line" | awk '{for(i=3;i<=7;i++) printf $i " ";}')
-        elapsed_time=$(echo "$line" | awk '{print $8}')
-        cmd=$(echo "$line" | awk '{for(i=9;i<=NF;i++) printf $i " ";}')
+        # Extract the base process information
+        local pid user start_time elapsed_time cmd forward_type local_port remote_port remote_host
 
-        local forward
-        forward=$(echo "$cmd" | grep -oE -- '-[DLR] [^ ]+')
-        local forward_type local_port remote_host="N/A" remote_port="N/A"
-
-        if [[ -n "$forward" ]]; then
-            forward_type=$(echo "$forward" | cut -d ' ' -f1)
-            local port_spec
-            port_spec=$(echo "$forward" | cut -d ' ' -f2)
-
-            case "$forward_type" in
-            -D)
-                local_port="${port_spec##*:}"
-                ;;
-            -L | -R)
-                IFS=':' read -ra parts <<<"$port_spec"
-                if [[ ${#parts[@]} -eq 4 ]]; then
-                    local_port="${parts[1]}"
-                    remote_host="${parts[2]}"
-                    remote_port="${parts[3]}"
-                elif [[ ${#parts[@]} -eq 3 ]]; then
-                    local_port="${parts[0]}"
-                    remote_host="${parts[1]}"
-                    remote_port="${parts[2]}"
-                fi
-                ;;
-            esac
+        if [ "$os_type" = "linux" ]; then
+            # Extract the basic process information for Linux
+            user=$(echo "$line" | awk '{print $1}')
+            pid=$(echo "$line" | awk '{print $2}')
+            start_time=$(echo "$line" | awk '{print $9}')
+            elapsed_time=$(echo "$line" | awk '{print $10}')
+            # Extract SSH command (everything after the 10th field)
+            cmd=$(echo "$line" | awk '{for(i=11;i<=NF;i++) printf "%s ", $i}')
+        elif [ "$os_type" = "macos" ]; then
+            # Extract the basic process information for macOS
+            pid=$(echo "$line" | awk '{print $1}')
+            user=$(echo "$line" | awk '{print $2}')
+            start_time=$(echo "$line" | awk '{print $3}')
+            elapsed_time=$(echo "$line" | awk '{print $4}')
+            # Extract SSH command (everything after the 4th field)
+            cmd=$(echo "$line" | awk '{for(i=5;i<=NF;i++) printf "%s ", $i}')
         fi
 
-        echo "-----------------------------------------------------------"
-        shell::colored_echo "TUNNEL #$count" 46
-        echo "PID:           $pid"
-        echo "USER:          $user"
-        echo "START:         $start_time"
-        echo "RUNTIME:       $elapsed_time"
-        echo "COMMAND:       ${cmd%% *}"
-        echo "LOCAL PORT:    $local_port"
-        echo "FORWARD TYPE:  $forward_type"
-        echo "REMOTE PORT:   $remote_port"
-        echo "REMOTE HOST:   $remote_host"
-    done <<<"$output"
+        # Now parse the command to extract port forwarding information
+        local ssh_options
+        ssh_options=$(echo "$cmd" | grep -oE -- '-[DLR] [^ ]+' | head -1)
 
-    echo "==========================================================="
-    shell::colored_echo "🔍 Found $count active SSH tunnel(s)" 46
+        if [ -n "$ssh_options" ]; then
+            # Extract the forwarding type (-L, -R, or -D)
+            forward_type=$(echo "$ssh_options" | cut -d ' ' -f 1)
+
+            # Parse the port specifications based on the forwarding type
+            case "$forward_type" in
+            "-D")
+                # Dynamic forwarding: -D [bind_address:]port
+                local_port=$(echo "$ssh_options" | cut -d ' ' -f 2 | awk -F: '{print $NF}')
+                remote_port="N/A"
+                remote_host="N/A"
+                ;;
+            "-L" | "-R")
+                # Local or remote forwarding: -L/-R [bind_address:]port:host:host_port
+                local port_spec
+                port_spec=$(echo "$ssh_options" | cut -d ' ' -f 2)
+
+                # Extract the local port (for -L) or remote port (for -R)
+                if [[ "$port_spec" == *:*:* ]]; then
+                    # Format with bind address: [bind_address:]port:host:host_port
+                    if [[ "$port_spec" == *:*:*:* ]]; then
+                        # Has bind address
+                        local_port=$(echo "$port_spec" | awk -F: '{print $2}')
+                    else
+                        # No bind address
+                        local_port=$(echo "$port_spec" | awk -F: '{print $1}')
+                    fi
+
+                    # Extract the remote host and port
+                    if [[ "$port_spec" == *:*:*:* ]]; then
+                        remote_host=$(echo "$port_spec" | awk -F: '{print $3}')
+                        remote_port=$(echo "$port_spec" | awk -F: '{print $4}')
+                    else
+                        remote_host=$(echo "$port_spec" | awk -F: '{print $2}')
+                        remote_port=$(echo "$port_spec" | awk -F: '{print $3}')
+                    fi
+                else
+                    # Simple format: port
+                    local_port="$port_spec"
+                    remote_port="Unknown"
+                    remote_host="Unknown"
+                fi
+                ;;
+            *)
+                # Fallback for unexpected format
+                local_port="Unknown"
+                remote_port="Unknown"
+                remote_host="Unknown"
+                ;;
+            esac
+
+            # Extract just the SSH command without arguments for cleaner display
+            cmd=$(echo "$cmd" | awk '{print $1}')
+
+            # Increment the tunnel count
+            ((tunnel_count++))
+
+            # Print the tunnel information with clear labels in a line-by-line format
+            echo "-----------------------------------------------------------"
+            shell::colored_echo "TUNNEL #$tunnel_count" 46
+            echo "PID:           $pid"
+            echo "USER:          $user"
+            echo "START:         $start_time"
+            echo "RUNTIME:       $elapsed_time"
+            echo "COMMAND:       $cmd"
+            echo "LOCAL PORT:    $local_port"
+            if [ "$forward_type" = "-L" ]; then
+                echo "FORWARD TYPE:  Local ($forward_type)"
+            elif [ "$forward_type" = "-R" ]; then
+                echo "FORWARD TYPE:  Remote ($forward_type)"
+            elif [ "$forward_type" = "-D" ]; then
+                echo "FORWARD TYPE:  Dynamic ($forward_type)"
+            else
+                echo "FORWARD TYPE:  $forward_type"
+            fi
+            echo "REMOTE PORT:   $remote_port"
+            echo "REMOTE HOST:   $remote_host"
+        fi
+    done <"$temp_file"
+
+    # Print a summary if tunnels were found
+    if [ "$tunnel_count" -gt 0 ]; then
+        echo "==========================================================="
+        shell::colored_echo "🔍 Found $tunnel_count active SSH tunnel(s)" 46
+    fi
+
+    # Clean up
+    shell::run_cmd_eval rm -f "$temp_file"
 }
