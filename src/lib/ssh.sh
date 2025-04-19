@@ -129,13 +129,13 @@ shell::list_ssh_tunnel() {
                 remote_host="N/A"
                 ;;
             "-L" | "-R")
-                # Local or remote forwarding: -L/-R [bind_address:]port:host:hostport
+                # Local or remote forwarding: -L/-R [bind_address:]port:host:host_port
                 local port_spec
                 port_spec=$(echo "$ssh_options" | cut -d ' ' -f 2)
 
                 # Extract the local port (for -L) or remote port (for -R)
                 if [[ "$port_spec" == *:*:* ]]; then
-                    # Format with bind address: [bind_address:]port:host:hostport
+                    # Format with bind address: [bind_address:]port:host:host_port
                     if [[ "$port_spec" == *:*:*:* ]]; then
                         # Has bind address
                         local_port=$(echo "$port_spec" | awk -F: '{print $2}')
@@ -203,5 +203,5 @@ shell::list_ssh_tunnel() {
     fi
 
     # Clean up
-    rm -f "$temp_file"
+    shell::run_cmd_eval rm -f "$temp_file"
 }
