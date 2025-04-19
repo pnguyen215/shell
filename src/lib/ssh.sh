@@ -60,7 +60,7 @@ shell::list_ssh_tunnel() {
         cmd="ps aux | grep ssh | grep -v grep | grep -E -- '-[DLR]' > \"$temp_file\""
     elif [ "$os_type" = "macos" ]; then
         # macOS processing
-        cmd="ps -ax -o pid,user,start,time,command | grep ssh | grep -v grep | grep -E -- '-[DLR]' > \"$temp_file\""
+        cmd="ps -ax -o pid,user,start,time,command | grep ssh | grep -v grep | grep -E -- '-[DLR]' > \"$temp_file\"" &>/dev/null
     else
         shell::colored_echo "🔴 Unsupported operating system: $os_type" 196
         rm -f "$temp_file"
@@ -170,7 +170,7 @@ shell::list_ssh_tunnel() {
             esac
 
             # Extract just the SSH command without arguments for cleaner display
-            cmd=$(echo "$cmd" | awk '{print $1}') &>/dev/null
+            cmd=$(echo "$cmd" | awk '{print $1}')
 
             # Increment the tunnel count
             ((tunnel_count++))
