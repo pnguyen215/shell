@@ -1151,13 +1151,13 @@ shell::clone_group() {
     fi
 }
 
-# sync_key_group_conf function
+# shell::sync_key_group_conf function
 # Synchronizes group configurations by ensuring that each group's keys exist in the key configuration file.
 # If a key listed in a group does not exist, it is removed from that group.
 # If a group ends up with no valid keys, that group entry is removed.
 #
 # Usage:
-#   sync_key_group_conf [-n]
+#   shell::sync_key_group_conf [-n]
 #
 # Parameters:
 #   - -n : Optional dry-run flag. If provided, the new group configuration is printed using shell::on_evict instead of being applied.
@@ -1170,9 +1170,9 @@ shell::clone_group() {
 #   In dry‑run mode, the new group configuration is printed via shell::on_evict without modifying the file.
 #
 # Example:
-#   sync_key_group_conf         # Synchronizes the group configuration file.
-#   sync_key_group_conf -n      # Displays the updated group configuration without modifying the file.
-sync_key_group_conf() {
+#   shell::sync_key_group_conf         # Synchronizes the group configuration file.
+#   shell::sync_key_group_conf -n      # Displays the updated group configuration without modifying the file.
+shell::sync_key_group_conf() {
     local dry_run="false"
     if [ "$1" = "-n" ]; then
         dry_run="true"

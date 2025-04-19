@@ -370,13 +370,13 @@ Access the shell library by opening your terminal and using the commands below. 
 
   - `shell::clone_group [-n]`
 
-- **`sync_key_group_conf`**
+- **`shell::sync_key_group_conf`**
   Synchronizes group configurations by ensuring that each group's keys exist in the key configuration file.
   If a key listed in a group does not exist, it is removed from that group.
   If a group ends up with no valid keys, that group entry is removed.
   _Example:_
 
-  - `sync_key_group_conf [-n]`
+  - `shell::sync_key_group_conf [-n]`
 
 - **`shell::send_telegram_message`**
   Sends a message via the Telegram Bot API.
