@@ -356,7 +356,7 @@ Access the shell library by opening your terminal and using the commands below. 
 
   - `shell::rename_group [-n]`
 
-- **`list_groups`**
+- **`shell::list_groups`**
   Lists all group names defined in the group configuration file.
 
 - **`select_group`**

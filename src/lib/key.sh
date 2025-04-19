@@ -935,11 +935,11 @@ shell::rename_group() {
     fi
 }
 
-# list_groups function
+# shell::list_groups function
 # Lists all group names defined in the group configuration file.
 #
 # Usage:
-#   list_groups
+#   shell::list_groups
 #
 # Description:
 #   This function reads the configuration file defined by SHELL_GROUP_CONF_FILE,
@@ -949,8 +949,8 @@ shell::rename_group() {
 #   using the 'cut' command.
 #
 # Example:
-#   list_groups       # Displays all group names.
-list_groups() {
+#   shell::list_groups       # Displays all group names.
+shell::list_groups() {
     if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
         shell::colored_echo "🔴 Error: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
         return 1
