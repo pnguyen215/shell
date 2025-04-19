@@ -73,8 +73,7 @@ shell::list_ssh_tunnel() {
         rm -f "$temp_file"
         return 0
     else
-        shell::run_cmd_eval "$cmd" &>/dev/null
-        # eval $cmd
+        shell::run_cmd_eval "$cmd"
     fi
 
     # If no SSH tunnels were found, display a message and exit
@@ -169,7 +168,7 @@ shell::list_ssh_tunnel() {
             esac
 
             # Extract just the SSH command without arguments for cleaner display
-            cmd=$(echo "$cmd" | awk '{print $1}')
+            cmd=$(echo "$cmd" | awk '{print $1}') &>/dev/null
 
             # Increment the tunnel count
             ((tunnel_count++))
