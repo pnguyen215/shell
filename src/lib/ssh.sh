@@ -73,7 +73,8 @@ shell::list_ssh_tunnel() {
         rm -f "$temp_file"
         return 0
     else
-        shell::run_cmd_eval "$cmd"
+        # shell::run_cmd_eval "$cmd" &>/dev/null
+        eval $cmd
     fi
 
     # If no SSH tunnels were found, display a message and exit
