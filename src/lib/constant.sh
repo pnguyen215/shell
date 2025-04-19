@@ -53,7 +53,7 @@ readonly SHELL_KEY_CONF_SETTING_WORKSPACE="$SHELL_CONF_WORKING_WORKSPACE/setting
 # The file stores group definitions in the following format:
 #   group_name=key1,key2,...,keyN
 # Each group maps a name to a comma-separated list of keys from the key configuration file.
-# Functions such as shell::add_group, read_group, remove_group, update_group, and clone_group use this file
+# Functions such as shell::add_group, shell::read_group, remove_group, update_group, and clone_group use this file
 # to manage groups of configuration keys.
 #
 # Example:

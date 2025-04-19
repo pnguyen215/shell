@@ -641,11 +641,11 @@ shell::add_group() {
     fi
 }
 
-# read_group function
+# shell::read_group function
 # Reads and displays the configurations for a given group by group name.
 #
 # Usage:
-#   read_group <group_name>
+#   shell::read_group <group_name>
 #
 # Description:
 #   This function looks up the group entry in SHELL_GROUP_CONF_FILE for the specified group name.
@@ -656,10 +656,10 @@ shell::add_group() {
 #   into a JSON object which is displayed.
 #
 # Example:
-#   read_group my_group   # Displays the configurations for the keys in the group 'my_group'.
-read_group() {
+#   shell::read_group my_group   # Displays the configurations for the keys in the group 'my_group'.
+shell::read_group() {
     if [ $# -lt 1 ]; then
-        echo "Usage: read_group <group_name>"
+        echo "Usage: shell::read_group <group_name>"
         return 1
     fi
 

@@ -330,12 +330,12 @@ Access the shell library by opening your terminal and using the commands below. 
 
   - `shell::add_group [-n]`
 
-- **`read_group`**
+- **`shell::read_group`**
   Reads and displays the configurations for a given group by group name.
   _Example:_
 
-  - `read_group <group_name>`
-  - `read_group my_group`
+  - `shell::read_group <group_name>`
+  - `shell::read_group my_group`
 
 - **`remove_group`**
   Interactively selects a group name from the group configuration file using fzf,
