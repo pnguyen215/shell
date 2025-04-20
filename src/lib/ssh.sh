@@ -85,7 +85,7 @@ shell::list_ssh_tunnel() {
 
     # Process each line and extract SSH tunnel information
     local tunnel_count=0
-
+    echo "DEBUG:: begin:: cmd: $cmd"
     # Print a header
     shell::colored_echo "SSH TUNNELS" 33
     echo "==========================================================="
