@@ -54,11 +54,11 @@ shell::list_ssh_tunnels() {
     temp_file=$(mktemp)
 
     # Base command for finding SSH tunnels differs by OS
-    local cmd=""
+    local ps_cmd=""
     if [ "$os_type" = "linux" ]; then
-        cmd="ps aux | grep ssh | grep -v grep | grep -E -- '-[DLR]' > \"$temp_file\""
+        ps_cmd="ps aux | grep ssh | grep -v grep | grep -E -- '-[DLR]' > \"$temp_file\""
     elif [ "$os_type" = "macos" ]; then
-        cmd="ps -ax -o pid,user,start,time,command | grep ssh | grep -v grep | grep -E -- '-[DLR]' > \"$temp_file\"" &>/dev/null
+        ps_cmd="ps -ax -o pid,user,start,time,command | grep ssh | grep -v grep | grep -E -- '-[DLR]' > \"$temp_file\"" &>/dev/null
     else
         shell::colored_echo "🔴 Unsupported operating system: $os_type" 196
         rm -f "$temp_file"
@@ -67,11 +67,11 @@ shell::list_ssh_tunnels() {
 
     # Execute or display the command based on dry-run flag
     if [ "$dry_run" = "true" ]; then
-        shell::on_evict "$cmd"
+        shell::on_evict "$ps_cmd"
         rm -f "$temp_file"
         return 0
     else
-        shell::run_cmd_eval "$cmd"
+        shell::run_cmd_eval "$ps_cmd"
     fi
 
     # If no SSH tunnels were found, display a message and exit
