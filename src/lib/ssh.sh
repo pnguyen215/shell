@@ -240,7 +240,8 @@ shell::fzf_ssh_keys() {
     # Find potential key files in the SSH directory, excluding common non-key files and directories.
     # Using find to get full paths for fzf.
     local key_files
-    key_files=$(find "$ssh_dir" -maxdepth 1 -type f \( ! -name "*.pub" ! -name "known_hosts*" ! -name "config" ! -name "authorized_keys*" ! -name "*.log" \) 2>/dev/null)
+    # key_files=$(find "$ssh_dir" -maxdepth 1 -type f \( ! -name "*.pub" ! -name "known_hosts*" ! -name "config" ! -name "authorized_keys*" ! -name "*.log" \) 2>/dev/null)
+    key_files=$(find "$ssh_dir" -maxdepth 1 -type f \( ! -name "known_hosts*" ! -name "config" ! -name "authorized_keys*" ! -name "*.log" \) 2>/dev/null)
 
     # Check if any potential key files were found.
     if [ -z "$key_files" ]; then
