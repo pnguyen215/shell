@@ -114,6 +114,7 @@ shell::list_ssh_tunnel() {
 
         # Now parse the command to extract port forwarding information
         local ssh_options
+        echo "DEBUG:: cmd: $cmd"
         ssh_options=$(echo "$cmd" | grep -oE -- '-[DLR] [^ ]+' | head -1)
 
         if [ -n "$ssh_options" ]; then
