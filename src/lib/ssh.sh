@@ -112,7 +112,7 @@ shell::list_ssh_tunnels() {
 
         # Now parse the command to extract port forwarding information
         local ssh_options
-        ssh_options=$(echo "$cmd" | grep -oE -- '-[DLR] [^ ]+' | head -1) &>/dev/null
+        ssh_options=$(echo "$cmd" | grep -oE -- '-[DLR] [^ ]+' | head -1)
 
         if [ -n "$ssh_options" ]; then
             # Extract the forwarding type (-L, -R, or -D)
