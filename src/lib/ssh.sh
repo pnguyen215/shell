@@ -229,22 +229,22 @@ shell::fzf_ssh_keys() {
     shell::install_package fzf
 
     # Define the SSH directory.
-    # local ssh_dir="$SHELL_CONF_SSH_DIR_WORKING"
+    local ssh_dir="$HOME/.ssh"
 
     # Check if the SSH directory exists.
-    if [ ! -d "$SHELL_CONF_SSH_DIR_WORKING" ]; then
-        shell::colored_echo "🔴 Error: SSH directory '"$SHELL_CONF_SSH_DIR_WORKING"' not found." 196
+    if [ ! -d "$ssh_dir" ]; then
+        shell::colored_echo "🔴 Error: SSH directory '"$ssh_dir"' not found." 196
         return 1
     fi
 
     # Find potential key files in the SSH directory, excluding common non-key files and directories.
     # Using find to get full paths for fzf.
     local key_files
-    key_files=$(find "$SHELL_CONF_SSH_DIR_WORKING" -maxdepth 1 -type f \( ! -name "*.pub" ! -name "known_hosts*" ! -name "config" ! -name "authorized_keys*" ! -name "*.log" \) 2>/dev/null)
+    key_files=$(find "$ssh_dir" -maxdepth 1 -type f \( ! -name "*.pub" ! -name "known_hosts*" ! -name "config" ! -name "authorized_keys*" ! -name "*.log" \) 2>/dev/null)
 
     # Check if any potential key files were found.
     if [ -z "$key_files" ]; then
-        shell::colored_echo "🟡 No potential SSH key files found in '"$SHELL_CONF_SSH_DIR_WORKING"'." 11
+        shell::colored_echo "🟡 No potential SSH key files found in '"$ssh_dir"'." 11
         return 0
     fi
 
