@@ -56,10 +56,8 @@ shell::list_ssh_tunnel() {
     # Base command for finding SSH tunnels differs by OS
     local cmd=""
     if [ "$os_type" = "linux" ]; then
-        # Linux processing
         cmd="ps aux | grep ssh | grep -v grep | grep -E -- '-[DLR]' > \"$temp_file\""
     elif [ "$os_type" = "macos" ]; then
-        # macOS processing
         cmd="ps -ax -o pid,user,start,time,command | grep ssh | grep -v grep | grep -E -- '-[DLR]' > \"$temp_file\"" &>/dev/null
     else
         shell::colored_echo "🔴 Unsupported operating system: $os_type" 196
@@ -85,9 +83,6 @@ shell::list_ssh_tunnel() {
 
     # Process each line and extract SSH tunnel information
     local tunnel_count=0
-    echo "DEBUG:: begin:: cmd: $cmd"
-    echo "DEBUG:: content tmp"
-    cat $temp_file
 
     # Print a header
     shell::colored_echo "SSH TUNNELS" 33
@@ -96,7 +91,7 @@ shell::list_ssh_tunnel() {
     while IFS= read -r line; do
         # Extract the base process information
         local pid user start_time elapsed_time cmd forward_type local_port remote_port remote_host
-        echo "DEBUG:: begin:: line: $line"
+
         if [ "$os_type" = "linux" ]; then
             # Extract the basic process information for Linux
             user=$(echo "$line" | awk '{print $1}')
@@ -117,7 +112,6 @@ shell::list_ssh_tunnel() {
 
         # Now parse the command to extract port forwarding information
         local ssh_options
-        echo "DEBUG:: cmd: $cmd"
         ssh_options=$(echo "$cmd" | grep -oE -- '-[DLR] [^ ]+' | head -1)
 
         if [ -n "$ssh_options" ]; then
@@ -172,9 +166,7 @@ shell::list_ssh_tunnel() {
             esac
 
             # Extract just the SSH command without arguments for cleaner display
-            echo "DEBUG:: cmd: $cmd"
             cmd=$(echo "$cmd" | awk '{print $1}')
-            echo "DEBUG:: cmd awk: $cmd"
 
             # Increment the tunnel count
             ((tunnel_count++))
