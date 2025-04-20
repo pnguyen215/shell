@@ -168,7 +168,9 @@ shell::list_ssh_tunnel() {
             esac
 
             # Extract just the SSH command without arguments for cleaner display
+            echo "DEBUG:: cmd: $cmd"
             cmd=$(echo "$cmd" | awk '{print $1}')
+            echo "DEBUG:: cmd awk: $cmd"
 
             # Increment the tunnel count
             ((tunnel_count++))
