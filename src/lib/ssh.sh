@@ -1,11 +1,11 @@
 #!/bin/bash
 # ssh.sh
 
-# shell::list_ssh_tunnel function
+# shell::list_ssh_tunnels function
 # Displays information about active SSH tunnel forwarding processes in a line-by-line format.
 #
 # Usage:
-#   shell::list_ssh_tunnel [-n]
+#   shell::list_ssh_tunnels [-n]
 #
 # Parameters:
 #   - -n : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
@@ -28,15 +28,15 @@
 #   - REMOTE_HOST: The remote host
 #
 # Example usage:
-#   shell::list_ssh_tunnel           # Display active SSH tunnels
-#   shell::list_ssh_tunnel -n        # Show commands that would be executed (dry-run mode)
+#   shell::list_ssh_tunnels           # Display active SSH tunnels
+#   shell::list_ssh_tunnels -n        # Show commands that would be executed (dry-run mode)
 #
 # Notes:
 #   - Requires the 'ps' command to be available
 #   - Works on both macOS and Linux systems
 #   - Uses different parsing approaches based on the detected operating system
 #   - Leverages shell::run_cmd_eval for command execution and shell::on_evict for dry-run mode
-shell::list_ssh_tunnel() {
+shell::list_ssh_tunnels() {
     local dry_run="false"
 
     # Check for the optional dry-run flag (-n)
