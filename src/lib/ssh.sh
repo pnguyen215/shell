@@ -96,7 +96,7 @@ shell::list_ssh_tunnel() {
     while IFS= read -r line; do
         # Extract the base process information
         local pid user start_time elapsed_time cmd forward_type local_port remote_port remote_host
-
+        echo "DEBUG:: begin:: line: $line"
         if [ "$os_type" = "linux" ]; then
             # Extract the basic process information for Linux
             user=$(echo "$line" | awk '{print $1}')
