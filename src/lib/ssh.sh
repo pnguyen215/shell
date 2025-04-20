@@ -331,12 +331,12 @@ shell::fzf_kill_ssh_tunnels() {
         return 0
     fi
 
-    shell::colored_echo "✅ Found potential SSH tunnels. Use fzf to select one or more to kill (Tab to select multiple):" 46
+    shell::colored_echo "✅ Found potential SSH tunnels. Use fzf to select:" 46
 
     # Use fzf to select tunnels. Pipe the info and let fzf handle the selection.
     # --multi allows selecting multiple lines.
     local selected_tunnels
-    selected_tunnels=$(echo "$ssh_tunnels_info" | fzf --multi --prompt="Select tunnels to kill: ")
+    selected_tunnels=$(echo "$ssh_tunnels_info" | fzf --prompt="Select tunnels to kill: ")
 
     # Check if any tunnels were selected.
     if [ -z "$selected_tunnels" ]; then
