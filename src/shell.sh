@@ -25,9 +25,9 @@ shell::__source_async_with_callback() {
     fi
 
     # Wait for all background processes to finish and discard any output
-    # for pid in "${pids[@]}"; do
-    #     wait "$pid" &>/dev/null
-    # done
+    for pid in "${pids[@]}"; do
+        wait "$pid" &>/dev/null
+    done
 
     # Execute the callback function
     if [ -n "$callback" ] && type "$callback" >/dev/null 2>&1; then
