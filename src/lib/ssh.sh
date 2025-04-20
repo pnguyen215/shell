@@ -229,7 +229,8 @@ shell::fzf_ssh_keys() {
     shell::install_package fzf
 
     # Define the SSH directory.
-    local ssh_dir="$HOME/.ssh"
+    # local ssh_dir="$HOME/.ssh"
+    local ssh_dir="$SHELL_CONF_SSH_DIR_WORKING"
 
     # Check if the SSH directory exists.
     if [ ! -d "$ssh_dir" ]; then
