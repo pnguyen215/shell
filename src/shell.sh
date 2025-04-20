@@ -6,7 +6,7 @@
 SHELL_DIR="${SHELL_DIR:-$HOME/shell}"
 LIB_DIR="$SHELL_DIR/src/lib"
 LANG_DIR="$SHELL_DIR/src/lang"
-CONF_DIR="$SHELL_DIR/src/conf"
+CONST_DIR="$SHELL_DIR/src/constant"
 
 # This function sources all .sh scripts in the specified directory.
 # It takes one argument: the directory containing the scripts.
@@ -58,7 +58,7 @@ shell::source_directory() {
 # Source configuration, library, and language scripts in order.
 # The callback functionality was removed as sourcing is synchronous and
 # sequential execution of the directories ensures order.
-shell::source_directory "$CONF_DIR"
+shell::source_directory "$CONST_DIR"
 shell::source_directory "$LIB_DIR"
 shell::source_directory "$LANG_DIR"
 
