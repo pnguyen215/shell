@@ -6,6 +6,7 @@
 SHELL_DIR="${SHELL_DIR:-$HOME/shell}"
 LIB_DIR="$SHELL_DIR/src/lib"
 LANG_DIR="$SHELL_DIR/src/lang"
+CONF_DIR="$SHELL_DIR/src/conf"
 
 # This function sources all .sh scripts in the specified directory asynchronously.
 # It takes two arguments: the directory containing the scripts and a callback function to execute after sourcing.
@@ -19,8 +20,8 @@ shell::__source_async_with_callback() {
         for script in "$dir"/*.sh; do
             if [ -f "$script" ]; then
                 # source "$script" &>/dev/null
-                source "$script"
                 # pids+=("$!")
+                source "$script"
             fi
         done
     fi
@@ -38,9 +39,9 @@ shell::__source_async_with_callback() {
 
 # Source library scripts asynchronously and then execute the callback
 # Example: shell::__source_async_with_callback "$LIB_DIR" shell::emit
-shell::__source_async_with_callback "$LIB_DIR" ""
-
+shell::__source_async_with_callback "$CONF_DIR" ""
 # Source language scripts asynchronously (no specific callback here, the main callback handles both)
+shell::__source_async_with_callback "$LIB_DIR" ""
 shell::__source_async_with_callback "$LANG_DIR" ""
 
 # shell::version function
