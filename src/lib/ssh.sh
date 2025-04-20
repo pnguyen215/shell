@@ -109,14 +109,12 @@ shell::list_ssh_tunnel() {
             start_time=$(echo "$line" | awk '{print $3}')
             elapsed_time=$(echo "$line" | awk '{print $4}')
             # Extract SSH command (everything after the 4th field)
-            echo "DEBUG:: line " $line
             cmd=$(echo "$line" | awk '{for(i=5;i<=NF;i++) printf "%s ", $i}')
         fi
 
         # Now parse the command to extract port forwarding information
         local ssh_options
         ssh_options=$(echo "$cmd" | grep -oE -- '-[DLR] [^ ]+' | head -1)
-        echo "DEBUG:: ssh_options " $ssh_options
 
         if [ -n "$ssh_options" ]; then
             # Extract the forwarding type (-L, -R, or -D)
