@@ -1235,3 +1235,111 @@ shell::sync_key_group_conf() {
         shell::colored_echo "🟢 Group configuration synchronized successfully." 46
     fi
 }
+
+# shell::load_ini_conf function
+# Reads a .ini.conf file and loads key-value pairs as environment variables.
+# Lines starting with '#' or ';' are treated as comments and ignored.
+# Empty lines are also ignored.
+# Each valid line in 'key=value' format is exported as an environment variable.
+#
+# Usage:
+#   shell::load_ini_conf <file_path>
+#
+# Parameters:
+#   <file_path>: The path to the .ini.conf file to load.
+#
+# Description:
+#   This function parses the specified configuration file. For each line that is
+#   not a comment or empty, it attempts to split the line at the first '=' sign.
+#   The part before the '=' is treated as the variable name (key), and the part
+#   after the '=' is treated as the variable value. Leading and trailing whitespace
+#   is trimmed from both the key and the value. The resulting key-value pair is
+#   then exported as an environment variable in the current shell. This makes the
+#   configuration settings available to subsequently executed commands and scripts.
+#   The function provides feedback on whether the file was found and loaded.
+#
+# Example usage:
+#   shell::load_ini_conf "$CONF_DIR/my_app.ini.conf" # Load configurations from my_app.ini.conf
+#
+# Requirements:
+#   - Assumes the presence of helper function: shell::colored_echo.
+shell::load_ini_conf() {
+    local config_file="$1"
+
+    # Check if the config file exists and is a regular file.
+    if [ ! -f "$config_file" ]; then
+        shell::colored_echo "🔴 Error: Configuration file '$config_file' not found." 196
+        return 1
+    fi
+
+    shell::colored_echo "⚙️ Loading configuration from: $config_file" 33
+
+    # Read the file line by line.
+    # Use IFS= and read -r to prevent issues with whitespace and backslashes.
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        # Remove leading/trailing whitespace from the line.
+        line=$(echo "$line" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+
+        # Skip empty lines and comment lines (starting with # or ;).
+        # Using a more compatible check for older shells.
+        if [ -z "$line" ]; then
+            continue # Skip if line is empty
+        fi
+
+        # Check if the first character is # or ; using standard parameter expansion.
+        # This is equivalent to ^[#;] in regex for the first character.
+        case "$line" in
+        # Check if the line starts with # or ;
+        "#"* | ";"*)
+            continue # Skip if it's a comment line
+            ;;
+        *)
+            # If not empty and not a comment, continue processing
+            ;;
+        esac
+
+        # Check if the line contains an '=' sign.
+        if [[ "$line" =~ = ]]; then
+            # Extract the key and value.
+            # Split the line at the first '='.
+            local key="${line%%=*}"
+            local value="${line#*=}"
+
+            # Trim leading/trailing whitespace from key and value.
+            key=$(echo "$key" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+            value=$(echo "$value" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+
+            # Skip if key is empty after trimming.
+            if [[ -z "$key" ]]; then
+                shell::colored_echo "🟡 Warning: Skipping line with empty key in '$config_file': $line" 11
+                continue
+            fi
+
+            # Export the key-value pair as an environment variable.
+            # Using eval to handle potential quoting/special characters in value,
+            # but this should be used with caution if the source file is untrusted.
+            # A safer approach for simple values is direct assignment and export.
+            # Let's use a safer direct assignment approach first.
+            # export "$key"="$value" # Direct assignment
+
+            # A more robust way to handle various characters in value might involve printf,
+            # but for typical config values, direct export should suffice.
+            # If values contain spaces or special characters, they should ideally be quoted in the .conf file.
+
+            # Using printf to handle potential whitespace and special characters safely during export.
+            # This constructs a safe export command string.
+            eval "$(printf 'export %q=%q' "$key" "$value")"
+
+            # Optional: Provide feedback on each variable loaded (can be noisy for large files).
+            # shell::colored_echo "  -> Loaded: $key" 3
+
+            # else
+            # Optional: Warn about lines that don't contain '=' but are not comments/empty.
+            # shell::colored_echo "🟡 Warning: Skipping invalid line format in '$config_file': $line" 11
+        fi
+    done <"$config_file" # Redirect the file content to the while loop
+
+    shell::colored_echo "🟢 Finished loading configuration from '$config_file'." 46
+
+    return 0
+}
