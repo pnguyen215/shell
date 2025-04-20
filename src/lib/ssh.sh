@@ -275,3 +275,106 @@ shell::fzf_ssh_keys() {
     shell::colored_echo "🟢 Absolute path copied to clipboard." 46
     return 0
 }
+
+# shell::fzf_kill_ssh_tunnels function
+# Interactively selects one or more SSH tunnel processes using fzf and kills them.
+#
+# Usage:
+#   shell::fzf_kill_ssh_tunnels
+#
+# Description:
+#   This function identifies potential SSH tunnel processes by searching for 'ssh'
+#   commands with port forwarding flags (-L, -R, or -D). It presents a list of
+#   these processes, including their PIDs and command details, in an fzf interface
+#   for interactive selection. The user can select one or multiple processes.
+#   After selection, the user is prompted for confirmation before the selected
+#   processes are terminated using the `kill` command.
+#
+# Example usage:
+#   shell::fzf_kill_ssh_tunnels # Launch fzf to select and kill SSH tunnels.
+#
+# Requirements:
+#   - fzf must be installed.
+#   - Assumes the presence of helper functions: shell::install_package, shell::colored_echo, shell::run_cmd_eval.
+shell::fzf_kill_ssh_tunnels() {
+    # Ensure fzf is installed.
+    shell::install_package fzf
+    shell::colored_echo "🔍 Searching for active SSH tunnel processes..." 33
+
+    # Find SSH processes with tunnel flags (-L, -R, -D).
+    # Using ps and grep, compatible with both Linux and MacOS.
+    # Exclude the grep command itself from the results.
+    local ssh_tunnels_info
+
+    # Use different ps options based on OS for wider compatibility, similar to shell::list_ssh_tunnels
+    local os_type
+    os_type=$(shell::get_os_type) # Assuming shell::get_os_type exists and works
+
+    if [ "$os_type" = "Linux" ]; then
+        # Use 'ax' for all processes, 'u' for user-oriented format (PID, user, command etc.)
+        # Use 'ww' to show full command line without truncation.
+        # Filter for 'ssh' command and tunnel flags, excluding the grep process.
+        ssh_tunnels_info=$(ps auxww | grep --color=never '[s]sh' | grep --color=never -E -- '-[LRD]')
+    elif [ "$os_type" = "Darwin" ]; then # MacOS
+        # Use 'ax' for all processes, '-o' for custom format including PID, user, command.
+        # Use 'www' to show full command line.
+        # Filter for 'ssh' command and tunnel flags, excluding the grep process.
+        ssh_tunnels_info=$(ps auxwww | grep --color=never '[s]sh' | grep --color=never -E -- '-[LRD]')
+    else
+        shell::colored_echo "🟡 Warning: Unknown OS type '$os_type'. Using generic ps auxww command, results may vary." 11
+        ssh_tunnels_info=$(ps auxww | grep --color=never '[s]sh' | grep --color=never -E -- '-[LRD]')
+    fi
+
+    # Check if any potential tunnels were found.
+    if [ -z "$ssh_tunnels_info" ]; then
+        shell::colored_echo "🟡 No active SSH tunnel processes found." 11
+        return 0
+    fi
+
+    shell::colored_echo "✅ Found potential SSH tunnels. Use fzf to select one or more to kill (Tab to select multiple):" 46
+
+    # Use fzf to select tunnels. Pipe the info and let fzf handle the selection.
+    # --multi allows selecting multiple lines.
+    local selected_tunnels
+    selected_tunnels=$(echo "$ssh_tunnels_info" | fzf --multi --prompt="Select tunnels to kill: ")
+
+    # Check if any tunnels were selected.
+    if [ -z "$selected_tunnels" ]; then
+        shell::colored_echo "🔴 No SSH tunnels selected." 196
+        return 1
+    fi
+
+    shell::colored_echo "Selected tunnels:" 33
+    echo "$selected_tunnels" # Display selected tunnels to the user
+
+    # Extract PIDs from selected lines (PID is typically the second column in ps aux/ax output).
+    local pids_to_kill
+    pids_to_kill=$(echo "$selected_tunnels" | awk '{print $2}') # Assuming PID is the second column
+
+    # Ask for confirmation before killing.
+    shell::colored_echo "⚠️ Are you sure you want to kill the following PID(s)? $pids_to_kill" 208
+    read -r -p "Confirm (y/N): " confirmation
+
+    if [[ "$confirmation" =~ ^[Yy]$ ]]; then
+        shell::colored_echo "🔪 Killing PID(s): $pids_to_kill" 208
+        # Kill the selected processes.
+        # Use command substitution to pass PIDs to kill.
+        # shell::run_cmd_eval "kill $pids_to_kill" # Using the helper if preferred
+        kill $pids_to_kill # Direct kill command
+
+        # Optional: Add a small delay and check if processes are still running
+        # sleep 1
+        # if ps -p $pids_to_kill > /dev/null 2>&1; then
+        #     shell::colored_echo "🔴 Failed to kill one or more processes." 196
+        # else
+        #     shell::colored_echo "🟢 Successfully killed PID(s): $pids_to_kill" 46
+        # fi
+        shell::colored_echo "🟢 Kill command sent for PID(s): $pids_to_kill. Verify they are stopped." 46
+
+    else
+        shell::colored_echo "❌ Kill operation cancelled." 11
+        return 0
+    fi
+
+    return 0
+}
