@@ -352,8 +352,8 @@ shell::fzf_kill_ssh_tunnels() {
     pids_to_kill=$(echo "$selected_tunnels" | awk '{print $2}') # Assuming PID is the second column
 
     # Ask for confirmation before killing.
-    shell::colored_echo "🟡 Are you sure you want to kill the following PID(s)? $pids_to_kill" 208
-    read -r "Confirm (y/N): " confirmation
+    shell::colored_echo "🟡 Are you sure you want to kill the following PID(s)? $pids_to_kill [y/N]" 208
+    read -r confirmation
 
     if [[ "$confirmation" =~ ^[Yy]$ ]]; then
         shell::colored_echo "🔪 Killing PID(s): $pids_to_kill" 208
