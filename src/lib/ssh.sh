@@ -310,12 +310,12 @@ shell::fzf_kill_ssh_tunnels() {
     local os_type
     os_type=$(shell::get_os_type) # Assuming shell::get_os_type exists and works
 
-    if [ "$os_type" = "Linux" ]; then
+    if [ "$os_type" = "linux" ]; then
         # Use 'ax' for all processes, 'u' for user-oriented format (PID, user, command etc.)
         # Use 'ww' to show full command line without truncation.
         # Filter for 'ssh' command and tunnel flags, excluding the grep process.
         ssh_tunnels_info=$(ps auxww | grep --color=never '[s]sh' | grep --color=never -E -- '-[LRD]')
-    elif [ "$os_type" = "Darwin" ]; then # MacOS
+    elif [ "$os_type" = "macos" ]; then # MacOS
         # Use 'ax' for all processes, '-o' for custom format including PID, user, command.
         # Use 'www' to show full command line.
         # Filter for 'ssh' command and tunnel flags, excluding the grep process.
