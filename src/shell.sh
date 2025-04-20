@@ -13,21 +13,22 @@ LANG_DIR="$SHELL_DIR/src/lang"
 shell::__source_async_with_callback() {
     local dir="$1"
     local callback="$2"
-    local pids=()
+    # local pids=()
 
     if [ -d "$dir" ]; then
         for script in "$dir"/*.sh; do
             if [ -f "$script" ]; then
-                source "$script" &>/dev/null
-                pids+=("$!")
+                # source "$script" &>/dev/null
+                source "$script"
+                # pids+=("$!")
             fi
         done
     fi
 
     # Wait for all background processes to finish and discard any output
-    for pid in "${pids[@]}"; do
-        wait "$pid" &>/dev/null
-    done
+    # for pid in "${pids[@]}"; do
+    #     wait "$pid" &>/dev/null
+    # done
 
     # Execute the callback function
     if [ -n "$callback" ] && type "$callback" >/dev/null 2>&1; then
