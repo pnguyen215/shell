@@ -85,8 +85,8 @@ shell::list_ssh_tunnels() {
     local tunnel_count=0
 
     # Print a header
-    shell::colored_echo "SSH TUNNELS" 33
-    echo "==========================================================="
+    # shell::colored_echo "SSH TUNNELS" 33
+    # echo "==========================================================="
 
     while IFS= read -r line; do
         # Extract the base process information
