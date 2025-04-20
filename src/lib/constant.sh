@@ -79,6 +79,15 @@ readonly SHELL_GH_CONF_FILE="$SHELL_CONF_WORKING/gh.conf"
 #   SHELL_PROTECTED_KEYS=("HOST" "PORT" "API_TOKEN")
 readonly SHELL_PROTECTED_KEYS=("HOST" "PORT" "SHELL_DEVELOPER" "SHELL_HISTORICAL_GH_TELEGRAM_BOT_TOKEN" "SHELL_HISTORICAL_GH_TELEGRAM_CHAT_ID")
 
+##########SSH Settings#############
+######### Aris Nguyen 2025 ########
+##########SSH Settings#############
+
+# SHELL_CONF_SSH_DIR_WORKING constant
+# This variable defines the path to the SSH configuration directory in the user's home directory.
+# It is used to store and manage SSH related configurations.
+readonly SHELL_CONF_SSH_DIR_WORKING="$HOME/.ssh/"
+
 # SHELL_C_AES_RED constant
 # This variable defines the ANSI escape code for red text color. It is used to highlight error messages or critical alerts in the shell.
 if [ -z "${SHELL_C_AES_RED+x}" ]; then
@@ -96,15 +105,6 @@ fi
 if [ -z "${SHELL_C_AES_YELLOW+x}" ]; then
     declare -gr SHELL_C_AES_YELLOW="\\033[0;33m"
 fi
-
-##########SSH Settings#############
-######### Aris Nguyen 2025 ########
-##########SSH Settings#############
-
-# SHELL_CONF_SSH_DIR_WORKING constant
-# This variable defines the path to the SSH configuration directory in the user's home directory.
-# It is used to store and manage SSH related configurations.
-readonly SHELL_CONF_SSH_DIR_WORKING="$HOME/.ssh"
 
 ##########Developers Settings#############
 ######### Aris Nguyen 2025 ###############
