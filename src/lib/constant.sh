@@ -97,6 +97,15 @@ if [ -z "${SHELL_C_AES_YELLOW+x}" ]; then
     declare -gr SHELL_C_AES_YELLOW="\\033[0;33m"
 fi
 
+##########SSH Settings#############
+######### Aris Nguyen 2025 ########
+##########SSH Settings#############
+
+# SHELL_CONF_SSH_DIR_WORKING constant
+# This variable defines the path to the SSH configuration directory in the user's home directory.
+# It is used to store and manage SSH related configurations.
+readonly SHELL_CONF_SSH_DIR_WORKING="$HOME/.ssh"
+
 ##########Developers Settings#############
 ######### Aris Nguyen 2025 ###############
 ##########Developers Settings#############

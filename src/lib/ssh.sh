@@ -203,3 +203,73 @@ shell::list_ssh_tunnels() {
     # Clean up
     shell::run_cmd_eval rm -f "$temp_file"
 }
+
+# shell::fzf_ssh_keys function
+# Interactively selects an SSH key file (private or public) from $HOME/.ssh using fzf,
+# displays the absolute path of the selected file, and copies the path to the clipboard.
+#
+# Usage:
+#   shell::fzf_ssh_keys
+#
+# Description:
+#   This function lists files within the user's SSH directory ($HOME/.ssh).
+#   It filters out common non-key files and then uses fzf to provide an interactive selection interface.
+#   Once a file is selected, its absolute path is determined, displayed to the user,
+#   and automatically copied to the system clipboard using the shell::clip_value function.
+#
+# Example usage:
+#   shell::fzf_ssh_keys # Launch fzf to select an SSH key and copy its path.
+#
+# Requirements:
+#   - fzf must be installed.
+#   - The user must have a $HOME/.ssh directory.
+#   - Assumes the presence of helper functions: shell::install_package, shell::colored_echo, shell::clip_value, and shell::is_command_available.
+shell::fzf_ssh_keys() {
+    # Ensure fzf is installed.
+    shell::install_package fzf
+
+    # Define the SSH directory.
+    local ssh_dir=$SHELL_CONF_SSH_DIR_WORKING
+
+    # Check if the SSH directory exists.
+    if [ ! -d "$ssh_dir" ]; then
+        shell::colored_echo "🔴 Error: SSH directory '$ssh_dir' not found." 196
+        return 1
+    fi
+
+    # Find potential key files in the SSH directory, excluding common non-key files and directories.
+    # Using find to get full paths for fzf.
+    local key_files
+    key_files=$(find "$ssh_dir" -maxdepth 1 -type f \( ! -name "*.pub" ! -name "known_hosts*" ! -name "config" ! -name "authorized_keys*" ! -name "*.log" \) 2>/dev/null)
+
+    # Check if any potential key files were found.
+    if [ -z "$key_files" ]; then
+        shell::colored_echo "🟡 No potential SSH key files found in '$ssh_dir'." 11
+        return 0
+    fi
+
+    # Use fzf to select a key file interactively.
+    local selected_key
+    selected_key=$(echo "$key_files" | fzf --prompt="Select an SSH key file: ")
+
+    # Check if a file was selected.
+    if [ -z "$selected_key" ]; then
+        shell::colored_echo "🔴 No SSH key file selected." 196
+        return 1
+    fi
+
+    # Get the absolute path of the selected file.
+    local abs_key_path
+    # Use realpath if available for robustness, otherwise rely on find's output format.
+    if shell::is_command_available realpath; then
+        abs_key_path=$(realpath "$selected_key")
+    else
+        abs_key_path="$selected_key"
+    fi
+
+    # Display the absolute path and copy it to the clipboard.
+    shell::colored_echo "🔑 Selected SSH key: $abs_key_path" 33
+    shell::clip_value "$abs_key_path"
+    shell::colored_echo "🟢 Absolute path copied to clipboard." 46
+    return 0
+}
