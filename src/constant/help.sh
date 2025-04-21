@@ -307,7 +307,7 @@ Usage:
   shell::exist_key_conf [-h] <key>
 
 Parameters:
-    - -h   : Optional. Displays this help message.
+  - -h   : Optional. Displays this help message.
   - <key>: The configuration key to check.
 
 Description:
