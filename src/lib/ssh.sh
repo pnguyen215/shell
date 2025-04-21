@@ -474,8 +474,7 @@ shell::kill_ssh_tunnels() {
         # Ask for confirmation before killing
         # Use printf for prompt to avoid issues with colored_echo potentially adding newlines
         printf "%s" "$(shell::colored_echo '❓ Do you want to kill these processes? (y/N): ' 33)"
-        read -r -n 1 confirm # Read single char response
-        echo                 # Move to a new line
+        read -r confirm
 
         if [[ $confirm =~ ^[Yy]$ ]]; then
             shell::colored_echo "Killing SSH tunnels..." 196
