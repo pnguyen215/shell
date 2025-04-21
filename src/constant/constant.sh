@@ -8,7 +8,7 @@
 #
 # Example:
 #   SHELL_CONF_WORKING="$HOME/.shell-config"
-readonly SHELL_CONF_WORKING="$HOME/.shell-config"
+SHELL_CONF_WORKING="$HOME/.shell-config"
 
 # SHELL_CONF_WORKING_WORKSPACE constant
 # This variable defines the path to the workspace directory within the shell configuration working directory.
@@ -17,7 +17,7 @@ readonly SHELL_CONF_WORKING="$HOME/.shell-config"
 #
 # Example:
 #   SHELL_CONF_WORKING_WORKSPACE="$SHELL_CONF_WORKING/workspace"
-readonly SHELL_CONF_WORKING_WORKSPACE="$SHELL_CONF_WORKING/workspace"
+SHELL_CONF_WORKING_WORKSPACE="$SHELL_CONF_WORKING/workspace"
 
 # SHELL_KEY_CONF_FILE constant
 # This variable defines the path to the key configuration file used by the shell bash library.
@@ -37,7 +37,7 @@ SHELL_KEY_CONF_FILE="$SHELL_CONF_WORKING/key.conf"
 #
 # Example:
 #   SHELL_KEY_CONF_FILE_WORKSPACE="$SHELL_CONF_WORKING_WORKSPACE/profile.conf"
-readonly SHELL_KEY_CONF_FILE_WORKSPACE="$SHELL_CONF_WORKING_WORKSPACE/profile.conf"
+SHELL_KEY_CONF_FILE_WORKSPACE="$SHELL_CONF_WORKING_WORKSPACE/profile.conf"
 
 # SHELL_KEY_CONF_SETTING_WORKSPACE constant
 # This variable defines the path to the settings configuration file within the workspace directory.
@@ -46,7 +46,7 @@ readonly SHELL_KEY_CONF_FILE_WORKSPACE="$SHELL_CONF_WORKING_WORKSPACE/profile.co
 #
 # Example:
 #   SHELL_KEY_CONF_SETTING_WORKSPACE="$SHELL_CONF_WORKING_WORKSPACE/settings.conf"
-readonly SHELL_KEY_CONF_SETTING_WORKSPACE="$SHELL_CONF_WORKING_WORKSPACE/settings.conf"
+SHELL_KEY_CONF_SETTING_WORKSPACE="$SHELL_CONF_WORKING_WORKSPACE/settings.conf"
 
 # SHELL_GROUP_CONF_FILE constant
 # This variable defines the path to the group configuration file used by the shell bash library.
@@ -58,7 +58,7 @@ readonly SHELL_KEY_CONF_SETTING_WORKSPACE="$SHELL_CONF_WORKING_WORKSPACE/setting
 #
 # Example:
 #   SHELL_GROUP_CONF_FILE="$HOME/.shell-config/group.conf"
-readonly SHELL_GROUP_CONF_FILE="$SHELL_CONF_WORKING/group.conf"
+SHELL_GROUP_CONF_FILE="$SHELL_CONF_WORKING/group.conf"
 
 # SHELL_GH_CONF_FILE constant
 # This variable defines the path to the GitHub configuration file used by the shell bash library.
@@ -67,7 +67,7 @@ readonly SHELL_GROUP_CONF_FILE="$SHELL_CONF_WORKING/group.conf"
 #
 # Example:
 #   SHELL_GH_CONF_FILE="$HOME/.shell-config/gh.conf"
-readonly SHELL_GH_CONF_FILE="$SHELL_CONF_WORKING/gh.conf"
+SHELL_GH_CONF_FILE="$SHELL_CONF_WORKING/gh.conf"
 
 # SHELL_PROTECTED_KEYS array
 # This array lists configuration keys that are considered constant and must not be removed, updated,
@@ -77,7 +77,7 @@ readonly SHELL_GH_CONF_FILE="$SHELL_CONF_WORKING/gh.conf"
 #
 # Example:
 #   SHELL_PROTECTED_KEYS=("HOST" "PORT" "API_TOKEN")
-readonly SHELL_PROTECTED_KEYS=("HOST" "PORT" "SHELL_DEVELOPER" "SHELL_HISTORICAL_GH_TELEGRAM_BOT_TOKEN" "SHELL_HISTORICAL_GH_TELEGRAM_CHAT_ID")
+SHELL_PROTECTED_KEYS=("HOST" "PORT" "SHELL_DEVELOPER" "SHELL_HISTORICAL_GH_TELEGRAM_BOT_TOKEN" "SHELL_HISTORICAL_GH_TELEGRAM_CHAT_ID")
 
 ##########SSH Settings#############
 ######### Aris Nguyen 2025 ########
@@ -112,43 +112,43 @@ fi
 
 # SHELL_PROJECT_GITIGNORE_GO constant
 # This variable holds the URL to the Go .gitignore template. It is used to provide a standard .gitignore file for Go projects.
-readonly SHELL_PROJECT_GITIGNORE_GO="https://raw.githubusercontent.com/pnguyen215/wsdkit.keys/master/gitignores/go_gitignore.txt"
+SHELL_PROJECT_GITIGNORE_GO="https://raw.githubusercontent.com/pnguyen215/wsdkit.keys/master/gitignores/go_gitignore.txt"
 
 # SHELL_PROJECT_GITIGNORE_JAVA constant
 # This variable holds the URL to the Java .gitignore template. It is used to provide a standard .gitignore file for Java projects.
-readonly SHELL_PROJECT_GITIGNORE_JAVA="https://raw.githubusercontent.com/pnguyen215/wsdkit.keys/master/gitignores/java_gitignore.txt"
+SHELL_PROJECT_GITIGNORE_JAVA="https://raw.githubusercontent.com/pnguyen215/wsdkit.keys/master/gitignores/java_gitignore.txt"
 
 # SHELL_PROJECT_GITIGNORE_ANGULAR constant
 # This variable holds the URL to the Angular .gitignore template. It is used to provide a standard .gitignore file for Angular projects.
-readonly SHELL_PROJECT_GITIGNORE_ANGULAR="https://raw.githubusercontent.com/pnguyen215/wsdkit.keys/master/gitignores/angular_gitignore.txt"
+SHELL_PROJECT_GITIGNORE_ANGULAR="https://raw.githubusercontent.com/pnguyen215/wsdkit.keys/master/gitignores/angular_gitignore.txt"
 
 # SHELL_PROJECT_GITIGNORE_NODEJS constant
 # This variable holds the URL to the Node.js .gitignore template. It is used to provide a standard .gitignore file for Node.js projects.
-readonly SHELL_PROJECT_GITIGNORE_NODEJS="https://raw.githubusercontent.com/pnguyen215/wsdkit.keys/master/gitignores/node.js_gitignore.txt"
+SHELL_PROJECT_GITIGNORE_NODEJS="https://raw.githubusercontent.com/pnguyen215/wsdkit.keys/master/gitignores/node.js_gitignore.txt"
 
 # SHELL_PROJECT_GITIGNORE_PYTHON constant
 # This variable holds the URL to the Python .gitignore template. It is used to provide a standard .gitignore file for Python projects.
-readonly SHELL_PROJECT_GITIGNORE_PYTHON="https://raw.githubusercontent.com/pnguyen215/wsdkit.keys/master/gitignores/python3_gitignore.txt"
+SHELL_PROJECT_GITIGNORE_PYTHON="https://raw.githubusercontent.com/pnguyen215/wsdkit.keys/master/gitignores/python3_gitignore.txt"
 
 # SHELL_PROJECT_GITHUB_WORKFLOW_CI constant
 # This variable holds the URL to the GitHub Actions CI workflow configuration file.
 # It is used to define the continuous integration process for projects using GitHub.
-readonly SHELL_PROJECT_GITHUB_WORKFLOW_CI="https://raw.githubusercontent.com/pnguyen215/wsdkit.keys/master/devops/github_workflow/ci.yml"
+SHELL_PROJECT_GITHUB_WORKFLOW_CI="https://raw.githubusercontent.com/pnguyen215/wsdkit.keys/master/devops/github_workflow/ci.yml"
 
 # SHELL_PROJECT_GITHUB_WORKFLOW_CI_NOTIFICATION constant
 # This variable holds the URL to the GitHub Actions CI notification workflow configuration file.
 # It is used to define the notification process for projects using GitHub Actions,
 # allowing for automated notifications based on CI events.
-readonly SHELL_PROJECT_GITHUB_WORKFLOW_CI_NOTIFICATION="https://raw.githubusercontent.com/pnguyen215/wsdkit.keys/master/devops/github_workflow/ci_notify.yml"
+SHELL_PROJECT_GITHUB_WORKFLOW_CI_NOTIFICATION="https://raw.githubusercontent.com/pnguyen215/wsdkit.keys/master/devops/github_workflow/ci_notify.yml"
 
 # SHELL_PROJECT_DOC_VERSION_RELEASE constant
 # This variable holds the URL to the documentation release notes.
 # It is used to provide access to the latest release information for the project,
 # allowing developers and users to stay informed about updates and changes.
-readonly SHELL_PROJECT_DOC_VERSION_RELEASE="https://raw.githubusercontent.com/pnguyen215/wsdkit.keys/master/docs/RELEASE.md"
+SHELL_PROJECT_DOC_VERSION_RELEASE="https://raw.githubusercontent.com/pnguyen215/wsdkit.keys/master/docs/RELEASE.md"
 
 # SHELL_PROJECT_GO_MAKEFILE constant
 # This variable holds the URL to the Makefile template for Go projects.
 # It is used to provide a standard Makefile configuration, which can help automate
 # the build process and other tasks for Go applications.
-readonly SHELL_PROJECT_GO_MAKEFILE="https://raw.githubusercontent.com/pnguyen215/wsdkit.keys/master/cmd/go/Makefile"
+SHELL_PROJECT_GO_MAKEFILE="https://raw.githubusercontent.com/pnguyen215/wsdkit.keys/master/cmd/go/Makefile"
