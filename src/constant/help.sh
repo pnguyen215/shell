@@ -202,3 +202,27 @@ Example:
   shell::add_conf my_setting \"some secret value\"         # Encodes the value and adds the entry.
   shell::add_conf -n my_setting \"some secret value\"      # Prints the command without executing it.
 "
+
+USAGE_SHELL_FZF_GET_CONF="
+shell::fzf_get_conf function
+Interactively selects a configuration key from a constant configuration file using fzf,
+then decodes and displays its corresponding value.
+
+Usage:
+  shell::fzf_get_conf [-h]
+
+Parameters:
+  - -h              : Optional. Displays this help message.
+
+Description:
+  The function reads the configuration file defined by the constant SHELL_KEY_CONF_FILE,
+  which is expected to have entries in the format:
+      key=encoded_value
+  Instead of listing the entire line, it extracts only the keys (before the '=') and uses fzf
+  for interactive selection. Once a key is selected, it looks up the full entry,
+  decodes the Base64-encoded value (using -D on macOS and -d on Linux), and then displays the key
+  and its decoded value.
+
+Example:
+  shell::fzf_get_conf      # Interactively select a key and display its decoded value.
+"

@@ -124,12 +124,12 @@ shell::add_conf() {
     fi
 }
 
-# shell::get_conf function
+# shell::fzf_get_conf function
 # Interactively selects a configuration key from a constant configuration file using fzf,
 # then decodes and displays its corresponding value.
 #
 # Usage:
-#   shell::get_conf
+#   shell::fzf_get_conf
 #
 # Description:
 #   The function reads the configuration file defined by the constant SHELL_KEY_CONF_FILE,
@@ -141,8 +141,14 @@ shell::add_conf() {
 #   and its decoded value.
 #
 # Example:
-#   shell::get_conf      # Interactively select a key and display its decoded value.
-shell::get_conf() {
+#   shell::fzf_get_conf      # Interactively select a key and display its decoded value.
+shell::fzf_get_conf() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_GET_CONF"
+        return 0
+    fi
+
     if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
         shell::colored_echo "🔴 Error: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
         return 1
