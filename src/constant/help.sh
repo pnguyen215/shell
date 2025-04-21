@@ -226,3 +226,25 @@ Description:
 Example:
   shell::fzf_get_conf      # Interactively select a key and display its decoded value.
 "
+
+USAGE_SHELL_GET_VALUE_CONF="
+shell::get_value_conf function
+Retrieves and outputs the decoded value for a given configuration key from the key configuration file.
+
+Usage:
+  shell::get_value_conf [-h] <key>
+
+Parameters:
+  - -h              : Optional. Displays this help message.
+  - <key>           : The configuration key whose value should be retrieved.
+
+Description:
+  This function searches for the specified key in the configuration file defined by SHELL_KEY_CONF_FILE.
+  The configuration file is expected to have entries in the format:
+      key=encoded_value
+  If the key is found, the function decodes the associated Base64‑encoded value (using -D on macOS and -d on Linux)
+  and outputs the decoded value to standard output.
+
+Example:
+  shell::get_value_conf my_setting   # Outputs the decoded value for the key 'my_setting'.
+"

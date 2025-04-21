@@ -207,8 +207,14 @@ shell::fzf_get_conf() {
 # Example:
 #   shell::get_value_conf my_setting   # Outputs the decoded value for the key 'my_setting'.
 shell::get_value_conf() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_GET_VALUE_CONF"
+        return 0
+    fi
+
     if [ $# -lt 1 ]; then
-        echo "Usage: shell::get_value_conf <key>"
+        echo "Usage: shell::get_value_conf [-h] <key>"
         return 1
     fi
 
