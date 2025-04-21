@@ -312,11 +312,11 @@ Access the shell library by opening your terminal and using the commands below. 
   - `shell::exist_key_conf <key>`
   - `shell::exist_key_conf my_setting`
 
-- **`shell::rename_key_conf`**
+- **`shell::fzf_rename_key_conf`**
   Renames an existing configuration key in the key configuration file.
   _Example:_
 
-  - `shell::rename_key_conf [-n]`
+  - `shell::fzf_rename_key_conf [-n]`
 
 - **`shell::is_protected_key`**
   Checks if the specified configuration key is protected.
