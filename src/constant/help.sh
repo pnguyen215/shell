@@ -177,3 +177,28 @@ Example:
   shell::read_conf ~/.my-config                # Sources the configuration file.
   shell::read_conf -n ~/.my-config             # Prints the sourcing command without executing it.
 "
+
+USAGE_SHELL_ADD_CONF="
+shell::add_conf function
+Adds a configuration entry (key=value) to a constant configuration file.
+The value is encoded using Base64 before being saved.
+
+Usage:
+  shell::add_conf [-n] [-h] <key> <value>
+
+Parameters:
+  - -n       : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - -h       : Optional. Displays this help message.
+  - <key>    : The configuration key.
+  - <value>  : The configuration value to be encoded and saved.
+
+Description:
+  The function first checks for an optional dry-run flag (-n) and verifies that both key and value are provided.
+  It encodes the value using Base64 (with newline characters removed) and then appends a line in the format:
+      key=encoded_value
+  to a constant configuration file (defined by SHELL_KEY_CONF_FILE). If the configuration file does not exist, it is created.
+
+Example:
+  shell::add_conf my_setting \"some secret value\"         # Encodes the value and adds the entry.
+  shell::add_conf -n my_setting \"some secret value\"      # Prints the command without executing it.
+"

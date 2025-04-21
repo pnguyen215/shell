@@ -86,6 +86,12 @@ shell::add_conf() {
         shift
     fi
 
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_ADD_CONF"
+        return 0
+    fi
+
     if [ $# -lt 2 ]; then
         echo "Usage: shell::add_conf [-n] <key> <value>"
         return 1
