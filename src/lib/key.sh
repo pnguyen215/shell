@@ -116,7 +116,7 @@ shell::add_conf() {
     else
         result=$(shell::exist_key_conf $key)
         if [ "$result" = "true" ]; then
-            shell::colored_echo "🟡 The key '$key' exists. Please consider updating it by using shell::update_conf" 11
+            shell::colored_echo "🟡 The key '$key' exists. Please consider updating it by using shell::fzf_update_conf" 11
             return 0
         fi
         shell::run_cmd_eval "$cmd"
@@ -330,12 +330,12 @@ shell::fzf_remove_conf() {
     fi
 }
 
-# shell::update_conf function
+# shell::fzf_update_conf function
 # Interactively updates the value for a configuration key in a constant configuration file.
 # The new value is encoded using Base64 before updating the file.
 #
 # Usage:
-#   shell::update_conf [-n]
+#   shell::fzf_update_conf [-n]
 #
 # Parameters:
 #   - -n : Optional dry-run flag. If provided, the update command is printed using shell::on_evict instead of executed.
@@ -349,15 +349,21 @@ shell::fzf_remove_conf() {
 #   The sed command used for in-place update differs between macOS and Linux.
 #
 # Example:
-#   shell::update_conf       # Interactively select a key, enter a new value, and update its entry.
-#   shell::update_conf -n    # Prints the update command without executing it.
-shell::update_conf() {
+#   shell::fzf_update_conf       # Interactively select a key, enter a new value, and update its entry.
+#   shell::fzf_update_conf -n    # Prints the update command without executing it.
+shell::fzf_update_conf() {
     local dry_run="false"
 
     # Check for the optional dry-run flag (-n)
     if [ "$1" = "-n" ]; then
         dry_run="true"
         shift
+    fi
+
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_UPDATE_CONF"
+        return 0
     fi
 
     if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
