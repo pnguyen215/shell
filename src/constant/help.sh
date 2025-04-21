@@ -248,3 +248,28 @@ Description:
 Example:
   shell::get_value_conf my_setting   # Outputs the decoded value for the key 'my_setting'.
 "
+
+USAGE_SHELL_FZF_REMOVE_CONF="
+shell::fzf_remove_conf function
+Interactively selects a configuration key from a constant configuration file using fzf,
+then removes the corresponding entry from the configuration file.
+
+Usage:
+  shell::fzf_remove_conf [-n] [-h]
+
+Parameters:
+  - -n              : Optional dry-run flag. If provided, the removal command is printed using shell::on_evict instead of executed.
+  - -h              : Optional. Displays this help message.
+
+Description:
+  The function reads the configuration file defined by the constant SHELL_KEY_CONF_FILE, where each entry is in the format:
+      key=encoded_value
+  It extracts only the keys (before the '=') and uses fzf for interactive selection.
+  Once a key is selected, it constructs a command to remove the line that starts with \"key=\" from the configuration file.
+  The command uses sed with different options depending on the operating system (macOS or Linux).
+  In dry-run mode, the command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
+
+Example:
+  shell::fzf_remove_conf         # Interactively select a key and remove its configuration entry.
+  shell::fzf_remove_conf -n      # Prints the removal command without executing it.
+"
