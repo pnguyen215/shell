@@ -154,3 +154,26 @@ Requirements:
   - fzf must be installed.
   - Assumes the presence of helper functions: shell::install_package, shell::colored_echo, shell::run_cmd_eval.
 "
+
+USAGE_SHELL_READ_CONF="
+shell::read_conf function
+Sources a configuration file, allowing its variables and functions to be loaded into the current shell.
+
+Usage:
+  shell::read_conf [-n] [-h] <filename>
+
+Parameters:
+  - -n              : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - -h              : Optional. Displays this help message.
+  - <filename>      : The configuration file to source.
+
+Description:
+  The function checks that a filename is provided and that the specified file exists.
+  If the file is not found, an error message is displayed.
+  In dry-run mode, the command 'source <filename >' is printed using shell::on_evict.
+  Otherwise, the file is sourced using shell::run_cmd to log the execution.
+
+Example:
+  shell::read_conf ~/.my-config                # Sources the configuration file.
+  shell::read_conf -n ~/.my-config             # Prints the sourcing command without executing it.
+"
