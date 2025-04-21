@@ -128,3 +128,29 @@ Requirements:
   - The user must have a $HOME/.ssh directory.
   - Assumes the presence of helper functions: shell::install_package, shell::colored_echo, shell::clip_value, and shell::is_command_available.
 "
+
+USAGE_SHELL_FZF_KILL_SSH_TUNNEL="
+shell::fzf_kill_ssh_tunnels function
+Interactively selects one or more SSH tunnel processes using fzf and kills them.
+
+Usage:
+  shell::fzf_kill_ssh_tunnels [-h]
+
+Parameters:
+  - -h              : Optional. Displays this help message.
+
+Description:
+  This function identifies potential SSH tunnel processes by searching for 'ssh'
+  commands with port forwarding flags (-L, -R, or -D). It presents a list of
+  these processes, including their PIDs and command details, in an fzf interface
+  for interactive selection. The user can select one or multiple processes.
+  After selection, the user is prompted for confirmation before the selected
+  processes are terminated using the $(kill) command.
+
+Example usage:
+  shell::fzf_kill_ssh_tunnels # Launch fzf to select and kill SSH tunnels.
+
+Requirements:
+  - fzf must be installed.
+  - Assumes the presence of helper functions: shell::install_package, shell::colored_echo, shell::run_cmd_eval.
+"

@@ -309,6 +309,12 @@ shell::fzf_ssh_keys() {
 #   - fzf must be installed.
 #   - Assumes the presence of helper functions: shell::install_package, shell::colored_echo, shell::run_cmd_eval.
 shell::fzf_kill_ssh_tunnels() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_KILL_SSH_TUNNEL"
+        return 0
+    fi
+
     # Ensure fzf is installed.
     shell::install_package fzf
     shell::colored_echo "🔍 Searching for active SSH tunnel processes..." 33
