@@ -102,3 +102,29 @@ Notes:
   - Uses different parsing approaches based on the detected operating system
   - Leverages shell::run_cmd_eval for command execution and shell::on_evict for dry-run mode
 "
+
+USAGE_SHELL_FZF_SSH_KEY="
+shell::fzf_ssh_keys function
+Interactively selects an SSH key file (private or public) from $HOME/.ssh using fzf,
+displays the absolute path of the selected file, and copies the path to the clipboard.
+
+Usage:
+  shell::fzf_ssh_keys [-h]
+
+Parameters:
+  - -h              : Optional. Displays this help message.
+
+Description:
+  This function lists files within the user's SSH directory ($HOME/.ssh).
+  It filters out common non-key files and then uses fzf to provide an interactive selection interface.
+  Once a file is selected, its absolute path is determined, displayed to the user,
+  and automatically copied to the system clipboard using the shell::clip_value function.
+
+Example usage:
+  shell::fzf_ssh_keys # Launch fzf to select an SSH key and copy its path.
+
+Requirements:
+  - fzf must be installed.
+  - The user must have a $HOME/.ssh directory.
+  - Assumes the presence of helper functions: shell::install_package, shell::colored_echo, shell::clip_value, and shell::is_command_available.
+"

@@ -231,6 +231,12 @@ shell::list_ssh_tunnels() {
 #   - The user must have a $HOME/.ssh directory.
 #   - Assumes the presence of helper functions: shell::install_package, shell::colored_echo, shell::clip_value, and shell::is_command_available.
 shell::fzf_ssh_keys() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_SSH_KEY"
+        return 0
+    fi
+
     # Ensure fzf is installed.
     shell::install_package fzf
 
