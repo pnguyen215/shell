@@ -465,7 +465,6 @@ shell::kill_ssh_tunnels() {
     echo "${pids_to_kill[*]}"
 
     if [ "$dry_run" = "true" ]; then
-        shell::colored_echo "Dry-run mode: Would kill the following PIDs:" 11
         for pid in "${pids_to_kill[@]}"; do
             local kill_cmd="kill $pid"
             shell::on_evict "$kill_cmd"
