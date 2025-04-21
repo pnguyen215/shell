@@ -378,3 +378,121 @@ shell::fzf_kill_ssh_tunnels() {
 
     return 0
 }
+
+# shell::kill_ssh_tunnels function
+# Kills all active SSH tunnel forwarding processes.
+#
+# Usage:
+#   shell::kill_ssh_tunnels [-n]
+#
+# Parameters:
+#   - -n : Optional dry-run flag. If provided, kill commands are printed using shell::on_evict instead of executed.
+#
+# Description:
+#   This function identifies all SSH processes that are using port forwarding options
+#   (-L, -R, or -D) [cite: 12] and attempts to terminate them using the 'kill' command.
+#   It works cross-platform on both macOS and Linux systems.
+#   Confirmation is requested before killing processes unless the dry-run flag is used.
+#
+# Example usage:
+#   shell::kill_ssh_tunnels       # Kills active SSH tunnels after confirmation.
+#   shell::kill_ssh_tunnels -n    # Shows kill commands that would be executed (dry-run mode).
+#
+# Notes:
+#   - Requires the 'ps' and 'kill' commands to be available.
+#   - Works on both macOS and Linux systems.
+#   - Uses different parsing approaches based on the detected operating system.
+#   - Leverages shell::run_cmd for command execution and shell::on_evict for dry-run mode.
+shell::kill_ssh_tunnels() {
+    local dry_run="false"
+
+    # Check for the optional dry-run flag (-n)
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    # Get the operating system type
+    local os_type
+    os_type=$(shell::get_os_type)
+
+    # Create a temporary file for processing PIDs
+    local temp_pids
+    temp_pids=$(mktemp)
+
+    # Command to find PIDs of SSH tunnels differs by OS
+    local ps_cmd=""
+    if [ "$os_type" = "linux" ]; then
+        ps_cmd="ps aux | grep ssh | grep -v grep | grep -E -- '-[DLR]' | awk '{print \$2}' > \"$temp_pids\""
+    elif [ "$os_type" = "macos" ]; then
+        ps_cmd="ps -ax -o pid,command | grep ssh | grep -v grep | grep -E -- '-[DLR]' | awk '{print \$1}' > \"$temp_pids\""
+    else
+        shell::colored_echo "🔴 Unsupported operating system: $os_type" 196
+        rm -f "$temp_pids"
+        return 1
+    fi
+
+    # Execute the command to get PIDs
+    # Using eval because the command string contains pipes and redirection
+    eval "$ps_cmd"
+
+    # Check if any SSH tunnel PIDs were found
+    if [ ! -s "$temp_pids" ]; then
+        shell::colored_echo "🟡 No active SSH tunnels found to kill." 11
+        rm -f "$temp_pids"
+        return 0
+    fi
+
+    # Read PIDs into an array
+    local pids_to_kill=()
+    while IFS= read -r pid; do
+        # Basic validation to ensure it's a number
+        if [[ "$pid" =~ ^[0-9]+$ ]]; then
+            pids_to_kill+=("$pid")
+        fi
+    done <"$temp_pids"
+
+    # Clean up the temporary file
+    rm -f "$temp_pids"
+
+    # Check again if any valid PIDs were collected
+    if [ ${#pids_to_kill[@]} -eq 0 ]; then
+        shell::colored_echo "🟡 No valid SSH tunnel PIDs found to kill." 11
+        return 0
+    fi
+
+    shell::colored_echo "The following SSH tunnel PIDs were found:" 33
+    echo "${pids_to_kill[*]}"
+
+    if [ "$dry_run" = "true" ]; then
+        shell::colored_echo "Dry-run mode: Would kill the following PIDs:" 11
+        for pid in "${pids_to_kill[@]}"; do
+            local kill_cmd="kill $pid"
+            shell::on_evict "$kill_cmd"
+        done
+    else
+        # Ask for confirmation before killing
+        # Use printf for prompt to avoid issues with colored_echo potentially adding newlines
+        printf "%s" "$(shell::colored_echo '❓ Do you want to kill these processes? (y/N): ' 33)"
+        read -r -n 1 confirm # Read single char response
+        echo                 # Move to a new line
+
+        if [[ $confirm =~ ^[Yy]$ ]]; then
+            shell::colored_echo "Killing SSH tunnels..." 196
+            local kill_count=0
+            for pid in "${pids_to_kill[@]}"; do
+                if shell::run_cmd kill "$pid"; then
+                    shell::colored_echo "🟢 Killed PID $pid successfully." 46
+                    ((kill_count++))
+                else
+                    shell::colored_echo "🔴 Failed to kill PID $pid." 196
+                fi
+            done
+            shell::colored_echo "✅ Killed $kill_count out of ${#pids_to_kill[@]} SSH tunnel process(es)." 46
+        else
+            shell::colored_echo "🟡 Aborted by user. No processes were killed." 11
+        fi
+    fi
+
+    return 0
+}
