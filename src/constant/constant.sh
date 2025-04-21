@@ -28,7 +28,7 @@ readonly SHELL_CONF_WORKING_WORKSPACE="$SHELL_CONF_WORKING/workspace"
 #
 # Example:
 #   SHELL_KEY_CONF_FILE="$HOME/.shell-config/key.conf"
-readonly SHELL_KEY_CONF_FILE="$SHELL_CONF_WORKING/key.conf"
+SHELL_KEY_CONF_FILE="$SHELL_CONF_WORKING/key.conf"
 
 # SHELL_KEY_CONF_FILE_WORKSPACE constant
 # This variable defines the path to the profile-specific configuration file within the workspace directory.
