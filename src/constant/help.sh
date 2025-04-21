@@ -35,3 +35,31 @@ Notes:
   - Relies on the 'ssh-keygen' command being available in the system's PATH.
   - Uses shell::create_directory_if_not_exists and shell::run_cmd helper functions.
 "
+
+USAGE_SHELL_KILL_SSH_TUNNEL="
+shell::kill_ssh_tunnels function
+Kills all active SSH tunnel forwarding processes.
+
+Usage:
+  shell::kill_ssh_tunnels [-n] [-h]
+
+Parameters:
+  - -n              : Optional dry-run flag. If provided, kill commands are printed using shell::on_evict instead of executed.
+  - -h              : Optional. Displays this help message.
+
+Description:
+  This function identifies all SSH processes that are using port forwarding options
+  (-L, -R, or -D) [cite: 12] and attempts to terminate them using the 'kill' command.
+  It works cross-platform on both macOS and Linux systems.
+  Confirmation is requested before killing processes unless the dry-run flag is used.
+
+Example usage:
+  shell::kill_ssh_tunnels       # Kills active SSH tunnels after confirmation.
+  shell::kill_ssh_tunnels -n    # Shows kill commands that would be executed (dry-run mode).
+
+Notes:
+  - Requires the 'ps' and 'kill' commands to be available.
+  - Works on both macOS and Linux systems.
+  - Uses different parsing approaches based on the detected operating system.
+  - Leverages shell::run_cmd for command execution and shell::on_evict for dry-run mode.
+"
