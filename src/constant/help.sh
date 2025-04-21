@@ -298,3 +298,22 @@ Example:
   shell::fzf_update_conf       # Interactively select a key, enter a new value, and update its entry.
   shell::fzf_update_conf -n    # Prints the update command without executing it.
 "
+
+USAGE_SHELL_EXIST_KEY_CONF="
+shell::exist_key_conf function
+Checks if a configuration key exists in the key configuration file.
+
+Usage:
+  shell::exist_key_conf [-h] <key>
+
+Parameters:
+    - -h   : Optional. Displays this help message.
+  - <key>: The configuration key to check.
+
+Description:
+  This function searches for the specified key in the configuration file defined by SHELL_KEY_CONF_FILE.
+  The configuration file should have entries in the format:
+      key=encoded_value
+  If a line starting with \"key=\" is found, the function echoes \"true\" and returns 0.
+  Otherwise, it echoes \"false\" and returns 1.
+"

@@ -450,8 +450,14 @@ shell::fzf_update_conf() {
 # Example:
 #   shell::exist_key_conf my_setting   # Echoes "true" and returns 0 if 'my_setting' exists; otherwise, echoes "false" and returns 1.
 shell::exist_key_conf() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_EXIST_KEY_CONF"
+        return 0
+    fi
+
     if [ $# -lt 1 ]; then
-        echo "Usage: shell::exist_key_conf <key>"
+        echo "Usage: shell::exist_key_conf [-h] <key>"
         return 1
     fi
 
