@@ -63,3 +63,42 @@ Notes:
   - Uses different parsing approaches based on the detected operating system.
   - Leverages shell::run_cmd for command execution and shell::on_evict for dry-run mode.
 "
+
+USAGE_SHELL_LIST_SSH_TUNNEL="
+shell::list_ssh_tunnels function
+Displays information about active SSH tunnel forwarding processes in a line-by-line format.
+
+Usage:
+  shell::list_ssh_tunnels [-n] [-h]
+
+Parameters:
+  - -n              : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+  - -h              : Optional. Displays this help message.
+
+Description:
+  This function identifies and displays all SSH processes that are using port forwarding options
+  (-L, -R, or -D). It shows detailed information about each process including PID, username,
+  start time, elapsed time, command, and specific forwarding details (local port, forwarding type,
+  remote port, remote host). The function works cross-platform on both macOS and Linux systems.
+
+Output Fields:
+  - PID: Process ID of the SSH tunnel
+  - USER: Username running the SSH tunnel
+  - START: Start time of the process
+  - TIME: Elapsed time the process has been running
+  - COMMAND: The SSH command path
+  - LOCAL_PORT: The local port being forwarded
+  - FORWARD_TYPE: Type of forwarding (-L for local, -R for remote, -D for dynamic)
+  - REMOTE_PORT: The remote port
+  - REMOTE_HOST: The remote host
+
+Example usage:
+  shell::list_ssh_tunnels           # Display active SSH tunnels
+  shell::list_ssh_tunnels -n        # Show commands that would be executed (dry-run mode)
+
+Notes:
+  - Requires the 'ps' command to be available
+  - Works on both macOS and Linux systems
+  - Uses different parsing approaches based on the detected operating system
+  - Leverages shell::run_cmd_eval for command execution and shell::on_evict for dry-run mode
+"

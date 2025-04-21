@@ -45,6 +45,12 @@ shell::list_ssh_tunnels() {
         shift
     fi
 
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_LIST_SSH_TUNNEL"
+        return 0
+    fi
+
     # Get the operating system type
     local os_type
     os_type=$(shell::get_os_type)
