@@ -30,6 +30,12 @@ shell::send_telegram_historical_gh_message() {
         shift
     fi
 
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_SEND_TELEGRAM_HISTORICAL_GH_MESSAGE"
+        return 0
+    fi
+
     # Ensure that a message argument is provided.
     if [ $# -lt 1 ]; then
         echo "Usage: shell::send_telegram_historical_gh_message [-n] <message>"

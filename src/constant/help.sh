@@ -645,3 +645,27 @@ from the specified GitHub repository. This file is crucial for setting up automa
 notifications related to CI events, ensuring that relevant stakeholders are informed
 about the status of the CI processes.
 "
+
+USAGE_SHELL_SEND_TELEGRAM_HISTORICAL_GH_MESSAGE="
+shell::send_telegram_historical_gh_message function
+Sends a historical GitHub-related message via Telegram using stored configuration keys.
+
+Usage:
+  shell::send_telegram_historical_gh_message [-n] [-h] <message>
+
+Parameters:
+  - -n              : Optional dry-run flag. If provided, the command will be printed using shell::on_evict instead of executed.
+  - -h              : Optional. Displays this help message.
+  - <message>       : The message text to send.
+
+Description:
+  The function first checks if the dry-run flag is provided. It then verifies the existence of the
+  configuration keys \"SHELL_HISTORICAL_GH_TELEGRAM_BOT_TOKEN\" and \"SHELL_HISTORICAL_GH_TELEGRAM_CHAT_ID\".
+  If either key is missing, a warning is printed and the corresponding key is copied to the clipboard
+  to prompt the user to add it using shell::add_conf. If both keys exist, it retrieves their values and
+  calls shell::send_telegram_message (with the dry-run flag, if enabled) to send the message.
+
+Example:
+  shell::send_telegram_historical_gh_message \"Historical message text\"
+  shell::send_telegram_historical_gh_message -n \"Dry-run historical message text\"
+"
