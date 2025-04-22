@@ -531,3 +531,24 @@ Description:
   as the selected group, and appended to SHELL_GROUP_CONF_FILE.
   In dry-run mode, the final command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
 "
+
+USAGE_SHELL_SYNC_KEY_GROUP_CONF="
+shell::sync_key_group_conf function
+Synchronizes group configurations by ensuring that each group's keys exist in the key configuration file.
+If a key listed in a group does not exist, it is removed from that group.
+If a group ends up with no valid keys, that group entry is removed.
+
+Usage:
+  shell::sync_key_group_conf [-n] [-h]
+
+Parameters:
+  - -n   : Optional dry-run flag. If provided, the new group configuration is printed using shell::on_evict instead of being applied.
+  - -h   : Optional. Displays this help message.
+
+Description:
+  The function reads each group entry from SHELL_GROUP_CONF_FILE (entries in the format: group_name=key1,key2,...,keyN).
+  For each group, it splits the comma-separated list of keys and checks each key using shell::exist_key_conf.
+  It builds a new list of valid keys. If the new list is non-empty, the group entry is updated;
+  if it is empty, the group entry is omitted.
+  In dry-run mode, the new group configuration is printed via shell::on_evict without modifying the file.
+"

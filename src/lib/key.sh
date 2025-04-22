@@ -1279,6 +1279,12 @@ shell::sync_key_group_conf() {
         shift
     fi
 
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_SYNC_KEY_GROUP_CONF"
+        return 0
+    fi
+
     if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
         shell::colored_echo "🔴 Error: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
         return 1
