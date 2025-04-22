@@ -367,6 +367,9 @@ Groups selected configuration keys under a specified group name.
 Usage:
   shell::add_group [-n] [-h]
 
+Parameters:
+  - -h   : Optional. Displays this help message.
+
 Description:
   This function prompts you to enter a group name, then uses fzf (with multi-select) to let you choose
   one or more configuration keys (from SHELL_KEY_CONF_FILE). It then stores the group in SHELL_GROUP_CONF_FILE in the format:
@@ -377,4 +380,23 @@ Description:
 Example:
   shell::add_group         # Prompts for a group name and lets you select keys to group.
   shell::add_group -n      # Prints the command for creating/updating the group without executing it.
+"
+
+USAGE_SHELL_READ_GROUP="
+shell::read_group function
+Reads and displays the configurations for a given group by group name.
+
+Usage:
+  shell::read_group [-h] <group_name>
+
+Parameters:
+  - -h   : Optional. Displays this help message.
+
+Description:
+  This function looks up the group entry in SHELL_GROUP_CONF_FILE for the specified group name.
+  The group entry is expected to be in the format:
+      group_name=key1,key2,...,keyN
+  For each key in the group, the function retrieves the corresponding configuration entry from SHELL_KEY_CONF_FILE,
+  decodes the Base64-encoded value (using -D on macOS and -d on Linux), and groups the key-value pairs
+  into a JSON object which is displayed.
 "

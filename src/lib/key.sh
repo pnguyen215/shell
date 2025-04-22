@@ -717,8 +717,14 @@ shell::add_group() {
 # Example:
 #   shell::read_group my_group   # Displays the configurations for the keys in the group 'my_group'.
 shell::read_group() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_READ_GROUP"
+        return 0
+    fi
+
     if [ $# -lt 1 ]; then
-        echo "Usage: shell::read_group <group_name>"
+        echo "Usage: shell::read_group [-h] <group_name>"
         return 1
     fi
 
