@@ -21,6 +21,12 @@
 # Example:
 #   shell::verify_arg_count "$#" 0 1   # Verifies that the function was called with 0 or 1 argument.
 shell::verify_arg_count() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_VERIFY_ARG_COUNT"
+        return 0
+    fi
+
     # Ensure exactly three parameters are provided to the function.
     if [[ "$#" -ne "3" ]]; then
         shell::fatal "Invalid number of arguments. Expected 3, received $#."
