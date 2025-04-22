@@ -364,11 +364,11 @@ Access the shell library by opening your terminal and using the commands below. 
   then lists all keys belonging to the selected group and uses fzf to choose one key,
   finally displaying the decoded value for the selected key.
 
-- **`shell::clone_group`**
+- **`shell::fzf_clone_group`**
   Clones an existing group by creating a new group with the same keys.
   _Example:_
 
-  - `shell::clone_group [-n]`
+  - `shell::fzf_clone_group [-n]`
 
 - **`shell::sync_key_group_conf`**
   Synchronizes group configurations by ensuring that each group's keys exist in the key configuration file.
