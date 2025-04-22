@@ -317,3 +317,28 @@ Description:
   If a line starting with \"key=\" is found, the function echoes \"true\" and returns 0.
   Otherwise, it echoes \"false\" and returns 1.
 "
+
+USAGE_SHELL_FZF_RENAME_KEY_CONF="
+shell::fzf_rename_key_conf function
+Renames an existing configuration key in the key configuration file.
+
+Usage:
+  shell::fzf_rename_key_conf [-n] [-h]
+
+Parameters:
+  - -n   : Optional dry-run flag. If provided, the renaming command is printed using shell::on_evict instead of executed.
+  - -h   : Optional. Displays this help message.
+
+Description:
+  The function reads the configuration file defined by SHELL_KEY_CONF_FILE, which stores entries in the format:
+      key=encoded_value
+  It uses fzf to interactively select an existing key.
+  After selection, the function prompts for a new key name and checks if the new key already exists.
+  If the new key does not exist, it constructs a sed command to replace the old key with the new key in the file.
+  The sed command uses in-place editing options appropriate for macOS (sed -i '') or Linux (sed -i).
+  In dry-run mode, the command is printed via shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
+
+Example:
+  shell::fzf_rename_key_conf         # Interactively select a key and rename it.
+  shell::fzf_rename_key_conf -n      # Prints the renaming command without executing it.
+"

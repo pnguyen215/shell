@@ -505,6 +505,12 @@ shell::fzf_rename_key_conf() {
         shift
     fi
 
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_RENAME_KEY_CONF"
+        return 0
+    fi
+
     if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
         shell::colored_echo "🔴 Error: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
         return 1
