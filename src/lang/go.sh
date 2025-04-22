@@ -273,6 +273,12 @@ shell::create_go_app() {
         app_name="$1"
     fi
 
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_CREATE_GO_APP"
+        return 0
+    fi
+
     # Validate app name
     if [ -z "$app_name" ]; then
         shell::colored_echo "🔴 Error: Application name is required." 196

@@ -757,3 +757,25 @@ Example:
   shell::fzf_remove_go_privates           # Interactively remove entries from GOPRIVATE.
   shell::fzf_remove_go_privates -n        # Preview the command without executing it.
 "
+
+USAGE_SHELL_CREATE_GO_APP="
+shell::create_go_app function
+Creates a new Go application by initializing a Go module and tidying dependencies.
+
+Usage:
+  shell::create_go_app [-n] [-h] <app_name|github_url>
+
+Parameters:
+  - -n                    : Optional dry-run flag. If provided, the commands are printed using shell::on_evict instead of being executed.
+  - -h                    : Optional. Displays this help message.
+  - <app_name|github_url> : The name of the application or a GitHub URL to initialize the module.
+
+Description:
+  This function checks if the provided application name is a valid URL. If it is, it extracts the module name
+  from the URL. It then initializes the Go module using $(go mod init) and tidies the dependencies using $(go mod tidy).
+  In dry-run mode, the commands are displayed without execution.
+
+Example:
+  shell::create_go_app my_app         # Initializes a Go module named 'my_app'.
+  shell::create_go_app -n my_app      # Previews the initialization commands without executing them.
+"
