@@ -630,12 +630,24 @@ Example:
 USAGE_SHELL_ADD_ANGULAR_GITIGNORE="
 shell::add_angular_gitignore function
 This function downloads the .gitignore file specifically for Angular projects.
+
+Usage:
+  shell::add_angular_gitignore [-h]
+
+Parameters:
+  - -h                              : Optional. Displays this help message.
 "
 
 USAGE_SHELL_ADD_GITHUB_WORKFLOW_CI="
 shell::add_github_workflow_ci function
 This function downloads the continuous integration (CI) workflow configuration file
 for the DevOps process from the specified GitHub repository.
+
+Usage:
+  shell::add_github_workflow_ci [-h]
+
+Parameters:
+  - -h                              : Optional. Displays this help message.
 "
 
 USAGE_SHELL_ADD_GITHUB_WORKFLOW_CI_NOTIFICATION="
@@ -644,6 +656,12 @@ This function downloads the GitHub Actions CI notification workflow configuratio
 from the specified GitHub repository. This file is crucial for setting up automated
 notifications related to CI events, ensuring that relevant stakeholders are informed
 about the status of the CI processes.
+
+Usage:
+  shell::add_github_workflow_ci_notification [-h]
+
+Parameters:
+  - -h                              : Optional. Displays this help message.
 "
 
 USAGE_SHELL_SEND_TELEGRAM_HISTORICAL_GH_MESSAGE="
@@ -795,4 +813,15 @@ It retrieves the following files:
 - Makefile: A build script that defines how to compile and manage the application.
 - ci.yml: A GitHub Actions workflow configuration for continuous integration.
 - ci_notify.yml: A GitHub Actions workflow configuration for notifications related to CI events.
+"
+
+USAGE_SHELL_ADD_GO_GITIGNORE="
+shell::add_go_gitignore function
+This function downloads the .gitignore file for a Go project.
+
+Usage:
+  shell::add_go_gitignore [-h]
+
+Parameters:
+  - -h                              : Optional. Displays this help message.
 "

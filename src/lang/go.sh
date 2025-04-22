@@ -358,5 +358,10 @@ shell::add_go_app_settings() {
 # The .gitignore file is essential for specifying which files and directories
 # should be ignored by Git, helping to keep the repository clean and free of unnecessary files.
 shell::add_go_gitignore() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_ADD_GO_GITIGNORE"
+        return 0
+    fi
     shell::download_dataset ".gitignore" $SHELL_PROJECT_GITIGNORE_GO
 }
