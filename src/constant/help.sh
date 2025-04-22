@@ -470,3 +470,21 @@ Example:
   shell::fzf_rename_group         # Interactively select a group and rename it.
   shell::fzf_rename_group -n      # Prints the renaming command without executing it.
 "
+
+USAGE_SHELL_LIST_GROUP="
+shell::list_groups function
+Lists all group names defined in the group configuration file.
+
+Usage:
+  shell::list_groups [-h]
+
+Parameters:
+  - -h   : Optional. Displays this help message.
+
+Description:
+  This function reads the configuration file defined by SHELL_GROUP_CONF_FILE,
+  where each line is in the format:
+      group_name=key1,key2,...,keyN
+  It extracts and displays the group names (the part before the '=')
+  using the 'cut' command.
+"
