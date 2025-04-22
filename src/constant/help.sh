@@ -400,3 +400,26 @@ Description:
   decodes the Base64-encoded value (using -D on macOS and -d on Linux), and groups the key-value pairs
   into a JSON object which is displayed.
 "
+
+USAGE_SHELL_FZF_REMOVE_GROUP="
+shell::fzf_remove_group function
+Interactively selects a group name from the group configuration file using fzf,
+then removes the corresponding group entry.
+
+Usage:
+  shell::fzf_remove_group [-n] [-h]
+
+Parameters:
+  - -n   : Optional dry-run flag. If provided, the removal command is printed using shell::on_evict instead of executed.
+  - -h   : Optional. Displays this help message.
+
+Description:
+  The function extracts group names from SHELL_GROUP_CONF_FILE and uses fzf for interactive selection.
+  Once a group is selected, it constructs a sed command (with appropriate in-place options for macOS or Linux)
+  to remove the line that starts with \"group_name=\".
+  If the file is not writable, sudo is prepended. In dry-run mode, the command is printed via shell::on_evict.
+
+Example:
+  shell::fzf_remove_group         # Interactively select a group and remove its entry.
+  shell::fzf_remove_group -n      # Prints the removal command without executing it.
+"
