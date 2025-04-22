@@ -325,6 +325,136 @@ shell::create_go_app() {
     shell::colored_echo "🟢 Go application initialized successfully." 46
 }
 
+# shell::create_go_app function
+# Creates a new Go application by initializing a Go module and tidying dependencies
+# within a specified target folder.
+#
+# Usage:
+#   shell::create_go_app [-n] <app_name|github_url> [target_folder]
+#
+# Parameters:
+#   - -n : Optional dry-run flag.
+#          If provided, the commands are printed using shell::on_evict instead of being executed.
+#   - <app_name|github_url> : The name of the application or a GitHub URL to initialize the module.
+#   - [target_folder] : Optional. The path to the folder where the Go application should be created.
+#                       If not provided, the application is created in the current directory.
+#
+# Description:
+#   This function checks if the provided application name is a valid URL.
+#   If it is, it extracts the module name from the URL.
+#   If a target folder is specified, the function ensures the folder exists,
+#   changes into that directory, initializes the Go module using `go mod init`,
+#   and tidies the dependencies using `go mod tidy`.
+#   After execution, it returns to the original directory.
+#   In dry-run mode, the commands are displayed without execution.
+#
+# Example:
+#   shell::create_go_app my_app                      # Initializes a Go module named 'my_app' in the current directory.
+#   shell::create_go_app my_app /path/to/my/folder   # Initializes 'my_app' in the specified folder.
+#   shell::create_go_app -n my_app                   # Previews the initialization commands without executing them.
+#   shell::create_go_app -n my_app /tmp/go_projects  # Previews initialization in a target folder.
+#   shell::create_go_app https://github.com/user/repo /home/user/src # Initializes from a GitHub URL in a target folder.
+shell::create_go_app2() {
+    local app_name=""
+    local target_folder=""
+    local dry_run="false"
+    local original_dir="$PWD" # Save the original directory
+
+    # Parse arguments
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_CREATE_GO_APP"
+        return 0
+    fi
+
+    # Check for required app name
+    if [ -z "$1" ]; then
+        shell::colored_echo "🔴 Error: Application name is required." 196
+        echo "Usage: shell::create_go_app [-n] <app_name|github_url> [target_folder]"
+        return 1
+    fi
+    app_name="$1"
+    shift
+
+    # Check for optional target folder
+    if [ -n "$1" ]; then
+        target_folder="$1"
+        shift
+    fi
+
+    # Check if there are any remaining unexpected arguments
+    if [ -n "$1" ]; then
+        shell::colored_echo "🟡 Warning: Unexpected arguments ignored: $*" 11
+    fi
+
+    local module_name="$app_name"
+    local is_url="false"
+
+    # Check if the app name is a URL
+    if [[ "$app_name" =~ ^(http:\/\/|https:\/\/) ]]; then
+        is_url="true"
+        # If it's a URL, extract the module name
+        module_name="${module_name#http://}"
+        module_name="${module_name#https://}"
+        module_name="${module_name%/}" # Remove trailing slashes
+    fi
+
+    # If a target folder is specified, create it and change directory
+    if [ -n "$target_folder" ]; then
+        shell::colored_echo "📁 Ensuring target directory exists: $target_folder" 36
+        if [ "$dry_run" = "true" ]; then
+            shell::on_evict "shell::create_directory_if_not_exists \"$target_folder\""
+            shell::on_evict "cd \"$target_folder\""
+        else
+            shell::create_directory_if_not_exists "$target_folder"
+            if [ $? -ne 0 ]; then
+                shell::colored_echo "🔴 Error: Could not create or access target directory '$target_folder'." 196
+                return 1
+            fi
+            cd "$target_folder" || {
+                shell::colored_echo "🔴 Error: Could not change to target directory '$target_folder'." 196
+                return 1
+            }
+        fi
+    fi
+
+    local init_cmd="go mod init $module_name"
+    local tidy_cmd="go mod tidy"
+
+    # Execute go mod init
+    shell::colored_echo "🔍 Initializing Go module: $module_name" 36
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "$init_cmd"
+    else
+        shell::run_cmd_eval "$init_cmd"
+    fi
+
+    # Execute go mod tidy
+    shell::colored_echo "🔍 Tidying Go dependencies" 36
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "$tidy_cmd"
+    else
+        shell::run_cmd_eval "$tidy_cmd"
+    fi
+
+    # Change back to the original directory if a target folder was used
+    if [ -n "$target_folder" ]; then
+        if [ "$dry_run" = "true" ]; then
+            shell::on_evict "cd \"$original_dir\""
+        else
+            cd "$original_dir" || {
+                shell::colored_echo "🔴 Warning: Could not change back to original directory '$original_dir'." 11
+            }
+        fi
+    fi
+    shell::colored_echo "🟢 Go application initialized successfully." 46
+}
+
 # shell::add_go_app_settings function
 # This function downloads essential configuration files for a Go application.
 #
