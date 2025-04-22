@@ -637,3 +637,11 @@ shell::add_github_workflow_ci function
 This function downloads the continuous integration (CI) workflow configuration file
 for the DevOps process from the specified GitHub repository.
 "
+
+USAGE_SHELL_ADD_GITHUB_WORKFLOW_CI_NOTIFICATION="
+shell::add_github_workflow_ci_notification function
+This function downloads the GitHub Actions CI notification workflow configuration file
+from the specified GitHub repository. This file is crucial for setting up automated
+notifications related to CI events, ensuring that relevant stakeholders are informed
+about the status of the CI processes.
+"
