@@ -262,68 +262,68 @@ shell::fzf_remove_go_privates() {
 # Example:
 #   shell::create_go_app my_app         # Initializes a Go module named 'my_app'.
 #   shell::create_go_app -n my_app      # Previews the initialization commands without executing them.
-shell::create_go_app() {
-    local app_name="$1"
-    local dry_run="false"
+# shell::create_go_app() {
+#     local app_name="$1"
+#     local dry_run="false"
 
-    # Check for dry-run option
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-        app_name="$1"
-    fi
+#     # Check for dry-run option
+#     if [ "$1" = "-n" ]; then
+#         dry_run="true"
+#         shift
+#         app_name="$1"
+#     fi
 
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_CREATE_GO_APP"
-        return 0
-    fi
+#     # Check for the help flag (-h)
+#     if [ "$1" = "-h" ]; then
+#         echo "$USAGE_SHELL_CREATE_GO_APP"
+#         return 0
+#     fi
 
-    # Validate app name
-    if [ -z "$app_name" ]; then
-        shell::colored_echo "🔴 Error: Application name is required." 196
-        shell::colored_echo "Usage: shell::create_go_app [-n] <app_name|github_url>"
-        return 1
-    fi
+#     # Validate app name
+#     if [ -z "$app_name" ]; then
+#         shell::colored_echo "🔴 Error: Application name is required." 196
+#         shell::colored_echo "Usage: shell::create_go_app [-n] <app_name|github_url>"
+#         return 1
+#     fi
 
-    # Check if the app name is a URL
-    local is_url="false"
-    if [[ "$app_name" =~ ^(http:\/\/|https:\/\/) ]]; then
-        is_url="true"
-    fi
+#     # Check if the app name is a URL
+#     local is_url="false"
+#     if [[ "$app_name" =~ ^(http:\/\/|https:\/\/) ]]; then
+#         is_url="true"
+#     fi
 
-    local module_name="$app_name"
+#     local module_name="$app_name"
 
-    # If it's a URL, extract the module name
-    if [ "$is_url" = "true" ]; then
-        # Remove "http://" or "https://"
-        module_name="${module_name#http://}"
-        module_name="${module_name#https://}"
-        # Remove trailing slashes
-        module_name="${module_name%/}"
-    fi
+#     # If it's a URL, extract the module name
+#     if [ "$is_url" = "true" ]; then
+#         # Remove "http://" or "https://"
+#         module_name="${module_name#http://}"
+#         module_name="${module_name#https://}"
+#         # Remove trailing slashes
+#         module_name="${module_name%/}"
+#     fi
 
-    local init_cmd="go mod init $module_name"
-    local tidy_cmd="go mod tidy"
+#     local init_cmd="go mod init $module_name"
+#     local tidy_cmd="go mod tidy"
 
-    # Execute go mod init
-    shell::colored_echo "🔍 Initializing Go module: $module_name" 36
-    if [ "$dry_run" = "true" ]; then
-        shell::on_evict "$init_cmd"
-    else
-        shell::run_cmd_eval "$init_cmd"
-    fi
+#     # Execute go mod init
+#     shell::colored_echo "🔍 Initializing Go module: $module_name" 36
+#     if [ "$dry_run" = "true" ]; then
+#         shell::on_evict "$init_cmd"
+#     else
+#         shell::run_cmd_eval "$init_cmd"
+#     fi
 
-    # Execute go mod tidy
-    shell::colored_echo "🔍 Tidying Go dependencies" 36
-    if [ "$dry_run" = "true" ]; then
-        shell::on_evict "$tidy_cmd"
-    else
-        shell::run_cmd_eval "$tidy_cmd"
-    fi
+#     # Execute go mod tidy
+#     shell::colored_echo "🔍 Tidying Go dependencies" 36
+#     if [ "$dry_run" = "true" ]; then
+#         shell::on_evict "$tidy_cmd"
+#     else
+#         shell::run_cmd_eval "$tidy_cmd"
+#     fi
 
-    shell::colored_echo "🟢 Go application initialized successfully." 46
-}
+#     shell::colored_echo "🟢 Go application initialized successfully." 46
+# }
 
 # shell::create_go_app function
 # Creates a new Go application by initializing a Go module and tidying dependencies
@@ -354,7 +354,7 @@ shell::create_go_app() {
 #   shell::create_go_app -n my_app                   # Previews the initialization commands without executing them.
 #   shell::create_go_app -n my_app /tmp/go_projects  # Previews initialization in a target folder.
 #   shell::create_go_app https://github.com/user/repo /home/user/src # Initializes from a GitHub URL in a target folder.
-shell::create_go_app2() {
+shell::create_go_app() {
     local app_name=""
     local target_folder=""
     local dry_run="false"
@@ -375,7 +375,7 @@ shell::create_go_app2() {
     # Check for required app name
     if [ -z "$1" ]; then
         shell::colored_echo "🔴 Error: Application name is required." 196
-        echo "Usage: shell::create_go_app [-n] <app_name|github_url> [target_folder]"
+        echo "Usage: shell::create_go_app [-n] [-h] <app_name|github_url> [target_folder]"
         return 1
     fi
     app_name="$1"
