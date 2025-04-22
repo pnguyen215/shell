@@ -350,11 +350,11 @@ Access the shell library by opening your terminal and using the commands below. 
 
   - `shell::fzf_update_group [-n]`
 
-- **`shell::rename_group`**
+- **`shell::fzf_rename_group`**
   Renames an existing group in the group configuration file.
   _Example:_
 
-  - `shell::rename_group [-n]`
+  - `shell::fzf_rename_group [-n]`
 
 - **`shell::list_groups`**
   Lists all group names defined in the group configuration file.

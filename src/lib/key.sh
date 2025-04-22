@@ -940,11 +940,11 @@ shell::fzf_update_group() {
     fi
 }
 
-# shell::rename_group function
+# shell::fzf_rename_group function
 # Renames an existing group in the group configuration file.
 #
 # Usage:
-#   shell::rename_group [-n]
+#   shell::fzf_rename_group [-n]
 #
 # Parameters:
 #   - -n : Optional dry-run flag. If provided, the renaming command is printed using shell::on_evict instead of executed.
@@ -959,9 +959,9 @@ shell::fzf_update_group() {
 #   In dry-run mode, the command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
 #
 # Example:
-#   shell::rename_group         # Interactively select a group and rename it.
-#   shell::rename_group -n      # Prints the renaming command without executing it.
-shell::rename_group() {
+#   shell::fzf_rename_group         # Interactively select a group and rename it.
+#   shell::fzf_rename_group -n      # Prints the renaming command without executing it.
+shell::fzf_rename_group() {
     local dry_run="false"
     # Check for the optional dry-run flag (-n)
     if [ "$1" = "-n" ]; then
