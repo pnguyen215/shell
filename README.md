@@ -344,11 +344,11 @@ Access the shell library by opening your terminal and using the commands below. 
 
   - `shell::fzf_remove_group [-n]`
 
-- **`shell::update_group`**
+- **`shell::fzf_update_group`**
   Interactively updates an existing group by letting you select new keys for that group.
   _Example:_
 
-  - `shell::update_group [-n]`
+  - `shell::fzf_update_group [-n]`
 
 - **`shell::rename_group`**
   Renames an existing group in the group configuration file.

@@ -53,7 +53,7 @@ SHELL_KEY_CONF_SETTING_WORKSPACE="$SHELL_CONF_WORKING_WORKSPACE/settings.conf"
 # The file stores group definitions in the following format:
 #   group_name=key1,key2,...,keyN
 # Each group maps a name to a comma-separated list of keys from the key configuration file.
-# Functions such as shell::add_group, shell::read_group, shell::fzf_remove_group, shell::update_group, and shell::clone_group use this file
+# Functions such as shell::add_group, shell::read_group, shell::fzf_remove_group, shell::fzf_update_group, and shell::clone_group use this file
 # to manage groups of configuration keys.
 #
 # Example:
