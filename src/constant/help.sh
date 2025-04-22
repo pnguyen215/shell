@@ -342,3 +342,20 @@ Example:
   shell::fzf_rename_key_conf         # Interactively select a key and rename it.
   shell::fzf_rename_key_conf -n      # Prints the renaming command without executing it.
 "
+
+USAGE_SHELL_PROTECTED_KEY="
+shell::is_protected_key function
+Checks if the specified configuration key is protected.
+
+Usage:
+  shell::is_protected_key [-h] <key>
+
+Parameters:
+  - -h   : Optional. Displays this help message.
+  - <key>: The configuration key to check.
+
+Description:
+  This function iterates over the SHELL_PROTECTED_KEYS array to determine if the given key is marked as protected.
+  If the key is found in the array, the function echoes "true" and returns 0.
+  Otherwise, it echoes "false" and returns 1.
+"

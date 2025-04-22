@@ -587,6 +587,12 @@ shell::fzf_rename_key_conf() {
 #       return 1
 #   fi
 shell::is_protected_key() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_PROTECTED_KEY"
+        return 0
+    fi
+
     if [ $# -lt 1 ]; then
         echo "Usage: shell::is_protected_key <key>"
         return 1
