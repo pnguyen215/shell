@@ -864,7 +864,7 @@ shell::fzf_remove_group() {
 # Interactively updates an existing group by letting you select new keys for that group.
 #
 # Usage:
-#   shell::fzf_update_group [-n]
+#   shell::fzf_update_group [-n] [-h]
 #
 # Parameters:
 #   - -n : Optional dry-run flag. If provided, the update command is printed using shell::on_evict instead of executed.
@@ -883,6 +883,12 @@ shell::fzf_update_group() {
     if [ "$1" = "-n" ]; then
         dry_run="true"
         shift
+    fi
+
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_UPDATE_GROUP"
+        return 0
     fi
 
     if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then

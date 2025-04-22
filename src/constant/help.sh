@@ -423,3 +423,25 @@ Example:
   shell::fzf_remove_group         # Interactively select a group and remove its entry.
   shell::fzf_remove_group -n      # Prints the removal command without executing it.
 "
+
+USAGE_SHELL_FZF_UPDATE_GROUP="
+shell::fzf_update_group function
+Interactively updates an existing group by letting you select new keys for that group.
+
+Usage:
+  shell::fzf_update_group [-n] [-h]
+
+Parameters:
+  - -n : Optional dry-run flag. If provided, the update command is printed using shell::on_evict instead of executed.
+  - -h   : Optional. Displays this help message.
+
+Description:
+  The function reads SHELL_GROUP_CONF_FILE and uses fzf to let you select an existing group.
+  It then presents all available keys from SHELL_KEY_CONF_FILE (via fzf with multi-select) for you to choose the new group membership.
+  The selected keys are converted into a comma-separated list, and the group entry is updated in SHELL_GROUP_CONF_FILE
+  (using sed with options appropriate for macOS or Linux). If the file is not writable, sudo is used.
+
+Example:
+  shell::fzf_update_group         # Interactively select a group, update its keys, and update the group entry.
+  shell::fzf_update_group -n      # Prints the update command without executing it.
+"
