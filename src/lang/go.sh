@@ -337,6 +337,11 @@ shell::create_go_app() {
 # Each file is downloaded using the shell::download_dataset function, which ensures that the files are
 # fetched from the specified URLs and saved in the appropriate locations.
 shell::add_go_app_settings() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_ADD_GO_APP_SETTINGS"
+        return 0
+    fi
     shell::download_dataset "docs/VERSION_RELEASE.md" $SHELL_PROJECT_DOC_VERSION_RELEASE
     shell::download_dataset "Makefile" $SHELL_PROJECT_GO_MAKEFILE
     shell::download_dataset ".gitignore" $SHELL_PROJECT_GITIGNORE_GO

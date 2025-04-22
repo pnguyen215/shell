@@ -779,3 +779,20 @@ Example:
   shell::create_go_app my_app         # Initializes a Go module named 'my_app'.
   shell::create_go_app -n my_app      # Previews the initialization commands without executing them.
 "
+
+USAGE_SHELL_ADD_GO_APP_SETTINGS="
+shell::add_go_app_settings function
+This function downloads essential configuration files for a Go application.
+
+Usage:
+  shell::add_go_app_settings [-h]
+
+Parameters:
+  - -h                              : Optional. Displays this help message.
+
+It retrieves the following files:
+- VERSION_RELEASE.md: Contains the version release information for the application.
+- Makefile: A build script that defines how to compile and manage the application.
+- ci.yml: A GitHub Actions workflow configuration for continuous integration.
+- ci_notify.yml: A GitHub Actions workflow configuration for notifications related to CI events.
+"
