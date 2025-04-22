@@ -445,3 +445,28 @@ Example:
   shell::fzf_update_group         # Interactively select a group, update its keys, and update the group entry.
   shell::fzf_update_group -n      # Prints the update command without executing it.
 "
+
+USAGE_SHELL_FZF_RENAME_GROUP="
+shell::fzf_rename_group function
+Renames an existing group in the group configuration file.
+
+Usage:
+  shell::fzf_rename_group [-n] [-h]
+
+Parameters:
+  - -n   : Optional dry-run flag. If provided, the renaming command is printed using shell::on_evict instead of executed.
+  - -h   : Optional. Displays this help message.
+
+Description:
+  The function reads the group configuration file (SHELL_GROUP_CONF_FILE) where each line is in the format:
+      group_name=key1,key2,...,keyN
+  It uses fzf to let you select an existing group to rename.
+  After selection, the function prompts for a new group name.
+  It then constructs a sed command to replace the old group name with the new one in the configuration file.
+  The sed command uses in-place editing options appropriate for macOS (sed -i '') or Linux (sed -i).
+  In dry-run mode, the command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
+
+Example:
+  shell::fzf_rename_group         # Interactively select a group and rename it.
+  shell::fzf_rename_group -n      # Prints the renaming command without executing it.
+"

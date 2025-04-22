@@ -968,6 +968,11 @@ shell::fzf_rename_group() {
         dry_run="true"
         shift
     fi
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_RENAME_GROUP"
+        return 0
+    fi
 
     if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
         shell::colored_echo "🔴 Error: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
