@@ -669,3 +669,24 @@ Example:
   shell::send_telegram_historical_gh_message \"Historical message text\"
   shell::send_telegram_historical_gh_message -n \"Dry-run historical message text\"
 "
+
+USAGE_SHELL_RETRIEVE_GH_LATEST_RELEASE="
+shell::retrieve_gh_latest_release function
+Retrieves the latest release tag from a GitHub repository using the GitHub API.
+
+Usage:
+  shell::retrieve_gh_latest_release <owner/repo>
+
+Parameters:
+  - <owner/repo>: GitHub repository in the format 'owner/repo'
+
+Returns:
+  Outputs the latest release tag (e.g., v1.2.3), or an error message if failed.
+
+Example:
+  shell::retrieve_gh_latest_release \"cli/cli\"
+
+Dependencies:
+  - curl
+  - jq (optional): For better JSON parsing. Falls back to grep/sed if unavailable.
+"

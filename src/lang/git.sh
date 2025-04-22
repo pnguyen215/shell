@@ -98,6 +98,12 @@ shell::send_telegram_historical_gh_message() {
 #   - Requires internet access.
 #   - Works on both macOS and Linux.
 shell::retrieve_gh_latest_release() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_RETRIEVE_GH_LATEST_RELEASE"
+        return 0
+    fi
+
     if [ -z "$1" ]; then
         shell::colored_echo "🔴 Usage: shell::retrieve_gh_latest_release <owner/repo>" 196
         return 1
