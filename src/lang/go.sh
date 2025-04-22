@@ -37,6 +37,12 @@ shell::get_go_privates() {
         shift
     fi
 
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_GET_GO_PRIVATES"
+        return 0
+    fi
+
     local cmd="go env GOPRIVATE"
 
     if [ "$dry_run" = "true" ]; then

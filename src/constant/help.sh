@@ -690,3 +690,23 @@ Dependencies:
   - curl
   - jq (optional): For better JSON parsing. Falls back to grep/sed if unavailable.
 "
+
+USAGE_SHELL_GET_GO_PRIVATES="
+shell::get_go_privates function
+
+Description:
+  Retrieves and prints the value of the GOPRIVATE environment variable.
+  The GOPRIVATE variable is used by Go tools to determine which modules
+  should be considered private, affecting how Go commands handle dependencies.
+
+Usage:
+  shell::get_go_privates [-n] [-h]
+
+Parameters:
+    - -n     : Optional. If provided, the command is printed using shell::on_evict instead of executed.
+    - -h     : Optional. Displays this help message.
+
+Example:
+  shell::get_go_privates
+  shell::get_go_privates -n
+"
