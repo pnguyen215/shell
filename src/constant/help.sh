@@ -516,10 +516,11 @@ shell::fzf_clone_group function
 Clones an existing group by creating a new group with the same keys.
 
 Usage:
-  shell::fzf_clone_group [-n]
+  shell::fzf_clone_group [-n] [-h]
 
 Parameters:
-  - -n : Optional dry-run flag. If provided, the cloning command is printed using shell::on_evict instead of executed.
+  - -n   : Optional dry-run flag. If provided, the cloning command is printed using shell::on_evict instead of executed.
+  - -h   : Optional. Displays this help message.
 
 Description:
   The function reads the group configuration file (SHELL_GROUP_CONF_FILE) where each line is in the format:
