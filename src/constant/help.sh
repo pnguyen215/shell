@@ -737,3 +737,23 @@ Example:
   shell::set_go_privates \"example.com/private1\"
   shell::set_go_privates -n \"example.com/private1\" \"example.com/internal\"
 "
+
+USAGE_SHELL_FZF_REMOVE_GO_PRIVATES="
+shell::fzf_remove_go_privates function
+
+Description:
+  Uses fzf to interactively select and remove entries from the GOPRIVATE environment variable.
+  The GOPRIVATE variable is used by Go tools to determine which modules should be considered private,
+  affecting how Go commands handle authenticated access to dependencies.
+
+Usage:
+  shell::fzf_remove_go_privates [-n] [-h]
+
+Parameters:
+  - -n                              : Optional. If provided, the command is printed using shell::on_evict instead of executed.
+  - -h                              : Optional. Displays this help message.
+
+Example:
+  shell::fzf_remove_go_privates           # Interactively remove entries from GOPRIVATE.
+  shell::fzf_remove_go_privates -n        # Preview the command without executing it.
+"

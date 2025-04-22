@@ -185,6 +185,12 @@ shell::fzf_remove_go_privates() {
         shift
     fi
 
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_REMOVE_GO_PRIVATES"
+        return 0
+    fi
+
     # Ensure fzf is installed
     shell::install_package fzf
 
