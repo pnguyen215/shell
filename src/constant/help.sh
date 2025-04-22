@@ -710,3 +710,30 @@ Example:
   shell::get_go_privates
   shell::get_go_privates -n
 "
+
+USAGE_SHELL_SET_GO_PRIVATES="
+shell::set_go_privates function
+
+Description:
+  Sets the GOPRIVATE environment variable to the provided value.
+  If GOPRIVATE already has values, the new values are appended
+  to the existing comma-separated list.
+  This variable is used by Go tools to determine which modules
+  should be considered private, affecting how Go commands handle dependencies.
+
+Usage:
+  shell::set_go_privates [-n] [-h] <repository1> [repository2] ...
+
+Parameters:
+  - -n                              : Optional. If provided, the command is printed using shell::on_evict instead of executed.
+  - -h                              : Optional. Displays this help message.
+  - <repository1>                   : The first repository to add to GOPRIVATE.
+  - [repository2] [repository3] ... : Additional repositories to add to GOPRIVATE.
+
+Options:
+  None
+
+Example:
+  shell::set_go_privates \"example.com/private1\"
+  shell::set_go_privates -n \"example.com/private1\" \"example.com/internal\"
+"

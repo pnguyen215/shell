@@ -103,6 +103,12 @@ shell::set_go_privates() {
         shift
     fi
 
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_SET_GO_PRIVATES"
+        return 0
+    fi
+
     # Handle no arguments provided
     if [ $# -eq 0 ]; then
         shell::colored_echo "🔴 Error: No repositories provided." 196
