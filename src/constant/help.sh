@@ -583,3 +583,23 @@ Example usage:
 Requirements:
   - Assumes the presence of helper function: shell::colored_echo.
 "
+
+USAGE_SHELL_FATAL="
+shell::fatal function
+Prints a fatal error message along with the function call stack, then exits the script.
+
+Usage:
+  shell::fatal [-h] [<message>]
+
+Parameters:
+    - -h            : Optional. Displays this help message.
+    - <message>     : (Optional) A custom error message describing the fatal error.
+
+Description:
+  The function first verifies that it has received 0 to 1 argument using shell::verify_arg_count.
+  It then constructs a stack trace from the FUNCNAME array, prints the error message with red formatting,
+  and outputs the call stack in yellow before exiting with a non-zero status.
+
+Example:
+  shell::fatal \"Configuration file not found.\"
+"

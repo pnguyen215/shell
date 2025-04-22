@@ -5,7 +5,7 @@
 # Prints a fatal error message along with the function call stack, then exits the script.
 #
 # Usage:
-#   shell::fatal [<message>]
+#   shell::fatal [-h] [<message>]
 #
 # Parameters:
 #   - <message> : (Optional) A custom error message describing the fatal error.
@@ -18,6 +18,12 @@
 # Example:
 #   shell::fatal "Configuration file not found."
 shell::fatal() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FATAL"
+        return 0
+    fi
+
     # Verify argument count: expects between 0 and 1 argument.
     shell::verify_arg_count "$#" 0 1 || exit 1
 
