@@ -359,3 +359,22 @@ Description:
   If the key is found in the array, the function echoes "true" and returns 0.
   Otherwise, it echoes "false" and returns 1.
 "
+
+USAGE_SHELL_ADD_GROUP="
+shell::add_group function
+Groups selected configuration keys under a specified group name.
+
+Usage:
+  shell::add_group [-n] [-h]
+
+Description:
+  This function prompts you to enter a group name, then uses fzf (with multi-select) to let you choose
+  one or more configuration keys (from SHELL_KEY_CONF_FILE). It then stores the group in SHELL_GROUP_CONF_FILE in the format:
+      group_name=key1,key2,...,keyN
+  If the group name already exists, the group entry is updated with the new selection.
+  An optional dry-run flag (-n) can be used to print the command via shell::on_evict instead of executing it.
+
+Example:
+  shell::add_group         # Prompts for a group name and lets you select keys to group.
+  shell::add_group -n      # Prints the command for creating/updating the group without executing it.
+"

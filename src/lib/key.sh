@@ -632,6 +632,11 @@ shell::add_group() {
         dry_run="true"
         shift
     fi
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_ADD_GROUP"
+        return 0
+    fi
 
     # Ensure the group configuration file exists.
     shell::create_file_if_not_exists "$SHELL_GROUP_CONF_FILE"
