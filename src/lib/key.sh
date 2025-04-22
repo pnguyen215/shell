@@ -1370,6 +1370,12 @@ shell::sync_key_group_conf() {
 # Requirements:
 #   - Assumes the presence of helper function: shell::colored_echo.
 shell::load_ini_conf() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_LOAD_INI_CONF"
+        return 0
+    fi
+
     local config_file="$1"
 
     # Check if the config file exists and is a regular file.
