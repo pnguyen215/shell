@@ -1076,6 +1076,12 @@ shell::list_groups() {
 # Example:
 #   shell::fzf_select_group   # Prompts to select a group, then a key within that group, and displays the decoded value.
 shell::fzf_select_group() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_SELECT_GROUP"
+        return 0
+    fi
+
     # Ensure the group configuration file exists.
     if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
         shell::colored_echo "🔴 Error: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196

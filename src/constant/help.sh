@@ -488,3 +488,25 @@ Description:
   It extracts and displays the group names (the part before the '=')
   using the 'cut' command.
 "
+
+USAGE_SHELL_FZF_SELECT_GROUP="
+shell::fzf_select_group function
+Interactively selects a group name from the group configuration file using fzf,
+then lists all keys belonging to the selected group and uses fzf to choose one key,
+finally displaying the decoded value for the selected key.
+
+Usage:
+  shell::fzf_select_group [-h]
+
+Parameters:
+  - -h   : Optional. Displays this help message.
+
+Description:
+  The function reads the configuration file defined by SHELL_GROUP_CONF_FILE, where each line is in the format:
+      group_name=key1,key2,...,keyN
+  It first uses fzf to allow interactive selection of a group name.
+  Once a group is selected, the function extracts the comma-separated list of keys,
+  converts them into a list (one per line), and uses fzf again to let you choose one key.
+  It then retrieves the corresponding configuration entry from SHELL_KEY_CONF_FILE (which stores entries as key=encoded_value),
+  decodes the Base64-encoded value (using -D on macOS and -d on Linux), and displays the group name, key, and decoded value.
+"
