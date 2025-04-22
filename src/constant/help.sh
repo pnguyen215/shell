@@ -510,3 +510,23 @@ Description:
   It then retrieves the corresponding configuration entry from SHELL_KEY_CONF_FILE (which stores entries as key=encoded_value),
   decodes the Base64-encoded value (using -D on macOS and -d on Linux), and displays the group name, key, and decoded value.
 "
+
+USAGE_SHELL_FZF_CLONE_GROUP="
+shell::fzf_clone_group function
+Clones an existing group by creating a new group with the same keys.
+
+Usage:
+  shell::fzf_clone_group [-n]
+
+Parameters:
+  - -n : Optional dry-run flag. If provided, the cloning command is printed using shell::on_evict instead of executed.
+
+Description:
+  The function reads the group configuration file (SHELL_GROUP_CONF_FILE) where each line is in the format:
+      group_name=key1,key2,...,keyN
+  It uses fzf to interactively select an existing group.
+  After selection, it prompts for a new group name.
+  The new group entry is then constructed with the new group name and the same comma-separated keys
+  as the selected group, and appended to SHELL_GROUP_CONF_FILE.
+  In dry-run mode, the final command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
+"

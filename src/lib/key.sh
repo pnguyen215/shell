@@ -1186,6 +1186,12 @@ shell::fzf_clone_group() {
         shift
     fi
 
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_CLONE_GROUP"
+        return 0
+    fi
+
     # Ensure the group configuration file exists.
     if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
         shell::colored_echo "🔴 Error: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
