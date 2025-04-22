@@ -626,3 +626,8 @@ Description:
 Example:
   shell::verify_arg_count \"$#\" 0 1   # Verifies that the function was called with 0 or 1 argument.
 "
+
+USAGE_SHELL_ADD_ANGULAR_GITIGNORE="
+shell::add_angular_gitignore function
+This function downloads the .gitignore file specifically for Angular projects.
+"
