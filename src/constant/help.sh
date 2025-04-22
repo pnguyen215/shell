@@ -858,3 +858,14 @@ Usage:
 Parameters:
   - -h                              : Optional. Displays this help message.
 "
+
+USAGE_SHELL_ADD_PYTHON_GITIGNORE="
+shell::add_python_gitignore function
+This function downloads the .gitignore file specifically for Python projects.
+
+Usage:
+  shell::add_python_gitignore [-h]
+
+Parameters:
+  - -h                              : Optional. Displays this help message.
+"
