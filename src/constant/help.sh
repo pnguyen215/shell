@@ -631,3 +631,9 @@ USAGE_SHELL_ADD_ANGULAR_GITIGNORE="
 shell::add_angular_gitignore function
 This function downloads the .gitignore file specifically for Angular projects.
 "
+
+USAGE_SHELL_ADD_GITHUB_WORKFLOW_CI="
+shell::add_github_workflow_ci function
+This function downloads the continuous integration (CI) workflow configuration file
+for the DevOps process from the specified GitHub repository.
+"

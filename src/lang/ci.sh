@@ -11,6 +11,11 @@
 # The CI workflow file is essential for automating the build, test, and deployment
 # processes in a continuous integration environment.
 shell::add_github_workflow_ci() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_ADD_GITHUB_WORKFLOW_CI"
+        return 0
+    fi
     shell::download_dataset ".github/workflows/ci.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_CI
 }
 
