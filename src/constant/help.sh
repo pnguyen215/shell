@@ -1151,3 +1151,27 @@ Example:
   shell::upgrade_pkg_python_env -n requests    # Prints upgrade command without executing.
   shell::upgrade_pkg_python_env -p ~/my_env flask  # Upgrades flask in ~/my_env.
 "
+
+USAGE_SHELL_FREEZE_PKG_PYTHON_ENV="
+shell::freeze_pkg_python_env function
+Exports a list of installed packages and their versions from a Python virtual environment to a requirements.txt file.
+
+Usage:
+  shell::freeze_pkg_python_env [-n] [-h] [-p <path>]
+
+Parameters:
+  - -n          : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+  - -h          : Optional. Displays this help message.
+  - -p <path>   : Optional. Specifies the path to the virtual environment (defaults to ./venv).
+
+Description:
+  This function uses pip freeze to generate a requirements.txt file, capturing the current state of the virtual environment's packages.
+  - It checks for the existence of the virtual environment.
+  - It constructs the appropriate pip freeze command.
+  - It supports dry-run mode to preview the command.
+  - It implements asynchronous execution for the freeze operation.
+
+Example:
+  shell::freeze_pkg_python_env         # Exports requirements from ./venv.
+  shell::freeze_pkg_python_env -n -p ~/my_env  # Prints the export command for ~/my_env without executing.
+"

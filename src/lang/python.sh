@@ -1179,6 +1179,12 @@ shell::upgrade_pkg_python_env() {
 #   - Requires an existing virtual environment.
 #   - Assumes pip is available in the virtual environment.
 shell::freeze_pkg_python_env() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FREEZE_PKG_PYTHON_ENV"
+        return 0
+    fi
+
     local dry_run="false"
     local venv_path="./venv"
 
