@@ -1267,6 +1267,12 @@ shell::freeze_pkg_python_env() {
 #   - Requires an existing virtual environment and a requirements.txt file.
 #   - Assumes pip is available in the virtual environment.
 shell::pip_install_requirements_env() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_PIP_INSTALL_REQUIREMENTS_ENV"
+        return 0
+    fi
+
     local dry_run="false"
     local venv_path="./venv"
 

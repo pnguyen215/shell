@@ -1175,3 +1175,27 @@ Example:
   shell::freeze_pkg_python_env         # Exports requirements from ./venv.
   shell::freeze_pkg_python_env -n -p ~/my_env  # Prints the export command for ~/my_env without executing.
 "
+
+USAGE_SHELL_PIP_INSTALL_REQUIREMENTS_ENV="
+shell::pip_install_requirements_env function
+Installs Python packages from a requirements.txt file into a virtual environment.
+
+Usage:
+  shell::pip_install_requirements_env [-n] [-h] [-p <path>]
+
+Parameters:
+  - -n          : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+  - -h          : Optional. Displays this help message.
+  - -p <path>   : Optional. Specifies the path to the virtual environment (defaults to ./venv).
+
+Description:
+  This function uses pip install -r to install packages from a requirements.txt file into the specified virtual environment.
+  - It checks for the existence of the virtual environment and the requirements.txt file.
+  - It constructs the appropriate pip install command.
+  - It supports dry-run mode to preview the command.
+  - It implements asynchronous execution for the installation process.
+
+Example:
+  shell::pip_install_requirements_env         # Installs from requirements.txt in ./venv.
+  shell::pip_install_requirements_env -n -p ~/my_env  # Prints the installation command for ~/my_env without executing.
+"
