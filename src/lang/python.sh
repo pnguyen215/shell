@@ -413,6 +413,12 @@ shell::uninstall_python_pip_deps::latest() {
 #   - On Linux, uses python3-venv package if needed.
 #   - Activation command is copied to clipboard for convenience.
 shell::create_python_env() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_CREATE_PYTHON_ENV"
+        return 0
+    fi
+
     local dry_run="false"
     local venv_path="./venv"
     local python_version="python3"

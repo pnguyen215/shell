@@ -956,3 +956,31 @@ Example usage:
   shell::uninstall_python_pip_deps::latest       # Uninstalls all pip/pip3 packages after confirmation
   shell::uninstall_python_pip_deps::latest -n    # Dry-run to preview commands
 "
+
+USAGE_SHELL_CREATE_PYTHON_ENV="
+shell::create_python_env function
+Creates a Python virtual environment for development, isolating it from system packages.
+
+Usage:
+  shell::create_python_env [-n] [-h] [-p <path>] [-v <version>]
+
+Parameters:
+  - -n          : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+  - -h          : Optional. Displays this help message.
+  - -p <path>   : Optional. Specifies the path where the virtual environment will be created (defaults to ./venv).
+  - -v <version>: Optional. Specifies the Python version (e.g., 3.10); defaults to system Python3.
+
+Description:
+  This function sets up a Python virtual environment to avoid package conflicts with the system OS:
+  - Ensures Python3 and pip are installed using shell::install_python.
+  - Creates a virtual environment at the specified or default path using the specified or default Python version.
+  - Upgrades pip and installs basic tools (wheel, setuptools) in the virtual environment.
+  - Supports asynchronous execution for pip upgrades to speed up setup.
+  - Verifies the environment and provides activation instructions.
+
+Example:
+  shell::create_python_env                # Creates a virtual env at ./venv with default Python3.
+  shell::create_python_env -n             # Prints commands without executing them.
+  shell::create_python_env -p ~/my_env     # Creates a virtual env at ~/my_env.
+  shell::create_python_env -v 3.10        # Uses Python 3.10 for the virtual env.
+"
