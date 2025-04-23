@@ -335,6 +335,12 @@ shell::remove_bookmark_linux() {
 #   The 'shell::show_bookmark' function lists all bookmarks in a formatted manner,
 #   showing the bookmark name (field 2) in yellow and the associated directory (field 1) in default color.
 shell::show_bookmark() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_SHOW_BOOKMARK"
+        return 0
+    fi
+
     local yellow normal
     yellow=$(tput setaf 3)
     normal=$(tput sgr0)
