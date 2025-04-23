@@ -1388,3 +1388,27 @@ Description:
 Example usage:
   shell::run_cmd ls -l
 "
+
+USAGE_SHELL_RUN_CMD_EVAL="
+shell::run_cmd_eval function
+Execute a command using eval and print it for logging purposes.
+
+Usage:
+  shell::run_cmd_eval [-h] <command>
+
+Parameters:
+    - -h              : Optional. Displays this help message.
+    - <command>       : The command to be executed (as a single string).
+
+Description:
+  The 'shell::run_cmd_eval' function executes a command by passing it to the \`eval\` command.
+  This allows the execution of complex commands with arguments, pipes, or redirection
+  that are difficult to handle with standard execution.
+  It logs the command before execution to provide visibility into what is being run.
+
+Options:
+  None
+
+Example usage:
+  shell::run_cmd_eval \"ls -l | grep txt\"
+"

@@ -220,6 +220,12 @@ shell::run_cmd() {
 #     command injection vulnerabilities. Ensure the command is sanitized before using this function.
 #   - Prefer the 'wsd_exe_cmd' function for simpler commands without special characters or pipes.
 shell::run_cmd_eval() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_RUN_CMD_EVAL"
+        return 0
+    fi
+
     local command="$*"
     # Capture the OS type output from shell::get_os_type
     local os_type
