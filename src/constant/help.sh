@@ -1370,3 +1370,21 @@ Example usage:
   shell::colored_echo \"Task completed\" 46      # Prints in vibrant green.
   shell::colored_echo \"Shades of gray\" 245     # Prints in a mid-gray shade.
 "
+
+USAGE_SHELL_RUN_CMD="
+shell::run_cmd function
+Executes a command and prints it for logging purposes.
+
+Usage:
+  shell::run_cmd [-h] <command>
+
+Parameters:
+    - -h              : Optional. Displays this help message.
+    - <command>       : The command to be executed.
+
+Description:
+  The \`shell::run_cmd\` function prints the command for logging before executing it.
+
+Example usage:
+  shell::run_cmd ls -l
+"

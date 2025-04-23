@@ -157,6 +157,12 @@ shell::colored_echo() {
 # Notes:
 #   - This function is useful for logging commands prior to execution.
 shell::run_cmd() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_RUN_CMD"
+        return 0
+    fi
+
     local command="$*"
 
     # Capture the OS type output from shell::get_os_type
