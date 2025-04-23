@@ -984,3 +984,29 @@ Example:
   shell::create_python_env -p ~/my_env     # Creates a virtual env at ~/my_env.
   shell::create_python_env -v 3.10        # Uses Python 3.10 for the virtual env.
 "
+
+USAGE_SHELL_INSTALL_PKG_PYTHON_ENV="
+shell::install_pkg_python_env function
+Installs Python packages into an existing virtual environment using pip, avoiding system package conflicts.
+
+Usage:
+  shell::install_pkg_python_env [-n] [-h] [-p <path>] <package1> [package2 ...]
+
+Parameters:
+  - -n          : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+  - -h          : Optional. Displays this help message.
+  - -p <path>   : Optional. Specifies the path to the virtual environment (defaults to ./venv).
+  - <package1> [package2 ...] : One or more Python package names to install (e.g., numpy, requests).
+
+Description:
+  This function installs specified Python packages into an existing virtual environment:
+  - Verifies the virtual environment exists at the specified or default path.
+  - Uses the virtual environment's pip to install packages, ensuring isolation from system Python.
+  - Supports asynchronous execution for package installation to improve performance.
+  - Provides feedback on success or failure, with dry-run support for previewing commands.
+
+Example:
+  shell::install_pkg_python_env numpy pandas    # Installs numpy and pandas in ./venv.
+  shell::install_pkg_python_env -n requests     # Prints installation command without executing.
+  shell::install_pkg_python_env -p ~/my_env flask  # Installs flask in ~/my_env.
+"
