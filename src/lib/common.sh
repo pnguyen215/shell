@@ -87,6 +87,12 @@ shell::get_os_type() {
 #   - Requires a terminal with 256-color support.
 #   - Use ANSI color codes for finer control over colors.
 shell::colored_echo() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_COLORED_ECHO"
+        return 0
+    fi
+
     local message=$1
     local color_code=${2:-4} # Default to blue (ANSI color code 4)
 

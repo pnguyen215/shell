@@ -1329,9 +1329,44 @@ USAGE_SHELL_GET_OS_TYPE="
 shell::get_os_type function
 Determines the current operating system type and outputs a standardized string.
 
+Usage:
+  shell::get_os_type [-h]
+
+Parameters:
+  - -h              : Optional. Displays this help message.
+
 Outputs:
   \"linux\"    - For Linux-based systems
   \"macos\"    - For macOS/Darwin systems
   \"windows\"  - For Windows-like environments (CYGWIN, MINGW, MSYS)
   \"unknown\"  - For unrecognized operating systems
+"
+
+USAGE_SHELL_COLORED_ECHO="
+shell::colored_echo function
+Prints text to the terminal with customizable colors using $(tput) and ANSI escape sequences.
+
+Usage:
+  shell::colored_echo [-h] <message> [color_code]
+
+Parameters:
+  - -h              : Optional. Displays this help message.
+  - <message>       : The text message to display.
+  - [color_code]    : (Optional) A number from 0 to 255 representing the text color.
+      - 0-15: Standard colors (Black, Red, Green, etc.)
+      - 16-231: Extended 6x6x6 color cube
+      - 232-255: Grayscale shades
+
+Description:
+  The $(shell::colored_echo) function prints a message in bold and a specific color, if a valid color code is provided.
+  It uses ANSI escape sequences for 256-color support. If no color code is specified, it defaults to blue (code 4).
+
+Options:
+  None
+
+Example usage:
+  shell::colored_echo \"Hello, World!\"          # Prints in default blue (code 4).
+  shell::colored_echo \"Error occurred\" 196     # Prints in bright red.
+  shell::colored_echo \"Task completed\" 46      # Prints in vibrant green.
+  shell::colored_echo \"Shades of gray\" 245     # Prints in a mid-gray shade.
 "
