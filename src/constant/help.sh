@@ -1123,3 +1123,31 @@ Example:
   shell::fzf_upgrade_pkg_python_env          # Upgrades packages in ./venv after interactive selection.
   shell::fzf_upgrade_pkg_python_env -n -p ~/my_env  # Prints upgrade commands for ~/my_env without executing.
 "
+
+USAGE_SHELL_UPGRADE_PKG_PYTHON_ENV="
+shell::upgrade_pkg_python_env function
+Upgrades Python packages in a virtual environment using pip.
+
+Usage:
+  shell::upgrade_pkg_python_env [-n] [-h] [-p <path>] <package1> [package2 ...]
+
+Parameters:
+  - -n          : Optional dry-run flag.
+                    If provided, commands are printed using shell::on_evict instead of executed.
+  - -h          : Optional. Displays this help message.
+  - -p <path>   : Optional.
+                    Specifies the path to the virtual environment (defaults to ./venv).
+  - <package1> [package2 ...]: One or more Python package names to upgrade.
+
+Description:
+  This function upgrades specified Python packages within an existing virtual environment:
+  - Verifies the virtual environment exists at the specified or default path.
+  - Uses the virtual environment's pip to upgrade packages.
+  - Supports dry-run mode to preview commands.
+  - Implements asynchronous execution for the upgrade process.
+
+Example:
+  shell::upgrade_pkg_python_env numpy pandas   # Upgrades numpy and pandas in ./venv.
+  shell::upgrade_pkg_python_env -n requests    # Prints upgrade command without executing.
+  shell::upgrade_pkg_python_env -p ~/my_env flask  # Upgrades flask in ~/my_env.
+"
