@@ -1229,3 +1229,18 @@ Description:
   The 'shell::opent' function opens the specified directory in a new Finder tab on Mac OS.
   If no directory is specified, it opens the current directory.
 "
+
+USAGE_SHELL_ADD_BOOKMARK="
+shell::add_bookmark function
+Adds a bookmark for the current directory with the specified name.
+
+Usage:
+  shell::add_bookmark [-h] <bookmark name>
+
+Parameters:
+  - -h          : Optional. Displays this help message.
+
+Description:
+  The 'shell::add_bookmark' function creates a bookmark for the current directory with the given name.
+  It allows quick navigation to the specified directory using the bookmark name.
+"

@@ -127,6 +127,12 @@ shell::opent() {
 #   The 'shell::add_bookmark' function creates a bookmark for the current directory with the given name.
 #   It allows quick navigation to the specified directory using the bookmark name.
 shell::add_bookmark() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_ADD_BOOKMARK"
+        return 0
+    fi
+
     local bookmark_name="$1"
 
     if [[ -z "$bookmark_name" ]]; then
