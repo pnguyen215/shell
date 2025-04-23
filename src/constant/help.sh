@@ -1244,3 +1244,21 @@ Description:
   The 'shell::add_bookmark' function creates a bookmark for the current directory with the given name.
   It allows quick navigation to the specified directory using the bookmark name.
 "
+
+USAGE_SHELL_REMOVE_BOOKMARK="
+shell::remove_bookmark function
+Deletes a bookmark with the specified name from the bookmarks file.
+
+Usage:
+  shell::remove_bookmark [-h] <bookmark_name>
+
+Parameters:
+  - -h              : Optional. Displays this help message.
+  - <bookmark_name> : The name of the bookmark to remove.
+
+Description:
+  This function searches for a bookmark entry in the bookmarks file that ends with \"|<bookmark_name>\".
+  If the entry is found, it creates a secure temporary file using mktemp, filters out the matching line,
+  and then replaces the original bookmarks file with the filtered version.
+  If the bookmark is not found or removal fails, an error message is displayed.
+"

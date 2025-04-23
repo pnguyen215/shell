@@ -220,6 +220,12 @@ shell::add_bookmark() {
 # Notes:
 #   - The bookmarks file is specified by the global variable 'bookmarks_file'.
 shell::remove_bookmark() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_REMOVE_BOOKMARK"
+        return 0
+    fi
+
     local bookmark_name="$1"
 
     if [[ -z "$bookmark_name" ]]; then
