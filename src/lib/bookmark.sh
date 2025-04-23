@@ -23,6 +23,12 @@ fi
 #   - The 'ln' command for creating hard links.
 #   - The 'chmod' command to modify file permissions.
 shell::uplink() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_UPLINK"
+        return 0
+    fi
+
     # If two arguments are provided, use them as source and destination.
     if [ "$#" -eq 2 ]; then
         local src="$1"

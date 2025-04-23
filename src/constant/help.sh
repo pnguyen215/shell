@@ -1199,3 +1199,18 @@ Example:
   shell::pip_install_requirements_env         # Installs from requirements.txt in ./venv.
   shell::pip_install_requirements_env -n -p ~/my_env  # Prints the installation command for ~/my_env without executing.
 "
+
+USAGE_SHELL_UPLINK="
+shell::uplink function
+Creates a hard link between the specified source and destination.
+
+Usage:
+  shell::uplink [-h] <source name> <destination name>
+
+Parameters:
+  - -h          : Optional. Displays this help message.
+
+Description:
+  The 'shell::uplink' function creates a hard link between the specified source file and destination file.
+  This allows multiple file names to refer to the same file content.
+"
