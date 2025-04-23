@@ -74,6 +74,12 @@ shell::uplink() {
 # Dependencies:
 #   - The 'osascript' command for AppleScript support.
 shell::opent() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_OPENT"
+        return 0
+    fi
+
     local os
     os=$(shell::get_os_type)
 

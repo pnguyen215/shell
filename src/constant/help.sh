@@ -1214,3 +1214,18 @@ Description:
   The 'shell::uplink' function creates a hard link between the specified source file and destination file.
   This allows multiple file names to refer to the same file content.
 "
+
+USAGE_SHELL_OPENT="
+shell::opent function
+Opens the specified directory in a new Finder tab (Mac OS only).
+
+Usage:
+  shell::opent [-h] [directory]
+
+Parameters:
+  - -h          : Optional. Displays this help message.
+
+Description:
+  The 'shell::opent' function opens the specified directory in a new Finder tab on Mac OS.
+  If no directory is specified, it opens the current directory.
+"
