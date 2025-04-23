@@ -213,6 +213,12 @@ shell::uninstall_python_pip_deps() {
         shift
     fi
 
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_UNINSTALL_PYTHON_PIP_DEPS"
+        return 0
+    fi
+
     shell::colored_echo "🟡 WARNING: This will uninstall all pip and pip3 packages, including system packages." 11
     shell::colored_echo "🟡 This is potentially dangerous and could break your system Python installation." 11
     shell::colored_echo "🟡 Are you absolutely sure you want to proceed? (yes/no)" 11
