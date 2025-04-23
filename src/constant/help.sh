@@ -1442,3 +1442,18 @@ Parameters:
 Example usage:
   shell::install_package git
 "
+
+USAGE_SHELL_REMOVAL_PACKAGE="
+shell::removal_package function
+Cross-platform package uninstallation function for macOS and Linux.
+
+Usage:
+  shell::removal_package [-h] <package_name>
+
+Parameters:
+    - -h                : Optional. Displays this help message.
+    - <package_name>    : The name of the package to uninstall
+
+Example usage:
+  shell::removal_package git
+"
