@@ -869,3 +869,25 @@ Usage:
 Parameters:
   - -h                              : Optional. Displays this help message.
 "
+
+USAGE_SHELL_INSTALL_PYTHON="
+shell::install_python function
+Installs Python (python3) on macOS or Linux.
+
+Usage:
+  shell::install_python [-n] [-h]
+
+Parameters:
+  - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - -h : Optional. Displays this help message.
+
+Description:
+  Installs Python 3 using the appropriate package manager based on the OS:
+  - On Linux: Uses apt-get, yum, or dnf (detected automatically), with a specific check for package installation state.
+  - On macOS: Uses Homebrew, checking Homebrew's package list.
+  Skips installation only if Python is confirmed installed via the package manager.
+
+Example:
+  shell::install_python       # Installs Python 3.
+  shell::install_python -n    # Prints the installation command without executing it.
+"

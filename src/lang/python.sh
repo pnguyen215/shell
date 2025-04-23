@@ -29,6 +29,12 @@ shell::install_python() {
         shift
     fi
 
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_INSTALL_PYTHON"
+        return 0
+    fi
+
     local os_type
     os_type=$(shell::get_os_type)
     local python_version="python3"
