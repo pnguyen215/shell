@@ -1097,3 +1097,29 @@ Example:
   shell::fzf_use_python_env          # Select and activate a venv from the current directory.
   shell::fzf_use_python_env -n -p ~/projects  # Prints activation command for a venv in ~/projects without executing.
 "
+
+USAGE_SHELL_FZF_UPGRADE_PKG_PYTHON_ENV="
+shell::fzf_upgrade_pkg_python_env function
+Interactively upgrades Python packages in a virtual environment using fzf for package selection.
+
+Usage:
+  shell::fzf_upgrade_pkg_python_env [-n] [-h] [-p <path>]
+
+Parameters:
+  - -n          : Optional dry-run flag.
+                    If provided, commands are printed using shell::on_evict
+                    instead of executed.
+  - -h          : Optional. Displays this help message.
+  - -p <path>   : Optional.
+                    Specifies the path to the virtual environment (defaults to ./venv).
+
+Description:
+  This function provides an interactive way to upgrade Python packages within a virtual environment by:
+  - Using fzf to allow selection of packages to upgrade.
+  - Constructing and executing pip upgrade commands.
+  - Supporting dry-run mode to preview commands.
+
+Example:
+  shell::fzf_upgrade_pkg_python_env          # Upgrades packages in ./venv after interactive selection.
+  shell::fzf_upgrade_pkg_python_env -n -p ~/my_env  # Prints upgrade commands for ~/my_env without executing.
+"

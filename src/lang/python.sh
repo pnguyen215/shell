@@ -966,6 +966,12 @@ shell::fzf_use_python_env() {
 # Notes:
 #   - Requires fzf and an existing virtual environment.
 shell::fzf_upgrade_pkg_python_env() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_UPGRADE_PKG_PYTHON_ENV"
+        return 0
+    fi
+
     local dry_run="false"
     local venv_path="./venv"
 
