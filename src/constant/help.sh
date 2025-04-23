@@ -891,3 +891,25 @@ Example:
   shell::install_python       # Installs Python 3.
   shell::install_python -n    # Prints the installation command without executing it.
 "
+
+USAGE_SHELL_UNINSTALL_PYTHON="
+shell::uninstall_python function
+Removes Python (python3) and its core components from the system.
+
+Usage:
+  shell::uninstall_python [-n] [-h]
+
+Parameters:
+  - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - -h : Optional. Displays this help message.
+
+Description:
+  Thoroughly uninstalls Python 3 using the appropriate package manager:
+  - On Linux: Uses \"purge\" with apt-get or \"remove\" with yum/dnf, followed by autoremove to clean dependencies.
+  - On macOS: Uses Homebrew with cleanup to remove all traces.
+  Warns about potential system impact on Linux due to Python dependencies.
+
+Example:
+  shell::uninstall_python       # Removes Python 3.
+  shell::uninstall_python -n    # Prints the removal command without executing it.
+"
