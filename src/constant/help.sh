@@ -1310,3 +1310,17 @@ Description:
   associated with the given bookmark name. It looks for a line in the bookmarks file
   that ends with \"|<bookmark name>\".
 "
+
+USAGE_SHELL_GO_BACK="
+shell::go_back function
+Navigates to the previous working directory.
+
+Usage:
+  shell::go_back [-h]
+
+Parameters:
+  - -h              : Optional. Displays this help message.
+
+Description:
+  The 'shell::go_back' function changes the current working directory to the previous directory in the history.
+"

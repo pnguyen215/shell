@@ -394,5 +394,11 @@ shell::go_bookmark() {
 # Description:
 #   The 'shell::go_back' function changes the current working directory to the previous directory in the history.
 shell::go_back() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_GO_BACK"
+        return 0
+    fi
+
     cd $OLDPWD
 }
