@@ -19,6 +19,15 @@ SHELL_CONF_WORKING="$HOME/.shell-config"
 #   SHELL_CONF_WORKING_WORKSPACE="$SHELL_CONF_WORKING/workspace"
 SHELL_CONF_WORKING_WORKSPACE="$SHELL_CONF_WORKING/workspace"
 
+# SHELL_CONF_WORKING_BOOKMARK constant
+# This variable defines the path to the bookmarks directory within the shell configuration working directory.
+# It is used to store bookmark files that allow quick navigation to frequently used directories.
+# By default, this is set to "$SHELL_CONF_WORKING/bookmarks". You can change this value if you want to store your bookmarks in a different location.
+#
+# Example:
+#   SHELL_CONF_WORKING_BOOKMARK="$SHELL_CONF_WORKING/bookmarks"
+SHELL_CONF_WORKING_BOOKMARK="$SHELL_CONF_WORKING/bookmarks"
+
 # SHELL_KEY_CONF_FILE constant
 # This variable defines the path to the key configuration file used by the shell bash library.
 # The file stores individual configuration entries in the following format:
@@ -47,6 +56,12 @@ SHELL_KEY_CONF_FILE_WORKSPACE="$SHELL_CONF_WORKING_WORKSPACE/profile.conf"
 # Example:
 #   SHELL_KEY_CONF_SETTING_WORKSPACE="$SHELL_CONF_WORKING_WORKSPACE/settings.conf"
 SHELL_KEY_CONF_SETTING_WORKSPACE="$SHELL_CONF_WORKING_WORKSPACE/settings.conf"
+
+# SHELL_KEY_CONF_FILE_BOOKMARK constant
+# This variable defines the path to the bookmarks file within the shell configuration bookmarks directory.
+# It is used to store individual bookmark entries, allowing for quick access to frequently used directories.
+# By default, this is set to "$SHELL_CONF_WORKING_BOOKMARK/.bookmarks". You can change this value if you want to store your bookmarks in a different location.
+SHELL_KEY_CONF_FILE_BOOKMARK="$SHELL_CONF_WORKING_BOOKMARK/.bookmarks"
 
 # SHELL_GROUP_CONF_FILE constant
 # This variable defines the path to the group configuration file used by the shell bash library.
