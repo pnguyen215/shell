@@ -1070,3 +1070,30 @@ Example:
   shell::fzf_uninstall_pkg_python_env          # Uninstalls packages from ./venv after interactive selection.
   shell::fzf_uninstall_pkg_python_env -n -p ~/my_env  # Prints uninstallation commands for ~/my_env without executing.
 "
+
+USAGE_SHELL_FZF_USE_PYTHON_ENV="
+shell::fzf_use_python_env function
+Interactively selects a Python virtual environment using fzf and activates/deactivates it.
+
+Usage:
+  shell::fzf_use_python_env [-n] [-h] [-p <path>]
+
+Parameters:
+  - -n          : Optional dry-run flag.
+                    If provided, commands are printed using shell::on_evict
+                    instead of executed.
+  - -h          : Optional. Displays this help message.
+  - -p <path>   : Optional.
+                    Specifies the parent path to search for virtual environments (defaults to current directory).
+
+Description:
+  This function enhances virtual environment management by:
+  - Using fzf to allow interactive selection of a virtual environment.
+  - Activating the selected virtual environment.
+  - Providing an option to deactivate the current environment.
+  - Supports dry-run.
+
+Example:
+  shell::fzf_use_python_env          # Select and activate a venv from the current directory.
+  shell::fzf_use_python_env -n -p ~/projects  # Prints activation command for a venv in ~/projects without executing.
+"

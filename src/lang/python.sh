@@ -866,6 +866,12 @@ shell::fzf_uninstall_pkg_python_env() {
 # Notes:
 #   - Requires fzf.
 shell::fzf_use_python_env() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_USE_PYTHON_ENV"
+        return 0
+    fi
+
     local dry_run="false"
     local parent_path="." # Default to current directory
 
