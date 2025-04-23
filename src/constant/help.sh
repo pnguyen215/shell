@@ -1044,3 +1044,29 @@ Example:
   shell::uninstall_pkg_python_env -n requests     # Prints uninstallation command without executing.
   shell::uninstall_pkg_python_env -p ~/my_env flask  # Uninstalls flask from ~/my_env.
 "
+
+USAGE_SHELL_FZF_UNINSTALL_PKG_PYTHON_ENV="
+shell::fzf_uninstall_pkg_python_env function
+Interactively uninstalls Python packages from a virtual environment using fzf for package selection.
+
+Usage:
+  shell::fzf_uninstall_pkg_python_env [-n] [-h] [-p <path>]
+
+Parameters:
+  - -n          : Optional dry-run flag.
+                    If provided, commands are printed using shell::on_evict
+                    instead of executed.
+  - -h          : Optional. Displays this help message.
+  - -p <path>   : Optional.
+                    Specifies the path to the virtual environment (defaults to ./venv).
+
+Description:
+  This function enhances Python package uninstallation by:
+  - Using fzf to allow interactive selection of packages to uninstall.
+  - Reusing shell::uninstall_pkg_python_env to perform the actual uninstallation.
+  - Supports dry-run and asynchronous execution.
+
+Example:
+  shell::fzf_uninstall_pkg_python_env          # Uninstalls packages from ./venv after interactive selection.
+  shell::fzf_uninstall_pkg_python_env -n -p ~/my_env  # Prints uninstallation commands for ~/my_env without executing.
+"
