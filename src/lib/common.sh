@@ -415,6 +415,12 @@ shell::removal_package() {
 # Example usage:
 #   shell::list_installed_packages
 shell::list_installed_packages() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_LIST_INSTALLED_PACKAGES"
+        return 0
+    fi
+
     local os_type
     os_type=$(shell::get_os_type)
 
