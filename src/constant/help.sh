@@ -1427,3 +1427,18 @@ Parameters:
 Returns:
   0 if the command is available, 1 otherwise
 "
+
+USAGE_SHELL_INSTALL_PACKAGE="
+shell::install_package function
+Cross-platform package installation function that works on both macOS and Linux.
+
+Usage:
+  shell::install_package [-h] <package_name>
+
+Parameters:
+    - -h                : Optional. Displays this help message.
+    - <package_name>    : The name of the package to install
+
+Example usage:
+  shell::install_package git
+"

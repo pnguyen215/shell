@@ -292,6 +292,12 @@ shell::is_command_available() {
 # Example usage:
 #   shell::install_package git
 shell::install_package() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_INSTALL_PACKAGE"
+        return 0
+    fi
+
     local package="$1"
 
     local os_type
