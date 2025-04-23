@@ -1324,3 +1324,14 @@ Parameters:
 Description:
   The 'shell::go_back' function changes the current working directory to the previous directory in the history.
 "
+
+USAGE_SHELL_GET_OS_TYPE="
+shell::get_os_type function
+Determines the current operating system type and outputs a standardized string.
+
+Outputs:
+  \"linux\"    - For Linux-based systems
+  \"macos\"    - For macOS/Darwin systems
+  \"windows\"  - For Windows-like environments (CYGWIN, MINGW, MSYS)
+  \"unknown\"  - For unrecognized operating systems
+"
