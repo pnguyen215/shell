@@ -1412,3 +1412,18 @@ Options:
 Example usage:
   shell::run_cmd_eval \"ls -l | grep txt\"
 "
+
+USAGE_SHELL_IS_COMMAND_AVAILABLE="
+shell::is_command_available function
+Check if a command is available in the system's PATH.
+
+Usage:
+  shell::is_command_available [-h] <command>
+
+Parameters:
+    - -h              : Optional. Displays this help message.
+    - <command>       : The command to check
+
+Returns:
+  0 if the command is available, 1 otherwise
+"

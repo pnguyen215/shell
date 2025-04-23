@@ -270,6 +270,12 @@ shell::run_cmd_eval() {
 #     echo "Git is not installed"
 #   fi
 shell::is_command_available() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_IS_COMMAND_AVAILABLE"
+        return 0
+    fi
+
     command -v "$1" &>/dev/null
     return $?
 }
