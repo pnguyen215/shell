@@ -934,3 +934,25 @@ Example usage:
   shell::uninstall_python_pip_deps       # Uninstalls all pip/pip3 packages after confirmation
   shell::uninstall_python_pip_deps -n    # Dry-run to preview commands
 "
+
+USAGE_SHELL_UNINSTALL_PYTHON_PIP_DEPS_LATEST="
+shell::uninstall_python_pip_deps::latest function
+Uninstalls all pip and pip3 packages with user confirmation and optional dry-run.
+
+Usage:
+  shell::uninstall_python_pip_deps::latest [-n] [-h]
+
+Parameters:
+  - -n  : Optional flag to perform a dry-run (uses shell::on_evict to print commands without executing).
+  - -h  : Optional. Displays this help message.
+
+Description:
+  This function uninstalls all packages installed via pip and pip3, including system packages,
+  after user confirmation. It is designed to work on both Linux and macOS, with safety checks.
+  In non-dry-run mode, it executes the uninstallation commands asynchronously using shell::async,
+  ensuring that the function returns once the background process completes.
+
+Example usage:
+  shell::uninstall_python_pip_deps::latest       # Uninstalls all pip/pip3 packages after confirmation
+  shell::uninstall_python_pip_deps::latest -n    # Dry-run to preview commands
+"
