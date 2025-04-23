@@ -1010,3 +1010,37 @@ Example:
   shell::install_pkg_python_env -n requests     # Prints installation command without executing.
   shell::install_pkg_python_env -p ~/my_env flask  # Installs flask in ~/my_env.
 "
+
+USAGE_SHELL_UNINSTALL_PKG_PYTHON_ENV="
+shell::uninstall_pkg_python_env function
+Uninstalls Python packages from a virtual environment using pip or pip3.
+
+Usage:
+  shell::uninstall_pkg_python_env [-n] [-h] [-p <path>] <package1> [package2 ...]
+
+Parameters:
+  - -n          : Optional dry-run flag.
+                    If provided, commands are printed using shell::on_evict
+                    instead of executed.
+  - -h          : Optional. Displays this help message.
+  - -p <path>   : Optional.
+                    Specifies the path to the virtual environment (defaults to ./venv).
+  - <package1> [package2 ...] : One or more Python package names to uninstall
+                    (e.g., numpy, requests).
+
+Description:
+  This function uninstalls specified Python packages from an existing virtual
+  environment:
+  - Verifies the virtual environment exists at the specified or default path.
+  - Uses the virtual environment's pip to uninstall packages, ensuring
+    uninstallation is isolated to the virtual environment.
+  - Supports asynchronous execution for package uninstallation to improve
+    performance.
+  - Provides feedback on success or failure, with dry-run support for
+    previewing commands.
+
+Example:
+  shell::uninstall_pkg_python_env numpy pandas    # Uninstalls numpy and pandas from ./venv.
+  shell::uninstall_pkg_python_env -n requests     # Prints uninstallation command without executing.
+  shell::uninstall_pkg_python_env -p ~/my_env flask  # Uninstalls flask from ~/my_env.
+"

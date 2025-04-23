@@ -656,6 +656,12 @@ shell::install_pkg_python_env() {
 #   - Assumes pip is available in the virtual environment.
 #   - Compatible with both Linux (Ubuntu 22.04 LTS) and macOS.
 shell::uninstall_pkg_python_env() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_UNINSTALL_PKG_PYTHON_ENV"
+        return 0
+    fi
+
     local dry_run="false"
     local venv_path="./venv"
     local packages=()
