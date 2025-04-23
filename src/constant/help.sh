@@ -1294,3 +1294,19 @@ Description:
   The 'shell::show_bookmark' function lists all bookmarks in a formatted manner,
   showing the bookmark name (field 2) in yellow and the associated directory (field 1) in default color.
 "
+
+USAGE_SHELL_GO_BOOKMARK="
+shell::go_bookmark function
+Navigates to the directory associated with the specified bookmark name.
+
+Usage:
+  shell::go_bookmark [-h] <bookmark name>
+
+Parameters:
+  - -h              : Optional. Displays this help message.
+
+Description:
+  The 'shell::go_bookmark' function changes the current working directory to the directory
+  associated with the given bookmark name. It looks for a line in the bookmarks file
+  that ends with \"|<bookmark name>\".
+"

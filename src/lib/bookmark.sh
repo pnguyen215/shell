@@ -358,6 +358,12 @@ shell::show_bookmark() {
 #   associated with the given bookmark name. It looks for a line in the bookmarks file
 #   that ends with "|<bookmark name>".
 shell::go_bookmark() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_GO_BOOKMARK"
+        return 0
+    fi
+
     local bookmark_name="$1"
     local bookmark dir
 
