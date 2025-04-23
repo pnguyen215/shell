@@ -922,7 +922,7 @@ Usage:
   shell::uninstall_python_pip_deps [-n] [-h]
 
 Parameters:
-  -n    : Optional flag to perform a dry-run (uses shell::on_evict to print commands without executing).
+  - -n  : Optional flag to perform a dry-run (uses shell::on_evict to print commands without executing).
   - -h  : Optional. Displays this help message.
 
 Description:
