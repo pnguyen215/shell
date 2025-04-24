@@ -682,6 +682,12 @@ shell::create_directory_if_not_exists() {
 #   shell::create_file_if_not_exists ./demo/sub/text.txt   # Creates all necessary directories and the file relative to the current directory.
 #   shell::create_file_if_not_exists /absolute/path/to/file.txt
 shell::create_file_if_not_exists() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_CREATE_FILE_IF_NOT_EXISTS"
+        return 0
+    fi
+
     if [ $# -lt 1 ]; then
         echo "Usage: shell::create_file_if_not_exists <filename>"
         return 1
