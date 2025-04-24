@@ -1594,3 +1594,17 @@ Example:
   shell::setPerms::777 ./my_script.sh
   shell::setPerms::777 -n ./my_script.sh  # Dry-run: prints the command without executing.
 "
+
+USAGE_SHELL_CLIP_CWD="
+shell::clip_cwd function
+Copies the current directory path to the clipboard.
+
+Usage:
+  shell::clip_cwd [-h]
+
+Parameters:
+  - -h              : Optional. Displays this help message.
+
+Description:
+  The 'shell::clip_cwd' function copies the current directory path to the clipboard using the 'pbcopy' command.
+"
