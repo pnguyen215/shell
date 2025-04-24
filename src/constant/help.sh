@@ -1662,3 +1662,25 @@ Description:
 Example usage:
   shell::on_evict ls -l
 "
+
+USAGE_SHELL_PORT_CHECK="
+shell::port_check function
+Checks if a specific TCP port is in use (listening).
+
+Usage:
+  shell::port_check [-h] <port> [-n]
+
+Parameters:
+    - -h     : Optional. Displays this help message.
+    - <port> : The TCP port number to check.
+    - -n     : Optional flag to enable dry-run mode (prints the command without executing it).
+
+Description:
+  This function uses lsof to determine if any process is actively listening on the specified TCP port.
+  It filters the output for lines containing \"LISTEN\", which indicates that the port is in use.
+  When the dry-run flag (-n) is provided, the command is printed using shell::on_evict instead of being executed.
+
+Example:
+  shell::port_check 8080        # Executes the command.
+  shell::port_check 8080 -n     # Prints the command (dry-run mode) without executing it.
+"

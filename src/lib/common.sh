@@ -1020,6 +1020,12 @@ shell::on_evict() {
 #   shell::port_check 8080        # Executes the command.
 #   shell::port_check 8080 -n     # Prints the command (dry-run mode) without executing it.
 shell::port_check() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_PORT_CHECK"
+        return 0
+    fi
+
     if [ $# -lt 1 ]; then
         echo "Usage: shell::port_check <port> [-n]"
         return 1
