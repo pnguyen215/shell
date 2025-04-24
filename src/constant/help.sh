@@ -1629,3 +1629,21 @@ Description:
 Example:
   shell::clip_value \"Hello, World!\"
 "
+
+USAGE_SHELL_GET_TEMP_DIR="
+shell::get_temp_dir function
+Returns the appropriate temporary directory based on the detected kernel.
+
+Usage:
+  shell::get_temp_dir [-h]
+
+Parameters:
+    - -h         : Optional. Displays this help message.
+
+Returns:
+  The path to the temporary directory for the current operating system.
+
+Example usage:
+  TEMP_DIR=$(shell::get_temp_dir)
+  echo \"Using temporary directory: $TEMP_DIR\"
+"

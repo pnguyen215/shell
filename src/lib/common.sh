@@ -921,6 +921,12 @@ shell::clip_value() {
 #   TEMP_DIR=$(shell::get_temp_dir)
 #   echo "Using temporary directory: $TEMP_DIR"
 shell::get_temp_dir() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_GET_TEMP_DIR"
+        return 0
+    fi
+
     shell::get_os_type
     local os=$?
 
