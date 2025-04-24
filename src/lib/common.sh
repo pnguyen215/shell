@@ -873,6 +873,12 @@ shell::clip_cwd() {
 # Example:
 #   shell::clip_value "Hello, World!"
 shell::clip_value() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_CLIP_VALUE"
+        return 0
+    fi
+
     local value="$1"
     if [[ -z "$value" ]]; then
         shell::colored_echo "🔴 Error: No value provided to copy." 196

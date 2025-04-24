@@ -1608,3 +1608,24 @@ Parameters:
 Description:
   The 'shell::clip_cwd' function copies the current directory path to the clipboard using the 'pbcopy' command.
 "
+
+USAGE_SHELL_CLIP_VALUE="
+shell::clip_value function
+Copies the provided text value into the system clipboard.
+
+Usage:
+  shell::clip_value [-h] <text>
+
+Parameters:
+    - -h              : Optional. Displays this help message.
+    - <text>          : The text string or value to copy to the clipboard.
+
+Description:
+  This function first checks if a value has been provided. It then determines the current operating
+  system using the shell::get_os_type function. On macOS, it uses pbcopy to copy the value to the clipboard.
+  On Linux, it first checks if xclip is available and uses it; if not, it falls back to xsel.
+  If no clipboard tool is found or the OS is unsupported, an error message is displayed.
+
+Example:
+  shell::clip_value \"Hello, World!\"
+"
