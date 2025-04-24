@@ -1706,3 +1706,27 @@ Example:
   shell::port_kill 8080              # Kills processes on port 8080.
   shell::port_kill -n 8080 3000       # Prints the kill commands for ports 8080 and 3000 without executing.
 "
+
+USAGE_SHELL_COPY_FILES="
+shell::copy_files function
+Copies a source file to one or more destination filenames in the current working directory.
+
+Usage:
+  shell::copy_files [-n] [-h] <source_filename> <new_filename1> [<new_filename2> ...]
+
+Parameters:
+    - -n                : Optional dry-run flag. If provided, the command will be printed using shell::on_evict instead of executed.
+    - -h                : Optional. Displays this help message.
+    - <source_filename> : The file to copy.
+    - <new_filenameX>   : One or more new filenames (within the current working directory) where the source file will be copied.
+
+Description:
+  The function first checks for a dry-run flag (-n). It then verifies that at least two arguments remain.
+  For each destination filename, it checks if the file already exists in the current working directory.
+  If not, it builds the command to copy the source file (using sudo) to the destination.
+  In dry-run mode, the command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
+
+Example:
+  shell::copy_files myfile.txt newfile.txt            # Copies myfile.txt to newfile.txt.
+  shell::copy_files -n myfile.txt newfile1.txt newfile2.txt  # Prints the copy commands without executing them.
+"

@@ -1145,6 +1145,12 @@ shell::copy_files() {
         shift
     fi
 
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_COPY_FILES"
+        return 0
+    fi
+
     if [ $# -lt 2 ]; then
         echo "Usage: shell::copy_files [-n] <source_filename> <new_filename1> [<new_filename2> ...]"
         return 1
