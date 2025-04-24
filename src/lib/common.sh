@@ -466,6 +466,12 @@ shell::list_installed_packages() {
 #   shell::list_path_installed_packages
 #   shell::list_path_installed_packages /custom/install/path
 shell::list_path_installed_packages() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_LIST_PATH_INSTALLED_PACKAGES"
+        return 0
+    fi
+
     local base_path="$1"
     local os_type
     os_type=$(shell::get_os_type)
