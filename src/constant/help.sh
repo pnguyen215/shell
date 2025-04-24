@@ -1642,8 +1642,4 @@ Parameters:
 
 Returns:
   The path to the temporary directory for the current operating system.
-
-Example usage:
-  TEMP_DIR=$(shell::get_temp_dir)
-  echo \"Using temporary directory: $TEMP_DIR\"
 "
