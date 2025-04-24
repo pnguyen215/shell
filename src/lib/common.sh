@@ -1080,6 +1080,12 @@ shell::port_kill() {
         shift
     fi
 
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_PORT_KILL"
+        return 0
+    fi
+
     if [ "$#" -eq 0 ]; then
         shell::colored_echo "🟡 No ports specified. Usage: shell::port_kill [-n] PORT [PORT...]" 11
         return 1
