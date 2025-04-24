@@ -1515,3 +1515,15 @@ Example usage:
   shell::list_path_installed_packages_details
   shell::list_path_installed_packages_details /custom/install/path
 "
+
+USAGE_SHELL_IS_PACKAGE_INSTALLED_LINUX="
+shell::is_package_installed_linux function
+Checks if a package is installed on Linux.
+
+Usage:
+  shell::is_package_installed_linux [-h] <package_name>
+
+Parameters:
+    - -h            : Optional. Displays this help message.
+    - <package_name>: The name of the package to check
+"

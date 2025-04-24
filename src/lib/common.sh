@@ -585,6 +585,12 @@ shell::list_path_installed_packages_details() {
 # Returns:
 #   0 if the package is installed, 1 otherwise.
 shell::is_package_installed_linux() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_IS_PACKAGE_INSTALLED_LINUX"
+        return 0
+    fi
+
     local package="$1"
 
     if shell::is_command_available apt-get; then
