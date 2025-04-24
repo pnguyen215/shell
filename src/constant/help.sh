@@ -1527,3 +1527,24 @@ Parameters:
     - -h            : Optional. Displays this help message.
     - <package_name>: The name of the package to check
 "
+
+USAGE_SHELL_CREATE_DIRECTORY_IF_NOT_EXISTS="
+shell::create_directory_if_not_exists function
+Utility function to create a directory (including nested directories) if it
+doesn't exist.
+
+Usage:
+  shell::create_directory_if_not_exists [-h] <directory_path>
+
+Parameters:
+    - -h                : Optional. Displays this help message.
+    - <directory_path>  : The path of the directory to be created.
+
+Description:
+  This function checks if the specified directory exists. If it does not,
+  it creates the directory (including any necessary parent directories) using
+  sudo to ensure proper privileges.
+
+Example:
+  shell::create_directory_if_not_exists /path/to/nested/directory
+"

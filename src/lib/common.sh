@@ -605,9 +605,7 @@ shell::is_package_installed_linux() {
     fi
 }
 
-###############################################################################
 # shell::create_directory_if_not_exists function
-###############################################################################
 # Utility function to create a directory (including nested directories) if it
 # doesn't exist.
 #
@@ -625,6 +623,12 @@ shell::is_package_installed_linux() {
 # Example:
 #   shell::create_directory_if_not_exists /path/to/nested/directory
 shell::create_directory_if_not_exists() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_CREATE_DIRECTORY_IF_NOT_EXISTS"
+        return 0
+    fi
+
     if [ $# -lt 1 ]; then
         echo "Usage: shell::create_directory_if_not_exists <directory_path>"
         return 1
