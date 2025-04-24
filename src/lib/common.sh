@@ -757,6 +757,12 @@ shell::create_file_if_not_exists() {
 #   shell::setPerms::777 ./my_script.sh
 #   shell::setPerms::777 -n ./my_script.sh  # Dry-run: prints the command without executing.
 shell::setPerms::777() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_SET_PERMS_777"
+        return 0
+    fi
+
     local dry_run="false"
 
     # Check for the optional dry-run flag (-n)

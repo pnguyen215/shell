@@ -1571,3 +1571,26 @@ Example usage:
   shell::create_file_if_not_exists ./demo/sub/text.txt   # Creates all necessary directories and the file relative to the current directory.
   shell::create_file_if_not_exists /absolute/path/to/file.txt
 "
+
+USAGE_SHELL_SET_PERMS_777="
+shell::setPerms::777 function
+Sets full permissions (read, write, and execute) for the specified file or directory.
+
+Usage:
+  shell::setPerms::777 [-n] [-h] <file/dir>
+
+Parameters:
+  - -n (optional)   : Dry-run mode. Instead of executing the command, prints it using shell::on_evict.
+  - -h              : Optional. Displays this help message.
+  - <file/dir>      : The path to the file or directory to modify.
+
+Description:
+  This function checks the current permission of the target. If it is already set to 777,
+  it logs a message and exits without making any changes.
+  Otherwise, it builds and executes (or prints, in dry-run mode) the chmod command asynchronously
+  to grant full permissions recursively.
+
+Example:
+  shell::setPerms::777 ./my_script.sh
+  shell::setPerms::777 -n ./my_script.sh  # Dry-run: prints the command without executing.
+"
