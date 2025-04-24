@@ -1643,3 +1643,22 @@ Parameters:
 Returns:
   The path to the temporary directory for the current operating system.
 "
+
+USAGE_SHELL_ON_EVICT="
+shell::on_evict function
+Hook to print a command without executing it.
+
+Usage:
+  shell::on_evict [-h] <command>
+
+Parameters:
+    - -h            : Optional. Displays this help message.
+    - <command>     : The command to be printed.
+
+Description:
+  The 'shell::on_evict' function prints a command without executing it.
+  It is designed as a hook for logging or displaying commands without actual execution.
+
+Example usage:
+  shell::on_evict ls -l
+"

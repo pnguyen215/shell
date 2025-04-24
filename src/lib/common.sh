@@ -990,6 +990,12 @@ shell::get_temp_dir() {
 # Notes:
 #   - This function is useful for displaying commands in logs or hooks without execution.
 shell::on_evict() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_ON_EVICT"
+        return 0
+    fi
+
     local command="$*"
     shell::colored_echo "CLI: $command" 3
     shell::clip_value "$command"
