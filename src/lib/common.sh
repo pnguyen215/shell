@@ -1682,6 +1682,12 @@ shell::open_link() {
         shift
     fi
 
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_OPEN_LINK"
+        return 0
+    fi
+
     if [ -z "$1" ]; then
         echo "Usage: shell::open_link [-n] <url>"
         return 1

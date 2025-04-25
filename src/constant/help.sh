@@ -1920,3 +1920,25 @@ Example:
   shell::list_high_mem_usage       # Displays processes with high memory consumption.
   shell::list_high_mem_usage -n    # Prints the command without executing it.
 "
+
+USAGE_SHELL_OPEN_LINK="
+shell::open_link function
+Opens the specified URL in the default web browser.
+
+Usage:
+  shell::open_link [-n] [-h] <url>
+
+Parameters:
+  - -n   : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - -h   : Optional. Displays this help message.
+  - <url>: The URL to open in the default web browser.
+
+Description:
+  This function determines the current operating system using shell::get_os_type. On macOS, it uses the 'open' command;
+  on Linux, it uses 'xdg-open' (if available). If the required command is missing on Linux, an error is displayed.
+  In dry-run mode, the command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
+
+Example:
+  shell::open_link https://example.com         # Opens the URL in the default browser.
+  shell::open_link -n https://example.com      # Prints the command without executing it.
+"
