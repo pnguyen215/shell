@@ -1748,6 +1748,12 @@ shell::loading_spinner() {
         shift
     fi
 
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_LOADING_SPINNER"
+        return 0
+    fi
+
     local duration="${1:-3}" # Default duration is 3 seconds
     local spinner="/-\|"
     local end_time=$((SECONDS + duration))

@@ -1942,3 +1942,27 @@ Example:
   shell::open_link https://example.com         # Opens the URL in the default browser.
   shell::open_link -n https://example.com      # Prints the command without executing it.
 "
+
+USAGE_SHELL_LOADING_SPINNER="
+shell::loading_spinner function
+Displays a loading spinner in the console for a specified duration.
+
+Usage:
+  shell::loading_spinner [-n] [-h] [duration]
+
+Parameters:
+  - -n        : Optional dry-run flag. If provided, the spinner command is printed using shell::on_evict instead of executed.
+  - -h        : Optional. Displays this help message.
+  - [duration]: Optional. The duration in seconds for which the spinner should be displayed. Default is 3 seconds.
+
+Description:
+  The function calculates an end time based on the provided duration and then iterates,
+  printing a sequence of spinner characters to create a visual loading effect.
+  In dry-run mode, it uses shell::on_evict to display a message indicating what would be executed,
+  without actually running the spinner.
+
+Example usage:
+  shell::loading_spinner          # Displays the spinner for 3 seconds.
+  shell::loading_spinner 10       # Displays the spinner for 10 seconds.
+  shell::loading_spinner -n 5     # Prints the spinner command for 5 seconds without executing it.
+"
