@@ -1877,3 +1877,25 @@ Example:
   shell::download_dataset mydata.zip https://example.com/mydata.zip
   shell::download_dataset -n mydata.zip https://example.com/mydata.zip  # Displays the commands without executing them.
 "
+
+USAGE_SHELL_UNARCHIVE="
+shell::unarchive function
+Extracts a compressed file based on its file extension.
+
+Usage:
+  shell::unarchive [-n] [-h] <filename>
+
+Parameters:
+  - -n        : Optional dry-run flag. If provided, the extraction command is printed using shell::on_evict instead of executed.
+  - -h        : Optional. Displays this help message.
+  - <filename>: The compressed file to extract.
+
+Description:
+  The function first checks for an optional dry-run flag (-n) and then verifies that exactly one argument (the filename) is provided.
+  It checks if the given file exists and, if so, determines the correct extraction command based on the file extension.
+  In dry-run mode, the command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
+
+Example:
+  shell::unarchive archive.tar.gz           # Extracts archive.tar.gz.
+  shell::unarchive -n archive.zip           # Prints the unzip command without executing it.
+"

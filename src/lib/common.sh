@@ -1527,6 +1527,12 @@ shell::download_dataset() {
 #   shell::unarchive archive.tar.gz           # Extracts archive.tar.gz.
 #   shell::unarchive -n archive.zip           # Prints the unzip command without executing it.
 shell::unarchive() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_UNARCHIVE"
+        return 0
+    fi
+
     local dry_run="false"
 
     # Check for the optional dry-run flag (-n).
