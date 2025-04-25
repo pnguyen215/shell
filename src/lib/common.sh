@@ -1072,6 +1072,12 @@ shell::port_check() {
 #   - Ensure you have the required privileges to kill processes.
 #   - Use with caution, as forcefully terminating processes may cause data loss.
 shell::port_kill() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_PORT_KILL"
+        return 0
+    fi
+
     local dry_run="false"
 
     # Check for the dry-run flag.

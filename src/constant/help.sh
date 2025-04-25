@@ -1730,3 +1730,24 @@ Example:
   shell::copy_files myfile.txt newfile.txt            # Copies myfile.txt to newfile.txt.
   shell::copy_files -n myfile.txt newfile1.txt newfile2.txt  # Prints the copy commands without executing them.
 "
+USAGE_SHELL_PORT_KILL="
+shell::port_kill function
+Terminates all processes listening on the specified TCP port(s).
+
+Usage:
+  shell::port_kill [-n] [-h] <port> [<port> ...]
+
+Parameters:
+  - -n    : Optional flag to enable dry-run mode (print commands without execution).
+  - -h    : Optional. Displays this help message.
+  - <port>: One or more TCP port numbers.
+
+Description:
+  This function checks each specified port to determine if any processes are listening on it,
+  using lsof. If any are found, it forcefully terminates them by sending SIGKILL (-9).
+  In dry-run mode (enabled by the -n flag), the kill command is printed using shell::on_evict instead of executed.
+
+Example:
+  shell::port_kill 8080              # Kills processes on port 8080.
+  shell::port_kill -n 8080 3000      # Prints the kill commands for ports 8080 and 3000 without executing.
+"
