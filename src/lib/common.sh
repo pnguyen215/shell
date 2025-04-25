@@ -1287,6 +1287,12 @@ shell::move_files() {
 #   shell::remove_dataset my-dir          # Removes the directory 'my-dir'.
 #   shell::remove_dataset -n myfile.txt  # Prints the removal command without executing it.
 shell::remove_dataset() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_REMOVE_DATASET"
+        return 0
+    fi
+
     local dry_run="false"
 
     # Check for the optional dry-run flag (-n).
