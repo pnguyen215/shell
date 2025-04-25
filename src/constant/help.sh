@@ -1853,3 +1853,27 @@ Example:
   shell::editor ~/documents          # Opens a file in the selected text editor.
   shell::editor -n ~/documents       # Prints the command that would be used, without executing it.
 "
+
+USAGE_SHELL_DOWNLOAD_DATASET="
+shell::download_dataset function
+Downloads a dataset file from a provided download link.
+
+Usage:
+  shell::download_dataset [-n] [-h] <filename_with_extension> <download_link>
+
+Parameters:
+  - -n                        : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+  - -h                        : Optional. Displays this help message.
+  - <filename_with_extension> : The target filename (with path) where the dataset will be saved.
+  - <download_link>           : The URL from which the dataset will be downloaded.
+
+Description:
+  This function downloads a file from a given URL and saves it under the specified filename.
+  It extracts the directory from the filename, ensures the directory exists, and changes to that directory
+  before attempting the download. If the file already exists, it prompts the user for confirmation before
+  overwriting it. In dry-run mode, the function uses shell::on_evict to display the commands without executing them.
+
+Example:
+  shell::download_dataset mydata.zip https://example.com/mydata.zip
+  shell::download_dataset -n mydata.zip https://example.com/mydata.zip  # Displays the commands without executing them.
+"

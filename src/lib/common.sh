@@ -1439,6 +1439,12 @@ shell::editor() {
 #   shell::download_dataset mydata.zip https://example.com/mydata.zip
 #   shell::download_dataset -n mydata.zip https://example.com/mydata.zip  # Displays the commands without executing them.
 shell::download_dataset() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_DOWNLOAD_DATASET"
+        return 0
+    fi
+
     local dry_run="false"
 
     # Check for the optional dry-run flag (-n)
