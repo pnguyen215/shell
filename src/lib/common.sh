@@ -1143,6 +1143,12 @@ shell::port_kill() {
 #   shell::copy_files myfile.txt newfile.txt            # Copies myfile.txt to newfile.txt.
 #   shell::copy_files -n myfile.txt newfile1.txt newfile2.txt  # Prints the copy commands without executing them.
 shell::copy_files() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_COPY_FILES"
+        return 0
+    fi
+
     local dry_run="false"
 
     # Check for the optional dry-run flag (-n).
