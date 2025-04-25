@@ -1899,3 +1899,24 @@ Example:
   shell::unarchive archive.tar.gz           # Extracts archive.tar.gz.
   shell::unarchive -n archive.zip           # Prints the unzip command without executing it.
 "
+
+USAGE_SHELL_LIST_HIGH_MEM_USAGE="
+shell::list_high_mem_usage function
+Displays processes with high memory consumption.
+
+Usage:
+  shell::list_high_mem_usage [-n] [-h]
+
+Parameters:
+  - -n        : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - -h        : Optional. Displays this help message.
+
+Description:
+  This function retrieves the operating system type using shell::get_os_type. For macOS, it uses 'top' to sort processes by resident size (RSIZE)
+  and filters the output to display processes consuming at least 100 MB. For Linux, it uses 'ps' to list processes sorted by memory usage.
+  In dry-run mode, the constructed command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
+
+Example:
+  shell::list_high_mem_usage       # Displays processes with high memory consumption.
+  shell::list_high_mem_usage -n    # Prints the command without executing it.
+"

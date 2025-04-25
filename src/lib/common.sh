@@ -1626,6 +1626,12 @@ shell::list_high_mem_usage() {
         shift
     fi
 
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_LIST_HIGH_MEM_USAGE"
+        return 0
+    fi
+
     # Determine the OS type using shell::get_os_type
     local os_type
     os_type=$(shell::get_os_type)
