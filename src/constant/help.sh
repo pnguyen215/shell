@@ -1775,3 +1775,30 @@ Example:
   shell::copy_files myfile.txt newfile.txt                   # Copies myfile.txt to newfile.txt.
   shell::copy_files -n myfile.txt newfile1.txt newfile2.txt  # Prints the copy commands without executing them.
 "
+
+USAGE_SHELL_MOVE_FILES="
+shell::move_files function
+Moves one or more files to a destination folder.
+
+Usage:
+  shell::move_files [-n] [-h] <destination_folder> <file1> <file2> ... <fileN>
+
+Parameters:
+  - -n                  : Optional dry-run flag. If provided, the command will be printed using shell::on_evict instead of executed.
+  - -h                  : Optional. Displays this help message.
+  - <destination_folder>: The target directory where the files will be moved.
+  - <fileX>             : One or more source files to be moved.
+
+Description:
+  The function first checks for an optional dry-run flag (-n). It then verifies that the destination folder exists.
+  For each source file provided:
+    - It checks whether the source file exists.
+    - It verifies that the destination file (using the basename of the source) does not already exist in the destination folder.
+    - It builds the command to move the file (using sudo mv).
+  In dry-run mode, the command is printed using shell::on_evict; otherwise, the command is executed using shell::run_cmd.
+  If an error occurs for a particular file (e.g., missing source or destination file conflict), the error is logged and the function continues with the next file.
+
+Example:
+  shell::move_files /path/to/dest file1.txt file2.txt        # Moves file1.txt and file2.txt to /path/to/dest.
+  shell::move_files -n /path/to/dest file1.txt file2.txt     # Prints the move commands without executing them.
+"

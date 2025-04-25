@@ -1215,6 +1215,12 @@ shell::copy_files() {
 #   shell::move_files /path/to/dest file1.txt file2.txt              # Moves file1.txt and file2.txt to /path/to/dest.
 #   shell::move_files -n /path/to/dest file1.txt file2.txt             # Prints the move commands without executing them.
 shell::move_files() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_MOVE_FILES"
+        return 0
+    fi
+
     local dry_run="false"
 
     if [ "$1" = "-n" ]; then
