@@ -1346,6 +1346,12 @@ shell::remove_dataset() {
 #   - fzf must be installed.
 #   - Helper functions: shell::run_cmd, shell::on_evict, shell::colored_echo, and shell::get_os_type.
 shell::editor() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_EDITOR"
+        return 0
+    fi
+
     local dry_run="false"
 
     # Check for the optional dry-run flag (-n).

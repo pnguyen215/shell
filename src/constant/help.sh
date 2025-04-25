@@ -1824,3 +1824,32 @@ Example:
   shell::remove_dataset my-dir         # Removes the directory 'my-dir'.
   shell::remove_dataset -n myfile.txt  # Prints the removal command without executing it.
 "
+
+USAGE_SHELL_EDITOR="
+shell::editor function
+Open a selected file from a specified folder using a chosen text editor.
+
+Usage:
+  shell::editor [-n] [-h] <folder>
+
+Parameters:
+  - -n       : Optional dry-run flag. If provided, the command will be printed using shell::on_evict instead of executed.
+  - -h       : Optional. Displays this help message.
+  - <folder> : The directory containing the files you want to edit.
+
+Description:
+  The 'shell::editor' function provides an interactive way to select a file from the specified
+  folder and open it using a chosen text editor. It uses 'fzf' for fuzzy file and command selection.
+  The function supports a dry-run mode where the command is printed without execution.
+
+Supported Text Editors:
+  - cat
+  - less
+  - more
+  - vim
+  - nano
+
+Example:
+  shell::editor ~/documents          # Opens a file in the selected text editor.
+  shell::editor -n ~/documents       # Prints the command that would be used, without executing it.
+"
