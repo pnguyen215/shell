@@ -2127,3 +2127,29 @@ Example:
   shell::fzf_current_zip_attachment
   shell::fzf_current_zip_attachment -n  # Dry-run: prints the command without executing it.
 "
+
+USAGE_SHELL_FZF_SEND_TELEGRAM_ATTACHMENT="
+shell::fzf_send_telegram_attachment function
+Uses fzf to interactively select one or more files from a folder (default: current directory)
+and sends them as attachments via the Telegram Bot API by reusing shell::send_telegram_attachment.
+
+Usage:
+  shell::fzf_send_telegram_attachment [-n] [-h] <token> <chat_id> <description> [folder_path]
+
+Parameters:
+  - -n           : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+  - -h           : Optional. Displays this help message.
+  - <token>      : The Telegram Bot API token.
+  - <chat_id>    : The chat identifier where the attachments are sent.
+  - <description>: A text description appended to each attachment's caption along with a timestamp.
+  - [folder_path]: (Optional) The folder to search for files; defaults to the current directory if not provided.
+
+Description:
+  This function checks that the required parameters are provided and sets the folder path to the current directory if none is given.
+  It then uses the 'find' command and fzf (in multi-select mode) to let the user choose one or more files.
+  If files are selected, it calls shell::send_telegram_attachment (passing the dry-run flag if needed) with the selected filenames.
+
+Example:
+  shell::fzf_send_telegram_attachment 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 \"Report\"
+  shell::fzf_send_telegram_attachment -n 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 \"Test\" /path/to/folder
+"

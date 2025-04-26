@@ -366,6 +366,12 @@ shell::fzf_send_telegram_attachment() {
         shift
     fi
 
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_SEND_TELEGRAM_ATTACHMENT"
+        return 0
+    fi
+
     # Ensure that at least three arguments remain: token, chat_id, description.
     if [ $# -lt 3 ]; then
         echo "Usage: shell::fzf_send_telegram_attachment [-n] <token> <chat_id> <description> [folder_path]"
