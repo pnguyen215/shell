@@ -1903,6 +1903,12 @@ shell::async() {
 # Example:
 #   shell::execute_or_evict "true" "echo Hello"
 shell::execute_or_evict() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_EXECUTE_OR_EVICT"
+        return 0
+    fi
+
     local dry_run="$1"
     local command="$2"
     if [ "$dry_run" = "true" ]; then

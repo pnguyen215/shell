@@ -2009,3 +2009,19 @@ Example:
   shell::async my_function arg1 arg2      # Executes my_function with arguments asynchronously.
   shell::async -n ls -l                   # Prints the 'ls -l' command that would be executed in the background.
 "
+
+USAGE_SHELL_EXECUTE_OR_EVICT="
+shell::execute_or_evict function
+Executes a command or prints it based on dry-run mode.
+
+Usage:
+  shell::execute_or_evict [-h] <dry_run> <command>
+
+Parameters:
+  - -h       : Optional. Displays this help message.
+  - <dry_run>: \"true\" to print the command, \"false\" to execute it.
+  - <command>: The command to execute or print.
+
+Example:
+  shell::execute_or_evict \"true\" \"echo Hello\"
+"
