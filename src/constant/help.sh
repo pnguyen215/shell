@@ -2078,3 +2078,28 @@ Description:
     1. A file or directory (from the current directory and subdirectories).
   It then removes the selected file or directory using the original path.
 "
+
+USAGE_SHELL_FZF_ZIP_ATTACHMENT="
+shell::fzf_zip_attachment function
+Zips selected files from a specified folder and outputs the absolute path of the created zip file.
+
+Usage:
+  shell::fzf_zip_attachment [-n] [-h] <folder_path>
+
+Parameters:
+  - -n            : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - -h            : Optional. Displays this help message.
+  - <folder_path> : The folder (directory) from which to select files for zipping.
+
+Description:
+  This function uses the 'find' command to list all files in the specified folder,
+  and then launches 'fzf' in multi-select mode to allow interactive file selection.
+  If one or more files are selected, a zip command is constructed to compress those files.
+  In dry-run mode (-n), the command is printed (via shell::on_evict) without execution;
+  otherwise, it is executed using shell::run_cmd_eval.
+  Finally, the absolute path of the created zip file is echoed.
+
+Example:
+  shell::fzf_zip_attachment /path/to/folder
+  shell::fzf_zip_attachment -n /path/to/folder  # Dry-run: prints the command without executing it.
+"

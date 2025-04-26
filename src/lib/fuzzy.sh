@@ -209,6 +209,12 @@ shell::fzf_zip_attachment() {
         shift
     fi
 
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_ZIP_ATTACHMENT"
+        return 0
+    fi
+
     if [ $# -lt 1 ]; then
         echo "Usage: shell::fzf_zip_attachment [-n] <folder_path>"
         return 1
