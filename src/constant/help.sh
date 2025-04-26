@@ -1966,3 +1966,24 @@ Example usage:
   shell::loading_spinner 10       # Displays the spinner for 10 seconds.
   shell::loading_spinner -n 5     # Prints the spinner command for 5 seconds without executing it.
 "
+
+USAGE_SHELL_MEASURE_TIME="
+shell::measure_time function
+Measures the execution time of a command and displays the elapsed time.
+
+Usage:
+  shell::measure_time [-h] <command> [arguments...]
+
+Parameters:
+  - -h                      : Optional. Displays this help message.
+  - <command> [arguments...]: The command (with its arguments) to execute.
+
+Description:
+  This function captures the start time, executes the provided command, and then captures the end time.
+  It calculates the elapsed time in milliseconds and displays the result in seconds and milliseconds.
+  On macOS, if GNU date (gdate) is available, it is used for millisecond precision; otherwise, it falls back
+  to the built-in SECONDS variable (providing second-level precision). On Linux, it uses date +%s%3N.
+
+Example:
+  shell::measure_time sleep 2    # Executes 'sleep 2' and displays the execution time.
+"

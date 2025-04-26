@@ -1792,6 +1792,12 @@ shell::loading_spinner() {
 # Example:
 #   shell::measure_time sleep 2    # Executes 'sleep 2' and displays the execution time.
 shell::measure_time() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_MEASURE_TIME"
+        return 0
+    fi
+
     local os_type
     os_type=$(shell::get_os_type)
 
