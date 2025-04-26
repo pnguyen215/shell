@@ -2103,3 +2103,27 @@ Example:
   shell::fzf_zip_attachment /path/to/folder
   shell::fzf_zip_attachment -n /path/to/folder  # Dry-run: prints the command without executing it.
 "
+
+USAGE_SHELL_FZF_CURRENT_ZIP_ATTACHMENT="
+shell::fzf_current_zip_attachment function
+Reuses shell::fzf_zip_attachment to zip selected files from the current directory,
+ensuring that when unzipped, the archive creates a single top-level folder.
+
+Usage:
+  shell::fzf_current_zip_attachment [-n] [-h]
+
+Parameters:
+  - -n         : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - -h         : Optional. Displays this help message.
+
+Description:
+  This function obtains the current directory's name and its parent directory.
+  It then changes to the parent directory and calls shell::fzf_zip_attachment on the folder name.
+  This ensures that the zip command is run with relative paths so that the resulting archive
+  contains only one top-level folder (the folder name). After zipping, it moves the zip file
+  back to the original (current) directory, echoes its absolute path, and copies the value to the clipboard.
+
+Example:
+  shell::fzf_current_zip_attachment
+  shell::fzf_current_zip_attachment -n  # Dry-run: prints the command without executing it.
+"

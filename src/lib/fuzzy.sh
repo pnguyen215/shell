@@ -292,6 +292,12 @@ shell::fzf_current_zip_attachment() {
         shift
     fi
 
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_CURRENT_ZIP_ATTACHMENT"
+        return 0
+    fi
+
     # Save the original directory (the folder to be zipped).
     local orig_dir="$PWD"
     local current_dir
