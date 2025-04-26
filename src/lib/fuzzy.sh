@@ -21,6 +21,12 @@
 #   - fzf must be installed.
 #   - Helper functions: shell::run_cmd_eval, shell::colored_echo, and shell::get_os_type.
 shell::fzf_copy() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_COPY"
+        return 0
+    fi
+
     # Check if fzf is installed.
     shell::install_package fzf
 
