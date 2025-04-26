@@ -2043,3 +2043,21 @@ Description:
     2. A destination directory (from the current directory and subdirectories).
   It then copies the source file to the destination directory using the original filename.
 "
+
+USAGE_SHELL_FZF_MOVE="
+shell::fzf_move function
+Interactively selects a file to move and a destination directory using fzf,
+then moves the selected file to the destination directory.
+
+Usage:
+  shell::fzf_move [-h]
+
+Parameters:
+  - -h       : Optional. Displays this help message.
+
+Description:
+  This function leverages fzf to provide an interactive interface for choosing:
+    1. A source file (from the current directory and subdirectories).
+    2. A destination directory (from the current directory and subdirectories).
+  It then moves the source file to the destination directory using the original filename.
+"
