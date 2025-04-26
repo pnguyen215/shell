@@ -2061,3 +2061,20 @@ Description:
     2. A destination directory (from the current directory and subdirectories).
   It then moves the source file to the destination directory using the original filename.
 "
+
+USAGE_SHELL_FZF_REMOVE="
+shell::fzf_remove function
+Interactively selects a file or directory to remove using fzf,
+then removes the selected file or directory.
+
+Usage:
+  shell::fzf_remove [-h]
+
+Parameters:
+  - -h       : Optional. Displays this help message.
+
+Description:
+  This function leverages fzf to provide an interactive interface for choosing:
+    1. A file or directory (from the current directory and subdirectories).
+  It then removes the selected file or directory using the original path.
+"
