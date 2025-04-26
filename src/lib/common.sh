@@ -1861,6 +1861,12 @@ shell::measure_time() {
 #   shell::async my_function arg1 arg2      # Executes my_function with arguments asynchronously.
 #   shell::async -n ls -l                   # Prints the 'ls -l' command that would be executed in the background.
 shell::async() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_ASYNC"
+        return 0
+    fi
+
     local dry_run="false"
 
     # Check for the optional dry-run flag (-n).

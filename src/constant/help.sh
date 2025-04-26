@@ -1987,3 +1987,25 @@ Description:
 Example:
   shell::measure_time sleep 2    # Executes 'sleep 2' and displays the execution time.
 "
+
+USAGE_SHELL_ASYNC="
+shell::async function
+Executes a command or function asynchronously (in the background).
+
+Usage:
+  shell::async [-n] [-h] <command> [arguments...]
+
+Parameters:
+  - -n                      : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - -h                      : Optional. Displays this help message.
+  - <command> [arguments...]: The command (or function) with its arguments to be executed asynchronously.
+
+Description:
+  The shell::async function builds the command from the provided arguments and runs it in the background.
+  If the optional dry-run flag (-n) is provided, the command is printed using shell::on_evict instead of executing it.
+  Otherwise, the command is executed asynchronously using eval, and the process ID (PID) is displayed.
+
+Example:
+  shell::async my_function arg1 arg2      # Executes my_function with arguments asynchronously.
+  shell::async -n ls -l                   # Prints the 'ls -l' command that would be executed in the background.
+"
