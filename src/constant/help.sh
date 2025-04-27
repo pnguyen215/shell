@@ -2255,3 +2255,28 @@ Example:
   shell::send_telegram_message 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 \"Hello, World!\"
   shell::send_telegram_message -n 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 \"Dry-run: Hello, World!\"
 "
+
+USAGE_SHELL_SEND_TELEGRAM_ATTACHMENT="
+shell::send_telegram_attachment function
+Sends one or more attachments (files) via Telegram using the Bot API asynchronously.
+
+Usage:
+  shell::send_telegram_attachment [-n] [-h] <token> <chat_id> <description> [filename_1] [filename_2] [filename_3] ...
+
+Parameters:
+  - -n           : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - -h          : Optional. Displays this help message.
+  - <token>      : The Telegram Bot API token.
+  - <chat_id>    : The chat identifier to which the attachments are sent.
+  - <description>: A text description that is appended to each attachment's caption along with a timestamp.
+  - [filename_X] : One or more filenames of the attachments to send.
+
+Description:
+  The function first checks for an optional dry-run flag (-n) and verifies that the required parameters
+  are provided. For each provided file, if the file exists, it builds a curl command to send the file
+  asynchronously via Telegram's API. In dry-run mode, the command is printed using shell::on_evict.
+
+Example:
+  shell::send_telegram_attachment 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 \"Report\" file1.pdf file2.pdf
+  shell::send_telegram_attachment -n 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 \"Report\" file1.pdf
+"

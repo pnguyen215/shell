@@ -122,6 +122,12 @@ shell::send_telegram_attachment() {
         shift
     fi
 
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_SEND_TELEGRAM_ATTACHMENT"
+        return 0
+    fi
+
     # Ensure that at least four arguments remain: token, chat_id, description, and at least one filename.
     if [ $# -lt 4 ]; then
         echo "Usage: shell::send_telegram_attachment [-n] <token> <chat_id> <description> [filename_1] [filename_2] [filename_3] ..."
