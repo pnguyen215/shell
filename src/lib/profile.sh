@@ -806,6 +806,13 @@ shell::rename_key_conf_profile() {
         dry_run="true"
         shift
     fi
+
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_RENAME_KEY_CONF_PROFILE"
+        return 0
+    fi
+
     if [ $# -lt 1 ]; then
         echo "Usage: shell::rename_key_conf_profile [-n] <profile_name>"
         return 1

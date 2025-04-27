@@ -2579,3 +2579,27 @@ Description:
 Example:
   shell::exist_key_conf_profile my_profile my_key
 "
+
+USAGE_SHELL_RENAME_KEY_CONF_PROFILE="
+shell::rename_key_conf_profile function
+Renames an existing configuration key in a given profile.
+
+Usage:
+  shell::rename_key_conf_profile [-n] [-h] <profile_name>
+
+Parameters:
+  - -n            : Optional dry-run flag. If provided, prints the sed command using shell::on_evict without executing.
+  - -h            : Optional. Displays this help message.
+  - <profile_name>: The name of the profile whose key should be renamed.
+
+Description:
+  The function checks that the profile directory and configuration file exist.
+  It then uses fzf to allow the user to select the existing key to rename.
+  After prompting for a new key name and verifying that it does not already exist,
+  the function constructs an OS-specific sed command to replace the old key with the new one.
+  In dry-run mode, the command is printed via shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
+
+Example:
+  shell::rename_key_conf_profile my_profile
+  shell::rename_key_conf_profile -n my_profile   # dry-run mode
+"
