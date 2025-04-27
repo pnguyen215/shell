@@ -2536,3 +2536,25 @@ Example:
   shell::remove_conf_profile my_profile
   shell::remove_conf_profile -n my_profile   # Dry-run: prints the removal command without executing.
 "
+
+USAGE_SHELL_UPDATE_CONF_PROFILE="
+shell::update_conf_profile function
+Updates a specified configuration key in a given profile by replacing its value.
+
+Usage:
+  shell::update_conf_profile [-n] [-h] <profile_name>
+
+Parameters:
+  - -n              : Optional dry-run flag. If provided, the update command is printed using shell::on_evict without executing.
+  - -h              : Optional. Displays this help message.
+  - <profile_name>  : The name of the profile to update.
+
+Description:
+  The function retrieves the profile configuration file, prompts the user to select a key (using fzf),
+  asks for the new value, encodes it in base64, and constructs a sed command to update the key.
+  The sed command is executed asynchronously via the shell::async function (unless in dry-run mode).
+
+Example:
+  shell::update_conf_profile my_profile
+  shell::update_conf_profile -n my_profile   # dry-run mode
+"
