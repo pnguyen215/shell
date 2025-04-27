@@ -2627,3 +2627,22 @@ Description:
 Example:
   shell::clone_conf_profile my_profile backup_profile   # Clones profile.conf from 'my_profile' to 'backup_profile'
 "
+
+USAGE_SHELL_LIST_CONF_PROFILE="
+shell::list_conf_profile function
+Lists all available configuration profiles in the workspace.
+
+Usage:
+  shell::list_conf_profile [-h]
+
+Parameters:
+  - -h      : Optional. Displays this help message.
+
+Description:
+  This function checks that the workspace directory ($SHELL_CONF_WORKING/workspace) exists.
+  It then finds all subdirectories (each representing a profile) and prints their names.
+  If no profiles are found, an appropriate message is displayed.
+
+Example:
+  shell::list_conf_profile       # Displays the names of all profiles in the workspace.
+"

@@ -939,6 +939,12 @@ shell::clone_conf_profile() {
 # Example:
 #   shell::list_conf_profile       # Displays the names of all profiles in the workspace.
 shell::list_conf_profile() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_LIST_CONF_PROFILE"
+        return 0
+    fi
+
     # Ensure that the workspace exists.
     shell::ensure_workspace
 
