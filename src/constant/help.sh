@@ -2187,3 +2187,25 @@ Description:
   profile (e.g., $HOME/.zprofile) using sed. The commands are executed via
   shell::run_cmd_eval to ensure they are logged prior to execution.
 "
+
+USAGE_SHELL_INSTALL_OH_MY_ZSH="
+shell::install_oh_my_zsh function
+Installs Oh My Zsh if it is not already present on the system.
+
+Usage:
+  shell::install_oh_my_zsh [-n] [-h]
+
+Parameters:
+  - -n : Optional dry-run flag. If provided, the installation command is printed using shell::on_evict instead of executed.
+  - -h : Optional. Displays this help message.
+
+Description:
+  The function checks whether the Oh My Zsh directory ($HOME/.oh-my-zsh) exists.
+  If it exists, it prints a message indicating that Oh My Zsh is already installed.
+  Otherwise, it proceeds to install Oh My Zsh by executing the installation script fetched via curl.
+  In dry-run mode, the command is displayed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
+
+Example:
+  shell::install_oh_my_zsh         # Installs Oh My Zsh if needed.
+  shell::install_oh_my_zsh -n      # Prints the installation command without executing it.
+"
