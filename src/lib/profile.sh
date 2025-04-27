@@ -470,6 +470,12 @@ shell::add_conf_profile() {
 #   shell::get_conf_profile my_profile          # Retrieves and processes the 'my_profile' profile.
 #   shell::get_conf_profile -n my_profile       # Dry-run mode: prints the commands without executing them.
 shell::get_conf_profile() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_GET_CONF_PROFILE"
+        return 0
+    fi
+
     if [ $# -lt 1 ]; then
         echo "Usage: shell::get_conf_profile <profile_name>"
         return 1

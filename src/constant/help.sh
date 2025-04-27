@@ -2465,3 +2465,26 @@ Example:
   shell::add_conf_profile my_profile my_setting \"some secret value\"         # Encodes the value and adds the entry to my_profile/profile.conf
   shell::add_conf_profile -n my_profile my_setting \"some secret value\"      # Prints the command without executing it
 "
+
+USAGE_SHELL_GET_CONF_PROFILE="
+shell::get_conf_profile function
+Retrieves a configuration profile value by prompting the user to select a config key from the profile's configuration file.
+
+Usage:
+  shell::get_conf_profile [-n] [-h] <profile_name>
+
+Parameters:
+  - -n (optional)   : Dry-run mode. Instead of executing commands, prints them using shell::on_evict.
+  - -h              : Optional. Displays this help message.
+  - <profile_name>  : The name of the configuration profile.
+
+Description:
+  This function locates the profile directory and its configuration file, verifies that the profile exists,
+  and then ensures that the interactive fuzzy finder (fzf) is installed. It uses fzf to let the user select a configuration key,
+  decodes its base64-encoded value (using the appropriate flag for macOS or Linux), displays the selected key,
+  and finally copies the decoded value to the clipboard asynchronously.
+
+Example:
+  shell::get_conf_profile my_profile          # Retrieves and processes the 'my_profile' profile.
+  shell::get_conf_profile -n my_profile       # Dry-run mode: prints the commands without executing them.
+"
