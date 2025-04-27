@@ -2314,3 +2314,24 @@ Description:
   Checks if the workspace directory ($SHELL_CONF_WORKING/workspace) exists.
   If it does not exist, creates it using mkdir -p.
 "
+
+USAGE_SHELL_ADD_PROFILE="
+shell::add_profile function
+Creates a new profile directory and initializes it with a profile.conf file.
+
+Usage:
+  shell::add_profile [-n] [-h] <profile_name>
+
+Parameters:
+  - -n             : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+  - -h             : Optional. Displays this help message.
+  - <profile_name> : The name of the profile to create.
+
+Description:
+  Ensures the workspace directory exists, then creates a new directory for the specified profile
+  and initializes it with an empty profile.conf file. If the profile already exists, it prints a warning.
+
+Example:
+  shell::add_profile my_profile         # Creates the profile directory and profile.conf.
+  shell::add_profile -n my_profile      # Prints the commands without executing them.
+"
