@@ -2356,3 +2356,24 @@ Example:
   shell::read_profile my_profile         # Sources profile.conf from my_profile.
   shell::read_profile -n my_profile      # Prints the sourcing command without executing it.
 "
+
+USAGE_SHELL_UPDATE_PROFILE="
+shell::update_profile function
+Opens the profile.conf file of the specified profile in the default editor.
+
+Usage:
+  shell::update_profile [-n] [-h] <profile_name>
+
+Parameters:
+  - -n             : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - -h             : Optional. Displays this help message.
+  - <profile_name> : The name of the profile to update.
+
+Description:
+  Checks if the specified profile exists and opens its profile.conf file in the editor specified
+  by the EDITOR environment variable (defaults to 'nano' if unset).
+
+Example:
+  shell::update_profile my_profile         # Opens profile.conf in the default editor.
+  shell::update_profile -n my_profile      # Prints the editor command without executing it.
+"
