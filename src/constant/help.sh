@@ -2558,3 +2558,24 @@ Example:
   shell::update_conf_profile my_profile
   shell::update_conf_profile -n my_profile   # dry-run mode
 "
+
+USAGE_SHELL_EXIST_KEY_CONF_PROFILE="
+shell::exist_key_conf_profile function
+Checks whether a specified key exists in the configuration file of a given profile.
+
+Usage:
+  shell::exist_key_conf_profile [-h] <profile_name> <key>
+
+Parameters:
+  - -h            : Optional. Displays this help message.
+  - <profile_name>: The name of the profile.
+  - <key>         : The configuration key to search for.
+
+Description:
+  The function constructs the path to the profile's configuration file and verifies that the profile directory exists.
+  It then checks if the configuration file exists. If both exist, it searches for the specified key using grep.
+  The function outputs "true" if the key is found and "false" otherwise.
+
+Example:
+  shell::exist_key_conf_profile my_profile my_key
+"

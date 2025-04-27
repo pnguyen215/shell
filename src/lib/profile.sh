@@ -749,6 +749,12 @@ shell::update_conf_profile() {
 # Example:
 #   shell::exist_key_conf_profile my_profile my_key
 shell::exist_key_conf_profile() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_EXIST_KEY_CONF_PROFILE"
+        return 0
+    fi
+
     if [ $# -lt 2 ]; then
         echo "Usage: shell::exist_key_conf_profile <profile_name> <key>"
         return 1
