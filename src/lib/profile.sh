@@ -540,6 +540,12 @@ shell::get_conf_profile() {
 #   shell::get_value_conf_profile my_profile API_KEY
 #   shell::get_value_conf_profile -n my_profile API_KEY   # Dry-run: prints commands without executing them.
 shell::get_value_conf_profile() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_GET_VALUE_CONF_PROFILE"
+        return 0
+    fi
+
     if [ $# -lt 2 ]; then
         echo "Usage: shell::get_value_conf_profile <profile_name> <key>"
         return 1

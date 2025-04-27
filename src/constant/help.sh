@@ -2488,3 +2488,27 @@ Example:
   shell::get_conf_profile my_profile          # Retrieves and processes the 'my_profile' profile.
   shell::get_conf_profile -n my_profile       # Dry-run mode: prints the commands without executing them.
 "
+
+USAGE_SHELL_GET_VALUE_CONF_PROFILE="
+shell::get_value_conf_profile function
+Retrieves a configuration value for a given profile and key by decoding its base64-encoded value.
+
+Usage:
+  shell::get_value_conf_profile [-n] [-h] <profile_name> <key>
+
+Parameters:
+  - -n (optional)   : Dry-run mode. Instead of executing commands, prints them using shell::on_evict.
+  - -h              : Optional. Displays this help message.
+  - <profile_name>  : The name of the configuration profile.
+  - <key>           : The configuration key whose value will be retrieved.
+
+Description:
+  This function ensures that the workspace exists and locates the profile directory
+  and configuration file. It then extracts the configuration line matching the provided key,
+  decodes the associated base64-encoded value (using the appropriate flag for macOS or Linux),
+  asynchronously copies the decoded value to the clipboard, and finally outputs the decoded value.
+
+Example:
+  shell::get_value_conf_profile my_profile API_KEY
+  shell::get_value_conf_profile -n my_profile API_KEY   # Dry-run: prints commands without executing them.
+"
