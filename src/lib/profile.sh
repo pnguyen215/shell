@@ -394,6 +394,12 @@ shell::add_conf_profile() {
         shift
     fi
 
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_ADD_CONF_PROFILE"
+        return 0
+    fi
+
     # Validate the number of arguments
     if [ $# -lt 3 ]; then
         echo "Usage: shell::add_conf_profile [-n] <profile_name> <key> <value>"

@@ -2439,3 +2439,29 @@ Example:
   shell::rename_profile old_profile new_profile         # Renames old_profile to new_profile.
   shell::rename_profile -n old_profile new_profile      # Prints the rename command without executing it.
 "
+
+USAGE_SHELL_ADD_CONF_PROFILE="
+shell::add_conf_profile function
+Adds a configuration entry (key=value) to the profile.conf file of a specified profile.
+The value is encoded using Base64 before being saved.
+
+Usage:
+  shell::add_conf_profile [-n] [-h] <profile_name> <key> <value>
+
+Parameters:
+  - -n             : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - -h             : Optional. Displays this help message.
+  - <profile_name> : The name of the profile.
+  - <key>          : The configuration key.
+  - <value>        : The configuration value to be encoded and saved.
+
+Description:
+  The function checks for an optional dry-run flag (-n) and ensures that the profile name, key, and value are provided.
+  It encodes the value using Base64 (with newline characters removed) and appends a line in the format:
+      key=encoded_value
+  to the profile.conf file in the specified profile directory. If the profile directory or the profile.conf file does not exist, they are created.
+
+Example:
+  shell::add_conf_profile my_profile my_setting \"some secret value\"         # Encodes the value and adds the entry to my_profile/profile.conf
+  shell::add_conf_profile -n my_profile my_setting \"some secret value\"      # Prints the command without executing it
+"
