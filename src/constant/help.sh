@@ -2398,3 +2398,22 @@ Example:
   shell::remove_profile my_profile         # Prompts to confirm deletion of my_profile.
   shell::remove_profile -n my_profile      # Prints the removal command without executing it.
 "
+
+USAGE_SHELL_GET_PROFILE="
+shell::get_profile function
+Displays the contents of the profile.conf file for the specified profile.
+
+Usage:
+  shell::get_profile [-h] <profile_name>
+
+Parameters:
+  - -h             : Optional. Displays this help message.
+  - <profile_name> : The name of the profile to display.
+
+Description:
+  Checks if the specified profile exists and displays the contents of its profile.conf file.
+  If the profile or file does not exist, it prints an error.
+
+Example:
+  shell::get_profile my_profile         # Displays the contents of profile.conf for my_profile.
+"

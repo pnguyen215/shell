@@ -282,6 +282,12 @@ shell::remove_profile() {
 # Example:
 #   shell::get_profile my_profile         # Displays the contents of profile.conf for my_profile.
 shell::get_profile() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_GET_PROFILE"
+        return 0
+    fi
+
     if [ $# -lt 1 ]; then
         echo "Usage: shell::get_profile <profile_name>"
         return 1
