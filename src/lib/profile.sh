@@ -44,6 +44,12 @@ shell::get@_profile_dir() {
 # Example:
 #   shell::ensure_workspace
 shell::ensure_workspace() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_ENSURE_WORKSPACE"
+        return 0
+    fi
+
     if [ ! -d "$SHELL_CONF_WORKING_WORKSPACE" ]; then
         shell::run_cmd_eval sudo mkdir -p "$SHELL_CONF_WORKING_WORKSPACE"
     fi

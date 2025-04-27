@@ -2297,5 +2297,20 @@ Description:
   located at $SHELL_CONF_WORKING/workspace.
 
 Example:
-  profile_dir=$(_shell::get@_profile_dir \"my_profile\")  # Returns \"$SHELL_CONF_WORKING/workspace/my_profile\"
+  profile_dir=$(shell::get@_profile_dir \"my_profile\")  # Returns \"$SHELL_CONF_WORKING/workspace/my_profile\"
+"
+
+USAGE_SHELL_ENSURE_WORKSPACE="
+shell::ensure_workspace function
+Ensures that the workspace directory exists.
+
+Usage:
+  shell::ensure_workspace [-h]
+
+Parameters:
+  - -h    : Optional. Displays this help message.
+
+Description:
+  Checks if the workspace directory ($SHELL_CONF_WORKING/workspace) exists.
+  If it does not exist, creates it using mkdir -p.
 "
