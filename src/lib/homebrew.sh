@@ -6,7 +6,6 @@
 # environment setup on macOS (and Linux if supported).
 
 # shell::install_homebrew function
-# -------------------------
 # Installs Homebrew using the official installation script.
 #
 # Usage:
@@ -23,6 +22,12 @@
 # Example:
 #   shell::install_homebrew
 shell::install_homebrew() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_INSTALL_HOMEBREW"
+        return 0
+    fi
+
     shell::run_cmd_eval '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
 }
 

@@ -2153,3 +2153,19 @@ Example:
   shell::fzf_send_telegram_attachment 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 \"Report\"
   shell::fzf_send_telegram_attachment -n 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 \"Test\" /path/to/folder
 "
+
+USAGE_SHELL_INSTALL_HOMEBREW="
+shell::install_homebrew function
+Installs Homebrew using the official installation script.
+
+Usage:
+  shell::install_homebrew [-h]
+
+Parameters:
+  - -h           : Optional. Displays this help message.
+
+Description:
+  This function downloads and executes the official Homebrew installation
+  script via curl. The command is executed using shell::run_cmd_eval, which logs
+  the command before executing it.
+"
