@@ -2209,3 +2209,25 @@ Example:
   shell::install_oh_my_zsh         # Installs Oh My Zsh if needed.
   shell::install_oh_my_zsh -n      # Prints the installation command without executing it.
 "
+
+USAGE_SHELL_REMOVAL_OH_MY_ZSH="
+shell::removal_oh_my_zsh function
+Uninstalls Oh My Zsh by removing its directory and restoring the original .zshrc backup if available.
+
+Usage:
+  shell::removal_oh_my_zsh [-n] [-h]
+
+Parameters:
+  - -n : Optional dry-run flag. If provided, the uninstallation commands are printed using shell::on_evict instead of executed.
+  - -h : Optional. Displays this help message.
+
+Description:
+  This function checks whether the Oh My Zsh directory ($HOME/.oh-my-zsh) exists.
+  If it does, the function proceeds to remove it using 'rm -rf'. Additionally, if a backup of the original .zshrc
+  (stored as $HOME/.zshrc.pre-oh-my-zsh) exists, it restores that backup by moving it back to $HOME/.zshrc.
+  In dry-run mode, the commands are displayed using shell::on_evict; otherwise, they are executed using shell::run_cmd_eval.
+
+Example:
+  shell::removal_oh_my_zsh         # Uninstalls Oh My Zsh if installed.
+  shell::removal_oh_my_zsh -n      # Displays the uninstallation commands without executing them.
+"

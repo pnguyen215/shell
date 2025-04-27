@@ -84,6 +84,12 @@ shell::removal_oh_my_zsh() {
         shift
     fi
 
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_REMOVAL_OH_MY_ZSH"
+        return 0
+    fi
+
     local oh_my_zsh_dir="$HOME/.oh-my-zsh"
 
     if [ ! -d "$oh_my_zsh_dir" ]; then
