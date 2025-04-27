@@ -2335,3 +2335,24 @@ Example:
   shell::add_profile my_profile         # Creates the profile directory and profile.conf.
   shell::add_profile -n my_profile      # Prints the commands without executing them.
 "
+
+USAGE_SHELL_READ_PROFILE="
+shell::read_profile function
+Sources the profile.conf file from the specified profile directory.
+
+Usage:
+  shell::read_profile [-n] [-h] <profile_name>
+
+Parameters:
+  - -n             : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - -h             : Optional. Displays this help message.
+  - <profile_name> : The name of the profile to read.
+
+Description:
+  Checks if the specified profile exists and sources its profile.conf file to load configurations
+  into the current shell session. If the profile or file does not exist, it prints an error.
+
+Example:
+  shell::read_profile my_profile         # Sources profile.conf from my_profile.
+  shell::read_profile -n my_profile      # Prints the sourcing command without executing it.
+"
