@@ -32,7 +32,6 @@ shell::install_homebrew() {
 }
 
 # shell::removal_homebrew function
-# ---------------------------
 # Uninstalls Homebrew from the system.
 #
 # Usage:
@@ -53,6 +52,12 @@ shell::install_homebrew() {
 # Example:
 #   shell::removal_homebrew
 shell::removal_homebrew() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_REMOVAL_HOMEBREW"
+        return 0
+    fi
+
     if shell::is_command_available brew; then
         echo "🚀 Uninstalling Homebrew..."
         shell::run_cmd_eval '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh)"'

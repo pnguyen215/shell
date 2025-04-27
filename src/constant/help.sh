@@ -2169,3 +2169,21 @@ Description:
   script via curl. The command is executed using shell::run_cmd_eval, which logs
   the command before executing it.
 "
+
+USAGE_SHELL_REMOVAL_HOMEBREW="
+shell::removal_homebrew function
+Uninstalls Homebrew from the system.
+
+Usage:
+  shell::removal_homebrew [-h]
+
+Parameters:
+  - -h           : Optional. Displays this help message.
+
+Description:
+  This function first checks if Homebrew is installed using shell::is_command_available.
+  If Homebrew is detected, it uninstalls Homebrew by running the official uninstall
+  script. Additionally, it removes Homebrew-related lines from the user's shell
+  profile (e.g., $HOME/.zprofile) using sed. The commands are executed via
+  shell::run_cmd_eval to ensure they are logged prior to execution.
+"
