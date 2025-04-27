@@ -2417,3 +2417,25 @@ Description:
 Example:
   shell::get_profile my_profile         # Displays the contents of profile.conf for my_profile.
 "
+
+USAGE_SHELL_RENAME_PROFILE="
+shell::rename_profile function
+Renames the specified profile directory.
+
+Usage:
+  shell::rename_profile [-n] [-h] <old_name> <new_name>
+
+Parameters:
+  - -n             : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - -h             : Optional. Displays this help message.
+  - <old_name>     : The current name of the profile.
+  - <new_name>     : The new name for the profile.
+
+Description:
+  Checks if the old profile exists and the new profile name does not already exist,
+  then renames the directory accordingly.
+
+Example:
+  shell::rename_profile old_profile new_profile         # Renames old_profile to new_profile.
+  shell::rename_profile -n old_profile new_profile      # Prints the rename command without executing it.
+"

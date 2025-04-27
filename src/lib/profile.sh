@@ -331,6 +331,13 @@ shell::rename_profile() {
         dry_run="true"
         shift
     fi
+
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_RENAME_PROFILE"
+        return 0
+    fi
+
     if [ $# -lt 2 ]; then
         echo "Usage: shell::rename_profile [-n] <old_name> <new_name>"
         return 1
