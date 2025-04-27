@@ -2377,3 +2377,24 @@ Example:
   shell::update_profile my_profile         # Opens profile.conf in the default editor.
   shell::update_profile -n my_profile      # Prints the editor command without executing it.
 "
+
+USAGE_SHELL_REMOVE_PROFILE="
+shell::remove_profile function
+Deletes the specified profile directory after user confirmation.
+
+Usage:
+  shell::remove_profile [-n] [-h] <profile_name>
+
+Parameters:
+  - -n             : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - -h             : Optional. Displays this help message.
+  - <profile_name> : The name of the profile to remove.
+
+Description:
+  Prompts for confirmation before deleting the profile directory and its contents.
+  If confirmed, removes the directory; otherwise, aborts the operation.
+
+Example:
+  shell::remove_profile my_profile         # Prompts to confirm deletion of my_profile.
+  shell::remove_profile -n my_profile      # Prints the removal command without executing it.
+"

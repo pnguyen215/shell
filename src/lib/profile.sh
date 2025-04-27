@@ -235,6 +235,13 @@ shell::remove_profile() {
         dry_run="true"
         shift
     fi
+
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_REMOVE_PROFILE"
+        return 0
+    fi
+
     if [ $# -lt 1 ]; then
         echo "Usage: shell::remove_profile [-n] <profile_name>"
         return 1
