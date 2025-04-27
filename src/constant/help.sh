@@ -2603,3 +2603,27 @@ Example:
   shell::rename_key_conf_profile my_profile
   shell::rename_key_conf_profile -n my_profile   # dry-run mode
 "
+
+USAGE_SHELL_CLONE_CONF_PROFILE="
+shell::clone_conf_profile function
+Clones a configuration profile by copying its profile.conf from a source profile to a destination profile.
+
+Usage:
+  shell::clone_conf_profile [-n] [-h] <source_profile> <destination_profile>
+
+Parameters:
+  - -n                    : (Optional) Dry-run flag. If provided, the command is printed but not executed.
+  - -h                    : Optional. Displays this help message.
+  - <source_profile>      : The name of the source profile.
+  - <destination_profile> : The name of the destination profile.
+
+Description:
+  This function retrieves the source and destination profile directories using shell::get@_profile_dir,
+  verifies that the source profile exists and has a profile.conf file, and ensures that the destination
+  profile does not already exist. If validations pass, it clones the configuration by creating the destination
+  directory and copying the profile.conf file from the source to the destination. When the dry-run flag (-n)
+  is provided, it prints the command without executing it.
+
+Example:
+  shell::clone_conf_profile my_profile backup_profile   # Clones profile.conf from 'my_profile' to 'backup_profile'
+"

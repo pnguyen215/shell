@@ -887,6 +887,13 @@ shell::clone_conf_profile() {
         dry_run="true"
         shift
     fi
+
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_CLONE_CONF_PROFILE"
+        return 0
+    fi
+
     if [ $# -lt 2 ]; then
         echo "Usage: shell::clone_conf_profile [-n] <source_profile> <destination_profile>"
         return 1
