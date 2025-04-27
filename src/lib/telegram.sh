@@ -55,6 +55,12 @@ shell::send_telegram_message() {
         shift
     fi
 
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_SEND_TELEGRAM_MESSAGE"
+        return 0
+    fi
+
     # Ensure that at least three arguments remain.
     if [ $# -lt 3 ]; then
         echo "Usage: shell::send_telegram_message [-n] <token> <chat_id> <message>"

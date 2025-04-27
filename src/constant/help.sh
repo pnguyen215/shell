@@ -2231,3 +2231,27 @@ Example:
   shell::removal_oh_my_zsh         # Uninstalls Oh My Zsh if installed.
   shell::removal_oh_my_zsh -n      # Displays the uninstallation commands without executing them.
 "
+
+USAGE_SHELL_SEND_TELEGRAM_MESSAGE="
+shell::send_telegram_message function
+Sends a message via the Telegram Bot API.
+
+Usage:
+  shell::send_telegram_message [-n] [-h] <token> <chat_id> <message>
+
+Parameters:
+  - -n          : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - -h          : Optional. Displays this help message.
+  - <token>     : The Telegram Bot API token.
+  - <chat_id>   : The chat identifier where the message should be sent.
+  - <message>   : The message text to send.
+
+Description:
+  The function first checks for an optional dry-run flag. It then verifies that at least three arguments are provided.
+  If the bot token or chat ID is missing, it prints an error message. Otherwise, it constructs a curl command to send
+  the message via Telegram's API. In dry-run mode, the command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
+
+Example:
+  shell::send_telegram_message 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 \"Hello, World!\"
+  shell::send_telegram_message -n 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 \"Dry-run: Hello, World!\"
+"
