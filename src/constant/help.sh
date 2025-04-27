@@ -2280,3 +2280,22 @@ Example:
   shell::send_telegram_attachment 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 \"Report\" file1.pdf file2.pdf
   shell::send_telegram_attachment -n 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 \"Report\" file1.pdf
 "
+
+USAGE_SHELL_GET_PROFILE_DIR="
+shell::get@_profile_dir function
+Returns the path to the profile directory for a given profile name.
+
+Usage:
+  shell::get@_profile_dir [-h] <profile_name>
+
+Parameters:
+  - -h            : Optional. Displays this help message.
+  - <profile_name>: The name of the profile.
+
+Description:
+  Constructs and returns the path to the profile directory within the workspace,
+  located at $SHELL_CONF_WORKING/workspace.
+
+Example:
+  profile_dir=$(_shell::get@_profile_dir \"my_profile\")  # Returns \"$SHELL_CONF_WORKING/workspace/my_profile\"
+"

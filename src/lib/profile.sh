@@ -17,6 +17,12 @@
 # Example:
 #   profile_dir=$(shell::get@_profile_dir "my_profile")  # Returns "$SHELL_CONF_WORKING/workspace/my_profile"
 shell::get@_profile_dir() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_GET_PROFILE_DIR"
+        return 0
+    fi
+
     if [ $# -lt 1 ]; then
         echo "Usage: shell::get@_profile_dir <profile_name>"
         return 1
