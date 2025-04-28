@@ -2646,3 +2646,28 @@ Description:
 Example:
   shell::list_conf_profile       # Displays the names of all profiles in the workspace.
 "
+
+USAGE_SHELL_RETRIEVE_GH_REPOSITORY_INFO="
+shell::retrieve_gh_repository_info function
+Retrieves and formats extensive information about the current Git repository
+using Markdown syntax for Telegram notifications.
+
+Usage:
+  shell::retrieve_gh_repository_info [-h]
+
+Parameters:
+  - -h      : Optional. Displays this help message.
+
+Description:
+  This function checks if the current directory is a Git repository and, if so,
+  retrieves extensive details such as the repository name, URLs (Git and HTTPS),
+  default branch, current branch, number of commits, latest commit hash, author,
+  date, recent commit messages, information about tags, and the status of the
+  working tree.
+  The collected information is then formatted into a single string response
+  using Markdown for compatibility with platforms like Telegram.
+
+Returns:
+  A Markdown-formatted string containing repository information if successful,
+  or an error message if not in a Git repository.
+"

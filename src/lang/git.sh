@@ -121,3 +121,128 @@ shell::retrieve_gh_latest_release() {
         curl --silent "$api_url" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/'
     fi
 }
+
+# shell::retrieve_gh_repository_info function
+# Retrieves and formats extensive information about the current Git repository
+# using Markdown syntax for Telegram notifications.
+#
+# Usage:
+#   shell::retrieve_gh_repository_info
+#
+# Description:
+#   This function checks if the current directory is a Git repository and, if so,
+#   retrieves extensive details such as the repository name, URLs (Git and HTTPS),
+#   default branch, current branch, number of commits, latest commit hash, author,
+#   date, recent commit messages, information about tags, and the status of the
+#   working tree.
+#   The collected information is then formatted into a single string response
+#   using Markdown for compatibility with platforms like Telegram.
+#
+# Returns:
+#   A Markdown-formatted string containing repository information if successful,
+#   or an error message if not in a Git repository.
+#
+# Example usage:
+#   repo_info=$(shell::retrieve_gh_repository_info)
+#   echo "$repo_info"
+#
+# Notes:
+#   - Requires the 'git' command to be available.
+#   - Assumes the remote name is 'origin'.
+#   - Uses existing helper functions: shell::colored_echo and shell::run_cmd_eval.
+#   - The Markdown formatting is tailored for platforms supporting basic Markdown (like Telegram).
+shell::retrieve_gh_repository_info() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_RETRIEVE_GH_REPOSITORY_INFO"
+        return 0
+    fi
+
+    # Check if the current directory is a Git repository
+    if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        shell::colored_echo "🔴 Error: Not in a Git repository." 196
+        return 1
+    fi
+
+    local repo_name
+    repo_name=$(shell::run_cmd_eval "basename $(git rev-parse --show-toplevel)")
+    if [ $? -ne 0 ]; then
+        repo_name="N/A"
+    fi
+
+    local git_url
+    git_url=$(shell::run_cmd_eval "git remote get-url origin --all 2>/dev/null | grep ^git")
+    if [ $? -ne 0 ]; then
+        git_url="N/A"
+    fi
+
+    local https_url
+    https_url=$(shell::run_cmd_eval "git remote get-url origin --all 2>/dev/null | grep ^https")
+    if [ $? -ne 0 ]; then
+        https_url="N/A"
+    fi
+
+    local default_branch
+    default_branch=$(shell::run_cmd_eval "git remote show origin 2>/dev/null | grep 'HEAD branch' | awk '{print \$NF}'")
+    if [ $? -ne 0 ]; then
+        default_branch="N/A"
+    fi
+
+    local current_branch
+    current_branch=$(shell::run_cmd_eval "git rev-parse --abbrev-ref HEAD")
+    if [ $? -ne 0 ]; then
+        current_branch="N/A"
+    fi
+
+    local commit_count
+    commit_count=$(shell::run_cmd_eval "git rev-list --count HEAD")
+    if [ $? -ne 0 ]; then
+        commit_count="N/A"
+    fi
+
+    local latest_commit_hash
+    latest_commit_hash=$(shell::run_cmd_eval "git log -1 --format=\"%H\"")
+    if [ $? -ne 0 ]; then
+        latest_commit_hash="N/A"
+    fi
+
+    local latest_commit_author
+    latest_commit_author=$(shell::run_cmd_eval "git log -1 --format=\"%aN\"")
+    if [ $? -ne 0 ]; then
+        latest_commit_author="N/A"
+    fi
+
+    local latest_commit_date
+    latest_commit_date=$(shell::run_cmd_eval "git log -1 --format=\"%aD\"")
+    if [ $? -ne 0 ]; then
+        latest_commit_date="N/A"
+    fi
+
+    local recent_commits
+    recent_commits=$(shell::run_cmd_eval "git log --oneline -n 5")
+    if [ -z "$recent_commits" ]; then
+        recent_commits="No recent commits found or command failed."
+    fi
+
+    local tags
+    tags=$(shell::run_cmd_eval "git tag --sort=-v:refname")
+    if [ -z "$tags" ]; then
+        tags="No tags found or command failed."
+    fi
+
+    # Format the output string with Markdown
+    local response="*Repository:* $repo_name\n"
+    response+="*Git URL:* \`$git_url\`\n"
+    response+="*HTTPS URL:* \`$https_url\`\n"
+    response+="*Default Branch:* $default_branch\n"
+    response+="*Current Branch:* $current_branch\n"
+    response+="*Total Commits:* $commit_count\n"
+    response+="*Latest Commit:* \`$latest_commit_hash\`\n"
+    response+="*Author:* $latest_commit_author\n"
+    response+="*Date:* $latest_commit_date\n"
+    response+="*Recent Commits:*\n\`\`\`\n$recent_commits\n\`\`\`\n"
+    response+="*Tags:*\n\`\`\`\n$tags\n\`\`\`"
+
+    echo "$response"
+    return 0
+}
