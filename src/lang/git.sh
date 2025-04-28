@@ -149,7 +149,7 @@ shell::retrieve_gh_latest_release() {
 # Notes:
 #   - Requires the 'git' command to be available.
 #   - Assumes the remote name is 'origin'.
-#   - Uses existing helper functions: shell::colored_echo and shell::run_cmd_eval.
+#   - Uses existing helper functions: shell::colored_echo and shell::run_cmd_outlet.
 #   - The Markdown formatting is tailored for platforms supporting basic Markdown (like Telegram).
 shell::retrieve_gh_repository_info() {
     # Check for the help flag (-h)
@@ -165,67 +165,67 @@ shell::retrieve_gh_repository_info() {
     fi
 
     local repo_name
-    repo_name=$(shell::run_cmd_eval "basename $(git rev-parse --show-toplevel)")
+    repo_name=$(shell::run_cmd_outlet "basename $(git rev-parse --show-toplevel)")
     if [ $? -ne 0 ]; then
         repo_name="N/A"
     fi
 
     local git_url
-    git_url=$(shell::run_cmd_eval "git remote get-url origin --all 2>/dev/null | grep ^git")
+    git_url=$(shell::run_cmd_outlet "git remote get-url origin --all 2>/dev/null | grep ^git")
     if [ $? -ne 0 ]; then
         git_url="N/A"
     fi
 
     local https_url
-    https_url=$(shell::run_cmd_eval "git remote get-url origin --all 2>/dev/null | grep ^https")
+    https_url=$(shell::run_cmd_outlet "git remote get-url origin --all 2>/dev/null | grep ^https")
     if [ $? -ne 0 ]; then
         https_url="N/A"
     fi
 
     local default_branch
-    default_branch=$(shell::run_cmd_eval "git remote show origin 2>/dev/null | grep 'HEAD branch' | awk '{print \$NF}'")
+    default_branch=$(shell::run_cmd_outlet "git remote show origin 2>/dev/null | grep 'HEAD branch' | awk '{print \$NF}'")
     if [ $? -ne 0 ]; then
         default_branch="N/A"
     fi
 
     local current_branch
-    current_branch=$(shell::run_cmd_eval "git rev-parse --abbrev-ref HEAD")
+    current_branch=$(shell::run_cmd_outlet "git rev-parse --abbrev-ref HEAD")
     if [ $? -ne 0 ]; then
         current_branch="N/A"
     fi
 
     local commit_count
-    commit_count=$(shell::run_cmd_eval "git rev-list --count HEAD")
+    commit_count=$(shell::run_cmd_outlet "git rev-list --count HEAD")
     if [ $? -ne 0 ]; then
         commit_count="N/A"
     fi
 
     local latest_commit_hash
-    latest_commit_hash=$(shell::run_cmd_eval "git log -1 --format=\"%H\"")
+    latest_commit_hash=$(shell::run_cmd_outlet "git log -1 --format=\"%H\"")
     if [ $? -ne 0 ]; then
         latest_commit_hash="N/A"
     fi
 
     local latest_commit_author
-    latest_commit_author=$(shell::run_cmd_eval "git log -1 --format=\"%aN\"")
+    latest_commit_author=$(shell::run_cmd_outlet "git log -1 --format=\"%aN\"")
     if [ $? -ne 0 ]; then
         latest_commit_author="N/A"
     fi
 
     local latest_commit_date
-    latest_commit_date=$(shell::run_cmd_eval "git log -1 --format=\"%aD\"")
+    latest_commit_date=$(shell::run_cmd_outlet "git log -1 --format=\"%aD\"")
     if [ $? -ne 0 ]; then
         latest_commit_date="N/A"
     fi
 
     local recent_commits
-    recent_commits=$(shell::run_cmd_eval "git log --oneline -n 5")
+    recent_commits=$(shell::run_cmd_outlet "git log --oneline -n 5")
     if [ -z "$recent_commits" ]; then
         recent_commits="No recent commits found or command failed."
     fi
 
     local tags
-    tags=$(shell::run_cmd_eval "git tag --sort=-v:refname")
+    tags=$(shell::run_cmd_outlet "git tag --sort=-v:refname")
     if [ -z "$tags" ]; then
         tags="No tags found or command failed."
     fi
