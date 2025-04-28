@@ -251,6 +251,38 @@ shell::run_cmd_eval() {
     eval "$command"
 }
 
+# shell::run_cmd_outlet function
+# Executes a given command using the shell's eval function.
+#
+# Usage:
+#   shell::run_cmd_outlet <command>
+#
+# Parameters:
+#   - <command>: The command to be executed.
+#
+# Description:
+#   This function takes a command as input and executes it using eval.
+#   It is designed to handle commands that may require shell interpretation.
+#   The function also checks for a help flag (-h) and displays usage information if present.
+#
+# Example usage:
+#   shell::run_cmd_outlet "ls -l"
+#
+# Notes:
+#   - The use of eval can be risky if the input command contains untrusted data,
+#     as it can lead to command injection vulnerabilities. Ensure the command is
+#     sanitized before using this function.
+shell::run_cmd_outlet() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_RUN_CMD_OUTLET"
+        return 0
+    fi
+
+    local command="$*"
+    eval "$command"
+}
+
 # shell::is_command_available function
 # Check if a command is available in the system's PATH.
 #

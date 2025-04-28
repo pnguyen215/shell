@@ -2671,3 +2671,23 @@ Returns:
   A Markdown-formatted string containing repository information if successful,
   or an error message if not in a Git repository.
 "
+
+USAGE_SHELL_RUN_CMD_OUTLET="
+shell::run_cmd_outlet function
+Executes a given command using the shell's eval function.
+
+Usage:
+  shell::run_cmd_outlet [-h] <command>
+
+Parameters:
+  - -h        : Optional. Displays this help message.
+  - <command> : The command to be executed.
+
+Description:
+  This function takes a command as input and executes it using eval.
+  It is designed to handle commands that may require shell interpretation.
+  The function also checks for a help flag (-h) and displays usage information if present.
+
+Example usage:
+  shell::run_cmd_outlet \"ls -l\"
+"
