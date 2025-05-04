@@ -220,29 +220,24 @@ shell::retrieve_gh_repository_info() {
 
     local recent_commits
     recent_commits=$(shell::run_cmd_outlet "git log --oneline -n 5")
-    if [ -z "$recent_commits" ]; then
-        recent_commits="No recent commits found or command failed."
-    fi
 
     local tags
     tags=$(shell::run_cmd_outlet "git tag --sort=-v:refname")
-    if [ -z "$tags" ]; then
-        tags="No tags found or command failed."
-    fi
 
     # Format the output string with Markdown
     local response="*Repository:* $repo_name\n"
     response+="*Git URL:* \`$git_url\`\n"
     response+="*HTTPS URL:* \`$https_url\`\n"
-    response+="*Default Branch:* $default_branch\n"
-    response+="*Current Branch:* $current_branch\n"
-    response+="*Total Commits:* $commit_count\n"
+    response+="*Default Branch:* \`$default_branch\`\n"
+    response+="*Current Branch:* \`$current_branch\`\n"
+    response+="*Total Commits:* \`$commit_count\`\n"
     response+="*Latest Commit:* \`$latest_commit_hash\`\n"
-    response+="*Author:* $latest_commit_author\n"
-    response+="*Date:* $latest_commit_date\n"
-    response+="*Recent Commits:*\n\`\`\`\n$recent_commits\n\`\`\`\n"
-    response+="*Tags:*\n\`\`\`\n$tags\n\`\`\`"
-
+    response+="*Latest Commit Date:* \`$latest_commit_date\`\n"
+    if [ ! -z "$tags" ]; then
+        response+="*Tags:*\n\`\`\`\n$tags\n\`\`\`"
+    fi
+    # response+="*Author:* $latest_commit_author\n"
+    # response+="*Recent Commits:*\n\`\`\`\n$recent_commits\n\`\`\`\n"
     echo "$response"
     return 0
 }
