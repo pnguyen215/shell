@@ -229,3 +229,34 @@ shell::retrieve_gh_repository_info() {
     echo "$response"
     return 0
 }
+
+# shell::current_gh_repository_name function
+# Retrieves the name of the current Git repository.
+#
+# Usage:
+#   shell::current_gh_repository_name
+#
+# Description:
+#   This function uses the 'git' command to determine the top-level directory
+#   of the current Git repository and extracts its basename, which corresponds
+#   to the repository name.
+#
+# Returns:
+#   The name of the current Git repository if successful, or an error message
+#   if not in a Git repository.
+#
+# Example usage:
+#   repo_name=$(shell::current_gh_repository_name)
+#   echo "$repo_name"
+#
+# Notes:
+#   - Requires the 'git' command to be available.
+shell::current_gh_repository_name() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_CURRENT_GH_REPOSITORY_NAME"
+        return 0
+    fi
+
+    shell::run_cmd_eval "basename $(git rev-parse --show-toplevel)"
+}

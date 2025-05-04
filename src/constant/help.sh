@@ -2691,3 +2691,19 @@ Description:
 Example usage:
   shell::run_cmd_outlet \"ls -l\"
 "
+
+USAGE_SHELL_CURRENT_GH_REPOSITORY_NAME="
+shell::current_gh_repository_name function
+Retrieves the name of the current Git repository.
+
+Usage:
+  shell::current_gh_repository_name [-h]
+
+Parameters:
+  - -h        : Optional. Displays this help message.
+
+Description:
+  This function uses the 'git' command to determine the top-level directory
+  of the current Git repository and extracts its basename, which corresponds
+  to the repository name.
+"
