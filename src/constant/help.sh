@@ -2724,3 +2724,19 @@ Description:
   'git remote show origin'. It utilizes shell::run_cmd_eval for command
   execution and logging.
 "
+
+USAGE_SHELL_RETRIEVE_CURRENT_GH_CURRENT_BRANCH="
+shell::retrieve_current_gh_current_branch function
+Retrieves the current branch for the current Git repository.
+
+Usage:
+  shell::retrieve_current_gh_current_branch [-h]
+
+Parameters:
+  - -h        : Optional. Displays this help message.
+
+Description:
+  This function checks if the current directory is a Git repository and, if so,
+  determines the name of the currently active branch.
+  It utilizes shell::run_cmd_outlet for command execution and output capture.
+"

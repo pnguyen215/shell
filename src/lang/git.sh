@@ -313,3 +313,54 @@ shell::retrieve_current_gh_default_branch() {
     echo "$default_branch"
     return 0
 }
+
+# shell::retrieve_current_gh_current_branch function
+# Retrieves the current branch for the current Git repository.
+#
+# Usage:
+#   shell::retrieve_current_gh_current_branch
+#
+# Description:
+#   This function checks if the current directory is a Git repository and, if so,
+#   determines the name of the currently active branch.
+#   It utilizes shell::run_cmd_outlet for command execution and output capture.
+#
+# Returns:
+#   Outputs the name of the current branch,
+#   or an error message if not in a Git repository or if the current branch
+#   cannot be determined.
+#
+# Example:
+#   current_branch=$(shell::retrieve_current_gh_current_branch)
+#   echo "Current branch: $current_branch"
+#
+# Notes:
+#   - Requires the 'git' command to be available.
+#   - Works on both macOS and Linux.
+#   - Uses existing helper functions: shell::colored_echo and shell::run_cmd_outlet.
+shell::retrieve_current_gh_current_branch() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_RETRIEVE_CURRENT_GH_CURRENT_BRANCH"
+        return 0
+    fi
+
+    # Check if the current directory is a Git repository
+    if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        shell::colored_echo "🔴 Error: Not in a Git repository." 196
+        return 1
+    fi
+
+    local current_branch
+    # Use git rev-parse --abbrev-ref HEAD to get the current branch name
+    # shell::run_cmd_eval executes the command and captures its standard output
+    current_branch=$(shell::run_cmd_eval "git rev-parse --abbrev-ref HEAD")
+
+    if [ -z "$current_branch" ]; then
+        shell::colored_echo "🔴 Error: Could not determine the current branch." 196
+        return 1
+    fi
+
+    echo "$current_branch"
+    return 0
+}
