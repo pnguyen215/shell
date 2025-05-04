@@ -166,57 +166,30 @@ shell::retrieve_gh_repository_info() {
 
     local repo_name
     repo_name=$(shell::run_cmd_outlet "basename $(git rev-parse --show-toplevel)")
-    if [ $? -ne 0 ]; then
-        repo_name="N/A"
-    fi
 
     local git_url
     git_url=$(shell::run_cmd_outlet "git remote get-url origin --all 2>/dev/null | grep ^git")
-    if [ $? -ne 0 ]; then
-        git_url="N/A"
-    fi
 
     local https_url
     https_url=$(shell::run_cmd_outlet "git remote get-url origin --all 2>/dev/null | grep ^https")
-    if [ $? -ne 0 ]; then
-        https_url="N/A"
-    fi
 
     local default_branch
     default_branch=$(shell::run_cmd_outlet "git remote show origin 2>/dev/null | grep 'HEAD branch' | awk '{print \$NF}'")
-    if [ $? -ne 0 ]; then
-        default_branch="N/A"
-    fi
 
     local current_branch
     current_branch=$(shell::run_cmd_outlet "git rev-parse --abbrev-ref HEAD")
-    if [ $? -ne 0 ]; then
-        current_branch="N/A"
-    fi
 
     local commit_count
     commit_count=$(shell::run_cmd_outlet "git rev-list --count HEAD")
-    if [ $? -ne 0 ]; then
-        commit_count="N/A"
-    fi
 
     local latest_commit_hash
     latest_commit_hash=$(shell::run_cmd_outlet "git log -1 --format=\"%H\"")
-    if [ $? -ne 0 ]; then
-        latest_commit_hash="N/A"
-    fi
 
     local latest_commit_author
     latest_commit_author=$(shell::run_cmd_outlet "git log -1 --format=\"%aN\"")
-    if [ $? -ne 0 ]; then
-        latest_commit_author="N/A"
-    fi
 
     local latest_commit_date
     latest_commit_date=$(shell::run_cmd_outlet "git log -1 --format=\"%aD\"")
-    if [ $? -ne 0 ]; then
-        latest_commit_date="N/A"
-    fi
 
     local recent_commits
     recent_commits=$(shell::run_cmd_outlet "git log --oneline -n 5")
@@ -225,19 +198,34 @@ shell::retrieve_gh_repository_info() {
     tags=$(shell::run_cmd_outlet "git tag --sort=-v:refname")
 
     # Format the output string with Markdown
+    # response+="*Recent Commits:*\n\`\`\`\n$recent_commits\n\`\`\`\n"
+
     local response="*Repository:* $repo_name\n"
-    response+="*Git URL:* \`$git_url\`\n"
-    response+="*HTTPS URL:* \`$https_url\`\n"
-    response+="*Default Branch:* \`$default_branch\`\n"
-    response+="*Current Branch:* \`$current_branch\`\n"
-    response+="*Total Commits:* \`$commit_count\`\n"
-    response+="*Latest Commit:* \`$latest_commit_hash\`\n"
-    response+="*Latest Commit Date:* \`$latest_commit_date\`\n"
+    if [ ! -z "$git_url" ]; then
+        response+="*Git URL:* \`$git_url\`\n"
+    fi
+    if [ ! -z "$https_url" ]; then
+        response+="*HTTPS URL:* \`$https_url\`\n"
+    fi
+    if [ ! -z "$default_branch" ]; then
+        response+="*Default Branch:* \`$default_branch\`\n"
+    fi
+    if [ ! -z "$current_branch" ]; then
+        response+="*Current Branch:* \`$current_branch\`\n"
+    fi
+    if [ ! -z "$commit_count" ]; then
+        response+="*Total Commits:* \`$commit_count\`\n"
+    fi
+    if [ ! -z "$latest_commit_hash" ]; then
+        response+="*Latest Commit:* \`$latest_commit_hash\`\n"
+    fi
+    if [ ! -z "$latest_commit_date" ]; then
+        response+="*Latest Commit Date:* \`$latest_commit_date\`\n"
+    fi
     if [ ! -z "$tags" ]; then
         response+="*Tags:*\n\`\`\`\n$tags\n\`\`\`"
     fi
-    # response+="*Author:* $latest_commit_author\n"
-    # response+="*Recent Commits:*\n\`\`\`\n$recent_commits\n\`\`\`\n"
+
     echo "$response"
     return 0
 }
