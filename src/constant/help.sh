@@ -2707,3 +2707,20 @@ Description:
   of the current Git repository and extracts its basename, which corresponds
   to the repository name.
 "
+
+USAGE_SHELL_RETRIEVE_CURRENT_GH_DEFAULT_BRANCH="
+shell::retrieve_current_gh_default_branch function
+Retrieves the default branch for the current Git repository.
+
+Usage:
+  shell::retrieve_current_gh_default_branch [-h]
+
+Parameters:
+  - -h        : Optional. Displays this help message.
+
+Description:
+  This function checks if the current directory is a Git repository and, if so,
+  determines the default branch by inspecting the 'origin' remote using
+  'git remote show origin'. It utilizes shell::run_cmd_eval for command
+  execution and logging.
+"

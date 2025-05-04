@@ -260,3 +260,56 @@ shell::retrieve_current_gh_repository_name() {
 
     shell::run_cmd_eval "basename $(git rev-parse --show-toplevel)"
 }
+
+# shell::retrieve_current_gh_default_branch function
+# Retrieves the default branch for the current Git repository.
+#
+# Usage:
+#   shell::retrieve_current_gh_default_branch
+#
+# Description:
+#   This function checks if the current directory is a Git repository and, if so,
+#   determines the default branch by inspecting the 'origin' remote using
+#   'git remote show origin'. It utilizes shell::run_cmd_eval for command
+#   execution and logging.
+#
+# Returns:
+#   Outputs the name of the default branch (e.g., main, master),
+#   or an error message if not in a Git repository or if the default branch
+#   cannot be determined.
+#
+# Example:
+#   default_branch=$(shell::retrieve_current_gh_default_branch)
+#   echo "Default branch: $default_branch"
+#
+# Notes:
+#   - Requires the 'git', 'grep', and 'awk' commands to be available.
+#   - Assumes the remote name is 'origin'.
+#   - Works on both macOS and Linux.
+#   - Uses existing helper functions: shell::colored_echo and shell::run_cmd_eval.
+shell::retrieve_current_gh_default_branch() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_RETRIEVE_CURRENT_GH_DEFAULT_BRANCH"
+        return 0
+    fi
+
+    # Check if the current directory is a Git repository
+    if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        shell::colored_echo "🔴 Error: Not in a Git repository." 196
+        return 1
+    fi
+
+    local default_branch
+    # Use shell::run_cmd_eval to execute the command and capture its output
+    # The command finds the HEAD branch for 'origin' and extracts the branch name
+    default_branch=$(shell::run_cmd_eval "git remote show origin 2>/dev/null | grep 'HEAD branch' | awk '{print \$NF}'")
+
+    if [ -z "$default_branch" ]; then
+        shell::colored_echo "🔴 Error: Could not determine the default branch for 'origin'." 196
+        return 1
+    fi
+
+    echo "$default_branch"
+    return 0
+}
