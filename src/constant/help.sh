@@ -2692,12 +2692,12 @@ Example usage:
   shell::run_cmd_outlet \"ls -l\"
 "
 
-USAGE_SHELL_CURRENT_GH_REPOSITORY_NAME="
-shell::current_gh_repository_name function
+USAGE_SHELL_RETRIEVE_CURRENT_GH_REPOSITORY_NAME="
+shell::retrieve_current_gh_repository_name function
 Retrieves the name of the current Git repository.
 
 Usage:
-  shell::current_gh_repository_name [-h]
+  shell::retrieve_current_gh_repository_name [-h]
 
 Parameters:
   - -h        : Optional. Displays this help message.
