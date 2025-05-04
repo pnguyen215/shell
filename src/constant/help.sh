@@ -2692,22 +2692,6 @@ Example usage:
   shell::run_cmd_outlet \"ls -l\"
 "
 
-USAGE_SHELL_RETRIEVE_CURRENT_GH_REPOSITORY_NAME="
-shell::retrieve_current_gh_repository_name function
-Retrieves the name of the current Git repository.
-
-Usage:
-  shell::retrieve_current_gh_repository_name [-h]
-
-Parameters:
-  - -h        : Optional. Displays this help message.
-
-Description:
-  This function uses the 'git' command to determine the top-level directory
-  of the current Git repository and extracts its basename, which corresponds
-  to the repository name.
-"
-
 USAGE_SHELL_RETRIEVE_CURRENT_GH_DEFAULT_BRANCH="
 shell::retrieve_current_gh_default_branch function
 Retrieves the default branch for the current Git repository.
