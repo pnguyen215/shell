@@ -554,28 +554,159 @@ shell::kill_ssh_tunnels() {
 #     to encourage passphrase usage).
 #   - Relies on the 'ssh-keygen' command being available in the system's PATH.
 #   - Uses shell::create_directory_if_not_exists and shell::run_cmd helper functions.
+# shell::gen_ssh_key() {
+#     local dry_run="false"
+
+#     # Check for the optional dry-run flag (-n) or help flag (-h)
+#     if [ "$1" = "-n" ]; then
+#         dry_run="true"
+#         shift
+#     fi
+
+#     # Check for the help flag (-h)
+#     if [ "$1" = "-h" ]; then
+#         echo "$USAGE_SHELL_GEN_SSH_KEY"
+#         return 0
+#     fi
+
+#     local email="${1:-}"              # Default to empty string if no email is provided
+#     local key_filename="${2:-id_rsa}" # Default to id_rsa if no filename is provided
+
+#     local ssh_dir="$SHELL_CONF_SSH_DIR_WORKING"
+#     local full_key_path="$ssh_dir/$key_filename"
+
+#     # Ensure the SSH directory exists
+#     if [ "$dry_run" = "true" ]; then
+#         shell::on_evict "shell::create_directory_if_not_exists \"$ssh_dir\""
+#     else
+#         shell::create_directory_if_not_exists "$ssh_dir"
+#         if [ $? -ne 0 ]; then
+#             shell::colored_echo "🔴 Failed to create SSH directory '$ssh_dir'." 196
+#             return 1
+#         fi
+#     fi
+
+#     # Build the ssh-keygen command
+#     # We use -N '' here to prevent the prompt for a passphrase in an automated script,
+#     # but ideally, users should add a passphrase manually or be prompted.
+#     # For a library function, prompting might be undesirable, so we disable it by default.
+#     local ssh_keygen_cmd="ssh-keygen -t rsa -b 4096 -C \"$email\" -f \"$full_key_path\" -N ''"
+
+#     # Check if the key file already exists
+#     if [ -f "$full_key_path" ]; then
+#         shell::colored_echo "🟡 SSH key '$full_key_path' already exists. Skipping generation." 11
+#         return 0
+#     fi
+
+#     # Execute or print the command based on dry-run mode
+#     if [ "$dry_run" = "true" ]; then
+#         shell::on_evict "$ssh_keygen_cmd"
+#     else
+#         shell::colored_echo "Generating SSH key pair: $full_key_path" 33
+#         # Using shell::run_cmd for execution logging
+#         shell::run_cmd $ssh_keygen_cmd
+
+#         if [ $? -eq 0 ]; then
+#             shell::colored_echo "🟢 SSH key pair generated successfully:" 46
+#             shell::colored_echo "  Private key: $full_key_path" 46
+#             shell::colored_echo "  Public key:  ${full_key_path}.pub" 46
+#         else
+#             shell::colored_echo "🔴 Failed to generate SSH key pair." 196
+#             return 1
+#         fi
+#     fi
+
+#     return 0
+# }
+
+# shell::gen_ssh_key function
+# Generates an SSH key pair (private and public) and saves them to the SSH directory.
+#
+# Usage:
+#   shell::gen_ssh_key [-n] [-t key_type] [-p passphrase] [-h] [email] [key_filename]
+#
+# Parameters:
+#   - -n              : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+#   - -t key_type     : Optional. Specifies the key type (e.g., rsa, ed25519). Defaults to rsa.
+#   - -p passphrase   : Optional. Specifies the passphrase for the key. Defaults to empty (no passphrase).
+#   - -h              : Optional. Displays this help message.
+#   - [email]         : Optional. The email address to be included in the comment field of the SSH key.
+#                       Defaults to an empty string if not provided.
+#   - [key_filename]  : Optional. The name of the key file to generate within the SSH directory.
+#                       Defaults to 'id_rsa' if not provided.
+#
+# Description:
+#   This function creates the SSH directory (defaults to $HOME/.ssh if $SHELL_CONF_SSH_DIR_WORKING is unset)
+#   if it doesn't exist and generates an SSH key pair using ssh-keygen. It supports specifying the key type,
+#   passphrase, email comment, and filename. The function ensures the ssh-keygen command is available,
+#   checks for existing keys, and sets appropriate permissions on generated files.
+#
+# Example usage:
+#   shell::gen_ssh_key                                  # Generates rsa key in ~/.ssh/id_rsa with no comment or passphrase.
+#   shell::gen_ssh_key "user@example.com"              # Generates rsa key with email, saved as ~/.ssh/id_rsa.
+#   shell::gen_ssh_key -t ed25519 "user@example.com"   # Generates ed25519 key with email.
+#   shell::gen_ssh_key "" "my_key"                     # Generates rsa key with no comment, saved as ~/.ssh/my_key.
+#   shell::gen_ssh_key -n "user@example.com" "my_key"  # Dry-run: prints the command without executing.
+#   shell::gen_ssh_key -h                              # Displays this help message.
+#
+# Notes:
+#   - Uses 4096-bit keys for rsa; ed25519 uses its default key size.
+#   - Sets key file permissions to 600 (private) and 644 (public) for security.
+#   - Relies on shell::create_directory_if_not_exists, shell::run_cmd_eval, and shell::is_command_available.
+#   - Validates the presence of ssh-keygen in the system's PATH.
 shell::gen_ssh_key() {
     local dry_run="false"
+    local key_type="rsa"
+    local passphrase=""
 
-    # Check for the optional dry-run flag (-n) or help flag (-h)
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+    # Parse options
+    while [[ "$1" == -* ]]; do
+        case "$1" in
+        -n)
+            dry_run="true"
+            shift
+            ;;
+        -t)
+            key_type="$2"
+            shift 2
+            ;;
+        -p)
+            passphrase="$2"
+            shift 2
+            ;;
+        -h)
+            echo "$USAGE_SHELL_GEN_SSH_KEY"
+            return 0
+            ;;
+        *)
+            shell::colored_echo "🔴 Unknown option: $1" 196
+            echo "$USAGE_SHELL_GEN_SSH_KEY"
+            return 1
+            ;;
+        esac
+    done
 
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_GEN_SSH_KEY"
-        return 0
-    fi
-
-    local email="${1:-}"              # Default to empty string if no email is provided
-    local key_filename="${2:-id_rsa}" # Default to id_rsa if no filename is provided
-
-    local ssh_dir="$SHELL_CONF_SSH_DIR_WORKING"
+    local email="${1:-}"              # Default to empty string if no email
+    local key_filename="${2:-id_rsa}" # Default to id_rsa if no filename
+    local ssh_dir="${SHELL_CONF_SSH_DIR_WORKING:-$HOME/.ssh}"
     local full_key_path="$ssh_dir/$key_filename"
 
-    # Ensure the SSH directory exists
+    # Validate ssh-keygen availability
+    if ! shell::is_command_available ssh-keygen; then
+        shell::colored_echo "🔴 Error: ssh-keygen is not available. Please install openssh-client." 196
+        return 1
+    fi
+
+    # Validate key type
+    case "$key_type" in
+    rsa | ed25519) ;;
+    *)
+        shell::colored_echo "🔴 Error: Unsupported key type '$key_type'. Supported types: rsa, ed25519." 196
+        return 1
+        ;;
+    esac
+
+    # Ensure SSH directory exists
     if [ "$dry_run" = "true" ]; then
         shell::on_evict "shell::create_directory_if_not_exists \"$ssh_dir\""
     else
@@ -586,27 +717,32 @@ shell::gen_ssh_key() {
         fi
     fi
 
-    # Build the ssh-keygen command
-    # We use -N '' here to prevent the prompt for a passphrase in an automated script,
-    # but ideally, users should add a passphrase manually or be prompted.
-    # For a library function, prompting might be undesirable, so we disable it by default.
-    local ssh_keygen_cmd="ssh-keygen -t rsa -b 4096 -C \"$email\" -f \"$full_key_path\" -N ''"
-
-    # Check if the key file already exists
+    # Check if key file already exists
     if [ -f "$full_key_path" ]; then
         shell::colored_echo "🟡 SSH key '$full_key_path' already exists. Skipping generation." 11
         return 0
     fi
 
-    # Execute or print the command based on dry-run mode
+    # Build ssh-keygen command
+    local ssh_keygen_cmd="ssh-keygen -t $key_type"
+    if [ "$key_type" = "rsa" ]; then
+        ssh_keygen_cmd="$ssh_keygen_cmd -b 4096"
+    fi
+    ssh_keygen_cmd="$ssh_keygen_cmd -C \"$email\" -f \"$full_key_path\""
+    if [ -n "$passphrase" ]; then
+        ssh_keygen_cmd="$ssh_keygen_cmd -N \"$passphrase\""
+    else
+        ssh_keygen_cmd="$ssh_keygen_cmd -N ''"
+    fi
+
     if [ "$dry_run" = "true" ]; then
         shell::on_evict "$ssh_keygen_cmd"
     else
         shell::colored_echo "Generating SSH key pair: $full_key_path" 33
-        # Using shell::run_cmd for execution logging
-        shell::run_cmd $ssh_keygen_cmd
-
+        shell::run_cmd_eval "$ssh_keygen_cmd"
         if [ $? -eq 0 ]; then
+            shell::run_cmd_eval chmod 600 "$full_key_path"
+            shell::run_cmd_eval chmod 644 "${full_key_path}.pub"
             shell::colored_echo "🟢 SSH key pair generated successfully:" 46
             shell::colored_echo "  Private key: $full_key_path" 46
             shell::colored_echo "  Public key:  ${full_key_path}.pub" 46
