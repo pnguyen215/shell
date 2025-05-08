@@ -9,7 +9,7 @@ bookmarks_file="$SHELL_KEY_CONF_FILE_BOOKMARK"
 if [[ ! -f $bookmarks_file ]]; then
     # touch $bookmarks_file
     # shell::create_file_if_not_exists $bookmarks_file
-    mkdir -p "$SHELL_CONF_WORKING_BOOKMARK" && touch "$SHELL_KEY_CONF_FILE_BOOKMARK"
+    # mkdir -p "$SHELL_CONF_WORKING_BOOKMARK" && touch "$SHELL_KEY_CONF_FILE_BOOKMARK"
 fi
 
 # shell::uplink function
