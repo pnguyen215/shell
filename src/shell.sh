@@ -61,8 +61,8 @@ shell::source_directory() {
 # sequential execution of the directories ensures order.
 shell::source_directory "$CONST_DIR"
 shell::source_directory "$LIB_DIR"
-shell::source_directory "$DEVOPS_DIR"
-shell::source_directory "$LANG_DIR"
+# shell::source_directory "$DEVOPS_DIR"
+# shell::source_directory "$LANG_DIR"
 
 # shell::version function
 # This function outputs the current version of the shell library.
