@@ -102,26 +102,64 @@ shell::gemini() {
     show_loading &
     spinner_pid=$!
 
-    # Execute the cURL command and process the streaming response
-    local response
+    # Execute the cURL command and process the streaming SSE response
+    local response=""
+    local temp_file
+    temp_file=$(mktemp)
+
+    # Run cURL and process SSE stream
+    shell::run_cmd_eval "$curl_cmd" >"$temp_file" 2>/dev/null
+    if [ $? -ne 0 ]; then
+        kill $spinner_pid >/dev/null 2>&1
+        wait $spinner_pid >/dev/null 2>&1
+        printf "\r\033[K" >&2
+        shell::colored_echo "🔴 Error: Failed to connect to Gemini API." 196
+        rm -f "$temp_file"
+        return 1
+    fi
+
+    # Process the SSE stream
     if shell::is_command_available jq; then
-        # Use jq for robust JSON parsing
-        response=$(shell::run_cmd_eval "$curl_cmd" | jq -r '.[] | .candidates[0].content.parts[0].text' 2>/dev/null)
+        # Use jq to parse each JSON chunk
+        while IFS= read -r line; do
+            # Skip empty lines or non-data lines
+            if [[ "$line" =~ ^data:\ (.*)$ ]]; then
+                json_chunk="${BASH_REMATCH[1]}"
+                # Skip if json_chunk is empty or not valid JSON
+                if [ -n "$json_chunk" ] && echo "$json_chunk" | jq . >/dev/null 2>&1; then
+                    text=$(echo "$json_chunk" | jq -r '.candidates[0].content.parts[0].text // empty')
+                    if [ -n "$text" ]; then
+                        response+="$text"
+                    fi
+                fi
+            fi
+        done <"$temp_file"
     else
         # Fallback to grep/sed for JSON parsing
-        response=$(shell::run_cmd_eval "$curl_cmd" | grep '"text":' | sed -E 's/.*"text":"([^"]+)".*/\1/' 2>/dev/null)
+        while IFS= read -r line; do
+            if [[ "$line" =~ ^data:\ (.*)$ ]]; then
+                json_chunk="${BASH_REMATCH[1]}"
+                if [ -n "$json_chunk" ]; then
+                    text=$(echo "$json_chunk" | grep '"text":' | sed -E 's/.*"text":"([^"]+)"[,}].*/\1/' | tr -d '\n')
+                    if [ -n "$text" ]; then
+                        response+="$text"
+                    fi
+                fi
+            fi
+        done <"$temp_file"
     fi
+
+    # Clean up
+    rm -f "$temp_file"
 
     # Stop the loading animation
     kill $spinner_pid >/dev/null 2>&1
     wait $spinner_pid >/dev/null 2>&1
-    # Clear the last spinner line
-    # echo -ne "\033[K" >&2
-    printf "\r\033[K" >&2
+    printf "\r\033[K" >&2 # Clear the last spinner line
 
     # Check if the response is empty
     if [ -z "$response" ]; then
-        shell::colored_echo "🔴 Error: No response received from Gemini API or parsing failed." 196
+        shell::colored_echo "🔴 Error: No valid text response received from Gemini API." 196
         return 1
     fi
 
