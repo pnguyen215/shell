@@ -142,7 +142,7 @@ Description:
   these processes, including their PIDs and command details, in an fzf interface
   for interactive selection. The user can select one or multiple processes.
   After selection, the user is prompted for confirmation before the selected
-  processes are terminated using the $(kill) command.
+  processes are terminated using the (kill) command.
 
 Example usage:
   shell::fzf_kill_ssh_tunnels # Launch fzf to select and kill SSH tunnels.
@@ -575,7 +575,7 @@ Description:
   The function provides feedback on whether the file was found and loaded.
 
 Example usage:
-  shell::load_ini_conf \"$CONF_DIR/my_app.ini.conf\" # Load configurations from my_app.ini.conf
+  shell::load_ini_conf \"CONF_DIR/my_app.ini.conf\" # Load configurations from my_app.ini.conf
 
 Requirements:
   - Assumes the presence of helper function: shell::colored_echo.
@@ -793,8 +793,8 @@ Description:
   This function checks if the provided application name is a valid URL.
   If it is, it extracts the module name from the URL.
   If a target folder is specified, the function ensures the folder exists,
-  changes into that directory, initializes the Go module using $(go mod init),
-  and tidies the dependencies using $(go mod tidy).
+  changes into that directory, initializes the Go module using (go mod init),
+  and tidies the dependencies using (go mod tidy).
   After execution, it returns to the original directory.
   In dry-run mode, the commands are displayed without execution.
 
@@ -1341,7 +1341,7 @@ Outputs:
 
 USAGE_SHELL_COLORED_ECHO="
 shell::colored_echo function
-Prints text to the terminal with customizable colors using $(tput) and ANSI escape sequences.
+Prints text to the terminal with customizable colors using (tput) and ANSI escape sequences.
 
 Usage:
   shell::colored_echo [-h] <message> [color_code]
@@ -1355,7 +1355,7 @@ Parameters:
       - 232-255: Grayscale shades
 
 Description:
-  The $(shell::colored_echo) function prints a message in bold and a specific color, if a valid color code is provided.
+  The (shell::colored_echo) function prints a message in bold and a specific color, if a valid color code is provided.
   It uses ANSI escape sequences for 256-color support. If no color code is specified, it defaults to blue (code 4).
 
 Options:
@@ -1560,8 +1560,8 @@ Parameters:
 Description:
   This function converts the provided filename to an absolute path based on the current working directory
   if it is not already absolute. It then extracts the parent directory path and ensures it exists,
-  creating it with admin privileges using $(sudo mkdir -p) if necessary. Finally, it creates the file
-  using $(sudo touch) if it does not already exist. Optional permission settings for the directory
+  creating it with admin privileges using (sudo mkdir -p) if necessary. Finally, it creates the file
+  using (sudo touch) if it does not already exist. Optional permission settings for the directory
   and file are included but commented out.
 
 Example usage:
@@ -2291,10 +2291,7 @@ Parameters:
 
 Description:
   Constructs and returns the path to the profile directory within the workspace,
-  located at $SHELL_CONF_WORKING/workspace.
-
-Example:
-  profile_dir=$(shell::get@_profile_dir \"my_profile\")  # Returns \"$SHELL_CONF_WORKING/workspace/my_profile\"
+  located at SHELL_CONF_WORKING/workspace.
 "
 
 USAGE_SHELL_ENSURE_WORKSPACE="
@@ -2308,7 +2305,7 @@ Parameters:
   - -h    : Optional. Displays this help message.
 
 Description:
-  Checks if the workspace directory ($SHELL_CONF_WORKING/workspace) exists.
+  Checks if the workspace directory (SHELL_CONF_WORKING/workspace) exists.
   If it does not exist, creates it using mkdir -p.
 "
 
@@ -2636,7 +2633,7 @@ Parameters:
   - -h      : Optional. Displays this help message.
 
 Description:
-  This function checks that the workspace directory ($SHELL_CONF_WORKING/workspace) exists.
+  This function checks that the workspace directory (SHELL_CONF_WORKING/workspace) exists.
   It then finds all subdirectories (each representing a profile) and prints their names.
   If no profiles are found, an appropriate message is displayed.
 
