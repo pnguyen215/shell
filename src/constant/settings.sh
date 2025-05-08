@@ -105,21 +105,24 @@ SHELL_PROTECTED_KEYS=("HOST" "PORT" "SHELL_DEVELOPER" "SHELL_HISTORICAL_GH_TELEG
 
 # SHELL_C_AES_RED constant
 # This variable defines the ANSI escape code for red text color. It is used to highlight error messages or critical alerts in the shell.
-if [ -z "${SHELL_C_AES_RED+x}" ]; then
-    declare -gr SHELL_C_AES_RED="\\033[0;31m"
-fi
+# if [ -z "${SHELL_C_AES_RED+x}" ]; then
+#     declare -gr SHELL_C_AES_RED="\\033[0;31m"
+# fi
+SHELL_C_AES_RED="\\033[0;31m"
 
 # SHELL_C_AES_RESET constant
 # This variable defines the ANSI escape code to reset text formatting to default. It is used to clear any previous text color or style.
-if [ -z "${SHELL_C_AES_RESET+x}" ]; then
-    declare -gr SHELL_C_AES_RESET="\\033[0m"
-fi
+# if [ -z "${SHELL_C_AES_RESET+x}" ]; then
+#     declare -gr SHELL_C_AES_RESET="\\033[0m"
+# fi
+SHELL_C_AES_RESET="\\033[0m"
 
 # SHELL_C_AES_YELLOW constant
 # This variable defines the ANSI escape code for yellow text color. It is used to highlight warnings or important information in the shell.
-if [ -z "${SHELL_C_AES_YELLOW+x}" ]; then
-    declare -gr SHELL_C_AES_YELLOW="\\033[0;33m"
-fi
+# if [ -z "${SHELL_C_AES_YELLOW+x}" ]; then
+#     declare -gr SHELL_C_AES_YELLOW="\\033[0;33m"
+# fi
+SHELL_C_AES_YELLOW="\\033[0;33m"
 
 ##########Developers Settings#############
 ######### Aris Nguyen 2025 ###############
