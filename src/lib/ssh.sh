@@ -242,7 +242,7 @@ shell::fzf_ssh_keys() {
 
     # Define the SSH directory.
     # local ssh_dir="$HOME/.ssh"
-    local ssh_dir="$HOME/.ssh"
+    local ssh_dir="${SHELL_CONF_SSH_DIR_WORKING:-$HOME/.ssh}"
 
     # Check if the SSH directory exists.
     if [ ! -d "$ssh_dir" ]; then
@@ -588,7 +588,7 @@ shell::gen_ssh_key() {
 
     local email="${1:-}"              # Default to empty string if no email
     local key_filename="${2:-id_rsa}" # Default to id_rsa if no filename
-    local ssh_dir="$HOME/.ssh"
+    local ssh_dir="${SHELL_CONF_SSH_DIR_WORKING:-$HOME/.ssh}"
     local full_key_path="$ssh_dir/$key_filename"
 
     # Validate ssh-keygen availability
