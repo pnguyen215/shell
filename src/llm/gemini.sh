@@ -52,13 +52,6 @@ shell::gemini() {
     local profile_name="$1"
     local prompt="$2"
 
-    # Ensure curl is installed
-    shell::install_package curl
-    if ! shell::is_command_available curl; then
-        shell::colored_echo "🔴 Error: 'curl' is required but not installed." 196
-        return 1
-    fi
-
     # Retrieve the Gemini API key from the profile
     local api_key
     # api_key=$(shell::get_value_conf_profile "$profile_name" "GEMINI_API_KEY" 2>/dev/null)
