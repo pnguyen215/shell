@@ -8,6 +8,7 @@ LIB_DIR="$SHELL_DIR/src/lib"
 LANG_DIR="$SHELL_DIR/src/lang"
 CONST_DIR="$SHELL_DIR/src/constant"
 DEVOPS_DIR="$SHELL_DIR/src/devops"
+LLM_DIR="$SHELL_DIR/src/llm"
 
 # This function sources all .sh scripts in the specified directory.
 # It takes one argument: the directory containing the scripts.
@@ -63,6 +64,7 @@ shell::source_directory "$CONST_DIR"
 shell::source_directory "$LIB_DIR"
 shell::source_directory "$DEVOPS_DIR"
 shell::source_directory "$LANG_DIR"
+shell::source_directory "$LLM_DIR"
 
 # shell::version function
 # This function outputs the current version of the shell library.
