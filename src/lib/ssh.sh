@@ -242,7 +242,7 @@ shell::fzf_ssh_keys() {
 
     # Define the SSH directory.
     # local ssh_dir="$HOME/.ssh"
-    local ssh_dir="$SHELL_CONF_SSH_DIR_WORKING"
+    local ssh_dir="$HOME/.ssh"
 
     # Check if the SSH directory exists.
     if [ ! -d "$ssh_dir" ]; then
@@ -536,7 +536,7 @@ shell::kill_ssh_tunnels() {
 #                       Defaults to 'id_rsa' if not provided.
 #
 # Description:
-#   This function creates the SSH directory (defaults to $HOME/.ssh if $SHELL_CONF_SSH_DIR_WORKING is unset)
+#   This function creates the SSH directory (defaults to $HOME/.ssh)
 #   if it doesn't exist and generates an SSH key pair using ssh-keygen. It supports specifying the key type,
 #   passphrase, email comment, and filename. The function ensures the ssh-keygen command is available,
 #   checks for existing keys, and sets appropriate permissions on generated files.
@@ -588,7 +588,7 @@ shell::gen_ssh_key() {
 
     local email="${1:-}"              # Default to empty string if no email
     local key_filename="${2:-id_rsa}" # Default to id_rsa if no filename
-    local ssh_dir="${SHELL_CONF_SSH_DIR_WORKING:-$HOME/.ssh}"
+    local ssh_dir="$HOME/.ssh"
     local full_key_path="$ssh_dir/$key_filename"
 
     # Validate ssh-keygen availability

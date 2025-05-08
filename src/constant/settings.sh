@@ -101,7 +101,7 @@ SHELL_PROTECTED_KEYS=("HOST" "PORT" "SHELL_DEVELOPER" "SHELL_HISTORICAL_GH_TELEG
 # SHELL_CONF_SSH_DIR_WORKING constant
 # This variable defines the path to the SSH configuration directory in the user's home directory.
 # It is used to store and manage SSH related configurations.
-SHELL_CONF_SSH_DIR_WORKING="$HOME/.ssh"
+# SHELL_CONF_SSH_DIR_WORKING="$HOME/.ssh"
 
 # SHELL_C_AES_RED constant
 # This variable defines the ANSI escape code for red text color. It is used to highlight error messages or critical alerts in the shell.
