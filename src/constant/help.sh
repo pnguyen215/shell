@@ -19,7 +19,7 @@ Parameters:
                       Defaults to 'id_rsa' if not provided.
 
 Description:
-  This function creates the SSH directory (defaults to $HOME/.ssh if $SHELL_CONF_SSH_DIR_WORKING is unset)
+  This function creates the SSH directory (defaults to $HOME/.ssh)
   if it doesn't exist and generates an SSH key pair using ssh-keygen. It supports specifying the key type,
   passphrase, email comment, and filename. The function ensures the ssh-keygen command is available,
   checks for existing keys, and sets appropriate permissions on generated files.
