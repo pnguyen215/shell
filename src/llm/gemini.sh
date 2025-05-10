@@ -55,7 +55,7 @@ shell::gemini() {
     # Retrieve the Gemini API key from the profile
     local api_key
     # api_key=$(shell::get_value_conf_profile "$profile_name" "GEMINI_API_KEY" 2>/dev/null)
-    api_key="AIzaSyCV3Fx-hOK3Ip5WTMO7a-TNydXr0eCfXnE"
+    api_key=""
     if [ $? -ne 0 ] || [ -z "$api_key" ]; then
         shell::colored_echo "🔴 Error: Could not retrieve GEMINI_API_KEY from profile '$profile_name'." 196
         return 1
