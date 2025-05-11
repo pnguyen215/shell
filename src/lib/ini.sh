@@ -74,3 +74,62 @@ shell::ini_validate_section_name() {
 
     return 0
 }
+
+# shell::ini_validate_key_name function
+# Validates an INI key name based on defined strictness levels.
+# It checks for empty names and disallowed characters or spaces according to
+# SHELL_INI_STRICT and SHELL_INI_ALLOW_SPACES_IN_NAMES variables.
+
+# Usage:
+#   shell::ini_validate_key_name [-h] <key_name>
+
+# Parameters:
+#   - -h         : Optional. Displays this help message.
+#   - <key_name> : The name of the INI key to validate.
+
+# Returns:
+#   0 if the key name is valid, 1 otherwise.
+
+# Notes:
+#   - Relies on the shell::colored_echo function for output.
+#   - The behavior is controlled by the SHELL_INI_STRICT and
+#     SHELL_INI_ALLOW_SPACES_IN_NAMES environment variables or constants.
+shell::ini_validate_key_name() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_INI_VALIDATE_KEY_NAME"
+        return 0
+    fi
+
+    local key="$1"
+
+    if [ -z "$key" ]; then
+        shell::colored_echo "🔴 Key name cannot be empty" 196
+        return 1
+    fi
+
+    # Check for illegal characters if strict mode is enabled.
+    if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
+        # Check for illegal characters in key name: [, ], = using case for portability
+        case "$key" in
+        *\[* | *\]* | *=*)
+            # If the key contains [, ], or =, it's illegal
+            shell::colored_echo "🔴 Key name contains illegal characters: $key" 196
+            return 1
+            ;;
+        *)
+            # No illegal characters found
+            ;;
+        esac
+    fi
+
+    # Check for spaces in key name if spaces are not allowed.
+    # The [[ ... =~ ... ]] for spaces works in Zsh too with [[:space:]]
+    # Alternatively, could use case: *[[:space:]]*)
+    if [ "${SHELL_INI_ALLOW_SPACES_IN_NAMES}" -eq 0 ] && [[ "$key" =~ [[:space:]] ]]; then
+        shell::colored_echo "🔴 Key name contains spaces: $key" 196
+        return 1
+    fi
+
+    return 0
+}
