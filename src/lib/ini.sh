@@ -54,6 +54,7 @@ shell::ini_validate_section_name() {
         return 1
     fi
     if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
+        echo "DEBUG: Strict mode is ON. Checking for illegal characters." # Debugging line
         # Check for illegal characters in section name
         if [[ "$section" =~ [\[\]\=] ]]; then
             shell::colored_echo "Section name contains illegal characters: $section" 196
