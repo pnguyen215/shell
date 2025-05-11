@@ -76,7 +76,7 @@ shell::ini_read() {
         # Check for section
         if [[ "$line" =~ $section_pattern ]]; then
             in_section=1
-            shell::colored_echo "Found section: $section" 11
+            # shell::colored_echo "Found section: $section" 11
             continue
         fi
 
@@ -102,7 +102,7 @@ shell::ini_read() {
                     value="${value//\\\"/\"}"
                 fi
 
-                shell::colored_echo "Found value: $value" 11
+                # shell::colored_echo "Found value: $value" 11
                 echo "$value"
                 return 0
             fi
