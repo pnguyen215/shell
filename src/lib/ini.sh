@@ -188,3 +188,33 @@ shell::ini_trim() {
     var="${var%"${var##*[![:space:]]}"}"
     echo "$var"
 }
+
+# shell::ini_escape_for_regex function
+# Escapes special characters in a string for regex matching.
+#
+# Usage:
+#   shell::ini_escape_for_regex <string>
+#
+# Parameters:
+#   - <string> : The string in which to escape special regex characters.
+#
+# Returns:
+#   The string with special regex characters escaped.
+#
+# Description:
+#   This function takes a string as input and escapes special characters
+#   that are used in regular expressions. It uses the sed command to
+#   prepend a backslash to each special character, ensuring the string
+#   can be safely used in regex operations.
+#
+# Example:
+#   escaped_string=$(shell::ini_escape_for_regex "example(string)")  # Outputs "example\(string\)"
+shell::ini_escape_for_regex() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_INI_ESCAPE_FOR_REGEX"
+        return 0
+    fi
+
+    echo "$1" | sed -e 's/[]\/()$*.^|[]/\\&/g'
+}

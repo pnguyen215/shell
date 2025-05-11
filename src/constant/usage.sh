@@ -2782,3 +2782,27 @@ Description:
   whitespace characters. It uses parameter expansion to efficiently trim
   the whitespace and then outputs the cleaned string.
 "
+
+USAGE_SHELL_INI_ESCAPE_FOR_REGEX="
+shell::ini_escape_for_regex function
+Escapes special characters in a string for regex matching.
+
+Usage:
+  shell::ini_escape_for_regex [-h] <string>
+
+Parameters:
+  - -h          : Optional. Displays this help message.
+  - <string>    : The string in which to escape special regex characters.
+
+Returns:
+  The string with special regex characters escaped.
+
+Description:
+  This function takes a string as input and escapes special characters
+  that are used in regular expressions. It uses the sed command to
+  prepend a backslash to each special character, ensuring the string
+  can be safely used in regex operations.
+
+Example:
+  escaped_string=(shell::ini_escape_for_regex \"example(string)\")  # Outputs \"example\(string\)\"
+"
