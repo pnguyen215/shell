@@ -2849,3 +2849,24 @@ Description:
 Example:
   shell::ini_list_sections config.ini  # Lists all sections in config.ini.
 "
+
+USAGE_SHELL_INI_LIST_KEYS="
+shell::ini_list_keys function
+Lists all key names from a specified section in a given INI file.
+
+Usage:
+  shell::ini_list_keys [-h] <file> <section>
+
+Parameters:
+  - -h        : Optional. Displays this help message.
+  - <file>    : The path to the INI file.
+  - <section> : The section within the INI file to search for keys.
+
+Description:
+  This function reads an INI file and extracts all key names from a specified section.
+  It validates the presence of the file and section, and applies strict validation rules
+  if SHELL_INI_STRICT is set. The function handles comments and empty lines within the INI file.
+
+Example:
+  shell::ini_list_keys config.ini MySection  # Lists all keys in MySection.
+"

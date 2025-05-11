@@ -443,3 +443,90 @@ shell::ini_list_sections() {
     grep -o '^\[[^]]*\]' "$file" 2>/dev/null | sed 's/^\[\(.*\)\]$/\1/'
     return 0
 }
+
+# shell::ini_list_keys function
+# Lists all key names from a specified section in a given INI file.
+#
+# Usage:
+#   shell::ini_list_keys [-h] <file> <section>
+#
+# Parameters:
+#   - -h        : Optional. Displays this help message.
+#   - <file>    : The path to the INI file.
+#   - <section> : The section within the INI file to search for keys.
+#
+# Description:
+#   This function reads an INI file and extracts all key names from a specified section.
+#   It validates the presence of the file and section, and applies strict validation rules
+#   if SHELL_INI_STRICT is set. The function handles comments and empty lines within the INI file.
+#
+# Example:
+#   shell::ini_list_keys config.ini MySection  # Lists all keys in MySection.
+#
+# Returns:
+#   0 on success, 1 if the file or section is missing or not found.
+#
+# Notes:
+#   - Relies on the shell::colored_echo function for output.
+shell::ini_list_keys() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_INI_LIST_KEYS"
+        return 0
+    fi
+
+    local file="$1"
+    local section="$2"
+
+    # Validate parameters
+    if [ -z "$file" ] || [ -z "$section" ]; then
+        shell::colored_echo "shell::ini_list_keys: Missing required parameters" 196
+        return 1
+    fi
+
+    # Validate section name only if strict mode is enabled
+    if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
+        shell::ini_validate_section_name "$section" || return 1
+    fi
+
+    # Check if file exists
+    if [ ! -f "$file" ]; then
+        shell::colored_echo "File not found: $file" 196
+        return 1
+    fi
+
+    # Escape section for regex pattern
+    local escaped_section
+    escaped_section=$(shell::ini_escape_for_regex "$section")
+    local section_pattern="^\[$escaped_section\]"
+    local in_section=0
+
+    shell::colored_echo "Listing keys in section '$section' in file: $file" 11
+
+    while IFS= read -r line; do
+        # Skip comments and empty lines
+        if [[ -z "$line" || "$line" =~ ^[[:space:]]*[#\;] ]]; then
+            continue
+        fi
+
+        # Check for section
+        if [[ "$line" =~ $section_pattern ]]; then
+            in_section=1
+            continue
+        fi
+
+        # Check if we've moved to a different section
+        if [[ $in_section -eq 1 && "$line" =~ ^\[[^]]+\] ]]; then
+            break
+        fi
+
+        # Extract key name from current section
+        if [[ $in_section -eq 1 && "$line" =~ ^[[:space:]]*[^=]+= ]]; then
+            local key="${line%%=*}"
+            key=$(shell::ini_trim "$key")
+            echo "$key"
+        fi
+    done <"$file"
+
+    return 0
+}
