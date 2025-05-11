@@ -45,7 +45,7 @@ shell::ini_validate_section_name() {
     local section="$1"
 
     if [ -z "$section" ]; then
-        shell::colored_echo "Section name cannot be empty" 196
+        shell::colored_echo "🔴 Section name cannot be empty" 196
         return 1
     fi
 
@@ -55,7 +55,7 @@ shell::ini_validate_section_name() {
         case "$section" in
         *\[* | *\]* | *=*)
             # If the section contains [, ], or =, it's illegal
-            shell::colored_echo "Section name contains illegal characters: $section" 196
+            shell::colored_echo "🔴 Section name contains illegal characters: $section" 196
             return 1
             ;;
         *)
@@ -68,7 +68,7 @@ shell::ini_validate_section_name() {
     # The [[ ... =~ ... ]] for spaces works in Zsh too with [[:space:]]
     # Alternatively, could use case: *[[:space:]]*)
     if [ "${SHELL_INI_ALLOW_SPACES_IN_NAMES}" -eq 0 ] && [[ "$section" =~ [[:space:]] ]]; then
-        shell::colored_echo "Section name contains spaces: $section" 196
+        shell::colored_echo "🔴 Section name contains spaces: $section" 196
         return 1
     fi
 
