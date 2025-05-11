@@ -2829,3 +2829,23 @@ Description:
 Example:
   shell::ini_read config.ini MySection MyKey  # Retrieves the value of MyKey in MySection.
 "
+
+USAGE_SHELL_INI_LIST_SECTIONS="
+shell::ini_list_sections function
+Lists all section names from a given INI file.
+
+Usage:
+  shell::ini_list_sections [-h] <file>
+
+Parameters:
+  - -h     : Optional. Displays this help message.
+  - <file> : The path to the INI file.
+
+Description:
+  This function reads an INI file and extracts all section names.
+  It validates the presence of the file and outputs the section names
+  without the enclosing square brackets.
+
+Example:
+  shell::ini_list_sections config.ini  # Lists all sections in config.ini.
+"

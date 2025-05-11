@@ -392,3 +392,54 @@ shell::ini_check_file() {
 
     return 0
 }
+
+# shell::ini_list_sections function
+# Lists all section names from a given INI file.
+#
+# Usage:
+#   shell::ini_list_sections [-h] <file>
+#
+# Parameters:
+#   - -h     : Optional. Displays this help message.
+#   - <file> : The path to the INI file.
+#
+# Description:
+#   This function reads an INI file and extracts all section names.
+#   It validates the presence of the file and outputs the section names
+#   without the enclosing square brackets.
+#
+# Example:
+#   shell::ini_list_sections config.ini  # Lists all sections in config.ini.
+#
+# Returns:
+#   0 on success, 1 if the file is missing or not found.
+#
+# Notes:
+#   - Relies on the shell::colored_echo function for output.
+shell::ini_list_sections() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_INI_LIST_SECTIONS"
+        return 0
+    fi
+
+    local file="$1"
+
+    # Validate parameters
+    if [ -z "$file" ]; then
+        shell::colored_echo "shell::ini_list_sections: Missing file parameter" 196
+        return 1
+    fi
+
+    # Check if file exists
+    if [ ! -f "$file" ]; then
+        shell::colored_echo "File not found: $file" 196
+        return 1
+    fi
+
+    shell::colored_echo "Listing sections in file: $file" 11
+
+    # Extract section names
+    grep -o '^\[[^]]*\]' "$file" 2>/dev/null | sed 's/^\[\(.*\)\]$/\1/'
+    return 0
+}
