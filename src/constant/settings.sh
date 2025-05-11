@@ -124,6 +124,31 @@ SHELL_C_AES_RESET="\\033[0m"
 # fi
 SHELL_C_AES_YELLOW="\\033[0;33m"
 
+# SHELL_INI_STRICT constant
+# This variable determines the strictness of validation for section and key names in INI files.
+# When set to 1, it enforces strict validation rules, ensuring that section and key names
+# adhere to specific naming conventions and do not contain illegal characters.
+# Example usage:
+#   export SHELL_INI_STRICT=0  # Disables strict validation
+#   export SHELL_INI_STRICT=1  # Enables strict validation
+SHELL_INI_STRICT=${SHELL_INI_STRICT:-0} # Default is 0, meaning strict validation is disabled
+
+# SHELL_INI_ALLOW_EMPTY_VALUES constant
+# This variable determines whether empty values are permitted in INI files.
+# When set to 1, it allows empty values, providing flexibility in configuration.
+# Example usage:
+#   export SHELL_INI_ALLOW_EMPTY_VALUES=0  # Disables empty values
+#   export SHELL_INI_ALLOW_EMPTY_VALUES=1  # Enables empty values
+SHELL_INI_ALLOW_EMPTY_VALUES=${SHELL_INI_ALLOW_EMPTY_VALUES:-1} # Default is 1, meaning empty values are allowed
+
+# SHELL_INI_ALLOW_SPACES_IN_NAMES constant
+# This variable determines whether spaces are allowed in section and key names within INI files.
+# When set to 1, it permits spaces, providing flexibility in naming conventions.
+# Example usage:
+#   export SHELL_INI_ALLOW_SPACES_IN_NAMES=0  # Disables spaces in names
+#   export SHELL_INI_ALLOW_SPACES_IN_NAMES=1  # Enables spaces in names
+SHELL_INI_ALLOW_SPACES_IN_NAMES=${SHELL_INI_ALLOW_SPACES_IN_NAMES:-1} # Default is 1, meaning spaces are allowed
+
 ##########Developers Settings#############
 ######### Aris Nguyen 2025 ###############
 ##########Developers Settings#############

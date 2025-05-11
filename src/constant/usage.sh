@@ -2718,3 +2718,33 @@ Description:
   determines the name of the currently active branch.
   It utilizes shell::run_cmd_outlet for command execution and output capture.
 "
+
+USAGE_SHELL_INI_VALIDATE_SECTION_NAME="
+shell::ini_validate_section_name function
+Validates an INI section name based on defined strictness levels.
+It checks for empty names and disallowed characters or spaces according to
+SHELL_INI_STRICT and SHELL_INI_ALLOW_SPACES_IN_NAMES variables.
+
+Usage:
+  shell::ini_validate_section_name [-h] <section_name>
+
+Parameters:
+  - -h              : Optional. Displays this help message.
+  - <section_name>  : The name of the INI section to validate.
+
+Description:
+  This function takes a section name as input and applies validation rules.
+  An empty section name is always considered invalid.
+  If SHELL_INI_STRICT is set to 1, the function checks for the presence of
+  illegal characters: square brackets and the equals sign ($(=)).
+  If SHELL_INI_ALLOW_SPACES_IN_NAMES is set to 0, the function checks for
+  the presence of spaces within the section name.
+  Error messages are displayed using the shell::colored_echo function.
+
+Example usage:
+  # Assuming SHELL_INI_STRICT=1 and SHELL_INI_ALLOW_SPACES_IN_NAMES=0
+  shell::ini_validate_section_name \"MySection\"   # Valid
+  shell::ini_validate_section_name \"My Section\"  # Invalid (contains space)
+  shell::ini_validate_section_name \"My[Section]\" # Invalid (contains illegal character)
+  shell::ini_validate_section_name \"\"            # Invalid (empty)
+"
