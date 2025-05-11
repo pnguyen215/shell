@@ -2806,3 +2806,26 @@ Description:
 Example:
   escaped_string=(shell::ini_escape_for_regex \"example(string)\")  # Outputs \"example\(string\)\"
 "
+
+USAGE_SHELL_INI_READ="
+shell::ini_read function
+Reads the value of a specified key from a given section in an INI file.
+
+Usage:
+  shell::ini_read [-h] <file> <section> <key>
+
+Parameters:
+  - -h        : Optional. Displays this help message.
+  - <file>    : The path to the INI file.
+  - <section> : The section within the INI file to search.
+  - <key>     : The key within the section whose value is to be retrieved.
+
+Description:
+  This function reads an INI file and retrieves the value associated with a
+  specified key within a given section. It validates the presence of the file,
+  section, and key, and applies strict validation rules if SHELL_INI_STRICT is set.
+  The function handles comments, empty lines, and quoted values within the INI file.
+
+Example:
+  shell::ini_read config.ini MySection MyKey  # Retrieves the value of MyKey in MySection.
+"

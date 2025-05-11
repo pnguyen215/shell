@@ -1,6 +1,118 @@
 #!/bin/bash
 # ini.sh
 
+# shell::ini_read function
+# Reads the value of a specified key from a given section in an INI file.
+#
+# Usage:
+#   shell::ini_read <file> <section> <key>
+#
+# Parameters:
+#   - <file>    : The path to the INI file.
+#   - <section> : The section within the INI file to search.
+#   - <key>     : The key within the section whose value is to be retrieved.
+#
+# Description:
+#   This function reads an INI file and retrieves the value associated with a
+#   specified key within a given section. It validates the presence of the file,
+#   section, and key, and applies strict validation rules if SHELL_INI_STRICT is set.
+#   The function handles comments, empty lines, and quoted values within the INI file.
+#
+# Example:
+#   shell::ini_read config.ini MySection MyKey  # Retrieves the value of MyKey in MySection.
+#
+# Returns:
+#   The value of the specified key if found, or an error message if the key is not found.
+#
+# Notes:
+#   - Relies on the shell::colored_echo function for output.
+#   - The behavior is controlled by the SHELL_INI_STRICT environment variable.
+shell::ini_read() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_INI_READ"
+        return 0
+    fi
+
+    local file="$1"
+    local section="$2"
+    local key="$3"
+
+    # Validate parameters
+    if [ -z "$file" ] || [ -z "$section" ] || [ -z "$key" ]; then
+        shell::colored_echo "shell::ini_read: Missing required parameters" 196
+        return 1
+    fi
+
+    # Validate section and key names only if strict mode is enabled
+    if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
+        shell::ini_validate_section_name "$section" || return 1
+        shell::ini_validate_key_name "$key" || return 1
+    fi
+
+    # Check if file exists
+    if [ ! -f "$file" ]; then
+        shell::colored_echo "File not found: $file" 196
+        return 1
+    fi
+
+    # Escape section and key for regex pattern
+    local escaped_section
+    escaped_section=$(shell::ini_escape_for_regex "$section")
+    local escaped_key
+    escaped_key=$(shell::ini_escape_for_regex "$key")
+
+    local section_pattern="^\[$escaped_section\]"
+    local in_section=0
+
+    shell::colored_echo "Reading key '$key' from section '$section' in file: $file" 11
+
+    while IFS= read -r line; do
+        # Skip comments and empty lines
+        if [[ -z "$line" || "$line" =~ ^[[:space:]]*[#\;] ]]; then
+            continue
+        fi
+
+        # Check for section
+        if [[ "$line" =~ $section_pattern ]]; then
+            in_section=1
+            shell::colored_echo "Found section: $section" 11
+            continue
+        fi
+
+        # Check if we've moved to a different section
+        if [[ $in_section -eq 1 && "$line" =~ ^\[[^]]+\] ]]; then
+            shell::colored_echo "Reached end of section without finding key" 11
+            return 1
+        fi
+
+        # Check for key in the current section
+        if [[ $in_section -eq 1 ]]; then
+            local key_pattern="^[[:space:]]*${escaped_key}[[:space:]]*="
+            if [[ "$line" =~ $key_pattern ]]; then
+                local value="${line#*=}"
+                # Trim whitespace
+                value=$(shell::ini_trim "$value")
+
+                # Check for quoted values
+                if [[ "$value" =~ ^\"(.*)\"$ ]]; then
+                    # Remove the quotes
+                    value="${BASH_REMATCH[1]}"
+                    # Handle escaped quotes within the value
+                    value="${value//\\\"/\"}"
+                fi
+
+                shell::colored_echo "Found value: $value" 11
+                echo "$value"
+                return 0
+            fi
+        fi
+    done <"$file"
+
+    shell::colored_echo "Key not found: $key in section: $section" 11
+    return 1
+}
+
 # shell::ini_validate_section_name function
 # Validates an INI section name based on defined strictness levels.
 # It checks for empty names and disallowed characters or spaces according to
@@ -217,4 +329,66 @@ shell::ini_escape_for_regex() {
     fi
 
     echo "$1" | sed -e 's/[]\/()$*.^|[]/\\&/g'
+}
+
+# shell::ini_check_file function
+# Validates the existence and write ability of a specified file, creating it if necessary.
+#
+# Usage:
+#   shell::ini_check_file <file>
+#
+# Parameters:
+#   - <file> : The path to the file to check or create.
+#
+# Description:
+#   This function checks if a specified file exists and is writable. If the file does not exist,
+#   it attempts to create the file and its parent directory if necessary. It ensures the file
+#   is writable before returning success. If any step fails, it outputs an error message and
+#   returns a non-zero status.
+#
+# Example:
+#   shell::ini_check_file /path/to/config.ini  # Checks or creates the file at the specified path.
+shell::ini_check_file() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_INI_CHECK_FILE"
+        return 0
+    fi
+
+    local file="$1"
+
+    # Check if file parameter is provided
+    if [ -z "$file" ]; then
+        shell::colored_echo "File path is required" 196
+        return 1
+    fi
+
+    # Check if file exists
+    if [ ! -f "$file" ]; then
+        shell::colored_echo "File does not exist, attempting to create: $file" 11
+        # Create directory if it doesn't exist
+        local dir
+        dir=$(dirname "$file")
+        if [ ! -d "$dir" ]; then
+            mkdir -p "$dir" 2>/dev/null || {
+                shell::colored_echo "Could not create directory: $dir" 196
+                return 1
+            }
+        fi
+
+        # Create the file
+        if ! touch "$file" 2>/dev/null; then
+            shell::colored_echo "Could not create file: $file" 196
+            return 1
+        fi
+        shell::colored_echo "File created successfully: $file" 46
+    fi
+
+    # Check if file is writable
+    if [ ! -w "$file" ]; then
+        shell::colored_echo "File is not writable: $file" 196
+        return 1
+    fi
+
+    return 0
 }
