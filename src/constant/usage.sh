@@ -2870,3 +2870,25 @@ Description:
 Example:
   shell::ini_list_keys config.ini MySection  # Lists all keys in MySection.
 "
+
+USAGE_SHELL_INI_SECTION_EXISTS="
+shell::ini_section_exists function
+Checks if a specified section exists in a given INI file.
+
+Usage:
+  shell::ini_section_exists [-h] <file> <section>
+
+Parameters:
+  - -h        : Optional. Displays this help message.
+  - <file>    : The path to the INI file.
+  - <section> : The section within the INI file to check for existence.
+
+Description:
+  This function checks whether a specified section exists in an INI file.
+  It validates the presence of the file and section, and applies strict
+  validation rules if SHELL_INI_STRICT is set. The function uses regex
+  to search for the section header within the file.
+
+Example:
+  shell::ini_section_exists config.ini MySection  # Checks if MySection exists in config.ini.
+"

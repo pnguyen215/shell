@@ -530,3 +530,68 @@ shell::ini_list_keys() {
 
     return 0
 }
+
+# shell::ini_section_exists function
+# Checks if a specified section exists in a given INI file.
+#
+# Usage:
+#   shell::ini_section_exists [-h] <file> <section>
+#
+# Parameters:
+#   - -h        : Optional. Displays this help message.
+#   - <file>    : The path to the INI file.
+#   - <section> : The section within the INI file to check for existence.
+#
+# Description:
+#   This function checks whether a specified section exists in an INI file.
+#   It validates the presence of the file and section, and applies strict
+#   validation rules if SHELL_INI_STRICT is set. The function uses regex
+#   to search for the section header within the file.
+#
+# Example:
+#   shell::ini_section_exists config.ini MySection  # Checks if MySection exists in config.ini.
+shell::ini_section_exists() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_INI_SECTION_EXISTS"
+        return 0
+    fi
+
+    local file="$1"
+    local section="$2"
+
+    # Validate parameters
+    if [ -z "$file" ] || [ -z "$section" ]; then
+        shell::colored_echo "shell::ini_section_exists: Missing required parameters" 196
+        return 1
+    fi
+
+    # Validate section name only if strict mode is enabled
+    if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
+        shell::ini_validate_section_name "$section" || return 1
+    fi
+
+    # Check if file exists
+    if [ ! -f "$file" ]; then
+        shell::colored_echo "File not found: $file" 196
+        return 1
+    fi
+
+    # Escape section for regex pattern
+    local escaped_section
+    escaped_section=$(shell::ini_escape_for_regex "$section")
+
+    shell::colored_echo "Checking if section '$section' exists in file: $file" 11
+
+    # Check if section exists
+    grep -q "^\[$escaped_section\]" "$file"
+    local result=$?
+
+    if [ $result -eq 0 ]; then
+        shell::colored_echo "Section found: $section" 11
+    else
+        shell::colored_echo "Section not found: $section" 11
+    fi
+
+    return $result
+}
