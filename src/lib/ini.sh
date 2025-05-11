@@ -133,3 +133,24 @@ shell::ini_validate_key_name() {
 
     return 0
 }
+
+# shell::ini_create_temp_file function
+# Creates a temporary file with a unique name in the system's temporary directory.
+#
+# Usage:
+#   shell::ini_create_temp_file
+#
+# Returns:
+#   The path to the newly created temporary file.
+#
+# Description:
+#   This function generates a temporary file using the mktemp command.
+#   The file is created in the directory specified by the TMPDIR environment variable,
+#   or in /tmp if TMPDIR is not set. The filename is prefixed with 'shell_ini_' and
+#   followed by a series of random characters to ensure uniqueness.
+#
+# Example:
+#   temp_file=$(shell::ini_create_temp_file)  # Creates a temporary file and stores its path in temp_file.
+shell::ini_create_temp_file() {
+    mktemp "${TMPDIR:-/tmp}/shell_ini_XXXXXXXXXX"
+}
