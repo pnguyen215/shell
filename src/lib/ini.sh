@@ -53,7 +53,7 @@ shell::ini_validate_section_name() {
     if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
         # Check for illegal characters in section name: [, ], = using case for portability
         case "$section" in
-        *[* | *]* | *=*)
+        *\[* | *\]* | *=*)
             # If the section contains [, ], or =, it's illegal
             shell::colored_echo "Section name contains illegal characters: $section" 196
             return 1
