@@ -49,19 +49,24 @@ shell::ini_validate_section_name() {
         return 1
     fi
 
-    if [[ "$section" =~ [\[\]\=] ]]; then
-        shell::colored_echo "Section name contains illegal characters: $section" 196
-        return 1
-    fi
+    # Check for illegal characters if strict mode is enabled.
     if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
-        echo "DEBUG: Strict mode is ON. Checking for illegal characters." # Debugging line
-        # Check for illegal characters in section name
-        if [[ "$section" =~ [\[\]\=] ]]; then
+        # Check for illegal characters in section name: [, ], = using case for portability
+        case "$section" in
+        *[* | *]* | *=*)
+            # If the section contains [, ], or =, it's illegal
             shell::colored_echo "Section name contains illegal characters: $section" 196
             return 1
-        fi
+            ;;
+        *)
+            # No illegal characters found
+            ;;
+        esac
     fi
 
+    # Check for spaces in section name if spaces are not allowed.
+    # The [[ ... =~ ... ]] for spaces works in Zsh too with [[:space:]]
+    # Alternatively, could use case: *[[:space:]]*)
     if [ "${SHELL_INI_ALLOW_SPACES_IN_NAMES}" -eq 0 ] && [[ "$section" =~ [[:space:]] ]]; then
         shell::colored_echo "Section name contains spaces: $section" 196
         return 1
