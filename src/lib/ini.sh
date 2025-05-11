@@ -595,3 +595,63 @@ shell::ini_section_exists() {
 
     return $result
 }
+
+# shell::ini_add_section function
+# Adds a new section to a specified INI file if it does not already exist.
+#
+# Usage:
+#   shell::ini_add_section [-h] <file> <section>
+#
+# Parameters:
+#   - -h        : Optional. Displays this help message.
+#   - <file>    : The path to the INI file.
+#   - <section> : The section to be added to the INI file.
+#
+# Description:
+#   This function checks if a specified section exists in an INI file and adds it if not.
+#   It validates the presence of the file and section, and applies strict validation rules
+#   if SHELL_INI_STRICT is set. The function handles the creation of the file if it does not exist.
+#
+# Example:
+#   shell::ini_add_section config.ini NewSection  # Adds NewSection to config.ini if it doesn't exist.
+shell::ini_add_section() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_INI_ADD_SECTION"
+        return 0
+    fi
+
+    local file="$1"
+    local section="$2"
+
+    if [ -z "$file" ] || [ -z "$section" ]; then
+        shell::colored_echo "shell::ini_add_section: Missing required parameters" 196
+        return 1
+    fi
+
+    # Validate section name only if strict mode is enabled
+    if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
+        shell::ini_validate_section_name "$section" || return 1
+    fi
+
+    # Check and create file if needed
+    shell::create_file_if_not_exists "$file"
+
+    # Check if section already exists
+    if shell::ini_section_exists "$file" "$section"; then
+        shell::colored_echo "Section already exists: $section" 11
+        return 0
+    fi
+
+    shell::colored_echo "Adding section '$section' to file: $file" 11
+
+    # Add a newline if file is not empty
+    if [ -s "$file" ]; then
+        echo "" >>"$file"
+    fi
+
+    # Add the section
+    echo "[$section]" >>"$file"
+
+    return 0
+}

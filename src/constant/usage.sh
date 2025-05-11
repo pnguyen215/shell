@@ -2892,3 +2892,24 @@ Description:
 Example:
   shell::ini_section_exists config.ini MySection  # Checks if MySection exists in config.ini.
 "
+
+USAGE_SHELL_INI_ADD_SECTION="
+shell::ini_add_section function
+Adds a new section to a specified INI file if it does not already exist.
+
+Usage:
+  shell::ini_add_section [-h] <file> <section>
+
+Parameters:
+  - -h        : Optional. Displays this help message.
+  - <file>    : The path to the INI file.
+  - <section> : The section to be added to the INI file.
+
+Description:
+  This function checks if a specified section exists in an INI file and adds it if not.
+  It validates the presence of the file and section, and applies strict validation rules
+  if SHELL_INI_STRICT is set. The function handles the creation of the file if it does not exist.
+
+Example:
+  shell::ini_add_section config.ini NewSection  # Adds NewSection to config.ini if it doesn't exist.
+"
