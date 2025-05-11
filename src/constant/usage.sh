@@ -2913,3 +2913,28 @@ Description:
 Example:
   shell::ini_add_section config.ini NewSection  # Adds NewSection to config.ini if it doesn't exist.
 "
+
+USAGE_SHELL_INI_WRITE="
+shell::ini_write function
+Writes a key-value pair to a specified section in an INI file.
+
+Usage:
+  shell::ini_write [-h] <file> <section> <key> <value>
+
+Parameters:
+  - -h        : Optional. Displays this help message.
+  - <file>    : The path to the INI file.
+  - <section> : The section within the INI file to write the key-value pair.
+  - <key>     : The key to be written in the specified section.
+  - <value>   : The value associated with the key.
+
+Description:
+  This function writes a key-value pair to a specified section in an INI file.
+  It validates the presence of the file, section, and key, and applies strict
+  validation rules if SHELL_INI_STRICT is set. The function handles the creation
+  of the file and section if they do not exist. It also manages special characters
+  in values by quoting them if necessary.
+
+Example:
+  shell::ini_write config.ini MySection MyKey MyValue  # Writes MyKey=MyValue in MySection.
+"

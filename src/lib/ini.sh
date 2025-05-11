@@ -655,3 +655,123 @@ shell::ini_add_section() {
 
     return 0
 }
+
+# shell::ini_write function
+# Writes a key-value pair to a specified section in an INI file.
+#
+# Usage:
+#   shell::ini_write [-h] <file> <section> <key> <value>
+#
+# Parameters:
+#   - -h        : Optional. Displays this help message.
+#   - <file>    : The path to the INI file.
+#   - <section> : The section within the INI file to write the key-value pair.
+#   - <key>     : The key to be written in the specified section.
+#   - <value>   : The value associated with the key.
+#
+# Description:
+#   This function writes a key-value pair to a specified section in an INI file.
+#   It validates the presence of the file, section, and key, and applies strict
+#   validation rules if SHELL_INI_STRICT is set. The function handles the creation
+#   of the file and section if they do not exist. It also manages special characters
+#   in values by quoting them if necessary.
+#
+# Example:
+#   shell::ini_write config.ini MySection MyKey MyValue  # Writes MyKey=MyValue in MySection.
+shell::ini_write() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_INI_WRITE"
+        return 0
+    fi
+
+    local file="$1"
+    local section="$2"
+    local key="$3"
+    local value="$4"
+
+    # Validate parameters
+    if [ -z "$file" ] || [ -z "$section" ] || [ -z "$key" ]; then
+        shell::colored_echo "shell::ini_write: Missing required parameters" 196
+        return 1
+    fi
+
+    # Validate section and key names only if strict mode is enabled
+    if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
+        shell::ini_validate_section_name "$section" || return 1
+        shell::ini_validate_key_name "$key" || return 1
+    fi
+
+    # Check for empty value if not allowed
+    if [ -z "$value" ] && [ "${SHELL_INI_ALLOW_EMPTY_VALUES}" -eq 0 ]; then
+        shell::colored_echo "Empty values are not allowed" 196
+        return 1
+    fi
+
+    # Check and create file if needed
+    shell::create_file_if_not_exists "$file"
+
+    # Create section if it doesn't exist
+    shell::ini_add_section "$file" "$section" || return 1
+
+    # Escape section and key for regex pattern
+    local escaped_section
+    escaped_section=$(shell::ini_escape_for_regex "$section")
+    local escaped_key
+    escaped_key=$(shell::ini_escape_for_regex "$key")
+
+    local section_pattern="^\[$escaped_section\]"
+    local key_pattern="^[[:space:]]*${escaped_key}[[:space:]]*="
+    local in_section=0
+    local found_key=0
+    local temp_file
+    temp_file=$(shell::ini_create_temp_file)
+
+    shell::colored_echo "Writing key '$key' with value '$value' to section '$section' in file: $file" 11
+
+    # Special handling for values with quotes or special characters
+    if [ "${SHELL_INI_STRICT}" -eq 1 ] && [[ "$value" =~ [[:space:]\"\'\`\&\|\<\>\;\$] ]]; then
+        value="\"${value//\"/\\\"}\""
+        shell::colored_echo "Value contains special characters, quoting: $value" 11
+    fi
+
+    # Process the file line by line
+    while IFS= read -r line || [ -n "$line" ]; do
+        # Check for section
+        if [[ "$line" =~ $section_pattern ]]; then
+            in_section=1
+            echo "$line" >>"$temp_file"
+            continue
+        fi
+
+        # Check if we've moved to a different section
+        if [[ $in_section -eq 1 && "$line" =~ ^\[[^]]+\] ]]; then
+            # Add the key-value pair if we haven't found it yet
+            if [ $found_key -eq 0 ]; then
+                echo "$key=$value" >>"$temp_file"
+                found_key=1
+            fi
+            in_section=0
+        fi
+
+        # Update the key if it exists in the current section
+        if [[ $in_section -eq 1 && "$line" =~ $key_pattern ]]; then
+            echo "$key=$value" >>"$temp_file"
+            found_key=1
+            continue
+        fi
+
+        # Write the line to the temp file
+        echo "$line" >>"$temp_file"
+    done <"$file"
+
+    # Add the key-value pair if we're still in the section and haven't found it
+    if [ $in_section -eq 1 ] && [ $found_key -eq 0 ]; then
+        echo "$key=$value" >>"$temp_file"
+    fi
+
+    # Use atomic operation to replace the original file
+    mv "$temp_file" "$file"
+    shell::colored_echo "Successfully wrote key '$key' with value '$value' to section '$section'" 46
+    return 0
+}
