@@ -588,9 +588,9 @@ shell::ini_section_exists() {
     local result=$?
 
     if [ $result -eq 0 ]; then
-        shell::colored_echo "Section found: $section" 11
+        shell::colored_echo "Section found: $section" 46
     else
-        shell::colored_echo "Section not found: $section" 11
+        shell::colored_echo "Section not found: $section" 196
     fi
 
     return $result
