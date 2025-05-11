@@ -2762,3 +2762,23 @@ Parameters:
   - -h         : Optional. Displays this help message.
   - <key_name> : The name of the INI key to validate.
 "
+
+USAGE_SHELL_INI_TRIM="
+shell::ini_trim function
+Trims leading and trailing whitespace from a given string.
+
+Usage:
+  shell::ini_trim [-h] <string>
+
+Parameters:
+  - -h          : Optional. Displays this help message.
+  - <string>    : The string from which to remove leading and trailing whitespace.
+
+Returns:
+  The trimmed string with no leading or trailing whitespace.
+
+Description:
+  This function takes a string as input and removes any leading and trailing
+  whitespace characters. It uses parameter expansion to efficiently trim
+  the whitespace and then outputs the cleaned string.
+"

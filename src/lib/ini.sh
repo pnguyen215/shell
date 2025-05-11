@@ -154,3 +154,37 @@ shell::ini_validate_key_name() {
 shell::ini_create_temp_file() {
     mktemp "${TMPDIR:-/tmp}/shell_ini_XXXXXXXXXX"
 }
+
+# shell::ini_trim function
+# Trims leading and trailing whitespace from a given string.
+#
+# Usage:
+#   shell::ini_trim <string>
+#
+# Parameters:
+#   - <string> : The string from which to remove leading and trailing whitespace.
+#
+# Returns:
+#   The trimmed string with no leading or trailing whitespace.
+#
+# Description:
+#   This function takes a string as input and removes any leading and trailing
+#   whitespace characters. It uses parameter expansion to efficiently trim
+#   the whitespace and then outputs the cleaned string.
+#
+# Example:
+#   trimmed_string=$(shell::ini_trim "  example string  ")  # Outputs "example string"
+shell::ini_trim() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_INI_TRIM"
+        return 0
+    fi
+
+    local var="$*"
+    # Remove leading whitespace
+    var="${var#"${var%%[![:space:]]*}"}"
+    # Remove trailing whitespace
+    var="${var%"${var##*[![:space:]]}"}"
+    echo "$var"
+}
