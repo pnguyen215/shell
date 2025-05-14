@@ -1013,8 +1013,6 @@ shell::fzf_ini_remove_key() {
         return 1
     }
 
-    shell::colored_echo "Listing keys in section '$section' of file: $file for selection..." 11
-
     # Get the list of keys in the specified section and use fzf to select one.
     local selected_key
     selected_key=$(shell::ini_list_keys "$file" "$section" | fzf --prompt="Select key to remove from section '$section': ")
