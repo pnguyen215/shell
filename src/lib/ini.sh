@@ -1102,3 +1102,158 @@ shell::fzf_ini_remove_key() {
 
     return 0
 }
+
+# shell::ini_remove_key function
+# Removes a specified key from a specific section in an INI formatted file.
+#
+# Usage:
+#   shell::ini_remove_key [-n] <file> <section> <key>
+#
+# Parameters:
+#   - -n        : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+#   - <file>    : The path to the INI file.
+#   - <section> : The section within the INI file from which to remove the key.
+#   - <key>     : The key to be removed from the specified section.
+#
+# Description:
+#   This function processes an INI file line by line. It identifies the start of the
+#   target section and then skips the line containing the specified key within that section.
+#   All other lines (before the target section, in the target section but not matching the key,
+#   and after the target section) are written to a temporary file, which then replaces
+#   the original file.
+#
+# Example usage:
+#   shell::ini_remove_key /path/to/config.ini "database" "username"
+#   shell::ini_remove_key -n /path/to/config.ini "api" "api_key" # Dry-run mode
+#
+# Notes:
+#   - Assumes the INI file has sections enclosed in square brackets (e.g., [section]) and key=value pairs.
+#   - Empty lines and lines outside of sections are preserved.
+#   - Relies on helper functions like shell::colored_echo, shell::ini_escape_for_regex,
+#     shell::ini_create_temp_file, and optionally shell::ini_validate_section_name,
+#     shell::ini_validate_key_name if SHELL_INI_STRICT is enabled.
+#   - Uses atomic operation (mv) to replace the original file, reducing risk of data loss.
+shell::ini_remove_key() {
+    local dry_run="false"
+
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_INI_REMOVE_KEY"
+        return 0
+    fi
+
+    # Check for the optional dry-run flag (-n)
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    # Validate required parameters: file path, section name, and key name.
+    if [ $# -lt 3 ]; then
+        shell::colored_echo "shell::ini_remove_key: Missing required parameters" 196
+        echo "Usage: shell::ini_remove_key [-n] <file> <section> <key>"
+        return 1
+    fi
+
+    local file="$1"
+    local section="$2"
+    local key="$3"
+
+    # Validate section and key names only if strict mode is enabled (optional, based on existing code).
+    # Assumes shell::ini_validate_section_name and shell::ini_validate_key_name functions exist.
+    if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
+        shell::ini_validate_section_name "$section" || return 1
+        shell::ini_validate_key_name "$key" || return 1
+    fi
+
+    # Check if the specified file exists.
+    if [ ! -f "$file" ]; then
+        shell::colored_echo "File not found: $file" 196
+        return 1
+    fi
+
+    # Check if the section exists in the file before attempting removal.
+    if ! shell::ini_section_exists "$file" "$section"; then
+        # shell::ini_section_exists prints an error if the section is not found
+        return 1
+    fi
+
+    shell::colored_echo "Attempting to remove key '$key' from section '$section' in file: $file" 11
+
+    # Escape section and key for regex pattern
+    local escaped_section
+    escaped_section=$(shell::ini_escape_for_regex "$section")
+    local escaped_key
+    escaped_key=$(shell::ini_escape_for_regex "$key")
+
+    local section_pattern="^\[$escaped_section\]"                # Regex for the target section header
+    local any_section_pattern="^\[[^]]+\]"                       # Regex for any section header
+    local key_pattern="^[[:space:]]*${escaped_key}[[:space:]]*=" # Regex to match the key at the start of a line (allowing leading spaces)
+
+    local in_target_section=0 # Flag: are we currently inside the target section?
+    local key_removed=0       # Flag: has the key been found and removed?
+    local temp_file
+    temp_file=$(shell::ini_create_temp_file)
+
+    # Process the file line by line
+    # Use `|| [ -n "$line" ]` to ensure the last line is processed even if it doesn't end with a newline.
+    while IFS= read -r line || [ -n "$line" ]; do
+        local trimmed_line
+        trimmed_line="$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+
+        # Check if the trimmed line is a section header
+        if [[ "$trimmed_line" =~ $any_section_pattern ]]; then
+            # Check if this is the target section header
+            if [[ "$trimmed_line" =~ $section_pattern ]]; then
+                in_target_section=1 # We are now inside the target section
+            else
+                in_target_section=0 # We are in a different section
+            fi
+            # Always write section headers to the temporary file
+            echo "$line" >>"$temp_file"
+            continue # Move to the next line
+        fi
+
+        # If we are currently inside the target section
+        if [ $in_target_section -eq 1 ]; then
+            # Check if this line contains the key we are looking for (using trimmed line for pattern match)
+            if [[ "$trimmed_line" =~ $key_pattern ]]; then
+                # Found the key, skip this line to remove it
+                shell::colored_echo "Found key '$key' for removal." 11
+                key_removed=1
+                continue # Move to the next line without writing the current line
+            fi
+            # If the line is within the target section but is not the key we are removing,
+            # write the original line to the temporary file.
+            echo "$line" >>"$temp_file"
+            continue # Move to the next line
+        fi
+
+        # If the trimmed line was not empty, not a section header, and we are not in the target section,
+        # write the original line to the temporary file. This preserves lines outside sections.
+        echo "$line" >>"$temp_file"
+
+    done <"$file" # Read input from the specified file.
+
+    # Use atomic operation to replace the original file.
+    # This is safer than removing the original and renaming the temp file.
+    local replace_cmd="mv \"$temp_file\" \"$file\""
+
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "$replace_cmd"
+    else
+        shell::run_cmd_eval "$replace_cmd"
+        if [ $? -eq 0 ]; then
+            if [ $key_removed -eq 1 ]; then
+                shell::colored_echo "🟢 Successfully removed key '$key' from section '$section'" 46
+                return 0
+            else
+                shell::colored_echo "🟡 Key '$key' not found in section '$section'." 11
+                return 1
+            fi
+        else
+            shell::colored_echo "🔴 Error replacing the original file after key removal." 196
+            return 1
+        fi
+    fi
+}
