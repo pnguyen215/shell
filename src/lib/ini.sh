@@ -775,3 +775,102 @@ shell::ini_write() {
     shell::colored_echo "Successfully wrote key '$key' with value '$value' to section '$section'" 46
     return 0
 }
+
+# shell::ini_remove_section function
+# Removes a specified section and its key-value pairs from an INI formatted file.
+#
+# Usage:
+#   shell::ini_remove_section <file> <section>
+#
+# Parameters:
+#   - <file>: The path to the INI file.
+#   - <section>: The name of the section to remove (without the square brackets).
+#
+# Description:
+#   This function processes an INI file line by line. It identifies the start of the
+#   section to be removed and skips all subsequent lines until another section
+#   header is encountered or the end of the file is reached. The remaining lines
+#   (before the target section and after it) are written to a temporary file,
+#   which then replaces the original file.
+#
+# Example usage:
+#   shell::ini_remove_section /path/to/config.ini "database"
+#
+# Notes:
+#   - Assumes the INI file has sections enclosed in square brackets (e.g., [section]).
+#   - Empty lines and lines outside of sections are preserved.
+#   - Relies on helper functions like shell::colored_echo, shell::ini_escape_for_regex,
+#     shell::ini_create_temp_file, and optionally shell::ini_validate_section_name
+#     if SHELL_INI_STRICT is enabled. (Note: shell::ini_escape_for_regex and
+#     shell::ini_create_temp_file are not provided in this snippet, but are assumed
+#     to exist based on usage.)
+#   - Uses atomic operation (mv) to replace the original file, reducing risk of data loss.
+shell::ini_remove_section() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_INI_REMOVE_SECTION"
+        return 0
+    fi
+
+    local file="$1"
+    local section="$2"
+
+    # Validate parameters
+    if [ -z "$file" ] || [ -z "$section" ]; then
+        shell::colored_echo "shell::ini_remove_section: Missing required parameters" 196
+        return 1
+    fi
+
+    # Validate section name only if strict mode is enabled
+    if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
+        shell::ini_validate_section_name "$section" || return 1
+    fi
+
+    # Check if file exists
+    if [ ! -f "$file" ]; then
+        shell::colored_echo "File not found: $file" 196
+        return 1
+    fi
+
+    # Escape the section name for use in a regex pattern to match the section header.
+    # Assumes shell::ini_escape_for_regex function exists.
+    local escaped_section
+    escaped_section=$(shell::ini_escape_for_regex "$section")
+    local section_pattern="^\[$escaped_section\]"
+    local in_section=0
+    local temp_file
+    # Create a temporary file to write the lines that are not in the removed section.
+    # Assumes shell::ini_create_temp_file function exists and returns the temp file path.
+    temp_file=$(shell::ini_create_temp_file)
+
+    shell::colored_echo "Removing section '$section' from file: $file" 11
+
+    # Process the file line by line.
+    # IFS= read -r line prevents issues with spaces and backslashes in lines.
+    while IFS= read -r line; do
+        # Check if the current line matches the start of the section to be removed.
+        if [[ "$line" =~ $section_pattern ]]; then
+            in_section=1 # Set flag to indicate we are now inside the target section.
+            continue
+        fi
+
+        # If we are currently inside the section to be removed, check if the current line
+        # is the start of a new section.
+        if [[ $in_section -eq 1 && "$line" =~ ^\[[^]]+\] ]]; then
+            in_section=0 # If it's a new section, we are no longer in the section to be removed.
+        fi
+
+        # If we are not inside the section to be removed, write the line to the temporary file.
+        if [ $in_section -eq 0 ]; then
+            echo "$line" >>"$temp_file"
+        fi
+    done <"$file"
+
+    # Atomically replace the original file with the temporary file.
+    # This is safer than removing the original and renaming the temp file,
+    # as it reduces the window where the file might be missing.
+    mv "$temp_file" "$file"
+
+    shell::colored_echo "Successfully removed section '$section'" 46
+    return 0
+}

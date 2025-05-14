@@ -2938,3 +2938,26 @@ Description:
 Example:
   shell::ini_write config.ini MySection MyKey MyValue  # Writes MyKey=MyValue in MySection.
 "
+
+USAGE_SHELL_INI_REMOVE_SECTION="
+shell::ini_remove_section function
+Removes a specified section and its key-value pairs from an INI formatted file.
+
+Usage:
+  shell::ini_remove_section [-h] <file> <section>
+
+Parameters:
+  - -h        : Optional. Displays this help message.
+  - <file>    : The path to the INI file.
+  - <section> : The name of the section to remove (without the square brackets).
+
+Description:
+  This function processes an INI file line by line. It identifies the start of the
+  section to be removed and skips all subsequent lines until another section
+  header is encountered or the end of the file is reached. The remaining lines
+  (before the target section and after it) are written to a temporary file,
+  which then replaces the original file.
+
+Example usage:
+  shell::ini_remove_section /path/to/config.ini \"database\"
+"
