@@ -645,14 +645,16 @@ shell::ini_add_section() {
 
     shell::colored_echo "Adding section '$section' to file: $file" 11
 
-    # Add a newline if file is not empty
+    # Add a blank line before the new section unless the file is empty.
+    # Use stat in case the file requires elevated permissions to read size.
+    # Use echo for appending in case the file requires elevated permissions to write.
     if [ -s "$file" ]; then
         echo "" >>"$file"
     fi
 
     # Add the section
     echo "[$section]" >>"$file"
-
+    shell::colored_echo "🟢 Successfully added section: $section" 46
     return 0
 }
 
