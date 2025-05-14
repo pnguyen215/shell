@@ -812,65 +812,134 @@ shell::ini_remove_section() {
         return 0
     fi
 
+    # local file="$1"
+    # local section="$2"
+
+    # # Validate parameters
+    # if [ -z "$file" ] || [ -z "$section" ]; then
+    #     shell::colored_echo "shell::ini_remove_section: Missing required parameters" 196
+    #     return 1
+    # fi
+
+    # # Validate section name only if strict mode is enabled
+    # if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
+    #     shell::ini_validate_section_name "$section" || return 1
+    # fi
+
+    # # Check if file exists
+    # if [ ! -f "$file" ]; then
+    #     shell::colored_echo "File not found: $file" 196
+    #     return 1
+    # fi
+
+    # # Escape the section name for use in a regex pattern to match the section header.
+    # # Assumes shell::ini_escape_for_regex function exists.
+    # local escaped_section
+    # escaped_section=$(shell::ini_escape_for_regex "$section")
+    # local section_pattern="^\[$escaped_section\]"
+    # local in_section=0
+    # local temp_file
+    # # Create a temporary file to write the lines that are not in the removed section.
+    # # Assumes shell::ini_create_temp_file function exists and returns the temp file path.
+    # temp_file=$(shell::ini_create_temp_file)
+
+    # shell::colored_echo "Removing section '$section' from file: $file" 11
+
+    # # Process the file line by line.
+    # # IFS= read -r line prevents issues with spaces and backslashes in lines.
+    # while IFS= read -r line; do
+    #     # Check if the current line matches the start of the section to be removed.
+    #     if [[ "$line" =~ $section_pattern ]]; then
+    #         in_section=1 # Set flag to indicate we are now inside the target section.
+    #         continue
+    #     fi
+
+    #     # If we are currently inside the section to be removed, check if the current line
+    #     # is the start of a new section.
+    #     if [[ $in_section -eq 1 && "$line" =~ ^\[[^]]+\] ]]; then
+    #         in_section=0 # If it's a new section, we are no longer in the section to be removed.
+    #     fi
+
+    #     # If we are not inside the section to be removed, write the line to the temporary file.
+    #     if [ $in_section -eq 0 ]; then
+    #         echo "$line" >>"$temp_file"
+    #     fi
+    # done <"$file"
+
+    # # Atomically replace the original file with the temporary file.
+    # # This is safer than removing the original and renaming the temp file,
+    # # as it reduces the window where the file might be missing.
+    # mv "$temp_file" "$file"
+
+    # shell::colored_echo "Successfully removed section '$section'" 46
+    # return 0
+
     local file="$1"
     local section="$2"
 
-    # Validate parameters
+    # Validate required parameters: file path and section name.
     if [ -z "$file" ] || [ -z "$section" ]; then
         shell::colored_echo "shell::ini_remove_section: Missing required parameters" 196
         return 1
     fi
 
-    # Validate section name only if strict mode is enabled
+    # Validate section name only if strict mode is enabled (optional, based on existing code).
+    # Assumes shell::ini_validate_section_name function exists.
     if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
         shell::ini_validate_section_name "$section" || return 1
     fi
 
-    # Check if file exists
+    # Check if the specified file exists.
     if [ ! -f "$file" ]; then
         shell::colored_echo "File not found: $file" 196
         return 1
     fi
 
-    # Escape the section name for use in a regex pattern to match the section header.
-    # Assumes shell::ini_escape_for_regex function exists.
-    local escaped_section
-    escaped_section=$(shell::ini_escape_for_regex "$section")
-    local section_pattern="^\[$escaped_section\]"
-    local in_section=0
-    local temp_file
-    # Create a temporary file to write the lines that are not in the removed section.
-    # Assumes shell::ini_create_temp_file function exists and returns the temp file path.
-    temp_file=$(shell::ini_create_temp_file)
+    # Check if the section exists in the file before attempting removal.
+    # This prevents sed from processing the entire file unnecessarily if the section isn't there.
+    if ! grep -q "^\[${section}\]$" "$file"; then
+        shell::colored_echo "Section '$section' not found in file: $file" 11
+        return 0
+    fi
 
     shell::colored_echo "Removing section '$section' from file: $file" 11
 
-    # Process the file line by line.
-    # IFS= read -r line prevents issues with spaces and backslashes in lines.
-    while IFS= read -r line; do
-        # Check if the current line matches the start of the section to be removed.
-        if [[ "$line" =~ $section_pattern ]]; then
-            in_section=1 # Set flag to indicate we are now inside the target section.
-            continue
-        fi
+    local os_type
+    # Determine the operating system type to adjust the sed command syntax.
+    # Assumes shell::get_os_type function exists.
+    os_type=$(shell::get_os_type)
 
-        # If we are currently inside the section to be removed, check if the current line
-        # is the start of a new section.
-        if [[ $in_section -eq 1 && "$line" =~ ^\[[^]]+\] ]]; then
-            in_section=0 # If it's a new section, we are no longer in the section to be removed.
-        fi
+    local sed_cmd=""
+    # Construct the sed command for in-place editing based on OS type.
+    # The command '/^\[${section}\]$/,/^\[.*\]$/ { /^\[.*\]$/!d; }' works as follows:
+    # 1. '/^\[${section}\]$/,/^\[.*\]$/': Defines a range starting from the line matching the exact section header
+    #    (e.g., [dev]) and ending at the next line that matches any section header (e.g., [uat]).
+    # 2. '{ ... }': Applies the commands within the curly braces to lines within the matched range.
+    # 3. '/^\[.*\]$/!d': Deletes lines (`d`) within the range that do *not* (`!`) match the pattern
+    #    `^\[.*\]$` (which matches any section header). This ensures that the starting section header
+    #    and all lines *within* the section are deleted, but the *next* section header (which ends the range)
+    #    is not deleted. If the target is the last section, the range extends to the end of the file,
+    #    and all lines after the target header are deleted correctly.
+    if [ "$os_type" = "macos" ]; then
+        # BSD sed on macOS requires an empty string backup extension with -i.
+        sed_cmd="sed -i '' '/^\[${section}\]$/,/^\[.*\]$/ { /^\[.*\]$/!d; }' \"$file\""
+    else
+        # GNU sed on Linux typically does not require a backup extension with -i.
+        sed_cmd="sed -i '/^\[${section}\]$/,/^\[.*\]$/ { /^\[.*\]$/!d; }' \"$file\""
+    fi
 
-        # If we are not inside the section to be removed, write the line to the temporary file.
-        if [ $in_section -eq 0 ]; then
-            echo "$line" >>"$temp_file"
-        fi
-    done <"$file"
+    # Execute the sed command using shell::run_cmd_eval for logging and execution.
+    # Assumes shell::run_cmd_eval function exists.
+    shell::run_cmd_eval "$sed_cmd"
 
-    # Atomically replace the original file with the temporary file.
-    # This is safer than removing the original and renaming the temp file,
-    # as it reduces the window where the file might be missing.
-    mv "$temp_file" "$file"
-
-    shell::colored_echo "Successfully removed section '$section'" 46
-    return 0
+    # Check the exit status of the sed command. sed returns 0 on successful execution.
+    if [ $? -eq 0 ]; then
+        shell::colored_echo "🟢 Successfully removed section '$section'" 46
+        return 0
+    else
+        # sed might return non-zero for various reasons, though the command is expected to work.
+        # A generic error message is appropriate here.
+        shell::colored_echo "🔴 Error removing section '$section'" 196
+        return 1
+    fi
 }
