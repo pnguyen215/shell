@@ -812,68 +812,6 @@ shell::ini_remove_section() {
         return 0
     fi
 
-    # local file="$1"
-    # local section="$2"
-
-    # # Validate parameters
-    # if [ -z "$file" ] || [ -z "$section" ]; then
-    #     shell::colored_echo "shell::ini_remove_section: Missing required parameters" 196
-    #     return 1
-    # fi
-
-    # # Validate section name only if strict mode is enabled
-    # if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
-    #     shell::ini_validate_section_name "$section" || return 1
-    # fi
-
-    # # Check if file exists
-    # if [ ! -f "$file" ]; then
-    #     shell::colored_echo "File not found: $file" 196
-    #     return 1
-    # fi
-
-    # # Escape the section name for use in a regex pattern to match the section header.
-    # # Assumes shell::ini_escape_for_regex function exists.
-    # local escaped_section
-    # escaped_section=$(shell::ini_escape_for_regex "$section")
-    # local section_pattern="^\[$escaped_section\]"
-    # local in_section=0
-    # local temp_file
-    # # Create a temporary file to write the lines that are not in the removed section.
-    # # Assumes shell::ini_create_temp_file function exists and returns the temp file path.
-    # temp_file=$(shell::ini_create_temp_file)
-
-    # shell::colored_echo "Removing section '$section' from file: $file" 11
-
-    # # Process the file line by line.
-    # # IFS= read -r line prevents issues with spaces and backslashes in lines.
-    # while IFS= read -r line; do
-    #     # Check if the current line matches the start of the section to be removed.
-    #     if [[ "$line" =~ $section_pattern ]]; then
-    #         in_section=1 # Set flag to indicate we are now inside the target section.
-    #         continue
-    #     fi
-
-    #     # If we are currently inside the section to be removed, check if the current line
-    #     # is the start of a new section.
-    #     if [[ $in_section -eq 1 && "$line" =~ ^\[[^]]+\] ]]; then
-    #         in_section=0 # If it's a new section, we are no longer in the section to be removed.
-    #     fi
-
-    #     # If we are not inside the section to be removed, write the line to the temporary file.
-    #     if [ $in_section -eq 0 ]; then
-    #         echo "$line" >>"$temp_file"
-    #     fi
-    # done <"$file"
-
-    # # Atomically replace the original file with the temporary file.
-    # # This is safer than removing the original and renaming the temp file,
-    # # as it reduces the window where the file might be missing.
-    # mv "$temp_file" "$file"
-
-    # shell::colored_echo "Successfully removed section '$section'" 46
-    # return 0
-
     local file="$1"
     local section="$2"
 
