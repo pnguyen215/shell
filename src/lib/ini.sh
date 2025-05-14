@@ -732,6 +732,7 @@ shell::ini_write() {
 
     local in_target_section=0 # Flag: are we currently inside the target section?
     local key_handled=0       # Flag: has the key been found and updated, or added?
+    local first_line=1        # Flag: is this the very first line being processed?
     local temp_file
     temp_file=$(shell::ini_create_temp_file)
 
@@ -747,8 +748,16 @@ shell::ini_write() {
     # Process the file line by line
     # Use `|| [ -n "$line" ]` to ensure the last line is processed even if it doesn't end with a newline.
     while IFS= read -r line || [ -n "$line" ]; do
+
         # Check if the current line is a section header
         if [[ "$line" =~ $any_section_pattern ]]; then
+            # If it's not the very first line, add a blank line before writing this section header.
+            if [ "$first_line" -eq 0 ]; then
+                echo "" >>"$temp_file"
+            fi
+            # Mark that we are no longer on the first line.
+            first_line=0
+
             # If we were in the target section and reached a new section,
             # and the key hasn't been handled yet, add it now at the end of the target section.
             if [ $in_target_section -eq 1 ] && [ $key_handled -eq 0 ]; then
@@ -774,6 +783,7 @@ shell::ini_write() {
                 # If the key is found, write the updated line with the new value
                 echo "$key=$value" >>"$temp_file"
                 key_handled=1 # Mark as updated
+                first_line=0  # Mark that we are no longer on the first line.
                 continue      # Skip the original line containing the old key-value pair
             fi
         fi
@@ -781,6 +791,7 @@ shell::ini_write() {
         # If the line was not a section header and not the target key within the target section,
         # write the original line to the temporary file.
         echo "$line" >>"$temp_file"
+        first_line=0 # Mark that we are no longer on the first line.
 
     done <"$file" # Read input from the specified file.
 
