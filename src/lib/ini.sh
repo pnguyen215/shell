@@ -964,13 +964,6 @@ shell::ini_remove_section() {
 # Example:
 #   shell::fzf_ini_remove_key config.ini "Database"  # Interactively remove a key from the Database section.
 #   shell::fzf_ini_remove_key -n settings.ini "API"  # Dry-run: show commands to remove a key from the API section.
-#
-# Requirements:
-#   - fzf must be installed (shell::install_package is used to ensure this).
-#   - Depends on existing shell::ini_* helper functions (shell::ini_list_keys, shell::ini_check_file,
-#     shell::ini_section_exists, shell::ini_escape_for_regex, shell::ini_create_temp_file)
-#     and shell::* helper functions (shell::colored_echo, shell::install_package, shell::get_os_type,
-#     shell::on_evict, shell::run_cmd_eval).
 shell::fzf_ini_remove_key() {
     local dry_run="false"
 
