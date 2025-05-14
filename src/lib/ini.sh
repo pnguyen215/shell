@@ -697,6 +697,7 @@ shell::ini_write() {
     fi
 
     # Validate section and key names only if strict mode is enabled
+    # Assumes shell::ini_validate_section_name and shell::ini_validate_key_name exist.
     if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
         shell::ini_validate_section_name "$section" || return 1
         shell::ini_validate_key_name "$key" || return 1
@@ -709,70 +710,102 @@ shell::ini_write() {
     fi
 
     # Check and create file if needed
+    # Assumes shell::create_file_if_not_exists function exists.
     shell::create_file_if_not_exists "$file"
 
-    # Create section if it doesn't exist
+    # Ensure the target section exists in the file. Add it if it doesn't.
+    # Assumes shell::ini_add_section function exists and is reliable.
     shell::ini_add_section "$file" "$section" || return 1
 
     # Escape section and key for regex pattern
+    # Assumes shell::ini_escape_for_regex function exists.
     local escaped_section
     escaped_section=$(shell::ini_escape_for_regex "$section")
     local escaped_key
     escaped_key=$(shell::ini_escape_for_regex "$key")
 
-    local section_pattern="^\[$escaped_section\]"
-    local key_pattern="^[[:space:]]*${escaped_key}[[:space:]]*="
-    local in_section=0
-    local found_key=0
+    local section_pattern="^\[$escaped_section\]"                # Regex for the target section header
+    local any_section_pattern="^\[[^]]+\]"                       # Regex for any section header
+    local key_pattern="^[[:space:]]*${escaped_key}[[:space:]]*=" # Regex to match the key at the start of a line (allowing leading spaces)
+
+    local in_target_section=0 # Flag: are we currently inside the target section?
+    local key_handled=0       # Flag: has the key been found and updated, or added?
     local temp_file
     temp_file=$(shell::ini_create_temp_file)
 
     shell::colored_echo "Writing key '$key' with value '$value' to section '$section' in file: $file" 11
 
-    # Special handling for values with quotes or special characters
+    # Special handling for values with quotes or special characters (remains the same)
+    # Assumes SHELL_INI_STRICT is defined.
     if [ "${SHELL_INI_STRICT}" -eq 1 ] && [[ "$value" =~ [[:space:]\"\'\`\&\|\<\>\;\$] ]]; then
         value="\"${value//\"/\\\"}\""
         shell::colored_echo "Value contains special characters, quoting: $value" 11
     fi
 
     # Process the file line by line
+    # Use `|| [ -n "$line" ]` to ensure the last line is processed even if it doesn't end with a newline.
     while IFS= read -r line || [ -n "$line" ]; do
-        # Check for section
-        if [[ "$line" =~ $section_pattern ]]; then
-            in_section=1
-            echo "$line" >>"$temp_file"
-            continue
-        fi
-
-        # Check if we've moved to a different section
-        if [[ $in_section -eq 1 && "$line" =~ ^\[[^]]+\] ]]; then
-            # Add the key-value pair if we haven't found it yet
-            if [ $found_key -eq 0 ]; then
+        # Check if the current line is a section header
+        if [[ "$line" =~ $any_section_pattern ]]; then
+            # If we were in the target section and reached a new section,
+            # and the key hasn't been handled yet, add it now at the end of the target section.
+            if [ $in_target_section -eq 1 ] && [ $key_handled -eq 0 ]; then
                 echo "$key=$value" >>"$temp_file"
-                found_key=1
+                key_handled=1 # Mark as added
             fi
-            in_section=0
+
+            # Check if this is the target section header
+            if [[ "$line" =~ $section_pattern ]]; then
+                in_target_section=1 # We are now inside the target section
+            else
+                in_target_section=0 # We are in a different section
+            fi
+
+            echo "$line" >>"$temp_file" # Always write section headers
+            continue                    # Move to the next line
         fi
 
-        # Update the key if it exists in the current section
-        if [[ $in_section -eq 1 && "$line" =~ $key_pattern ]]; then
-            echo "$key=$value" >>"$temp_file"
-            found_key=1
-            continue
+        # If we are currently inside the target section
+        if [ $in_target_section -eq 1 ]; then
+            # Check if this line contains the key we are looking for
+            if [[ "$line" =~ $key_pattern ]]; then
+                # If the key is found, write the updated line with the new value
+                echo "$key=$value" >>"$temp_file"
+                key_handled=1 # Mark as updated
+                continue      # Skip the original line containing the old key-value pair
+            fi
         fi
 
-        # Write the line to the temp file
+        # If the line was not a section header and not the target key within the target section,
+        # write the original line to the temporary file.
         echo "$line" >>"$temp_file"
-    done <"$file"
 
-    # Add the key-value pair if we're still in the section and haven't found it
-    if [ $in_section -eq 1 ] && [ $found_key -eq 0 ]; then
+    done <"$file" # Read input from the specified file.
+
+    # After the loop, if we were in the target section when the file ended,
+    # and the key was never handled (meaning it didn't exist in the target section),
+    # add the key-value pair at the end of the file. This handles the case where
+    # the target section is the last section in the file.
+    if [ $in_target_section -eq 1 ] && [ $key_handled -eq 0 ]; then
         echo "$key=$value" >>"$temp_file"
+        key_handled=1 # Mark as added
     fi
 
-    # Use atomic operation to replace the original file
+    # Use atomic operation to replace the original file.
+    # This is safer than removing the original and renaming the temp file,
+    # as it reduces the window where the file might be missing.
     mv "$temp_file" "$file"
-    shell::colored_echo "Successfully wrote key '$key' with value '$value' to section '$section'" 46
+
+    # Provide feedback based on whether the key was updated or added.
+    if [ $key_handled -eq 1 ]; then
+        shell::colored_echo "🟢 Successfully wrote key '$key' with value '$value' to section '$section'" 46
+    else
+        # This case should ideally not be reached if shell::ini_add_section ensures
+        # the section exists and the logic is correct. It's a safeguard.
+        shell::colored_echo "🟡 Section '$section' processed, but key '$key' was not added or updated." 11
+        return 1
+    fi
+
     return 0
 }
 
