@@ -750,8 +750,7 @@ shell::ini_write() {
     while IFS= read -r line || [ -n "$line" ]; do
         # Trim leading and trailing whitespace from the line for easier processing.
         local trimmed_line
-        trimmed_line="$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-        set +x
+        trimmed_line="$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')" >/dev/null 2>&1
 
         # Skip empty lines (after trimming). This removes blank lines within sections.
         if [ -z "$trimmed_line" ]; then
