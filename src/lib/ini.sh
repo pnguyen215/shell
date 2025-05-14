@@ -716,7 +716,8 @@ shell::ini_write() {
     shell::create_file_if_not_exists "$file"
 
     # Ensure the target section exists in the file. Add it if it doesn't.
-    # Assumes shell::ini_add_section function exists and is reliable.
+    # Assumes shell::ini_add_section function exists and handles adding a blank line
+    # before a new section if the file is not empty.
     shell::ini_add_section "$file" "$section" || return 1
 
     # Escape section and key for regex pattern
@@ -732,7 +733,6 @@ shell::ini_write() {
 
     local in_target_section=0 # Flag: are we currently inside the target section?
     local key_handled=0       # Flag: has the key been found and updated, or added?
-    local first_line=1        # Flag: is this the very first line being processed?
     local temp_file
     temp_file=$(shell::ini_create_temp_file)
 
@@ -748,16 +748,17 @@ shell::ini_write() {
     # Process the file line by line
     # Use `|| [ -n "$line" ]` to ensure the last line is processed even if it doesn't end with a newline.
     while IFS= read -r line || [ -n "$line" ]; do
+        # Trim leading and trailing whitespace from the line for easier processing.
+        local trimmed_line
+        trimmed_line="$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
 
-        # Check if the current line is a section header
-        if [[ "$line" =~ $any_section_pattern ]]; then
-            # If it's not the very first line, add a blank line before writing this section header.
-            if [ "$first_line" -eq 0 ]; then
-                echo "" >>"$temp_file"
-            fi
-            # Mark that we are no longer on the first line.
-            first_line=0
+        # Skip empty lines (after trimming). This removes blank lines within sections.
+        if [ -z "$trimmed_line" ]; then
+            continue
+        fi
 
+        # Check if the trimmed line is a section header
+        if [[ "$trimmed_line" =~ $any_section_pattern ]]; then
             # If we were in the target section and reached a new section,
             # and the key hasn't been handled yet, add it now at the end of the target section.
             if [ $in_target_section -eq 1 ] && [ $key_handled -eq 0 ]; then
@@ -765,41 +766,53 @@ shell::ini_write() {
                 key_handled=1 # Mark as added
             fi
 
+            # Add a blank line before this section header unless the temp file is currently empty.
+            # This ensures a blank line before all sections after the first one.
+            if [ -s "$temp_file" ]; then
+                echo "" >>"$temp_file"
+            fi
+
             # Check if this is the target section header
-            if [[ "$line" =~ $section_pattern ]]; then
+            if [[ "$trimmed_line" =~ $section_pattern ]]; then
                 in_target_section=1 # We are now inside the target section
             else
                 in_target_section=0 # We are in a different section
             fi
 
-            echo "$line" >>"$temp_file" # Always write section headers
-            continue                    # Move to the next line
+            # Write the original (untrimmed) section header to preserve original spacing if desired.
+            echo "$line" >>"$temp_file"
+            continue # Move to the next line
         fi
 
         # If we are currently inside the target section
         if [ $in_target_section -eq 1 ]; then
-            # Check if this line contains the key we are looking for
-            if [[ "$line" =~ $key_pattern ]]; then
-                # If the key is found, write the updated line with the new value
+            # Check if this line contains the key we are looking for (using trimmed line for pattern match)
+            if [[ "$trimmed_line" =~ $key_pattern ]]; then
+                # If the key is found, write the updated line with the new value.
+                # No blank line added before the key-value pair.
                 echo "$key=$value" >>"$temp_file"
                 key_handled=1 # Mark as updated
-                first_line=0  # Mark that we are no longer on the first line.
                 continue      # Skip the original line containing the old key-value pair
             fi
+
+            # If the line is within the target section but is not the key we are handling,
+            # write the original line. This preserves other keys or comments in the section.
+            # Blank lines were already skipped.
+            echo "$line" >>"$temp_file"
+            continue # Move to the next line
         fi
 
-        # If the line was not a section header and not the target key within the target section,
-        # write the original line to the temporary file.
+        # If the trimmed line was not empty, not a section header, and we are not in the target section,
+        # write the original line to the temporary file. This preserves lines outside sections.
         echo "$line" >>"$temp_file"
-        first_line=0 # Mark that we are no longer on the first line.
 
     done <"$file" # Read input from the specified file.
 
     # After the loop, if we were in the target section when the file ended,
     # and the key was never handled (meaning it didn't exist in the target section),
-    # add the key-value pair at the end of the file. This handles the case where
-    # the target section is the last section in the file.
+    # add the key-value pair at the end of the file (within that last section).
     if [ $in_target_section -eq 1 ] && [ $key_handled -eq 0 ]; then
+        # No blank line added before the key-value pair at the end of the section.
         echo "$key=$value" >>"$temp_file"
         key_handled=1 # Mark as added
     fi
