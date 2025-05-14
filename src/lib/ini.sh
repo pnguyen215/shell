@@ -748,12 +748,9 @@ shell::ini_write() {
     # Process the file line by line
     # Use `|| [ -n "$line" ]` to ensure the last line is processed even if it doesn't end with a newline.
     while IFS= read -r line || [ -n "$line" ]; do
-        # Temporarily disable tracing for the whitespace trimming command to prevent its output.
-        set +x
         # Trim leading and trailing whitespace from the line for easier processing.
         local trimmed_line
         trimmed_line="$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-        set -x
 
         # Skip empty lines (after trimming). This removes blank lines within sections.
         if [ -z "$trimmed_line" ]; then
