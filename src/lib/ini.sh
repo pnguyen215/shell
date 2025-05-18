@@ -1858,7 +1858,7 @@ shell::ini_destroy_keys() {
             # 'declare -p' is used for robust variable existence check across Bash versions.
             if declare -p "$var_name" &>/dev/null; then
                 unset "$var_name"
-                shell::colored_echo "🗑️ Unset: ${var_name}" 208
+                shell::colored_echo "📍 Unset: ${var_name}" 208
             fi
         done < <(shell::ini_list_keys "$file" "$section")
 
@@ -1868,8 +1868,8 @@ shell::ini_destroy_keys() {
             # Validate current section name if strict mode is enabled.
             if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
                 shell::ini_validate_section_name "$current_section" || {
-                    shell::colored_echo "  🔴 Skipping section with invalid name '$current_section' in strict mode." 196
-                    continue # Skip to the next section
+                    shell::colored_echo "🔴 Skipping section with invalid name '$current_section' in strict mode." 196
+                    continue
                 }
             fi
 
