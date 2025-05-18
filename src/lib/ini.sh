@@ -1469,7 +1469,6 @@ shell::ini_get_array_value() {
 
     # Output each item of the parsed array on a new line.
     if [ ${#result[@]} -gt 0 ]; then
-        shell::colored_echo "🟢 Successfully read and parsed array for key '$key'. Items:" 46
         for item in "${result[@]}"; do
             echo "$item"
         done
