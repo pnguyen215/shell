@@ -3011,3 +3011,30 @@ Example usage:
   shell::ini_remove_key /path/to/config.ini \"database\" \"username\"
   shell::ini_remove_key -n /path/to/config.ini \"api\" \"api_key\" # Dry-run mode
 "
+
+USAGE_SHELL_INI_SET_ARRAY_VALUE="
+shell::ini_set_array_value function
+Writes an array of values to a specified key in an INI file.
+
+Usage:
+  shell::ini_set_array_value [-h] <file> <section> <key> [value1] [value2 ...]
+
+Parameters:
+  - -h        : Optional. Displays this help message.
+  - <file>    : The path to the INI file.
+  - <section> : The section within the INI file to write the array to.
+  - <key>     : The key to be associated with the array of values.
+  - [valueN]  : Optional. One or more values to be written as part of the array.
+
+Description:
+  This function processes a list of values, formats them into a comma-separated
+  string, and writes this string as the value for a specified key in an INI file.
+  Values containing spaces, commas, or double quotes are automatically enclosed
+  in double quotes, and internal double quotes are escaped (e.g., \"value with \"quote\"\").
+  The final formatted string is passed to 'shell::ini_write' for atomic writing,
+  which handles file and section existence, creation, and updates.
+
+Example:
+  shell::ini_set_array_value config.ini MySection MyList \"alpha\" \"beta gamma\" \"delta,epsilon\"
+  # This would result in MyList=alpha,\"beta gamma\",\"delta,epsilon\" in config.ini
+"
