@@ -1480,3 +1480,84 @@ shell::ini_get_array_value() {
 
     return 0
 }
+
+# shell::ini_key_exists function
+# Checks if a specified key exists within a section in an INI file.
+#
+# Usage:
+#   shell::ini_key_exists [-h] <file> <section> <key>
+#
+# Parameters:
+#   - -h        : Optional. Displays this help message.
+#   - <file>    : The path to the INI file.
+#   - <section> : The section within the INI file to check.
+#   - <key>     : The key to check for existence.
+#
+# Description:
+#   This function provides a convenient way to verify the presence of a specific
+#   key within a designated section of an INI configuration file. It acts as a
+#   wrapper around 'shell::ini_read', using its capabilities to determine if
+#   the key can be successfully retrieved.
+#   If strict mode is active (SHELL_INI_STRICT is set to 1), it first
+#   validates the format of the section and key names, returning an error if
+#   they do not conform to the defined naming conventions.
+#   The function ensures its own output is clean by suppressing the internal
+#   logging of 'shell::ini_read', providing clear, colored messages indicating
+#   whether the key was found or not.
+#
+# Example:
+#   # Check if a 'port' key exists in the 'Network' section of 'settings.ini'
+#   if shell::ini_key_exists settings.ini Network port; then
+#     shell::colored_echo "Found 'port' setting." 46
+#   else
+#     shell::colored_echo "The 'port' setting is missing." 196
+#   fi
+#
+# Returns:
+#   0 (success) if the key exists in the specified section and file.
+#   1 (failure) if the key does not exist, or if required parameters are missing,
+#     or if validation fails (in strict mode).
+#   Outputs status messages using 'shell::colored_echo' to standard error.
+#
+# Notes:
+#   - This function does not output the value of the key, only its existence status.
+#   - It leverages 'shell::ini_read' and other 'shell::ini_validate_*' functions for its operations.
+#   - For detailed reasons why a key might not be found (e.g., file doesn't exist,
+#     section doesn't exist), 'shell::ini_read' or 'shell::ini_section_exists'
+#     will provide their own specific error messages if called directly.
+shell::ini_key_exists() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_INI_KEY_EXISTS"
+        return 0
+    fi
+
+    local file="$1"
+    local section="$2"
+    local key="$3"
+
+    # Validate required parameters.
+    if [ -z "$file" ] || [ -z "$section" ] || [ -z "$key" ]; then
+        shell::colored_echo "🔴 shell::ini_key_exists: Missing required parameters: file, section, or key." 196
+        echo "Usage: shell::ini_key_exists [-h] <file> <section> <key>"
+        return 1
+    fi
+
+    # Validate section and key names if strict mode is enabled.
+    # The called validation functions will print their own error messages if validation fails.
+    if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
+        shell::ini_validate_section_name "$section" || return 1
+        shell::ini_validate_key_name "$key" || return 1
+    fi
+
+    # Attempt to read the key's value.
+    # Redirect stdout and stderr to /dev/null to prevent shell::ini_read's output/errors
+    # from cluttering the console, as this function provides its own status messages.
+    if shell::ini_read "$file" "$section" "$key" >/dev/null 2>&1; then
+        shell::colored_echo "🟢 Key found: '$key' in section '$section'." 46
+        return 0
+    else
+        shell::colored_echo "🔴 Key not found: '$key' in section '$section'." 196
+        return 1
+    fi
+}

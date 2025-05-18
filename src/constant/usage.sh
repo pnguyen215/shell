@@ -3073,3 +3073,37 @@ Example:
   # item,with,commas
   # item with "escaped" quotes
 "
+
+USAGE_SHELL_INI_KEY_EXISTS="
+shell::ini_key_exists function
+Checks if a specified key exists within a section in an INI file.
+
+Usage:
+  shell::ini_key_exists [-h] <file> <section> <key>
+
+Parameters:
+  - -h        : Optional. Displays this help message.
+  - <file>    : The path to the INI file.
+  - <section> : The section within the INI file to check.
+  - <key>     : The key to check for existence.
+
+Description:
+  This function provides a convenient way to verify the presence of a specific
+  key within a designated section of an INI configuration file. It acts as a
+  wrapper around 'shell::ini_read', using its capabilities to determine if
+  the key can be successfully retrieved.
+  If strict mode is active (SHELL_INI_STRICT is set to 1), it first
+  validates the format of the section and key names, returning an error if
+  they do not conform to the defined naming conventions.
+  The function ensures its own output is clean by suppressing the internal
+  logging of 'shell::ini_read', providing clear, colored messages indicating
+  whether the key was found or not.
+
+Example:
+  # Check if a 'port' key exists in the 'Network' section of 'settings.ini'
+  if shell::ini_key_exists settings.ini Network port; then
+    shell::colored_echo \"Found 'port' setting.\" 46
+  else
+    shell::colored_echo \"The 'port' setting is missing.\" 196
+  fi
+"
