@@ -65,7 +65,7 @@ shell::ini_read() {
     local section_pattern="^\[$escaped_section\]"
     local in_section=0
 
-    shell::colored_echo "Reading key '$key' from section '$section' in file: $file" 11
+    # shell::colored_echo "Reading key '$key' from section '$section' in file: $file" 11
 
     while IFS= read -r line; do
         # Skip comments and empty lines
