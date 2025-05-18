@@ -1752,3 +1752,152 @@ shell::ini_to_env() {
     shell::colored_echo "🟢 Environment variables export completed." 46
     return 0
 }
+
+# shell::ini_destroy_keys function
+# Unsets environment variables previously exported from an INI file.
+#
+# Usage:
+#   shell::ini_destroy_keys [-h] <file> [prefix] [section]
+#
+# Parameters:
+#   - -h        : Optional. Displays this help message.
+#   - <file>    : The path to the INI file that was used for exporting variables.
+#   - [prefix]  : Optional. The same prefix that was used during the export (e.g., 'APP_CONFIG').
+#                 If provided, only variables with this prefix will be targeted.
+#   - [section] : Optional. If specified, only variables corresponding to keys from
+#                 this specific section will be unset. If omitted, keys from all
+#                 sections (matching the prefix, if given) will be targeted.
+#
+# Description:
+#   This function serves to clean up environment variables that were previously
+#   populated using 'shell::ini_to_env'. It reconstructs the expected names of
+#   these environment variables by parsing the provided INI file (or a specified
+#   subset) and applying the same sanitization and prefixing logic as
+#   'shell::ini_to_env'.
+#
+#   For each potential environment variable name, the function checks if it is
+#   currently set in the shell's environment. If found, the variable is
+#   then unset, effectively removing it from the current session. This helps in
+#   maintaining a clean environment or switching between different configurations.
+#
+#   It's important to use the identical parameters (file, prefix, section) that
+#   were supplied during the initial export to ensure that the correct set of
+#   variables is targeted for destruction.
+#
+# Example:
+#   # To export variables from 'dev.ini' with prefix 'DEV_APP':
+#   # shell::ini_to_env dev.ini DEV_APP
+#   # To then destroy these variables:
+#   # shell::ini_destroy_keys dev.ini DEV_APP
+#
+# Returns:
+#   0 (success) on completion of the unsetting process.
+#   1 (failure) if the INI file is not found or required parameters are missing.
+#   Outputs colored status messages to standard error.
+#
+# Notes:
+#   - This function does not report individual errors if a variable was expected
+#     but not found or already unset; it simply proceeds.
+#   - The function's effectiveness relies on matching the naming convention of
+#     'shell::ini_to_env'.
+#   - This function uses process substitution (`< <(...)`) for portability
+#     when iterating over lists of sections/keys, making it compatible with
+#     older Bash versions (e.g., Bash 3 on macOS) as well as newer ones.
+shell::ini_destroy_keys() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_INI_DESTROY_KEYS"
+        return 0
+    fi
+
+    local file="$1"
+    local prefix="$2"
+    local section="$3"
+
+    # Validate required parameters.
+    if [ -z "$file" ]; then
+        shell::colored_echo "🔴 shell::ini_destroy_keys: Missing file parameter." 196
+        echo "Usage: shell::ini_destroy_keys [-h] <file> [prefix] [section]"
+        return 1
+    fi
+
+    # Check if file exists.
+    if [ ! -f "$file" ]; then
+        shell::colored_echo "🔴 File not found: $file" 196
+        return 1
+    fi
+
+    # If a specific section is specified, only target keys from that section.
+    if [ -n "$section" ]; then
+        # Validate section name if strict mode is enabled.
+        if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
+            shell::ini_validate_section_name "$section" || {
+                shell::colored_echo "🔴 Cannot destroy keys: Invalid section name '$section' in strict mode." 196
+                return 1
+            }
+        fi
+
+        local sanitized_section
+        sanitized_section=$(shell::ini_sanitize_var_name "$section")
+
+        # Safely read keys line by line using process substitution.
+        while IFS= read -r key; do
+            local sanitized_key
+            sanitized_key=$(shell::ini_sanitize_var_name "$key")
+
+            local var_name
+            if [ -n "$prefix" ]; then
+                local sanitized_prefix
+                sanitized_prefix=$(shell::ini_sanitize_var_name "$prefix")
+                var_name="${sanitized_prefix}_${sanitized_section}_${sanitized_key}"
+            else
+                var_name="${sanitized_section}_${sanitized_key}"
+            fi
+
+            # Check if the variable is set before unsetting.
+            # 'declare -p' is used for robust variable existence check across Bash versions.
+            if declare -p "$var_name" &>/dev/null; then
+                unset "$var_name"
+                shell::colored_echo "🗑️ Unset: ${var_name}" 208
+            fi
+        done < <(shell::ini_list_keys "$file" "$section")
+
+    else # No specific section specified, target keys from all sections.
+        # Safely read sections line by line.
+        while IFS= read -r current_section; do
+            # Validate current section name if strict mode is enabled.
+            if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
+                shell::ini_validate_section_name "$current_section" || {
+                    shell::colored_echo "  🔴 Skipping section with invalid name '$current_section' in strict mode." 196
+                    continue # Skip to the next section
+                }
+            fi
+
+            local sanitized_section
+            sanitized_section=$(shell::ini_sanitize_var_name "$current_section")
+
+            # Safely read keys from the current section.
+            while IFS= read -r key; do
+                local sanitized_key
+                sanitized_key=$(shell::ini_sanitize_var_name "$key")
+
+                local var_name
+                if [ -n "$prefix" ]; then
+                    local sanitized_prefix
+                    sanitized_prefix=$(shell::ini_sanitize_var_name "$prefix")
+                    var_name="${sanitized_prefix}_${sanitized_section}_${sanitized_key}"
+                else
+                    var_name="${sanitized_section}_${sanitized_key}"
+                fi
+
+                if declare -p "$var_name" &>/dev/null; then
+                    unset "$var_name"
+                    shell::colored_echo "  🗑️ Unset: ${var_name}" 208
+                fi
+            done < <(shell::ini_list_keys "$file" "$current_section")
+        done < <(shell::ini_list_sections "$file")
+    fi
+
+    shell::colored_echo "🟢 Environment variables destruction completed." 46
+    return 0
+}

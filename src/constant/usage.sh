@@ -3155,3 +3155,53 @@ Notes:
   - If SHELL_INI_STRICT is enabled, section and key names will be validated prior
     to reading.
 "
+
+USAGE_SHELL_INI_DESTROY_KEYS="
+shell::ini_destroy_keys function
+Unsets environment variables previously exported from an INI file.
+
+Usage:
+  shell::ini_destroy_keys [-h] <file> [prefix] [section]
+
+Parameters:
+  - -h        : Optional. Displays this help message.
+  - <file>    : The path to the INI file that was used for exporting variables.
+  - [prefix]  : Optional. The same prefix that was used during the export (e.g., 'APP_CONFIG').
+                If provided, only variables with this prefix will be targeted.
+  - [section] : Optional. If specified, only variables corresponding to keys from
+                this specific section will be unset. If omitted, keys from all
+                sections (matching the prefix, if given) will be targeted.
+
+Description:
+  This function reverses the action of 'shell::ini_to_env'. It reads the specified
+  INI file (or a specific section within it) and generates the expected environment
+  variable names based on the file's structure and the provided prefix (if any).
+  For each generated variable name, it checks if the variable is currently set
+  in the environment and, if so, unsets it.
+
+  It's crucial to provide the *exact same* 'file', 'prefix', and 'section' arguments
+  that were used when calling 'shell::ini_to_env' to ensure the correct variables
+  are targeted for unsetting. Variable names are sanitized using the same logic
+  as 'shell::ini_to_env' to accurately match previously exported variables.
+
+Example:
+  # To unset all variables exported from 'config.ini' without a prefix:
+  shell::ini_destroy_keys config.ini
+
+  # To unset variables exported from 'config.ini' with the 'APP_CONFIG' prefix:
+  shell::ini_destroy_keys config.ini APP_CONFIG
+
+  # To unset variables from the 'Database' section of 'config.ini' with the 'DB' prefix:
+  shell::ini_destroy_keys config.ini DB Database
+
+Returns:
+  0 on successful completion, 1 on failure (e.g., missing file, invalid parameters).
+  Outputs colored messages indicating status and actions.
+
+Notes:
+  - This function attempts to unset variables; it does not report an error if a
+    variable was not found or was already unset.
+  - Relies on 'shell::ini_list_sections', 'shell::ini_list_keys',
+    'shell::ini_sanitize_var_name', and 'shell::colored_echo'.
+  - It does NOT rely on 'shell::ini_read' for values, only for deriving names.
+"
