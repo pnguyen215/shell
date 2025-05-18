@@ -1561,3 +1561,194 @@ shell::ini_key_exists() {
         return 1
     fi
 }
+
+# shell::ini_sanitize_var_name function
+# Converts a string into a format suitable for an environment variable name.
+# Replaces non-alphanumeric characters (except underscore) with underscores,
+# and converts to uppercase.
+#
+# Usage:
+#   shell::ini_sanitize_var_name <string>
+#
+# Parameters:
+#   - <string> : The input string (e.g., INI section or key name).
+#
+# Returns:
+#   The sanitized string suitable for a shell variable name.
+#
+# Example:
+#   sanitized=$(shell::ini_sanitize_var_name "My-Section.Key_Name") # Outputs "MY_SECTION_KEY_NAME"
+shell::ini_sanitize_var_name() {
+    local input="$1"
+    # Convert to uppercase, replace non-alphanumeric and non-underscore with underscore
+    echo "$input" | tr '[:lower:]' '[:upper:]' | sed -e 's/[^A-Z0-9_]/_/g'
+}
+
+# shell::ini_to_env function
+# Exports key-value pairs from an INI file as environment variables.
+#
+# Usage:
+#   shell::ini_to_env [-h] <file> [prefix] [section]
+#
+# Parameters:
+#   - -h        : Optional. Displays this help message.
+#   - <file>    : The path to the INI file to read.
+#   - [prefix]  : Optional. A string prefix to prepend to all environment variable names.
+#                 If provided, variables will be named like \`PREFIX_SECTION_KEY\`.
+#                 If omitted, variables will be named like \`SECTION_KEY\`.
+#   - [section] : Optional. If specified, only keys from this specific section will
+#                 be exported. If omitted, keys from all sections will be exported.
+#
+# Description:
+#   This function provides a convenient way to load INI configuration into the
+#   current shell's environment. It iterates through the specified INI file,
+#   reading section and key-value pairs, and then uses the 'export' command
+#   to make them available as environment variables.
+#
+#   To ensure compatibility with shell variable naming conventions, all section
+#   and key names used in the environment variable name (e.g., SECTION_KEY) are
+#   automatically sanitized. This involves converting them to uppercase and
+#   replacing any non-alphanumeric or non-underscore characters with underscores.
+#
+#   If a specific section is provided, only the keys within that section are
+#   processed. If no section is given, all readable sections and their keys
+#   across the entire file are exported.
+#
+# Example:
+#   # Export database credentials from 'db.ini' with 'DB_APP' prefix
+#   # assuming db.ini contains:
+#   # [production]
+#   # host=localhost
+#   # user=db.user
+#   # pass=db.pass
+#   shell::ini_to_env db.ini DB_APP production
+#   echo $DB_APP_PRODUCTION_HOST # Outputs 'localhost'
+#
+# Returns:
+#   0 (success) if the export process completes without critical errors.
+#   1 (failure) if the INI file is not found, required parameters are missing,
+#     or if underlying functions report an error (e.g., invalid section/key name
+#     in strict mode).
+#   Outputs colored status messages to standard error.
+#
+# Notes:
+#   - This function does not modify the INI file.
+#   - Variable names in the environment are derived from sanitized section and
+#     key names. For instance, a section '[My Config]' and key 'api-key' would
+#     become 'MY_CONFIG_API_KEY'.
+#   - Values containing special characters are exported as-is; it's the calling
+#     script's responsibility to handle such values.
+#   - This function uses process substitution (`< <(...)`) for portability
+#     when iterating over lists of sections/keys, making it compatible with
+#     older Bash versions (e.g., Bash 3 on macOS) as well as newer ones.
+#   - If a key's value cannot be read (e.g., key not found by ini_read), that
+#     specific key will be skipped in the export process, and a warning will be
+#     logged.
+shell::ini_to_env() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_INI_TO_ENV"
+        return 0
+    fi
+
+    local file="$1"
+    local prefix="$2"
+    local section="$3"
+
+    # Validate required parameters.
+    if [ -z "$file" ]; then
+        shell::colored_echo "🔴 shell::ini_to_env: Missing file parameter." 196
+        echo "Usage: shell::ini_to_env [-h] <file> [prefix] [section]"
+        return 1
+    fi
+
+    # Check if file exists.
+    if [ ! -f "$file" ]; then
+        shell::colored_echo "🔴 File not found: $file" 196
+        return 1
+    fi
+
+    shell::colored_echo "🔵 Exporting INI values to environment variables from '$file' (prefix: '$prefix', section: '$section')." 11
+
+    # If a specific section is specified, only export keys from that section.
+    if [ -n "$section" ]; then
+        # Validate section name if strict mode is enabled.
+        if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
+            shell::ini_validate_section_name "$section" || return 1
+        fi
+
+        # Safely read keys line by line using process substitution to handle spaces in names.
+        while IFS= read -r key; do
+            local value
+            # Attempt to read the key's value. Suppress ini_read's output for cleaner logging here.
+            value=$(shell::ini_read "$file" "$section" "$key" 2>/dev/null)
+            local read_status=$? # Capture exit status of shell::ini_read
+
+            # Only export if shell::ini_read was successful (key found and read).
+            if [ $read_status -eq 0 ]; then
+                local sanitized_section
+                sanitized_section=$(shell::ini_sanitize_var_name "$section")
+                local sanitized_key
+                sanitized_key=$(shell::ini_sanitize_var_name "$key")
+
+                local var_name
+                if [ -n "$prefix" ]; then
+                    local sanitized_prefix
+                    sanitized_prefix=$(shell::ini_sanitize_var_name "$prefix")
+                    var_name="${sanitized_prefix}_${sanitized_section}_${sanitized_key}"
+                else
+                    var_name="${sanitized_section}_${sanitized_key}"
+                fi
+
+                export "${var_name}=${value}"
+                shell::colored_echo "  ✅ Exported: ${var_name}=${value}" 46
+            else
+                shell::colored_echo "  🟡 Failed to read key '$key' from section '$section'. Skipping export." 33
+            fi
+        done < <(shell::ini_list_keys "$file" "$section") # Use process substitution for robust key listing
+
+    else # No specific section specified, export keys from all sections.
+        # Safely read sections line by line.
+        while IFS= read -r current_section; do
+            # Validate current section name if strict mode is enabled.
+            if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
+                shell::ini_validate_section_name "$current_section" || {
+                    shell::colored_echo "  🔴 Skipping invalid section name '$current_section' in strict mode." 196
+                    continue # Skip to the next section
+                }
+            fi
+
+            # Safely read keys from the current section.
+            while IFS= read -r key; do
+                local value
+                # Attempt to read the key's value. Suppress ini_read's output for cleaner logging here.
+                value=$(shell::ini_read "$file" "$current_section" "$key" 2>/dev/null)
+                local read_status=$?
+
+                if [ $read_status -eq 0 ]; then
+                    local sanitized_section
+                    sanitized_section=$(shell::ini_sanitize_var_name "$current_section")
+                    local sanitized_key
+                    sanitized_key=$(shell::ini_sanitize_var_name "$key")
+
+                    local var_name
+                    if [ -n "$prefix" ]; then
+                        local sanitized_prefix
+                        sanitized_prefix=$(shell::ini_sanitize_var_name "$prefix")
+                        var_name="${sanitized_prefix}_${sanitized_section}_${sanitized_key}"
+                    else
+                        var_name="${sanitized_section}_${sanitized_key}"
+                    fi
+
+                    export "${var_name}=${value}"
+                    shell::colored_echo "  ✅ Exported: ${var_name}=${value}" 46
+                else
+                    shell::colored_echo "  🟡 Failed to read key '$key' from section '$current_section'. Skipping export." 33
+                fi
+            done < <(shell::ini_list_keys "$file" "$current_section")
+        done < <(shell::ini_list_sections "$file")
+    fi
+
+    shell::colored_echo "🟢 Environment variables export completed." 46
+    return 0
+}

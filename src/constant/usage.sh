@@ -3107,3 +3107,51 @@ Example:
     shell::colored_echo \"The 'port' setting is missing.\" 196
   fi
 "
+
+USAGE_SHELL_INI_TO_ENV="
+shell::ini_to_env function
+Exports key-value pairs from an INI file as environment variables.
+
+Usage:
+  shell::ini_to_env [-h] <file> [prefix] [section]
+
+Parameters:
+  - -h        : Optional. Displays this help message.
+  - <file>    : The path to the INI file to read.
+  - [prefix]  : Optional. A string prefix to prepend to all environment variable names.
+                If provided, variables will be named like \`PREFIX_SECTION_KEY\`.
+                If omitted, variables will be named like \`SECTION_KEY\`.
+  - [section] : Optional. If specified, only keys from this specific section will
+                be exported. If omitted, keys from all sections will be exported.
+
+Description:
+  This function parses an INI file and exports its key-value pairs as environment
+  variables in the current shell session. It allows for an optional prefix to be
+  added to the variable names and can target a specific section or export from all
+  sections.
+  Variable names are automatically sanitized (converted to uppercase, and
+  non-alphanumeric/underscore characters replaced with underscores) to ensure they
+  are valid shell variable names.
+
+Example:
+  # Export all keys from config.ini without a prefix
+  shell::ini_to_env config.ini
+
+  # Export all keys from config.ini with 'APP_CONFIG' prefix
+  shell::ini_to_env config.ini APP_CONFIG
+
+  # Export keys from 'Database' section of config.ini with 'DB' prefix
+  shell::ini_to_env config.ini DB Database
+
+Returns:
+  0 on success, 1 on failure (e.g., missing file, invalid parameters, or issues
+  during key reading).
+  Outputs colored messages indicating status and actions.
+
+Notes:
+  - Affects the current shell session's environment.
+  - Relies on 'shell::ini_list_sections', 'shell::ini_list_keys', 'shell::ini_read',
+    'shell::ini_sanitize_var_name', and 'shell::colored_echo'.
+  - If SHELL_INI_STRICT is enabled, section and key names will be validated prior
+    to reading.
+"
