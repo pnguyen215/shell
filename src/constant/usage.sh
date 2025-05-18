@@ -2961,3 +2961,53 @@ Description:
 Example usage:
   shell::ini_remove_section /path/to/config.ini \"database\"
 "
+
+USAGE_SHELL_FZF_INI_REMOVE_KEY="
+shell::fzf_ini_remove_key function
+Interactively selects a key from a specific section in an INI file using fzf
+and then removes the selected key from that section.
+
+Usage:
+  shell::fzf_ini_remove_key [-n] <file> <section>
+
+Parameters:
+  - -n        : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+  - <file>    : The path to the INI file.
+  - <section> : The section within the INI file from which to remove a key.
+
+Description:
+  This function validates the input file and section, lists keys within the section
+  using shell::ini_list_keys, presents the keys for interactive selection using fzf,
+  and then removes the chosen key-value pair from the specified section in the INI file.
+  It handles cases where the file or section does not exist and provides feedback
+  using shell::colored_echo.
+
+Example:
+  shell::fzf_ini_remove_key config.ini \"Database\"  # Interactively remove a key from the Database section.
+  shell::fzf_ini_remove_key -n settings.ini \"API\"  # Dry-run: show commands to remove a key from the API section.
+"
+
+USAGE_SHELL_INI_REMOVE_KEY="
+shell::ini_remove_key function
+Removes a specified key from a specific section in an INI formatted file.
+
+Usage:
+  shell::ini_remove_key [-n] <file> <section> <key>
+
+Parameters:
+  - -n        : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+  - <file>    : The path to the INI file.
+  - <section> : The section within the INI file from which to remove the key.
+  - <key>     : The key to be removed from the specified section.
+
+Description:
+  This function processes an INI file line by line. It identifies the start of the
+  target section and then skips the line containing the specified key within that section.
+  All other lines (before the target section, in the target section but not matching the key,
+  and after the target section) are written to a temporary file, which then replaces
+  the original file.
+
+Example usage:
+  shell::ini_remove_key /path/to/config.ini \"database\" \"username\"
+  shell::ini_remove_key -n /path/to/config.ini \"api\" \"api_key\" # Dry-run mode
+"
