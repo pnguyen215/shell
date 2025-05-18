@@ -1350,3 +1350,134 @@ shell::ini_set_array_value() {
 
     return $status
 }
+
+# shell::ini_get_array_value function
+# Reads and parses an array of values from a specified key in an INI file.
+#
+# Usage:
+#   shell::ini_get_array_value [-h] <file> <section> <key>
+#
+# Parameters:
+#   - -h        : Optional. Displays this help message.
+#   - <file>    : The path to the INI file.
+#   - <section> : The section within the INI file to read the array from.
+#   - <key>     : The key whose array of values is to be retrieved.
+#
+# Description:
+#   This function first reads the raw string value of a specified key from an INI file
+#   using 'shell::ini_read'. It then meticulously parses this string to extract
+#   individual array elements. The parsing logic correctly handles comma delimiters
+#   and preserves values enclosed in double quotes, including those containing
+#   spaces, commas, or escaped double quotes within the value itself.
+#   Each extracted item is then trimmed of leading/trailing whitespace.
+#   The function outputs each parsed array item on a new line to standard output.
+#
+# Example:
+#   # Assuming 'my_config.ini' contains:
+#   # [Settings]
+#   # MyArray=item1,\"item with spaces\",\"item,with,commas\",\"item with \\\"escaped\\\" quotes\"
+#
+#   shell::ini_get_array_value my_config.ini Settings MyArray
+#   # Expected output:
+#   # item1
+#   # item with spaces
+#   # item,with,commas
+#   # item with "escaped" quotes
+#
+# Returns:
+#   0 on successful parsing and output, 1 on failure (e.g., missing parameters,
+#   file/section/key not found).
+#   The parsed array items are echoed to standard output, one per line.
+#
+# Notes:
+#   - Relies on 'shell::ini_read' to retrieve the raw value.
+#   - Relies on 'shell::ini_trim' for whitespace removal from individual items.
+#   - The parsing logic is custom-built to handle INI-style quoted comma-separated lists.
+#   - Interaction with SHELL_INI_STRICT in 'shell::ini_write': Values formatted by
+#     'shell::ini_set_array_value' (which are read by this function) are intended to be
+#     interpreted as single strings by 'shell::ini_write'. If 'SHELL_INI_STRICT' is 1
+#     during writing, the entire formatted string might be re-quoted. This function correctly
+#     parses values regardless of outer re-quoting, as it targets the internal array structure.
+shell::ini_get_array_value() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_INI_GET_ARRAY_VALUE"
+        return 0
+    fi
+
+    local file="$1"
+    local section="$2"
+    local key="$3"
+
+    # Validate required parameters.
+    if [ -z "$file" ] || [ -z "$section" ] || [ -z "$key" ]; then
+        shell::colored_echo "🔴 shell::ini_get_array_value: Missing required parameters." 196
+        echo "Usage: shell::ini_get_array_value [-h] <file> <section> <key>"
+        return 1
+    fi
+
+    # Read the raw string value from the INI file.
+    local value
+    # Capture stderr from shell::ini_read to prevent its error messages from appearing if not desired,
+    # but still allow it to return status.
+    value=$(shell::ini_read "$file" "$section" "$key")
+    local ini_read_status=$?
+
+    # Check if shell::ini_read failed (e.g., file/section/key not found).
+    if [ $ini_read_status -ne 0 ]; then
+        # shell::ini_read already prints specific error messages, so just indicate general failure here.
+        shell::colored_echo "🔴 Failed to read raw value for key '$key' from section '$section'." 196
+        return 1
+    fi
+
+    local -a result=()
+    local in_quotes=0
+    local current_item=""
+    local char
+
+    # Iterate through the string character by character to parse the array.
+    for ((i = 0; i < ${#value}; i++)); do
+        char="${value:$i:1}"
+
+        if [ "$char" = '"' ]; then
+            # Handle escaped quotes: if the previous character was a backslash,
+            # it's an escaped quote, so remove the backslash and add the literal quote.
+            if [ $i -gt 0 ] && [ "${value:$((i - 1)):1}" = "\\" ]; then
+                current_item="${current_item:0:-1}\"" # Remove trailing backslash, add literal quote.
+            else
+                # Toggle the 'in_quotes' state for unescaped double quotes.
+                in_quotes=$((1 - in_quotes))
+            fi
+        elif [ "$char" = ',' ] && [ "$in_quotes" -eq 0 ]; then
+            # If a comma is encountered outside of quotes, it signifies the end of an item.
+            result+=("$(shell::ini_trim "$current_item")") # Add the trimmed item to the result array.
+            current_item=""                                # Reset current_item for the next element.
+        else
+            # Append the current character to the current item being built.
+            current_item="$current_item$char"
+        fi
+    done
+
+    # After the loop, add the last accumulated item.
+    # This conditional ensures that:
+    # 1. A non-empty 'current_item' is always added.
+    # 2. An empty 'current_item' is added if it implies a trailing comma (result already has items).
+    # 3. Nothing is added if the initial 'value' was entirely empty (no items parsed, current_item is empty).
+    if [ -n "$current_item" ] || [ ${#result[@]} -gt 0 ]; then
+        result+=("$(shell::ini_trim "$current_item")")
+    fi
+
+    # Output each item of the parsed array on a new line.
+    if [ ${#result[@]} -gt 0 ]; then
+        shell::colored_echo "🟢 Successfully read and parsed array for key '$key'. Items:" 46
+        for item in "${result[@]}"; do
+            echo "$item"
+        done
+    else
+        # This case covers scenarios where the key exists but its value is empty or malformed
+        # such that no discernible items were parsed.
+        shell::colored_echo "🟡 Key '$key' found in section '$section', but no array items could be parsed. Check format." 33
+    fi
+
+    return 0
+}

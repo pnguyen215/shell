@@ -3038,3 +3038,38 @@ Example:
   shell::ini_set_array_value config.ini MySection MyList \"alpha\" \"beta gamma\" \"delta,epsilon\"
   # This would result in MyList=alpha,\"beta gamma\",\"delta,epsilon\" in config.ini
 "
+
+USAGE_SHELL_INI_GET_ARRAY_VALUE="
+shell::ini_get_array_value function
+Reads and parses an array of values from a specified key in an INI file.
+
+Usage:
+  shell::ini_get_array_value [-h] <file> <section> <key>
+
+Parameters:
+  - -h        : Optional. Displays this help message.
+  - <file>    : The path to the INI file.
+  - <section> : The section within the INI file to read the array from.
+  - <key>     : The key whose array of values is to be retrieved.
+
+Description:
+  This function first reads the raw string value of a specified key from an INI file
+  using 'shell::ini_read'. It then meticulously parses this string to extract
+  individual array elements. The parsing logic correctly handles comma delimiters
+  and preserves values enclosed in double quotes, including those containing
+  spaces, commas, or escaped double quotes within the value itself.
+  Each extracted item is then trimmed of leading/trailing whitespace.
+  The function outputs each parsed array item on a new line to standard output.
+
+Example:
+  # Assuming 'my_config.ini' contains:
+  # [Settings]
+  # MyArray=item1,\"item with spaces\",\"item,with,commas\",\"item with \\\"escaped\\\" quotes\"
+
+  shell::ini_get_array_value my_config.ini Settings MyArray
+  # Expected output:
+  # item1
+  # item with spaces
+  # item,with,commas
+  # item with "escaped" quotes
+"
