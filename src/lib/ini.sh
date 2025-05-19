@@ -47,13 +47,13 @@ shell::ini_read() {
 
     # Validate section and key names only if strict mode is enabled
     if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
-        shell::ini_validate_section_name "$section" >&2 || return 1
-        shell::ini_validate_key_name "$key" >&2 || return 1
+        shell::ini_validate_section_name "$section" || return 1
+        shell::ini_validate_key_name "$key" || return 1
     fi
 
     # Check if file exists
     if [ ! -f "$file" ]; then
-        shell::colored_echo "File not found: $file" 196 >&2
+        shell::colored_echo "🔴 File not found: $file" 196
         return 1
     fi
 
@@ -64,31 +64,39 @@ shell::ini_read() {
     escaped_key=$(shell::ini_escape_for_regex "$key")
 
     local section_pattern="^\[$escaped_section\]"
-    local in_section=0
+    local any_section_pattern="^\[[^]]+\]" # Regex for any section header
+    local in_target_section=0
 
-    # shell::colored_echo "Reading key '$key' from section '$section' in file: $file" 11 >&2
+    # shell::colored_echo "🔵 Reading key '$key' from section '$section' in file: $file" 11
 
-    while IFS= read -r line; do
+    while IFS= read -r line || [ -n "$line" ]; do
         # Skip comments and empty lines
         if [[ -z "$line" || "$line" =~ ^[[:space:]]*[#\;] ]]; then
             continue
         fi
 
-        # Check for section
-        if [[ "$line" =~ $section_pattern ]]; then
-            in_section=1
-            # shell::colored_echo "Found section: $section" 11 >&2 # Commented out for less verbose output
-            continue
+        # Check if the line is a section header
+        if [[ "$line" =~ $any_section_pattern ]]; then
+            if [ "$in_target_section" -eq 1 ] && ! [[ "$line" =~ $section_pattern ]]; then
+                # We were in the target section, but now we've moved to a *different* section.
+                # Key was not found in the target section. Exit the loop.
+                shell::colored_echo "🟡 Reached end of target section '$section' without finding key '$key'." 33
+                return 1 # Key not found in specified section.
+            fi
+
+            if [[ "$line" =~ $section_pattern ]]; then
+                # This is the target section.
+                in_target_section=1
+            else
+                # This is a different section (not the target one, and not the one we just exited from).
+                # Ensure we are no longer searching within the target section's scope.
+                in_target_section=0
+            fi
+            continue # Move to the next line, as this line is a section header.
         fi
 
-        # Check if we've moved to a different section
-        if [[ $in_section -eq 1 && "$line" =~ ^\[[^]]+\] ]]; then
-            shell::colored_echo "Reached end of section without finding key" 11 >&2
-            return 1
-        fi
-
-        # Check for key in the current section
-        if [[ $in_section -eq 1 ]]; then
+        # Only proceed to check for key if we are currently inside the target section
+        if [ "$in_target_section" -eq 1 ]; then
             local key_pattern="^[[:space:]]*${escaped_key}[[:space:]]*="
             if [[ "$line" =~ $key_pattern ]]; then
                 local value="${line#*=}"
@@ -103,14 +111,14 @@ shell::ini_read() {
                     value="${value//\\\"/\"}"
                 fi
 
-                # shell::colored_echo "Found value: $value" 11 >&2 # Commented out for less verbose output
+                # shell::colored_echo "🟢 Found value for key '$key'." 46
                 echo "$value"
                 return 0
             fi
         fi
     done <"$file"
 
-    # shell::colored_echo "Key not found: $key in section: $section" 11 >&2
+    shell::colored_echo "🟡 Key not found: '$key' in section: '$section'." 33
     return 1
 }
 
