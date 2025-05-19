@@ -540,6 +540,9 @@ shell::fzf_rename_key_conf() {
         return 1
     fi
 
+    # sanitized key
+    new_key=$(shell::ini_sanitize_var_name "$new_key")
+
     # Check if the new key already exists.
     local exist
     exist=$(shell::exist_key_conf "$new_key")
