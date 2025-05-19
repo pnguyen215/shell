@@ -40,19 +40,20 @@ shell::ini_read() {
 
     # Validate parameters
     if [ -z "$file" ] || [ -z "$section" ] || [ -z "$key" ]; then
-        shell::colored_echo "shell::ini_read: Missing required parameters" 196
+        shell::colored_echo "shell::ini_read: Missing required parameters" 196 >&2
+        echo "Usage: shell::ini_read [-h] <file> <section> <key>"
         return 1
     fi
 
     # Validate section and key names only if strict mode is enabled
     if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
-        shell::ini_validate_section_name "$section" || return 1
-        shell::ini_validate_key_name "$key" || return 1
+        shell::ini_validate_section_name "$section" >&2 || return 1
+        shell::ini_validate_key_name "$key" >&2 || return 1
     fi
 
     # Check if file exists
     if [ ! -f "$file" ]; then
-        shell::colored_echo "File not found: $file" 196
+        shell::colored_echo "File not found: $file" 196 >&2
         return 1
     fi
 
@@ -65,7 +66,7 @@ shell::ini_read() {
     local section_pattern="^\[$escaped_section\]"
     local in_section=0
 
-    # shell::colored_echo "Reading key '$key' from section '$section' in file: $file" 11
+    # shell::colored_echo "Reading key '$key' from section '$section' in file: $file" 11 >&2
 
     while IFS= read -r line; do
         # Skip comments and empty lines
@@ -76,13 +77,13 @@ shell::ini_read() {
         # Check for section
         if [[ "$line" =~ $section_pattern ]]; then
             in_section=1
-            # shell::colored_echo "Found section: $section" 11
+            # shell::colored_echo "Found section: $section" 11 >&2 # Commented out for less verbose output
             continue
         fi
 
         # Check if we've moved to a different section
         if [[ $in_section -eq 1 && "$line" =~ ^\[[^]]+\] ]]; then
-            shell::colored_echo "Reached end of section without finding key" 11
+            shell::colored_echo "Reached end of section without finding key" 11 >&2
             return 1
         fi
 
@@ -102,14 +103,14 @@ shell::ini_read() {
                     value="${value//\\\"/\"}"
                 fi
 
-                # shell::colored_echo "Found value: $value" 11
+                # shell::colored_echo "Found value: $value" 11 >&2 # Commented out for less verbose output
                 echo "$value"
                 return 0
             fi
         fi
     done <"$file"
 
-    shell::colored_echo "Key not found: $key in section: $section" 11
+    # shell::colored_echo "Key not found: $key in section: $section" 11 >&2
     return 1
 }
 
