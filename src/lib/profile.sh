@@ -409,6 +409,8 @@ shell::add_conf_profile() {
     local profile_name="$1"
     local key="$2"
     local value="$3"
+    # sanitized key
+    key=$(shell::ini_sanitize_var_name "$key")
 
     # Get the profile directory (assumes shell::get@_profile_dir is defined elsewhere)
     local profile_dir=$(shell::get@_profile_dir "$profile_name")
@@ -555,6 +557,9 @@ shell::get_value_conf_profile() {
     local key="$2"
     local profile_dir=$(shell::get@_profile_dir "$profile_name")
     local profile_conf="$profile_dir/profile.conf"
+    # sanitized key
+    key=$(shell::ini_sanitize_var_name "$key")
+
     if [ ! -d "$profile_dir" ]; then
         shell::colored_echo "🔴 Profile '$profile_name' does not exist." 196
         return 1
@@ -763,6 +768,9 @@ shell::exist_key_conf_profile() {
     local key="$2"
     local profile_dir=$(shell::get@_profile_dir "$profile_name")
     local profile_conf="$profile_dir/profile.conf"
+    # sanitized key
+    key=$(shell::ini_sanitize_var_name "$key")
+
     if [ ! -d "$profile_dir" ]; then
         shell::colored_echo "🔴 Profile '$profile_name' does not exist." 196
         return 1
@@ -841,6 +849,9 @@ shell::rename_key_conf_profile() {
         shell::colored_echo "🔴 No new key name entered. Aborting rename." 196
         return 1
     fi
+    # sanitized key
+    new_key=$(shell::ini_sanitize_var_name "$new_key")
+
     if grep -q "^${new_key}=" "$profile_conf"; then
         shell::colored_echo "🔴 Error: Key '$new_key' already exists in profile '$profile_name'." 196
         return 1
