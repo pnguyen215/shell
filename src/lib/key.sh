@@ -99,6 +99,8 @@ shell::add_conf() {
 
     local key="$1"
     local value="$2"
+    key=$(shell::ini_sanitize_var_name "$key")
+    echo "The Key sanitized: $key"
 
     # Encode the value using Base64 and remove any newlines.
     local encoded_value
