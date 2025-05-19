@@ -3205,3 +3205,48 @@ Notes:
     'shell::ini_sanitize_var_name', and 'shell::colored_echo'.
   - It does NOT rely on 'shell::ini_read' for values, only for deriving names.
 "
+
+USAGE_SHELL_INI_GET_OR_DEFAULT="
+shell::ini_get_or_default function
+Reads a key's value from an INI file or returns a default if not found.
+
+Usage:
+  shell::ini_get_or_default [-h] <file> <section> <key> [default_value]
+
+Parameters:
+  - -h          : Optional. Displays this help message.
+  - <file>      : The path to the INI file.
+  - <section>   : The section within the INI file to search.
+  - <key>       : The key whose value is to be retrieved.
+  - [default_value]: Optional. The value to return if the key is not found
+                    or if reading fails. Defaults to an empty string if omitted.
+
+Description:
+  This function attempts to read the value of a specified key from a given
+  section in an INI file. If the key is successfully found, its value is
+  printed to standard output. If the key is not found, or if there is an
+  issue reading the file/section (e.g., file not found, section not found),
+  the provided 'default_value' is printed instead. If no 'default_value'
+  is supplied, an empty string is returned as the default.
+
+Example:
+  # Get 'api_key' from 'Settings' or return 'no_key' if not found
+  api_key=(shell::ini_get_or_default config.ini Settings api_key "no_key")
+  echo \"API Key: $api_key\"
+
+  # Get 'debug_mode' or default to empty string if not found
+  debug_mode=(shell::ini_get_or_default app.ini General debug_mode)
+  if [ -n \"$debug_mode\" ]; then
+    echo \"Debug mode is enabled.\"
+  fi
+
+Returns:
+  0 on success (value found or default returned), 1 on failure (missing parameters).
+  The retrieved value or the default value is echoed to standard output.
+
+Notes:
+  - Relies on 'shell::ini_read' for file parsing.
+  - Error messages from 'shell::ini_read' are suppressed, as this function
+    provides its own feedback regarding value retrieval or default usage.
+  - Console logging is used for status updates.
+"

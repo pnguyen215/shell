@@ -1901,3 +1901,90 @@ shell::ini_destroy_keys() {
     shell::colored_echo "🟢 Environment variables destruction completed." 46
     return 0
 }
+
+# shell::ini_get_or_default function
+# Reads a key's value from an INI file or returns a default if not found.
+#
+# Usage:
+#   shell::ini_get_or_default [-h] <file> <section> <key> [default_value]
+#
+# Parameters:
+#   - -h          : Optional. Displays this help message.
+#   - <file>      : The path to the INI file.
+#   - <section>   : The section within the INI file to search.
+#   - <key>       : The key whose value is to be retrieved.
+#   - [default_value]: Optional. The value to return if the key is not found
+#                     or if reading fails. Defaults to an empty string if omitted.
+#
+# Description:
+#   This function attempts to retrieve a configuration value from an INI file.
+#   It takes the file path, section name, and key as mandatory arguments.
+#   An optional 'default_value' can be provided.
+#
+#   The function first tries to read the key's value using 'shell::ini_read'.
+#   If 'shell::ini_read' successfully finds and returns a value (exit status 0),
+#   that value is echoed to standard output.
+#   If 'shell::ini_read' fails to find the key or encounters any other issue
+#   (e.g., file not found, section not found), the 'default_value' is echoed
+#   to standard output instead. If 'default_value' is not provided, an empty
+#   string is used as the default.
+#
+#   This function always returns 0 on completion (indicating that a value,
+#   either read or default, was provided), unless there are missing mandatory
+#   parameters.
+#
+# Example:
+#   # Read 'timeout' from 'Network' section, default to '30'
+#   TIMEOUT=$(shell::ini_get_or_default app.ini Network timeout 30)
+#   echo "Connection Timeout: $TIMEOUT seconds"
+#
+#   # Read 'feature_flag' or default to empty string
+#   FLAG=$(shell::ini_get_or_default settings.ini Features feature_flag)
+#   if [ "$FLAG" = "enabled" ]; then
+#     echo "Feature is ON."
+#   fi
+#
+# Returns:
+#   0 (success) if the function completes and provides a value (either read or default).
+#   1 (failure) if mandatory parameters (file, section, key) are missing.
+#   The retrieved value or default value is echoed to standard output.
+#
+# Notes:
+#   - 'shell::ini_read' error messages (e.g., "File not found", "Key not found") are
+#     suppressed to avoid clutter when a default value is being returned.
+#     This function provides its own consolidated logging.
+#   - Ensures cross-platform compatibility by relying on standard Bash features
+#     and existing cross-platform helper functions.
+shell::ini_get_or_default() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_INI_GET_OR_DEFAULT"
+        return 0
+    fi
+
+    local file="$1"
+    local section="$2"
+    local key="$3"
+    local default_value="${4:-}"
+
+    # Validate mandatory parameters. [cite: 10, 11]
+    if [ -z "$file" ] || [ -z "$section" ] || [ -z "$key" ]; then
+        shell::colored_echo "🔴 shell::ini_get_or_default: Missing required parameters: file, section, or key." 196
+        echo "Usage: shell::ini_get_or_default [-h] <file> <section> <key> [default_value]"
+        return 1
+    fi
+
+    local value
+    # Try to read the value, suppressing shell::ini_read's error output. [cite: 11]
+    value=$(shell::ini_read "$file" "$section" "$key" 2>/dev/null)
+    local read_status=$?
+
+    # Return the value if read successfully, otherwise return the default_value. [cite: 12, 13]
+    if [ $read_status -eq 0 ]; then
+        echo "$value"
+    else
+        echo "$default_value"
+    fi
+
+    return 0
+}
