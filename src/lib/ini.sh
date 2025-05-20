@@ -499,7 +499,7 @@ shell::ini_list_keys() {
 
     # Validate parameters
     if [ -z "$file" ] || [ -z "$section" ]; then
-        shell::colored_echo "shell::ini_list_keys: Missing required parameters" 196
+        shell::colored_echo "shell::ini_list_keys: Missing required parameters" 196 >&2
         echo "Usage: shell::ini_list_keys [-h] <file> <section>"
         return 1
     fi
@@ -511,7 +511,7 @@ shell::ini_list_keys() {
 
     # Check if file exists
     if [ ! -f "$file" ]; then
-        shell::colored_echo "File not found: $file" 196
+        shell::colored_echo "File not found: $file" 196 >&2
         return 1
     fi
 
@@ -519,31 +519,34 @@ shell::ini_list_keys() {
     local escaped_section
     escaped_section=$(shell::ini_escape_for_regex "$section")
     local section_pattern="^\[$escaped_section\]"
+    local any_section_pattern="^\[[^]]+\]" # Regex for any section header
     local in_section=0
 
-    # shell::colored_echo "Listing keys in section '$section' in file: $file" 11
-
     while IFS= read -r line; do
-        # Skip comments and empty lines
-        if [[ -z "$line" || "$line" =~ ^[[:space:]]*[#\;] ]]; then
+        local trimmed_line
+        trimmed_line=$(shell::ini_trim "$line") # Trim leading/trailing whitespace, including carriage returns
+
+        # Skip comments and empty lines (using trimmed_line)
+        if [[ -z "$trimmed_line" || "$trimmed_line" =~ ^[#\;] ]]; then
             continue
         fi
 
-        # Check for section
-        if [[ "$line" =~ $section_pattern ]]; then
+        # Check for section (using trimmed_line)
+        if [[ "$trimmed_line" =~ $section_pattern ]]; then
             in_section=1
             continue
         fi
 
-        # Check if we've moved to a different section
-        if [[ $in_section -eq 1 && "$line" =~ ^\[[^]]+\] ]]; then
+        # Check if we've moved to a different section (using trimmed_line)
+        if [[ $in_section -eq 1 && "$trimmed_line" =~ $any_section_pattern ]]; then
             break
         fi
 
         # Extract key name from current section
-        if [[ $in_section -eq 1 && "$line" =~ ^[[:space:]]*[^=]+= ]]; then
-            local key="${line%%=*}"
-            key=$(shell::ini_trim "$key")
+        # Ensure we are in the target section and the line looks like a key-value pair
+        if [[ $in_section -eq 1 && "$trimmed_line" =~ ^[^=]+= ]]; then
+            local key="${trimmed_line%%=*}" # Extract key part from trimmed line
+            key=$(shell::ini_trim "$key")   # Trim again for safety, though trimmed_line should be clean
             echo "$key"
         fi
     done <"$file"
