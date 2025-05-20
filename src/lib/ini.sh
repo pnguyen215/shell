@@ -517,7 +517,7 @@ shell::ini_list_keys() {
 
     # Escape section for regex pattern
     local escaped_section
-    escaped_section=$(farmers::ini_escape_for_regex "$section")
+    escaped_section=$(shell::ini_escape_for_regex "$section")
     local section_pattern="^\[$escaped_section\]"
     local any_section_pattern="^\[[^]]+\]"
     local in_section=0
