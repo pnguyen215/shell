@@ -1593,11 +1593,11 @@ shell::ini_sanitize_var_name() {
     echo "$input" | tr '[:lower:]' '[:upper:]' | sed -e 's/[^A-Z0-9_]/_/g'
 }
 
-# shell::ini_to_env function
+# shell::ini_expose_env function
 # Exports key-value pairs from an INI file as environment variables.
 #
 # Usage:
-#   shell::ini_to_env [-h] <file> [prefix] [section]
+#   shell::ini_expose_env [-h] <file> [prefix] [section]
 #
 # Parameters:
 #   - -h        : Optional. Displays this help message.
@@ -1630,7 +1630,7 @@ shell::ini_sanitize_var_name() {
 #   # host=localhost
 #   # user=db.user
 #   # pass=db.pass
-#   shell::ini_to_env db.ini DB_APP production
+#   shell::ini_expose_env db.ini DB_APP production
 #   echo $DB_APP_PRODUCTION_HOST # Outputs 'localhost'
 #
 # Returns:
@@ -1653,7 +1653,7 @@ shell::ini_sanitize_var_name() {
 #   - If a key's value cannot be read (e.g., key not found by ini_read), that
 #     specific key will be skipped in the export process, and a warning will be
 #     logged.
-shell::ini_to_env() {
+shell::ini_expose_env() {
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_INI_TO_ENV"
@@ -1666,8 +1666,8 @@ shell::ini_to_env() {
 
     # Validate required parameters.
     if [ -z "$file" ]; then
-        shell::colored_echo "🔴 shell::ini_to_env: Missing file parameter." 196
-        echo "Usage: shell::ini_to_env [-h] <file> [prefix] [section]"
+        shell::colored_echo "🔴 shell::ini_expose_env: Missing file parameter." 196
+        echo "Usage: shell::ini_expose_env [-h] <file> [prefix] [section]"
         return 1
     fi
 
@@ -1779,10 +1779,10 @@ shell::ini_to_env() {
 #
 # Description:
 #   This function serves to clean up environment variables that were previously
-#   populated using 'shell::ini_to_env'. It reconstructs the expected names of
+#   populated using 'shell::ini_expose_env'. It reconstructs the expected names of
 #   these environment variables by parsing the provided INI file (or a specified
 #   subset) and applying the same sanitization and prefixing logic as
-#   'shell::ini_to_env'.
+#   'shell::ini_expose_env'.
 #
 #   For each potential environment variable name, the function checks if it is
 #   currently set in the shell's environment. If found, the variable is
@@ -1795,7 +1795,7 @@ shell::ini_to_env() {
 #
 # Example:
 #   # To export variables from 'dev.ini' with prefix 'DEV_APP':
-#   # shell::ini_to_env dev.ini DEV_APP
+#   # shell::ini_expose_env dev.ini DEV_APP
 #   # To then destroy these variables:
 #   # shell::ini_destroy_keys dev.ini DEV_APP
 #
@@ -1808,7 +1808,7 @@ shell::ini_to_env() {
 #   - This function does not report individual errors if a variable was expected
 #     but not found or already unset; it simply proceeds.
 #   - The function's effectiveness relies on matching the naming convention of
-#     'shell::ini_to_env'.
+#     'shell::ini_expose_env'.
 #   - This function uses process substitution (`< <(...)`) for portability
 #     when iterating over lists of sections/keys, making it compatible with
 #     older Bash versions (e.g., Bash 3 on macOS) as well as newer ones.
