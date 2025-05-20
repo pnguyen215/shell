@@ -786,7 +786,10 @@ shell::ini_write() {
             # If we were in the target section and reached a new section,
             # and the key hasn't been handled yet, add it now at the end of the target section.
             if [ $in_target_section -eq 1 ] && [ $key_handled -eq 0 ]; then
-                echo "$key=$value" >>"$temp_file"
+                # Encode the value using Base64 and remove any newlines
+                local encoded_value
+                encoded_value=$(echo -n "$value" | base64 | tr -d '\n')
+                echo "$key=$encoded_value" >>"$temp_file"
                 key_handled=1 # Mark as added
             fi
 
@@ -814,7 +817,10 @@ shell::ini_write() {
             if [[ "$trimmed_line" =~ $key_pattern ]]; then
                 # If the key is found, write the updated line with the new value.
                 # No blank line added before the key-value pair.
-                echo "$key=$value" >>"$temp_file"
+                # Encode the value using Base64 and remove any newlines
+                local encoded_value
+                encoded_value=$(echo -n "$value" | base64 | tr -d '\n')
+                echo "$key=$encoded_value" >>"$temp_file"
                 key_handled=1 # Mark as updated
                 continue      # Skip the original line containing the old key-value pair
             fi
@@ -837,7 +843,10 @@ shell::ini_write() {
     # add the key-value pair at the end of the file (within that last section).
     if [ $in_target_section -eq 1 ] && [ $key_handled -eq 0 ]; then
         # No blank line added before the key-value pair at the end of the section.
-        echo "$key=$value" >>"$temp_file"
+        # Encode the value using Base64 and remove any newlines
+        local encoded_value
+        encoded_value=$(echo -n "$value" | base64 | tr -d '\n')
+        echo "$key=$encoded_value" >>"$temp_file"
         key_handled=1 # Mark as added
     fi
 
