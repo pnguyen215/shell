@@ -66,7 +66,8 @@ shell::ini_read() {
     local section_pattern="^\[$escaped_section\]"
     local any_section_pattern="^\[[^]]+\]" # Regex for any section header
     local in_target_section=0
-
+    local os_type=$(shell::get_os_type)
+    local decoded_value
     # shell::colored_echo "🔵 Reading key '$key' from section '$section' in file: $file" 11
 
     while IFS= read -r line || [ -n "$line" ]; do
@@ -112,7 +113,12 @@ shell::ini_read() {
                 fi
 
                 # shell::colored_echo "🟢 Found value for key '$key'." 46
-                echo "$value"
+                if [ "$os_type" = "macos" ]; then
+                    decoded_value=$(echo "$value" | base64 -D)
+                else
+                    decoded_value=$(echo "$value" | base64 -d)
+                fi
+                echo "$decoded_value"
                 return 0
             fi
         fi
