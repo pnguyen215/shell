@@ -173,6 +173,7 @@ shell::ini_validate_section_name() {
 
     if [ -z "$section" ]; then
         shell::colored_echo "🔴 Section name cannot be empty" 196
+        echo "Usage: shell::ini_validate_section_name [-h] <section_name>"
         return 1
     fi
 
@@ -232,6 +233,7 @@ shell::ini_validate_key_name() {
 
     if [ -z "$key" ]; then
         shell::colored_echo "🔴 Key name cannot be empty" 196
+        echo "Usage: shell::ini_validate_key_name [-h] <key_name>"
         return 1
     fi
 
@@ -350,7 +352,7 @@ shell::ini_escape_for_regex() {
 # Validates the existence and write ability of a specified file, creating it if necessary.
 #
 # Usage:
-#   shell::ini_check_file <file>
+#   shell::ini_check_file [-h] <file>
 #
 # Parameters:
 #   - <file> : The path to the file to check or create.
@@ -375,6 +377,7 @@ shell::ini_check_file() {
     # Check if file parameter is provided
     if [ -z "$file" ]; then
         shell::colored_echo "File path is required" 196
+        echo "Usage: shell::ini_check_file [-h] <file>"
         return 1
     fi
 
@@ -443,6 +446,7 @@ shell::ini_list_sections() {
     # Validate parameters
     if [ -z "$file" ]; then
         shell::colored_echo "shell::ini_list_sections: Missing file parameter" 196
+        echo "Usage: shell::ini_list_sections [-h] <file>"
         return 1
     fi
 
@@ -496,6 +500,7 @@ shell::ini_list_keys() {
     # Validate parameters
     if [ -z "$file" ] || [ -z "$section" ]; then
         shell::colored_echo "shell::ini_list_keys: Missing required parameters" 196
+        echo "Usage: shell::ini_list_keys [-h] <file> <section>"
         return 1
     fi
 
@@ -578,6 +583,7 @@ shell::ini_section_exists() {
     # Validate parameters
     if [ -z "$file" ] || [ -z "$section" ]; then
         shell::colored_echo "shell::ini_section_exists: Missing required parameters" 196
+        echo "Usage: shell::ini_section_exists [-h] <file> <section>"
         return 1
     fi
 
@@ -641,6 +647,7 @@ shell::ini_add_section() {
 
     if [ -z "$file" ] || [ -z "$section" ]; then
         shell::colored_echo "shell::ini_add_section: Missing required parameters" 196
+        echo "Usage: shell::ini_add_section [-h] <file> <section>"
         return 1
     fi
 
@@ -710,6 +717,7 @@ shell::ini_write() {
     # Validate parameters
     if [ -z "$file" ] || [ -z "$section" ] || [ -z "$key" ]; then
         shell::colored_echo "shell::ini_write: Missing required parameters" 196
+        echo "Usage: shell::ini_write [-h] <file> <section> <key> <value>"
         return 1
     fi
 
@@ -893,6 +901,7 @@ shell::ini_remove_section() {
     # Validate required parameters: file path and section name.
     if [ -z "$file" ] || [ -z "$section" ]; then
         shell::colored_echo "shell::ini_remove_section: Missing required parameters" 196
+        echo "Usage: shell::ini_remove_section [-h] <file> <section>"
         return 1
     fi
 
