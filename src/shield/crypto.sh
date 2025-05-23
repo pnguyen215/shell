@@ -76,8 +76,8 @@ shell::generate_random_key() {
 #   and validates the key length. The function is compatible with both macOS and Linux.
 #
 # Example:
-#   shell::encode::aes256cbc "sensitive data" "my32bytekey12345678901234567890"  # Encrypts with specified key
-#   export SHELL_SHIELD_ENCRYPTION_KEY="my32bytekey12345678901234567890"
+#   shell::encode::aes256cbc "sensitive data" "my32byteKey12345678901234567890"  # Encrypts with specified key
+#   export SHELL_SHIELD_ENCRYPTION_KEY="my32byteKey12345678901234567890"
 #   shell::encode::aes256cbc "sensitive data"  # Encrypts with SHELL_SHIELD_ENCRYPTION_KEY
 #
 # Returns:
@@ -107,11 +107,11 @@ shell::encode::aes256cbc() {
 
     # Use SHELL_SHIELD_ENCRYPTION_KEY if no key is provided
     if [ -z "$key" ]; then
-        if [ -z "$SHELL_SHIELD_ENCRYPTION_KEY" ]; then
-            shell::colored_echo "🔴 shell::encode::aes256cbc: No encryption key provided and SHELL_SHIELD_ENCRYPTION_KEY is not set" 196 >&2
-            return 1
+        local hasKey=$(shell::exist_key_conf "SHELL_SHIELD_ENCRYPTION_KEY")
+        if [ "$hasKey" = "false" ]; then
+            shell::add_conf "SHELL_SHIELD_ENCRYPTION_KEY" "$(shell::generate_random_key 32)"
         fi
-        key="$SHELL_SHIELD_ENCRYPTION_KEY"
+        key=$(shell::get_value_conf "SHELL_SHIELD_ENCRYPTION_KEY")
     fi
 
     # Validate key length (32 bytes for AES-256)
@@ -126,8 +126,7 @@ shell::encode::aes256cbc() {
         return 1
     fi
 
-    local os_type
-    os_type=$(shell::get_os_type)
+    local os_type=$(shell::get_os_type)
 
     # Encrypt the value string and encode in Base64
     local encrypted
@@ -138,12 +137,13 @@ shell::encode::aes256cbc() {
     fi
 
     if [ $? -ne 0 ]; then
-        shell::colored_echo "🔴 shell::encode::aes256cbc: Encryption failed" 196 >&2
+        shell::colored_echo "🔴 shell::encode::aes256cbc: Encryption failed. Please check your key and try again." 196 >&2
         return 1
     fi
 
     # Remove newlines from Base64 output
     encrypted=$(echo -n "$encrypted" | tr -d '\n')
     echo "$encrypted"
+    shell::clip_value "$encrypted"
     return 0
 }
