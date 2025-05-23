@@ -8,6 +8,7 @@
     "auxwww",
     "bunzip",
     "cecho",
+    "ciphertext",
     "createfileifnotexists",
     "dotglob",
     "ensurepip",
