@@ -202,7 +202,7 @@ shell::decode::aes256cbc() {
         fi
         key=$(shell::get_value_conf "SHELL_SHIELD_ENCRYPTION_KEY")
     fi
-
+    echo "key: $key"
     # Validate key length (32 bytes for AES-256)
     if [ ${#key} -ne 32 ]; then
         shell::colored_echo "🔴 shell::decode::aes256cbc: Encryption key must be exactly 32 bytes" 196 >&2
