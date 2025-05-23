@@ -3250,3 +3250,37 @@ Notes:
     provides its own feedback regarding value retrieval or default usage.
   - Console logging is used for status updates.
 "
+
+USAGE_SHELL_ENCODE_AES256CBC="
+shell::encode::aes256cbc function
+Encrypts a string using AES-256-CBC with OpenSSL.
+
+Usage:
+  shell::encode::aes256cbc [-h] <string> [key]  
+
+Parameters:
+  - -h        : Optional. Displays this help message.
+  - <string>  : The string to encrypt.
+  - [key]     : Optional. The encryption key (32 bytes for AES-256). If not provided, uses SHELL_SHIELD_ENCRYPTION_KEY.
+
+Description:
+  This function encrypts the input string using AES-256-CBC with OpenSSL, using either the provided key
+  or the SHELL_SHIELD_ENCRYPTION_KEY environment variable. The encrypted output is Base64-encoded for safe storage
+  in configuration files, aligning with the library's existing Base64 usage. It checks for OpenSSL availability
+  and validates the key length. The function is compatible with both macOS and Linux. 
+"
+
+USAGE_SHELL_GENERATE_RANDOM_KEY="
+shell::generate_random_key function
+Generates a random encryption key of specified length (in bytes) and outputs it to standard output.
+
+Usage:
+  shell::generate_random_key [-h] [bytes]
+
+Parameters:
+  - -h        : Optional. Displays this help message.
+  - [bytes]   : Optional. The length of the key to generate, in bytes. Defaults to 32 bytes.
+
+Description:
+  This function uses OpenSSL to generate a random key of the specified length in hexadecimal format.
+"
