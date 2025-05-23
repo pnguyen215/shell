@@ -131,9 +131,9 @@ shell::encode::aes256cbc() {
     # Encrypt the value string and encode in Base64
     local encrypted
     if [ "$os_type" = "macos" ]; then
-        encrypted=$(echo -n "$value" | openssl enc -aes-256-cbc -a -salt -pass pass:"$key" 2>/dev/null)
+        encrypted=$(echo -n "$value" | openssl enc -aes-256-cbc -a -salt -k "$key" 2>/dev/null)
     else
-        encrypted=$(echo -n "$value" | openssl enc -aes-256-cbc -base64 -salt -pass pass:"$key" 2>/dev/null)
+        encrypted=$(echo -n "$value" | openssl enc -aes-256-cbc -base64 -salt -k "$key" 2>/dev/null)
     fi
 
     if [ $? -ne 0 ]; then
@@ -198,7 +198,8 @@ shell::decode::aes256cbc() {
     if [ -z "$key" ]; then
         local hasKey=$(shell::exist_key_conf "SHELL_SHIELD_ENCRYPTION_KEY")
         if [ "$hasKey" = "false" ]; then
-            shell::add_conf "SHELL_SHIELD_ENCRYPTION_KEY" "$(shell::generate_random_key 16)"
+            shell::colored_echo "🔴 shell::decode::aes256cbc: SHELL_SHIELD_ENCRYPTION_KEY is not set. Please set it or provide a key." 196 >&2
+            return 1
         fi
         key=$(shell::get_value_conf "SHELL_SHIELD_ENCRYPTION_KEY")
     fi
@@ -220,9 +221,9 @@ shell::decode::aes256cbc() {
     # Decode the Base64-encoded string and decrypt it
     local decrypted
     if [ "$os_type" = "macos" ]; then
-        decrypted=$(echo -n "$value" | openssl enc -aes-256-cbc -d -a -salt -pass pass:"$key" 2>/dev/null)
+        decrypted=$(echo -n "$value" | openssl enc -aes-256-cbc -d -a -salt -k "$key" 2>/dev/null)
     else
-        decrypted=$(echo -n "$value" | openssl enc -aes-256-cbc -d -base64 -salt -pass pass:"$key" 2>/dev/null)
+        decrypted=$(echo -n "$value" | openssl enc -aes-256-cbc -d -base64 -salt -k "$key" 2>/dev/null)
     fi
 
     if [ $? -ne 0 ]; then
