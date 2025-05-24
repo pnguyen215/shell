@@ -2063,14 +2063,27 @@ shell::ini_get_or_default() {
 #     shell::ini_escape_for_regex, shell::ini_validate_section_name, and shell::run_cmd_eval.
 shell::ini_rename_section() {
     local dry_run="false"
+    local opt_h_found="false"
 
-    # Check for the optional dry-run flag (-n)
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+    # Process options: -n and -h
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+        -n)
+            dry_run="true"
+            shift # Consume -n
+            ;;
+        -h)
+            opt_h_found="true"
+            shift # Consume -h
+            ;;
+        *)
+            break # End of options
+            ;;
+        esac
+    done
 
-    if [ "$1" = "-h" ]; then
+    # If -h was found, display usage and exit immediately regardless of other args
+    if [ "$opt_h_found" = "true" ]; then
         echo "$USAGE_SHELL_INI_RENAME_SECTION"
         return 0
     fi
