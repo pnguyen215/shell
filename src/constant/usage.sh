@@ -3398,3 +3398,19 @@ Parameters:
 Description:
   This function clones a section from one INI file to another using fzf.
 "
+
+USAGE_SHELL_FZF_REMOVE_SECTIONS="
+shell::fzf_remove_sections function
+Interactively removes sections from an INI file using fzf.
+
+Usage:
+  shell::fzf_remove_sections [-n] [-h] <file>
+
+Parameters:
+  - -n        : Optional. Dry-run mode. Prints the command without executing it.
+  - -h        : Optional. Displays this help message.
+  - <file>    : The path to the INI file.
+
+Description:
+  This function removes sections from an INI file using fzf.
+"

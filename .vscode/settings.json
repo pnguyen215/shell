@@ -29,6 +29,7 @@
     "setuptools",
     "shell::opent",
     "softprops",
+    "tmpbak",
     "toplevel",
     "tput",
     "unrar",

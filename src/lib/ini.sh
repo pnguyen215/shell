@@ -2513,3 +2513,168 @@ shell::fzf_ini_clone_section() {
 
     return $?
 }
+
+# shell::fzf_remove_sections function
+# Interactively selects multiple sections to remove from an INI file using fzf.
+#
+# Usage:
+#   shell::fzf_remove_sections [-n] [-h] <file>
+#
+# Parameters:
+#   - -n        : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+#   - -h        : Optional help flag. Displays this help message.
+#   - <file>    : The path to the INI file.
+#
+# Description:
+#   This function first ensures fzf is installed. It then lists all sections in the
+#   given INI file and uses fzf to allow the user to interactively select one or
+#   more sections for removal. After selection, it proceeds to remove the selected
+#   sections and their contents from the INI file.
+#   The function handles dry-run mode, where it only prints the commands that would be executed.
+#
+# Example:
+#   shell::fzf_remove_sections config.ini   # Interactively remove sections.
+#   shell::fzf_remove_sections -n config.ini # Dry-run: show commands to remove sections.
+#
+# Returns:
+#   0 on success, 1 on failure (e.g., missing parameters, file not found, no section selected).
+#
+# Notes:
+#   - Relies on shell::colored_echo, shell::install_package, shell::ini_list_sections,
+#     shell::run_cmd_eval, shell::on_evict, and shell::ini_escape_for_regex.
+#   - Uses fzf's multi-select feature (TAB key) for selecting multiple sections.
+shell::fzf_remove_sections() {
+    local dry_run="false"
+
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_REMOVE_SECTIONS"
+        return 0
+    fi
+
+    # Check for the optional dry-run flag (-n)
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    # Validate required parameters
+    if [ $# -lt 1 ]; then
+        shell::colored_echo "🔴 shell::fzf_remove_sections: Missing file parameter." 196
+        echo "Usage: shell::fzf_remove_sections [-n] [-h] <file>"
+        return 1
+    fi
+
+    local file="$1"
+
+    # Check if file exists
+    if [ ! -f "$file" ]; then
+        shell::colored_echo "🔴 File not found: $file" 196
+        return 1
+    fi
+
+    # Ensure fzf is installed.
+    shell::install_package fzf || {
+        shell::colored_echo "🔴 Error: fzf is required but could not be installed." 196
+        return 1
+    }
+
+    # Get the list of sections and use fzf to select multiple sections.
+    # --multi enables multi-selection with TAB
+    local selected_sections
+    selected_sections=$(shell::ini_list_sections "$file" | fzf --multi --prompt="Select sections to remove (TAB to select multiple): ")
+
+    # Check if any sections were selected.
+    if [ -z "$selected_sections" ]; then
+        shell::colored_echo "🟡 No sections selected for removal. Aborting." 33
+        return 0
+    fi
+
+    shell::colored_echo "Selected sections for removal:" 11
+    echo "$selected_sections" | while IFS= read -r section; do
+        shell::colored_echo "  - $section" 11
+    done
+
+    shell::colored_echo "Proceed with removal? (y/N)" 220
+    read -r confirm
+    if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+        shell::colored_echo "Removal cancelled." 196
+        return 1
+    fi
+
+    local temp_file
+    temp_file=$(shell::ini_create_temp_file)
+    local section_removed_flag=0
+
+    # Read the file and filter out selected sections
+    while IFS= read -r line || [ -n "$line" ]; do
+        local trimmed_line
+        trimmed_line="$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+
+        local is_section_header=0
+        local current_section=""
+
+        # Check if the line is a section header
+        if [[ "$trimmed_line" =~ ^\[[^]]+\]$ ]]; then
+            is_section_header=1
+            current_section="${trimmed_line%\]}"
+            current_section="${current_section#\[}"
+        fi
+
+        # Check if the current line (or subsequent lines if within a selected section) should be removed
+        local remove_this_line=0
+        if [ "$is_section_header" -eq 1 ]; then
+            # Check if the current section header is in the list of sections to remove
+            if echo "$selected_sections" | grep -q "^${current_section}$"; then
+                section_removed_flag=1 # Start removing lines from this section
+                remove_this_line=1
+            else
+                section_removed_flag=0 # Not in a section to be removed
+            fi
+        elif [ "$section_removed_flag" -eq 1 ]; then
+            # We are currently inside a section that is being removed, so remove this line
+            remove_this_line=1
+        fi
+
+        # If the line should not be removed, write it to the temporary file
+        if [ "$remove_this_line" -eq 0 ]; then
+            echo "$line" >>"$temp_file"
+        fi
+    done <"$file"
+
+    # Remove any extra blank lines that might result from section removal
+    # This sed command removes leading/trailing blank lines, and collapses multiple blank lines to one
+    local clean_temp_cmd="sed -i.bak -e '/^[[:space:]]*$/d' -e :a -e '/^\n*$/{$d;N;ba' -e '}' \"$temp_file\""
+    # Note: sed -i.bak creates a backup file. macOS requires an extension. Linux can use -i without it.
+    # To make it truly cross-platform without .bak, could mv the file around.
+    # For now, using .bak which is generally safer.
+
+    # Remove the backup file after cleaning
+    local remove_bak_cmd="rm -f \"${temp_file}.bak\""
+
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "$clean_temp_cmd"
+        shell::on_evict "$remove_bak_cmd"
+        shell::on_evict "mv \"$temp_file\" \"$file\""
+    else
+        # Clean up the temporary file for aesthetic purposes (e.g., empty lines between sections)
+        local os_type
+        os_type=$(shell::get_os_type)
+
+        if [ "$os_type" = "macos" ]; then
+            shell::run_cmd_eval "sed -i '.tmpbak' -e '/^[[:space:]]*$/d' -e :a -e '/^\n*$/{$d;N;ba' -e '}' \"$temp_file\""
+            shell::run_cmd_eval "rm -f \"${temp_file}.tmpbak\""
+        else
+            shell::run_cmd_eval "sed -i -e '/^[[:space:]]*$/d' -e :a -e '/^\n*$/{$d;N;ba' -e '}' \"$temp_file\""
+        fi
+
+        # Replace the original file with the modified temp file
+        shell::run_cmd_eval "mv \"$temp_file\" \"$file\""
+        if [ $? -eq 0 ]; then
+            shell::colored_echo "🟢 Successfully removed selected sections from '$file'." 46
+            return 0
+        else
+            shell::colored_echo "🔴 Error removing sections or replacing the original file." 196
+            return 1
+        fi
+    fi
+}
