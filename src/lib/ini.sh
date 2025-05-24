@@ -2341,102 +2341,79 @@ shell::ini_clone_section() {
 
     shell::colored_echo "Cloning section '$source_section' to '$destination_section' in file: $file" 11
 
+    local escaped_source_section
+    escaped_source_section=$(shell::ini_escape_for_regex "$source_section")
+    local source_section_start_pattern="^\[$escaped_source_section\]"
+    local any_section_pattern="^\[[^]]+\]"
+
+    local in_source_section_to_clone=0
+    local cloned_section_content=""
     local temp_file
     temp_file=$(shell::ini_create_temp_file)
 
-    local escaped_source_section
-    escaped_source_section=$(shell::ini_escape_for_regex "$source_section")
-    local source_section_pattern="^\[$escaped_source_section\]"
-    local any_section_pattern="^\[[^]]+\]"
-
-    local in_source_section=0
-    local cloned_content=() # Array to store lines of the source section
-
-    # First pass: Read the file and capture the content of the source section
+    # Read original file line by line to capture content and build the new file
     while IFS= read -r line || [ -n "$line" ]; do
         local trimmed_line
         trimmed_line="$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
 
-        if [[ "$trimmed_line" =~ $any_section_pattern ]]; then
-            if [[ "$trimmed_line" =~ $source_section_pattern ]]; then
-                in_source_section=1
-                continue # Do not add the section header itself to cloned_content yet
-            elif [ "$in_source_section" -eq 1 ]; then
-                # We've moved out of the source section
-                in_source_section=0
-            fi
-        fi
-
-        if [ "$in_source_section" -eq 1 ]; then
-            cloned_content+=("$line")
-        fi
-    done <"$file"
-
-    local os_type
-    os_type=$(shell::get_os_type)
-
-    local in_target_section_area=0 # Flag to know if we are in the area where new section should be added
-    local added_new_section=0      # Flag to ensure we add the new section only once
-
-    # Second pass: Write to temp file, inserting the cloned section
-    while IFS= read -r line || [ -n "$line" ]; do
-        local trimmed_line
-        trimmed_line="$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-
-        if [[ "$trimmed_line" =~ $source_section_pattern ]]; then
-            in_target_section_area=1
-            echo "$line" >>"$temp_file" # Write the original source section
+        # Detect start of source section
+        if [[ "$trimmed_line" =~ $source_section_start_pattern ]]; then
+            in_source_section_to_clone=1
+            echo "$line" >>"$temp_file" # Write original section header
             continue
-        elif [[ "$trimmed_line" =~ $any_section_pattern ]]; then
-            if [ "$in_target_section_area" -eq 1 ] && [ "$added_new_section" -eq 0 ]; then
-                # Add the cloned section before the next section
-                # Add a blank line before the new section unless the temp file is currently empty.
-                if [ -s "$temp_file" ]; then
-                    echo "" >>"$temp_file"
+        fi
+
+        # Detect end of source section or beginning of new section for content capture
+        if [ "$in_source_section_to_clone" -eq 1 ]; then
+            if [[ "$trimmed_line" =~ $any_section_pattern ]]; then
+                # We hit a new section, so the source section content ended here.
+                in_source_section_to_clone=0
+            else
+                # Still inside the source section, add to cloned content.
+                # Only add non-empty, non-comment lines to the cloned content.
+                if [[ -n "$trimmed_line" && ! "$trimmed_line" =~ ^[[:space:]]*[#\;] ]]; then
+                    cloned_section_content+="$line\n"
                 fi
-                echo "[$destination_section]" >>"$temp_file"
-                for cloned_line in "${cloned_content[@]}"; do
-                    echo "$cloned_line" >>"$temp_file"
-                done
-                added_new_section=1
             fi
-            in_target_section_area=0
-            echo "$line" >>"$temp_file" # Write the other section header
-            continue
         fi
-
-        if [ "$in_source_section" -eq 1 ]; then
-            # We are past the source section header but still reading its content,
-            # so we let the loop continue to the next section or end of file.
-            : # Do nothing, content is handled in first pass
-        else
-            echo "$line" >>"$temp_file" # Write lines outside sections or not part of the source section
-        fi
+        # Always write the original line to the temp file to reconstruct the original content
+        echo "$line" >>"$temp_file"
     done <"$file"
 
-    # If the source section was the last section in the file and we haven't added the new section yet
-    if [ "$added_new_section" -eq 0 ]; then
-        # Add a blank line before the new section unless the temp file is currently empty.
-        if [ -s "$temp_file" ]; then
-            echo "" >>"$temp_file"
-        fi
-        echo "[$destination_section]" >>"$temp_file"
-        for cloned_line in "${cloned_content[@]}"; do
-            echo "$cloned_line" >>"$temp_file"
-        done
+    # Append the new cloned section at the end of the temp file
+    local append_cloned_section_cmd=""
+    if [ -s "$temp_file" ]; then # Add a blank line only if the file isn't empty already
+        append_cloned_section_cmd+="echo \"\" >>\"$temp_file\" && "
+    fi
+    append_cloned_section_cmd+="echo \"[$destination_section]\" >>\"$temp_file\""
+
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "$append_cloned_section_cmd"
+    else
+        eval "$append_cloned_section_cmd"
     fi
 
+    # Append the accumulated content for the cloned section
+    if [ -n "$cloned_section_content" ]; then
+        local append_cloned_content_cmd="echo -e \"${cloned_section_content%\\n}\" >>\"$temp_file\"" # Remove trailing newline
+        if [ "$dry_run" = "true" ]; then
+            shell::on_evict "$append_cloned_content_cmd"
+        else
+            eval "$append_cloned_content_cmd"
+        fi
+    fi
+
+    # Atomically replace the original file with the modified temporary file
     local replace_cmd="mv \"$temp_file\" \"$file\""
     if [ "$dry_run" = "true" ]; then
         shell::on_evict "$replace_cmd"
-        shell::colored_echo "🟢 Dry-run: Would have cloned section '$source_section' to '$destination_section'." 46
     else
         shell::run_cmd_eval "$replace_cmd"
         if [ $? -eq 0 ]; then
             shell::colored_echo "🟢 Successfully cloned section '$source_section' to '$destination_section'." 46
             return 0
         else
-            shell::colored_echo "🔴 Error cloning section '$source_section' to '$destination_section'." 196
+            shell::colored_echo "🔴 Error replacing the original file after section clone." 196
             return 1
         fi
     fi
