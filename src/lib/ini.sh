@@ -2580,18 +2580,21 @@ shell::fzf_ini_remove_sections() {
 
     # Get the list of sections and use fzf to select multiple sections.
     # --multi enables multi-selection with TAB
-    local selected_sections
-    selected_sections=$(shell::ini_list_sections "$file" | fzf --multi --prompt="Select sections to remove (TAB to select multiple): ")
+    local selected_sections_raw
+    selected_sections_raw=$(shell::ini_list_sections "$file" | fzf --multi --prompt="Select sections to remove (TAB to select multiple): ")
 
     # Check if any sections were selected.
-    if [ -z "$selected_sections" ]; then
+    if [ -z "$selected_sections_raw" ]; then
         shell::colored_echo "🟡 No sections selected for removal. Aborting." 33
         return 0
     fi
 
+    # Convert selected_sections_raw (multiline string) into a bash array for easier iteration.
+    IFS=$'\n' read -r -d '' -a selected_sections_array <<<"$selected_sections_raw"
+
     shell::colored_echo "Selected sections for removal:" 11
-    echo "$selected_sections" | while IFS= read -r section; do
-        shell::colored_echo "  - $section" 11
+    for section_to_remove in "${selected_sections_array[@]}"; do
+        shell::colored_echo "  - $section_to_remove" 11
     done
 
     shell::colored_echo "Proceed with removal? (y/N)" 220
@@ -2605,7 +2608,7 @@ shell::fzf_ini_remove_sections() {
     temp_file=$(shell::ini_create_temp_file)
     local in_section_to_remove=0
 
-    # Read the file and filter out selected sections and their content
+    # Read the file line by line and write to a temporary file, skipping selected sections
     while IFS= read -r line || [ -n "$line" ]; do
         local trimmed_line
         trimmed_line="$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
@@ -2620,52 +2623,71 @@ shell::fzf_ini_remove_sections() {
             current_section_name="${current_section_name#\[}"
         fi
 
-        # Determine if we are currently inside a section that needs to be removed
+        # Determine if the current line should be removed
+        local should_remove_this_line=0
         if [ "$is_section_header" -eq 1 ]; then
-            # If the current section is one of the selected ones for removal
-            if echo "$selected_sections" | grep -q "^${current_section_name}$"; then
-                in_section_to_remove=1
-            else
+            # Check if the current section header is one of the selected sections to remove
+            for section_to_remove in "${selected_sections_array[@]}"; do
+                if [ "$current_section_name" = "$section_to_remove" ]; then
+                    in_section_to_remove=1 # Start skipping lines
+                    should_remove_this_line=1
+                    break
+                fi
+            done
+            # If it's a section header not marked for removal, stop skipping
+            if [ "$should_remove_this_line" -eq 0 ]; then
                 in_section_to_remove=0
             fi
         fi
 
-        # If we are not in a section to be removed, write the line to the temp file
-        if [ "$in_section_to_remove" -eq 0 ]; then
-            echo "$line" >>"$temp_file"
+        # If currently in a section to be removed, skip this line
+        if [ "$in_section_to_remove" -eq 1 ]; then
+            continue
         fi
+
+        # Write the line to temp_file if it's not part of a removed section
+        echo "$line" >>"$temp_file"
+
     done <"$file"
 
-    # Post-process the temporary file to remove excessive blank lines
-    # This sed command removes all blank lines. We might need a slightly more nuanced approach
-    # if original INI formatting with single blank lines between sections is critical.
-    # For now, this is safer to avoid the unescaped newline error.
-    local clean_temp_cmd_part1="grep -v '^[[:space:]]*$' \"$temp_file\""                                # Remove all empty lines
-    local clean_temp_cmd_part2="awk 'NF { if (p) print \"\"; print $0 } {p=NF}' > \"${temp_file}.tmp\"" # Ensure single blank lines between content blocks
+    # After processing, clean up blank lines from the temporary file.
+    # This uses a simpler sed command to remove only truly empty lines, which is more cross-platform.
+    # We will then collapse multiple empty lines into one.
+    local os_type
+    os_type=$(shell::get_os_type)
 
-    # Replace the temp_file with its cleaned version
-    local replace_cleaned_temp_cmd="mv \"${temp_file}.tmp\" \"$temp_file\""
+    local clean_temp_cmd_part1="sed -e '/^[[:space:]]*$/d'" # Remove all blank lines
+    local clean_temp_cmd_part2=""
+    local clean_temp_cmd_part3="sed -e '/./!d' -e '$!N; /^\n$/!P; D'" # Collapse multiple blank lines to one
+
+    if [ "$os_type" = "macos" ]; then
+        local sed_i_arg="-i ''" # BSD sed requires a backup extension
+    else
+        local sed_i_arg="-i" # GNU sed
+    fi
+
+    # The actual command string to execute for cleaning
+    local final_clean_cmd="${clean_temp_cmd_part1} ${temp_file} | ${clean_temp_cmd_part3} ${sed_i_arg} ${temp_file}"
+    # This chain is problematic for in-place edit, `sed -i` cannot take input from pipe.
+    # A safer way is to use a second temp file for the cleaning step.
+
+    local cleaned_temp_file=$(shell::ini_create_temp_file)
 
     if [ "$dry_run" = "true" ]; then
-        shell::on_evict "$clean_temp_cmd_part1 | $clean_temp_cmd_part2"
-        shell::on_evict "$replace_cleaned_temp_cmd"
-        shell::on_evict "mv \"$temp_file\" \"$file\""
+        shell::on_evict "cat \"$temp_file\" | sed -e '/^[[:space:]]*$/d' | sed -e '/./!d' -e '\$!N; /^\n$/!P; D' > \"$cleaned_temp_file\""
+        shell::on_evict "mv \"$cleaned_temp_file\" \"$file\""
+        shell::on_evict "rm -f \"$temp_file\"" # Clean up the initial temp file
     else
-        # Execute the cleaning commands
-        if ! eval "$clean_temp_cmd_part1 | $clean_temp_cmd_part2"; then
-            shell::colored_echo "🔴 Error during temporary file cleaning." 196
-            rm -f "$temp_file" "${temp_file}.tmp" # Clean up temporary files
-            return 1
-        fi
+        # Perform the cleaning: remove blank lines, then collapse multiple blanks to one.
+        # This requires piping, so we output to cleaned_temp_file first, then move.
+        cat "$temp_file" | sed -e '/^[[:space:]]*$/d' | sed -e '/./!d' -e '$!N; /^\n$/!P; D' >"$cleaned_temp_file" 2>/dev/null
 
-        if ! eval "$replace_cleaned_temp_cmd"; then
-            shell::colored_echo "🔴 Error replacing cleaned temporary file." 196
-            rm -f "$temp_file" "${temp_file}.tmp"
-            return 1
-        fi
+        # Replace the original file with the final cleaned temporary file
+        shell::run_cmd_eval "mv \"$cleaned_temp_file\" \"$file\""
 
-        # Atomically replace the original file with the modified temp file
-        shell::run_cmd_eval "mv \"$temp_file\" \"$file\""
+        # Clean up the initial temporary file
+        rm -f "$temp_file"
+
         if [ $? -eq 0 ]; then
             shell::colored_echo "🟢 Successfully removed selected sections from '$file'." 46
             return 0
