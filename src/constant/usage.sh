@@ -3303,3 +3303,26 @@ Description:
   This function decodes the Base64-encoded input string and decrypts it using AES-256-CBC with OpenSSL,
   using either the provided key or the SHELL_SHIELD_ENCRYPTION_KEY environment variable.
 "
+
+USAGE_SHELL_CRYPTOGRAPHY_CREATE_PASSWORD_HASH="
+shell::cryptography::create_password_hash function
+Creates a password hash using a specified OpenSSL algorithm.
+
+Usage:
+  shell::cryptography::create_password_hash [-h] <algorithm> <password>
+
+Parameters:
+  - -h          : Optional. Displays this help message.
+  - <algorithm> : Hashing algorithm (e.g., a, B, B2, 5, 6 for MD5, Blowfish, bcrypt, SHA256, SHA512 based hashes).
+                  Refer to (man openssl passwd) for supported algorithms and their identifiers.
+  - <password>  : The password to hash.
+
+Description:
+  This function uses (openssl passwd) to generate a cryptographic hash of a password.
+  It supports various algorithms, including modern secure hashing algorithms like bcrypt
+  (identified by 'B' or 'B2') and SHA-based hashes ('5' for SHA256, '6' for SHA512).
+  The output includes the salt and the hashed password, suitable for storage.
+
+Example:
+  hashed_pass=(shell::cryptography::create_password_hash B "MySecurePassword123!") # Uses bcrypt
+"

@@ -250,3 +250,71 @@ shell::decode::aes256cbc() {
     shell::clip_value "$decrypted"
     return 0
 }
+
+# shell::cryptography::create_password_hash function
+# Creates a password hash using a specified OpenSSL algorithm.
+#
+# Usage:
+#   shell::cryptography::create_password_hash [-h] <algorithm> <password>
+#
+# Parameters:
+#   - -h         : Optional. Displays this help message.
+#   - <algorithm>: Hashing algorithm (e.g., a, B, B2, 5, 6 for MD5, Blowfish, bcrypt, SHA256, SHA512 based hashes).
+#                  Refer to `man openssl passwd` for supported algorithms and their identifiers.
+#   - <password> : The plain text password to hash.
+#
+# Description:
+#   This function uses `openssl passwd` to generate a cryptographic hash of a password.
+#   It supports various algorithms, including modern secure hashing algorithms like bcrypt
+#   (identified by 'B' or 'B2') and SHA-based hashes ('5' for SHA256, '6' for SHA512).
+#   The output includes the salt and the hashed password, suitable for storage.
+#
+# Example:
+#   hashed_pass=$(shell::cryptography::create_password_hash B "MySecurePassword123!") # Uses bcrypt
+#   echo "Hashed password (bcrypt): $hashed_pass"
+#
+#   hashed_pass_sha256=$(shell::cryptography::create_password_hash 5 "AnotherPassword") # Uses SHA256
+#   echo "Hashed password (SHA256): $hashed_pass_sha256"
+#
+# Returns:
+#   The hashed password string on success, or an error message on failure.
+#
+# Notes:
+#   - Requires OpenSSL to be installed.
+#   - The 'algorithm' parameter directly corresponds to the flags used with `openssl passwd`.
+#     It's crucial to select a strong, modern hashing algorithm.
+#   - The function handles prompting for password if not provided directly, but this function
+#     expects it as an argument for automation.
+shell::cryptography::create_password_hash() {
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_CRYPTOGRAPHY_CREATE_PASSWORD_HASH"
+        return 0
+    fi
+
+    local algorithm="$1"
+    local password="$2"
+
+    if [ -z "$algorithm" ] || [ -z "$password" ]; then
+        shell::colored_echo "🔴 shell::cryptography::create_password_hash: Missing required parameters." 196 >&2
+        echo "Usage: shell::cryptography::create_password_hash [-h] <algorithm> <password>"
+        return 1
+    fi
+
+    if ! shell::is_command_available openssl; then
+        shell::colored_echo "🔴 shell::cryptography::create_password_hash: OpenSSL is not installed." 196 >&2
+        return 1
+    fi
+
+    # Use openssl passwd. -stdin reads password from stdin.
+    # The algorithm is passed as an option, e.g., -a, -B, -5, -6.
+    local hashed_password=$(printf "%s" "$password" | openssl passwd "-$algorithm" -stdin 2>/dev/null)
+
+    if [ $? -ne 0 ] || [ -z "$hashed_password" ]; then
+        shell::colored_echo "🔴 shell::cryptography::create_password_hash: Failed to create password hash. Check algorithm or OpenSSL installation." 196 >&2
+        return 1
+    fi
+
+    echo "$hashed_password"
+    return 0
+}
