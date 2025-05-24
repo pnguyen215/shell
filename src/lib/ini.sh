@@ -950,12 +950,27 @@ shell::ini_remove_section() {
     local section_removed=0                       # Flag: has the section been removed?
     local temp_file
     temp_file=$(shell::ini_create_temp_file)
+    local last_line_was_blank=0 # Flag: was the last written line blank?
 
     # Process the file line by line
     while IFS= read -r line || [ -n "$line" ]; do
+        # Trim the line for processing but preserve the original for output
+        local trimmed_line
+        trimmed_line=$(shell::ini_trim "$line")
+
+        # Check if the line is empty
+        if [ -z "$trimmed_line" ]; then
+            # Only write a blank line if the last written line was not blank
+            if [ $last_line_was_blank -eq 0 ] && [ -s "$temp_file" ]; then
+                echo "" >>"$temp_file"
+                last_line_was_blank=1
+            fi
+            continue
+        fi
+
         # Check if the line is a section header
-        if [[ "$line" =~ $any_section_pattern ]]; then
-            if [[ "$line" =~ $section_pattern ]]; then
+        if [[ "$trimmed_line" =~ $any_section_pattern ]]; then
+            if [[ "$trimmed_line" =~ $section_pattern ]]; then
                 # Found the target section header; skip it and enter the section
                 in_target_section=1
                 section_removed=1
@@ -963,18 +978,25 @@ shell::ini_remove_section() {
             else
                 # Found a different section header; exit the target section
                 in_target_section=0
-                # Write a blank line before the section header if the temp file is not empty
-                if [ -s "$temp_file" ]; then
+                # Only add a blank line if the last written line was not blank and the temp file is not empty
+                if [ $last_line_was_blank -eq 0 ] && [ -s "$temp_file" ]; then
                     echo "" >>"$temp_file"
+                    last_line_was_blank=1
                 fi
                 echo "$line" >>"$temp_file"
+                last_line_was_blank=0
                 continue
             fi
         fi
 
         # If not in the target section, write the line to the temp file
         if [ $in_target_section -eq 0 ]; then
+            # Skip writing if the line is empty and we're at the start of the file
+            if [ ! -s "$temp_file" ] && [ -z "$trimmed_line" ]; then
+                continue
+            fi
             echo "$line" >>"$temp_file"
+            last_line_was_blank=0
         fi
     done <"$file"
 
