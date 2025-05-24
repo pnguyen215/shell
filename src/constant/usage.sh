@@ -3330,3 +3330,21 @@ Description:
 Example:
   hashed_pass=(shell::cryptography::create_password_hash 1 "MySecurePassword123!")
 "
+
+USAGE_SHELL_INI_RENAME_SECTION="
+shell::ini_rename_section function
+Renames a section in an INI file.
+
+Usage:
+  shell::ini_rename_section [-n] [-h] <file> <old_section> <new_section>
+
+Parameters:
+  - -n        : Optional. Dry-run mode. Prints the command without executing it.
+  - -h        : Optional. Displays this help message.
+  - <file>    : The path to the INI file.
+  - <old_section> : The name of the section to rename.
+  - <new_section> : The new name for the section.
+
+Description:
+  This function renames a section in an INI file.
+"

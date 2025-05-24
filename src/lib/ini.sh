@@ -2029,3 +2029,115 @@ shell::ini_get_or_default() {
 
     return 0
 }
+
+# shell::ini_rename_section function
+# Renames an existing section in an INI file.
+#
+# Usage:
+#   shell::ini_rename_section [-n] <file> <old_section> <new_section>
+#
+# Parameters:
+#   - -n          : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+#   - <file>      : The path to the INI file.
+#   - <old_section> : The current name of the section to be renamed.
+#   - <new_section> : The new name for the section.
+#
+# Description:
+#   This function renames a section within an INI file by replacing its header.
+#   It performs validation to ensure the file exists, the old section exists,
+#   and the new section name does not already exist. It also applies strict
+#   validation rules for section names if SHELL_INI_STRICT is enabled.
+#   The function uses 'sed' for in-place editing, adapting its syntax for
+#   macOS (BSD sed) and Linux (GNU sed) for cross-platform compatibility.
+#
+# Example usage:
+#   shell::ini_rename_section config.ini "OldSection" "NewSection"
+#   shell::ini_rename_section -n settings.ini "Database" "ProductionDB" # Dry-run mode
+#
+# Returns:
+#   0 on success, 1 on failure (e.g., missing parameters, file not found,
+#   section not found, new section already exists, or validation failure).
+#
+# Notes:
+#   - Relies on shell::colored_echo, shell::ini_check_file, shell::ini_section_exists,
+#     shell::ini_escape_for_regex, shell::ini_validate_section_name, and shell::run_cmd_eval.
+shell::ini_rename_section() {
+    local dry_run="false"
+
+    # Check for the optional dry-run flag (-n)
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_INI_RENAME_SECTION"
+        return 0
+    fi
+
+    # Validate required parameters: file, old_section, new_section.
+    if [ $# -lt 3 ]; then
+        shell::colored_echo "🔴 shell::ini_rename_section: Missing required parameters." 196
+        echo "Usage: shell::ini_rename_section [-n] [-h] <file> <old_section> <new_section>"
+        return 1
+    fi
+
+    local file="$1"
+    local old_section="$2"
+    local new_section="$3"
+
+    # Validate section names if strict mode is enabled.
+    if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
+        shell::ini_validate_section_name "$old_section" || return 1
+        shell::ini_validate_section_name "$new_section" || return 1
+    fi
+
+    # Check if the file exists and is writable.
+    if ! shell::ini_check_file "$file"; then
+        return 1
+    fi
+
+    # Check if the old section exists. Suppress output as shell::ini_section_exists
+    # already provides verbose messages.
+    if ! shell::ini_section_exists "$file" "$old_section" >/dev/null 2>&1; then
+        shell::colored_echo "🔴 Section to rename ('$old_section') not found in file: $file" 196
+        return 1
+    fi
+
+    # Check if the new section name already exists.
+    if shell::ini_section_exists "$file" "$new_section" >/dev/null 2>&1; then
+        shell::colored_echo "🔴 New section name ('$new_section') already exists in file: $file. Aborting rename." 196
+        return 1
+    fi
+
+    local escaped_old_section
+    escaped_old_section=$(shell::ini_escape_for_regex "$old_section")
+
+    local os_type
+    os_type=$(shell::get_os_type)
+    local sed_cmd=""
+
+    # Construct the sed command for in-place editing based on OS type.
+    # The 's' command replaces the matched pattern.
+    if [ "$os_type" = "macos" ]; then
+        # BSD sed on macOS requires an empty string backup extension with -i.
+        sed_cmd="sed -i '' \"s/^\[${escaped_old_section}\]$/\[${new_section}\]/\" \"$file\""
+    else
+        # GNU sed on Linux typically does not require a backup extension with -i.
+        sed_cmd="sed -i \"s/^\[${escaped_old_section}\]$/\[${new_section}\]/\" \"$file\""
+    fi
+
+    # Execute or print the command based on dry-run flag.
+    shell::execute_or_evict "$dry_run" "$sed_cmd"
+    local status=$?
+
+    if [ $status -eq 0 ]; then
+        if [ "$dry_run" = "false" ]; then
+            shell::colored_echo "🟢 Successfully renamed section from '$old_section' to '$new_section'." 46
+        fi
+        return 0
+    else
+        shell::colored_echo "🔴 Error renaming section from '$old_section' to '$new_section'." 196
+        return 1
+    fi
+}
