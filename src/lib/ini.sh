@@ -2603,71 +2603,68 @@ shell::fzf_ini_remove_sections() {
 
     local temp_file
     temp_file=$(shell::ini_create_temp_file)
-    local section_removed_flag=0
+    local in_section_to_remove=0
 
-    # Read the file and filter out selected sections
+    # Read the file and filter out selected sections and their content
     while IFS= read -r line || [ -n "$line" ]; do
         local trimmed_line
         trimmed_line="$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
 
         local is_section_header=0
-        local current_section=""
+        local current_section_name=""
 
         # Check if the line is a section header
         if [[ "$trimmed_line" =~ ^\[[^]]+\]$ ]]; then
             is_section_header=1
-            current_section="${trimmed_line%\]}"
-            current_section="${current_section#\[}"
+            current_section_name="${trimmed_line%\]}"
+            current_section_name="${current_section_name#\[}"
         fi
 
-        # Check if the current line (or subsequent lines if within a selected section) should be removed
-        local remove_this_line=0
+        # Determine if we are currently inside a section that needs to be removed
         if [ "$is_section_header" -eq 1 ]; then
-            # Check if the current section header is in the list of sections to remove
-            if echo "$selected_sections" | grep -q "^${current_section}$"; then
-                section_removed_flag=1 # Start removing lines from this section
-                remove_this_line=1
+            # If the current section is one of the selected ones for removal
+            if echo "$selected_sections" | grep -q "^${current_section_name}$"; then
+                in_section_to_remove=1
             else
-                section_removed_flag=0 # Not in a section to be removed
+                in_section_to_remove=0
             fi
-        elif [ "$section_removed_flag" -eq 1 ]; then
-            # We are currently inside a section that is being removed, so remove this line
-            remove_this_line=1
         fi
 
-        # If the line should not be removed, write it to the temporary file
-        if [ "$remove_this_line" -eq 0 ]; then
+        # If we are not in a section to be removed, write the line to the temp file
+        if [ "$in_section_to_remove" -eq 0 ]; then
             echo "$line" >>"$temp_file"
         fi
     done <"$file"
 
-    # Remove any extra blank lines that might result from section removal
-    # This sed command removes leading/trailing blank lines, and collapses multiple blank lines to one
-    local clean_temp_cmd="sed -i.bak -e '/^[[:space:]]*$/d' -e :a -e '/^\n*$/{$d;N;ba' -e '}' \"$temp_file\""
-    # Note: sed -i.bak creates a backup file. macOS requires an extension. Linux can use -i without it.
-    # To make it truly cross-platform without .bak, could mv the file around.
-    # For now, using .bak which is generally safer.
+    # Post-process the temporary file to remove excessive blank lines
+    # This sed command removes all blank lines. We might need a slightly more nuanced approach
+    # if original INI formatting with single blank lines between sections is critical.
+    # For now, this is safer to avoid the unescaped newline error.
+    local clean_temp_cmd_part1="grep -v '^[[:space:]]*$' \"$temp_file\""                                # Remove all empty lines
+    local clean_temp_cmd_part2="awk 'NF { if (p) print \"\"; print $0 } {p=NF}' > \"${temp_file}.tmp\"" # Ensure single blank lines between content blocks
 
-    # Remove the backup file after cleaning
-    local remove_bak_cmd="rm -f \"${temp_file}.bak\""
+    # Replace the temp_file with its cleaned version
+    local replace_cleaned_temp_cmd="mv \"${temp_file}.tmp\" \"$temp_file\""
 
     if [ "$dry_run" = "true" ]; then
-        shell::on_evict "$clean_temp_cmd"
-        shell::on_evict "$remove_bak_cmd"
+        shell::on_evict "$clean_temp_cmd_part1 | $clean_temp_cmd_part2"
+        shell::on_evict "$replace_cleaned_temp_cmd"
         shell::on_evict "mv \"$temp_file\" \"$file\""
     else
-        # Clean up the temporary file for aesthetic purposes (e.g., empty lines between sections)
-        local os_type
-        os_type=$(shell::get_os_type)
-
-        if [ "$os_type" = "macos" ]; then
-            shell::run_cmd_eval "sed -i '.tmpbak' -e '/^[[:space:]]*$/d' -e :a -e '/^\n*$/{$d;N;ba' -e '}' \"$temp_file\""
-            shell::run_cmd_eval "rm -f \"${temp_file}.tmpbak\""
-        else
-            shell::run_cmd_eval "sed -i -e '/^[[:space:]]*$/d' -e :a -e '/^\n*$/{$d;N;ba' -e '}' \"$temp_file\""
+        # Execute the cleaning commands
+        if ! eval "$clean_temp_cmd_part1 | $clean_temp_cmd_part2"; then
+            shell::colored_echo "🔴 Error during temporary file cleaning." 196
+            rm -f "$temp_file" "${temp_file}.tmp" # Clean up temporary files
+            return 1
         fi
 
-        # Replace the original file with the modified temp file
+        if ! eval "$replace_cleaned_temp_cmd"; then
+            shell::colored_echo "🔴 Error replacing cleaned temporary file." 196
+            rm -f "$temp_file" "${temp_file}.tmp"
+            return 1
+        fi
+
+        # Atomically replace the original file with the modified temp file
         shell::run_cmd_eval "mv \"$temp_file\" \"$file\""
         if [ $? -eq 0 ]; then
             shell::colored_echo "🟢 Successfully removed selected sections from '$file'." 46
