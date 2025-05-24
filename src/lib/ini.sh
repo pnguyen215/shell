@@ -2514,11 +2514,11 @@ shell::fzf_ini_clone_section() {
     return $?
 }
 
-# shell::fzf_remove_sections function
+# shell::fzf_ini_remove_sections function
 # Interactively selects multiple sections to remove from an INI file using fzf.
 #
 # Usage:
-#   shell::fzf_remove_sections [-n] [-h] <file>
+#   shell::fzf_ini_remove_sections [-n] [-h] <file>
 #
 # Parameters:
 #   - -n        : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
@@ -2533,8 +2533,8 @@ shell::fzf_ini_clone_section() {
 #   The function handles dry-run mode, where it only prints the commands that would be executed.
 #
 # Example:
-#   shell::fzf_remove_sections config.ini   # Interactively remove sections.
-#   shell::fzf_remove_sections -n config.ini # Dry-run: show commands to remove sections.
+#   shell::fzf_ini_remove_sections config.ini   # Interactively remove sections.
+#   shell::fzf_ini_remove_sections -n config.ini # Dry-run: show commands to remove sections.
 #
 # Returns:
 #   0 on success, 1 on failure (e.g., missing parameters, file not found, no section selected).
@@ -2543,7 +2543,7 @@ shell::fzf_ini_clone_section() {
 #   - Relies on shell::colored_echo, shell::install_package, shell::ini_list_sections,
 #     shell::run_cmd_eval, shell::on_evict, and shell::ini_escape_for_regex.
 #   - Uses fzf's multi-select feature (TAB key) for selecting multiple sections.
-shell::fzf_remove_sections() {
+shell::fzf_ini_remove_sections() {
     local dry_run="false"
 
     if [ "$1" = "-h" ]; then
@@ -2559,8 +2559,8 @@ shell::fzf_remove_sections() {
 
     # Validate required parameters
     if [ $# -lt 1 ]; then
-        shell::colored_echo "🔴 shell::fzf_remove_sections: Missing file parameter." 196
-        echo "Usage: shell::fzf_remove_sections [-n] [-h] <file>"
+        shell::colored_echo "🔴 shell::fzf_ini_remove_sections: Missing file parameter." 196
+        echo "Usage: shell::fzf_ini_remove_sections [-n] [-h] <file>"
         return 1
     fi
 
