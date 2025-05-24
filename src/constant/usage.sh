@@ -3364,3 +3364,21 @@ Parameters:
 Description:
   This function renames a section in an INI file using fzf.
 "
+
+USAGE_SHELL_INI_CLONE_SECTION="
+shell::ini_clone_section function
+Clones a section from one INI file to another.
+
+Usage:
+  shell::ini_clone_section [-n] [-h] <file> <source_section> <destination_section> 
+
+Parameters:
+  - -n                    : Optional. Dry-run mode. Prints the command without executing it.
+  - -h                    : Optional. Displays this help message.
+  - <file>                : The path to the INI file.
+  - <source_section>      : The name of the section to clone from.
+  - <destination_section> : The name of the section to create.
+
+Description:
+  This function clones a section from one INI file to another.
+"

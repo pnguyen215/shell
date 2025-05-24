@@ -2255,3 +2255,204 @@ shell::fzf_ini_rename_section() {
     fi
     shell::ini_rename_section "${rename_args[@]}"
 }
+
+# shell::ini_clone_section function
+# Clones an existing section to a new section within the same INI file.
+# All key-value pairs from the source section are copied to the destination section.
+#
+# Usage:
+#   shell::ini_clone_section [-n] <file> <source_section> <destination_section>
+#
+# Parameters:
+#   - -n                 : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+#   - <file>             : The path to the INI file.
+#   - <source_section>   : The name of the section to clone.
+#   - <destination_section>: The name of the new section to create and copy keys into.
+#
+# Description:
+#   This function first validates that the source section exists in the INI file.
+#   It then checks if the destination section already exists, warning the user if it does.
+#   It reads all key-value pairs from the source section and writes them sequentially
+#   to the new destination section. This is achieved by iterating through the file content
+#   between the source section header and the next section header (or end of file).
+#   The function ensures file integrity by writing to a temporary file and then atomically
+#   replacing the original file.
+#
+# Example:
+#   shell::ini_clone_section config.ini "Development" "Staging"
+#   shell::ini_clone_section -n config.ini "Production" "Backup_Prod"
+#
+# Returns:
+#   0 on success, 1 on failure (e.g., missing parameters, file/section not found,
+#   destination section already exists in strict mode, or write errors).
+#
+# Notes:
+#   - Relies on shell::colored_echo, shell::ini_section_exists, shell::ini_add_section,
+#     shell::ini_write, shell::ini_create_temp_file, and shell::ini_escape_for_regex.
+#   - Honors SHELL_INI_STRICT for section name validation.
+shell::ini_clone_section() {
+    local dry_run="false"
+
+    # Check for the optional dry-run flag (-n)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_INI_CLONE_SECTION"
+        return 0
+    fi
+
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    local file="$1"
+    local source_section="$2"
+    local destination_section="$3"
+
+    # Validate parameters
+    if [ -z "$file" ] || [ -z "$source_section" ] || [ -z "$destination_section" ]; then
+        shell::colored_echo "🔴 shell::ini_clone_section: Missing required parameters." 196
+        echo "Usage: shell::ini_clone_section [-n] [-h] <file> <source_section> <destination_section>"
+        return 1
+    fi
+
+    # Validate section names if strict mode is enabled
+    if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
+        shell::ini_validate_section_name "$source_section" || return 1
+        shell::ini_validate_section_name "$destination_section" || return 1
+    fi
+
+    # Check if file exists
+    if [ ! -f "$file" ]; then
+        shell::colored_echo "🔴 File not found: $file" 196
+        return 1
+    fi
+
+    # Check if source section exists
+    if ! shell::ini_section_exists "$file" "$source_section"; then
+        shell::colored_echo "🔴 Source section '$source_section' not found in file: $file" 196
+        return 1
+    fi
+
+    # Check if destination section already exists
+    if shell::ini_section_exists "$file" "$destination_section"; then
+        shell::colored_echo "🟡 Destination section '$destination_section' already exists. Aborting clone to prevent overwrite." 11
+        return 1
+    fi
+
+    shell::colored_echo "Cloning section '$source_section' to '$destination_section' in file: $file" 11
+
+    local temp_file
+    temp_file=$(shell::ini_create_temp_file)
+    local in_source_section=0
+    local source_section_pattern="^\[$(shell::ini_escape_for_regex "$source_section")\]"
+    local any_section_pattern="^\[[^]]+\]"
+    local first_line_written=false
+
+    while IFS= read -r line || [ -n "$line" ]; do
+        # Write the original line to the temp file first
+        echo "$line" >>"$temp_file"
+
+        local trimmed_line=$(shell::ini_trim "$line")
+
+        if [[ "$trimmed_line" =~ $source_section_pattern ]]; then
+            in_source_section=1
+            continue
+        fi
+
+        if [ "$in_source_section" -eq 1 ]; then
+            if [[ "$trimmed_line" =~ $any_section_pattern ]]; then
+                # Reached a new section, stop copying from source
+                in_source_section=0
+            else
+                # This line is part of the source section (not a new section header)
+                # Extract key and value
+                if [[ "$trimmed_line" =~ ^[[:space:]]*[^=]+= ]]; then
+                    local key="${trimmed_line%%=*}"
+                    key=$(shell::ini_trim "$key")
+                    local raw_value="${trimmed_line#*=}"
+                    raw_value=$(shell::ini_trim "$raw_value")
+
+                    # Handle quoted values by removing outer quotes and unescaping internal quotes
+                    if [[ "$raw_value" =~ ^\"(.*)\"$ ]]; then
+                        raw_value="${BASH_REMATCH[1]}"
+                        raw_value="${raw_value//\\\"/\"}"
+                    fi
+
+                    # Decode the value before passing to ini_write, as ini_write expects raw value
+                    local os_type=$(shell::get_os_type)
+                    local decoded_value
+                    if [ "$os_type" = "macos" ]; then
+                        decoded_value=$(echo "$raw_value" | base64 -D)
+                    else
+                        decoded_value=$(echo "$raw_value" | base64 -d)
+                    fi
+
+                    # Write the key-value pair to the destination section
+                    # In dry-run mode, print the command, otherwise execute
+                    local write_cmd="shell::ini_write \"$file\" \"$destination_section\" \"$key\" \"$decoded_value\""
+                    if [ "$dry_run" = "true" ]; then
+                        shell::on_evict "$write_cmd"
+                    else
+                        # To avoid re-reading the file multiple times in the loop,
+                        # we'll collect the keys and values and then write them all at once
+                        # after the initial file processing.
+                        # For now, just indicate what would be written.
+                        : # No-op for direct execution in the loop when collecting for post-processing
+                    fi
+                    if [ "$dry_run" = "true" ]; then
+                        shell::colored_echo "(Dry-run) Would write '$key' to section '$destination_section' with value '$decoded_value'" 11
+                    fi
+                fi
+            fi
+        fi
+    done <"$file"
+
+    # Now, add the destination section and then write all collected keys
+    local add_section_cmd="shell::ini_add_section \"$file\" \"$destination_section\""
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "$add_section_cmd"
+    else
+        shell::run_cmd_eval "$add_section_cmd" || {
+            shell::colored_echo "🔴 Failed to add destination section '$destination_section'." 196
+            rm -f "$temp_file"
+            return 1
+        }
+    fi
+
+    # Read keys from source section and write to destination section
+    # This loop is executed after the original file has been processed and
+    # the temp file is ready, avoiding issues with modifying file being read.
+    local keys_to_clone
+    keys_to_clone=$(shell::ini_list_keys "$file" "$source_section")
+
+    while IFS= read -r key; do
+        local value_to_clone
+        value_to_clone=$(shell::ini_read "$file" "$source_section" "$key")
+        local write_cmd="shell::ini_write \"$file\" \"$destination_section\" \"$key\" \"$value_to_clone\""
+        if [ "$dry_run" = "true" ]; then
+            shell::on_evict "$write_cmd"
+        else
+            shell::run_cmd_eval "$write_cmd" || {
+                shell::colored_echo "🔴 Failed to clone key '$key' to section '$destination_section'." 196
+                rm -f "$temp_file"
+                return 1
+            }
+        fi
+    done <<<"$keys_to_clone"
+
+    # Atomically replace the original file with the modified content
+    local replace_cmd="mv \"$temp_file\" \"$file\""
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "$replace_cmd"
+    else
+        shell::run_cmd_eval "$replace_cmd"
+        if [ $? -eq 0 ]; then
+            shell::colored_echo "🟢 Successfully cloned section '$source_section' to '$destination_section'." 46
+        else
+            shell::colored_echo "🔴 Error replacing original file after cloning section." 196
+            return 1
+        fi
+    fi
+
+    return 0
+}
