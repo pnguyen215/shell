@@ -2418,3 +2418,98 @@ shell::ini_clone_section() {
         fi
     fi
 }
+
+# shell::fzf_ini_clone_section function
+# Interactively selects a section to clone from an INI file using fzf,
+# prompts for a new name (with "_clone" prefix), and then clones the section.
+#
+# Usage:
+#   shell::fzf_ini_clone_section [-n] <file>
+#
+# Parameters:
+#   - -n        : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed. [cite: 9]
+#   - <file>    : The path to the INI file.
+#
+# Description:
+#   This function first ensures fzf is installed. It then lists all sections in the
+#   given INI file and uses fzf to allow the user to interactively select a section.
+#   After selection, it prompts the user for a new section name, appending "_clone"
+#   to the selected section name as a suggestion. Finally, it calls
+#   shell::ini_clone_section to perform the cloning operation.
+#   The function handles dry-run mode, where it only prints the commands that would be executed. [cite: 9]
+#
+# Example:
+#   shell::fzf_ini_clone_section config.ini   # Interactively clone a section.
+#   shell::fzf_ini_clone_section -n config.ini # Dry-run: show commands to clone a section.
+#
+# Returns:
+#   0 on success, 1 on failure (e.g., missing parameters, file not found, no section selected).
+#
+# Notes:
+#   - Relies on shell::colored_echo, shell::install_package, shell::ini_list_sections,
+#     shell::ini_clone_section, and shell::on_evict.
+#   - Provides interactive selection and auto-suggestion for the cloned section name. [cite: 7]
+shell::fzf_ini_clone_section() {
+    local dry_run="false"
+
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_INI_CLONE_SECTION"
+        return 0
+    fi
+
+    # Check for the optional dry-run flag (-n)
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    # Validate required parameters
+    if [ $# -lt 1 ]; then
+        shell::colored_echo "🔴 shell::fzf_ini_clone_section: Missing file parameter." 196
+        echo "Usage: shell::fzf_ini_clone_section [-n] [-h] <file>"
+        return 1
+    fi
+
+    local file="$1"
+
+    # Check if file exists
+    if [ ! -f "$file" ]; then
+        shell::colored_echo "🔴 File not found: $file" 196
+        return 1
+    fi
+
+    # Ensure fzf is installed.
+    shell::install_package fzf || {
+        shell::colored_echo "🔴 Error: fzf is required but could not be installed." 196
+        return 1
+    }
+
+    # Get the list of sections and use fzf to select one.
+    local selected_section
+    selected_section=$(shell::ini_list_sections "$file" | fzf --prompt="Select section to clone: ")
+
+    # Check if a section was selected.
+    if [ -z "$selected_section" ]; then
+        shell::colored_echo "🔴 No section selected. Aborting clone." 196
+        return 1
+    fi
+
+    shell::colored_echo "Selected section for cloning: '$selected_section'" 33
+
+    # Prompt for the new section name, with "_clone" appended as a suggestion.
+    shell::colored_echo ">> Enter new section name (e.g., ${selected_section}_clone):" 33
+    read -r new_section_name
+    if [ -z "$new_section_name" ]; then
+        new_section_name="${selected_section}_clone"
+        shell::colored_echo "Using default new section name: '$new_section_name'" 11
+    fi
+
+    # Perform the clone operation using shell::ini_clone_section
+    if [ "$dry_run" = "true" ]; then
+        shell::ini_clone_section -n "$file" "$selected_section" "$new_section_name"
+    else
+        shell::ini_clone_section "$file" "$selected_section" "$new_section_name"
+    fi
+
+    return $?
+}
