@@ -3251,25 +3251,6 @@ Notes:
   - Console logging is used for status updates.
 "
 
-USAGE_SHELL_ENCODE_AES256CBC="
-shell::encode::aes256cbc function
-Encrypts a string using AES-256-CBC with OpenSSL.
-
-Usage:
-  shell::encode::aes256cbc [-h] <string> [key]  
-
-Parameters:
-  - -h        : Optional. Displays this help message.
-  - <string>  : The string to encrypt.
-  - [key]     : Optional. The encryption key (32 bytes for AES-256). If not provided, uses SHELL_SHIELD_ENCRYPTION_KEY.
-
-Description:
-  This function encrypts the input string using AES-256-CBC with OpenSSL, using either the provided key
-  or the SHELL_SHIELD_ENCRYPTION_KEY environment variable. The encrypted output is Base64-encoded for safe storage
-  in configuration files, aligning with the library's existing Base64 usage. It checks for OpenSSL availability
-  and validates the key length. The function is compatible with both macOS and Linux. 
-"
-
 USAGE_SHELL_GENERATE_RANDOM_KEY="
 shell::generate_random_key function
 Generates a random encryption key of specified length (in bytes) and outputs it to standard output.
@@ -3283,4 +3264,42 @@ Parameters:
 
 Description:
   This function uses OpenSSL to generate a random key of the specified length in hexadecimal format.
+"
+
+USAGE_SHELL_ENCODE_AES256CBC="
+shell::encode::aes256cbc function
+Encrypts a string using AES-256-CBC encryption and encodes the result in Base64.
+
+Usage:
+  shell::encode::aes256cbc [-h] <string> [key] [iv]
+
+Parameters:
+  - -h        : Optional. Displays this help message.
+  - <string>  : The string to encrypt.
+  - [key]     : Optional. The encryption key (32 bytes for AES-256). If not provided, uses SHELL_SHIELD_ENCRYPTION_KEY.
+  - [iv]      : Optional. The initialization vector (16 bytes for AES-256). If not provided, uses SHELL_SHIELD_ENCRYPTION_IV.
+
+Description:
+  This function encrypts the input string using AES-256-CBC with OpenSSL, using either the provided key
+  or the SHELL_SHIELD_ENCRYPTION_KEY environment variable. The encrypted output is Base64-encoded for safe storage
+  in configuration files, aligning with the library's existing Base64 usage. It checks for OpenSSL availability
+  and validates the key length. The function is compatible with both macOS and Linux.
+"
+
+USAGE_SHELL_DECODE_AES256CBC="
+shell::decode::aes256cbc function
+Decodes a Base64-encoded string and decrypts it using AES-256-CBC.
+
+Usage:
+  shell::decode::aes256cbc [-h] <string> [key] [iv]
+
+Parameters:
+  - -h        : Optional. Displays this help message.
+  - <string>  : The Base64-encoded string to decrypt.
+  - [key]     : Optional. The encryption key (32 bytes for AES-256). If not provided, uses SHELL_SHIELD_ENCRYPTION_KEY.
+  - [iv]      : Optional. The initialization vector (16 bytes for AES-256). If not provided, uses SHELL_SHIELD_ENCRYPTION_IV.
+
+Description:
+  This function decodes the Base64-encoded input string and decrypts it using AES-256-CBC with OpenSSL,
+  using either the provided key or the SHELL_SHIELD_ENCRYPTION_KEY environment variable.
 "

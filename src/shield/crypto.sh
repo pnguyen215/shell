@@ -77,8 +77,8 @@ shell::generate_random_key() {
 #   and validates the key length. The function is compatible with both macOS and Linux.
 #
 # Example:
-#   shell::encode::aes256cbc "sensitive data" "my32byteKey12345678901234567890"  # Encrypts with specified key
-#   export SHELL_SHIELD_ENCRYPTION_KEY="my32byteKey12345678901234567890"
+#   shell::encode::aes256cbc "sensitive data" "my64byteKey1234567890123456789012345678901234567890"  # Encrypts with specified key
+#   export SHELL_SHIELD_ENCRYPTION_KEY="my64byteKey1234567890123456789012345678901234567890"
 #   shell::encode::aes256cbc "sensitive data"  # Encrypts with SHELL_SHIELD_ENCRYPTION_KEY
 #
 # Returns:
@@ -87,7 +87,7 @@ shell::generate_random_key() {
 # Notes:
 #   - Relies on the shell::colored_echo function for output.
 #   - Requires OpenSSL to be installed.
-#   - The encryption key must be 32 bytes for AES-256-CBC.
+#   - The encryption key must be 64 bytes for AES-256-CBC.
 #   - If SHELL_SHIELD_ENCRYPTION_KEY is not set and no key is provided, the function fails.
 shell::encode::aes256cbc() {
     # Check for the help flag (-h)
@@ -143,22 +143,13 @@ shell::encode::aes256cbc() {
         return 1
     fi
 
-    local os_type=$(shell::get_os_type)
     # Encrypt the value string and encode in Base64
     local encrypted=$(printf "%s" "$value" | openssl enc -aes-256-cbc -base64 -K "$key" -iv "$iv" 2>/dev/null)
-    # if [ "$os_type" = "macos" ]; then
-    #     encrypted=$(echo -n "$value" | openssl enc -aes-256-cbc -a -salt -k "$key" 2>/dev/null)
-    # else
-    #     encrypted=$(echo -n "$value" | openssl enc -aes-256-cbc -base64 -salt -k "$key" 2>/dev/null)
-    # fi
-
     if [ $? -ne 0 ]; then
         shell::colored_echo "🔴 shell::encode::aes256cbc: Encryption failed. Please check your key and try again." 196 >&2
         return 1
     fi
 
-    # Remove newlines from Base64 output
-    # encrypted=$(echo -n "$encrypted" | tr -d '\n')
     echo "$encrypted"
     shell::clip_value "$encrypted"
     return 0
@@ -168,12 +159,13 @@ shell::encode::aes256cbc() {
 # Decodes a Base64-encoded string and decrypts it using AES-256-CBC.
 #
 # Usage:
-#   shell::decode::aes256cbc [-h] <string> [key]
+#   shell::decode::aes256cbc [-h] <string> [key] [iv]
 #
 # Parameters:
 #   - -h        : Optional. Displays this help message.
 #   - <string>  : The Base64-encoded string to decrypt.
 #   - [key]     : Optional. The encryption key (32 bytes for AES-256). If not provided, uses SHELL_SHIELD_ENCRYPTION_KEY.
+#   - [iv]      : Optional. The initialization vector (16 bytes for AES-256). If not provided, uses SHELL_SHIELD_ENCRYPTION_IV.
 #
 # Description:
 #   This function decodes the Base64-encoded input string and decrypts it using AES-256-CBC with OpenSSL,
@@ -181,8 +173,8 @@ shell::encode::aes256cbc() {
 #   availability and validates the key length. The function is compatible with both macOS and Linux.
 #
 # Example:
-#   shell::decode::aes256cbc "Base64EncodedString" "my32byteKey12345678901234567890"  # Decrypts with specified key
-#   export SHELL_SHIELD_ENCRYPTION_KEY="my32byteKey12345678901234567890"
+#   shell::decode::aes256cbc "Base64EncodedString" "my64byteKey1234567890123456789012345678901234567890"  # Decrypts with specified key
+#   export SHELL_SHIELD_ENCRYPTION_KEY="my64byteKey1234567890123456789012345678901234567890"
 #   shell::decode::aes256cbc "Base64EncodedString"  # Decrypts with SHELL_SHIELD_ENCRYPTION_KEY
 #
 # Returns:
@@ -191,7 +183,7 @@ shell::encode::aes256cbc() {
 # Notes:
 #   - Relies on the shell::colored_echo function for output.
 #   - Requires OpenSSL to be installed.
-#   - The encryption key must be 32 bytes for AES-256-CBC.
+#   - The encryption key must be 64 bytes for AES-256-CBC.
 #   - If SHELL_SHIELD_ENCRYPTION_KEY is not set and no key is provided, the function fails.
 shell::decode::aes256cbc() {
     # Check for the help flag (-h)
@@ -202,11 +194,11 @@ shell::decode::aes256cbc() {
 
     local value="$1"
     local key="$2"
-
+    local iv="$3"
     # Validate input
     if [ -z "$value" ]; then
         shell::colored_echo "🔴 shell::decode::aes256cbc: Missing argument value" 196 >&2
-        echo "Usage: shell::decode::aes256cbc [-h] <value> [key]"
+        echo "Usage: shell::decode::aes256cbc [-h] <value> [key] [iv]"
         return 1
     fi
 
@@ -220,9 +212,25 @@ shell::decode::aes256cbc() {
         key=$(shell::get_value_conf "SHELL_SHIELD_ENCRYPTION_KEY")
     fi
 
-    # Validate key length (32 bytes for AES-256)
-    if [ ${#key} -ne 32 ]; then
-        shell::colored_echo "🔴 shell::decode::aes256cbc: Encryption key must be exactly 32 bytes" 196 >&2
+    # Use SHELL_SHIELD_ENCRYPTION_IV if no iv is provided
+    if [ -z "$iv" ]; then
+        local hasIv=$(shell::exist_key_conf "SHELL_SHIELD_ENCRYPTION_IV")
+        if [ "$hasIv" = "false" ]; then
+            shell::colored_echo "🔴 shell::decode::aes256cbc: SHELL_SHIELD_ENCRYPTION_IV is not set. Please set it or provide a key." 196 >&2
+            return 1
+        fi
+        iv=$(shell::get_value_conf "SHELL_SHIELD_ENCRYPTION_IV")
+    fi
+
+    # Validate key length (64 bytes for AES-256)
+    if [ ${#key} -ne 64 ]; then
+        shell::colored_echo "🔴 shell::decode::aes256cbc: Encryption key must be exactly 64 bytes" 196 >&2
+        return 1
+    fi
+
+    # Validate iv length (32 bytes for AES-256)
+    if [ ${#iv} -ne 32 ]; then
+        shell::colored_echo "🔴 shell::decode::aes256cbc: Initialization vector must be exactly 32 bytes" 196 >&2
         return 1
     fi
 
@@ -232,21 +240,9 @@ shell::decode::aes256cbc() {
         return 1
     fi
 
-    local os_type=$(shell::get_os_type)
-
-    # Decode the Base64-encoded string and decrypt it
-    local decrypted
-    if [ "$os_type" = "macos" ]; then
-        decrypted=$(echo -n "$value" | openssl enc -aes-256-cbc -d -a -salt -k "$key" 2>/dev/null)
-    else
-        decrypted=$(echo -n "$value" | openssl enc -aes-256-cbc -d -base64 -salt -k "$key" 2>/dev/null)
-    fi
-
+    local decrypted=$(echo "$value" | openssl enc -aes-256-cbc -d -base64 -K "$key" -iv "$iv" 2>/dev/null)
     if [ $? -ne 0 ]; then
-        # Enhanced error message for debugging
         shell::colored_echo "🔴 shell::decode::aes256cbc: Decryption failed. Please check your key and try again." 196 >&2
-        echo "Value being decrypted: $value" >&2
-        echo "Key being used: $key" >&2
         return 1
     fi
 
