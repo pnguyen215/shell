@@ -62,12 +62,13 @@ shell::generate_random_key() {
 # Encrypts a string using AES-256-CBC encryption and encodes the result in Base64.
 #
 # Usage:
-#   shell::encode::aes256cbc [-h] <string> [key]
+#   shell::encode::aes256cbc [-h] <string> [key] [iv]
 #
 # Parameters:
 #   - -h        : Optional. Displays this help message.
 #   - <string>  : The string to encrypt.
 #   - [key]     : Optional. The encryption key (32 bytes for AES-256). If not provided, uses SHELL_SHIELD_ENCRYPTION_KEY.
+#   - [iv]      : Optional. The initialization vector (16 bytes for AES-256). If not provided, uses SHELL_SHIELD_ENCRYPTION_IV.
 #
 # Description:
 #   This function encrypts the input string using AES-256-CBC with OpenSSL, using either the provided key
@@ -97,11 +98,12 @@ shell::encode::aes256cbc() {
 
     local value="$1"
     local key="$2"
+    local iv="$3"
 
     # Validate input
     if [ -z "$value" ]; then
         shell::colored_echo "🔴 shell::encode::aes256cbc: Missing argument value" 196 >&2
-        echo "Usage: shell::encode::aes256cbc [-h] <value> [key]"
+        echo "Usage: shell::encode::aes256cbc [-h] <value> [key] [iv]"
         return 1
     fi
 
@@ -109,14 +111,29 @@ shell::encode::aes256cbc() {
     if [ -z "$key" ]; then
         local hasKey=$(shell::exist_key_conf "SHELL_SHIELD_ENCRYPTION_KEY")
         if [ "$hasKey" = "false" ]; then
-            shell::add_conf "SHELL_SHIELD_ENCRYPTION_KEY" "$(shell::generate_random_key 16)"
+            shell::add_conf "SHELL_SHIELD_ENCRYPTION_KEY" "$(shell::generate_random_key 32)"
         fi
         key=$(shell::get_value_conf "SHELL_SHIELD_ENCRYPTION_KEY")
     fi
 
-    # Validate key length (32 bytes for AES-256)
-    if [ ${#key} -ne 32 ]; then
-        shell::colored_echo "🔴 shell::encode::aes256cbc: Encryption key must be exactly 32 bytes" 196 >&2
+    # Use SHELL_SHIELD_ENCRYPTION_IV if no iv is provided
+    if [ -z "$iv" ]; then
+        local hasIv=$(shell::exist_key_conf "SHELL_SHIELD_ENCRYPTION_IV")
+        if [ "$hasIv" = "false" ]; then
+            shell::add_conf "SHELL_SHIELD_ENCRYPTION_IV" "$(shell::generate_random_key 16)"
+        fi
+        iv=$(shell::get_value_conf "SHELL_SHIELD_ENCRYPTION_IV")
+    fi
+
+    # Validate key length (64 bytes for AES-256)
+    if [ ${#key} -ne 64 ]; then
+        shell::colored_echo "🔴 shell::encode::aes256cbc: Encryption key must be exactly 64 bytes" 196 >&2
+        return 1
+    fi
+
+    # Validate iv length (32 bytes for AES-256)
+    if [ ${#iv} -ne 32 ]; then
+        shell::colored_echo "🔴 shell::encode::aes256cbc: Initialization vector must be exactly 32 bytes" 196 >&2
         return 1
     fi
 
@@ -127,14 +144,13 @@ shell::encode::aes256cbc() {
     fi
 
     local os_type=$(shell::get_os_type)
-
     # Encrypt the value string and encode in Base64
-    local encrypted
-    if [ "$os_type" = "macos" ]; then
-        encrypted=$(echo -n "$value" | openssl enc -aes-256-cbc -a -salt -k "$key" 2>/dev/null)
-    else
-        encrypted=$(echo -n "$value" | openssl enc -aes-256-cbc -base64 -salt -k "$key" 2>/dev/null)
-    fi
+    local encrypted=$(printf "%s" "$value" | openssl enc -aes-256-cbc -base64 -K "$key" -iv "$iv" 2>/dev/null)
+    # if [ "$os_type" = "macos" ]; then
+    #     encrypted=$(echo -n "$value" | openssl enc -aes-256-cbc -a -salt -k "$key" 2>/dev/null)
+    # else
+    #     encrypted=$(echo -n "$value" | openssl enc -aes-256-cbc -base64 -salt -k "$key" 2>/dev/null)
+    # fi
 
     if [ $? -ne 0 ]; then
         shell::colored_echo "🔴 shell::encode::aes256cbc: Encryption failed. Please check your key and try again." 196 >&2
@@ -142,7 +158,7 @@ shell::encode::aes256cbc() {
     fi
 
     # Remove newlines from Base64 output
-    encrypted=$(echo -n "$encrypted" | tr -d '\n')
+    # encrypted=$(echo -n "$encrypted" | tr -d '\n')
     echo "$encrypted"
     shell::clip_value "$encrypted"
     return 0
