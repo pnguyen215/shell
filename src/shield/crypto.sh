@@ -259,8 +259,12 @@ shell::decode::aes256cbc() {
 #
 # Parameters:
 #   - -h         : Optional. Displays this help message.
-#   - <algorithm>: Hashing algorithm (e.g., a, B, B2, 5, 6 for MD5, Blowfish, bcrypt, SHA256, SHA512 based hashes).
-#                  Refer to `man openssl passwd` for supported algorithms and their identifiers.
+#   - <algorithm>: Hashing algorithm.
+#                   -1 for Use the MD5 based BSD password algorithm 1 (default)
+#                   -apr1 for Use the apr1 algorithm (Apache variant of the BSD algorithm).
+#                   -aixmd5 for Use the AIX MD5 algorithm (AIX variant of the BSD algorithm).
+#                   -5 for Use the SHA-256 based hash algorithm
+#                   -6 for Use the SHA-512 based hash algorithm
 #   - <password> : The plain text password to hash.
 #
 # Description:
@@ -270,7 +274,7 @@ shell::decode::aes256cbc() {
 #   The output includes the salt and the hashed password, suitable for storage.
 #
 # Example:
-#   hashed_pass=$(shell::cryptography::create_password_hash B "MySecurePassword123!") # Uses bcrypt
+#   hashed_pass=$(shell::cryptography::create_password_hash 1 "MySecurePassword123!")
 #   echo "Hashed password (bcrypt): $hashed_pass"
 #
 #   hashed_pass_sha256=$(shell::cryptography::create_password_hash 5 "AnotherPassword") # Uses SHA256
@@ -307,7 +311,7 @@ shell::cryptography::create_password_hash() {
     fi
 
     # Use openssl passwd. -stdin reads password from stdin.
-    # The algorithm is passed as an option, e.g., -a, -B, -5, -6.
+    # The algorithm is passed as an option, e.g., -1, -apr1, -aixmd5, -5, -6.
     local hashed_password=$(printf "%s" "$password" | openssl passwd "-$algorithm" -stdin 2>/dev/null)
 
     if [ $? -ne 0 ] || [ -z "$hashed_password" ]; then
