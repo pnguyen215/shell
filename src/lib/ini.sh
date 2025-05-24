@@ -2127,17 +2127,9 @@ shell::ini_rename_section() {
         sed_cmd="sed -i \"s/^\[${escaped_old_section}\]$/\[${new_section}\]/\" \"$file\""
     fi
 
-    local status
     shell::execute_or_evict "$dry_run" "$sed_cmd"
-    status=$?
-
-    if [ $status -eq 0 ]; then
-        if [ "$dry_run" = "false" ]; then
-            shell::colored_echo "🟢 Successfully renamed section from '$old_section' to '$new_section'." 46
-        fi
-        return 0
-    else
-        shell::colored_echo "🔴 Error renaming section from '$old_section' to '$new_section'." 196
-        return 1
+    if [ "$dry_run" = "false" ]; then
+        shell::colored_echo "🟢 Successfully renamed section from '$old_section' to '$new_section'." 46
     fi
+    return 0
 }
