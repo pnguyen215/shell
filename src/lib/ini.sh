@@ -2346,99 +2346,105 @@ shell::ini_clone_section() {
     local in_source_section=0
     local source_section_pattern="^\[$(shell::ini_escape_for_regex "$source_section")\]"
     local any_section_pattern="^\[[^]]+\]"
-    local first_line_written=false
+    local collected_keys_values=() # Array to store "key=value" for cloning
 
     while IFS= read -r line || [ -n "$line" ]; do
-        # Write the original line to the temp file first
-        echo "$line" >>"$temp_file"
-
         local trimmed_line=$(shell::ini_trim "$line")
 
-        if [[ "$trimmed_line" =~ $source_section_pattern ]]; then
-            in_source_section=1
+        # Check if the line is a section header
+        if [[ "$trimmed_line" =~ $any_section_pattern ]]; then
+            if [ "$in_source_section" -eq 1 ]; then
+                # We were in the source section and encountered a new section header
+                # Now, add the destination section and all collected keys/values
+                if [ "$dry_run" = "true" ]; then
+                    shell::on_evict "shell::ini_add_section \"$file\" \"$destination_section\""
+                else
+                    shell::run_cmd_eval "shell::ini_add_section \"$file\" \"$destination_section\"" || {
+                        shell::colored_echo "🔴 Failed to add destination section '$destination_section'." 196
+                        rm -f "$temp_file"
+                        return 1
+                    }
+                fi
+                for kv_pair in "${collected_keys_values[@]}"; do
+                    local key="${kv_pair%%=*}"
+                    local value="${kv_pair#*=}"
+                    if [ "$dry_run" = "true" ]; then
+                        shell::on_evict "shell::ini_write \"$file\" \"$destination_section\" \"$key\" \"$value\""
+                    else
+                        shell::run_cmd_eval "shell::ini_write \"$file\" \"$destination_section\" \"$key\" \"$value\"" || {
+                            shell::colored_echo "🔴 Failed to clone key '$key' to section '$destination_section'." 196
+                            rm -f "$temp_file"
+                            return 1
+                        }
+                    fi
+                done
+                collected_keys_values=() # Reset for future use, though not needed here
+            fi
+
+            # Determine if we are entering or leaving the source section
+            if [[ "$trimmed_line" =~ $source_section_pattern ]]; then
+                in_source_section=1
+            else
+                in_source_section=0
+            fi
+            echo "$line" >>"$temp_file" # Always write original section header
             continue
         fi
 
+        # If currently in the source section, collect key-value pairs
         if [ "$in_source_section" -eq 1 ]; then
-            if [[ "$trimmed_line" =~ $any_section_pattern ]]; then
-                # Reached a new section, stop copying from source
-                in_source_section=0
-            else
-                # This line is part of the source section (not a new section header)
-                # Extract key and value
-                if [[ "$trimmed_line" =~ ^[[:space:]]*[^=]+= ]]; then
-                    local key="${trimmed_line%%=*}"
-                    key=$(shell::ini_trim "$key")
-                    local raw_value="${trimmed_line#*=}"
-                    raw_value=$(shell::ini_trim "$raw_value")
+            if [[ "$trimmed_line" =~ ^[[:space:]]*[^=]+= ]]; then
+                local key="${trimmed_line%%=*}"
+                key=$(shell::ini_trim "$key")
+                local raw_value="${trimmed_line#*=}"
+                raw_value=$(shell::ini_trim "$raw_value")
 
-                    # Handle quoted values by removing outer quotes and unescaping internal quotes
-                    if [[ "$raw_value" =~ ^\"(.*)\"$ ]]; then
-                        raw_value="${BASH_REMATCH[1]}"
-                        raw_value="${raw_value//\\\"/\"}"
-                    fi
-
-                    # Decode the value before passing to ini_write, as ini_write expects raw value
-                    local os_type=$(shell::get_os_type)
-                    local decoded_value
-                    if [ "$os_type" = "macos" ]; then
-                        decoded_value=$(echo "$raw_value" | base64 -D)
-                    else
-                        decoded_value=$(echo "$raw_value" | base64 -d)
-                    fi
-
-                    # Write the key-value pair to the destination section
-                    # In dry-run mode, print the command, otherwise execute
-                    local write_cmd="shell::ini_write \"$file\" \"$destination_section\" \"$key\" \"$decoded_value\""
-                    if [ "$dry_run" = "true" ]; then
-                        shell::on_evict "$write_cmd"
-                    else
-                        # To avoid re-reading the file multiple times in the loop,
-                        # we'll collect the keys and values and then write them all at once
-                        # after the initial file processing.
-                        # For now, just indicate what would be written.
-                        : # No-op for direct execution in the loop when collecting for post-processing
-                    fi
-                    if [ "$dry_run" = "true" ]; then
-                        shell::colored_echo "(Dry-run) Would write '$key' to section '$destination_section' with value '$decoded_value'" 11
-                    fi
+                # Handle quoted values by removing outer quotes and unescaping internal quotes
+                if [[ "$raw_value" =~ ^\"(.*)\"$ ]]; then
+                    raw_value="${BASH_REMATCH[1]}"
+                    raw_value="${raw_value//\\\"/\"}"
                 fi
+
+                # Decode the value because ini_write expects raw decoded value for re-encoding
+                local os_type=$(shell::get_os_type)
+                local decoded_value
+                if [ "$os_type" = "macos" ]; then
+                    decoded_value=$(echo "$raw_value" | base64 -D)
+                else
+                    decoded_value=$(echo "$raw_value" | base64 -d)
+                fi
+                collected_keys_values+=("${key}=${decoded_value}")
             fi
         fi
+        echo "$line" >>"$temp_file" # Always write original line to temp file
     done <"$file"
 
-    # Now, add the destination section and then write all collected keys
-    local add_section_cmd="shell::ini_add_section \"$file\" \"$destination_section\""
-    if [ "$dry_run" = "true" ]; then
-        shell::on_evict "$add_section_cmd"
-    else
-        shell::run_cmd_eval "$add_section_cmd" || {
-            shell::colored_echo "🔴 Failed to add destination section '$destination_section'." 196
-            rm -f "$temp_file"
-            return 1
-        }
-    fi
-
-    # Read keys from source section and write to destination section
-    # This loop is executed after the original file has been processed and
-    # the temp file is ready, avoiding issues with modifying file being read.
-    local keys_to_clone
-    keys_to_clone=$(shell::ini_list_keys "$file" "$source_section")
-
-    while IFS= read -r key; do
-        local value_to_clone
-        value_to_clone=$(shell::ini_read "$file" "$source_section" "$key")
-        local write_cmd="shell::ini_write \"$file\" \"$destination_section\" \"$key\" \"$value_to_clone\""
+    # After the loop, if we were still in the source section (meaning it was the last section in the file)
+    # then add the cloned section and its keys.
+    if [ "$in_source_section" -eq 1 ]; then
         if [ "$dry_run" = "true" ]; then
-            shell::on_evict "$write_cmd"
+            shell::on_evict "shell::ini_add_section \"$file\" \"$destination_section\""
         else
-            shell::run_cmd_eval "$write_cmd" || {
-                shell::colored_echo "🔴 Failed to clone key '$key' to section '$destination_section'." 196
+            shell::run_cmd_eval "shell::ini_add_section \"$file\" \"$destination_section\"" || {
+                shell::colored_echo "🔴 Failed to add destination section '$destination_section'." 196
                 rm -f "$temp_file"
                 return 1
             }
         fi
-    done <<<"$keys_to_clone"
+        for kv_pair in "${collected_keys_values[@]}"; do
+            local key="${kv_pair%%=*}"
+            local value="${kv_pair#*=}"
+            if [ "$dry_run" = "true" ]; then
+                shell::on_evict "shell::ini_write \"$file\" \"$destination_section\" \"$key\" \"$value\""
+            else
+                shell::run_cmd_eval "shell::ini_write \"$file\" \"$destination_section\" \"$key\" \"$value\"" || {
+                    shell::colored_echo "🔴 Failed to clone key '$key' to section '$destination_section'." 196
+                    rm -f "$temp_file"
+                    return 1
+                }
+            fi
+        done
+    fi
 
     # Atomically replace the original file with the modified content
     local replace_cmd="mv \"$temp_file\" \"$file\""
