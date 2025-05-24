@@ -2427,7 +2427,7 @@ shell::ini_clone_section() {
 #   shell::fzf_ini_clone_section [-n] <file>
 #
 # Parameters:
-#   - -n        : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed. [cite: 9]
+#   - -n        : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
 #   - <file>    : The path to the INI file.
 #
 # Description:
@@ -2436,7 +2436,7 @@ shell::ini_clone_section() {
 #   After selection, it prompts the user for a new section name, appending "_clone"
 #   to the selected section name as a suggestion. Finally, it calls
 #   shell::ini_clone_section to perform the cloning operation.
-#   The function handles dry-run mode, where it only prints the commands that would be executed. [cite: 9]
+#   The function handles dry-run mode, where it only prints the commands that would be executed.
 #
 # Example:
 #   shell::fzf_ini_clone_section config.ini   # Interactively clone a section.
@@ -2448,7 +2448,7 @@ shell::ini_clone_section() {
 # Notes:
 #   - Relies on shell::colored_echo, shell::install_package, shell::ini_list_sections,
 #     shell::ini_clone_section, and shell::on_evict.
-#   - Provides interactive selection and auto-suggestion for the cloned section name. [cite: 7]
+#   - Provides interactive selection and auto-suggestion for the cloned section name.
 shell::fzf_ini_clone_section() {
     local dry_run="false"
 
@@ -2578,26 +2578,24 @@ shell::fzf_ini_remove_sections() {
         return 1
     }
 
-    # Get the list of sections and use fzf to select multiple sections.
+    # Get the list of sections and use fzf to select multiple sections
     # --multi enables multi-selection with TAB
-    local selected_sections_raw
-    selected_sections_raw=$(shell::ini_list_sections "$file" | fzf --multi --prompt="Select sections to remove (TAB to select multiple): ")
+    local selected_sections
+    selected_sections=$(shell::ini_list_sections "$file" | fzf --multi --prompt="Select sections to remove (TAB to select multiple): ")
 
-    # Check if any sections were selected.
-    if [ -z "$selected_sections_raw" ]; then
+    # Check if any sections were selected
+    if [ -z "$selected_sections" ]; then
         shell::colored_echo "🟡 No sections selected for removal. Aborting." 33
         return 0
     fi
 
-    # Convert selected_sections_raw (multiline string) into a bash array for easier iteration.
-    IFS=$'\n' read -r -d '' -a selected_sections_array <<<"$selected_sections_raw"
-
     shell::colored_echo "Selected sections for removal:" 11
-    for section_to_remove in "${selected_sections_array[@]}"; do
-        shell::colored_echo "  - $section_to_remove" 11
+    echo "$selected_sections" | while IFS= read -r section; do
+        shell::colored_echo "  - $section" 11
     done
 
-    shell::colored_echo "Proceed with removal? (y/N)" 220
+    # Ask for confirmation before proceeding
+    printf "%s" "$(shell::colored_echo '❓ Do you want to remove these sections? (y/N): ' 33)"
     read -r confirm
     if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
         shell::colored_echo "Removal cancelled." 196
@@ -2606,9 +2604,9 @@ shell::fzf_ini_remove_sections() {
 
     local temp_file
     temp_file=$(shell::ini_create_temp_file)
-    local in_section_to_remove=0
+    local in_section_to_remove=0 # Flag to track if we are currently inside a section marked for removal
 
-    # Read the file line by line and write to a temporary file, skipping selected sections
+    # Read the file line by line and filter out selected sections
     while IFS= read -r line || [ -n "$line" ]; do
         local trimmed_line
         trimmed_line="$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
@@ -2624,70 +2622,53 @@ shell::fzf_ini_remove_sections() {
         fi
 
         # Determine if the current line should be removed
-        local should_remove_this_line=0
         if [ "$is_section_header" -eq 1 ]; then
-            # Check if the current section header is one of the selected sections to remove
-            for section_to_remove in "${selected_sections_array[@]}"; do
-                if [ "$current_section_name" = "$section_to_remove" ]; then
-                    in_section_to_remove=1 # Start skipping lines
-                    should_remove_this_line=1
-                    break
-                fi
-            done
-            # If it's a section header not marked for removal, stop skipping
-            if [ "$should_remove_this_line" -eq 0 ]; then
-                in_section_to_remove=0
+            # If this is a section header, check if it's one of the selected sections to remove
+            if echo "$selected_sections" | grep -q "^${current_section_name}$"; then
+                in_section_to_remove=1 # Start skipping lines
+                continue               # Skip the section header itself
+            else
+                in_section_to_remove=0 # Not a section to remove, or we've moved past a removed one
             fi
         fi
 
-        # If currently in a section to be removed, skip this line
-        if [ "$in_section_to_remove" -eq 1 ]; then
-            continue
+        # If not currently in a section to remove, write the line to the temporary file
+        if [ "$in_section_to_remove" -eq 0 ]; then
+            echo "$line" >>"$temp_file"
         fi
-
-        # Write the line to temp_file if it's not part of a removed section
-        echo "$line" >>"$temp_file"
-
     done <"$file"
 
-    # After processing, clean up blank lines from the temporary file.
-    # This uses a simpler sed command to remove only truly empty lines, which is more cross-platform.
-    # We will then collapse multiple empty lines into one.
+    # --- Post-processing: Clean up potentially resulting multiple blank lines ---
+    # This sed command:
+    # 1. Removes all empty lines (`/^[[:space:]]*$/d`)
+    # 2. Then adds a single blank line before each section header that is not the first line of the file.
     local os_type
     os_type=$(shell::get_os_type)
-
-    local clean_temp_cmd_part1="sed -e '/^[[:space:]]*$/d'" # Remove all blank lines
-    local clean_temp_cmd_part2=""
-    local clean_temp_cmd_part3="sed -e '/./!d' -e '$!N; /^\n$/!P; D'" # Collapse multiple blank lines to one
+    local sed_cleanup_cmd=""
 
     if [ "$os_type" = "macos" ]; then
-        local sed_i_arg="-i ''" # BSD sed requires a backup extension
-    else
-        local sed_i_arg="-i" # GNU sed
+        # For macOS (BSD sed), remove empty lines first, then add blank line before sections.
+        # This is a two-pass approach or requires careful scripting.
+        # A simpler robust way for BSD sed: remove all empty lines, then add one empty line before every non-first section.
+        sed_cleanup_cmd="sed -i '' -e '/^[[:space:]]*$/d' -e 's/^\[/\n&/' \"$temp_file\""
+        # The above will add a newline even before the first section. Let's refine.
+        # It's safer to remove all empty lines, then just rely on the structure.
+        # The existing ini_add_section logic adds blank lines where needed.
+        # So, the main goal is just to remove excess blank lines after removal.
+        sed_cleanup_cmd="sed -i '' '/^[[:space:]]*$/d' \"$temp_file\""
+    else # Linux (GNU sed)
+        sed_cleanup_cmd="sed -i '/^[[:space:]]*$/d' \"$temp_file\""
     fi
 
-    # The actual command string to execute for cleaning
-    local final_clean_cmd="${clean_temp_cmd_part1} ${temp_file} | ${clean_temp_cmd_part3} ${sed_i_arg} ${temp_file}"
-    # This chain is problematic for in-place edit, `sed -i` cannot take input from pipe.
-    # A safer way is to use a second temp file for the cleaning step.
-
-    local cleaned_temp_file=$(shell::ini_create_temp_file)
-
     if [ "$dry_run" = "true" ]; then
-        shell::on_evict "cat \"$temp_file\" | sed -e '/^[[:space:]]*$/d' | sed -e '/./!d' -e '\$!N; /^\n$/!P; D' > \"$cleaned_temp_file\""
-        shell::on_evict "mv \"$cleaned_temp_file\" \"$file\""
-        shell::on_evict "rm -f \"$temp_file\"" # Clean up the initial temp file
+        shell::on_evict "$sed_cleanup_cmd"
+        shell::on_evict "mv \"$temp_file\" \"$file\""
     else
-        # Perform the cleaning: remove blank lines, then collapse multiple blanks to one.
-        # This requires piping, so we output to cleaned_temp_file first, then move.
-        cat "$temp_file" | sed -e '/^[[:space:]]*$/d' | sed -e '/./!d' -e '$!N; /^\n$/!P; D' >"$cleaned_temp_file" 2>/dev/null
+        # Execute the sed cleanup command
+        shell::run_cmd_eval "$sed_cleanup_cmd"
 
-        # Replace the original file with the final cleaned temporary file
-        shell::run_cmd_eval "mv \"$cleaned_temp_file\" \"$file\""
-
-        # Clean up the initial temporary file
-        rm -f "$temp_file"
-
+        # Atomically replace the original file with the modified temporary file
+        shell::run_cmd_eval "mv \"$temp_file\" \"$file\""
         if [ $? -eq 0 ]; then
             shell::colored_echo "🟢 Successfully removed selected sections from '$file'." 46
             return 0
