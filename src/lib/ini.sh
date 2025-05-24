@@ -2127,9 +2127,9 @@ shell::ini_rename_section() {
         sed_cmd="sed -i \"s/^\[${escaped_old_section}\]$/\[${new_section}\]/\" \"$file\""
     fi
 
-    # Execute or print the command based on dry-run flag.
+    local status
     shell::execute_or_evict "$dry_run" "$sed_cmd"
-    local status=$?
+    status=$?
 
     if [ $status -eq 0 ]; then
         if [ "$dry_run" = "false" ]; then
