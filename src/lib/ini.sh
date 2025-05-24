@@ -934,53 +934,67 @@ shell::ini_remove_section() {
         return 1
     fi
 
-    # Check if the section exists in the file before attempting removal.
-    # This prevents sed from processing the entire file unnecessarily if the section isn't there.
-    if ! grep -q "^\[${section}\]$" "$file"; then
+    # Check if the section exists in the file
+    local escaped_section
+    escaped_section=$(shell::ini_escape_for_regex "$section")
+    if ! grep -q "^\[$escaped_section\]" "$file"; then
         shell::colored_echo "Section '$section' not found in file: $file" 11
         return 0
     fi
 
     shell::colored_echo "Removing section '$section' from file: $file" 11
 
-    local os_type
-    # Determine the operating system type to adjust the sed command syntax.
-    # Assumes shell::get_os_type function exists.
-    os_type=$(shell::get_os_type)
+    local section_pattern="^\[$escaped_section\]" # Regex for the target section header
+    local any_section_pattern="^\[[^]]+\]"        # Regex for any section header
+    local in_target_section=0                     # Flag: are we in the target section?
+    local section_removed=0                       # Flag: has the section been removed?
+    local temp_file
+    temp_file=$(shell::ini_create_temp_file)
 
-    local sed_cmd=""
-    # Construct the sed command for in-place editing based on OS type.
-    # The command '/^\[${section}\]$/,/^\[.*\]$/ { /^\[.*\]$/!d; }' works as follows:
-    # 1. '/^\[${section}\]$/,/^\[.*\]$/': Defines a range starting from the line matching the exact section header
-    #    (e.g., [dev]) and ending at the next line that matches any section header (e.g., [uat]).
-    # 2. '{ ... }': Applies the commands within the curly braces to lines within the matched range.
-    # 3. '/^\[.*\]$/!d': Deletes lines (`d`) within the range that do *not* (`!`) match the pattern
-    #    `^\[.*\]$` (which matches any section header). This ensures that the starting section header
-    #    and all lines *within* the section are deleted, but the *next* section header (which ends the range)
-    #    is not deleted. If the target is the last section, the range extends to the end of the file,
-    #    and all lines after the target header are deleted correctly.
-    if [ "$os_type" = "macos" ]; then
-        # BSD sed on macOS requires an empty string backup extension with -i.
-        sed_cmd="sed -i '' '/^\[${section}\]$/,/^\[.*\]$/ { /^\[.*\]$/!d; }' \"$file\""
+    # Process the file line by line
+    while IFS= read -r line || [ -n "$line" ]; do
+        # Check if the line is a section header
+        if [[ "$line" =~ $any_section_pattern ]]; then
+            if [[ "$line" =~ $section_pattern ]]; then
+                # Found the target section header; skip it and enter the section
+                in_target_section=1
+                section_removed=1
+                continue
+            else
+                # Found a different section header; exit the target section
+                in_target_section=0
+                # Write a blank line before the section header if the temp file is not empty
+                if [ -s "$temp_file" ]; then
+                    echo "" >>"$temp_file"
+                fi
+                echo "$line" >>"$temp_file"
+                continue
+            fi
+        fi
+
+        # If not in the target section, write the line to the temp file
+        if [ $in_target_section -eq 0 ]; then
+            echo "$line" >>"$temp_file"
+        fi
+    done <"$file"
+
+    # Construct the command to replace the original file
+    local replace_cmd="mv \"$temp_file\" \"$file\""
+
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "$replace_cmd"
+        shell::colored_echo "🟢 Dry-run: Would remove section '$section' from '$file'" 46
     else
-        # GNU sed on Linux typically does not require a backup extension with -i.
-        sed_cmd="sed -i '/^\[${section}\]$/,/^\[.*\]$/ { /^\[.*\]$/!d; }' \"$file\""
+        shell::run_cmd_eval "$replace_cmd"
+        if [ $? -eq 0 ] && [ $section_removed -eq 1 ]; then
+            shell::colored_echo "🟢 Successfully removed section '$section'" 46
+        else
+            shell::colored_echo "🔴 Error removing section '$section'" 196
+            return 1
+        fi
     fi
 
-    # Execute the sed command using shell::run_cmd_eval for logging and execution.
-    # Assumes shell::run_cmd_eval function exists.
-    shell::run_cmd_eval "$sed_cmd"
-
-    # Check the exit status of the sed command. sed returns 0 on successful execution.
-    if [ $? -eq 0 ]; then
-        shell::colored_echo "🟢 Successfully removed section '$section'" 46
-        return 0
-    else
-        # sed might return non-zero for various reasons, though the command is expected to work.
-        # A generic error message is appropriate here.
-        shell::colored_echo "🔴 Error removing section '$section'" 196
-        return 1
-    fi
+    return 0
 }
 
 # shell::fzf_ini_remove_key function
