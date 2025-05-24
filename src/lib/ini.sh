@@ -2578,48 +2578,90 @@ shell::fzf_ini_remove_sections() {
         return 1
     }
 
-    # Get the list of sections and use fzf to select multiple sections.
-    local selected_sections_multiline
-    selected_sections_multiline=$(shell::ini_list_sections "$file" | fzf --multi --prompt="Select sections to remove (Tab to select, Enter to confirm): ")
+    # Get the list of sections and use fzf to select multiple.
+    local selected_sections_raw
+    selected_sections_raw=$(shell::ini_list_sections "$file" | fzf --multi --prompt="Select sections to remove (Tab to select, Enter to confirm): ")
 
     # Check if any sections were selected.
-    if [ -z "$selected_sections_multiline" ]; then
-        shell::colored_echo "🟡 No sections selected. Aborting removal." 33
-        return 0 # Not an error, user simply didn't select anything
+    if [ -z "$selected_sections_raw" ]; then
+        shell::colored_echo "🔴 No sections selected. Aborting removal." 196
+        return 1
     fi
 
-    # Read selected sections into an array
-    IFS=$'\n' read -r -d '' -a selected_sections_array <<<"$selected_sections_multiline"
+    # Convert selected sections into an array.
+    local -a sections_to_remove=()
+    IFS=$'\n' read -r -d '' -a sections_to_remove <<<"$selected_sections_raw"
 
-    shell::colored_echo "Selected sections for removal:" 33
-    for section in "${selected_sections_array[@]}"; do
-        shell::colored_echo "  - $section" 33
-    done
+    shell::colored_echo "Selected sections for removal: ${sections_to_remove[*]}" 33
 
-    # Loop through each selected section and remove it
-    local overall_status=0 # 0 for success, 1 if any removal failed
-    for section_to_remove in "${selected_sections_array[@]}"; do
-        shell::colored_echo "Attempting to remove section: '$section_to_remove'" 11
-        if [ "$dry_run" = "true" ]; then
-            # In dry-run mode, print the command that would be executed
-            local remove_cmd="shell::ini_remove_section \"$file\" \"$section_to_remove\""
-            shell::on_evict "$remove_cmd"
-        else
-            # Execute the actual removal
-            if ! shell::ini_remove_section "$file" "$section_to_remove"; then
-                shell::colored_echo "🔴 Failed to remove section: '$section_to_remove'" 196
-                overall_status=1
+    local temp_file
+    temp_file=$(shell::ini_create_temp_file)
+
+    shell::colored_echo "Removing sections from file: $file" 11
+
+    local in_section_to_remove=0
+    local removed_count=0
+
+    # Read the original file line by line
+    while IFS= read -r line || [ -n "$line" ]; do
+        local trimmed_line
+        trimmed_line="$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+
+        local is_section_header=0
+        local current_section=""
+
+        # Check if the line is a section header
+        if [[ "$trimmed_line" =~ ^\[[^]]+\]$ ]]; then
+            is_section_header=1
+            current_section=$(echo "$trimmed_line" | sed 's/^\[\(.*\)\]$/\1/')
+        fi
+
+        # Determine if we are entering or exiting a section to be removed
+        if [ "$is_section_header" -eq 1 ]; then
+            local found_in_selection="false"
+            for s in "${sections_to_remove[@]}"; do
+                if [ "$s" = "$current_section" ]; then
+                    found_in_selection="true"
+                    break
+                fi
+            done
+
+            if [ "$found_in_selection" = "true" ]; then
+                in_section_to_remove=1 # Start skipping lines
+                shell::colored_echo "🟡 Skipping section: [$current_section]" 33
+                ((removed_count++))
+                continue # Do not write the header of the section to be removed
             else
-                shell::colored_echo "🟢 Successfully removed section: '$section_to_remove'" 46
+                in_section_to_remove=0 # Stop skipping lines if we hit a different section
             fi
         fi
-    done
 
-    if [ "$overall_status" -eq 0 ]; then
-        shell::colored_echo "✅ All selected sections processed successfully (or would be in dry-run)." 46
+        # If not in a section to be removed, write the line to the temporary file
+        if [ "$in_section_to_remove" -eq 0 ]; then
+            echo "$line" >>"$temp_file"
+        fi
+    done <"$file"
+
+    # Use atomic operation to replace the original file.
+    local replace_cmd="mv \"$temp_file\" \"$file\""
+
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "$replace_cmd"
     else
-        shell::colored_echo "🔴 Some sections failed to be removed." 196
+        shell::run_cmd_eval "$replace_cmd"
+        if [ $? -eq 0 ]; then
+            if [ "$removed_count" -gt 0 ]; then
+                shell::colored_echo "🟢 Successfully removed $removed_count section(s)." 46
+                return 0
+            else
+                shell::colored_echo "🟡 No matching sections were found for removal." 33
+                return 1 # Indicate that no sections were removed (though the operation itself succeeded)
+            fi
+        else
+            shell::colored_echo "🔴 Error replacing the original file after section removal." 196
+            return 1
+        fi
     fi
 
-    return "$overall_status"
+    return 0
 }
