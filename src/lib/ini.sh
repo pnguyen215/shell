@@ -456,7 +456,7 @@ shell::ini_list_sections() {
         return 1
     fi
 
-    shell::colored_echo "Listing sections in file: $file" 11
+    # shell::colored_echo "Listing sections in file: $file" 11
 
     # Extract section names
     grep -o '^\[[^]]*\]' "$file" 2>/dev/null | sed 's/^\[\(.*\)\]$/\1/'
