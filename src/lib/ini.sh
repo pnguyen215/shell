@@ -2008,7 +2008,7 @@ shell::ini_get_or_default() {
     local key="$3"
     local default_value="${4:-}"
 
-    # Validate mandatory parameters. [cite: 10, 11]
+    # Validate mandatory parameters.
     if [ -z "$file" ] || [ -z "$section" ] || [ -z "$key" ]; then
         shell::colored_echo "🔴 shell::ini_get_or_default: Missing required parameters: file, section, or key." 196
         echo "Usage: shell::ini_get_or_default [-h] <file> <section> <key> [default_value]"
@@ -2016,11 +2016,11 @@ shell::ini_get_or_default() {
     fi
 
     local value
-    # Try to read the value, suppressing shell::ini_read's error output. [cite: 11]
+    # Try to read the value, suppressing shell::ini_read's error output.
     value=$(shell::ini_read "$file" "$section" "$key" 2>/dev/null)
     local read_status=$?
 
-    # Return the value if read successfully, otherwise return the default_value. [cite: 12, 13]
+    # Return the value if read successfully, otherwise return the default_value.
     if [ $read_status -eq 0 ]; then
         echo "$value"
     else
@@ -2343,122 +2343,101 @@ shell::ini_clone_section() {
 
     local temp_file
     temp_file=$(shell::ini_create_temp_file)
-    local in_source_section=0
-    local source_section_pattern="^\[$(shell::ini_escape_for_regex "$source_section")\]"
+
+    local escaped_source_section
+    escaped_source_section=$(shell::ini_escape_for_regex "$source_section")
+    local source_section_pattern="^\[$escaped_source_section\]"
     local any_section_pattern="^\[[^]]+\]"
-    local collected_keys_values=() # Array to store "key=value" for cloning
 
+    local in_source_section=0
+    local cloned_content=() # Array to store lines of the source section
+
+    # First pass: Read the file and capture the content of the source section
     while IFS= read -r line || [ -n "$line" ]; do
-        local trimmed_line=$(shell::ini_trim "$line")
+        local trimmed_line
+        trimmed_line="$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
 
-        # Check if the line is a section header
         if [[ "$trimmed_line" =~ $any_section_pattern ]]; then
-            if [ "$in_source_section" -eq 1 ]; then
-                # We were in the source section and encountered a new section header
-                # Now, add the destination section and all collected keys/values
-                if [ "$dry_run" = "true" ]; then
-                    shell::on_evict "shell::ini_add_section \"$file\" \"$destination_section\""
-                else
-                    shell::run_cmd_eval "shell::ini_add_section \"$file\" \"$destination_section\"" || {
-                        shell::colored_echo "🔴 Failed to add destination section '$destination_section'." 196
-                        rm -f "$temp_file"
-                        return 1
-                    }
-                fi
-                for kv_pair in "${collected_keys_values[@]}"; do
-                    local key="${kv_pair%%=*}"
-                    local value="${kv_pair#*=}"
-                    if [ "$dry_run" = "true" ]; then
-                        shell::on_evict "shell::ini_write \"$file\" \"$destination_section\" \"$key\" \"$value\""
-                    else
-                        shell::run_cmd_eval "shell::ini_write \"$file\" \"$destination_section\" \"$key\" \"$value\"" || {
-                            shell::colored_echo "🔴 Failed to clone key '$key' to section '$destination_section'." 196
-                            rm -f "$temp_file"
-                            return 1
-                        }
-                    fi
-                done
-                collected_keys_values=() # Reset for future use, though not needed here
-            fi
-
-            # Determine if we are entering or leaving the source section
             if [[ "$trimmed_line" =~ $source_section_pattern ]]; then
                 in_source_section=1
-            else
+                continue # Do not add the section header itself to cloned_content yet
+            elif [ "$in_source_section" -eq 1 ]; then
+                # We've moved out of the source section
                 in_source_section=0
             fi
-            echo "$line" >>"$temp_file" # Always write original section header
+        fi
+
+        if [ "$in_source_section" -eq 1 ]; then
+            cloned_content+=("$line")
+        fi
+    done <"$file"
+
+    local os_type
+    os_type=$(shell::get_os_type)
+
+    local in_target_section_area=0 # Flag to know if we are in the area where new section should be added
+    local added_new_section=0      # Flag to ensure we add the new section only once
+
+    # Second pass: Write to temp file, inserting the cloned section
+    while IFS= read -r line || [ -n "$line" ]; do
+        local trimmed_line
+        trimmed_line="$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+
+        if [[ "$trimmed_line" =~ $source_section_pattern ]]; then
+            in_target_section_area=1
+            echo "$line" >>"$temp_file" # Write the original source section
+            continue
+        elif [[ "$trimmed_line" =~ $any_section_pattern ]]; then
+            if [ "$in_target_section_area" -eq 1 ] && [ "$added_new_section" -eq 0 ]; then
+                # Add the cloned section before the next section
+                # Add a blank line before the new section unless the temp file is currently empty.
+                if [ -s "$temp_file" ]; then
+                    echo "" >>"$temp_file"
+                fi
+                echo "[$destination_section]" >>"$temp_file"
+                for cloned_line in "${cloned_content[@]}"; do
+                    echo "$cloned_line" >>"$temp_file"
+                done
+                added_new_section=1
+            fi
+            in_target_section_area=0
+            echo "$line" >>"$temp_file" # Write the other section header
             continue
         fi
 
-        # If currently in the source section, collect key-value pairs
         if [ "$in_source_section" -eq 1 ]; then
-            if [[ "$trimmed_line" =~ ^[[:space:]]*[^=]+= ]]; then
-                local key="${trimmed_line%%=*}"
-                key=$(shell::ini_trim "$key")
-                local raw_value="${trimmed_line#*=}"
-                raw_value=$(shell::ini_trim "$raw_value")
-
-                # Handle quoted values by removing outer quotes and unescaping internal quotes
-                if [[ "$raw_value" =~ ^\"(.*)\"$ ]]; then
-                    raw_value="${BASH_REMATCH[1]}"
-                    raw_value="${raw_value//\\\"/\"}"
-                fi
-
-                # Decode the value because ini_write expects raw decoded value for re-encoding
-                local os_type=$(shell::get_os_type)
-                local decoded_value
-                if [ "$os_type" = "macos" ]; then
-                    decoded_value=$(echo "$raw_value" | base64 -D)
-                else
-                    decoded_value=$(echo "$raw_value" | base64 -d)
-                fi
-                collected_keys_values+=("${key}=${decoded_value}")
-            fi
+            # We are past the source section header but still reading its content,
+            # so we let the loop continue to the next section or end of file.
+            : # Do nothing, content is handled in first pass
+        else
+            echo "$line" >>"$temp_file" # Write lines outside sections or not part of the source section
         fi
-        echo "$line" >>"$temp_file" # Always write original line to temp file
     done <"$file"
 
-    # After the loop, if we were still in the source section (meaning it was the last section in the file)
-    # then add the cloned section and its keys.
-    if [ "$in_source_section" -eq 1 ]; then
-        if [ "$dry_run" = "true" ]; then
-            shell::on_evict "shell::ini_add_section \"$file\" \"$destination_section\""
-        else
-            shell::run_cmd_eval "shell::ini_add_section \"$file\" \"$destination_section\"" || {
-                shell::colored_echo "🔴 Failed to add destination section '$destination_section'." 196
-                rm -f "$temp_file"
-                return 1
-            }
+    # If the source section was the last section in the file and we haven't added the new section yet
+    if [ "$added_new_section" -eq 0 ]; then
+        # Add a blank line before the new section unless the temp file is currently empty.
+        if [ -s "$temp_file" ]; then
+            echo "" >>"$temp_file"
         fi
-        for kv_pair in "${collected_keys_values[@]}"; do
-            local key="${kv_pair%%=*}"
-            local value="${kv_pair#*=}"
-            if [ "$dry_run" = "true" ]; then
-                shell::on_evict "shell::ini_write \"$file\" \"$destination_section\" \"$key\" \"$value\""
-            else
-                shell::run_cmd_eval "shell::ini_write \"$file\" \"$destination_section\" \"$key\" \"$value\"" || {
-                    shell::colored_echo "🔴 Failed to clone key '$key' to section '$destination_section'." 196
-                    rm -f "$temp_file"
-                    return 1
-                }
-            fi
+        echo "[$destination_section]" >>"$temp_file"
+        for cloned_line in "${cloned_content[@]}"; do
+            echo "$cloned_line" >>"$temp_file"
         done
     fi
 
-    # Atomically replace the original file with the modified content
     local replace_cmd="mv \"$temp_file\" \"$file\""
     if [ "$dry_run" = "true" ]; then
         shell::on_evict "$replace_cmd"
+        shell::colored_echo "🟢 Dry-run: Would have cloned section '$source_section' to '$destination_section'." 46
     else
         shell::run_cmd_eval "$replace_cmd"
         if [ $? -eq 0 ]; then
             shell::colored_echo "🟢 Successfully cloned section '$source_section' to '$destination_section'." 46
+            return 0
         else
-            shell::colored_echo "🔴 Error replacing original file after cloning section." 196
+            shell::colored_echo "🔴 Error cloning section '$source_section' to '$destination_section'." 196
             return 1
         fi
     fi
-
-    return 0
 }
