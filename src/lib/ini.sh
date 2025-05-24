@@ -2178,27 +2178,101 @@ shell::ini_rename_section() {
 #   - Relies on shell::colored_echo, shell::install_package, shell::ini_list_sections,
 #     and shell::ini_rename_section.
 shell::fzf_ini_rename_section() {
+    # local dry_run="false"
+
+    # # Check for the optional dry-run flag (-n)
+    # if [ "$1" = "-n" ]; then
+    #     dry_run="true"
+    #     shift
+    # fi
+
+    # if [ "$1" = "-h" ]; then
+    #     echo "$USAGE_SHELL_FZF_INI_RENAME_SECTION"
+    #     return 0
+    # fi
+
+    # # Validate required parameter: file path.
+    # if [ $# -lt 1 ]; then
+    #     shell::colored_echo "🔴 shell::fzf_ini_rename_section: Missing required file parameter." 196
+    #     echo "Usage: shell::fzf_ini_rename_section [-n] [-h] <file>"
+    #     return 1
+    # fi
+
+    # local file="$1"
+
+    # # Check if the specified file exists.
+    # if [ ! -f "$file" ]; then
+    #     shell::colored_echo "🔴 File not found: $file" 196
+    #     return 1
+    # fi
+
+    # # Ensure fzf is installed.
+    # shell::install_package fzf || {
+    #     shell::colored_echo "🔴 Error: fzf is required but could not be installed." 196
+    #     return 1
+    # }
+
+    # # Get the list of sections and use fzf to select one.
+    # local selected_section
+    # selected_section=$(shell::ini_list_sections "$file" | fzf --prompt="Select section to rename: ")
+
+    # # Check if a section was selected.
+    # if [ -z "$selected_section" ]; then
+    #     shell::colored_echo "🔴 No section selected. Aborting rename." 196
+    #     return 1
+    # fi
+
+    # shell::colored_echo "Selected section for renaming: '$selected_section'" 33
+
+    # # Prompt for the new section name.
+    # shell::colored_echo ">> Enter new name for section '$selected_section':" 33
+    # read -r new_section
+    # if [ -z "$new_section" ]; then
+    #     shell::colored_echo "🔴 No new section name entered. Aborting rename." 196
+    #     return 1
+    # fi
+
+    # # Call the core renaming function.
+    # shell::ini_rename_section "$dry_run" "$file" "$selected_section" "$new_section"
+
     local dry_run="false"
+    local opt_h_found="false" # Flag to track if -h was explicitly passed
+    local file_param=""       # To store the actual file parameter after option parsing
 
-    # Check for the optional dry-run flag (-n)
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+    # Process options: -n and -h
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+        -n)
+            dry_run="true"
+            shift # Consume -n
+            ;;
+        -h)
+            opt_h_found="true"
+            shift # Consume -h
+            ;;
+        *)
+            # Assuming the first non-option argument is the file
+            file_param="$1"
+            shift # Consume the file parameter
+            break # Stop processing args as options, rest are positional
+            ;;
+        esac
+    done
 
-    if [ "$1" = "-h" ]; then
+    # If -h was found, display usage and exit immediately regardless of other args
+    if [ "$opt_h_found" = "true" ]; then
         echo "$USAGE_SHELL_FZF_INI_RENAME_SECTION"
         return 0
     fi
 
     # Validate required parameter: file path.
-    if [ $# -lt 1 ]; then
+    if [ -z "$file_param" ]; then
         shell::colored_echo "🔴 shell::fzf_ini_rename_section: Missing required file parameter." 196
         echo "Usage: shell::fzf_ini_rename_section [-n] [-h] <file>"
         return 1
     fi
 
-    local file="$1"
+    local file="$file_param" # Assign to 'file' for consistency
 
     # Check if the specified file exists.
     if [ ! -f "$file" ]; then
@@ -2232,6 +2306,9 @@ shell::fzf_ini_rename_section() {
         return 1
     fi
 
-    # Call the core renaming function.
-    shell::ini_rename_section "$dry_run" "$file" "$selected_section" "$new_section"
+    local rename_args=("$file" "$selected_section" "$new_section")
+    if [ "$dry_run" = "true" ]; then
+        rename_args=("-n" "${rename_args[@]}")
+    fi
+    shell::ini_rename_section "${rename_args[@]}"
 }
