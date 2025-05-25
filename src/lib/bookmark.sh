@@ -546,8 +546,10 @@ shell::fzf_goto_verifier() {
         return 1
     }
 
-    # Double-quote fzf_options when used
-    local fzf_options="--prompt=\"Select a bookmarked path to verify: \""
+    # FIX: Use an array for fzf_args to handle spaces correctly
+    local fzf_args=()
+    fzf_args+=("--prompt")
+    fzf_args+=("Select a bookmarked path to verify: ") # The space here is part of the string, handled by array
     local bookmark_list_for_fzf=""
 
     # Read the bookmarks file line by line to add status
@@ -566,8 +568,8 @@ shell::fzf_goto_verifier() {
 
     local selected_display_line
     # Use process substitution for robust input to fzf
-    # Double-quote $fzf_options here
-    selected_display_line=$(echo -e "$bookmark_list_for_fzf" | fzf "$fzf_options")
+    # FIX: Pass the array elements quoted, i.e., "${fzf_args[@]}"
+    selected_display_line=$(echo -e "$bookmark_list_for_fzf" | fzf "${fzf_args[@]}")
 
     if [ -z "$selected_display_line" ]; then
         shell::colored_echo "🔴 No bookmark selected. Aborting." 196
