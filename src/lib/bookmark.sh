@@ -403,3 +403,91 @@ shell::go_back() {
 
     cd $OLDPWD
 }
+
+# shell::fzf_goto function
+# Interactively selects a path from the bookmarks file using fzf and navigates to it.
+#
+# Usage:
+#   shell::fzf_goto [-n] [-h]
+#
+# Parameters:
+#   - -h : Optional help flag. Displays this help message.
+#   - -n : Optional dry-run flag. If provided, the navigation command is printed instead of executed.
+#
+# Description:
+#   This function first checks if the bookmarks file exists. If not, it displays an error.
+#   It then extracts bookmark names and their associated paths from the bookmarks file,
+#   formats them for fzf display, and allows the user to interactively select a bookmark.
+#   Once a bookmark is selected, it extracts the target directory.
+#   In dry-run mode, it prints the 'cd' command that would be executed.
+#   Otherwise, it changes the current working directory to the selected path.
+#
+# Requirements:
+#   - fzf must be installed.
+#   - The 'bookmarks_file' variable must be set.
+#   - Helper functions: shell::install_package, shell::colored_echo, shell::on_evict.
+#
+# Example usage:
+#   shell::fzf_goto         # Interactively select a bookmark and navigate to it.
+#   shell::fzf_goto -n      # Dry-run: print the navigation command without executing.
+shell::fzf_goto() {
+    local dry_run="false"
+
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_GOTO"
+        return 0
+    fi
+
+    # Check for the optional dry-run flag (-n)
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if [ ! -f "$bookmarks_file" ]; then
+        shell::colored_echo "🔴 Error: Bookmarks file '$bookmarks_file' not found." 196
+        return 1
+    fi
+
+    shell::install_package fzf || {
+        shell::colored_echo "🔴 Error: fzf is required but could not be installed." 196
+        return 1
+    }
+
+    local selected_bookmark_line
+    # Display bookmarks in the format "name (path)" and use fzf to select.
+    # The 'awk' command reorders the fields from "path|name" to "name (path)".
+    selected_bookmark_line=$(awk -F'|' '{print $2 " (" $1 ")"}' "$bookmarks_file" | fzf --prompt="Select a bookmarked path: ")
+
+    if [ -z "$selected_bookmark_line" ]; then
+        shell::colored_echo "🔴 No bookmark selected. Aborting." 196
+        return 1
+    fi
+
+    # Extract the original path from the selected line (which is in "name (path)" format).
+    # Use grep -oP to extract content within parentheses.
+    local target_path
+    if [[ "$selected_bookmark_line" =~ \((.*)\) ]]; then
+        target_path="${BASH_REMATCH[1]}"
+    else
+        shell::colored_echo "🔴 Error: Could not parse selected bookmark line: '$selected_bookmark_line'." 196
+        return 1
+    fi
+
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "cd \"$target_path\""
+    else
+        if [ -d "$target_path" ]; then
+            cd "$target_path" || {
+                shell::colored_echo "🔴 Failed to change directory to '$target_path'." 196
+                return 1
+            }
+            shell::colored_echo "🟢 Changed directory to: '$target_path'" 46
+        else
+            shell::colored_echo "🔴 Error: Target directory '$target_path' does not exist." 196
+            return 1
+        fi
+    fi
+
+    return 0
+}

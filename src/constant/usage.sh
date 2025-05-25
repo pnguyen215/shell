@@ -3414,3 +3414,18 @@ Parameters:
 Description:
   This function removes sections from an INI file using fzf.
 "
+
+USAGE_SHELL_FZF_GOTO="
+shell::fzf_goto function
+Interactively selects a path from the bookmarks file using fzf and navigates to it.
+
+Usage:
+  shell::fzf_goto [-n] [-h]
+
+Parameters:
+  - -n        : Optional. Dry-run mode. Prints the command without executing it.
+  - -h        : Optional. Displays this help message.
+
+Description:
+  This function selects a path from the bookmarks file using fzf and navigates to it.
+"
