@@ -2,12 +2,10 @@
 # bookmark.sh
 
 # Set the bookmarks file (tilde expansion works here)
-# bookmarks_file=~/.bookmarks
 bookmarks_file="$SHELL_KEY_CONF_FILE_BOOKMARK"
 
 # Create bookmarks_file it if it doesn't exist
 if [[ ! -f $bookmarks_file ]]; then
-    # touch $bookmarks_file
     # shell::create_file_if_not_exists $bookmarks_file
     mkdir -p "$SHELL_CONF_WORKING_BOOKMARK" && touch "$SHELL_KEY_CONF_FILE_BOOKMARK"
 fi
