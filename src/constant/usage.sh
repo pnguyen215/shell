@@ -3429,3 +3429,18 @@ Parameters:
 Description:
   This function selects a path from the bookmarks file using fzf and navigates to it.
 "
+
+USAGE_SHELL_FZF_GOTO_VERIFIER="
+shell::fzf_goto_verifier function
+Interactively selects a path from the bookmarks file using fzf and displays its availability status.
+
+Usage:
+  shell::fzf_goto_verifier [-n] [-h]
+
+Parameters:
+  - -n        : Optional. Dry-run mode. Prints the command without executing it.
+  - -h        : Optional. Displays this help message.
+
+Description:
+  This function selects a path from the bookmarks file using fzf and displays its availability status.
+"

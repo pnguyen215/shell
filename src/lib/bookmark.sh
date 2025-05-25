@@ -546,48 +546,6 @@ shell::fzf_goto_verifier() {
         return 1
     }
 
-    # local selected_display_line
-    # # Display bookmarks in the format "name (path) [status]" for fzf.
-    # # Check each path's existence and append [active] or [inactive].
-    # selected_display_line=$(awk -F'|' '{status = system("[ -d \"" $1 "\" ]") == 0 ? "[active]" : "[inactive]"; print $2 " (" $1 ") " status}' "$bookmarks_file" | fzf --prompt="Select a bookmarked path: ")
-
-    # if [ -z "$selected_display_line" ]; then
-    #     shell::colored_echo "🔴 No bookmark selected. Aborting." 196
-    #     return 1
-    # fi
-
-    # local selected_bookmark_name
-    # # Extract only the bookmark name from the selected display line, e.g., "working-service-path"
-    # # This assumes the format "name (path) [status]".
-    # selected_bookmark_name=$(echo "$selected_display_line" | sed 's/ (.*)//')
-
-    # local target_path
-    # # Find the original line in the bookmarks_file using the extracted name
-    # # Then cut the path (first field) from that line.
-    # target_path=$(grep "^.*|${selected_bookmark_name}$" "$bookmarks_file" | cut -d'|' -f1)
-
-    # if [ -z "$target_path" ]; then
-    #     shell::colored_echo "🔴 Error: Could not find path for selected bookmark '$selected_bookmark_name'." 196
-    #     return 1
-    # fi
-
-    # if [ "$dry_run" = "true" ]; then
-    #     shell::on_evict "cd \"$target_path\""
-    # else
-    #     if [ -d "$target_path" ]; then
-    #         cd "$target_path" || {
-    #             shell::colored_echo "🔴 Failed to change directory to '$target_path'." 196
-    #             return 1
-    #         }
-    #         shell::colored_echo "🟢 Changed directory to: '$target_path'" 46
-    #     else
-    #         shell::colored_echo "🔴 Error: Target directory '$target_path' does not exist." 196
-    #         return 1
-    #     fi
-    # fi
-
-    # return 0
-
     local selected_display_line
     # Display bookmarks in the format "name (path) [status]" for fzf.
     # Check each path's existence and append [active] or [inactive].
