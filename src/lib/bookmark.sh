@@ -465,7 +465,7 @@ shell::fzf_goto() {
     fi
 
     local selected_bookmark_name
-    # Extract only the bookmark name from the selected display line, e.g., "neyu-tms-service"
+    # Extract only the bookmark name from the selected display line, e.g., "working-service-path"
     # This assumes the format "name (path)".
     selected_bookmark_name=$(echo "$selected_display_line" | sed 's/ (.*)//')
 
@@ -491,6 +491,113 @@ shell::fzf_goto() {
         else
             shell::colored_echo "🔴 Error: Target directory '$target_path' does not exist." 196
             return 1
+        fi
+    fi
+
+    return 0
+}
+
+# shell::fzf_goto_verifier function
+# Interactively selects a path from the bookmarks file using fzf and displays its availability status.
+#
+# Usage:
+#   shell::fzf_goto_verifier [-n]
+#
+# Parameters:
+#   - -n : Optional dry-run flag. If provided, the verification commands are printed instead of executing checks.
+#
+# Description:
+#   This function first checks if the bookmarks file exists. If not, it displays an error.
+#   It then reads each bookmark, determines if its associated directory exists (Active/Inactive),
+#   and formats the output for fzf to include this status.
+#   The user can then interactively select a bookmark, and the function will display
+#   the selected bookmark's name, path, and its active/inactive status.
+#   In dry-run mode, it will print the commands that would be used to check directory existence.
+#
+# Requirements:
+#   - fzf must be installed.
+#   - The 'bookmarks_file' variable must be set.
+#   - Helper functions: shell::install_package, shell::colored_echo, shell::on_evict.
+#
+# Example usage:
+#   shell::fzf_goto_verifier         # Interactively select a bookmark and verify its path.
+#   shell::fzf_goto_verifier -n      # Dry-run: print verification commands without executing.
+shell::fzf_goto_verifier() {
+    local dry_run="false"
+
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_GOTO_VERIFIER"
+        return 0
+    fi
+
+    # Check for the optional dry-run flag (-n)
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if [ ! -f "$bookmarks_file" ]; then
+        shell::colored_echo "🔴 Error: Bookmarks file '$bookmarks_file' not found." 196
+        return 1
+    fi
+
+    shell::install_package fzf || {
+        shell::colored_echo "🔴 Error: fzf is required but could not be installed." 196
+        return 1
+    }
+
+    local fzf_options="--prompt=\"Select a bookmarked path to verify: \""
+    local bookmark_list_for_fzf=""
+
+    # Read the bookmarks file line by line to add status
+    while IFS='|' read -r path name; do
+        if [ "$dry_run" = "true" ]; then
+            # In dry-run, just indicate what check would be performed
+            bookmark_list_for_fzf+="${name} (${path}) [CHECKING_STATUS]\n"
+        else
+            if [ -d "$path" ]; then
+                bookmark_list_for_fzf+="${name} (${path}) [🟢 Active]\n"
+            else
+                bookmark_list_for_fzf+="${name} (${path}) [🔴 Inactive]\n"
+            fi
+        fi
+    done <"$bookmarks_file"
+
+    local selected_display_line
+    # Use process substitution for robust input to fzf
+    selected_display_line=$(echo -e "$bookmark_list_for_fzf" | fzf $fzf_options)
+
+    if [ -z "$selected_display_line" ]; then
+        shell::colored_echo "🔴 No bookmark selected. Aborting." 196
+        return 1
+    fi
+
+    local selected_bookmark_name
+    # Extract only the bookmark name from the selected display line, e.g., "working-service-path"
+    # This assumes the format "name (path) [status]".
+    selected_bookmark_name=$(echo "$selected_display_line" | sed -E 's/ \(.*\) \[.*\]//')
+
+    local target_path
+    # Find the original line in the bookmarks_file using the extracted name
+    # Then cut the path (first field) from that line.
+    target_path=$(grep "^.*|${selected_bookmark_name}$" "$bookmarks_file" | cut -d'|' -f1)
+
+    if [ -z "$target_path" ]; then
+        shell::colored_echo "🔴 Error: Could not find path for selected bookmark '$selected_bookmark_name'." 196
+        return 1
+    fi
+
+    shell::colored_echo "Selected Bookmark: '$selected_bookmark_name'" 33
+    shell::colored_echo "Path: '$target_path'" 33
+
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "[ -d \"$target_path\" ]"
+        shell::colored_echo "Note: In dry-run mode, actual directory existence check is skipped." 11
+    else
+        if [ -d "$target_path" ]; then
+            shell::colored_echo "Status: [🟢 Active]" 46
+        else
+            shell::colored_echo "Status: [🔴 Inactive]" 196
         fi
     fi
 
