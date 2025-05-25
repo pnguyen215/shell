@@ -546,30 +546,10 @@ shell::fzf_goto_verifier() {
         return 1
     }
 
-    # FIX: Use an array for fzf_args to handle spaces correctly
-    local fzf_args=()
-    fzf_args+=("--prompt")
-    fzf_args+=("Select a bookmarked path to verify: ") # The space here is part of the string, handled by array
-    local bookmark_list_for_fzf=""
-
-    # Read the bookmarks file line by line to add status
-    while IFS='|' read -r path name; do
-        if [ "$dry_run" = "true" ]; then
-            # In dry-run, just indicate what check would be performed
-            bookmark_list_for_fzf+="${name} (${path}) [CHECKING_STATUS]\n"
-        else
-            if [ -d "$path" ]; then
-                bookmark_list_for_fzf+="${name} (${path}) [🟢 Active]\n"
-            else
-                bookmark_list_for_fzf+="${name} (${path}) [🔴 Inactive]\n"
-            fi
-        fi
-    done <"$bookmarks_file"
-
     local selected_display_line
-    # Use process substitution for robust input to fzf
-    # FIX: Pass the array elements quoted, i.e., "${fzf_args[@]}"
-    selected_display_line=$(echo -e "$bookmark_list_for_fzf" | fzf "${fzf_args[@]}")
+    # Display bookmarks in the format "name (path) [status]" for fzf.
+    # Check each path's existence and append [active] or [inactive].
+    selected_display_line=$(awk -F'|' '{status = system("[ -d \"" $1 "\" ]") == 0 ? "[active]" : "[inactive]"; print $2 " (" $1 ") " status}' "$bookmarks_file" | fzf --prompt="Select a bookmarked path: ")
 
     if [ -z "$selected_display_line" ]; then
         shell::colored_echo "🔴 No bookmark selected. Aborting." 196
@@ -579,7 +559,7 @@ shell::fzf_goto_verifier() {
     local selected_bookmark_name
     # Extract only the bookmark name from the selected display line, e.g., "working-service-path"
     # This assumes the format "name (path) [status]".
-    selected_bookmark_name=$(echo "$selected_display_line" | sed -E 's/ \(.*\) \[.*\]//')
+    selected_bookmark_name=$(echo "$selected_display_line" | sed 's/ (.*)//')
 
     local target_path
     # Find the original line in the bookmarks_file using the extracted name
@@ -591,17 +571,18 @@ shell::fzf_goto_verifier() {
         return 1
     fi
 
-    shell::colored_echo "Selected Bookmark: '$selected_bookmark_name'" 33
-    shell::colored_echo "Path: '$target_path'" 33
-
     if [ "$dry_run" = "true" ]; then
-        shell::on_evict "[ -d \"$target_path\" ]"
-        shell::colored_echo "Note: In dry-run mode, actual directory existence check is skipped." 11
+        shell::on_evict "cd \"$target_path\""
     else
         if [ -d "$target_path" ]; then
-            shell::colored_echo "Status: [🟢 Active]" 46
+            cd "$target_path" || {
+                shell::colored_echo "🔴 Failed to change directory to '$target_path'." 196
+                return 1
+            }
+            shell::colored_echo "🟢 Changed directory to: '$target_path'" 46
         else
-            shell::colored_echo "Status: [🔴 Inactive]" 196
+            shell::colored_echo "🔴 Error: Target directory '$target_path' does not exist." 196
+            return 1
         fi
     fi
 
