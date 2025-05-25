@@ -546,6 +546,7 @@ shell::fzf_goto_verifier() {
         return 1
     }
 
+    # Double-quote fzf_options when used
     local fzf_options="--prompt=\"Select a bookmarked path to verify: \""
     local bookmark_list_for_fzf=""
 
@@ -565,7 +566,8 @@ shell::fzf_goto_verifier() {
 
     local selected_display_line
     # Use process substitution for robust input to fzf
-    selected_display_line=$(echo -e "$bookmark_list_for_fzf" | fzf $fzf_options)
+    # Double-quote $fzf_options here
+    selected_display_line=$(echo -e "$bookmark_list_for_fzf" | fzf "$fzf_options")
 
     if [ -z "$selected_display_line" ]; then
         shell::colored_echo "🔴 No bookmark selected. Aborting." 196
