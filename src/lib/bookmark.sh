@@ -454,23 +454,28 @@ shell::fzf_goto() {
         return 1
     }
 
-    local selected_bookmark_line
-    # Display bookmarks in the format "name (path)" and use fzf to select.
-    # The 'awk' command reorders the fields from "path|name" to "name (path)".
-    selected_bookmark_line=$(awk -F'|' '{print $2 " (" $1 ")"}' "$bookmarks_file" | fzf --prompt="Select a bookmarked path: ")
+    local selected_display_line
+    # Display bookmarks in the format "name (path)" for fzf.
+    # The original full line from the file is also passed through so we can easily grep for it.
+    selected_display_line=$(awk -F'|' '{print $2 " (" $1 ")"}' "$bookmarks_file" | fzf --prompt="Select a bookmarked path: ")
 
-    if [ -z "$selected_bookmark_line" ]; then
+    if [ -z "$selected_display_line" ]; then
         shell::colored_echo "🔴 No bookmark selected. Aborting." 196
         return 1
     fi
 
-    # Extract the original path from the selected line (which is in "name (path)" format).
-    # Use grep -oP to extract content within parentheses.
+    local selected_bookmark_name
+    # Extract only the bookmark name from the selected display line, e.g., "neyu-tms-service"
+    # This assumes the format "name (path)".
+    selected_bookmark_name=$(echo "$selected_display_line" | sed 's/ (.*)//')
+
     local target_path
-    if [[ "$selected_bookmark_line" =~ \((.*)\) ]]; then
-        target_path="${BASH_REMATCH[1]}"
-    else
-        shell::colored_echo "🔴 Error: Could not parse selected bookmark line: '$selected_bookmark_line'." 196
+    # Find the original line in the bookmarks_file using the extracted name
+    # Then cut the path (first field) from that line.
+    target_path=$(grep "^.*|${selected_bookmark_name}$" "$bookmarks_file" | cut -d'|' -f1)
+
+    if [ -z "$target_path" ]; then
+        shell::colored_echo "🔴 Error: Could not find path for selected bookmark '$selected_bookmark_name'." 196
         return 1
     fi
 
