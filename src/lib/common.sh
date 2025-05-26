@@ -1970,7 +1970,7 @@ shell::execute_or_evict() {
 #   The function is compatible with both macOS and Linux, handling differences in ls and stat commands.
 #
 # Requirements:
-#   - Standard tools: ls, stat, awk, column, find.
+#   - Standard tools: ls, stat, awk, column.
 #   - Helper functions: shell::colored_echo, shell::get_os_type.
 #
 # Example usage:
@@ -1986,7 +1986,7 @@ shell::execute_or_evict() {
 # Notes:
 #   - Colors are applied using ANSI codes via tput.
 #   - File metadata is retrieved using stat, with OS-specific formats.
-#   - Uses ls for primary listing, with fallback to find if ls fails.
+#   - Uses ls for listing, with proper argument handling via arrays.
 shell::ls() {
     local show_hidden="false"
     local long_format="false"
@@ -2044,35 +2044,22 @@ shell::ls() {
         echo "---- ---------- ---- -------- ----" >>"$tmp_file"
     fi
 
-    # Try listing with ls
-    local ls_cmd="/bin/ls -1"
+    # Set ls command as an array
+    local ls_cmd=(/bin/ls -1)
     if [ "$show_hidden" = "true" ]; then
-        ls_cmd="/bin/ls -1A"
+        ls_cmd=(/bin/ls -1A)
     fi
-    local ls_output ls_error
-    ls_output=$($ls_cmd 2> >(
-        ls_error=$(cat)
-        echo "$ls_error" >&2
-    ))
-    local ls_status=$?
 
-    if [ $ls_status -ne 0 ]; then
-        [ "$debug" = "true" ] && shell::colored_echo "🔴 ls failed: $ls_error" 196
-        shell::colored_echo "🟡 Falling back to find due to ls error." 11
+    [ "$debug" = "true" ] && echo "Running ls command: ${ls_cmd[*]}" >&2
 
-        # Fallback to find
-        local find_cmd="find . -maxdepth 1 -type f -o -type d"
-        if [ "$show_hidden" = "false" ]; then
-            find_cmd="$find_cmd -not -name '.*'"
-        fi
-        ls_output=$($find_cmd | sed 's|^\./||')
-        ls_status=$?
-        if [ $ls_status -ne 0 ]; then
-            shell::colored_echo "🔴 Error: Failed to list directory contents with find." 196
-            rm -f "$tmp_file"
-            trap - EXIT
-            return 1
-        fi
+    # Try listing with ls
+    local ls_output
+    if ! ls_output=$("${ls_cmd[@]}" 2>&1); then
+        [ "$debug" = "true" ] && shell::colored_echo "🔴 ls failed: $ls_output" 196
+        shell::colored_echo "🔴 Error: Failed to list directory contents with ls." 196
+        rm -f "$tmp_file"
+        trap - EXIT
+        return 1
     fi
 
     # Process each file
@@ -2129,7 +2116,7 @@ shell::ls() {
         return 0
     fi
 
-    # Display the output using column for alignment
+    # Display the output using column
     column -t "$tmp_file"
 
     # Clean up
