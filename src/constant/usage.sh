@@ -3498,3 +3498,18 @@ Example:
   export SHELL_SHIELD_ENCRYPTION_KEY="my64byteKey1234567890123456789012345678901234567890"
   shell::decode::file::aes256cbc -n encrypted.bin decrypted.txt  # Prints decryption command without executing
 "
+
+USAGE_SHELL_FZF_GOTO_CLEAR="
+shell::fzf_goto_clear function
+Interactively selects inactive bookmark paths using fzf and removes them from the bookmarks file.
+
+Usage:
+  shell::fzf_goto_clear [-n] [-h]
+
+Parameters:
+  - -n        : Optional. Dry-run mode. Prints the command without executing it.
+  - -h        : Optional. Displays this help message.
+
+Description:
+  This function removes inactive bookmark paths from the bookmarks file using fzf.
+"
