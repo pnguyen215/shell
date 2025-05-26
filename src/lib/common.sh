@@ -1969,7 +1969,7 @@ shell::execute_or_evict() {
 #   The function is compatible with both macOS and Linux, handling differences in ls and stat commands.
 #
 # Requirements:
-#   - Standard tools: ls, stat, awk, column.
+#   - Standard tools: ls, stat, awk, column, find.
 #   - Helper functions: shell::colored_echo, shell::get_os_type.
 #
 # Example usage:
@@ -1984,6 +1984,7 @@ shell::execute_or_evict() {
 # Notes:
 #   - Colors are applied using ls -G (macOS) or ls --color=auto (Linux).
 #   - File metadata is retrieved using stat, with OS-specific formats.
+#   - Uses find for reliable file listing, handling special characters in file names.
 #   - Output is formatted with column for aligned display.
 shell::ls() {
     local show_hidden="false"
@@ -2012,15 +2013,12 @@ shell::ls() {
     local os_type
     os_type=$(shell::get_os_type)
 
-    # Set ls command with color options
+    # Set ls command with color options for display (not for file listing)
     local ls_cmd="ls"
     if [ "$os_type" = "macos" ]; then
         ls_cmd="ls -G"
     else
         ls_cmd="ls --color=auto"
-    fi
-    if [ "$show_hidden" = "true" ]; then
-        ls_cmd="$ls_cmd -a"
     fi
 
     # Check if current directory is accessible
@@ -2049,13 +2047,19 @@ shell::ls() {
         echo "---- ---------- ---- -------- ----" >>"$tmp_file"
     fi
 
-    # List files and process each entry
-    local file
+    # Use find to list files, handling special characters
+    local find_cmd="find . -maxdepth 1 -type f -o -type d"
+    if [ "$show_hidden" = "false" ]; then
+        find_cmd="$find_cmd -not -name '.*'"
+    fi
+
+    # Process each file
+    local file_count=0
     while IFS= read -r file; do
-        # Skip . and .. entries unless -a is specified
-        if [ "$show_hidden" = "false" ] && { [ "$file" = "." ] || [ "$file" = ".." ]; }; then
-            continue
-        fi
+        # Strip './' prefix from find output
+        file="${file#./}"
+        # Skip empty entries
+        [ -z "$file" ] && continue
 
         # Determine file type and icon
         local icon="📄"
@@ -2087,14 +2091,19 @@ shell::ls() {
             # Simple format: just icon and file name
             echo "$icon ${color}${file}${normal}" >>"$tmp_file"
         fi
-    done < <($ls_cmd -1 2>/dev/null)
+        ((file_count++))
+    done < <($find_cmd 2>/dev/null)
+
+    # Check if any files were processed
+    if [ $file_count -eq 0 ]; then
+        shell::colored_echo "🟢 No files or directories found." 46
+        rm -f "$tmp_file"
+        trap - EXIT
+        return 0
+    fi
 
     # Display the output using column for alignment
-    if [ -s "$tmp_file" ]; then
-        column -t "$tmp_file"
-    else
-        shell::colored_echo "🟢 No files or directories found." 46
-    fi
+    column -t "$tmp_file"
 
     # Clean up
     trap - EXIT
