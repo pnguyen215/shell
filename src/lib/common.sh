@@ -2124,3 +2124,191 @@ shell::ls() {
     rm -f "$tmp_file"
     return 0
 }
+
+# shell::ask::perms function
+# Explains a file permission string (e.g., -rwxr-xr-x) in a human-readable way for developers.
+#
+# Usage:
+#   shell::ask::perms [-h] [--file <path>] [--debug] [permission_string]
+#
+# Parameters:
+#   - -h : Optional. Displays this help message.
+#   - --file <path> : Optional. Use the permissions of the specified file.
+#   - --debug : Optional. Enables debug output to trace execution.
+#   - permission_string : Optional. A permission string (e.g., -rwxr-xr-x). If omitted and --file is not used, defaults to -rw-r--r--.
+#
+# Description:
+#   This function parses a file permission string or extracts permissions from a file and explains them in a clear, professional manner.
+#   It describes the file type (e.g., regular file, directory), permissions for owner, group, and others (read, write, execute),
+#   and provides the octal equivalent (e.g., 644). The output includes developer-relevant context, such as implications for scripts,
+#   security considerations, and common use cases (e.g., 755 for executables). The function is compatible with macOS and Linux.
+#
+# Requirements:
+#   - Standard tools: stat, tput.
+#   - Helper functions: shell::colored_echo, shell::get_os_type.
+#
+# Example usage:
+#   shell::ask::perms -rwxr-xr-x       # Explain -rwxr-xr-x permissions.
+#   shell::ask::perms --file script.sh # Explain permissions of script.sh.
+#   shell::ask::perms -h               # Show help message.
+#   shell::ask::perms --debug          # Explain default permissions with debug output.
+#
+# Returns:
+#   0 on success, 1 on failure (e.g., invalid permission string, file not found).
+#
+# Notes:
+#   - Colors are applied using tput for consistency with shell::colored_echo.
+#   - Supports standard Unix permission strings (10 characters).
+#   - Provides octal values for use with chmod.
+shell::ask::perms() {
+    local permission_string=""
+    local file_path=""
+    local debug="false"
+
+    # Parse command-line options
+    while [ $# -gt 0 ]; do
+        case "$1" in
+        -h)
+            echo "Usage: shell::ask::perms [-h] [--file <path>] [--debug] [permission_string]"
+            echo "  -h : Display this help message."
+            echo "  --file <path> : Use permissions of the specified file."
+            echo "  --debug : Enable debug output."
+            echo "  permission_string : A permission string (e.g., -rwxr-xr-x). Defaults to -rw-r--r--."
+            return 0
+            ;;
+        --file)
+            if [ -z "$2" ]; then
+                shell::colored_echo "🔴 Error: --file requires a path." 196
+                return 1
+            fi
+            file_path="$2"
+            shift 2
+            ;;
+        --debug)
+            debug="true"
+            shift
+            ;;
+        *)
+            if [ -n "$permission_string" ]; then
+                shell::colored_echo "🔴 Error: Multiple permission strings provided." 196
+                return 1
+            fi
+            permission_string="$1"
+            shift
+            ;;
+        esac
+    done
+
+    # If file_path is provided, get its permissions
+    if [ -n "$file_path" ]; then
+        if [ ! -e "$file_path" ]; then
+            shell::colored_echo "🔴 Error: File '$file_path' does not exist." 196
+            return 1
+        fi
+        local os_type
+        os_type=$(shell::get_os_type)
+        if [ "$os_type" = "macos" ]; then
+            permission_string=$(stat -f "%Sp" "$file_path" 2>/dev/null)
+        else
+            permission_string=$(stat --format="%A" "$file_path" 2>/dev/null)
+        fi
+        if [ -z "$permission_string" ]; then
+            shell::colored_echo "🔴 Error: Failed to get permissions for '$file_path'." 196
+            return 1
+        fi
+        [ "$debug" = "true" ] && echo "Retrieved permissions: $permission_string" >&2
+    fi
+
+    # Default permission string if none provided
+    if [ -z "$permission_string" ]; then
+        permission_string="-rw-r--r--"
+        [ "$debug" = "true" ] && echo "Using default permissions: $permission_string" >&2
+    fi
+
+    # Validate permission string (10 characters, valid format)
+    if ! echo "$permission_string" | grep -Eq '^[-d]([-r][-w][-x]){3}$'; then
+        shell::colored_echo "🔴 Error: Invalid permission string '$permission_string'. Expected format like -rwxr-xr-x." 196
+        return 1
+    fi
+
+    # Define ANSI color codes using tput
+    local blue=$(tput setaf 4)   # Blue for emphasis
+    local green=$(tput setaf 2)  # Green for permissions
+    local yellow=$(tput setaf 3) # Yellow for octal
+    local normal=$(tput sgr0)    # Reset to normal
+
+    # Parse permission string
+    local file_type=${permission_string:0:1}
+    local owner_perms=${permission_string:1:3}
+    local group_perms=${permission_string:4:3}
+    local others_perms=${permission_string:7:3}
+
+    # Describe file type
+    local file_type_desc
+    case "$file_type" in
+    "-") file_type_desc="regular file" ;;
+    "d") file_type_desc="directory" ;;
+    *) file_type_desc="unknown type" ;; # Shouldn't occur due to validation
+    esac
+
+    # Convert permissions to human-readable
+    local owner_desc=""
+    [ "${owner_perms:0:1}" = "r" ] && owner_desc+="read, "
+    [ "${owner_perms:1:1}" = "w" ] && owner_desc+="write, "
+    [ "${owner_perms:2:1}" = "x" ] && owner_desc+="execute"
+    owner_desc=${owner_desc%, } # Remove trailing comma
+    [ -z "$owner_desc" ] && owner_desc="no permissions"
+
+    local group_desc=""
+    [ "${group_perms:0:1}" = "r" ] && group_desc+="read, "
+    [ "${group_perms:1:1}" = "w" ] && group_desc+="write, "
+    [ "${group_perms:2:1}" = "x" ] && group_desc+="execute"
+    group_desc=${group_desc%, }
+    [ -z "$group_desc" ] && group_desc="no permissions"
+
+    local others_desc=""
+    [ "${others_perms:0:1}" = "r" ] && others_desc+="read, "
+    [ "${others_perms:1:1}" = "w" ] && others_desc+="write, "
+    [ "${others_perms:2:1}" = "x" ] && others_desc+="execute"
+    others_desc=${others_desc%, }
+    [ -z "$others_desc" ] && others_desc="no permissions"
+
+    # Calculate octal value
+    local octal=0
+    for perms in "$owner_perms" "$group_perms" "$others_perms"; do
+        local value=0
+        [ "${perms:0:1}" = "r" ] && ((value += 4))
+        [ "${perms:1:1}" = "w" ] && ((value += 2))
+        [ "${perms:2:1}" = "x" ] && ((value += 1))
+        octal=$((octal * 8 + value))
+    done
+    octal=$(printf "%03d" "$octal") # Ensure 3 digits
+
+    # Developer context
+    local dev_context=""
+    if [ "$permission_string" = "-rwxr-xr-x" ]; then
+        dev_context="This is a common permission for executable scripts or binaries (octal 755). The owner can modify and run the file, while group members and others can read and execute it. Ideal for shared tools or scripts in a team environment, ensuring only the owner can edit."
+    elif [ "$permission_string" = "-rw-r--r--" ]; then
+        dev_context="This is typical for configuration files or source code (octal 644). The owner can edit the file, while group and others can only read it. Suitable for files in version control (e.g., Git) or server configs where read-only access is sufficient for most users."
+    elif [ "${others_perms:1:1}" = "w" ]; then
+        dev_context="Warning: Write permissions for 'others' can be a security risk, as any user can modify the file. Avoid this in production environments, especially for scripts or configs on shared servers."
+    elif [ "$file_type" = "d" ] && [ "$owner_perms" = "rwx" ]; then
+        dev_context="This directory allows the owner full control (read, write, execute). Execute permission is required to enter the directory or list its contents. Common for project directories where the owner manages all files."
+    else
+        dev_context="These permissions control file access in development workflows. Ensure execute permissions for scripts (chmod +x) and restrict write access for sensitive files (e.g., API keys) to the owner."
+    fi
+
+    # Output explanation
+    shell::colored_echo "🟢 Permission Explanation for ${blue}${permission_string}${normal}" 46
+    echo
+    echo "${green}File Type${normal}: The first character '${blue}${file_type}${normal}' indicates a ${file_type_desc}."
+    echo "${green}Owner Permissions${normal}: '${blue}${owner_perms}${normal}' means the owner has ${owner_desc}."
+    echo "${green}Group Permissions${normal}: '${blue}${group_perms}${normal}' means group members have ${group_desc}."
+    echo "${green}Others Permissions${normal}: '${blue}${others_perms}${normal}' means others have ${others_desc}."
+    echo "${green}Octal Value${normal}: ${yellow}${octal}${normal} (use with 'chmod ${octal}')."
+    echo
+    echo "${green}Developer Context${normal}: $dev_context"
+    [ "$debug" = "true" ] && echo "Debug: Parsed file type='$file_type', owner='$owner_perms', group='$group_perms', others='$others_perms', octal='$octal'" >&2
+
+    return 0
+}
