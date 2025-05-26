@@ -391,9 +391,9 @@ shell::encode::file::aes256cbc() {
     fi
 
     # Execute or print the command based on dry-run mode
-    if [ "$dry_run" = "false" ]; then
-        shell::create_file_if_not_exists "$output_file"
-    fi
+    # if [ "$dry_run" = "false" ]; then
+    #     shell::create_file_if_not_exists "$output_file"
+    # fi
 
     # Check if output file already exists
     if [ -e "$output_file" ] && [ "$dry_run" = "false" ]; then
