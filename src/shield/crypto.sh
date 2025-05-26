@@ -396,7 +396,7 @@ shell::encode::file::aes256cbc() {
     fi
 
     # Check if output file already exists
-    if [ -e "$output_file" ]; then
+    if [ -e "$output_file" ] && [ "$dry_run" = "false" ]; then
         shell::colored_echo "🔴 shell::encode::file::aes256cbc: Output file '$output_file' already exists" 196 >&2
         return 1
     fi
