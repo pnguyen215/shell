@@ -1954,12 +1954,13 @@ shell::execute_or_evict() {
 # Lists files and folders in the current directory with a beautiful, easy-to-read layout.
 #
 # Usage:
-#   shell::ls [-a] [-l] [-h]
+#   shell::ls [-a] [-l] [-h] [--debug]
 #
 # Parameters:
 #   - -a : Optional. Include hidden files and directories (similar to ls -a).
 #   - -l : Optional. Use long format, showing permissions, size, and last modified date.
 #   - -h : Optional. Displays this help message.
+#   - --debug : Optional. Enables debug output to trace command execution.
 #
 # Description:
 #   This function lists all files and folders in the current directory with a visually appealing layout.
@@ -1969,7 +1970,7 @@ shell::execute_or_evict() {
 #   The function is compatible with both macOS and Linux, handling differences in ls and stat commands.
 #
 # Requirements:
-#   - Standard tools: ls, stat, awk, column.
+#   - Standard tools: ls, stat, awk, column, find.
 #   - Helper functions: shell::colored_echo, shell::get_os_type.
 #
 # Example usage:
@@ -1977,44 +1978,49 @@ shell::execute_or_evict() {
 #   shell::ls -a       # Include hidden files.
 #   shell::ls -l       # Show detailed listing with permissions, size, and modified date.
 #   shell::ls -a -l    # Show detailed listing including hidden files.
+#   shell::ls --debug  # Enable debug output for troubleshooting.
 #
 # Returns:
 #   0 on success, 1 on failure (e.g., current directory inaccessible).
 #
 # Notes:
-#   - Colors are applied using ls -G (macOS) or ls --color=auto (Linux).
+#   - Colors are applied using ANSI codes via tput.
 #   - File metadata is retrieved using stat, with OS-specific formats.
-#   - Uses ls -1A for reliable file listing, handling special characters in file names.
+#   - Uses ls for primary listing, with fallback to find if ls fails.
 shell::ls() {
     local show_hidden="false"
     local long_format="false"
+    local debug="false"
 
     # Parse command-line options
-    while getopts "alh" opt; do
-        case "$opt" in
-        a) show_hidden="true" ;;
-        l) long_format="true" ;;
-        h)
-            echo "Usage: shell::ls [-a] [-l] [-h]"
+    while [ $# -gt 0 ]; do
+        case "$1" in
+        -a) show_hidden="true" ;;
+        -l) long_format="true" ;;
+        -h)
+            echo "Usage: shell::ls [-a] [-l] [-h] [--debug]"
             echo "  -a : Include hidden files and directories."
             echo "  -l : Use long format (permissions, size, modified date)."
             echo "  -h : Display this help message."
+            echo "  --debug : Enable debug output."
             return 0
             ;;
+        --debug) debug="true" ;;
         *)
-            shell::colored_echo "🔴 Invalid option. Usage: shell::ls [-a] [-l] [-h]" 196
+            shell::colored_echo "🔴 Invalid option: $1. Usage: shell::ls [-a] [-l] [-h] [--debug]" 196
             return 1
             ;;
         esac
+        shift
     done
 
-    # Determine OS for ls and stat compatibility
-    local os_type
-    os_type=$(shell::get_os_type)
-
-    # Check if current directory is accessible
+    # Check if current directory is accessible and readable
     if ! pwd >/dev/null 2>&1; then
         shell::colored_echo "🔴 Error: Cannot access current directory." 196
+        return 1
+    fi
+    if ! [ -r . ]; then
+        shell::colored_echo "🔴 Error: No read permission for current directory." 196
         return 1
     fi
 
@@ -2038,23 +2044,39 @@ shell::ls() {
         echo "---- ---------- ---- -------- ----" >>"$tmp_file"
     fi
 
-    # Set ls command for listing
-    local ls_cmd="ls -1"
+    # Try listing with ls
+    local ls_cmd="/bin/ls -1"
     if [ "$show_hidden" = "true" ]; then
-        ls_cmd="ls -1A" # -A includes hidden files but excludes . and ..
+        ls_cmd="/bin/ls -1A"
+    fi
+    local ls_output ls_error
+    ls_output=$($ls_cmd 2> >(
+        ls_error=$(cat)
+        echo "$ls_error" >&2
+    ))
+    local ls_status=$?
+
+    if [ $ls_status -ne 0 ]; then
+        [ "$debug" = "true" ] && shell::colored_echo "🔴 ls failed: $ls_error" 196
+        shell::colored_echo "🟡 Falling back to find due to ls error." 11
+
+        # Fallback to find
+        local find_cmd="find . -maxdepth 1 -type f -o -type d"
+        if [ "$show_hidden" = "false" ]; then
+            find_cmd="$find_cmd -not -name '.*'"
+        fi
+        ls_output=$($find_cmd | sed 's|^\./||')
+        ls_status=$?
+        if [ $ls_status -ne 0 ]; then
+            shell::colored_echo "🔴 Error: Failed to list directory contents with find." 196
+            rm -f "$tmp_file"
+            trap - EXIT
+            return 1
+        fi
     fi
 
     # Process each file
     local file_count=0
-    local ls_output
-    ls_output=$($ls_cmd 2>/dev/null)
-    if [ $? -ne 0 ]; then
-        shell::colored_echo "🔴 Error: Failed to list directory contents." 196
-        rm -f "$tmp_file"
-        trap - EXIT
-        return 1
-    fi
-
     while IFS= read -r file; do
         # Skip empty entries or . and .. when show_hidden is true
         [ -z "$file" ] && continue
@@ -2062,8 +2084,7 @@ shell::ls() {
             continue
         fi
 
-        # Debugging: Uncomment to trace processed files
-        # echo "Processing file: $file" >&2
+        [ "$debug" = "true" ] && echo "Processing file: $file" >&2
 
         # Determine file type and icon
         local icon="📄"
@@ -2079,6 +2100,8 @@ shell::ls() {
         if [ "$long_format" = "true" ]; then
             # Get file metadata
             local perms size modified
+            local os_type
+            os_type=$(shell::get_os_type)
             if [ "$os_type" = "macos" ]; then
                 perms=$(stat -f "%Sp" "$file" 2>/dev/null || echo "-")
                 size=$(stat -f "%z" "$file" 2>/dev/null | awk '{if ($1 < 1024) print $1 " B"; else if ($1 < 1048576) print sprintf("%.1f KB", $1/1024); else print sprintf("%.1f MB", $1/1048576)}')
