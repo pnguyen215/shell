@@ -322,3 +322,137 @@ shell::cryptography::create_password_hash() {
     echo "$hashed_password"
     return 0
 }
+
+# shell::encode::file::aes256cbc function
+# Encrypts a file using AES-256-CBC encryption and saves the result to an output file.
+#
+# Usage:
+#   shell::encode::file::aes256cbc [-n] [-h] <input_file> <output_file> [key] [iv]
+#
+# Parameters:
+#   - -n           : Optional. Dry-run mode; prints the command using shell::on_evict instead of executing it.
+#   - -h           : Optional. Displays this help message.
+#   - <input_file> : The path to the file to encrypt.
+#   - <output_file>: The path where the encrypted file will be saved.
+#   - [key]        : Optional. The encryption key (32 bytes for AES-256). If not provided, uses SHELL_SHIELD_ENCRYPTION_KEY.
+#   - [iv]         : Optional. The initialization vector (16 bytes for AES-256). If not provided, uses SHELL_SHIELD_ENCRYPTION_IV.
+#
+# Description:
+#   This function encrypts the specified input file using AES-256-CBC with OpenSSL, using either the provided key
+#   or the SHELL_SHIELD_ENCRYPTION_KEY environment variable. The encrypted output is saved to the specified output file.
+#   It checks for OpenSSL availability, validates the key and IV lengths, and ensures the input file exists.
+#   The function is compatible with both macOS and Linux. In dry-run mode, it prints the encryption command without executing it.
+#
+# Example:
+#   shell::encode::file::aes256cbc input.txt encrypted.bin "my64byteKey1234567890123456789012345678901234567890"  # Encrypts with specified key
+#   export SHELL_SHIELD_ENCRYPTION_KEY="my64byteKey1234567890123456789012345678901234567890"
+#   shell::encode::file::aes256cbc -n input.txt encrypted.bin  # Prints encryption command without executing
+#
+# Returns:
+#   0 on success, 1 on failure (e.g., file not found, invalid key, or encryption failure).
+#
+# Notes:
+#   - Relies on the shell::colored_echo, shell::on_evict, and shell::run_cmd_eval functions for output and command execution.
+#   - Requires OpenSSL to be installed.
+#   - The encryption key must be 64 bytes (hex) for AES-256-CBC.
+#   - The initialization vector must be 32 bytes (hex) for AES-256-CBC.
+#   - If SHELL_SHIELD_ENCRYPTION_KEY or SHELL_SHIELD_ENCRYPTION_IV is not set and no key/IV is provided, the function generates and stores them.
+shell::encode::file::aes256cbc() {
+    local dry_run="false"
+
+    # Check for help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_ENCODE_FILE_AES256CBC"
+        return 0
+    fi
+
+    # Check for dry-run flag (-n)
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    local input_file="$1"
+    local output_file="$2"
+    local key="$3"
+    local iv="$4"
+
+    # Validate input parameters
+    if [ -z "$input_file" ] || [ -z "$output_file" ]; then
+        shell::colored_echo "🔴 shell::encode::file::aes256cbc: Missing input or output file" 196 >&2
+        echo "Usage: shell::encode::file::aes256cbc [-n] [-h] <input_file> <output_file> [key] [iv]" >&2
+        return 1
+    fi
+
+    # Check if input file exists
+    if [ ! -f "$input_file" ]; then
+        shell::colored_echo "🔴 shell::encode::file::aes256cbc: Input file '$input_file' does not exist" 196 >&2
+        return 1
+    fi
+
+    # Execute or print the command based on dry-run mode
+    if [ "$dry_run" = "false" ]; then
+        shell::create_file_if_not_exists "$output_file"
+    fi
+
+    # Check if output file already exists
+    if [ -e "$output_file" ]; then
+        shell::colored_echo "🔴 shell::encode::file::aes256cbc: Output file '$output_file' already exists" 196 >&2
+        return 1
+    fi
+
+    # Use SHELL_SHIELD_ENCRYPTION_KEY if no key is provided
+    if [ -z "$key" ]; then
+        local hasKey=$(shell::exist_key_conf "SHELL_SHIELD_ENCRYPTION_KEY")
+        if [ "$hasKey" = "false" ]; then
+            shell::add_conf "SHELL_SHIELD_ENCRYPTION_KEY" "$(shell::generate_random_key 32)"
+        fi
+        key=$(shell::get_value_conf "SHELL_SHIELD_ENCRYPTION_KEY")
+    fi
+
+    # Use SHELL_SHIELD_ENCRYPTION_IV if no iv is provided
+    if [ -z "$iv" ]; then
+        local hasIv=$(shell::exist_key_conf "SHELL_SHIELD_ENCRYPTION_IV")
+        if [ "$hasIv" = "false" ]; then
+            shell::add_conf "SHELL_SHIELD_ENCRYPTION_IV" "$(shell::generate_random_key 16)"
+        fi
+        iv=$(shell::get_value_conf "SHELL_SHIELD_ENCRYPTION_IV")
+    fi
+
+    # Validate key length (64 bytes for AES-256)
+    if [ ${#key} -ne 64 ]; then
+        shell::colored_echo "🔴 shell::encode::file::aes256cbc: Encryption key must be exactly 64 bytes" 196 >&2
+        return 1
+    fi
+
+    # Validate iv length (32 bytes for AES-256)
+    if [ ${#iv} -ne 32 ]; then
+        shell::colored_echo "🔴 shell::encode::file::aes256cbc: Initialization vector must be exactly 32 bytes" 196 >&2
+        return 1
+    fi
+
+    # Check if OpenSSL is installed
+    if ! shell::is_command_available openssl; then
+        shell::colored_echo "🔴 shell::encode::file::aes256cbc: OpenSSL is not installed" 196 >&2
+        return 1
+    fi
+
+    # Construct the encryption command
+    local cmd="openssl enc -aes-256-cbc -K \"$key\" -iv \"$iv\" -in \"$input_file\" -out \"$output_file\""
+
+    # Execute or print the command based on dry-run mode
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "$cmd"
+        return 0
+    fi
+
+    # Encrypt the file using the constructed command
+    if ! shell::run_cmd_eval "$cmd" 2>/dev/null; then
+        shell::colored_echo "🔴 shell::encode::file::aes256cbc: Encryption failed. Please check your key and try again." 196 >&2
+        return 1
+    fi
+
+    shell::colored_echo "🟢 File encrypted successfully to '$output_file'" 46
+    shell::clip_value "$output_file"
+    return 0
+}

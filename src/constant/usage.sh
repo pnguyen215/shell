@@ -3444,3 +3444,30 @@ Parameters:
 Description:
   This function selects a path from the bookmarks file using fzf and displays its availability status.
 "
+
+USAGE_SHELL_ENCODE_FILE_AES256CBC="
+shell::encode::file::aes256cbc function
+Encrypts a file using AES-256-CBC encryption and encodes the result in Base64.
+
+Usage:
+  shell::encode::file::aes256cbc [-n] [-h] <input_file> <output_file> [key] [iv]
+
+Parameters:
+  - -n        : Optional. Dry-run mode. Prints the command without executing it.
+  - -h        : Optional. Displays this help message.
+  - <input_file> : The path to the file to encrypt.
+  - <output_file>: The path where the encrypted file will be saved.
+  - [key]        : Optional. The encryption key (32 bytes for AES-256). If not provided, uses SHELL_SHIELD_ENCRYPTION_KEY.
+  - [iv]         : Optional. The initialization vector (16 bytes for AES-256). If not provided, uses SHELL_SHIELD_ENCRYPTION_IV.
+
+Description:
+  This function encrypts the specified input file using AES-256-CBC with OpenSSL, using either the provided key
+  or the SHELL_SHIELD_ENCRYPTION_KEY environment variable. The encrypted output is saved to the specified output file.
+  It checks for OpenSSL availability, validates the key and IV lengths, and ensures the input file exists.
+  The function is compatible with both macOS and Linux. In dry-run mode, it prints the encryption command without executing it.
+
+Example:
+  shell::encode::file::aes256cbc input.txt encrypted.bin "my64byteKey1234567890123456789012345678901234567890"  # Encrypts with specified key
+  export SHELL_SHIELD_ENCRYPTION_KEY="my64byteKey1234567890123456789012345678901234567890"
+  shell::encode::file::aes256cbc -n input.txt encrypted.bin  # Prints encryption command without executing
+"
