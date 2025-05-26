@@ -699,6 +699,79 @@ shell::fzf_goto_clear() {
     }
 
     # Define ANSI color codes using tput
+    # local yellow=$(tput setaf 3) # Yellow for bookmark name
+    # local cyan=$(tput setaf 6)   # Cyan for path
+    # local red=$(tput setaf 1)    # Red for [inactive]
+    # local normal=$(tput sgr0)    # Reset to normal
+
+    # # Filter and format inactive bookmarks for fzf
+    # local inactive_bookmarks
+    # inactive_bookmarks=$(awk -F'|' -v yellow="$yellow" -v cyan="$cyan" -v red="$red" -v normal="$normal" \
+    #     '{if (system("[ -d \"" $1 "\" ]") != 0) print yellow $2 normal " (" cyan $1 normal ") " red "[inactive]" normal}' \
+    #     "$bookmarks_file")
+
+    # if [ -z "$inactive_bookmarks" ]; then
+    #     shell::colored_echo "🟢 No inactive bookmarks found." 46
+    #     return 0
+    # fi
+
+    # # Use fzf in multi-select mode to select inactive bookmarks
+    # local selected_display_lines
+    # selected_display_lines=$(echo "$inactive_bookmarks" | fzf --ansi --multi --prompt="Select inactive bookmarks to remove: ")
+
+    # if [ -z "$selected_display_lines" ]; then
+    #     shell::colored_echo "🔴 No bookmarks selected. Aborting." 196
+    #     return 1
+    # fi
+
+    # # Create a secure temporary file
+    # local tmp_file
+    # tmp_file=$(mktemp) || {
+    #     shell::colored_echo "🔴 Failed to create temporary file." 196
+    #     return 1
+    # }
+
+    # # Set a trap to ensure the temporary file is removed
+    # trap 'rm -f "$tmp_file"' EXIT
+
+    # # Extract bookmark names from selected lines
+    # local selected_bookmark_names=()
+    # while IFS= read -r line; do
+    #     # Extract bookmark name (before " (path) [inactive]")
+    #     local name=$(echo "$line" | sed 's/ *(.*) *\[.*\]//')
+    #     selected_bookmark_names+=("$name")
+    # done <<<"$selected_display_lines"
+
+    # # Construct the grep command to exclude selected bookmarks
+    # local grep_cmd="grep -v -E '"
+    # local first="true"
+    # for name in "${selected_bookmark_names[@]}"; do
+    #     if [ "$first" = "true" ]; then
+    #         grep_cmd+="|${name}$"
+    #         first="false"
+    #     else
+    #         grep_cmd+="\\||${name}$"
+    #     fi
+    # done
+    # grep_cmd+="' \"$bookmarks_file\" > \"$tmp_file\" && mv \"$tmp_file\" \"$bookmarks_file\""
+
+    # # Execute or print the command on dry-run mode
+    # if [ "$dry_run" = "true" ]; then
+    #     shell::on_evict "$grep_cmd"
+    # else
+    #     if shell::run_cmd_eval "$grep_cmd"; then
+    #         shell::colored_echo "🟢 Successfully removed ${#selected_bookmark_names[@]} inactive bookmark(s)." 46
+    #     else
+    #         shell::colored_echo "🔴 Failed to remove selected bookmarks." 196
+    #         return 1
+    #     fi
+    # fi
+
+    # # Remove the trap after successful execution
+    # trap - EXIT
+    # return 0
+
+    # Define ANSI color codes using tput
     local yellow=$(tput setaf 3) # Yellow for bookmark name
     local cyan=$(tput setaf 6)   # Cyan for path
     local red=$(tput setaf 1)    # Red for [inactive]
@@ -724,16 +797,6 @@ shell::fzf_goto_clear() {
         return 1
     fi
 
-    # Create a secure temporary file
-    local tmp_file
-    tmp_file=$(mktemp) || {
-        shell::colored_echo "🔴 Failed to create temporary file." 196
-        return 1
-    }
-
-    # Set a trap to ensure the temporary file is removed
-    trap 'rm -f "$tmp_file"' EXIT
-
     # Extract bookmark names from selected lines
     local selected_bookmark_names=()
     while IFS= read -r line; do
@@ -742,32 +805,32 @@ shell::fzf_goto_clear() {
         selected_bookmark_names+=("$name")
     done <<<"$selected_display_lines"
 
-    # Construct the grep command to exclude selected bookmarks
-    local grep_cmd="grep -v -E '"
-    local first="true"
+    # Remove selected bookmarks using shell::remove_bookmark
+    local success_count=0
+    local failed_count=0
     for name in "${selected_bookmark_names[@]}"; do
-        if [ "$first" = "true" ]; then
-            grep_cmd+="|${name}$"
-            first="false"
+        if [ "$dry_run" = "true" ]; then
+            shell::on_evict "shell::remove_bookmark \"$name\""
         else
-            grep_cmd+="\\||${name}$"
+            if shell::remove_bookmark "$name"; then
+                ((success_count++))
+            else
+                ((failed_count++))
+            fi
         fi
     done
-    grep_cmd+="' \"$bookmarks_file\" > \"$tmp_file\" && mv \"$tmp_file\" \"$bookmarks_file\""
 
-    # Execute or print the command on dry-run mode
+    # Provide feedback
     if [ "$dry_run" = "true" ]; then
-        shell::on_evict "$grep_cmd"
+        shell::colored_echo "🟢 Dry-run: Would have attempted to remove ${#selected_bookmark_names[@]} bookmark(s)." 46
     else
-        if shell::run_cmd_eval "$grep_cmd"; then
-            shell::colored_echo "🟢 Successfully removed ${#selected_bookmark_names[@]} inactive bookmark(s)." 46
+        if [ $failed_count -eq 0 ]; then
+            shell::colored_echo "🟢 Successfully removed $success_count inactive bookmark(s)." 46
         else
-            shell::colored_echo "🔴 Failed to remove selected bookmarks." 196
+            shell::colored_echo "🟡 Removed $success_count bookmark(s), but $failed_count failed." 11
             return 1
         fi
     fi
 
-    # Remove the trap after successful execution
-    trap - EXIT
     return 0
 }
