@@ -1969,7 +1969,7 @@ shell::execute_or_evict() {
 #   The function is compatible with both macOS and Linux, handling differences in ls and stat commands.
 #
 # Requirements:
-#   - Standard tools: ls, stat, awk, column, find.
+#   - Standard tools: ls, stat, awk, column.
 #   - Helper functions: shell::colored_echo, shell::get_os_type.
 #
 # Example usage:
@@ -1984,8 +1984,7 @@ shell::execute_or_evict() {
 # Notes:
 #   - Colors are applied using ls -G (macOS) or ls --color=auto (Linux).
 #   - File metadata is retrieved using stat, with OS-specific formats.
-#   - Uses find for reliable file listing, handling special characters in file names.
-#   - Output is formatted with column for aligned display.
+#   - Uses ls -1A for reliable file listing, handling special characters in file names.
 shell::ls() {
     local show_hidden="false"
     local long_format="false"
@@ -2013,14 +2012,6 @@ shell::ls() {
     local os_type
     os_type=$(shell::get_os_type)
 
-    # Set ls command with color options for display (not for file listing)
-    local ls_cmd="ls"
-    if [ "$os_type" = "macos" ]; then
-        ls_cmd="ls -G"
-    else
-        ls_cmd="ls --color=auto"
-    fi
-
     # Check if current directory is accessible
     if ! pwd >/dev/null 2>&1; then
         shell::colored_echo "🔴 Error: Cannot access current directory." 196
@@ -2047,19 +2038,32 @@ shell::ls() {
         echo "---- ---------- ---- -------- ----" >>"$tmp_file"
     fi
 
-    # Use find to list files, handling special characters
-    local find_cmd="find . -maxdepth 1 -type f -o -type d"
-    if [ "$show_hidden" = "false" ]; then
-        find_cmd="$find_cmd -not -name '.*'"
+    # Set ls command for listing
+    local ls_cmd="ls -1"
+    if [ "$show_hidden" = "true" ]; then
+        ls_cmd="ls -1A" # -A includes hidden files but excludes . and ..
     fi
 
     # Process each file
     local file_count=0
+    local ls_output
+    ls_output=$($ls_cmd 2>/dev/null)
+    if [ $? -ne 0 ]; then
+        shell::colored_echo "🔴 Error: Failed to list directory contents." 196
+        rm -f "$tmp_file"
+        trap - EXIT
+        return 1
+    fi
+
     while IFS= read -r file; do
-        # Strip './' prefix from find output
-        file="${file#./}"
-        # Skip empty entries
+        # Skip empty entries or . and .. when show_hidden is true
         [ -z "$file" ] && continue
+        if [ "$show_hidden" = "true" ] && { [ "$file" = "." ] || [ "$file" = ".." ]; }; then
+            continue
+        fi
+
+        # Debugging: Uncomment to trace processed files
+        # echo "Processing file: $file" >&2
 
         # Determine file type and icon
         local icon="📄"
@@ -2092,7 +2096,7 @@ shell::ls() {
             echo "$icon ${color}${file}${normal}" >>"$tmp_file"
         fi
         ((file_count++))
-    done < <($find_cmd 2>/dev/null)
+    done <<<"$ls_output"
 
     # Check if any files were processed
     if [ $file_count -eq 0 ]; then
