@@ -1949,3 +1949,155 @@ shell::execute_or_evict() {
         shell::run_cmd_eval "$command"
     fi
 }
+
+# shell::ls function
+# Lists files and folders in the current directory with a beautiful, easy-to-read layout.
+#
+# Usage:
+#   shell::ls [-a] [-l] [-h]
+#
+# Parameters:
+#   - -a : Optional. Include hidden files and directories (similar to ls -a).
+#   - -l : Optional. Use long format, showing permissions, size, and last modified date.
+#   - -h : Optional. Displays this help message.
+#
+# Description:
+#   This function lists all files and folders in the current directory with a visually appealing layout.
+#   It uses colors to differentiate file types (blue for directories, green for executables, white for regular files),
+#   includes icons (📁 for directories, 📄 for files, ⚙️ for executables), and aligns output in a tabulated format.
+#   The long format (-l) includes permissions, human-readable file size, and last modified date.
+#   The function is compatible with both macOS and Linux, handling differences in ls and stat commands.
+#
+# Requirements:
+#   - Standard tools: ls, stat, awk, column.
+#   - Helper functions: shell::colored_echo, shell::get_os_type.
+#
+# Example usage:
+#   shell::ls           # List files and folders in a simple, colored format.
+#   shell::ls -a       # Include hidden files.
+#   shell::ls -l       # Show detailed listing with permissions, size, and modified date.
+#   shell::ls -a -l    # Show detailed listing including hidden files.
+#
+# Returns:
+#   0 on success, 1 on failure (e.g., current directory inaccessible).
+#
+# Notes:
+#   - Colors are applied using ls -G (macOS) or ls --color=auto (Linux).
+#   - File metadata is retrieved using stat, with OS-specific formats.
+#   - Output is formatted with column for aligned display.
+shell::ls() {
+    local show_hidden="false"
+    local long_format="false"
+
+    # Parse command-line options
+    while getopts "alh" opt; do
+        case "$opt" in
+        a) show_hidden="true" ;;
+        l) long_format="true" ;;
+        h)
+            echo "Usage: shell::ls [-a] [-l] [-h]"
+            echo "  -a : Include hidden files and directories."
+            echo "  -l : Use long format (permissions, size, modified date)."
+            echo "  -h : Display this help message."
+            return 0
+            ;;
+        *)
+            shell::colored_echo "🔴 Invalid option. Usage: shell::ls [-a] [-l] [-h]" 196
+            return 1
+            ;;
+        esac
+    done
+
+    # Determine OS for ls and stat compatibility
+    local os_type
+    os_type=$(shell::get_os_type)
+
+    # Set ls command with color options
+    local ls_cmd="ls"
+    if [ "$os_type" = "macos" ]; then
+        ls_cmd="ls -G"
+    else
+        ls_cmd="ls --color=auto"
+    fi
+    if [ "$show_hidden" = "true" ]; then
+        ls_cmd="$ls_cmd -a"
+    fi
+
+    # Check if current directory is accessible
+    if ! pwd >/dev/null 2>&1; then
+        shell::colored_echo "🔴 Error: Cannot access current directory." 196
+        return 1
+    fi
+
+    # Define ANSI color codes using tput
+    local blue=$(tput setaf 4)  # Blue for directories
+    local green=$(tput setaf 2) # Green for executables
+    local white=$(tput setaf 7) # White for regular files
+    local normal=$(tput sgr0)   # Reset to normal
+
+    # Temporary file to store formatted output
+    local tmp_file
+    tmp_file=$(mktemp) || {
+        shell::colored_echo "🔴 Failed to create temporary file." 196
+        return 1
+    }
+    trap 'rm -f "$tmp_file"' EXIT
+
+    # Header for long format
+    if [ "$long_format" = "true" ]; then
+        echo "Type Permissions Size Modified Name" >"$tmp_file"
+        echo "---- ---------- ---- -------- ----" >>"$tmp_file"
+    fi
+
+    # List files and process each entry
+    local file
+    while IFS= read -r file; do
+        # Skip . and .. entries unless -a is specified
+        if [ "$show_hidden" = "false" ] && { [ "$file" = "." ] || [ "$file" = ".." ]; }; then
+            continue
+        fi
+
+        # Determine file type and icon
+        local icon="📄"
+        local color="$white"
+        if [ -d "$file" ]; then
+            icon="📁"
+            color="$blue"
+        elif [ -x "$file" ] && [ ! -d "$file" ]; then
+            icon="⚙️"
+            color="$green"
+        fi
+
+        if [ "$long_format" = "true" ]; then
+            # Get file metadata
+            local perms size modified
+            if [ "$os_type" = "macos" ]; then
+                perms=$(stat -f "%Sp" "$file" 2>/dev/null || echo "-")
+                size=$(stat -f "%z" "$file" 2>/dev/null | awk '{if ($1 < 1024) print $1 " B"; else if ($1 < 1048576) print sprintf("%.1f KB", $1/1024); else print sprintf("%.1f MB", $1/1048576)}')
+                modified=$(stat -f "%Sm" -t "%Y-%m-%d %H:%M" "$file" 2>/dev/null || echo "-")
+            else
+                perms=$(stat --format="%A" "$file" 2>/dev/null || echo "-")
+                size=$(stat --format="%s" "$file" 2>/dev/null | awk '{if ($1 < 1024) print $1 " B"; else if ($1 < 1048576) print sprintf("%.1f KB", $1/1024); else print sprintf("%.1f MB", $1/1048576)}')
+                modified=$(stat --format="%y" "$file" 2>/dev/null | cut -d' ' -f1,2 | cut -d'.' -f1)
+            fi
+
+            # Write formatted line to temporary file
+            echo "$icon $perms $size $modified ${color}${file}${normal}" >>"$tmp_file"
+        else
+            # Simple format: just icon and file name
+            echo "$icon ${color}${file}${normal}" >>"$tmp_file"
+        fi
+    done < <($ls_cmd -1 2>/dev/null)
+
+    # Display the output using column for alignment
+    if [ -s "$tmp_file" ]; then
+        column -t "$tmp_file"
+    else
+        shell::colored_echo "🟢 No files or directories found." 46
+    fi
+
+    # Clean up
+    trap - EXIT
+    rm -f "$tmp_file"
+    return 0
+}
