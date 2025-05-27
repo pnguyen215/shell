@@ -1535,11 +1535,24 @@ shell::fzf_get_conf_visualization() {
         base64_decode_cmd="base64 -d"
     fi
 
-    # Use fzf with a preview window to show the decoded value in real-time
+    # Verify base64 command availability
+    if ! command -v base64 >/dev/null 2>&1; then
+        shell::colored_echo "🔴 Error: base64 command is not available." 196
+        return 1
+    fi
+
+    # Prepare colored key list for fzf
+    local key_list
+    key_list=$(cut -d '=' -f 1 "$SHELL_KEY_CONF_FILE" | awk -v yellow="$yellow" -v normal="$normal" '{print yellow $0 normal}')
+
+    # Use fzf with a preview window to show only the decoded value
     local selected_key
-    selected_key=$(cut -d '=' -f 1 "$SHELL_KEY_CONF_FILE" | fzf --ansi \
+    selected_key=$(echo "$key_list" | fzf --ansi \
         --prompt="Select config key: " \
-        --preview="grep '^{}=.*' \"$SHELL_KEY_CONF_FILE\" | cut -d '=' -f 2- | $base64_decode_cmd | xargs -I {} echo '$yellow{} $normal($cyan{} $normal)'")
+        --preview="grep '^{}=.*' \"$SHELL_KEY_CONF_FILE\" | cut -d '=' -f 2- | $base64_decode_cmd")
+
+    # Extract the uncolored key (remove ANSI codes)
+    selected_key=$(echo "$selected_key" | sed "s/$(echo -e "\033")[0-9;]*m//g")
 
     if [ -z "$selected_key" ]; then
         shell::colored_echo "🔴 No configuration key selected." 196
@@ -1558,9 +1571,9 @@ shell::fzf_get_conf_visualization() {
     local encoded_value
     encoded_value=$(echo "$selected_line" | cut -d '=' -f 2-)
     local decoded_value
-    decoded_value=$(echo "$encoded_value" | $base64_decode_cmd)
+    decoded_value=$(echo "$encoded_value" | $base64_decode_cmd 2>/dev/null)
     if [ $? -ne 0 ]; then
-        shell::colored_echo "🔴 Error: Failed to decode value for key '$selected_key'." 196
+        shell::colored_echo "🔴 Error: Failed to decode value for key '$selected_key'. Ensure the value is valid Base64." 196
         return 1
     fi
 
