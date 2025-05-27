@@ -67,4 +67,4 @@ else
     echo "WARN: Shell already sourced in $shell_config"
 fi
 
-echo "INFO: shell installed. Restart your terminal or run 'source $shell_config' to apply changes."
+echo "INFO: shell installed. Restart your terminal or run 'source $shell_config' or 'source ~/.bashrc' to apply changes."

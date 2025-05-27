@@ -103,7 +103,7 @@ shell::upgrade() {
     install_dir="$HOME/shell"
     [ -d "$install_dir" ] && rm -rf "$install_dir"
     bash -c "$(curl -fsSL https://raw.githubusercontent.com/pnguyen215/shell/master/install.sh)"
-    shell::colored_echo "INFO: shell upgraded. Restart your terminal or run 'source ~/.zshrc' or 'source ~/.bashrc' to apply changes." 46
+    # shell::colored_echo "INFO: shell upgraded. Restart your terminal or run 'source ~/.zshrc' or 'source ~/.bashrc' to apply changes." 46
     if [ -f "$HOME/.zshrc" ] && grep -q "source $install_dir/src/shell.sh" "$HOME/.zshrc"; then
         shell::clip_value "source ~/.zshrc"
         shell::run_cmd_eval "source ~/.zshrc"
