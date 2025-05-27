@@ -37,7 +37,7 @@ shell::install_oh_my_zsh() {
     local oh_my_zsh_dir="$HOME/.oh-my-zsh"
 
     if [ -d "$oh_my_zsh_dir" ]; then
-        shell::colored_echo "🍺 Oh My Zsh is already installed." 46
+        shell::colored_echo "WARN: Oh My Zsh is already installed." 46
     else
         shell::colored_echo "🚀 Installing Oh My Zsh..." 33
         # Build the installation command
@@ -93,7 +93,7 @@ shell::removal_oh_my_zsh() {
     local oh_my_zsh_dir="$HOME/.oh-my-zsh"
 
     if [ ! -d "$oh_my_zsh_dir" ]; then
-        shell::colored_echo "🍺 Oh My Zsh is not installed." 46
+        shell::colored_echo "WARN: Oh My Zsh is not installed." 46
         return 0
     fi
 
@@ -120,7 +120,7 @@ shell::removal_oh_my_zsh() {
         fi
         shell::colored_echo "INFO: Original .zshrc restored from backup." 46
     else
-        shell::colored_echo "🍺 No backup .zshrc found. Please manually update your .zshrc if necessary." 33
+        shell::colored_echo "WARN: No backup .zshrc found. Please manually update your .zshrc if necessary." 33
     fi
 
     shell::colored_echo "INFO: Oh My Zsh uninstalled successfully!" 46
