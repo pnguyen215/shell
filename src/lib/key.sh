@@ -1520,76 +1520,6 @@ shell::fzf_get_conf_visualization() {
         return 1
     }
 
-    # # Define ANSI color codes using tput
-    # local yellow=$(tput setaf 3) # Yellow for key
-    # local cyan=$(tput setaf 6)   # Cyan for value
-    # local normal=$(tput sgr0)    # Reset to normal
-
-    # # Determine OS type for Base64 decoding
-    # local os_type
-    # os_type=$(shell::get_os_type)
-    # local base64_decode_cmd
-    # if [ "$os_type" = "macos" ]; then
-    #     base64_decode_cmd="base64 -D"
-    # else
-    #     base64_decode_cmd="base64 -d"
-    # fi
-
-    # # Verify base64 command availability
-    # if ! command -v base64 >/dev/null 2>&1; then
-    #     shell::colored_echo "🔴 Error: base64 command is not available." 196
-    #     return 1
-    # fi
-
-    # # Prepare colored key list for fzf
-    # local key_list
-    # key_list=$(cut -d '=' -f 1 "$SHELL_KEY_CONF_FILE" | awk -v yellow="$yellow" -v normal="$normal" '{print yellow $0 normal}')
-
-    # # Use fzf with a preview window to show only the decoded value
-    # local selected_key
-    # selected_key=$(echo "$key_list" | fzf --ansi \
-    #     --prompt="Select config key: " \
-    #     --preview="grep '^{}=.*' \"$SHELL_KEY_CONF_FILE\" | cut -d '=' -f 2- | $base64_decode_cmd")
-
-    # # Extract the uncolored key (remove ANSI codes)
-    # selected_key=$(echo "$selected_key" | sed "s/$(echo -e "\033")[0-9;]*m//g")
-
-    # if [ -z "$selected_key" ]; then
-    #     shell::colored_echo "🔴 No configuration key selected." 196
-    #     return 1
-    # fi
-
-    # # Retrieve the selected configuration line
-    # local selected_line
-    # selected_line=$(grep "^${selected_key}=" "$SHELL_KEY_CONF_FILE")
-    # if [ -z "$selected_line" ]; then
-    #     shell::colored_echo "🔴 Error: Selected key '$selected_key' not found in configuration." 196
-    #     return 1
-    # fi
-
-    # # Extract and decode the value
-    # local encoded_value
-    # encoded_value=$(echo "$selected_line" | cut -d '=' -f 2-)
-    # local decoded_value
-    # decoded_value=$(echo "$encoded_value" | $base64_decode_cmd 2>/dev/null)
-    # if [ $? -ne 0 ]; then
-    #     shell::colored_echo "🔴 Error: Failed to decode value for key '$selected_key'. Ensure the value is valid Base64." 196
-    #     return 1
-    # fi
-
-    # # Display the formatted key-value pair
-    # shell::colored_echo "${yellow}${selected_key}${normal} (${cyan}${decoded_value}${normal})" 33
-
-    # # Copy the decoded value to the clipboard or print the command in dry-run mode
-    # if [ "$dry_run" = "true" ]; then
-    #     shell::on_evict "shell::clip_value \"$decoded_value\""
-    # else
-    #     shell::clip_value "$decoded_value"
-    #     shell::colored_echo "🟢 Decoded value copied to clipboard." 46
-    # fi
-
-    # return 0
-
     # Define ANSI color codes using tput
     local yellow=$(tput setaf 3) # Yellow for key
     local cyan=$(tput setaf 6)   # Cyan for value
@@ -1623,43 +1553,5 @@ shell::fzf_get_conf_visualization() {
         return 1
     fi
     echo "selected_key: $selected_key"
-    # Retrieve the selected configuration line
-    local selected_line
-    selected_line=$(grep "^${selected_key}=" "$SHELL_KEY_CONF_FILE")
-    if [ -z "$selected_line" ]; then
-        shell::colored_echo "🔴 Error: Selected key '$selected_key' not found in configuration." 196
-        return 1
-    fi
-    echo "selected_line: $selected_line"
-    # Extract the encoded value
-    local encoded_value
-    encoded_value=$(echo "$selected_line" | cut -d '=' -f 2-)
-    echo "encoded_value: $encoded_value"
-    # Validate Base64 format
-    # if ! echo "$encoded_value" | grep -qE '^[A-Za-z0-9+/=]*$' || [ $((${#encoded_value} % 4)) -ne 0 ]; then
-    #     shell::colored_echo "🔴 Error: Value for key '$selected_key' is not valid Base64: '$encoded_value'" 196
-    #     return 1
-    # fi
-
-    # Decode the value
-    local decoded_value
-    decoded_value=$(echo "$encoded_value" | $base64_decode_cmd 2>/dev/null)
-    echo "decoded_value: $decoded_value"
-    if [ $? -ne 0 ]; then
-        shell::colored_echo "🔴 Error: Failed to decode value for key '$selected_key'. Encoded value: '$encoded_value'" 196
-        return 1
-    fi
-
-    # Display the formatted key-value pair
-    shell::colored_echo "${yellow}${selected_key}${normal} (${cyan}${decoded_value}${normal})" 33
-
-    # Copy the decoded value to the clipboard or print the command in dry-run mode
-    if [ "$dry_run" = "true" ]; then
-        shell::on_evict "shell::clip_value \"$decoded_value\""
-    else
-        shell::clip_value "$decoded_value"
-        shell::colored_echo "🟢 Decoded value copied to clipboard." 46
-    fi
-
-    return 0
+    shell::clip_value $(shell::get_value_conf "$selected_key")
 }
