@@ -922,14 +922,14 @@ shell::clip_value() {
 
     if [[ "$os" == "macos" ]]; then
         echo -n "$value" | pbcopy
-        shell::colored_echo "INFO: Value copied to clipboard using pbcopy." 46
+        shell::colored_echo "DEBUG: Value copied to clipboard using pbcopy." 244
     elif [[ "$os" == "linux" ]]; then
         if shell::is_command_available xclip; then
             echo -n "$value" | xclip -selection clipboard
-            shell::colored_echo "INFO: Value copied to clipboard using xclip." 46
+            shell::colored_echo "DEBUG: Value copied to clipboard using xclip." 244
         elif shell::is_command_available xsel; then
             echo -n "$value" | xsel --clipboard --input
-            shell::colored_echo "INFO: Value copied to clipboard using xsel." 46
+            shell::colored_echo "DEBUG: Value copied to clipboard using xsel." 244
         else
             shell::colored_echo "ERR: Clipboard tool not found. Please install xclip or xsel." 196
             return 1
