@@ -56,7 +56,7 @@ shell::install_python() {
     fi
 
     if [ "$is_installed" = "true" ]; then
-        shell::colored_echo "🟡 Python3 is already installed via package manager. Skipping." 33
+        shell::colored_echo "WARN: Python3 is already installed via package manager. Skipping." 33
         return 0
     fi
 
@@ -134,24 +134,24 @@ shell::uninstall_python() {
 
     if [ "$os_type" = "linux" ]; then
         local package="python3"
-        shell::colored_echo "🟡 Warning: Removing Python3 may break system tools on Linux. Proceed with caution." 33
+        shell::colored_echo "WARN: Warning: Removing Python3 may break system tools on Linux. Proceed with caution." 33
         if shell::is_command_available apt-get; then
             if shell::is_package_installed_linux "$package"; then
                 shell::execute_or_evict "$dry_run" "sudo apt-get purge -y $package && sudo apt-get autoremove -y"
             else
-                shell::colored_echo "🟡 Python3 is not installed via apt-get. Skipping." 33
+                shell::colored_echo "WARN: Python3 is not installed via apt-get. Skipping." 33
             fi
         elif shell::is_command_available yum; then
             if rpm -q "$package" >/dev/null 2>&1; then
                 shell::execute_or_evict "$dry_run" "sudo yum remove -y $package"
             else
-                shell::colored_echo "🟡 Python3 is not installed via yum. Skipping." 33
+                shell::colored_echo "WARN: Python3 is not installed via yum. Skipping." 33
             fi
         elif shell::is_command_available dnf; then
             if rpm -q "$package" >/dev/null 2>&1; then
                 shell::execute_or_evict "$dry_run" "sudo dnf remove -y $package"
             else
-                shell::colored_echo "🟡 Python3 is not installed via dnf. Skipping." 33
+                shell::colored_echo "WARN: Python3 is not installed via dnf. Skipping." 33
             fi
         else
             shell::colored_echo "ERR: Unsupported package manager on Linux." 196
@@ -162,7 +162,7 @@ shell::uninstall_python() {
             if brew list --versions python3 >/dev/null 2>&1; then
                 shell::execute_or_evict "$dry_run" "brew uninstall python3 && brew cleanup"
             else
-                shell::colored_echo "🟡 Python3 is not installed via Homebrew. Skipping." 33
+                shell::colored_echo "WARN: Python3 is not installed via Homebrew. Skipping." 33
             fi
         else
             shell::colored_echo "ERR: Homebrew is not installed on macOS." 196
@@ -176,7 +176,7 @@ shell::uninstall_python() {
     if [ "$dry_run" = "false" ] && ! shell::is_command_available python3; then
         shell::colored_echo "INFO: Python3 removed successfully." 46
     elif [ "$dry_run" = "false" ]; then
-        shell::colored_echo "🟡 Python3 binary still detected. Manual cleanup may be required." 33
+        shell::colored_echo "WARN: Python3 binary still detected. Manual cleanup may be required." 33
     fi
 }
 
@@ -219,9 +219,9 @@ shell::uninstall_python_pip_deps() {
         return 0
     fi
 
-    shell::colored_echo "🟡 WARNING: This will uninstall all pip and pip3 packages, including system packages." 11
-    shell::colored_echo "🟡 This is potentially dangerous and could break your system Python installation." 11
-    shell::colored_echo "🟡 Are you absolutely sure you want to proceed? (yes/no)" 11
+    shell::colored_echo "WARN: WARNING: This will uninstall all pip and pip3 packages, including system packages." 11
+    shell::colored_echo "WARN: This is potentially dangerous and could break your system Python installation." 11
+    shell::colored_echo "WARN: Are you absolutely sure you want to proceed? (yes/no)" 11
     read -r confirmation
     if [[ $confirmation =~ ^[Yy](es)?$ ]]; then
         shell::colored_echo "INFO: Proceeding with uninstallation..." 32
@@ -250,19 +250,19 @@ shell::uninstall_python_pip_deps() {
                             shell::colored_echo "ERR: An error occurred while uninstalling $pip_cmd packages." 196
                         fi
                     else
-                        shell::colored_echo "🟡 No valid $pip_cmd packages found to uninstall." 11
+                        shell::colored_echo "WARN: No valid $pip_cmd packages found to uninstall." 11
                     fi
                     rm "$packages_file"
                 fi
             else
-                shell::colored_echo "🟡 $pip_cmd is not installed." 11
+                shell::colored_echo "WARN: $pip_cmd is not installed." 11
             fi
         }
 
         # Check if pip and pip3 are the same to avoid redundant uninstallation
         if shell::is_command_available pip && shell::is_command_available pip3; then
             if [ "$(command -v pip)" = "$(command -v pip3)" ]; then
-                shell::colored_echo "🟡 pip and pip3 are the same; uninstalling once." 11
+                shell::colored_echo "WARN: pip and pip3 are the same; uninstalling once." 11
                 uninstall_packages "pip"
             else
                 uninstall_packages "pip"
@@ -273,7 +273,7 @@ shell::uninstall_python_pip_deps() {
         elif shell::is_command_available pip3; then
             uninstall_packages "pip3"
         else
-            shell::colored_echo "🟡 Neither pip nor pip3 is installed." 11
+            shell::colored_echo "WARN: Neither pip nor pip3 is installed." 11
         fi
 
         shell::colored_echo "INFO: Operation completed." 46
@@ -317,9 +317,9 @@ shell::uninstall_python_pip_deps::latest() {
         return 0
     fi
 
-    shell::colored_echo "🟡 WARNING: This will uninstall all pip and pip3 packages, including system packages." 11
-    shell::colored_echo "🟡 This is potentially dangerous and could break your system Python installation." 11
-    shell::colored_echo "🟡 Are you absolutely sure you want to proceed? (yes/no)" 11
+    shell::colored_echo "WARN: WARNING: This will uninstall all pip and pip3 packages, including system packages." 11
+    shell::colored_echo "WARN: This is potentially dangerous and could break your system Python installation." 11
+    shell::colored_echo "WARN: Are you absolutely sure you want to proceed? (yes/no)" 11
     read -r confirmation
     if [[ $confirmation =~ ^[Yy](es)?$ ]]; then
         shell::colored_echo "INFO: Proceeding with uninstallation..." 32
@@ -350,20 +350,20 @@ shell::uninstall_python_pip_deps::latest() {
                             shell::colored_echo "ERR: An error occurred while uninstalling $pip_cmd packages." 196
                         fi
                     else
-                        shell::colored_echo "🟡 No valid $pip_cmd packages found to uninstall." 11
+                        shell::colored_echo "WARN: No valid $pip_cmd packages found to uninstall." 11
                     fi
                     # Clean up the temporary file if it still exists
                     [ -f "$packages_file" ] && rm "$packages_file"
                 fi
             else
-                shell::colored_echo "🟡 $pip_cmd is not installed." 11
+                shell::colored_echo "WARN: $pip_cmd is not installed." 11
             fi
         }
 
         # Check if pip and pip3 are the same to avoid redundant uninstallation
         if shell::is_command_available pip && shell::is_command_available pip3; then
             if [ "$(command -v pip)" = "$(command -v pip3)" ]; then
-                shell::colored_echo "🟡 pip and pip3 are the same; uninstalling once." 11
+                shell::colored_echo "WARN: pip and pip3 are the same; uninstalling once." 11
                 uninstall_packages "pip"
             else
                 uninstall_packages "pip"
@@ -374,7 +374,7 @@ shell::uninstall_python_pip_deps::latest() {
         elif shell::is_command_available pip3; then
             uninstall_packages "pip3"
         else
-            shell::colored_echo "🟡 Neither pip nor pip3 is installed." 11
+            shell::colored_echo "WARN: Neither pip nor pip3 is installed." 11
         fi
 
         shell::colored_echo "INFO: Operation completed." 46
@@ -467,7 +467,7 @@ shell::create_python_env() {
 
     # Check if virtual environment already exists
     if [ -d "$venv_path" ] && [ "$dry_run" = "false" ]; then
-        shell::colored_echo "🟡 Virtual environment already exists at '$venv_path'. Skipping creation." 33
+        shell::colored_echo "WARN: Virtual environment already exists at '$venv_path'. Skipping creation." 33
     else
         # Create the virtual environment
         local create_cmd="$python_version -m venv \"$venv_path\""
@@ -812,7 +812,7 @@ shell::fzf_uninstall_pkg_python_env() {
 
     # Handle no selection
     if [ -z "$selected_packages" ]; then
-        shell::colored_echo "🟡 No packages selected for uninstallation." 33
+        shell::colored_echo "WARN: No packages selected for uninstallation." 33
         return 0
     fi
 
@@ -907,7 +907,7 @@ shell::fzf_use_python_env() {
 
     # Handle no selection
     if [ -z "$selected_venv" ]; then
-        shell::colored_echo "🟡 No virtual environment selected." 33
+        shell::colored_echo "WARN: No virtual environment selected." 33
         return 0
     fi
 
@@ -916,7 +916,7 @@ shell::fzf_use_python_env() {
 
     # Handle deactivation if already in a virtual environment
     if [ -n "$VIRTUAL_ENV" ]; then
-        shell::colored_echo "🟡 Current virtual environment: $VIRTUAL_ENV" 33
+        shell::colored_echo "WARN: Current virtual environment: $VIRTUAL_ENV" 33
         shell::colored_echo "❓ Do you want to deactivate it first? (y/n)" 33
         read -r deactivate_choice
         if [[ "$deactivate_choice" =~ ^[Yy](es)?$ ]]; then
@@ -1021,7 +1021,7 @@ shell::fzf_upgrade_pkg_python_env() {
 
     # Handle no selection
     if [ -z "$selected_packages" ]; then
-        shell::colored_echo "🟡 No packages selected for upgrade." 33
+        shell::colored_echo "WARN: No packages selected for upgrade." 33
         return 0
     fi
 

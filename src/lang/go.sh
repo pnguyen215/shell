@@ -197,7 +197,7 @@ shell::fzf_remove_go_privates() {
     # Retrieve current GOPRIVATE value
     local current_goprivate=$(go env GOPRIVATE)
     if [ -z "$current_goprivate" ]; then
-        shell::colored_echo "🟡 GOPRIVATE is not set." 33
+        shell::colored_echo "WARN: GOPRIVATE is not set." 33
         return 0
     fi
 
@@ -207,7 +207,7 @@ shell::fzf_remove_go_privates() {
     # Use fzf to select entries to remove (multi-select enabled)
     local selected=$(printf "%s\n" "${entries[@]}" | fzf --multi --prompt="Select entries to remove: ")
     if [ -z "$selected" ]; then
-        shell::colored_echo "🟡 No entries selected for removal." 33
+        shell::colored_echo "WARN: No entries selected for removal." 33
         return 0
     fi
 
@@ -308,7 +308,7 @@ shell::create_go_app() {
 
     # Check if there are any remaining unexpected arguments
     if [ -n "$1" ]; then
-        shell::colored_echo "🟡 Warning: Unexpected arguments ignored: $*" 11
+        shell::colored_echo "WARN: Warning: Unexpected arguments ignored: $*" 11
     fi
 
     local module_name="$app_name"

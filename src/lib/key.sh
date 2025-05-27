@@ -117,7 +117,7 @@ shell::add_conf() {
     else
         result=$(shell::exist_key_conf $key)
         if [ "$result" = "true" ]; then
-            shell::colored_echo "🟡 The key '$key' exists. Please consider updating it by using shell::fzf_update_conf" 11
+            shell::colored_echo "WARN: The key '$key' exists. Please consider updating it by using shell::fzf_update_conf" 11
             return 0
         fi
         shell::run_cmd_eval "$cmd"
@@ -1330,7 +1330,7 @@ shell::sync_key_group_conf() {
         if [ -n "$new_keys" ]; then
             echo "${group_name}=${new_keys}" >>"$temp_file"
         else
-            shell::colored_echo "🟡 Group '$group_name' has no valid keys and will be removed." 33
+            shell::colored_echo "WARN: Group '$group_name' has no valid keys and will be removed." 33
         fi
     done <"$SHELL_GROUP_CONF_FILE"
 
@@ -1427,7 +1427,7 @@ shell::load_ini_conf() {
 
             # Skip if key is empty after trimming.
             if [[ -z "$key" ]]; then
-                shell::colored_echo "🟡 Warning: Skipping line with empty key in '$config_file': $line" 11
+                shell::colored_echo "WARN: Warning: Skipping line with empty key in '$config_file': $line" 11
                 continue
             fi
 
@@ -1451,7 +1451,7 @@ shell::load_ini_conf() {
 
             # else
             # Optional: Warn about lines that don't contain '=' but are not comments/empty.
-            # shell::colored_echo "🟡 Warning: Skipping invalid line format in '$config_file': $line" 11
+            # shell::colored_echo "WARN: Warning: Skipping invalid line format in '$config_file': $line" 11
         fi
     done <"$config_file" # Redirect the file content to the while loop
 

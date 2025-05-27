@@ -396,19 +396,19 @@ shell::removal_package() {
             if shell::is_package_installed_linux "$package"; then
                 shell::run_cmd_eval "sudo apt-get remove -y $package"
             else
-                shell::colored_echo "🟡 $package is not installed. Skipping uninstallation." 33
+                shell::colored_echo "WARN: $package is not installed. Skipping uninstallation." 33
             fi
         elif shell::is_command_available yum; then
             if rpm -q "$package" >/dev/null 2>&1; then
                 shell::run_cmd_eval "sudo yum remove -y $package"
             else
-                shell::colored_echo "🟡 $package is not installed. Skipping uninstallation." 33
+                shell::colored_echo "WARN: $package is not installed. Skipping uninstallation." 33
             fi
         elif shell::is_command_available dnf; then
             if rpm -q "$package" >/dev/null 2>&1; then
                 shell::run_cmd_eval "sudo dnf remove -y $package"
             else
-                shell::colored_echo "🟡 $package is not installed. Skipping uninstallation." 33
+                shell::colored_echo "WARN: $package is not installed. Skipping uninstallation." 33
             fi
         else
             shell::colored_echo "ERR: Unsupported package manager on Linux." 196
@@ -419,7 +419,7 @@ shell::removal_package() {
             if brew list --versions "$package" >/dev/null 2>&1; then
                 shell::run_cmd_eval "brew uninstall $package"
             else
-                shell::colored_echo "🟡 $package is not installed. Skipping uninstallation." 33
+                shell::colored_echo "WARN: $package is not installed. Skipping uninstallation." 33
             fi
         else
             shell::colored_echo "ERR: Homebrew is not installed on macOS." 196
@@ -835,7 +835,7 @@ shell::setPerms::777() {
     else
         # If the target already has 777 permissions, skip execution.
         if [ "$current_perm" -eq 777 ]; then
-            # shell::colored_echo "🟡 Permissions for '$target' already set to full (777)" 33
+            # shell::colored_echo "WARN: Permissions for '$target' already set to full (777)" 33
             return 0
         fi
         shell::run_cmd_eval "$chmod_cmd"
@@ -1125,7 +1125,7 @@ shell::port_kill() {
     fi
 
     if [ "$#" -eq 0 ]; then
-        shell::colored_echo "🟡 No ports specified. Usage: shell::port_kill [-n] PORT [PORT...]" 11
+        shell::colored_echo "WARN: No ports specified. Usage: shell::port_kill [-n] PORT [PORT...]" 11
         return 1
     fi
 

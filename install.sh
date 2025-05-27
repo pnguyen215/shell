@@ -40,10 +40,10 @@ fi
 
 # Move all contents (including hidden files) and clean up
 # shopt -s dotglob # Enable globbing to include hidden files
-mv "$extracted_dir"/* "$install_dir/" 2>/dev/null || echo "🟡 Some files couldn't be moved (possibly empty or hidden files only)."
+mv "$extracted_dir"/* "$install_dir/" 2>/dev/null || echo "WARN: Some files couldn't be moved (possibly empty or hidden files only)."
 # shopt -u dotglob # Reset globbing behavior
 rmdir "$extracted_dir" 2>/dev/null || {
-    # echo "🟡 $extracted_dir not empty, removing with rm -rf"
+    # echo "WARN: $extracted_dir not empty, removing with rm -rf"
     rm -rf "$extracted_dir"
 }
 rm "$zip_file"
@@ -55,7 +55,7 @@ if [ -f "$HOME/.zshrc" ]; then
 elif [ -f "$HOME/.bashrc" ]; then
     shell_config="$HOME/.bashrc"
 else
-    echo "🟡 No .zshrc or .bashrc found. Please manually add 'source $install_dir/src/shell.sh' to your shell config."
+    echo "WARN: No .zshrc or .bashrc found. Please manually add 'source $install_dir/src/shell.sh' to your shell config."
     exit 0
 fi
 
@@ -64,7 +64,7 @@ if ! grep -qF "$line" "$shell_config" 2>/dev/null; then
     echo "$line" >>"$shell_config"
     echo "INFO: Added shell to $shell_config"
 else
-    echo "🟡 Shell already sourced in $shell_config"
+    echo "WARN: Shell already sourced in $shell_config"
 fi
 
 echo "INFO: shell installed. Restart your terminal or run 'source $shell_config' to apply changes."

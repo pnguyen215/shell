@@ -158,7 +158,7 @@ shell::add_bookmark() {
             elif [[ "$replace" == "n" ]]; then
                 break
             else
-                shell::colored_echo "🟡 Please type 'y' or 'n':" 5
+                shell::colored_echo "WARN: Please type 'y' or 'n':" 5
             fi
         done
     fi
@@ -712,7 +712,7 @@ shell::fzf_goto_clear() {
         if [ $failed_count -eq 0 ]; then
             shell::colored_echo "INFO: Successfully removed $success_count inactive bookmark(s)." 46
         else
-            shell::colored_echo "🟡 Removed $success_count bookmark(s), but $failed_count failed." 11
+            shell::colored_echo "WARN: Removed $success_count bookmark(s), but $failed_count failed." 11
             return 1
         fi
     fi

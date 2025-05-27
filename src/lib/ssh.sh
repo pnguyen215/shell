@@ -82,7 +82,7 @@ shell::list_ssh_tunnels() {
 
     # If no SSH tunnels were found, display a message and exit
     if [ ! -s "$temp_file" ]; then
-        shell::colored_echo "🟡 No active SSH tunnels found." 11
+        shell::colored_echo "WARN: No active SSH tunnels found." 11
         rm -f "$temp_file"
         return 0
     fi
@@ -258,7 +258,7 @@ shell::fzf_ssh_keys() {
 
     # Check if any potential key files were found.
     if [ -z "$key_files" ]; then
-        shell::colored_echo "🟡 No potential SSH key files found in '"$ssh_dir"'." 11
+        shell::colored_echo "WARN: No potential SSH key files found in '"$ssh_dir"'." 11
         return 0
     fi
 
@@ -339,13 +339,13 @@ shell::fzf_kill_ssh_tunnels() {
         # Filter for 'ssh' command and tunnel flags, excluding the grep process.
         ssh_tunnels_info=$(ps auxwww | grep --color=never '[s]sh' | grep --color=never -E -- '-[LRD]')
     else
-        shell::colored_echo "🟡 Warning: Unknown OS type '$os_type'. Using generic ps auxww command, results may vary." 11
+        shell::colored_echo "WARN: Warning: Unknown OS type '$os_type'. Using generic ps auxww command, results may vary." 11
         ssh_tunnels_info=$(ps auxww | grep --color=never '[s]sh' | grep --color=never -E -- '-[LRD]')
     fi
 
     # Check if any potential tunnels were found.
     if [ -z "$ssh_tunnels_info" ]; then
-        shell::colored_echo "🟡 No active SSH tunnel processes found." 11
+        shell::colored_echo "WARN: No active SSH tunnel processes found." 11
         return 0
     fi
 
@@ -370,7 +370,7 @@ shell::fzf_kill_ssh_tunnels() {
     pids_to_kill=$(echo "$selected_tunnels" | awk '{print $2}') # Assuming PID is the second column
 
     # Ask for confirmation before killing.
-    shell::colored_echo "🟡 Are you sure you want to kill the following PID(s)? $pids_to_kill [y/N]" 208
+    shell::colored_echo "WARN: Are you sure you want to kill the following PID(s)? $pids_to_kill [y/N]" 208
     read -r confirmation
 
     if [[ "$confirmation" =~ ^[Yy]$ ]]; then
@@ -462,7 +462,7 @@ shell::kill_ssh_tunnels() {
 
     # Check if any SSH tunnel PIDs were found
     if [ ! -s "$temp_pids" ]; then
-        shell::colored_echo "🟡 No active SSH tunnels found to kill." 11
+        shell::colored_echo "WARN: No active SSH tunnels found to kill." 11
         rm -f "$temp_pids"
         return 0
     fi
@@ -481,7 +481,7 @@ shell::kill_ssh_tunnels() {
 
     # Check again if any valid PIDs were collected
     if [ ${#pids_to_kill[@]} -eq 0 ]; then
-        shell::colored_echo "🟡 No valid SSH tunnel PIDs found to kill." 11
+        shell::colored_echo "WARN: No valid SSH tunnel PIDs found to kill." 11
         return 0
     fi
 
@@ -512,7 +512,7 @@ shell::kill_ssh_tunnels() {
             done
             shell::colored_echo "✅ Killed $kill_count out of ${#pids_to_kill[@]} SSH tunnel process(es)." 46
         else
-            shell::colored_echo "🟡 Aborted by user. No processes were killed." 11
+            shell::colored_echo "WARN: Aborted by user. No processes were killed." 11
         fi
     fi
 
@@ -619,7 +619,7 @@ shell::gen_ssh_key() {
 
     # Check if key file already exists
     if [ -f "$full_key_path" ]; then
-        shell::colored_echo "🟡 SSH key '$full_key_path' already exists. Skipping generation." 11
+        shell::colored_echo "WARN: SSH key '$full_key_path' already exists. Skipping generation." 11
         return 0
     fi
 

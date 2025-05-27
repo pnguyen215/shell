@@ -92,7 +92,7 @@ shell::add_profile() {
     local profile_name="$1"
     local profile_dir=$(shell::get@_profile_dir "$profile_name")
     if [ -d "$profile_dir" ]; then
-        shell::colored_echo "🟡 Profile '$profile_name' already exists." 11
+        shell::colored_echo "WARN: Profile '$profile_name' already exists." 11
         return 1
     fi
 
@@ -261,7 +261,7 @@ shell::remove_profile() {
             shell::run_cmd_eval sudo rm -rf "$profile_dir"
             shell::colored_echo "INFO: Removed profile '$profile_name'." 46
         else
-            shell::colored_echo "🟡 Removal aborted." 11
+            shell::colored_echo "WARN: Removal aborted." 11
         fi
     fi
 }
@@ -443,7 +443,7 @@ shell::add_conf_profile() {
     else
         # Check if the key already exists in the profile.conf
         if grep -q "^${key}=" "$profile_conf"; then
-            shell::colored_echo "🟡 The key '$key' already exists in profile '$profile_name'. Consider updating it using shell::update_conf_profile." 11
+            shell::colored_echo "WARN: The key '$key' already exists in profile '$profile_name'. Consider updating it using shell::update_conf_profile." 11
             return 0
         fi
         shell::setPerms::777 "$profile_conf"

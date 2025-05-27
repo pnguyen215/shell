@@ -81,7 +81,7 @@ shell::ini_read() {
             if [ "$in_target_section" -eq 1 ] && ! [[ "$line" =~ $section_pattern ]]; then
                 # We were in the target section, but now we've moved to a *different* section.
                 # Key was not found in the target section. Exit the loop.
-                shell::colored_echo "🟡 Reached end of target section '$section' without finding key '$key'." 33
+                shell::colored_echo "WARN: Reached end of target section '$section' without finding key '$key'." 33
                 return 1 # Key not found in specified section.
             fi
 
@@ -124,7 +124,7 @@ shell::ini_read() {
         fi
     done <"$file"
 
-    shell::colored_echo "🟡 Key not found: '$key' in section: '$section'." 33
+    shell::colored_echo "WARN: Key not found: '$key' in section: '$section'." 33
     return 1
 }
 
@@ -552,7 +552,7 @@ shell::ini_list_keys() {
 
     # Return 1 if no keys were found in the section
     if [ $found_keys -eq 0 ]; then
-        shell::colored_echo "🟡 No keys found in section '$section' in file: $file" 33
+        shell::colored_echo "WARN: No keys found in section '$section' in file: $file" 33
         return 1
     fi
 
@@ -869,7 +869,7 @@ shell::ini_write() {
     else
         # This case should ideally not be reached if shell::ini_add_section ensures
         # the section exists and the logic is correct. It's a safeguard.
-        shell::colored_echo "🟡 Section '$section' processed, but key '$key' was not added or updated." 11
+        shell::colored_echo "WARN: Section '$section' processed, but key '$key' was not added or updated." 11
         return 1
     fi
 
@@ -1168,7 +1168,7 @@ shell::fzf_ini_remove_key() {
             else
                 # This case should not be reached if shell::ini_list_keys and fzf worked correctly,
                 # but it's a safeguard.
-                shell::colored_echo "🟡 Key '$selected_key' was selected but not found in section '$section' during removal process." 11
+                shell::colored_echo "WARN: Key '$selected_key' was selected but not found in section '$section' during removal process." 11
                 return 1
             fi
         else
@@ -1325,7 +1325,7 @@ shell::ini_remove_key() {
                 shell::colored_echo "INFO: Successfully removed key '$key' from section '$section'" 46
                 return 0
             else
-                shell::colored_echo "🟡 Key '$key' not found in section '$section'." 11
+                shell::colored_echo "WARN: Key '$key' not found in section '$section'." 11
                 return 1
             fi
         else
@@ -1552,7 +1552,7 @@ shell::ini_get_array_value() {
     else
         # This case covers scenarios where the key exists but its value is empty or malformed
         # such that no discernible items were parsed.
-        shell::colored_echo "🟡 Key '$key' found in section '$section', but no array items could be parsed. Check format." 33
+        shell::colored_echo "WARN: Key '$key' found in section '$section', but no array items could be parsed. Check format." 33
     fi
 
     return 0
@@ -1780,7 +1780,7 @@ shell::ini_expose_env() {
                 export "${var_name}=${value}"
                 shell::colored_echo "  ✅ Exported: ${var_name}=${value}" 46
             else
-                shell::colored_echo "  🟡 Failed to read key '$key' from section '$section'. Skipping export." 33
+                shell::colored_echo "  WARN: Failed to read key '$key' from section '$section'. Skipping export." 33
             fi
         done < <(shell::ini_list_keys "$file" "$section") # Use process substitution for robust key listing
 
@@ -1820,7 +1820,7 @@ shell::ini_expose_env() {
                     export "${var_name}=${value}"
                     shell::colored_echo "  ✅ Exported: ${var_name}=${value}" 46
                 else
-                    shell::colored_echo "  🟡 Failed to read key '$key' from section '$current_section'. Skipping export." 33
+                    shell::colored_echo "  WARN: Failed to read key '$key' from section '$current_section'. Skipping export." 33
                 fi
             done < <(shell::ini_list_keys "$file" "$current_section")
         done < <(shell::ini_list_sections "$file")
@@ -2371,7 +2371,7 @@ shell::ini_clone_section() {
 
     # Check if destination section already exists
     if shell::ini_section_exists "$file" "$destination_section"; then
-        shell::colored_echo "🟡 Destination section '$destination_section' already exists. Aborting clone to prevent overwrite." 11
+        shell::colored_echo "WARN: Destination section '$destination_section' already exists. Aborting clone to prevent overwrite." 11
         return 1
     fi
 
