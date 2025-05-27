@@ -1622,7 +1622,7 @@ shell::fzf_get_conf_visualization() {
         shell::colored_echo "🔴 No configuration key selected." 196
         return 1
     fi
-
+    echo "selected_key: $selected_key"
     # Retrieve the selected configuration line
     local selected_line
     selected_line=$(grep "^${selected_key}=" "$SHELL_KEY_CONF_FILE")
@@ -1630,11 +1630,11 @@ shell::fzf_get_conf_visualization() {
         shell::colored_echo "🔴 Error: Selected key '$selected_key' not found in configuration." 196
         return 1
     fi
-
+    echo "selected_line: $selected_line"
     # Extract the encoded value
     local encoded_value
     encoded_value=$(echo "$selected_line" | cut -d '=' -f 2-)
-
+    echo "encoded_value: $encoded_value"
     # Validate Base64 format
     if ! echo "$encoded_value" | grep -qE '^[A-Za-z0-9+/=]*$' || [ $((${#encoded_value} % 4)) -ne 0 ]; then
         shell::colored_echo "🔴 Error: Value for key '$selected_key' is not valid Base64: '$encoded_value'" 196
@@ -1644,6 +1644,7 @@ shell::fzf_get_conf_visualization() {
     # Decode the value
     local decoded_value
     decoded_value=$(echo "$encoded_value" | $base64_decode_cmd 2>/dev/null)
+    echo "decoded_value: $decoded_value"
     if [ $? -ne 0 ]; then
         shell::colored_echo "🔴 Error: Failed to decode value for key '$selected_key'. Encoded value: '$encoded_value'" 196
         return 1
