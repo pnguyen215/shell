@@ -1552,6 +1552,6 @@ shell::fzf_get_conf_visualization() {
         shell::colored_echo "🔴 No configuration key selected." 196
         return 1
     fi
-    echo "selected_key: $selected_key"
+    shell::colored_echo "🟢 Selected key: $selected_key" 46
     shell::clip_value $(shell::get_value_conf "$selected_key")
 }
