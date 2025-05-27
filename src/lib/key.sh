@@ -1636,10 +1636,10 @@ shell::fzf_get_conf_visualization() {
     encoded_value=$(echo "$selected_line" | cut -d '=' -f 2-)
     echo "encoded_value: $encoded_value"
     # Validate Base64 format
-    if ! echo "$encoded_value" | grep -qE '^[A-Za-z0-9+/=]*$' || [ $((${#encoded_value} % 4)) -ne 0 ]; then
-        shell::colored_echo "🔴 Error: Value for key '$selected_key' is not valid Base64: '$encoded_value'" 196
-        return 1
-    fi
+    # if ! echo "$encoded_value" | grep -qE '^[A-Za-z0-9+/=]*$' || [ $((${#encoded_value} % 4)) -ne 0 ]; then
+    #     shell::colored_echo "🔴 Error: Value for key '$selected_key' is not valid Base64: '$encoded_value'" 196
+    #     return 1
+    # fi
 
     # Decode the value
     local decoded_value
