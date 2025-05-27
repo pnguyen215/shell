@@ -98,7 +98,7 @@ shell::colored_echo() {
 
     # Validate color code range (0 to 255)
     if [[ $color_code -lt 0 || $color_code -gt 255 ]]; then
-        echo "🔴 Invalid color code! Please provide a number between 0 and 255."
+        echo "ERR: Invalid color code! Please provide a number between 0 and 255."
         return 1
     fi
 
@@ -349,7 +349,7 @@ shell::install_package() {
         elif shell::is_command_available dnf; then
             shell::run_cmd_eval "sudo dnf install -y $package"
         else
-            shell::colored_echo "🔴 Error: Unsupported package manager on Linux." 196
+            shell::colored_echo "ERR: Unsupported package manager on Linux." 196
             return 1
         fi
     elif [ "$os_type" = "macos" ]; then # macOS
@@ -364,7 +364,7 @@ shell::install_package() {
         fi
         shell::run_cmd_eval "brew install $package"
     else
-        shell::colored_echo "🔴 Error: Unsupported operating system." 196
+        shell::colored_echo "ERR: Unsupported operating system." 196
         return 1
     fi
 }
@@ -411,7 +411,7 @@ shell::removal_package() {
                 shell::colored_echo "🟡 $package is not installed. Skipping uninstallation." 33
             fi
         else
-            shell::colored_echo "🔴 Error: Unsupported package manager on Linux." 196
+            shell::colored_echo "ERR: Unsupported package manager on Linux." 196
             return 1
         fi
     elif [ "$os_type" = "macos" ]; then
@@ -422,11 +422,11 @@ shell::removal_package() {
                 shell::colored_echo "🟡 $package is not installed. Skipping uninstallation." 33
             fi
         else
-            shell::colored_echo "🔴 Error: Homebrew is not installed on macOS." 196
+            shell::colored_echo "ERR: Homebrew is not installed on macOS." 196
             return 1
         fi
     else
-        shell::colored_echo "🔴 Error: Unsupported operating system." 196
+        shell::colored_echo "ERR: Unsupported operating system." 196
         return 1
     fi
 }
@@ -464,7 +464,7 @@ shell::list_installed_packages() {
             shell::colored_echo "Listing installed packages (RPM-based):" 34
             shell::run_cmd_eval rpm -qa | sort
         else
-            shell::colored_echo "🔴 Error: Unsupported package manager on Linux." 196
+            shell::colored_echo "ERR: Unsupported package manager on Linux." 196
             return 1
         fi
     elif [ "$os_type" = "macos" ]; then
@@ -472,11 +472,11 @@ shell::list_installed_packages() {
             shell::colored_echo "Listing installed packages (Homebrew):" 32
             shell::run_cmd_eval brew list
         else
-            shell::colored_echo "🔴 Error: Homebrew is not installed on macOS." 196
+            shell::colored_echo "ERR: Homebrew is not installed on macOS." 196
             return 1
         fi
     else
-        shell::colored_echo "🔴 Error: Unsupported operating system." 196
+        shell::colored_echo "ERR: Unsupported operating system." 196
         return 1
     fi
 }
@@ -515,14 +515,14 @@ shell::list_path_installed_packages() {
         elif [ "$os_type" = "linux" ]; then
             base_path="/opt"
         else
-            shell::colored_echo "🔴 Error: Unsupported operating system for package path listing." 196
+            shell::colored_echo "ERR: Unsupported operating system for package path listing." 196
             return 1
         fi
     fi
 
     # Verify the base installation directory exists.
     if [ ! -d "$base_path" ]; then
-        shell::colored_echo "🔴 Error: The specified installation path '$base_path' does not exist." 196
+        shell::colored_echo "ERR: The specified installation path '$base_path' does not exist." 196
         return 1
     fi
 
@@ -569,14 +569,14 @@ shell::list_path_installed_packages_details() {
         elif [ "$os_type" = "linux" ]; then
             base_path="/opt"
         else
-            shell::colored_echo "🔴 Error: Unsupported operating system for package details listing." 196
+            shell::colored_echo "ERR: Unsupported operating system for package details listing." 196
             return 1
         fi
     fi
 
     # Verify that the base installation directory exists.
     if [ ! -d "$base_path" ]; then
-        shell::colored_echo "🔴 Error: The specified installation path '$base_path' does not exist." 196
+        shell::colored_echo "ERR: The specified installation path '$base_path' does not exist." 196
         return 1
     fi
 
@@ -632,7 +632,7 @@ shell::is_package_installed_linux() {
         # RPM-based: Check using rpm query.
         rpm -q "$package" >/dev/null 2>&1
     else
-        shell::colored_echo "🔴 Error: Unsupported package manager for Linux." 196
+        shell::colored_echo "ERR: Unsupported package manager for Linux." 196
         return 1
     fi
 }
@@ -686,7 +686,7 @@ shell::create_directory_if_not_exists() {
             shell::setPerms::777 "$dir"
             return 0
         else
-            shell::colored_echo "🔴 Error: Failed to create the directory." 196
+            shell::colored_echo "ERR: Failed to create the directory." 196
             return 1
         fi
     else
@@ -747,7 +747,7 @@ shell::create_file_if_not_exists() {
             # Optionally set directory permissions
             shell::setPerms::777 "$directory" # # shell::run_cmd_eval "sudo chmod 700 \"$directory\""
         else
-            shell::colored_echo "🔴 Error: Failed to create the directory." 196
+            shell::colored_echo "ERR: Failed to create the directory." 196
             return 1
         fi
     fi
@@ -762,7 +762,7 @@ shell::create_file_if_not_exists() {
             shell::setPerms::777 "$abs_filename" # shell::run_cmd_eval "sudo chmod 600 \"$abs_filename\""
             return 0
         else
-            shell::colored_echo "🔴 Error: Failed to create the file." 196
+            shell::colored_echo "ERR: Failed to create the file." 196
             return 1
         fi
     fi
@@ -812,7 +812,7 @@ shell::setPerms::777() {
 
     # Verify that the target exists
     if [ ! -e "$target" ]; then
-        shell::colored_echo "🔴 Target '$target' does not exist." 196
+        shell::colored_echo "ERR: Target '$target' does not exist." 196
         return 1
     fi
 
@@ -873,11 +873,11 @@ shell::clip_cwd() {
             echo -n "$adr" | xsel --clipboard --input
             shell::colored_echo "🟢 Path copied to clipboard using xsel" 46
         else
-            shell::colored_echo "🔴 Clipboard tool not found. Please install xclip or xsel." 196
+            shell::colored_echo "ERR: Clipboard tool not found. Please install xclip or xsel." 196
             return 1
         fi
     else
-        shell::colored_echo "🔴 Clipboard copying not supported on this OS." 196
+        shell::colored_echo "ERR: Clipboard copying not supported on this OS." 196
         return 1
     fi
 }
@@ -913,7 +913,7 @@ shell::clip_value() {
 
     local value="$1"
     if [[ -z "$value" ]]; then
-        shell::colored_echo "🔴 Error: No value provided to copy." 196
+        shell::colored_echo "ERR: No value provided to copy." 196
         return 1
     fi
 
@@ -931,11 +931,11 @@ shell::clip_value() {
             echo -n "$value" | xsel --clipboard --input
             shell::colored_echo "🟢 Value copied to clipboard using xsel." 46
         else
-            shell::colored_echo "🔴 Clipboard tool not found. Please install xclip or xsel." 196
+            shell::colored_echo "ERR: Clipboard tool not found. Please install xclip or xsel." 196
             return 1
         fi
     else
-        shell::colored_echo "🔴 Clipboard copying not supported on this OS." 196
+        shell::colored_echo "ERR: Clipboard copying not supported on this OS." 196
         return 1
     fi
 }
@@ -1208,7 +1208,7 @@ shell::copy_files() {
         local destination_file="$destination/$filename"
 
         if [ -e "$destination_file" ]; then
-            shell::colored_echo "🔴 Error: Destination file '$filename' already exists." 196
+            shell::colored_echo "ERR: Destination file '$filename' already exists." 196
             continue
         fi
 
@@ -1269,20 +1269,20 @@ shell::move_files() {
     shift
 
     if [ ! -d "$destination_folder" ]; then
-        shell::colored_echo "🔴 Error: Destination folder '$destination_folder' does not exist." 196
+        shell::colored_echo "ERR: Destination folder '$destination_folder' does not exist." 196
         return 1
     fi
 
     for source in "$@"; do
         if [ ! -e "$source" ]; then
-            shell::colored_echo "🔴 Error: Source file '$source' does not exist." 196
+            shell::colored_echo "ERR: Source file '$source' does not exist." 196
             continue
         fi
 
         local destination="$destination_folder/$(basename "$source")"
 
         if [ -e "$destination" ]; then
-            shell::colored_echo "🔴 Error: Destination file '$destination' already exists." 196
+            shell::colored_echo "ERR: Destination file '$destination' already exists." 196
             continue
         fi
 
@@ -1294,7 +1294,7 @@ shell::move_files() {
             if [ $? -eq 0 ]; then
                 shell::colored_echo "🟢 File '$source' moved successfully to $destination" 46
             else
-                shell::colored_echo "🔴 Error moving file '$source'." 196
+                shell::colored_echo "ERR: moving file '$source'." 196
             fi
         fi
     done
@@ -1399,7 +1399,7 @@ shell::editor() {
 
     local folder="$1"
     if [ ! -d "$folder" ]; then
-        shell::colored_echo "🔴 Error: '$folder' is not a valid directory." 196
+        shell::colored_echo "ERR: '$folder' is not a valid directory." 196
         return 1
     fi
 
@@ -1421,7 +1421,7 @@ shell::editor() {
     local file_list
     file_list=$(find "$folder" -type f -exec "${abs_command[@]}" {} \;)
     if [ -z "$file_list" ]; then
-        shell::colored_echo "🔴 No files found in '$folder'." 196
+        shell::colored_echo "ERR: No files found in '$folder'." 196
         return 1
     fi
 
@@ -1429,7 +1429,7 @@ shell::editor() {
     local selected_file
     selected_file=$(echo "$file_list" | fzf --prompt="Select a file: ")
     if [ -z "$selected_file" ]; then
-        shell::colored_echo "🔴 No file selected." 196
+        shell::colored_echo "ERR: No file selected." 196
         return 1
     fi
 
@@ -1437,7 +1437,7 @@ shell::editor() {
     local selected_command
     selected_command=$(echo "cat;less;more;vim;nano" | tr ';' '\n' | fzf --prompt="Select an action: ")
     if [ -z "$selected_command" ]; then
-        shell::colored_echo "🔴 No action selected." 196
+        shell::colored_echo "ERR: No action selected." 196
         return 1
     fi
 
@@ -1504,7 +1504,7 @@ shell::download_dataset() {
             echo -n "❓ Do you want to overwrite the existing file? (y/n): "
             read confirm
             if [ -z "$confirm" ]; then
-                shell::colored_echo "🔴 Invalid input. Please enter y or n." 196
+                shell::colored_echo "ERR: Invalid input. Please enter y or n." 196
             fi
         done
 
@@ -1535,7 +1535,7 @@ shell::download_dataset() {
         if [ $? -eq 0 ]; then
             shell::colored_echo "🟢 Successfully downloaded: $filename" 46
         else
-            shell::colored_echo "🔴 Error: Download failed for $link" 196
+            shell::colored_echo "ERR: Download failed for $link" 196
         fi
     fi
 }
@@ -1616,7 +1616,7 @@ shell::unarchive() {
             local cmd="7z x \"$file\""
             ;;
         *)
-            shell::colored_echo "🔴 Error: '$file' cannot be extracted via shell::unarchive()" 196
+            shell::colored_echo "ERR: '$file' cannot be extracted via shell::unarchive()" 196
             return 1
             ;;
         esac
@@ -1627,7 +1627,7 @@ shell::unarchive() {
             shell::run_cmd_eval "$cmd"
         fi
     else
-        shell::colored_echo "🔴 Error: '$file' is not a valid file" 196
+        shell::colored_echo "ERR: '$file' is not a valid file" 196
         return 1
     fi
 }
@@ -1676,7 +1676,7 @@ shell::list_high_mem_usage() {
         # Build the command string for Linux
         cmd="ps -axo pid,user,%mem,command --sort=-%mem | head -n 11 | tail -n +2"
     else
-        shell::colored_echo "🔴 Error: Unsupported OS for shell::list_high_mem_usage function." 196
+        shell::colored_echo "ERR: Unsupported OS for shell::list_high_mem_usage function." 196
         return 1
     fi
 
@@ -1736,11 +1736,11 @@ shell::open_link() {
         if shell::is_command_available xdg-open; then
             cmd="xdg-open \"$url\""
         else
-            shell::colored_echo "🔴 Error: xdg-open is not installed on Linux." 196
+            shell::colored_echo "ERR: xdg-open is not installed on Linux." 196
             return 1
         fi
     else
-        shell::colored_echo "🔴 Error: Unsupported OS for shell::open_link function." 196
+        shell::colored_echo "ERR: Unsupported OS for shell::open_link function." 196
         return 1
     fi
 
@@ -2007,7 +2007,7 @@ shell::ls() {
             ;;
         --debug) debug="true" ;;
         *)
-            shell::colored_echo "🔴 Invalid option: $1. Usage: shell::ls [-a] [-l] [-h] [--debug]" 196
+            shell::colored_echo "ERR: Invalid option: $1. Usage: shell::ls [-a] [-l] [-h] [--debug]" 196
             return 1
             ;;
         esac
@@ -2016,11 +2016,11 @@ shell::ls() {
 
     # Check if current directory is accessible and readable
     if ! pwd >/dev/null 2>&1; then
-        shell::colored_echo "🔴 Error: Cannot access current directory." 196
+        shell::colored_echo "ERR: Cannot access current directory." 196
         return 1
     fi
     if ! [ -r . ]; then
-        shell::colored_echo "🔴 Error: No read permission for current directory." 196
+        shell::colored_echo "ERR: No read permission for current directory." 196
         return 1
     fi
 
@@ -2033,7 +2033,7 @@ shell::ls() {
     # Temporary file to store formatted output
     local tmp_file
     tmp_file=$(mktemp) || {
-        shell::colored_echo "🔴 Failed to create temporary file." 196
+        shell::colored_echo "ERR: Failed to create temporary file." 196
         return 1
     }
     trap 'rm -f "$tmp_file"' EXIT
@@ -2055,8 +2055,8 @@ shell::ls() {
     # Try listing with ls
     local ls_output
     if ! ls_output=$("${ls_cmd[@]}" 2>&1); then
-        [ "$debug" = "true" ] && shell::colored_echo "🔴 ls failed: $ls_output" 196
-        shell::colored_echo "🔴 Error: Failed to list directory contents with ls." 196
+        [ "$debug" = "true" ] && shell::colored_echo "ERR: ls failed: $ls_output" 196
+        shell::colored_echo "ERR: Failed to list directory contents with ls." 196
         rm -f "$tmp_file"
         trap - EXIT
         return 1
@@ -2178,7 +2178,7 @@ shell::ask::perms() {
             ;;
         --file)
             if [ -z "$2" ]; then
-                shell::colored_echo "🔴 Error: --file requires a path." 196
+                shell::colored_echo "ERR: --file requires a path." 196
                 return 1
             fi
             file_path="$2"
@@ -2190,7 +2190,7 @@ shell::ask::perms() {
             ;;
         *)
             if [ -n "$permission_string" ]; then
-                shell::colored_echo "🔴 Error: Multiple permission strings provided." 196
+                shell::colored_echo "ERR: Multiple permission strings provided." 196
                 return 1
             fi
             permission_string="$1"
@@ -2202,7 +2202,7 @@ shell::ask::perms() {
     # If file_path is provided, get its permissions
     if [ -n "$file_path" ]; then
         if [ ! -e "$file_path" ]; then
-            shell::colored_echo "🔴 Error: File '$file_path' does not exist." 196
+            shell::colored_echo "ERR: File '$file_path' does not exist." 196
             return 1
         fi
         local os_type
@@ -2213,7 +2213,7 @@ shell::ask::perms() {
             permission_string=$(stat --format="%A" "$file_path" 2>/dev/null)
         fi
         if [ -z "$permission_string" ]; then
-            shell::colored_echo "🔴 Error: Failed to get permissions for '$file_path'." 196
+            shell::colored_echo "ERR: Failed to get permissions for '$file_path'." 196
             return 1
         fi
         [ "$debug" = "true" ] && echo "Retrieved permissions: $permission_string" >&2
@@ -2227,7 +2227,7 @@ shell::ask::perms() {
 
     # Validate permission string (10 characters, valid format)
     if ! echo "$permission_string" | grep -Eq '^[-d]([-r][-w][-x]){3}$'; then
-        shell::colored_echo "🔴 Error: Invalid permission string '$permission_string'. Expected format like -rwxr-xr-x." 196
+        shell::colored_echo "ERR: Invalid permission string '$permission_string'. Expected format like -rwxr-xr-x." 196
         return 1
     fi
 

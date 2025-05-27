@@ -105,7 +105,7 @@ shell::retrieve_gh_latest_release() {
     fi
 
     if [ -z "$1" ]; then
-        shell::colored_echo "🔴 Usage: shell::retrieve_gh_latest_release <owner/repo>" 196
+        shell::colored_echo "ERR: Usage: shell::retrieve_gh_latest_release <owner/repo>" 196
         return 1
     fi
 
@@ -160,7 +160,7 @@ shell::retrieve_gh_repository_info() {
 
     # Check if the current directory is a Git repository
     if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-        shell::colored_echo "🔴 Error: Not in a Git repository." 196
+        shell::colored_echo "ERR: Not in a Git repository." 196
         return 1
     fi
 
@@ -265,7 +265,7 @@ shell::retrieve_current_gh_default_branch() {
 
     # Check if the current directory is a Git repository
     if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-        shell::colored_echo "🔴 Error: Not in a Git repository." 196
+        shell::colored_echo "ERR: Not in a Git repository." 196
         return 1
     fi
 
@@ -275,7 +275,7 @@ shell::retrieve_current_gh_default_branch() {
     default_branch=$(shell::run_cmd_eval "git remote show origin 2>/dev/null | grep 'HEAD branch' | awk '{print \$NF}'")
 
     if [ -z "$default_branch" ]; then
-        shell::colored_echo "🔴 Error: Could not determine the default branch for 'origin'." 196
+        shell::colored_echo "ERR: Could not determine the default branch for 'origin'." 196
         return 1
     fi
 
@@ -316,7 +316,7 @@ shell::retrieve_current_gh_current_branch() {
 
     # Check if the current directory is a Git repository
     if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-        shell::colored_echo "🔴 Error: Not in a Git repository." 196
+        shell::colored_echo "ERR: Not in a Git repository." 196
         return 1
     fi
 
@@ -326,7 +326,7 @@ shell::retrieve_current_gh_current_branch() {
     current_branch=$(shell::run_cmd_eval "git rev-parse --abbrev-ref HEAD")
 
     if [ -z "$current_branch" ]; then
-        shell::colored_echo "🔴 Error: Could not determine the current branch." 196
+        shell::colored_echo "ERR: Could not determine the current branch." 196
         return 1
     fi
 

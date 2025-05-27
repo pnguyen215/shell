@@ -45,7 +45,7 @@ shell::gemini() {
 
     # Validate arguments
     if [ $# -lt 2 ]; then
-        shell::colored_echo "🔴 Usage: shell::gemini [-n] <profile_name> <prompt>" 196
+        shell::colored_echo "ERR: Usage: shell::gemini [-n] <profile_name> <prompt>" 196
         return 1
     fi
 
@@ -57,7 +57,7 @@ shell::gemini() {
     # api_key=$(shell::get_value_conf_profile "$profile_name" "GEMINI_API_KEY" 2>/dev/null)
     api_key=""
     if [ $? -ne 0 ] || [ -z "$api_key" ]; then
-        shell::colored_echo "🔴 Error: Could not retrieve GEMINI_API_KEY from profile '$profile_name'." 196
+        shell::colored_echo "ERR: Could not retrieve GEMINI_API_KEY from profile '$profile_name'." 196
         return 1
     fi
 
@@ -113,7 +113,7 @@ shell::gemini() {
         kill $spinner_pid >/dev/null 2>&1
         wait $spinner_pid >/dev/null 2>&1
         printf "\r\033[K" >&2
-        shell::colored_echo "🔴 Error: Failed to connect to Gemini API." 196
+        shell::colored_echo "ERR: Failed to connect to Gemini API." 196
         rm -f "$temp_file"
         return 1
     fi
@@ -159,7 +159,7 @@ shell::gemini() {
 
     # Check if the response is empty
     if [ -z "$response" ]; then
-        shell::colored_echo "🔴 Error: No valid text response received from Gemini API." 196
+        shell::colored_echo "ERR: No valid text response received from Gemini API." 196
         return 1
     fi
 

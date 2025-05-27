@@ -44,7 +44,7 @@ shell::read_conf() {
 
     # Verify that the configuration file exists.
     if [[ ! -f "$filename" ]]; then
-        shell::colored_echo "🔴 Error: Conf file '$filename' not found." 196
+        shell::colored_echo "ERR: Conf file '$filename' not found." 196
         return 1
     fi
 
@@ -151,7 +151,7 @@ shell::fzf_get_conf() {
     fi
 
     if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
-        shell::colored_echo "🔴 Error: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
+        shell::colored_echo "ERR: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
         return 1
     fi
 
@@ -161,7 +161,7 @@ shell::fzf_get_conf() {
     local selected_key
     selected_key=$(cut -d '=' -f 1 "$SHELL_KEY_CONF_FILE" | fzf --prompt="Select config key: ")
     if [ -z "$selected_key" ]; then
-        shell::colored_echo "🔴 No configuration selected." 196
+        shell::colored_echo "ERR: No configuration selected." 196
         return 1
     fi
 
@@ -169,7 +169,7 @@ shell::fzf_get_conf() {
     local selected_line
     selected_line=$(grep "^${selected_key}=" "$SHELL_KEY_CONF_FILE")
     if [ -z "$selected_line" ]; then
-        shell::colored_echo "🔴 Error: Selected key '$selected_key' not found in configuration." 196
+        shell::colored_echo "ERR: Selected key '$selected_key' not found in configuration." 196
         return 1
     fi
 
@@ -222,14 +222,14 @@ shell::get_value_conf() {
     local key="$1"
 
     if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
-        shell::colored_echo "🔴 Error: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
+        shell::colored_echo "ERR: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
         return 1
     fi
 
     local conf_line
     conf_line=$(grep "^${key}=" "$SHELL_KEY_CONF_FILE")
     if [ -z "$conf_line" ]; then
-        shell::colored_echo "🔴 Error: Key '$key' not found in configuration." 196
+        shell::colored_echo "ERR: Key '$key' not found in configuration." 196
         return 1
     fi
 
@@ -285,7 +285,7 @@ shell::fzf_remove_conf() {
     fi
 
     if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
-        shell::colored_echo "🔴 Error: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
+        shell::colored_echo "ERR: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
         return 1
     fi
 
@@ -295,12 +295,12 @@ shell::fzf_remove_conf() {
     local selected_key
     selected_key=$(cut -d '=' -f 1 "$SHELL_KEY_CONF_FILE" | fzf --prompt="Select config key to remove: ")
     if [ -z "$selected_key" ]; then
-        shell::colored_echo "🔴 No configuration selected." 196
+        shell::colored_echo "ERR: No configuration selected." 196
         return 1
     fi
 
     if [ "$(shell::is_protected_key "$selected_key")" = "true" ]; then
-        shell::colored_echo "🔴 Error: '$selected_key' is a protected key and cannot be modified." 196
+        shell::colored_echo "ERR: '$selected_key' is a protected key and cannot be modified." 196
         return 1
     fi
 
@@ -368,7 +368,7 @@ shell::fzf_update_conf() {
     fi
 
     if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
-        shell::colored_echo "🔴 Error: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
+        shell::colored_echo "ERR: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
         return 1
     fi
 
@@ -378,7 +378,7 @@ shell::fzf_update_conf() {
     local selected_key
     selected_key=$(cut -d '=' -f 1 "$SHELL_KEY_CONF_FILE" | fzf --prompt="Select config key to update: ")
     if [ -z "$selected_key" ]; then
-        shell::colored_echo "🔴 No configuration selected." 196
+        shell::colored_echo "ERR: No configuration selected." 196
         return 1
     fi
 
@@ -386,7 +386,7 @@ shell::fzf_update_conf() {
     shell::colored_echo ">> Enter new value for key '$selected_key':" 33
     read -r new_value
     if [ -z "$new_value" ]; then
-        shell::colored_echo "🔴 No new value entered. Update aborted." 196
+        shell::colored_echo "ERR: No new value entered. Update aborted." 196
         return 1
     fi
 
@@ -465,7 +465,7 @@ shell::exist_key_conf() {
     local key="$1"
 
     if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
-        shell::colored_echo "🔴 Error: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
+        shell::colored_echo "ERR: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
         return 1
     fi
 
@@ -513,7 +513,7 @@ shell::fzf_rename_key_conf() {
     fi
 
     if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
-        shell::colored_echo "🔴 Error: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
+        shell::colored_echo "ERR: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
         return 1
     fi
 
@@ -523,12 +523,12 @@ shell::fzf_rename_key_conf() {
     local old_key
     old_key=$(cut -d '=' -f 1 "$SHELL_KEY_CONF_FILE" | fzf --prompt="Select a key to rename: ")
     if [ -z "$old_key" ]; then
-        shell::colored_echo "🔴 No key selected. Aborting rename." 196
+        shell::colored_echo "ERR: No key selected. Aborting rename." 196
         return 1
     fi
 
     if [ "$(shell::is_protected_key "$old_key")" = "true" ]; then
-        shell::colored_echo "🔴 Error: '$old_key' is a protected key and cannot be modified." 196
+        shell::colored_echo "ERR: '$old_key' is a protected key and cannot be modified." 196
         return 1
     fi
 
@@ -536,7 +536,7 @@ shell::fzf_rename_key_conf() {
     shell::colored_echo "Enter new key name for '$old_key':" 33
     read -r new_key
     if [ -z "$new_key" ]; then
-        shell::colored_echo "🔴 No new key name entered. Aborting rename." 196
+        shell::colored_echo "ERR: No new key name entered. Aborting rename." 196
         return 1
     fi
 
@@ -547,7 +547,7 @@ shell::fzf_rename_key_conf() {
     local exist
     exist=$(shell::exist_key_conf "$new_key")
     if [ "$exist" = "true" ]; then
-        shell::colored_echo "🔴 Error: Key '$new_key' already exists. Aborting rename." 196
+        shell::colored_echo "ERR: Key '$new_key' already exists. Aborting rename." 196
         return 1
     fi
 
@@ -587,7 +587,7 @@ shell::fzf_rename_key_conf() {
 #
 # Example:
 #   if shell::is_protected_key "HOST"; then
-#       shell::colored_echo "🔴 Error: 'HOST' is a protected key and cannot be modified." 196
+#       shell::colored_echo "ERR: 'HOST' is a protected key and cannot be modified." 196
 #       return 1
 #   fi
 shell::is_protected_key() {
@@ -650,13 +650,13 @@ shell::add_group() {
     shell::colored_echo "Enter group name:" 33
     read -r group_name
     if [ -z "$group_name" ]; then
-        shell::colored_echo "🔴 No group name entered. Aborting." 196
+        shell::colored_echo "ERR: No group name entered. Aborting." 196
         return 1
     fi
 
     # Ensure the individual configuration file exists.
     if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
-        shell::colored_echo "🔴 Error: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
+        shell::colored_echo "ERR: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
         return 1
     fi
 
@@ -666,7 +666,7 @@ shell::add_group() {
     local selected_keys
     selected_keys=$(cut -d '=' -f 1 "$SHELL_KEY_CONF_FILE" | fzf --multi --prompt="Select config keys for group '$group_name': ")
     if [ -z "$selected_keys" ]; then
-        shell::colored_echo "🔴 No keys selected. Aborting group creation." 196
+        shell::colored_echo "ERR: No keys selected. Aborting group creation." 196
         return 1
     fi
 
@@ -735,7 +735,7 @@ shell::read_group() {
     local group_name="$1"
 
     if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
-        shell::colored_echo "🔴 Error: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
+        shell::colored_echo "ERR: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
         return 1
     fi
 
@@ -743,7 +743,7 @@ shell::read_group() {
     local group_entry
     group_entry=$(grep "^${group_name}=" "$SHELL_GROUP_CONF_FILE")
     if [ -z "$group_entry" ]; then
-        shell::colored_echo "🔴 Error: Group '$group_name' not found." 196
+        shell::colored_echo "ERR: Group '$group_name' not found." 196
         return 1
     fi
 
@@ -751,7 +751,7 @@ shell::read_group() {
     local keys_csv
     keys_csv=$(echo "$group_entry" | cut -d '=' -f 2-)
     if [ -z "$keys_csv" ]; then
-        shell::colored_echo "🔴 Error: No keys defined in group '$group_name'." 196
+        shell::colored_echo "ERR: No keys defined in group '$group_name'." 196
         return 1
     fi
 
@@ -832,7 +832,7 @@ shell::fzf_remove_group() {
     fi
 
     if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
-        shell::colored_echo "🔴 Error: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
+        shell::colored_echo "ERR: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
         return 1
     fi
 
@@ -841,7 +841,7 @@ shell::fzf_remove_group() {
     local selected_group
     selected_group=$(cut -d '=' -f 1 "$SHELL_GROUP_CONF_FILE" | fzf --prompt="Select a group to remove: ")
     if [ -z "$selected_group" ]; then
-        shell::colored_echo "🔴 No group selected." 196
+        shell::colored_echo "ERR: No group selected." 196
         return 1
     fi
 
@@ -896,7 +896,7 @@ shell::fzf_update_group() {
     fi
 
     if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
-        shell::colored_echo "🔴 Error: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
+        shell::colored_echo "ERR: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
         return 1
     fi
 
@@ -906,13 +906,13 @@ shell::fzf_update_group() {
     local selected_group
     selected_group=$(cut -d '=' -f 1 "$SHELL_GROUP_CONF_FILE" | fzf --prompt="Select a group to update: ")
     if [ -z "$selected_group" ]; then
-        shell::colored_echo "🔴 No group selected." 196
+        shell::colored_echo "ERR: No group selected." 196
         return 1
     fi
 
     # Ensure the individual configuration file exists.
     if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
-        shell::colored_echo "🔴 Error: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
+        shell::colored_echo "ERR: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
         return 1
     fi
 
@@ -920,7 +920,7 @@ shell::fzf_update_group() {
     local new_keys
     new_keys=$(cut -d '=' -f 1 "$SHELL_KEY_CONF_FILE" | fzf --multi --prompt="Select new keys for group '$selected_group': " | paste -sd "," -)
     if [ -z "$new_keys" ]; then
-        shell::colored_echo "🔴 No keys selected. Aborting update." 196
+        shell::colored_echo "ERR: No keys selected. Aborting update." 196
         return 1
     fi
 
@@ -979,7 +979,7 @@ shell::fzf_rename_group() {
     fi
 
     if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
-        shell::colored_echo "🔴 Error: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
+        shell::colored_echo "ERR: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
         return 1
     fi
 
@@ -989,7 +989,7 @@ shell::fzf_rename_group() {
     local old_group
     old_group=$(cut -d '=' -f 1 "$SHELL_GROUP_CONF_FILE" | fzf --prompt="Select group to rename: ")
     if [ -z "$old_group" ]; then
-        shell::colored_echo "🔴 No group selected. Aborting rename." 196
+        shell::colored_echo "ERR: No group selected. Aborting rename." 196
         return 1
     fi
 
@@ -997,7 +997,7 @@ shell::fzf_rename_group() {
     shell::colored_echo "Enter new name for group '$old_group':" 33
     read -r new_group
     if [ -z "$new_group" ]; then
-        shell::colored_echo "🔴 No new group name entered. Aborting rename." 196
+        shell::colored_echo "ERR: No new group name entered. Aborting rename." 196
         return 1
     fi
 
@@ -1044,7 +1044,7 @@ shell::list_groups() {
     fi
 
     if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
-        shell::colored_echo "🔴 Error: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
+        shell::colored_echo "ERR: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
         return 1
     fi
 
@@ -1052,7 +1052,7 @@ shell::list_groups() {
     local groups
     groups=$(cut -d '=' -f 1 "$SHELL_GROUP_CONF_FILE")
     if [ -z "$groups" ]; then
-        shell::colored_echo "🔴 No groups found in '$SHELL_GROUP_CONF_FILE'." 196
+        shell::colored_echo "ERR: No groups found in '$SHELL_GROUP_CONF_FILE'." 196
         return 1
     fi
 
@@ -1088,7 +1088,7 @@ shell::fzf_select_group() {
 
     # Ensure the group configuration file exists.
     if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
-        shell::colored_echo "🔴 Error: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
+        shell::colored_echo "ERR: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
         return 1
     fi
 
@@ -1100,7 +1100,7 @@ shell::fzf_select_group() {
     local selected_group
     selected_group=$(echo "$groups" | fzf --prompt="Select a group name: ")
     if [ -z "$selected_group" ]; then
-        shell::colored_echo "🔴 No group selected." 196
+        shell::colored_echo "ERR: No group selected." 196
         return 1
     fi
 
@@ -1108,7 +1108,7 @@ shell::fzf_select_group() {
     local group_entry
     group_entry=$(grep "^${selected_group}=" "$SHELL_GROUP_CONF_FILE")
     if [ -z "$group_entry" ]; then
-        shell::colored_echo "🔴 Error: Group '$selected_group' not found in configuration." 196
+        shell::colored_echo "ERR: Group '$selected_group' not found in configuration." 196
         return 1
     fi
 
@@ -1116,7 +1116,7 @@ shell::fzf_select_group() {
     local keys_csv
     keys_csv=$(echo "$group_entry" | cut -d '=' -f 2-)
     if [ -z "$keys_csv" ]; then
-        shell::colored_echo "🔴 Error: No keys defined in group '$selected_group'." 196
+        shell::colored_echo "ERR: No keys defined in group '$selected_group'." 196
         return 1
     fi
 
@@ -1124,13 +1124,13 @@ shell::fzf_select_group() {
     local selected_key
     selected_key=$(echo "$keys_csv" | tr ',' '\n' | fzf --prompt="Select a key from group '$selected_group': ")
     if [ -z "$selected_key" ]; then
-        shell::colored_echo "🔴 No key selected from group '$selected_group'." 196
+        shell::colored_echo "ERR: No key selected from group '$selected_group'." 196
         return 1
     fi
 
     # Ensure the individual configuration file exists.
     if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
-        shell::colored_echo "🔴 Error: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
+        shell::colored_echo "ERR: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
         return 1
     fi
 
@@ -1138,7 +1138,7 @@ shell::fzf_select_group() {
     local conf_line
     conf_line=$(grep "^${selected_key}=" "$SHELL_KEY_CONF_FILE")
     if [ -z "$conf_line" ]; then
-        shell::colored_echo "🔴 Error: Key '$selected_key' not found in configuration." 196
+        shell::colored_echo "ERR: Key '$selected_key' not found in configuration." 196
         return 1
     fi
 
@@ -1198,7 +1198,7 @@ shell::fzf_clone_group() {
 
     # Ensure the group configuration file exists.
     if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
-        shell::colored_echo "🔴 Error: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
+        shell::colored_echo "ERR: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
         return 1
     fi
 
@@ -1208,7 +1208,7 @@ shell::fzf_clone_group() {
     local selected_group
     selected_group=$(cut -d '=' -f 1 "$SHELL_GROUP_CONF_FILE" | fzf --prompt="Select a group to clone: ")
     if [ -z "$selected_group" ]; then
-        shell::colored_echo "🔴 No group selected. Aborting clone." 196
+        shell::colored_echo "ERR: No group selected. Aborting clone." 196
         return 1
     fi
 
@@ -1216,14 +1216,14 @@ shell::fzf_clone_group() {
     local group_entry
     group_entry=$(grep "^${selected_group}=" "$SHELL_GROUP_CONF_FILE")
     if [ -z "$group_entry" ]; then
-        shell::colored_echo "🔴 Error: Group '$selected_group' not found." 196
+        shell::colored_echo "ERR: Group '$selected_group' not found." 196
         return 1
     fi
 
     local keys_csv
     keys_csv=$(echo "$group_entry" | cut -d '=' -f 2-)
     if [ -z "$keys_csv" ]; then
-        shell::colored_echo "🔴 Error: No keys defined in group '$selected_group'." 196
+        shell::colored_echo "ERR: No keys defined in group '$selected_group'." 196
         return 1
     fi
 
@@ -1231,13 +1231,13 @@ shell::fzf_clone_group() {
     shell::colored_echo "Enter new group name for the clone of '$selected_group':" 33
     read -r new_group
     if [ -z "$new_group" ]; then
-        shell::colored_echo "🔴 No new group name entered. Aborting clone." 196
+        shell::colored_echo "ERR: No new group name entered. Aborting clone." 196
         return 1
     fi
 
     # Check if the new group name already exists.
     if grep -q "^${new_group}=" "$SHELL_GROUP_CONF_FILE"; then
-        shell::colored_echo "🔴 Error: Group '$new_group' already exists." 196
+        shell::colored_echo "ERR: Group '$new_group' already exists." 196
         return 1
     fi
 
@@ -1290,7 +1290,7 @@ shell::sync_key_group_conf() {
     fi
 
     if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
-        shell::colored_echo "🔴 Error: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
+        shell::colored_echo "ERR: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
         return 1
     fi
 
@@ -1299,7 +1299,7 @@ shell::sync_key_group_conf() {
     # Create a temporary file for the updated configuration.
     local temp_file
     temp_file=$(mktemp) || {
-        shell::colored_echo "🔴 Error: Unable to create temporary file." 196
+        shell::colored_echo "ERR: Unable to create temporary file." 196
         return 1
     }
 
@@ -1384,7 +1384,7 @@ shell::load_ini_conf() {
 
     # Check if the config file exists and is a regular file.
     if [ ! -f "$config_file" ]; then
-        shell::colored_echo "🔴 Error: Configuration file '$config_file' not found." 196
+        shell::colored_echo "ERR: Configuration file '$config_file' not found." 196
         return 1
     fi
 
@@ -1510,13 +1510,13 @@ shell::fzf_get_conf_visualization() {
 
     # Validate configuration file existence
     if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
-        shell::colored_echo "🔴 Error: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
+        shell::colored_echo "ERR: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
         return 1
     fi
 
     # Ensure fzf is installed
     shell::install_package fzf || {
-        shell::colored_echo "🔴 Error: fzf is required but could not be installed." 196
+        shell::colored_echo "ERR: fzf is required but could not be installed." 196
         return 1
     }
 
@@ -1549,7 +1549,7 @@ shell::fzf_get_conf_visualization() {
     selected_key=$(echo "$selected_key" | sed "s/$(echo -e "\033")[0-9;]*m//g")
 
     if [ -z "$selected_key" ]; then
-        shell::colored_echo "🔴 No configuration key selected." 196
+        shell::colored_echo "ERR: No configuration key selected." 196
         return 1
     fi
     shell::colored_echo "🟢 Selected key: $selected_key" 46

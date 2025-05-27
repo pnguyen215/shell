@@ -4,7 +4,7 @@ echo "🚀 Installing shell..."
 # Check for required tools
 for cmd in curl unzip; do
     if ! command -v "$cmd" >/dev/null 2>&1; then
-        echo "🔴 Error: $cmd is required but not installed. Please install it (e.g., 'sudo apt install $cmd' on Ubuntu)."
+        echo "ERR: $cmd is required but not installed. Please install it (e.g., 'sudo apt install $cmd' on Ubuntu)."
         exit 1
     fi
 done
@@ -15,32 +15,25 @@ repo="shell"
 zip_file="$repo.zip"
 install_dir="$HOME/shell"
 
-# Fetch latest release or fallback to master
-# release_url=$(curl -s "https://api.github.com/repos/$owner/$repo/releases/latest")
-# zip_url=$(echo "$release_url" | grep -o '"browser_download_url": ".*shell.*.zip"' | cut -d'"' -f4)
-# if [ -z "$zip_url" ]; then
-#     echo "👉 Latest release not found. Downloading from master branch."
-#     zip_url="https://github.com/$owner/$repo/archive/master.zip"
-# fi
 # Download from the master branch only
 zip_url="https://github.com/$owner/$repo/archive/master.zip"
 echo "👉 Downloading from master branch ($zip_url)"
 
 # Download and extract
 curl -s -L -o "$zip_file" "$zip_url" || {
-    echo "🔴 Download failed."
+    echo "ERR: Download failed."
     exit 1
 }
 mkdir -p "$install_dir"
 unzip -qq -o "$zip_file" -d "$install_dir" || {
-    echo "🔴 Extraction failed."
+    echo "ERR: Extraction failed."
     exit 1
 }
 
 # Dynamically find the extracted folder
 extracted_dir=$(find "$install_dir" -maxdepth 1 -type d -name "$repo-*" | head -n 1)
 if [ -z "$extracted_dir" ]; then
-    echo "🔴 Error: Could not locate extracted folder matching '$repo-*'."
+    echo "ERR: Could not locate extracted folder matching '$repo-*'."
     rm "$zip_file"
     exit 1
 fi

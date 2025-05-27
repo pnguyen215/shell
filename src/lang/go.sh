@@ -55,7 +55,7 @@ shell::get_go_privates() {
         if [ $? -eq 0 ]; then
             shell::colored_echo "🟢 Go privates setting retrieved successfully: ${cmd}" 46
         else
-            shell::colored_echo "🔴 Error: Failed to retrieve GOPRIVATE." 196
+            shell::colored_echo "ERR: Failed to retrieve GOPRIVATE." 196
             return 1
         fi
     fi
@@ -111,7 +111,7 @@ shell::set_go_privates() {
 
     # Handle no arguments provided
     if [ $# -eq 0 ]; then
-        shell::colored_echo "🔴 Error: No repositories provided." 196
+        shell::colored_echo "ERR: No repositories provided." 196
         echo "Usage: shell::set_go_privates [-n] <repository1> [repository2] ..."
         return 1
     fi
@@ -142,7 +142,7 @@ shell::set_go_privates() {
         if [ $? -eq 0 ]; then
             shell::colored_echo "🟢 GOPRIVATE set successfully to: $repositories_by_comma" 46
         else
-            shell::colored_echo "🔴 Error: Failed to set GOPRIVATE." 196
+            shell::colored_echo "ERR: Failed to set GOPRIVATE." 196
             return 1
         fi
     fi
@@ -238,92 +238,11 @@ shell::fzf_remove_go_privates() {
         if [ $? -eq 0 ]; then
             shell::colored_echo "🟢 Removed selected entries from GOPRIVATE." 46
         else
-            shell::colored_echo "🔴 Error: Failed to update GOPRIVATE." 196
+            shell::colored_echo "ERR: Failed to update GOPRIVATE." 196
             return 1
         fi
     fi
 }
-
-# shell::create_go_app function
-# Creates a new Go application by initializing a Go module and tidying dependencies.
-#
-# Usage:
-#   shell::create_go_app [-n] <app_name|github_url>
-#
-# Parameters:
-#   - -n : Optional dry-run flag. If provided, the commands are printed using shell::on_evict instead of being executed.
-#   - <app_name|github_url> : The name of the application or a GitHub URL to initialize the module.
-#
-# Description:
-#   This function checks if the provided application name is a valid URL. If it is, it extracts the module name
-#   from the URL. It then initializes the Go module using `go mod init` and tidies the dependencies using `go mod tidy`.
-#   In dry-run mode, the commands are displayed without execution.
-#
-# Example:
-#   shell::create_go_app my_app         # Initializes a Go module named 'my_app'.
-#   shell::create_go_app -n my_app      # Previews the initialization commands without executing them.
-# shell::create_go_app() {
-#     local app_name="$1"
-#     local dry_run="false"
-
-#     # Check for dry-run option
-#     if [ "$1" = "-n" ]; then
-#         dry_run="true"
-#         shift
-#         app_name="$1"
-#     fi
-
-#     # Check for the help flag (-h)
-#     if [ "$1" = "-h" ]; then
-#         echo "$USAGE_SHELL_CREATE_GO_APP"
-#         return 0
-#     fi
-
-#     # Validate app name
-#     if [ -z "$app_name" ]; then
-#         shell::colored_echo "🔴 Error: Application name is required." 196
-#         shell::colored_echo "Usage: shell::create_go_app [-n] <app_name|github_url>"
-#         return 1
-#     fi
-
-#     # Check if the app name is a URL
-#     local is_url="false"
-#     if [[ "$app_name" =~ ^(http:\/\/|https:\/\/) ]]; then
-#         is_url="true"
-#     fi
-
-#     local module_name="$app_name"
-
-#     # If it's a URL, extract the module name
-#     if [ "$is_url" = "true" ]; then
-#         # Remove "http://" or "https://"
-#         module_name="${module_name#http://}"
-#         module_name="${module_name#https://}"
-#         # Remove trailing slashes
-#         module_name="${module_name%/}"
-#     fi
-
-#     local init_cmd="go mod init $module_name"
-#     local tidy_cmd="go mod tidy"
-
-#     # Execute go mod init
-#     shell::colored_echo "🔍 Initializing Go module: $module_name" 36
-#     if [ "$dry_run" = "true" ]; then
-#         shell::on_evict "$init_cmd"
-#     else
-#         shell::run_cmd_eval "$init_cmd"
-#     fi
-
-#     # Execute go mod tidy
-#     shell::colored_echo "🔍 Tidying Go dependencies" 36
-#     if [ "$dry_run" = "true" ]; then
-#         shell::on_evict "$tidy_cmd"
-#     else
-#         shell::run_cmd_eval "$tidy_cmd"
-#     fi
-
-#     shell::colored_echo "🟢 Go application initialized successfully." 46
-# }
 
 # shell::create_go_app function
 # Creates a new Go application by initializing a Go module and tidying dependencies
@@ -374,7 +293,7 @@ shell::create_go_app() {
 
     # Check for required app name
     if [ -z "$1" ]; then
-        shell::colored_echo "🔴 Error: Application name is required." 196
+        shell::colored_echo "ERR: Application name is required." 196
         echo "Usage: shell::create_go_app [-n] [-h] <app_name|github_url> [target_folder]"
         return 1
     fi
@@ -413,11 +332,11 @@ shell::create_go_app() {
         else
             shell::create_directory_if_not_exists "$target_folder"
             if [ $? -ne 0 ]; then
-                shell::colored_echo "🔴 Error: Could not create or access target directory '$target_folder'." 196
+                shell::colored_echo "ERR: Could not create or access target directory '$target_folder'." 196
                 return 1
             fi
             cd "$target_folder" || {
-                shell::colored_echo "🔴 Error: Could not change to target directory '$target_folder'." 196
+                shell::colored_echo "ERR: Could not change to target directory '$target_folder'." 196
                 return 1
             }
         fi
@@ -448,7 +367,7 @@ shell::create_go_app() {
             shell::on_evict "cd \"$original_dir\""
         else
             cd "$original_dir" || {
-                shell::colored_echo "🔴 Warning: Could not change back to original directory '$original_dir'." 11
+                shell::colored_echo "ERR: Warning: Could not change back to original directory '$original_dir'." 11
             }
         fi
     fi

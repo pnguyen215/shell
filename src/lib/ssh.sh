@@ -66,7 +66,7 @@ shell::list_ssh_tunnels() {
     elif [ "$os_type" = "macos" ]; then
         ps_cmd="ps -ax -o pid,user,start,time,command | grep ssh | grep -v grep | grep -E -- '-[DLR]' > \"$temp_file\"" &>/dev/null
     else
-        shell::colored_echo "🔴 Unsupported operating system: $os_type" 196
+        shell::colored_echo "ERR: Unsupported operating system: $os_type" 196
         rm -f "$temp_file"
         return 1
     fi
@@ -246,7 +246,7 @@ shell::fzf_ssh_keys() {
 
     # Check if the SSH directory exists.
     if [ ! -d "$ssh_dir" ]; then
-        shell::colored_echo "🔴 Error: SSH directory '"$ssh_dir"' not found." 196
+        shell::colored_echo "ERR: SSH directory '"$ssh_dir"' not found." 196
         return 1
     fi
 
@@ -268,7 +268,7 @@ shell::fzf_ssh_keys() {
 
     # Check if a file was selected.
     if [ -z "$selected_key" ]; then
-        shell::colored_echo "🔴 No SSH key file selected." 196
+        shell::colored_echo "ERR: No SSH key file selected." 196
         return 1
     fi
 
@@ -358,7 +358,7 @@ shell::fzf_kill_ssh_tunnels() {
 
     # Check if any tunnels were selected.
     if [ -z "$selected_tunnels" ]; then
-        shell::colored_echo "🔴 No SSH tunnels selected." 196
+        shell::colored_echo "ERR: No SSH tunnels selected." 196
         return 1
     fi
 
@@ -383,7 +383,7 @@ shell::fzf_kill_ssh_tunnels() {
         # Optional: Add a small delay and check if processes are still running
         # sleep 1
         # if ps -p $pids_to_kill > /dev/null 2>&1; then
-        #     shell::colored_echo "🔴 Failed to kill one or more processes." 196
+        #     shell::colored_echo "ERR: Failed to kill one or more processes." 196
         # else
         #     shell::colored_echo "🟢 Successfully killed PID(s): $pids_to_kill" 46
         # fi
@@ -451,7 +451,7 @@ shell::kill_ssh_tunnels() {
     elif [ "$os_type" = "macos" ]; then
         ps_cmd="ps -ax -o pid,command | grep ssh | grep -v grep | grep -E -- '-[DLR]' | awk '{print \$1}' > \"$temp_pids\""
     else
-        shell::colored_echo "🔴 Unsupported operating system: $os_type" 196
+        shell::colored_echo "ERR: Unsupported operating system: $os_type" 196
         rm -f "$temp_pids"
         return 1
     fi
@@ -507,7 +507,7 @@ shell::kill_ssh_tunnels() {
                     shell::colored_echo "🟢 Killed PID $pid successfully." 46
                     ((kill_count++))
                 else
-                    shell::colored_echo "🔴 Failed to kill PID $pid." 196
+                    shell::colored_echo "ERR: Failed to kill PID $pid." 196
                 fi
             done
             shell::colored_echo "✅ Killed $kill_count out of ${#pids_to_kill[@]} SSH tunnel process(es)." 46
@@ -579,7 +579,7 @@ shell::gen_ssh_key() {
             return 0
             ;;
         *)
-            shell::colored_echo "🔴 Unknown option: $1" 196
+            shell::colored_echo "ERR: Unknown option: $1" 196
             echo "$USAGE_SHELL_GEN_SSH_KEY"
             return 1
             ;;
@@ -593,7 +593,7 @@ shell::gen_ssh_key() {
 
     # Validate ssh-keygen availability
     if ! shell::is_command_available ssh-keygen; then
-        shell::colored_echo "🔴 Error: ssh-keygen is not available. Please install openssh-client." 196
+        shell::colored_echo "ERR: ssh-keygen is not available. Please install openssh-client." 196
         return 1
     fi
 
@@ -601,7 +601,7 @@ shell::gen_ssh_key() {
     case "$key_type" in
     rsa | ed25519) ;;
     *)
-        shell::colored_echo "🔴 Error: Unsupported key type '$key_type'. Supported types: rsa, ed25519." 196
+        shell::colored_echo "ERR: Unsupported key type '$key_type'. Supported types: rsa, ed25519." 196
         return 1
         ;;
     esac
@@ -612,7 +612,7 @@ shell::gen_ssh_key() {
     else
         shell::create_directory_if_not_exists "$ssh_dir"
         if [ $? -ne 0 ]; then
-            shell::colored_echo "🔴 Failed to create SSH directory '$ssh_dir'." 196
+            shell::colored_echo "ERR: Failed to create SSH directory '$ssh_dir'." 196
             return 1
         fi
     fi
@@ -647,7 +647,7 @@ shell::gen_ssh_key() {
             shell::colored_echo "  Private key: $full_key_path" 46
             shell::colored_echo "  Public key:  ${full_key_path}.pub" 46
         else
-            shell::colored_echo "🔴 Failed to generate SSH key pair." 196
+            shell::colored_echo "ERR: Failed to generate SSH key pair." 196
             return 1
         fi
     fi

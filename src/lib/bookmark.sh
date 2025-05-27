@@ -56,7 +56,7 @@ shell::uplink() {
             if [ -n "$src" ] && [ -n "$dest" ]; then
                 ln -vif "$src" "$dest" && chmod +x "$dest"
             else
-                shell::colored_echo "🔴 Error: Invalid link specification in .link: $line" 196
+                shell::colored_echo "ERR: Invalid link specification in .link: $line" 196
             fi
         fi
     done <"$link_file"
@@ -109,7 +109,7 @@ shell::opent() {
         # Use xdg-open to open the directory in the default file manager.
         xdg-open "$dir"
     else
-        shell::colored_echo "🔴 Unsupported operating system for shell::opent function." 196
+        shell::colored_echo "ERR: Unsupported operating system for shell::opent function." 196
         return 1
     fi
 
@@ -135,7 +135,7 @@ shell::add_bookmark() {
     local bookmark_name="$1"
 
     if [[ -z "$bookmark_name" ]]; then
-        shell::colored_echo "🔴 Please type a valid name for your bookmark." 3
+        shell::colored_echo "ERR: Please type a valid name for your bookmark." 3
         return 1
     fi
 
@@ -243,7 +243,7 @@ shell::remove_bookmark() {
     # Create a secure temporary file.
     local tmp_file
     tmp_file=$(mktemp) || {
-        shell::colored_echo "🔴 Failed to create temporary file." 196
+        shell::colored_echo "ERR: Failed to create temporary file." 196
         return 1
     }
 
@@ -258,7 +258,7 @@ shell::remove_bookmark() {
     if shell::run_cmd_eval "$cmd"; then
         shell::colored_echo "🟢 Bookmark '$bookmark_name' removed" 46
     else
-        shell::colored_echo "🔴 Failed to remove bookmark '$bookmark_name'" 196
+        shell::colored_echo "ERR: Failed to remove bookmark '$bookmark_name'" 196
         return 1
     fi
 
@@ -319,7 +319,7 @@ shell::remove_bookmark_linux() {
     if shell::run_cmd_eval "$sed_cmd"; then
         shell::colored_echo "🟢 Bookmark '$bookmark_name' removed" 46
     else
-        shell::colored_echo "🔴 Failed to remove bookmark '$bookmark_name'" 196
+        shell::colored_echo "ERR: Failed to remove bookmark '$bookmark_name'" 196
         return 1
     fi
 }
@@ -378,7 +378,7 @@ shell::go_bookmark() {
         if cd "$dir"; then
             shell::colored_echo "📂 Changed directory to: $dir" 2
         else
-            shell::colored_echo "🔴 Failed to change directory to: $dir" 1
+            shell::colored_echo "ERR: Failed to change directory to: $dir" 1
             return 1
         fi
     fi
@@ -443,12 +443,12 @@ shell::fzf_goto() {
     fi
 
     if [ ! -f "$bookmarks_file" ]; then
-        shell::colored_echo "🔴 Error: Bookmarks file '$bookmarks_file' not found." 196
+        shell::colored_echo "ERR: Bookmarks file '$bookmarks_file' not found." 196
         return 1
     fi
 
     shell::install_package fzf || {
-        shell::colored_echo "🔴 Error: fzf is required but could not be installed." 196
+        shell::colored_echo "ERR: fzf is required but could not be installed." 196
         return 1
     }
 
@@ -458,7 +458,7 @@ shell::fzf_goto() {
     selected_display_line=$(awk -F'|' '{print $2 " (" $1 ")"}' "$bookmarks_file" | fzf --prompt="Select a bookmarked path: ")
 
     if [ -z "$selected_display_line" ]; then
-        shell::colored_echo "🔴 No bookmark selected. Aborting." 196
+        shell::colored_echo "ERR: No bookmark selected. Aborting." 196
         return 1
     fi
 
@@ -473,7 +473,7 @@ shell::fzf_goto() {
     target_path=$(grep "^.*|${selected_bookmark_name}$" "$bookmarks_file" | cut -d'|' -f1)
 
     if [ -z "$target_path" ]; then
-        shell::colored_echo "🔴 Error: Could not find path for selected bookmark '$selected_bookmark_name'." 196
+        shell::colored_echo "ERR: Could not find path for selected bookmark '$selected_bookmark_name'." 196
         return 1
     fi
 
@@ -482,12 +482,12 @@ shell::fzf_goto() {
     else
         if [ -d "$target_path" ]; then
             cd "$target_path" || {
-                shell::colored_echo "🔴 Failed to change directory to '$target_path'." 196
+                shell::colored_echo "ERR: Failed to change directory to '$target_path'." 196
                 return 1
             }
             shell::colored_echo "🟢 Changed directory to: '$target_path'" 46
         else
-            shell::colored_echo "🔴 Error: Target directory '$target_path' does not exist." 196
+            shell::colored_echo "ERR: Target directory '$target_path' does not exist." 196
             return 1
         fi
     fi
@@ -535,56 +535,14 @@ shell::fzf_goto_verifier() {
     fi
 
     if [ ! -f "$bookmarks_file" ]; then
-        shell::colored_echo "🔴 Error: Bookmarks file '$bookmarks_file' not found." 196
+        shell::colored_echo "ERR: Bookmarks file '$bookmarks_file' not found." 196
         return 1
     fi
 
     shell::install_package fzf || {
-        shell::colored_echo "🔴 Error: fzf is required but could not be installed." 196
+        shell::colored_echo "ERR: fzf is required but could not be installed." 196
         return 1
     }
-
-    # local selected_display_line
-    # # Display bookmarks in the format "name (path) [status]" for fzf.
-    # # Check each path's existence and append [active] or [inactive].
-    # selected_display_line=$(awk -F'|' '{status = system("[ -d \"" $1 "\" ]") == 0 ? "[active]" : "[inactive]"; print $2 " (" $1 ") " status}' "$bookmarks_file" | fzf --prompt="Select a bookmarked path: ")
-
-    # if [ -z "$selected_display_line" ]; then
-    #     shell::colored_echo "🔴 No bookmark selected. Aborting." 196
-    #     return 1
-    # fi
-
-    # local selected_bookmark_name
-    # # Extract only the bookmark name from the selected display line, e.g., "working-service-path"
-    # # This assumes the format "name (path) [status]" and removes both " (path)" and " [status]".
-    # selected_bookmark_name=$(echo "$selected_display_line" | sed 's/ *(.*) *\[.*\]//')
-
-    # local target_path
-    # # Find the original line in the bookmarks_file using the extracted name
-    # # Then cut the path (first field) from that line.
-    # target_path=$(grep "^.*|${selected_bookmark_name}$" "$bookmarks_file" | cut -d'|' -f1)
-
-    # if [ -z "$target_path" ]; then
-    #     shell::colored_echo "🔴 Error: Could not find path for selected bookmark '$selected_bookmark_name'." 196
-    #     return 1
-    # fi
-
-    # if [ "$dry_run" = "true" ]; then
-    #     shell::on_evict "cd \"$target_path\""
-    # else
-    #     if [ -d "$target_path" ]; then
-    #         cd "$target_path" || {
-    #             shell::colored_echo "🔴 Failed to change directory to '$target_path'." 196
-    #             return 1
-    #         }
-    #         shell::colored_echo "🟢 Changed directory to: '$target_path'" 46
-    #     else
-    #         shell::colored_echo "🔴 Error: Target directory '$target_path' does not exist." 196
-    #         return 1
-    #     fi
-    # fi
-
-    # return 0
 
     # Define ANSI color codes using tput
     local yellow=$(tput setaf 3) # Yellow for bookmark name
@@ -601,7 +559,7 @@ shell::fzf_goto_verifier() {
         "$bookmarks_file" | fzf --ansi --prompt="Select a bookmarked path: ")
 
     if [ -z "$selected_display_line" ]; then
-        shell::colored_echo "🔴 No bookmark selected. Aborting." 196
+        shell::colored_echo "ERR: No bookmark selected. Aborting." 196
         return 1
     fi
 
@@ -616,7 +574,7 @@ shell::fzf_goto_verifier() {
     target_path=$(grep "^.*|${selected_bookmark_name}$" "$bookmarks_file" | cut -d'|' -f1)
 
     if [ -z "$target_path" ]; then
-        shell::colored_echo "🔴 Error: Could not find path for selected bookmark '$selected_bookmark_name'." 196
+        shell::colored_echo "ERR: Could not find path for selected bookmark '$selected_bookmark_name'." 196
         return 1
     fi
 
@@ -625,12 +583,12 @@ shell::fzf_goto_verifier() {
     else
         if [ -d "$target_path" ]; then
             cd "$target_path" || {
-                shell::colored_echo "🔴 Failed to change directory to '$target_path'." 196
+                shell::colored_echo "ERR: Failed to change directory to '$target_path'." 196
                 return 1
             }
             shell::colored_echo "🟢 Changed directory to: '$target_path'" 46
         else
-            shell::colored_echo "🔴 Error: Target directory '$target_path' does not exist." 196
+            shell::colored_echo "ERR: Target directory '$target_path' does not exist." 196
             return 1
         fi
     fi
@@ -688,13 +646,13 @@ shell::fzf_goto_clear() {
 
     # Validate bookmarks file existence
     if [ ! -f "$bookmarks_file" ]; then
-        shell::colored_echo "🔴 Error: Bookmarks file '$bookmarks_file' not found." 196
+        shell::colored_echo "ERR: Bookmarks file '$bookmarks_file' not found." 196
         return 1
     fi
 
     # Ensure fzf is installed
     shell::install_package fzf || {
-        shell::colored_echo "🔴 Error: fzf is required but could not be installed." 196
+        shell::colored_echo "ERR: fzf is required but could not be installed." 196
         return 1
     }
 
@@ -720,7 +678,7 @@ shell::fzf_goto_clear() {
     selected_display_lines=$(echo "$inactive_bookmarks" | fzf --ansi --multi --prompt="Select inactive bookmarks to remove: ")
 
     if [ -z "$selected_display_lines" ]; then
-        shell::colored_echo "🔴 No bookmarks selected. Aborting." 196
+        shell::colored_echo "ERR: No bookmarks selected. Aborting." 196
         return 1
     fi
 
