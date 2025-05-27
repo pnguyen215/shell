@@ -1459,3 +1459,121 @@ shell::load_ini_conf() {
 
     return 0
 }
+
+# shell::fzf_get_conf_visualization function
+# Interactively selects a configuration key using fzf and displays its decoded value in real-time.
+#
+# Usage:
+#   shell::fzf_get_conf_visualization [-n] [-h]
+#
+# Parameters:
+#   - -n : Optional dry-run flag. If provided, the clipboard copy command is printed instead of executed.
+#   - -h : Optional help flag. Displays this help message.
+#
+# Description:
+#   This function checks if the configuration file exists. If not, it displays an error.
+#   It then uses fzf to interactively select a configuration key from the file, showing
+#   the Base64-decoded value in real-time in a preview window, formatted as "key (value)"
+#   with the key in yellow and the value in cyan. Once a key is selected, its decoded value
+#   is copied to the clipboard unless in dry-run mode, where the copy command is printed.
+#
+# Requirements:
+#   - fzf must be installed.
+#   - The 'SHELL_KEY_CONF_FILE' variable must be set.
+#   - Helper functions: shell::install_package, shell::colored_echo, shell::get_os_type, shell::clip_value, shell::on_evict.
+#
+# Example usage:
+#   shell::fzf_get_conf_visualization         # Select a key and copy its decoded value.
+#   shell::fzf_get_conf_visualization -n      # Dry-run: print the clipboard copy command.
+#
+# Returns:
+#   0 on success, 1 on failure (e.g., no config file, fzf not installed, no selection).
+#
+# Notes:
+#   - Compatible with both macOS and Linux.
+#   - Uses ANSI color codes for formatting (yellow for key, cyan for value).
+#   - The configuration file is expected to contain key=value pairs with Base64-encoded values.
+shell::fzf_get_conf_visualization() {
+    local dry_run="false"
+
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_GET_CONF_VISUALIZATION"
+        return 0
+    fi
+
+    # Check for the optional dry-run flag (-n)
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    # Validate configuration file existence
+    if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
+        shell::colored_echo "🔴 Error: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
+        return 1
+    fi
+
+    # Ensure fzf is installed
+    shell::install_package fzf || {
+        shell::colored_echo "🔴 Error: fzf is required but could not be installed." 196
+        return 1
+    }
+
+    # Define ANSI color codes using tput
+    local yellow=$(tput setaf 3) # Yellow for key
+    local cyan=$(tput setaf 6)   # Cyan for value
+    local normal=$(tput sgr0)    # Reset to normal
+
+    # Determine OS type for Base64 decoding
+    local os_type
+    os_type=$(shell::get_os_type)
+    local base64_decode_cmd
+    if [ "$os_type" = "macos" ]; then
+        base64_decode_cmd="base64 -D"
+    else
+        base64_decode_cmd="base64 -d"
+    fi
+
+    # Use fzf with a preview window to show the decoded value in real-time
+    local selected_key
+    selected_key=$(cut -d '=' -f 1 "$SHELL_KEY_CONF_FILE" | fzf --ansi \
+        --prompt="Select config key: " \
+        --preview="grep '^{}=.*' \"$SHELL_KEY_CONF_FILE\" | cut -d '=' -f 2- | $base64_decode_cmd | xargs -I {} echo '$yellow{} $normal($cyan{} $normal)'")
+
+    if [ -z "$selected_key" ]; then
+        shell::colored_echo "🔴 No configuration key selected." 196
+        return 1
+    fi
+
+    # Retrieve the selected configuration line
+    local selected_line
+    selected_line=$(grep "^${selected_key}=" "$SHELL_KEY_CONF_FILE")
+    if [ -z "$selected_line" ]; then
+        shell::colored_echo "🔴 Error: Selected key '$selected_key' not found in configuration." 196
+        return 1
+    fi
+
+    # Extract and decode the value
+    local encoded_value
+    encoded_value=$(echo "$selected_line" | cut -d '=' -f 2-)
+    local decoded_value
+    decoded_value=$(echo "$encoded_value" | $base64_decode_cmd)
+    if [ $? -ne 0 ]; then
+        shell::colored_echo "🔴 Error: Failed to decode value for key '$selected_key'." 196
+        return 1
+    fi
+
+    # Display the formatted key-value pair
+    shell::colored_echo "${yellow}${selected_key}${normal} (${cyan}${decoded_value}${normal})" 33
+
+    # Copy the decoded value to the clipboard or print the command in dry-run mode
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "shell::clip_value \"$decoded_value\""
+    else
+        shell::clip_value "$decoded_value"
+        shell::colored_echo "🟢 Decoded value copied to clipboard." 46
+    fi
+
+    return 0
+}
