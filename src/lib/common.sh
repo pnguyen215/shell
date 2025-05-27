@@ -531,7 +531,7 @@ shell::list_path_installed_packages() {
     find "$base_path" -maxdepth 1 -mindepth 1 -type d | sort | while read -r package_dir; do
         local package_name
         package_name=$(basename "$package_dir")
-        shell::colored_echo "📦 Package: $package_name 👉 Path: $package_dir"
+        shell::colored_echo "📦 Package: $package_name DEBUG: Path: $package_dir"
     done
 }
 
@@ -591,10 +591,10 @@ shell::list_path_installed_packages_details() {
         # Get detailed information using stat, with different formatting for Linux and macOS.
         if [ "$os_type" = "linux" ]; then
             # Linux: %n for name, %s for size, %y for last modification date.
-            details=$(stat -c "👉 Path: %n, Size: %s bytes, Modified: %y" "$package_dir")
+            details=$(stat -c "DEBUG: Path: %n, Size: %s bytes, Modified: %y" "$package_dir")
         elif [ "$os_type" = "macos" ]; then
             # macOS: %N for name, %z for size, %Sm for last modification date.
-            details=$(stat -f "👉 Path: %N, Size: %z bytes, Modified: %Sm" "$package_dir")
+            details=$(stat -f "DEBUG: Path: %N, Size: %z bytes, Modified: %Sm" "$package_dir")
         else
             details="Unsupported OS for detailed stat."
         fi

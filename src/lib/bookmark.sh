@@ -343,7 +343,7 @@ shell::show_bookmark() {
     local yellow normal
     yellow=$(tput setaf 3)
     normal=$(tput sgr0)
-    awk -v yellow="$yellow" -v normal="$normal" 'BEGIN { FS="|"} { printf "👉 %s%-10s%s %s\n", yellow, $2, normal, $1 }' "$bookmarks_file"
+    awk -v yellow="$yellow" -v normal="$normal" 'BEGIN { FS="|"} { printf "DEBUG: %s%-10s%s %s\n", yellow, $2, normal, $1 }' "$bookmarks_file"
 }
 
 # shell::go_bookmark function
