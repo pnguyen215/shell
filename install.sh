@@ -62,9 +62,9 @@ fi
 line="source $install_dir/src/shell.sh"
 if ! grep -qF "$line" "$shell_config" 2>/dev/null; then
     echo "$line" >>"$shell_config"
-    echo "🟢 Added shell to $shell_config"
+    echo "INFO: Added shell to $shell_config"
 else
     echo "🟡 Shell already sourced in $shell_config"
 fi
 
-echo "🟢 shell installed. Restart your terminal or run 'source $shell_config' to apply changes."
+echo "INFO: shell installed. Restart your terminal or run 'source $shell_config' to apply changes."

@@ -112,7 +112,7 @@ shell::ini_read() {
                     value="${value//\\\"/\"}"
                 fi
 
-                # shell::colored_echo "🟢 Found value for key '$key'." 46
+                # shell::colored_echo "INFO: Found value for key '$key'." 46
                 if [ "$os_type" = "macos" ]; then
                     decoded_value=$(echo "$value" | base64 -D)
                 else
@@ -684,7 +684,7 @@ shell::ini_add_section() {
 
     # Add the section
     echo "[$section]" >>"$file"
-    shell::colored_echo "🟢 Successfully added section: $section" 46
+    shell::colored_echo "INFO: Successfully added section: $section" 46
     return 0
 }
 
@@ -865,7 +865,7 @@ shell::ini_write() {
 
     # Provide feedback based on whether the key was updated or added.
     if [ $key_handled -eq 1 ]; then
-        shell::colored_echo "🟢 Successfully wrote key '$key' with value '$value' to section '$section'" 46
+        shell::colored_echo "INFO: Successfully wrote key '$key' with value '$value' to section '$section'" 46
     else
         # This case should ideally not be reached if shell::ini_add_section ensures
         # the section exists and the logic is correct. It's a safeguard.
@@ -1005,11 +1005,11 @@ shell::ini_remove_section() {
 
     if [ "$dry_run" = "true" ]; then
         shell::on_evict "$replace_cmd"
-        shell::colored_echo "🟢 Dry-run: Would remove section '$section' from '$file'" 46
+        shell::colored_echo "INFO: Dry-run: Would remove section '$section' from '$file'" 46
     else
         shell::run_cmd_eval "$replace_cmd"
         if [ $? -eq 0 ] && [ $section_removed -eq 1 ]; then
-            shell::colored_echo "🟢 Successfully removed section '$section'" 46
+            shell::colored_echo "INFO: Successfully removed section '$section'" 46
         else
             shell::colored_echo "ERR: removing section '$section'" 196
             return 1
@@ -1164,7 +1164,7 @@ shell::fzf_ini_remove_key() {
         shell::run_cmd_eval "$replace_cmd"
         if [ $? -eq 0 ]; then
             if [ $key_removed -eq 1 ]; then
-                shell::colored_echo "🟢 Successfully removed key '$selected_key' from section '$section'" 46
+                shell::colored_echo "INFO: Successfully removed key '$selected_key' from section '$section'" 46
             else
                 # This case should not be reached if shell::ini_list_keys and fzf worked correctly,
                 # but it's a safeguard.
@@ -1322,7 +1322,7 @@ shell::ini_remove_key() {
         shell::run_cmd_eval "$replace_cmd"
         if [ $? -eq 0 ]; then
             if [ $key_removed -eq 1 ]; then
-                shell::colored_echo "🟢 Successfully removed key '$key' from section '$section'" 46
+                shell::colored_echo "INFO: Successfully removed key '$key' from section '$section'" 46
                 return 0
             else
                 shell::colored_echo "🟡 Key '$key' not found in section '$section'." 11
@@ -1420,7 +1420,7 @@ shell::ini_set_array_value() {
 
     # Provide feedback based on the operation's success.
     if [ $status -eq 0 ]; then
-        shell::colored_echo "🟢 Successfully wrote array value for key '$key' to section '$section'." 46
+        shell::colored_echo "INFO: Successfully wrote array value for key '$key' to section '$section'." 46
     else
         shell::colored_echo "ERR: Failed to write array value for key '$key' to section '$section'." 196
     fi
@@ -1631,7 +1631,7 @@ shell::ini_key_exists() {
     # Redirect stdout and stderr to /dev/null to prevent shell::ini_read's output/errors
     # from cluttering the console, as this function provides its own status messages.
     if shell::ini_read "$file" "$section" "$key" >/dev/null 2>&1; then
-        shell::colored_echo "🟢 Key found: '$key' in section '$section'." 46
+        shell::colored_echo "INFO: Key found: '$key' in section '$section'." 46
         return 0
     else
         shell::colored_echo "ERR: Key not found: '$key' in section '$section'." 196
@@ -1826,7 +1826,7 @@ shell::ini_expose_env() {
         done < <(shell::ini_list_sections "$file")
     fi
 
-    shell::colored_echo "🟢 Environment variables export completed." 46
+    shell::colored_echo "INFO: Environment variables export completed." 46
     return 0
 }
 
@@ -1975,7 +1975,7 @@ shell::ini_destroy_keys() {
         done < <(shell::ini_list_sections "$file")
     fi
 
-    shell::colored_echo "🟢 Environment variables destruction completed." 46
+    shell::colored_echo "INFO: Environment variables destruction completed." 46
     return 0
 }
 
@@ -2178,7 +2178,7 @@ shell::ini_rename_section() {
 
     shell::execute_or_evict "$dry_run" "$sed_cmd"
     if [ "$dry_run" = "false" ]; then
-        shell::colored_echo "🟢 Successfully renamed section from '$old_section' to '$new_section'." 46
+        shell::colored_echo "INFO: Successfully renamed section from '$old_section' to '$new_section'." 46
     fi
     return 0
 }
@@ -2446,7 +2446,7 @@ shell::ini_clone_section() {
     else
         shell::run_cmd_eval "$replace_cmd"
         if [ $? -eq 0 ]; then
-            shell::colored_echo "🟢 Successfully cloned section '$source_section' to '$destination_section'." 46
+            shell::colored_echo "INFO: Successfully cloned section '$source_section' to '$destination_section'." 46
             return 0
         else
             shell::colored_echo "ERR: replacing the original file after section clone." 196
@@ -2645,9 +2645,9 @@ shell::fzf_ini_remove_sections() {
     done
 
     if [ "$dry_run" = "true" ]; then
-        shell::colored_echo "🟢 Dry-run completed. Commands for removing sections were printed." 46
+        shell::colored_echo "INFO: Dry-run completed. Commands for removing sections were printed." 46
     elif [ $success -eq 0 ]; then
-        shell::colored_echo "🟢 Successfully removed all selected sections from '$file'" 46
+        shell::colored_echo "INFO: Successfully removed all selected sections from '$file'" 46
     else
         shell::colored_echo "ERR: Some sections could not be removed from '$file'" 196
         return 1

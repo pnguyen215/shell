@@ -63,7 +63,7 @@ shell::fzf_copy() {
     # Execute the command (using shell::run_cmd_eval to log and run it).
     shell::run_cmd_eval "$cmd"
     shell::clip_value "$cmd"
-    shell::colored_echo "🟢 File copied successfully to $destination_file" 46
+    shell::colored_echo "INFO: File copied successfully to $destination_file" 46
 }
 
 # shell::fzf_move function
@@ -128,7 +128,7 @@ shell::fzf_move() {
     # Execute the command (using shell::run_cmd_eval to log and run it).
     shell::run_cmd_eval "$cmd"
     shell::clip_value "$cmd"
-    shell::colored_echo "🟢 File moved successfully to $destination_file" 46
+    shell::colored_echo "INFO: File moved successfully to $destination_file" 46
 }
 
 # shell::fzf_remove function
@@ -173,7 +173,7 @@ shell::fzf_remove() {
     # Execute the command (using shell::run_cmd_eval to log and run it).
     shell::run_cmd_eval "$cmd"
     shell::clip_value "$cmd"
-    shell::colored_echo "🟢 Removed successfully: $target" 46
+    shell::colored_echo "INFO: Removed successfully: $target" 46
 }
 
 # shell::fzf_zip_attachment function
@@ -247,7 +247,7 @@ shell::fzf_zip_attachment() {
         return 0
     else
         shell::run_cmd "${cmd[@]}"
-        shell::colored_echo "🟢 Zipping selected files from '$folder_path'" 46
+        shell::colored_echo "INFO: Zipping selected files from '$folder_path'" 46
     fi
 
     # Determine the absolute path of the created zip file.
@@ -325,7 +325,7 @@ shell::fzf_current_zip_attachment() {
     local desired_zip="${orig_dir}/${current_dir}.zip"
     if [ -f "$created_zip" ]; then
         mv "$created_zip" "$desired_zip"
-        shell::colored_echo "🟢 Renamed zip file to '$desired_zip'" 46
+        shell::colored_echo "INFO: Renamed zip file to '$desired_zip'" 46
         shell::clip_value "$desired_zip"
     else
         shell::colored_echo "ERR: Expected zip file not found." 196

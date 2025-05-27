@@ -121,7 +121,7 @@ shell::add_conf() {
             return 0
         fi
         shell::run_cmd_eval "$cmd"
-        shell::colored_echo "🟢 Added configuration: $key (encoded value)" 46
+        shell::colored_echo "INFO: Added configuration: $key (encoded value)" 46
     fi
 }
 
@@ -327,7 +327,7 @@ shell::fzf_remove_conf() {
         shell::on_evict "$sed_cmd"
     else
         shell::run_cmd_eval "$sed_cmd"
-        shell::colored_echo "🟢 Removed configuration for key: $selected_key" 46
+        shell::colored_echo "INFO: Removed configuration for key: $selected_key" 46
     fi
 }
 
@@ -412,7 +412,7 @@ shell::fzf_update_conf() {
         shell::on_evict "$sed_cmd"
     else
         shell::run_cmd_eval "$sed_cmd"
-        shell::colored_echo "🟢 Updated configuration for key: $selected_key" 46
+        shell::colored_echo "INFO: Updated configuration for key: $selected_key" 46
     fi
 }
 
@@ -567,7 +567,7 @@ shell::fzf_rename_key_conf() {
         shell::on_evict "$sed_cmd"
     else
         shell::run_cmd_eval "$sed_cmd"
-        shell::colored_echo "🟢 Renamed key '$old_key' to '$new_key'" 46
+        shell::colored_echo "INFO: Renamed key '$old_key' to '$new_key'" 46
     fi
 }
 
@@ -691,7 +691,7 @@ shell::add_group() {
             shell::on_evict "$sed_cmd"
         else
             shell::run_cmd_eval "$sed_cmd"
-            shell::colored_echo "🟢 Updated group '$group_name' with keys: $keys_csv" 46
+            shell::colored_echo "INFO: Updated group '$group_name' with keys: $keys_csv" 46
         fi
     else
         local cmd="echo \"$group_entry\" >> \"$SHELL_GROUP_CONF_FILE\""
@@ -699,7 +699,7 @@ shell::add_group() {
             shell::on_evict "$cmd"
         else
             shell::run_cmd_eval "$cmd"
-            shell::colored_echo "🟢 Created group '$group_name' with keys: $keys_csv" 46
+            shell::colored_echo "INFO: Created group '$group_name' with keys: $keys_csv" 46
         fi
     fi
 }
@@ -860,7 +860,7 @@ shell::fzf_remove_group() {
         shell::on_evict "$sed_cmd"
     else
         shell::run_cmd_eval "$sed_cmd"
-        shell::colored_echo "🟢 Removed group: $selected_group" 46
+        shell::colored_echo "INFO: Removed group: $selected_group" 46
     fi
 }
 
@@ -940,7 +940,7 @@ shell::fzf_update_group() {
         shell::on_evict "$sed_cmd"
     else
         shell::run_cmd_eval "$sed_cmd"
-        shell::colored_echo "🟢 Updated group '$selected_group' with new keys: $new_keys" 46
+        shell::colored_echo "INFO: Updated group '$selected_group' with new keys: $new_keys" 46
     fi
 }
 
@@ -1017,7 +1017,7 @@ shell::fzf_rename_group() {
         shell::on_evict "$sed_cmd"
     else
         shell::run_cmd_eval "$sed_cmd"
-        shell::colored_echo "🟢 Renamed group '$old_group' to '$new_group'" 46
+        shell::colored_echo "INFO: Renamed group '$old_group' to '$new_group'" 46
     fi
 }
 
@@ -1251,7 +1251,7 @@ shell::fzf_clone_group() {
         shell::on_evict "$cmd"
     else
         shell::run_cmd_eval "$cmd"
-        shell::colored_echo "🟢 Created new group '$new_group' as a clone of '$selected_group' with keys: $keys_csv" 46
+        shell::colored_echo "INFO: Created new group '$new_group' as a clone of '$selected_group' with keys: $keys_csv" 46
     fi
 }
 
@@ -1342,7 +1342,7 @@ shell::sync_key_group_conf() {
         local backup_file="${SHELL_GROUP_CONF_FILE}.bak"
         shell::run_cmd_eval "sudo cp $SHELL_GROUP_CONF_FILE $backup_file"
         shell::run_cmd_eval "sudo mv $temp_file $SHELL_GROUP_CONF_FILE"
-        shell::colored_echo "🟢 Group configuration synchronized successfully." 46
+        shell::colored_echo "INFO: Group configuration synchronized successfully." 46
     fi
 }
 
@@ -1455,7 +1455,7 @@ shell::load_ini_conf() {
         fi
     done <"$config_file" # Redirect the file content to the while loop
 
-    shell::colored_echo "🟢 Finished loading configuration from '$config_file'." 46
+    shell::colored_echo "INFO: Finished loading configuration from '$config_file'." 46
 
     return 0
 }
@@ -1552,6 +1552,6 @@ shell::fzf_get_conf_visualization() {
         shell::colored_echo "ERR: No configuration key selected." 196
         return 1
     fi
-    shell::colored_echo "🟢 Selected key: $selected_key" 46
+    shell::colored_echo "INFO: Selected key: $selected_key" 46
     shell::clip_value $(shell::get_value_conf "$selected_key")
 }

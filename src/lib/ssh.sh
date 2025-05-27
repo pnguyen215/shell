@@ -284,7 +284,7 @@ shell::fzf_ssh_keys() {
     # Display the absolute path and copy it to the clipboard.
     shell::colored_echo "🔑 Selected SSH key: $abs_key_path" 33
     shell::clip_value "$abs_key_path"
-    shell::colored_echo "🟢 Absolute path copied to clipboard." 46
+    shell::colored_echo "INFO: Absolute path copied to clipboard." 46
     return 0
 }
 
@@ -385,9 +385,9 @@ shell::fzf_kill_ssh_tunnels() {
         # if ps -p $pids_to_kill > /dev/null 2>&1; then
         #     shell::colored_echo "ERR: Failed to kill one or more processes." 196
         # else
-        #     shell::colored_echo "🟢 Successfully killed PID(s): $pids_to_kill" 46
+        #     shell::colored_echo "INFO: Successfully killed PID(s): $pids_to_kill" 46
         # fi
-        shell::colored_echo "🟢 Kill command sent for PID(s): $pids_to_kill. Verify they are stopped." 46
+        shell::colored_echo "INFO: Kill command sent for PID(s): $pids_to_kill. Verify they are stopped." 46
 
     else
         shell::colored_echo "❌ Kill operation cancelled." 11
@@ -504,7 +504,7 @@ shell::kill_ssh_tunnels() {
             local kill_count=0
             for pid in "${pids_to_kill[@]}"; do
                 if shell::run_cmd kill "$pid"; then
-                    shell::colored_echo "🟢 Killed PID $pid successfully." 46
+                    shell::colored_echo "INFO: Killed PID $pid successfully." 46
                     ((kill_count++))
                 else
                     shell::colored_echo "ERR: Failed to kill PID $pid." 196
@@ -643,7 +643,7 @@ shell::gen_ssh_key() {
         if [ $? -eq 0 ]; then
             shell::run_cmd_eval chmod 600 "$full_key_path"
             shell::run_cmd_eval chmod 644 "${full_key_path}.pub"
-            shell::colored_echo "🟢 SSH key pair generated successfully:" 46
+            shell::colored_echo "INFO: SSH key pair generated successfully:" 46
             shell::colored_echo "  Private key: $full_key_path" 46
             shell::colored_echo "  Public key:  ${full_key_path}.pub" 46
         else

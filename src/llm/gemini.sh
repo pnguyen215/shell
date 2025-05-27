@@ -164,7 +164,7 @@ shell::gemini() {
     fi
 
     # Output the response
-    shell::colored_echo "🟢 Response:" 46
+    shell::colored_echo "INFO: Response:" 46
     echo "$response"
     return 0
 }

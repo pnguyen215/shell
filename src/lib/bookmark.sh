@@ -145,7 +145,7 @@ shell::add_bookmark() {
     # Check if the bookmark already exists.
     if [[ -z $(grep "|$bookmark_name" "$bookmarks_file") ]]; then
         echo "$bookmark" >>"$bookmarks_file"
-        shell::colored_echo "🟢 Bookmark '$bookmark_name' saved" 46
+        shell::colored_echo "INFO: Bookmark '$bookmark_name' saved" 46
     else
         shell::colored_echo "🟠 Bookmark '$bookmark_name' already exists. Replace it? (y or n)" 5
         while read -r replace; do
@@ -153,7 +153,7 @@ shell::add_bookmark() {
                 # Delete existing bookmark and save the new one.
                 shell::run_cmd_eval "sed '/.*|$bookmark_name/d' \"$bookmarks_file\" > ~/.tmp && mv ~/.tmp \"$bookmarks_file\""
                 echo "$bookmark" >>"$bookmarks_file"
-                shell::colored_echo "🟢 Bookmark '$bookmark_name' saved" 46
+                shell::colored_echo "INFO: Bookmark '$bookmark_name' saved" 46
                 break
             elif [[ "$replace" == "n" ]]; then
                 break
@@ -197,7 +197,7 @@ shell::add_bookmark() {
 #         return 1
 #     else
 #         grep -v "|${bookmark_name}$" "$bookmarks_file" >"$HOME/bookmarks_temp" && mv "$HOME/bookmarks_temp" "$bookmarks_file"
-#         shell::colored_echo "🟢 Bookmark '$bookmark_name' removed" 46
+#         shell::colored_echo "INFO: Bookmark '$bookmark_name' removed" 46
 #     fi
 # }
 
@@ -256,7 +256,7 @@ shell::remove_bookmark() {
 
     # Execute the command using shell::run_cmd_eval.
     if shell::run_cmd_eval "$cmd"; then
-        shell::colored_echo "🟢 Bookmark '$bookmark_name' removed" 46
+        shell::colored_echo "INFO: Bookmark '$bookmark_name' removed" 46
     else
         shell::colored_echo "ERR: Failed to remove bookmark '$bookmark_name'" 196
         return 1
@@ -317,7 +317,7 @@ shell::remove_bookmark_linux() {
 
     # Execute the sed command using shell::run_cmd_eval.
     if shell::run_cmd_eval "$sed_cmd"; then
-        shell::colored_echo "🟢 Bookmark '$bookmark_name' removed" 46
+        shell::colored_echo "INFO: Bookmark '$bookmark_name' removed" 46
     else
         shell::colored_echo "ERR: Failed to remove bookmark '$bookmark_name'" 196
         return 1
@@ -485,7 +485,7 @@ shell::fzf_goto() {
                 shell::colored_echo "ERR: Failed to change directory to '$target_path'." 196
                 return 1
             }
-            shell::colored_echo "🟢 Changed directory to: '$target_path'" 46
+            shell::colored_echo "INFO: Changed directory to: '$target_path'" 46
         else
             shell::colored_echo "ERR: Target directory '$target_path' does not exist." 196
             return 1
@@ -586,7 +586,7 @@ shell::fzf_goto_verifier() {
                 shell::colored_echo "ERR: Failed to change directory to '$target_path'." 196
                 return 1
             }
-            shell::colored_echo "🟢 Changed directory to: '$target_path'" 46
+            shell::colored_echo "INFO: Changed directory to: '$target_path'" 46
         else
             shell::colored_echo "ERR: Target directory '$target_path' does not exist." 196
             return 1
@@ -669,7 +669,7 @@ shell::fzf_goto_clear() {
         "$bookmarks_file")
 
     if [ -z "$inactive_bookmarks" ]; then
-        shell::colored_echo "🟢 No inactive bookmarks found." 46
+        shell::colored_echo "INFO: No inactive bookmarks found." 46
         return 0
     fi
 
@@ -707,10 +707,10 @@ shell::fzf_goto_clear() {
 
     # Provide feedback
     if [ "$dry_run" = "true" ]; then
-        shell::colored_echo "🟢 Dry-run: Would have attempted to remove ${#selected_bookmark_names[@]} bookmark(s)." 46
+        shell::colored_echo "INFO: Dry-run: Would have attempted to remove ${#selected_bookmark_names[@]} bookmark(s)." 46
     else
         if [ $failed_count -eq 0 ]; then
-            shell::colored_echo "🟢 Successfully removed $success_count inactive bookmark(s)." 46
+            shell::colored_echo "INFO: Successfully removed $success_count inactive bookmark(s)." 46
         else
             shell::colored_echo "🟡 Removed $success_count bookmark(s), but $failed_count failed." 11
             return 1

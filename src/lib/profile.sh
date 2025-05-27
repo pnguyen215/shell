@@ -102,7 +102,7 @@ shell::add_profile() {
     else
         shell::ensure_workspace
         shell::run_cmd_eval "$cmd"
-        shell::colored_echo "🟢 Created profile '$profile_name'." 46
+        shell::colored_echo "INFO: Created profile '$profile_name'." 46
     fi
 }
 
@@ -259,7 +259,7 @@ shell::remove_profile() {
         read -r confirm
         if [[ "$confirm" =~ ^[Yy]$ ]]; then
             shell::run_cmd_eval sudo rm -rf "$profile_dir"
-            shell::colored_echo "🟢 Removed profile '$profile_name'." 46
+            shell::colored_echo "INFO: Removed profile '$profile_name'." 46
         else
             shell::colored_echo "🟡 Removal aborted." 11
         fi
@@ -359,7 +359,7 @@ shell::rename_profile() {
         shell::on_evict "$cmd"
     else
         shell::run_cmd_eval "$cmd"
-        shell::colored_echo "🟢 Renamed profile '$old_name' to '$new_name'." 46
+        shell::colored_echo "INFO: Renamed profile '$old_name' to '$new_name'." 46
     fi
 }
 
@@ -448,7 +448,7 @@ shell::add_conf_profile() {
         fi
         shell::setPerms::777 "$profile_conf"
         shell::run_cmd_eval "$cmd"
-        shell::colored_echo "🟢 Added configuration to profile '$profile_name': $key (encoded value)" 46
+        shell::colored_echo "INFO: Added configuration to profile '$profile_name': $key (encoded value)" 46
     fi
 }
 
@@ -655,7 +655,7 @@ shell::remove_conf_profile() {
         shell::on_evict "$sed_cmd"
     else
         shell::run_cmd_eval "$sed_cmd"
-        shell::colored_echo "🟢 Removed configuration for key: $selected_key from profile '$profile_name'" 46
+        shell::colored_echo "INFO: Removed configuration for key: $selected_key from profile '$profile_name'" 46
     fi
 }
 
@@ -732,7 +732,7 @@ shell::update_conf_profile() {
         shell::on_evict "$sed_cmd"
     else
         shell::run_cmd_eval "$sed_cmd"
-        shell::colored_echo "🟢 Updated configuration for key: $selected_key in profile '$profile_name'" 46
+        shell::colored_echo "INFO: Updated configuration for key: $selected_key in profile '$profile_name'" 46
     fi
 }
 
@@ -868,7 +868,7 @@ shell::rename_key_conf_profile() {
         shell::on_evict "$sed_cmd"
     else
         shell::run_cmd_eval "$sed_cmd"
-        shell::colored_echo "🟢 Renamed key '$old_key' to '$new_key' in profile '$profile_name'" 46
+        shell::colored_echo "INFO: Renamed key '$old_key' to '$new_key' in profile '$profile_name'" 46
     fi
 }
 
@@ -932,7 +932,7 @@ shell::clone_conf_profile() {
         shell::on_evict "$cmd"
     else
         shell::run_cmd_eval "$cmd"
-        shell::colored_echo "🟢 Cloned profile.conf from '$source_profile' to '$destination_profile'" 46
+        shell::colored_echo "INFO: Cloned profile.conf from '$source_profile' to '$destination_profile'" 46
     fi
 }
 

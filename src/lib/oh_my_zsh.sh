@@ -53,7 +53,7 @@ shell::install_oh_my_zsh() {
         # sed -i.bak 's/ZSH_THEME="robbyrussell"/ZSH_THEME="your_custom_theme"/' "$HOME/.zshrc"
         # plugins=(your_plugin1 your_plugin2)
         # sed -i.bak '/^plugins=(/a \ \ your_custom_plugin' "$HOME/.zshrc"
-        shell::colored_echo "🟢 Oh-My-Zsh installed successfully!" 46
+        shell::colored_echo "INFO: Oh-My-Zsh installed successfully!" 46
     fi
 }
 
@@ -118,10 +118,10 @@ shell::removal_oh_my_zsh() {
         else
             shell::run_cmd_eval "$restore_cmd"
         fi
-        shell::colored_echo "🟢 Original .zshrc restored from backup." 46
+        shell::colored_echo "INFO: Original .zshrc restored from backup." 46
     else
         shell::colored_echo "🍺 No backup .zshrc found. Please manually update your .zshrc if necessary." 33
     fi
 
-    shell::colored_echo "🟢 Oh My Zsh uninstalled successfully!" 46
+    shell::colored_echo "INFO: Oh My Zsh uninstalled successfully!" 46
 }

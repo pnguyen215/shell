@@ -88,7 +88,7 @@ shell::send_telegram_message() {
         shell::on_evict "$cmd &"
     else
         shell::async "$cmd"
-        shell::colored_echo "🟢 Telegram message sent." 46
+        shell::colored_echo "INFO: Telegram message sent." 46
     fi
 }
 
@@ -151,7 +151,7 @@ shell::send_telegram_attachment() {
                 shell::on_evict "$cmd &"
             else
                 shell::async "$cmd"
-                shell::colored_echo "🟢 Async: Attachment '$filename' is being sent." 46
+                shell::colored_echo "INFO: Async: Attachment '$filename' is being sent." 46
             fi
         else
             shell::colored_echo "ERR: Attachment '$filename' not found. Skipping." 196

@@ -682,7 +682,7 @@ shell::create_directory_if_not_exists() {
         shell::colored_echo "📁 Directory '$dir' does not exist. Creating the directory (including nested directories) with admin privileges..." 11
         shell::run_cmd_eval 'sudo mkdir -p "$dir"' # Use sudo to create the directory and its parent directories.
         if [ $? -eq 0 ]; then
-            shell::colored_echo "🟢 Directory created successfully." 46
+            shell::colored_echo "INFO: Directory created successfully." 46
             shell::setPerms::777 "$dir"
             return 0
         else
@@ -690,7 +690,7 @@ shell::create_directory_if_not_exists() {
             return 1
         fi
     else
-        shell::colored_echo "🟢 Directory '$dir' already exists." 46
+        shell::colored_echo "INFO: Directory '$dir' already exists." 46
     fi
 }
 
@@ -743,7 +743,7 @@ shell::create_file_if_not_exists() {
         shell::colored_echo "📁 Creating directory '$directory'..." 11
         shell::run_cmd_eval "sudo mkdir -p \"$directory\""
         if [ $? -eq 0 ]; then
-            shell::colored_echo "🟢 Directory created successfully." 46
+            shell::colored_echo "INFO: Directory created successfully." 46
             # Optionally set directory permissions
             shell::setPerms::777 "$directory" # # shell::run_cmd_eval "sudo chmod 700 \"$directory\""
         else
@@ -757,7 +757,7 @@ shell::create_file_if_not_exists() {
         shell::colored_echo "📄 Creating file '$abs_filename'..." 11
         shell::run_cmd_eval "sudo touch \"$abs_filename\""
         if [ $? -eq 0 ]; then
-            shell::colored_echo "🟢 File created successfully." 46
+            shell::colored_echo "INFO: File created successfully." 46
             # Optionally set file permissions
             shell::setPerms::777 "$abs_filename" # shell::run_cmd_eval "sudo chmod 600 \"$abs_filename\""
             return 0
@@ -839,7 +839,7 @@ shell::setPerms::777() {
             return 0
         fi
         shell::run_cmd_eval "$chmod_cmd"
-        shell::colored_echo "🟢 Permissions for '$target' set to full (read, write, and execute - 777)" 46
+        shell::colored_echo "INFO: Permissions for '$target' set to full (read, write, and execute - 777)" 46
     fi
 }
 
@@ -864,14 +864,14 @@ shell::clip_cwd() {
 
     if [[ "$os" == "macos" ]]; then
         echo -n "$adr" | pbcopy
-        shell::colored_echo "🟢 Path copied to clipboard using pbcopy" 46
+        shell::colored_echo "INFO: Path copied to clipboard using pbcopy" 46
     elif [[ "$os" == "linux" ]]; then
         if shell::is_command_available xclip; then
             echo -n "$adr" | xclip -selection clipboard
-            shell::colored_echo "🟢 Path copied to clipboard using xclip" 46
+            shell::colored_echo "INFO: Path copied to clipboard using xclip" 46
         elif shell::is_command_available xsel; then
             echo -n "$adr" | xsel --clipboard --input
-            shell::colored_echo "🟢 Path copied to clipboard using xsel" 46
+            shell::colored_echo "INFO: Path copied to clipboard using xsel" 46
         else
             shell::colored_echo "ERR: Clipboard tool not found. Please install xclip or xsel." 196
             return 1
@@ -922,14 +922,14 @@ shell::clip_value() {
 
     if [[ "$os" == "macos" ]]; then
         echo -n "$value" | pbcopy
-        shell::colored_echo "🟢 Value copied to clipboard using pbcopy." 46
+        shell::colored_echo "INFO: Value copied to clipboard using pbcopy." 46
     elif [[ "$os" == "linux" ]]; then
         if shell::is_command_available xclip; then
             echo -n "$value" | xclip -selection clipboard
-            shell::colored_echo "🟢 Value copied to clipboard using xclip." 46
+            shell::colored_echo "INFO: Value copied to clipboard using xclip." 46
         elif shell::is_command_available xsel; then
             echo -n "$value" | xsel --clipboard --input
-            shell::colored_echo "🟢 Value copied to clipboard using xsel." 46
+            shell::colored_echo "INFO: Value copied to clipboard using xsel." 46
         else
             shell::colored_echo "ERR: Clipboard tool not found. Please install xclip or xsel." 196
             return 1
@@ -1135,7 +1135,7 @@ shell::port_kill() {
         pids=$(lsof -ti :"$port")
 
         if [ -n "$pids" ]; then
-            shell::colored_echo "🟢 Processing port $port with PIDs: $pids" 46
+            shell::colored_echo "INFO: Processing port $port with PIDs: $pids" 46
             for pid in $pids; do
                 # Construct the kill command as an array to reuse it for both shell::on_evict and shell::run_cmd.
                 local cmd=("kill" "-9" "$pid")
@@ -1218,7 +1218,7 @@ shell::copy_files() {
             shell::on_evict "$cmd"
         else
             shell::run_cmd_eval "$cmd"
-            shell::colored_echo "🟢 File copied successfully to $destination_file" 46
+            shell::colored_echo "INFO: File copied successfully to $destination_file" 46
         fi
     done
 }
@@ -1292,7 +1292,7 @@ shell::move_files() {
         else
             shell::run_cmd sudo mv "$source" "$destination"
             if [ $? -eq 0 ]; then
-                shell::colored_echo "🟢 File '$source' moved successfully to $destination" 46
+                shell::colored_echo "INFO: File '$source' moved successfully to $destination" 46
             else
                 shell::colored_echo "ERR: moving file '$source'." 196
             fi
@@ -1533,7 +1533,7 @@ shell::download_dataset() {
     else
         shell::run_cmd curl -s -LJ "$link" -o "$filename"
         if [ $? -eq 0 ]; then
-            shell::colored_echo "🟢 Successfully downloaded: $filename" 46
+            shell::colored_echo "INFO: Successfully downloaded: $filename" 46
         else
             shell::colored_echo "ERR: Download failed for $link" 196
         fi
@@ -2110,7 +2110,7 @@ shell::ls() {
 
     # Check if any files were processed
     if [ $file_count -eq 0 ]; then
-        shell::colored_echo "🟢 No files or directories found." 46
+        shell::colored_echo "INFO: No files or directories found." 46
         rm -f "$tmp_file"
         trap - EXIT
         return 0
@@ -2299,7 +2299,7 @@ shell::ask::perms() {
     fi
 
     # Output explanation
-    shell::colored_echo "🟢 Permission Explanation for ${blue}${permission_string}${normal}" 46
+    shell::colored_echo "INFO: Permission Explanation for ${blue}${permission_string}${normal}" 46
     echo
     echo "${green}File Type${normal}: The first character '${blue}${file_type}${normal}' indicates a ${file_type_desc}."
     echo "${green}Owner Permissions${normal}: '${blue}${owner_perms}${normal}' means the owner has ${owner_desc}."

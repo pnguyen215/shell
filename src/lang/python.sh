@@ -87,7 +87,7 @@ shell::install_python() {
 
     # Verify installation
     if [ "$dry_run" = "false" ] && shell::is_command_available "$python_version"; then
-        shell::colored_echo "🟢 Python3 installed successfully." 46
+        shell::colored_echo "INFO: Python3 installed successfully." 46
     elif [ "$dry_run" = "false" ]; then
         shell::colored_echo "ERR: Python3 installation failed." 196
         return 1
@@ -174,7 +174,7 @@ shell::uninstall_python() {
     fi
 
     if [ "$dry_run" = "false" ] && ! shell::is_command_available python3; then
-        shell::colored_echo "🟢 Python3 removed successfully." 46
+        shell::colored_echo "INFO: Python3 removed successfully." 46
     elif [ "$dry_run" = "false" ]; then
         shell::colored_echo "🟡 Python3 binary still detected. Manual cleanup may be required." 33
     fi
@@ -224,7 +224,7 @@ shell::uninstall_python_pip_deps() {
     shell::colored_echo "🟡 Are you absolutely sure you want to proceed? (yes/no)" 11
     read -r confirmation
     if [[ $confirmation =~ ^[Yy](es)?$ ]]; then
-        shell::colored_echo "🟢 Proceeding with uninstallation..." 32
+        shell::colored_echo "INFO: Proceeding with uninstallation..." 32
 
         # Helper function to uninstall packages for a given pip command
         uninstall_packages() {
@@ -245,7 +245,7 @@ shell::uninstall_python_pip_deps() {
                     if [ -s "$packages_file" ]; then
                         shell::run_cmd_eval "$uninstall_cmd"
                         if [ $? -eq 0 ]; then
-                            shell::colored_echo "🟢 All $pip_cmd packages uninstalled successfully." 46
+                            shell::colored_echo "INFO: All $pip_cmd packages uninstalled successfully." 46
                         else
                             shell::colored_echo "ERR: An error occurred while uninstalling $pip_cmd packages." 196
                         fi
@@ -276,7 +276,7 @@ shell::uninstall_python_pip_deps() {
             shell::colored_echo "🟡 Neither pip nor pip3 is installed." 11
         fi
 
-        shell::colored_echo "🟢 Operation completed." 46
+        shell::colored_echo "INFO: Operation completed." 46
     else
         shell::colored_echo "ERR: Operation canceled by user." 196
     fi
@@ -322,7 +322,7 @@ shell::uninstall_python_pip_deps::latest() {
     shell::colored_echo "🟡 Are you absolutely sure you want to proceed? (yes/no)" 11
     read -r confirmation
     if [[ $confirmation =~ ^[Yy](es)?$ ]]; then
-        shell::colored_echo "🟢 Proceeding with uninstallation..." 32
+        shell::colored_echo "INFO: Proceeding with uninstallation..." 32
 
         # Helper function to uninstall packages for a given pip command asynchronously.
         uninstall_packages() {
@@ -345,7 +345,7 @@ shell::uninstall_python_pip_deps::latest() {
                         shell::async "$uninstall_cmd && rm $packages_file" &
                         wait $! # Wait for the asynchronous process to finish
                         if [ $? -eq 0 ]; then
-                            shell::colored_echo "🟢 All $pip_cmd packages uninstalled successfully." 46
+                            shell::colored_echo "INFO: All $pip_cmd packages uninstalled successfully." 46
                         else
                             shell::colored_echo "ERR: An error occurred while uninstalling $pip_cmd packages." 196
                         fi
@@ -377,7 +377,7 @@ shell::uninstall_python_pip_deps::latest() {
             shell::colored_echo "🟡 Neither pip nor pip3 is installed." 11
         fi
 
-        shell::colored_echo "🟢 Operation completed." 46
+        shell::colored_echo "INFO: Operation completed." 46
     else
         shell::colored_echo "ERR: Operation canceled by user." 196
     fi
@@ -493,7 +493,7 @@ shell::create_python_env() {
             shell::async "$upgrade_cmd" &
             wait $! # Wait for async process to complete
             if [ $? -eq 0 ]; then
-                shell::colored_echo "🟢 Pip and tools upgraded successfully." 46
+                shell::colored_echo "INFO: Pip and tools upgraded successfully." 46
             else
                 shell::colored_echo "ERR: Failed to upgrade pip/tools." 196
             fi
@@ -507,7 +507,7 @@ shell::create_python_env() {
 
     # Verify and provide activation instructions
     if [ "$dry_run" = "false" ] && [ -f "$venv_path/bin/activate" ]; then
-        shell::colored_echo "🟢 Virtual environment created successfully at '$venv_path'." 46
+        shell::colored_echo "INFO: Virtual environment created successfully at '$venv_path'." 46
         shell::colored_echo "🔑 To activate, run: $activate_cmd" 33
         shell::clip_value "$activate_cmd"
     elif [ "$dry_run" = "false" ]; then
@@ -611,7 +611,7 @@ shell::install_pkg_python_env() {
         local pid=$!
         wait $pid
         if [ $? -eq 0 ]; then
-            shell::colored_echo "🟢 Packages installed successfully: ${packages[*]}" 46
+            shell::colored_echo "INFO: Packages installed successfully: ${packages[*]}" 46
         else
             shell::colored_echo "ERR: Failed to install one or more packages." 196
             return 1
@@ -723,7 +723,7 @@ shell::uninstall_pkg_python_env() {
         local pid=$!
         wait $pid
         if [ $? -eq 0 ]; then
-            shell::colored_echo "🟢 Packages uninstalled successfully: ${packages[*]}" 46
+            shell::colored_echo "INFO: Packages uninstalled successfully: ${packages[*]}" 46
         else
             shell::colored_echo "ERR: Failed to uninstall one or more packages." 196
             return 1
@@ -936,7 +936,7 @@ shell::fzf_use_python_env() {
         shell::on_evict "$activate_cmd"
     else
         shell::run_cmd_eval "$activate_cmd"
-        shell::colored_echo "🟢 Virtual environment activated." 46
+        shell::colored_echo "INFO: Virtual environment activated." 46
     fi
 }
 
@@ -1048,7 +1048,7 @@ shell::fzf_upgrade_pkg_python_env() {
         for cmd in "${upgrade_commands[@]}"; do
             shell::run_cmd_eval "$cmd"
         done
-        shell::colored_echo "🟢 Packages upgraded successfully." 46
+        shell::colored_echo "INFO: Packages upgraded successfully." 46
     fi
 }
 
@@ -1146,7 +1146,7 @@ shell::upgrade_pkg_python_env() {
         local pid=$!
         wait $pid
         if [ $? -eq 0 ]; then
-            shell::colored_echo "🟢 Packages upgraded successfully: ${packages[*]}" 46
+            shell::colored_echo "INFO: Packages upgraded successfully: ${packages[*]}" 46
         else
             shell::colored_echo "ERR: Failed to upgrade one or more packages." 196
             return 1
@@ -1234,7 +1234,7 @@ shell::freeze_pkg_python_env() {
         local pid=$!
         wait $pid
         if [ $? -eq 0 ]; then
-            shell::colored_echo "🟢 Packages exported successfully to $venv_path/requirements.txt" 46
+            shell::colored_echo "INFO: Packages exported successfully to $venv_path/requirements.txt" 46
         else
             shell::colored_echo "ERR: Failed to export packages." 196
             return 1
@@ -1331,7 +1331,7 @@ shell::pip_install_requirements_env() {
         local pid=$!
         wait $pid
         if [ $? -eq 0 ]; then
-            shell::colored_echo "🟢 Packages installed successfully from $requirements_file." 46
+            shell::colored_echo "INFO: Packages installed successfully from $requirements_file." 46
         else
             shell::colored_echo "ERR: Failed to install packages." 196
             return 1

@@ -447,7 +447,7 @@ shell::encode::file::aes256cbc() {
         return 1
     fi
 
-    shell::colored_echo "🟢 File encrypted successfully to '$output_file'" 46
+    shell::colored_echo "INFO: File encrypted successfully to '$output_file'" 46
     shell::clip_value "$output_file"
     return 0
 }
@@ -578,7 +578,7 @@ shell::decode::file::aes256cbc() {
         return 1
     fi
 
-    shell::colored_echo "🟢 File decrypted successfully to '$output_file'" 46
+    shell::colored_echo "INFO: File decrypted successfully to '$output_file'" 46
     shell::clip_value "$output_file"
     return 0
 }

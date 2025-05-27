@@ -53,7 +53,7 @@ shell::get_go_privates() {
         wait $pid
 
         if [ $? -eq 0 ]; then
-            shell::colored_echo "🟢 Go privates setting retrieved successfully: ${cmd}" 46
+            shell::colored_echo "INFO: Go privates setting retrieved successfully: ${cmd}" 46
         else
             shell::colored_echo "ERR: Failed to retrieve GOPRIVATE." 196
             return 1
@@ -140,7 +140,7 @@ shell::set_go_privates() {
         wait $pid
 
         if [ $? -eq 0 ]; then
-            shell::colored_echo "🟢 GOPRIVATE set successfully to: $repositories_by_comma" 46
+            shell::colored_echo "INFO: GOPRIVATE set successfully to: $repositories_by_comma" 46
         else
             shell::colored_echo "ERR: Failed to set GOPRIVATE." 196
             return 1
@@ -236,7 +236,7 @@ shell::fzf_remove_go_privates() {
         local pid=$!
         wait $pid
         if [ $? -eq 0 ]; then
-            shell::colored_echo "🟢 Removed selected entries from GOPRIVATE." 46
+            shell::colored_echo "INFO: Removed selected entries from GOPRIVATE." 46
         else
             shell::colored_echo "ERR: Failed to update GOPRIVATE." 196
             return 1
@@ -371,7 +371,7 @@ shell::create_go_app() {
             }
         fi
     fi
-    shell::colored_echo "🟢 Go application initialized successfully." 46
+    shell::colored_echo "INFO: Go application initialized successfully." 46
 }
 
 # shell::add_go_app_settings function
