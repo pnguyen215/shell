@@ -1029,7 +1029,7 @@ shell::on_evict() {
     fi
 
     local command="$*"
-    shell::colored_echo "CLI: $command" 3
+    shell::colored_echo "[prev]: $command" 49
     shell::clip_value "$command"
 }
 
