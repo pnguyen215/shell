@@ -125,6 +125,84 @@ shell::add_conf() {
     fi
 }
 
+# shell::add_conf_comment function
+# Adds a configuration entry (key=value) with an optional comment to the constant configuration file.
+# The value is encoded using Base64 before being saved.
+#
+# Usage:
+# shell::add_conf_comment [-n] <key> <value> [comment]
+#
+# Parameters:
+# - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+# - <key> : The configuration key.
+# - <value> : The configuration value to be encoded and saved.
+# - [comment] : Optional comment to be added above the key-value pair.
+#
+# Description:
+# This function encodes the value using Base64 (with newline characters removed) and appends a line in the format:
+# # comment (if provided)
+# key=encoded_value
+# to the configuration file defined by SHELL_KEY_CONF_FILE.
+# If the key already exists, a warning is shown and the function exits.
+#
+# Example:
+# shell::add_conf_comment my_key "my secret" "This is a comment"
+# shell::add_conf_comment -n my_key "my secret" "Dry-run with comment"
+shell::add_conf_comment() {
+    local dry_run="false"
+
+    # Check for the optional dry-run flag (-n)
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    # Check for the help flag (-h)
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_ADD_CONF_COMMENT"
+        return 0
+    fi
+
+    if [ $# -lt 2 ]; then
+        echo "Usage: shell::add_conf_comment [-n] <key> <value> [comment]"
+        return 1
+    fi
+
+    local key="$1"
+    local value="$2"
+    local comment="$3"
+
+    key=$(shell::ini_sanitize_var_name "$key")
+
+    # Encode the value using Base64 and remove any newlines
+    local encoded_value
+    encoded_value=$(echo -n "$value" | base64 | tr -d '\n')
+
+    # Ensure the configuration file exists
+    shell::create_file_if_not_exists "$SHELL_KEY_CONF_FILE"
+    shell::setPerms::777 "$SHELL_KEY_CONF_FILE"
+
+    # Check if the key already exists
+    if [ "$(shell::exist_key_conf "$key")" = "true" ]; then
+        shell::colored_echo "WARN: The key '$key' exists. Please consider updating it by using shell::fzf_update_conf" 11
+        return 0
+    fi
+
+    # Build the command to append the comment and key-value pair
+    local cmd=""
+    if [ -n "$comment" ]; then
+        cmd="echo \"# $comment\" >> \"$SHELL_KEY_CONF_FILE\" && "
+    fi
+    cmd+="echo \"$key=$encoded_value\" >> \"$SHELL_KEY_CONF_FILE\""
+
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "$cmd"
+    else
+        shell::run_cmd_eval "$cmd"
+        shell::colored_echo "INFO: Added configuration: $key (encoded value) with comment" 46
+    fi
+}
+
 # shell::fzf_get_conf function
 # Interactively selects a configuration key from a constant configuration file using fzf,
 # then decodes and displays its corresponding value.

@@ -3513,3 +3513,25 @@ Parameters:
 Description:
   This function removes inactive bookmark paths from the bookmarks file using fzf.
 "
+
+USAGE_SHELL_ADD_CONF_COMMENT="
+shell::add_conf_comment function
+Adds a configuration entry (key=value) with an optional comment to the constant configuration file.
+The value is encoded using Base64 before being saved.
+
+Usage:
+shell::add_conf_comment [-n] <key> <value> [comment]
+
+Parameters:
+  - -n        : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - <key>     : The configuration key.
+  - <value>   : The configuration value to be encoded and saved.
+  - [comment] : Optional comment to be added above the key-value pair.
+
+Description:
+This function encodes the value using Base64 (with newline characters removed) and appends a line in the format:
+# comment (if provided)
+key=encoded_value
+to the configuration file defined by SHELL_KEY_CONF_FILE.
+If the key already exists, a warning is shown and the function exits.
+"
