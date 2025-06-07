@@ -174,7 +174,7 @@ shell::run_cmd() {
     if [ "$os_type" = "linux" ]; then
         color_code=34 # Blue for Linux
     elif [ "$os_type" = "macos" ]; then
-        color_code=32 # Green for macOS
+        color_code=51 # Green for macOS
     fi
 
     # Print the command with OS-appropriate emoji
@@ -236,7 +236,7 @@ shell::run_cmd_eval() {
     if [ "$os_type" = "linux" ]; then
         color_code=34 # Blue for Linux
     elif [ "$os_type" = "macos" ]; then
-        color_code=32 # Green for macOS
+        color_code=51 # Green for macOS
     fi
 
     # Print the command with OS-appropriate emoji
