@@ -1628,11 +1628,15 @@ shell::fzf_get_conf_visualization() {
     #     --prompt="Select config key: " \
     #     --preview="grep '^{}=.*' \"$SHELL_KEY_CONF_FILE\" | cut -d '=' -f 2- | $base64_decode_cmd 2>/dev/null || echo 'Invalid Base64'")
 
-    # selected_key=$(echo "$key_list" | fzf --ansi \
-    #     --prompt="Select config key: " \
-    #     --preview="grep -v '^\s*#' \"$SHELL_KEY_CONF_FILE\" | cut -d '=' -f 2- | $base64_decode_cmd 2>/dev/null || echo 'Invalid Base64'")
+    # Use grep to filter out comments and then cut to get the key names
+    # Use fzf to select a key, showing the decoded value in the preview
+    # selected_key=$(grep -v '^\s*#' "$SHELL_KEY_CONF_FILE" | cut -d '=' -f 1 |
+    #     fzf --ansi \
+    #         --prompt="Select config key: " \
+    #         --preview="grep -v '^\s*#' \"$SHELL_KEY_CONF_FILE\" | grep '^{}=' | cut -d '=' -f 2- | $base64_decode_cmd 2>/dev/null || echo 'Invalid Base64'" \
+    #         --preview-window=up:3:wrap)
 
-    selected_key=$(grep -v '^\s*#' "$SHELL_KEY_CONF_FILE" | cut -d '=' -f 1 |
+    selected_key=$(echo "$key_list" |
         fzf --ansi \
             --prompt="Select config key: " \
             --preview="grep -v '^\s*#' \"$SHELL_KEY_CONF_FILE\" | grep '^{}=' | cut -d '=' -f 2- | $base64_decode_cmd 2>/dev/null || echo 'Invalid Base64'" \
