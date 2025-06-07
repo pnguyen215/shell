@@ -1616,8 +1616,12 @@ shell::fzf_get_conf_visualization() {
 
     # Prepare colored key list for fzf
     local key_list
-    key_list=$(cut -d '=' -f 1 "$SHELL_KEY_CONF_FILE" | awk -v yellow="$yellow" -v normal="$normal" '{print yellow $0 normal}')
-
+    # key_list=$(cut -d '=' -f 1 "$SHELL_KEY_CONF_FILE" | awk -v yellow="$yellow" -v normal="$normal" '{print yellow $0 normal}')
+    key_list=$(grep -v '^\s*#' "$SHELL_KEY_CONF_FILE" | cut -d '=' -f 1 "$SHELL_KEY_CONF_FILE" | awk -v yellow="$yellow" -v normal="$normal" '{print yellow $0 normal}')
+    if [ -z "$key_list" ]; then
+        shell::colored_echo "ERR: No configuration keys found in '$SHELL_KEY_CONF_FILE'." 196
+        return 1
+    fi
     # Use fzf with a preview window to show only the decoded value
     local selected_key
     selected_key=$(echo "$key_list" | fzf --ansi \
