@@ -796,11 +796,15 @@ shell::fzf_remove_ssh_keys() {
     shell::colored_echo "DEBUG: Selected files for removal:" 244
     echo "$selected_files"
 
-    shell::colored_echo "[q] Are you sure you want to delete the selected file(s)? [y/N]" 208
-    read -r confirm
-    if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
-        shell::colored_echo "WARN: Deletion cancelled." 11
-        return 0
+    # Ask for confirmation before deleting
+    # If dry-run is disabled, prompt the user for confirmation.
+    if [ "$dry_run" = "false" ]; then
+        shell::colored_echo "[q] Are you sure you want to delete the selected file(s)? [y/N]" 208
+        read -r confirm
+        if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+            shell::colored_echo "WARN: Deletion cancelled." 11
+            return 0
+        fi
     fi
 
     # Remove each selected file
@@ -812,9 +816,8 @@ shell::fzf_remove_ssh_keys() {
             shell::on_evict "$cmd"
         else
             shell::run_cmd_eval "$cmd"
+            shell::colored_echo "INFO: SSH key file removal process completed." 46
         fi
     done <<<"$selected_files"
-
-    shell::colored_echo "INFO: SSH key file removal process completed." 46
     return 0
 }
