@@ -1654,3 +1654,130 @@ shell::fzf_get_conf_visualization() {
     shell::colored_echo "INFO: Selected key: $selected_key" 46
     shell::clip_value $(shell::get_value_conf "$selected_key")
 }
+
+# shell::add_protected_key function
+# Adds a key to the protected key list stored in protected.conf.
+#
+# Usage:
+# shell::add_protected_key [-n] <key>
+#
+# Parameters:
+# - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+# - <key> : The key to mark as protected.
+#
+# Description:
+# This function appends a key to the protected.conf file located at $SHELL_CONF_WORKING/protected.conf.
+# If the key already exists in the file, it will not be added again.
+shell::add_protected_key() {
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_ADD_PROTECTED_KEY"
+        return 0
+    fi
+
+    if [ $# -lt 1 ]; then
+        echo "Usage: shell::add_protected_key [-n] <key>"
+        return 1
+    fi
+
+    local key="$1"
+    local file="$SHELL_KEY_CONF_FILE_PROTECTED"
+
+    # Check if the key is provided
+    if [ -z "$key" ]; then
+        shell::colored_echo "ERR: No key provided to protect." 196
+        return 1
+    fi
+    # Ensure the protected.conf file exists and has the correct permissions.
+    if [ ! -d "$SHELL_CONF_WORKING" ]; then
+        shell::colored_echo "ERR: Working directory '$SHELL_CONF_WORKING' does not exist." 196
+        return 1
+    fi
+
+    # Create the protected.conf file if it does not exist.
+    # Use shell::create_file_if_not_exists to ensure the file is created.
+    # Set permissions to 777 for the file.
+    shell::create_file_if_not_exists "$file"
+    shell::setPerms::777 "$file"
+
+    # Check if the key is already protected.
+    # Use grep to check if the key is already in the file.
+    # The key is considered protected if it matches exactly (no partial matches).
+    # Use ^ and $ to ensure we match the whole line.
+    if grep -q "^${key}$" "$file"; then
+        shell::colored_echo "WARN: Key '$key' is already protected." 11
+        return 0
+    fi
+
+    # Append the key to the protected.conf file.
+    # Use echo to append the key, ensuring it is quoted to handle special characters.
+    # Use shell::on_evict for dry-run mode, otherwise run the command.
+    local cmd="echo \"$key\" >> \"$file\""
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "$cmd"
+    else
+        shell::run_cmd_eval "$cmd"
+        shell::colored_echo "INFO: Protected key added: $key" 46
+    fi
+}
+
+# shell::fzf_add_protected_key function
+# Interactively selects a key from the configuration file and adds it to the protected list.
+#
+# Usage:
+# shell::fzf_add_protected_key [-n]
+#
+# Description:
+# This function uses fzf to select a key from the configuration file (excluding comments),
+# and adds it to the protected.conf file.
+shell::fzf_add_protected_key() {
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_ADD_PROTECTED_KEY"
+        return 0
+    fi
+
+    # Ensure the configuration file exists.
+    if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
+        shell::colored_echo "ERR: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
+        return 1
+    fi
+
+    shell::install_package fzf
+
+    local yellow=$(tput setaf 3)
+    local normal=$(tput sgr0)
+
+    # Use fzf to select a key from the configuration file.
+    # Exclude comments and format the output with colors.
+    # Use grep to filter out comments and then cut to get the key names.
+    # Use awk to color the selected key.
+    local selected_key_colored
+    selected_key_colored=$(grep -v '^\s*#' "$SHELL_KEY_CONF_FILE" | cut -d '=' -f 1 |
+        awk -v yellow="$yellow" -v normal="$normal" '{print yellow $0 normal}' |
+        fzf --ansi --prompt="Select key to protect: ")
+
+    local selected_key
+    # selected_key=$(echo "$selected_key_colored" | sed -E 's/\x1B\[[0-9;]*m//g')
+    selected_key=$(echo "$selected_key_colored" | sed "s/$(echo -e "\033")[0-9;]*m//g")
+
+    # Check if a key was selected.
+    # If no key was selected, print an error message and return.
+    if [ -z "$selected_key" ]; then
+        shell::colored_echo "ERR: No key selected." 196
+        return 1
+    fi
+
+    # Call shell::add_protected_key to add the selected key to the protected list.
+    shell::add_protected_key ${dry_run:+-n} "$selected_key"
+}

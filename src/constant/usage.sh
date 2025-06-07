@@ -3535,3 +3535,27 @@ key=encoded_value
 to the configuration file defined by SHELL_KEY_CONF_FILE.
 If the key already exists, a warning is shown and the function exits.
 "
+
+USAGE_SHELL_ADD_PROTECTED_KEY="
+shell::add_protected_key function
+Adds a key to the protected key list stored in protected.conf.
+
+Usage:
+shell::add_protected_key [-n] <key>
+
+Parameters:
+  - -n    : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - <key> : The key to mark as protected.
+"
+
+USAGE_SHELL_FZF_ADD_PROTECTED_KEY="
+shell::fzf_add_protected_key function
+Interactively selects a key from the configuration file and adds it to the protected list.
+
+Usage:
+shell::fzf_add_protected_key [-n]
+
+Description:
+This function uses fzf to select a key from the configuration file (excluding comments),
+and adds it to the protected.conf file.
+"

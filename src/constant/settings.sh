@@ -39,6 +39,12 @@ SHELL_CONF_WORKING_BOOKMARK="$SHELL_CONF_WORKING/bookmarks"
 #   SHELL_KEY_CONF_FILE="$HOME/.shell-config/key.conf"
 SHELL_KEY_CONF_FILE="$SHELL_CONF_WORKING/key.conf"
 
+# SHELL_KEY_CONF_FILE_PROTECTED constant
+# This variable defines the path to the protected key configuration file used by the shell bash library.
+# The file stores protected configuration entries that should not be modified or removed through interactive functions.
+# It is intended for critical settings that are essential for the shell's operation.
+SHELL_KEY_CONF_FILE_PROTECTED="$SHELL_CONF_WORKING/protected.conf"
+
 # SHELL_KEY_CONF_FILE_WORKSPACE constant
 # This variable defines the path to the profile-specific configuration file within the workspace directory.
 # It is used to store configuration settings specific to a user's profile, allowing for personalized shell environments.
