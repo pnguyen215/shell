@@ -599,8 +599,7 @@ shell::list_path_installed_packages_details() {
             details="Unsupported OS for detailed stat."
         fi
 
-        echo "----------------------------------------"
-        echo "📦 Package: $package_name"
+        echo "Package: $package_name"
         echo "$details"
     done
 }
@@ -679,7 +678,7 @@ shell::create_directory_if_not_exists() {
 
     # Check if the directory exists.
     if [ ! -d "$dir" ]; then
-        shell::colored_echo "📁 Directory '$dir' does not exist. Creating the directory (including nested directories) with admin privileges..." 11
+        shell::colored_echo "WARN: Directory '$dir' does not exist. Creating the directory (including nested directories) with admin privileges..." 11
         shell::run_cmd_eval 'sudo mkdir -p "$dir"' # Use sudo to create the directory and its parent directories.
         if [ $? -eq 0 ]; then
             shell::colored_echo "INFO: Directory created successfully." 46
@@ -740,7 +739,7 @@ shell::create_file_if_not_exists() {
 
     # Check if the parent directory exists.
     if [ ! -d "$directory" ]; then
-        shell::colored_echo "📁 Creating directory '$directory'..." 11
+        shell::colored_echo "WARN: Creating directory '$directory'..." 11
         shell::run_cmd_eval "sudo mkdir -p \"$directory\""
         if [ $? -eq 0 ]; then
             shell::colored_echo "INFO: Directory created successfully." 46
@@ -754,7 +753,7 @@ shell::create_file_if_not_exists() {
 
     # Check if the file exists.
     if [ ! -e "$abs_filename" ]; then
-        shell::colored_echo "📄 Creating file '$abs_filename'..." 11
+        shell::colored_echo "WARN: Creating file '$abs_filename'..." 11
         shell::run_cmd_eval "sudo touch \"$abs_filename\""
         if [ $? -eq 0 ]; then
             shell::colored_echo "INFO: File created successfully." 46
@@ -835,11 +834,11 @@ shell::unlock_permissions() {
     else
         # If the target already has 777 permissions, skip execution.
         if [ "$current_perm" -eq 777 ]; then
-            # shell::colored_echo "WARN: Permissions for '$target' already set to full (777)" 33
             return 0
         fi
         shell::run_cmd_eval "$chmod_cmd"
-        shell::colored_echo "INFO: Permissions for '$target' set to full (read, write, and execute - 777)" 46
+        shell::colored_echo "INFO: Permissions for '$target' set to full (read,write,execute)" 46
+        return 0
     fi
 }
 
@@ -972,34 +971,6 @@ shell::get_temp_dir() {
     fi
 }
 
-# shell::port_check function
-# Checks if a specific TCP port is in use (listening).
-#
-# Usage:
-#   shell::port_check <port>
-#
-# Parameters:
-#   - <port> : The port number to check.
-#
-# Description:
-#   This function uses lsof to determine if any process is actively listening on the specified
-#   TCP port. It filters the output for lines containing "LISTEN", which indicates that the port is in use.
-#
-# Example:
-#   shell::port_check 8080
-#
-# Notes:
-#   - Ensure that lsof is installed on your system.
-# function shell::port_check() {
-#     if [ $# -ne 1 ]; then
-#         echo "Usage: shell::port_check <port>"
-#         return 1
-#     fi
-
-#     local port="$1"
-#     shell::run_cmd lsof -nP -iTCP:"$port" | grep LISTEN
-# }
-
 # shell::on_evict function
 # Hook to print a command without executing it.
 #
@@ -1076,7 +1047,6 @@ shell::port_check() {
     if [ "$dry_run" = "true" ]; then
         shell::on_evict "$cmd"
     else
-        # shell::run_cmd lsof -nP -iTCP:"$port" | grep LISTEN
         shell::run_cmd_eval "$cmd"
     fi
 }
@@ -1528,7 +1498,7 @@ shell::download_dataset() {
     local download_cmd="curl -LJ \"$link\" -o \"$filename\""
     if [ "$dry_run" = "true" ]; then
         shell::on_evict "$download_cmd"
-        shell::colored_echo "💡 Dry-run mode: Displayed download command for $filename" 11
+        shell::colored_echo "WARN: Dry-run mode: Displayed download command for $filename" 11
         return 0
     else
         shell::run_cmd curl -s -LJ "$link" -o "$filename"
@@ -1846,7 +1816,7 @@ shell::measure_time() {
             local elapsed=$((end_time - start_time))
             local seconds=$((elapsed / 1000))
             local milliseconds=$((elapsed % 1000))
-            shell::colored_echo "🕒 Execution time: ${seconds}s ${milliseconds}ms" 33
+            shell::colored_echo "Execution time: ${seconds}s ${milliseconds}ms" 33
             return $exit_code
         else
             # Fallback: use SECONDS (resolution in seconds)
@@ -1855,7 +1825,7 @@ shell::measure_time() {
             exit_code=$?
             local end_seconds=$SECONDS
             local elapsed_seconds=$((end_seconds - start_seconds))
-            shell::colored_echo "🕒 Execution time: ${elapsed_seconds}s" 33
+            shell::colored_echo "Execution time: ${elapsed_seconds}s" 33
             return $exit_code
         fi
     else
@@ -1869,7 +1839,7 @@ shell::measure_time() {
         local elapsed=$((end_time - start_time))
         local seconds=$((elapsed / 1000))
         local milliseconds=$((elapsed % 1000))
-        shell::colored_echo "🕒 Execution time: ${seconds}s ${milliseconds}ms" 33
+        shell::colored_echo "Execution time: ${seconds}s ${milliseconds}ms" 33
         return $exit_code
     fi
 }
@@ -1917,7 +1887,7 @@ shell::async() {
         # Execute the command asynchronously (in the background)
         eval "$cmd" &
         local pid=$!
-        shell::colored_echo "🕒 Async process started with PID: $pid" 33
+        shell::colored_echo "DEBUG: Async process started with PID: $pid" 244
         return 0
     fi
 }
