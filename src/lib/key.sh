@@ -1636,7 +1636,7 @@ shell::fzf_get_conf_visualization() {
     #         --preview="grep -v '^\s*#' \"$SHELL_KEY_CONF_FILE\" | grep '^{}=' | cut -d '=' -f 2- | $base64_decode_cmd 2>/dev/null || echo 'Invalid Base64'" \
     #         --preview-window=up:3:wrap)
 
-    selected_key=$(echo "$key_list" |
+    selected_key=$(grep -v '^\s*#' "$SHELL_KEY_CONF_FILE" | cut -d '=' -f 1 | awk -v yellow="$yellow" -v normal="$normal" '{print yellow $0 normal}' |
         fzf --ansi \
             --prompt="Select config key: " \
             --preview="grep -v '^\s*#' \"$SHELL_KEY_CONF_FILE\" | grep '^{}=' | cut -d '=' -f 2- | $base64_decode_cmd 2>/dev/null || echo 'Invalid Base64'" \
