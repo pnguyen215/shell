@@ -3647,3 +3647,22 @@ excluding common non-key files. It uses fzf with multi-select to allow the user
 to choose one or more files to delete. After confirmation, the selected files
 are removed using (rm). In dry-run mode, the removal commands are printed instead.
 "
+
+USAGE_SHELL_FZF_GET_CONF_VISUALIZATION="
+shell::fzf_get_conf_viz function
+Interactively selects a configuration key using fzf and displays its decoded value in real-time.
+
+Usage:
+  shell::fzf_get_conf_viz [-n] [-h]
+
+Parameters:
+  - -n : Optional dry-run flag. If provided, the clipboard copy command is printed instead of executed.
+  - -h : Optional help flag. Displays this help message.
+
+Description:
+  This function checks if the configuration file exists. If not, it displays an error.
+  It then uses fzf to interactively select a configuration key from the file, showing
+  the Base64-decoded value in real-time in a preview window, formatted as "key-value"
+  with the key in yellow and the value in cyan. Once a key is selected, its decoded value
+  is copied to the clipboard unless in dry-run mode, where the copy command is printed.
+"

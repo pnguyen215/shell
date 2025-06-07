@@ -1479,15 +1479,12 @@ shell::sync_key_group_conf() {
 #   - Uses ANSI color codes for formatting (yellow for key, cyan for value).
 #   - The configuration file is expected to contain key=value pairs with Base64-encoded values.
 shell::fzf_get_conf_viz() {
-    local dry_run="false"
-
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_FZF_GET_CONF_VISUALIZATION"
         return 0
     fi
 
-    # Check for the optional dry-run flag (-n)
+    local dry_run="false"
     if [ "$1" = "-n" ]; then
         dry_run="true"
         shift
