@@ -3601,3 +3601,26 @@ This function compares the keys listed in protected.conf with those in key.conf.
 Any protected key that is not found in key.conf will be removed.
 In dry-run mode, the updated list is printed instead of being written to the file.
 "
+
+USAGE_SHELL_SET_PERMISSIONS="
+shell::set_permissions function
+Sets file or directory permissions using human-readable group syntax.
+
+Usage:
+shell::set_permissions [-n] <target> [owner=...] [group=...] [others=...]
+
+Parameters:
+  - -n          : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - <target>    : The file or directory to set permissions on.
+  - [owner=...] : Optional. Set permissions for the owner (e.g., owner=read,write).
+  - [group=...] : Optional. Set permissions for the group (e.g., group=read,execute).
+  - [others=...]: Optional. Set permissions for others (e.g., others=read).
+
+Description:
+  This function allows you to set permissions on a file or directory using a human-readable format.
+  It supports specifying permissions for the owner, group, and others using keywords like read, write, and execute.
+  The function constructs a chmod command based on the provided arguments and executes it.
+  If the -n flag is provided, it prints the command instead of executing it.
+  The function checks if the target exists and is accessible before attempting to change permissions.
+  It also validates the permission groups and provides error messages for invalid inputs.
+"
