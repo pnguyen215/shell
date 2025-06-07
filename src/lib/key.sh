@@ -1855,9 +1855,9 @@ shell::fzf_remove_protected_key() {
     os_type=$(shell::get_os_type)
     local sed_cmd=""
     if [ "$os_type" = "macos" ]; then
-        sed_cmd="sed -i '' \"/^${selected_key}$/d\" \"$file\"" # Use sed with -i '' for macOS compatibility
+        sed_cmd="sudo sed -i '' \"/^${selected_key}$/d\" \"$file\"" # Use sed with -i '' for macOS compatibility
     else
-        sed_cmd="sed -i \"/^${selected_key}$/d\" \"$file\"" # Use sed with -i for Linux compatibility
+        sed_cmd="sudo sed -i \"/^${selected_key}$/d\" \"$file\"" # Use sed with -i for Linux compatibility
     fi
 
     # If dry-run mode is enabled, print the command to remove the protected key.
