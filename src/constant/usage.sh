@@ -3568,3 +3568,19 @@ Description:
 This function uses fzf to select a key from the configuration file (excluding comments),
 and adds it to the protected.conf file.
 "
+
+USAGE_SHELL_FZF_REMOVE_PROTECTED_KEY="
+shell::fzf_remove_protected_key function
+Interactively selects a protected key using fzf and removes it from protected.conf.
+
+Usage:
+shell::fzf_remove_protected_key [-n] [-h]
+
+Parameters:
+  - -n : Optional dry-run flag. If provided, the removal command is printed using shell::on_evict instead of executed.
+  - -h : Optional. Displays this help message.
+
+Description:
+This function reads the protected.conf file, uses fzf to let the user select a key,
+and removes the selected key using sed. In dry-run mode, the command is printed instead of executed.
+"

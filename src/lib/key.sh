@@ -1803,3 +1803,67 @@ shell::fzf_add_protected_key() {
         shell::add_protected_key "$selected_key"
     fi
 }
+
+# shell::fzf_remove_protected_key function
+# Interactively selects a protected key using fzf and removes it from protected.conf.
+#
+# Usage:
+# shell::fzf_remove_protected_key [-n]
+#
+# Parameters:
+# - -n : Optional dry-run flag. If provided, the removal command is printed using shell::on_evict instead of executed.
+#
+# Description:
+# This function reads the protected.conf file, uses fzf to let the user select a key,
+# and removes the selected key using sed. In dry-run mode, the command is printed instead of executed.
+shell::fzf_remove_protected_key() {
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_REMOVE_PROTECTED_KEY"
+        return 0
+    fi
+
+    local file="$SHELL_KEY_CONF_FILE_PROTECTED"
+    # Check if the protected.conf file exists.
+    # If it does not exist, print an error message and return.
+    if [ ! -f "$file" ]; then
+        shell::colored_echo "ERR: Protected key file '$file' not found." 196
+        return 1
+    fi
+
+    shell::install_package fzf
+
+    # Use fzf to select a protected key.
+    # Exclude comments and use fzf to let the user select a key.
+    # Use grep to filter out comments and then use fzf to select a key.
+    local selected_key
+    selected_key=$(grep -v '^\s*#' "$file" | fzf --prompt="Select protected key to remove: ")
+
+    if [ -z "$selected_key" ]; then
+        shell::colored_echo "ERR: No key selected." 196
+        return 1
+    fi
+
+    local os_type
+    os_type=$(shell::get_os_type)
+    local sed_cmd=""
+    if [ "$os_type" = "macos" ]; then
+        sed_cmd="sed -i '' \"/^${selected_key}$/d\" \"$file\"" # Use sed with -i '' for macOS compatibility
+    else
+        sed_cmd="sed -i \"/^${selected_key}$/d\" \"$file\"" # Use sed with -i for Linux compatibility
+    fi
+
+    # If dry-run mode is enabled, print the command to remove the protected key.
+    # Otherwise, execute the command to remove the key.
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "$sed_cmd"
+    else
+        shell::run_cmd_eval "$sed_cmd"
+        shell::colored_echo "INFO: Removed protected key: $selected_key" 46
+    fi
+}
