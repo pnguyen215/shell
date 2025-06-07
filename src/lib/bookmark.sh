@@ -113,7 +113,7 @@ shell::opent() {
         return 1
     fi
 
-    shell::colored_echo "🙂 Opening \"$name\" ..." 5
+    shell::colored_echo "DEBUG: Opening \"$name\" ..." 244
 }
 
 # shell::add_bookmark function
@@ -135,7 +135,7 @@ shell::add_bookmark() {
     local bookmark_name="$1"
 
     if [[ -z "$bookmark_name" ]]; then
-        shell::colored_echo "ERR: Please type a valid name for your bookmark." 3
+        shell::colored_echo "ERR: Please type a valid name for your bookmark." 196
         return 1
     fi
 
@@ -147,7 +147,7 @@ shell::add_bookmark() {
         echo "$bookmark" >>"$bookmarks_file"
         shell::colored_echo "INFO: Bookmark '$bookmark_name' saved" 46
     else
-        shell::colored_echo "🟠 Bookmark '$bookmark_name' already exists. Replace it? (y or n)" 5
+        shell::colored_echo "WARN: Bookmark '$bookmark_name' already exists. Replace it? (y or n)" 11
         while read -r replace; do
             if [[ "$replace" == "y" ]]; then
                 # Delete existing bookmark and save the new one.
@@ -158,48 +158,11 @@ shell::add_bookmark() {
             elif [[ "$replace" == "n" ]]; then
                 break
             else
-                shell::colored_echo "WARN: Please type 'y' or 'n':" 5
+                shell::colored_echo "WARN: Please type 'y' or 'n':" 11
             fi
         done
     fi
 }
-
-# shell::remove_bookmark function
-# Deletes a bookmark with the specified name from the bookmarks file.
-#
-# Usage:
-#   shell::remove_bookmark <bookmark_name>
-#
-# Parameters:
-#   <bookmark_name> : The name of the bookmark to remove.
-#
-# Description:
-#   This function searches for a bookmark entry in the bookmarks file that ends with "|<bookmark_name>".
-#   If the entry is found, it removes the corresponding line from the bookmarks file.
-#   If the bookmark is not found or the name is empty, it prints an error message.
-#
-# Notes:
-#   - The bookmarks file is specified by the global variable 'bookmarks_file'.
-#   - A temporary file (located at "$HOME/bookmarks_temp") is used during the removal process.
-# shell::remove_bookmark() {
-#     local bookmark_name="$1"
-
-#     if [[ -z "$bookmark_name" ]]; then
-#         shell::colored_echo "👊 Type bookmark name to remove." 3
-#         return 1
-#     fi
-
-#     local bookmark
-#     bookmark=$(grep "|${bookmark_name}$" "$bookmarks_file")
-
-#     if [[ -z "$bookmark" ]]; then
-#         shell::colored_echo "🙈 Invalid bookmark name." 3
-#         return 1
-#     else
-#         grep -v "|${bookmark_name}$" "$bookmarks_file" >"$HOME/bookmarks_temp" && mv "$HOME/bookmarks_temp" "$bookmarks_file"
-#         shell::colored_echo "INFO: Bookmark '$bookmark_name' removed" 46
-#     fi
-# }
 
 # shell::remove_bookmark function
 # Deletes a bookmark with the specified name from the bookmarks file.
@@ -219,16 +182,14 @@ shell::add_bookmark() {
 # Notes:
 #   - The bookmarks file is specified by the global variable 'bookmarks_file'.
 shell::remove_bookmark() {
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_REMOVE_BOOKMARK"
         return 0
     fi
 
     local bookmark_name="$1"
-
     if [[ -z "$bookmark_name" ]]; then
-        shell::colored_echo "👊 Type bookmark name to remove." 3
+        shell::colored_echo "WARN: Type bookmark name to remove." 11
         return 1
     fi
 
@@ -236,7 +197,7 @@ shell::remove_bookmark() {
     bookmark=$(grep "|${bookmark_name}$" "$bookmarks_file")
 
     if [[ -z "$bookmark" ]]; then
-        shell::colored_echo "🙈 Invalid bookmark name." 3
+        shell::colored_echo "WARN: Invalid bookmark name." 11
         return 1
     fi
 
@@ -292,14 +253,14 @@ shell::remove_bookmark_linux() {
     local bookmark_name="$1"
 
     if [[ -z "$bookmark_name" ]]; then
-        shell::colored_echo "👊 Type bookmark name to remove." 3
+        shell::colored_echo "WARN: Type bookmark name to remove." 11
         return 1
     fi
 
     local bookmark
     bookmark=$(grep "|${bookmark_name}$" "$bookmarks_file")
     if [[ -z "$bookmark" ]]; then
-        shell::colored_echo "🙈 Invalid bookmark name." 3
+        shell::colored_echo "WARN: Invalid bookmark name." 11
         return 1
     fi
 
@@ -334,7 +295,6 @@ shell::remove_bookmark_linux() {
 #   The 'shell::show_bookmark' function lists all bookmarks in a formatted manner,
 #   showing the bookmark name (field 2) in yellow and the associated directory (field 1) in default color.
 shell::show_bookmark() {
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_SHOW_BOOKMARK"
         return 0
@@ -357,7 +317,6 @@ shell::show_bookmark() {
 #   associated with the given bookmark name. It looks for a line in the bookmarks file
 #   that ends with "|<bookmark name>".
 shell::go_bookmark() {
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_GO_BOOKMARK"
         return 0
@@ -370,15 +329,15 @@ shell::go_bookmark() {
     bookmark=$(grep "|${bookmark_name}$" "$bookmarks_file")
 
     if [[ -z "$bookmark" ]]; then
-        shell::colored_echo '🙈 Bookmark not found!' 3
+        shell::colored_echo 'WARN: Bookmark not found!' 11
         return 1
     else
         # Extract the directory (the part before the "|")
         dir=$(echo "$bookmark" | cut -d'|' -f1)
         if cd "$dir"; then
-            shell::colored_echo "📂 Changed directory to: $dir" 2
+            shell::colored_echo "INFO: Changed directory to: $dir" 2
         else
-            shell::colored_echo "ERR: Failed to change directory to: $dir" 1
+            shell::colored_echo "ERR: Failed to change directory to: $dir" 196
             return 1
         fi
     fi

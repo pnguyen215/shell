@@ -1149,7 +1149,7 @@ shell::port_kill() {
                 fi
             done
         else
-            shell::colored_echo "🟠 No processes found on port $port" 11
+            shell::colored_echo "WARN: No processes found on port $port" 11
         fi
     done
 }
@@ -1501,7 +1501,7 @@ shell::download_dataset() {
     if [ -e "$base" ]; then
         local confirm=""
         while [ -z "$confirm" ]; do
-            echo -n "❓ Do you want to overwrite the existing file? (y/n): "
+            echo -n "[q] Do you want to overwrite the existing file? (y/n): "
             read confirm
             if [ -z "$confirm" ]; then
                 shell::colored_echo "ERR: Invalid input. Please enter y or n." 196
@@ -1509,7 +1509,7 @@ shell::download_dataset() {
         done
 
         if [ "$confirm" != "y" ]; then
-            shell::colored_echo "🍌 Download canceled. The file already exists." 11
+            shell::colored_echo "WARN: Download canceled. The file already exists." 11
             return 1
         fi
 
