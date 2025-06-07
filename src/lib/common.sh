@@ -683,7 +683,7 @@ shell::create_directory_if_not_exists() {
         shell::run_cmd_eval 'sudo mkdir -p "$dir"' # Use sudo to create the directory and its parent directories.
         if [ $? -eq 0 ]; then
             shell::colored_echo "INFO: Directory created successfully." 46
-            shell::setPerms::777 "$dir"
+            shell::unlock_permissions "$dir"
             return 0
         else
             shell::colored_echo "ERR: Failed to create the directory." 196
@@ -745,7 +745,7 @@ shell::create_file_if_not_exists() {
         if [ $? -eq 0 ]; then
             shell::colored_echo "INFO: Directory created successfully." 46
             # Optionally set directory permissions
-            shell::setPerms::777 "$directory" # # shell::run_cmd_eval "sudo chmod 700 \"$directory\""
+            shell::unlock_permissions "$directory" # # shell::run_cmd_eval "sudo chmod 700 \"$directory\""
         else
             shell::colored_echo "ERR: Failed to create the directory." 196
             return 1
@@ -759,7 +759,7 @@ shell::create_file_if_not_exists() {
         if [ $? -eq 0 ]; then
             shell::colored_echo "INFO: File created successfully." 46
             # Optionally set file permissions
-            shell::setPerms::777 "$abs_filename" # shell::run_cmd_eval "sudo chmod 600 \"$abs_filename\""
+            shell::unlock_permissions "$abs_filename" # shell::run_cmd_eval "sudo chmod 600 \"$abs_filename\""
             return 0
         else
             shell::colored_echo "ERR: Failed to create the file." 196
@@ -769,11 +769,11 @@ shell::create_file_if_not_exists() {
     return 0
 }
 
-# shell::setPerms::777 function
+# shell::unlock_permissions function
 # Sets full permissions (read, write, and execute) for the specified file or directory.
 #
 # Usage:
-#   shell::setPerms::777 [-n] <file/dir>
+#   shell::unlock_permissions [-n] <file/dir>
 #
 # Parameters:
 #   - -n (optional): Dry-run mode. Instead of executing the command, prints it using shell::on_evict.
@@ -786,9 +786,9 @@ shell::create_file_if_not_exists() {
 #   to grant full permissions recursively.
 #
 # Example:
-#   shell::setPerms::777 ./my_script.sh
-#   shell::setPerms::777 -n ./my_script.sh  # Dry-run: prints the command without executing.
-shell::setPerms::777() {
+#   shell::unlock_permissions ./my_script.sh
+#   shell::unlock_permissions -n ./my_script.sh  # Dry-run: prints the command without executing.
+shell::unlock_permissions() {
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_SET_PERMS_777"
@@ -804,7 +804,7 @@ shell::setPerms::777() {
     fi
 
     if [ $# -lt 1 ]; then
-        echo "Usage: shell::setPerms::777 [-n] <file/dir>"
+        echo "Usage: shell::unlock_permissions [-n] <file/dir>"
         return 1
     fi
 

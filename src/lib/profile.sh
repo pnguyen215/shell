@@ -446,7 +446,7 @@ shell::add_conf_profile() {
             shell::colored_echo "WARN: The key '$key' already exists in profile '$profile_name'. Consider updating it using shell::update_conf_profile." 11
             return 0
         fi
-        shell::setPerms::777 "$profile_conf"
+        shell::unlock_permissions "$profile_conf"
         shell::run_cmd_eval "$cmd"
         shell::colored_echo "INFO: Added configuration to profile '$profile_name': $key (encoded value)" 46
     fi

@@ -1570,11 +1570,11 @@ Example usage:
 "
 
 USAGE_SHELL_SET_PERMS_777="
-shell::setPerms::777 function
+shell::unlock_permissions function
 Sets full permissions (read, write, and execute) for the specified file or directory.
 
 Usage:
-  shell::setPerms::777 [-n] [-h] <file/dir>
+  shell::unlock_permissions [-n] [-h] <file/dir>
 
 Parameters:
   - -n (optional)   : Dry-run mode. Instead of executing the command, prints it using shell::on_evict.
@@ -1588,8 +1588,8 @@ Description:
   to grant full permissions recursively.
 
 Example:
-  shell::setPerms::777 ./my_script.sh
-  shell::setPerms::777 -n ./my_script.sh  # Dry-run: prints the command without executing.
+  shell::unlock_permissions ./my_script.sh
+  shell::unlock_permissions -n ./my_script.sh  # Dry-run: prints the command without executing.
 "
 
 USAGE_SHELL_CLIP_CWD="

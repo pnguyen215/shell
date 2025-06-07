@@ -107,7 +107,7 @@ shell::add_conf() {
 
     # Ensure the configuration file exists.
     shell::create_file_if_not_exists "$SHELL_KEY_CONF_FILE"
-    shell::setPerms::777 "$SHELL_KEY_CONF_FILE"
+    shell::unlock_permissions "$SHELL_KEY_CONF_FILE"
 
     # Build the command to append the key and encoded value to the configuration file.
     local cmd="echo \"$key=$encoded_value\" >> \"$SHELL_KEY_CONF_FILE\""
@@ -180,7 +180,7 @@ shell::add_conf_comment() {
 
     # Ensure the configuration file exists
     shell::create_file_if_not_exists "$SHELL_KEY_CONF_FILE"
-    shell::setPerms::777 "$SHELL_KEY_CONF_FILE"
+    shell::unlock_permissions "$SHELL_KEY_CONF_FILE"
 
     # Check if the key already exists
     if [ "$(shell::exist_key_conf "$key")" = "true" ]; then
@@ -743,7 +743,7 @@ shell::add_group() {
 
     # Ensure the group configuration file exists.
     shell::create_file_if_not_exists "$SHELL_GROUP_CONF_FILE"
-    shell::setPerms::777 "$SHELL_GROUP_CONF_FILE"
+    shell::unlock_permissions "$SHELL_GROUP_CONF_FILE"
 
     # Prompt the user for a group name.
     shell::colored_echo "Enter group name:" 33
@@ -1720,7 +1720,7 @@ shell::add_protected_key() {
     # Use shell::create_file_if_not_exists to ensure the file is created.
     # Set permissions to 777 for the file.
     shell::create_file_if_not_exists "$file"
-    shell::setPerms::777 "$file"
+    shell::unlock_permissions "$file"
 
     # Check if the key is already protected.
     # Use grep to check if the key is already in the file.
