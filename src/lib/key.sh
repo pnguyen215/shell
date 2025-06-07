@@ -1836,8 +1836,7 @@ shell::fzf_remove_protected_key() {
         return 1
     fi
 
-    # Ensure the protected.conf file has the correct permissions.
-    # shell::setPerms::777 "$file"
+    # Ensure fzf is installed.
     shell::install_package fzf
 
     # Use fzf to select a protected key.
