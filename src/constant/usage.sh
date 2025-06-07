@@ -3541,7 +3541,12 @@ shell::add_protected_key function
 Adds a key to the protected key list stored in protected.conf.
 
 Usage:
-shell::add_protected_key [-n] <key>
+shell::add_protected_key [-n] [-h] <key>
+
+Parameters:
+  - -n        : Optional. Dry-run mode. Prints the command without executing it.
+  - -h        : Optional. Displays this help message.
+  - <key>     : The key to mark as protected.
 
 Parameters:
   - -n    : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
@@ -3553,7 +3558,11 @@ shell::fzf_add_protected_key function
 Interactively selects a key from the configuration file and adds it to the protected list.
 
 Usage:
-shell::fzf_add_protected_key [-n]
+shell::fzf_add_protected_key [-n] [-h]
+
+Parameters:
+  - -n        : Optional. Dry-run mode. Prints the command without executing it.
+  - -h        : Optional. Displays this help message.
 
 Description:
 This function uses fzf to select a key from the configuration file (excluding comments),
