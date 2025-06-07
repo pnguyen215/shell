@@ -1622,16 +1622,21 @@ shell::fzf_get_conf_visualization() {
         shell::colored_echo "ERR: No configuration keys found in '$SHELL_KEY_CONF_FILE'." 196
         return 1
     fi
-    echo "DEBUG: key list is: $key_list"
     # Use fzf with a preview window to show only the decoded value
     local selected_key
     # selected_key=$(echo "$key_list" | fzf --ansi \
     #     --prompt="Select config key: " \
     #     --preview="grep '^{}=.*' \"$SHELL_KEY_CONF_FILE\" | cut -d '=' -f 2- | $base64_decode_cmd 2>/dev/null || echo 'Invalid Base64'")
 
-    selected_key=$(echo "$key_list" | fzf --ansi \
-        --prompt="Select config key: " \
-        --preview="grep -v '^\s*#' \"$SHELL_KEY_CONF_FILE\" | cut -d '=' -f 2- | $base64_decode_cmd 2>/dev/null || echo 'Invalid Base64'")
+    # selected_key=$(echo "$key_list" | fzf --ansi \
+    #     --prompt="Select config key: " \
+    #     --preview="grep -v '^\s*#' \"$SHELL_KEY_CONF_FILE\" | cut -d '=' -f 2- | $base64_decode_cmd 2>/dev/null || echo 'Invalid Base64'")
+
+    selected_key=$(grep -v '^\s*#' "$SHELL_KEY_CONF_FILE" | cut -d '=' -f 1 |
+        fzf --ansi \
+            --prompt="Select config key: " \
+            --preview="grep -v '^\s*#' \"$SHELL_KEY_CONF_FILE\" | grep '^{}=' | cut -d '=' -f 2- | $base64_decode_cmd 2>/dev/null || echo 'Invalid Base64'" \
+            --preview-window=up:3:wrap)
 
     # Extract the uncolored key (remove ANSI codes)
     selected_key=$(echo "$selected_key" | sed "s/$(echo -e "\033")[0-9;]*m//g")
