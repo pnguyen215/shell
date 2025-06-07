@@ -602,7 +602,8 @@ shell::fzf_rename_key_conf() {
 
     # Use fzf to select an existing key.
     local old_key
-    old_key=$(cut -d '=' -f 1 "$SHELL_KEY_CONF_FILE" | fzf --prompt="Select a key to rename: ")
+    # old_key=$(cut -d '=' -f 1 "$SHELL_KEY_CONF_FILE" | fzf --prompt="Select a key to rename: ")
+    old_key=$(grep -v '^\s*#' "$SHELL_KEY_CONF_FILE" | cut -d '=' -f 1 | fzf --prompt="Select config key to rename: ")
     if [ -z "$old_key" ]; then
         shell::colored_echo "ERR: No key selected. Aborting rename." 196
         return 1
