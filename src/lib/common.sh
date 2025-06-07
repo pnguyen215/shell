@@ -180,9 +180,9 @@ shell::run_cmd() {
     # Print the command with OS-appropriate emoji
     local emoji="🔍"
     if [ "$os_type" = "linux" ]; then
-        emoji="🐧" # Penguin for Linux
+        emoji="[v]" # Penguin for Linux
     elif [ "$os_type" = "macos" ]; then
-        emoji="🍎" # Apple for macOS
+        emoji="[v]" # Apple for macOS
     fi
 
     shell::colored_echo "$emoji $command" $color_code
@@ -242,9 +242,9 @@ shell::run_cmd_eval() {
     # Print the command with OS-appropriate emoji
     local emoji="🔍"
     if [ "$os_type" = "linux" ]; then
-        emoji="🐧" # Penguin for Linux
+        emoji="[v]" # Penguin for Linux
     elif [ "$os_type" = "macos" ]; then
-        emoji="🍎" # Apple for macOS
+        emoji="[v]" # Apple for macOS
     fi
 
     shell::colored_echo "$emoji $command" $color_code
