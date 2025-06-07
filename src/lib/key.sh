@@ -1622,6 +1622,7 @@ shell::fzf_get_conf_visualization() {
         shell::colored_echo "ERR: No configuration keys found in '$SHELL_KEY_CONF_FILE'." 196
         return 1
     fi
+    echo "DEBUG: key list is: $key_list"
     # Use fzf with a preview window to show only the decoded value
     local selected_key
     # selected_key=$(echo "$key_list" | fzf --ansi \
