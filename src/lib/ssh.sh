@@ -728,3 +728,93 @@ shell::fzf_ssh_keys_viz() {
         eval "$fzf_cmd"
     fi
 }
+
+# shell::fzf_remove_ssh_keys function
+# Interactively selects one or more SSH key files from $HOME/.ssh using fzf and removes them.
+#
+# Usage:
+# shell::fzf_remove_ssh_keys [-n]
+#
+# Parameters:
+# - -n : Optional dry-run flag. If provided, the removal command is printed using shell::on_evict instead of executed.
+#
+# Description:
+# This function lists SSH key files in the user's SSH directory ($HOME/.ssh),
+# excluding common non-key files. It uses fzf with multi-select to allow the user
+# to choose one or more files to delete. After confirmation, the selected files
+# are removed using `rm`. In dry-run mode, the removal commands are printed instead.
+#
+# Example usage:
+# shell::fzf_remove_ssh_keys       # Launch fzf to select and delete SSH key files.
+# shell::fzf_remove_ssh_keys -n    # Dry-run: show the removal commands without executing.
+shell::fzf_remove_ssh_keys() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_REMOVE_SSH_KEYS"
+        return 0
+    fi
+
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    # Ensure fzf is installed
+    shell::install_package fzf
+
+    # Define the SSH directory
+    local ssh_dir="${SHELL_CONF_SSH_DIR_WORKING:-$HOME/.ssh}"
+
+    # Check if the SSH directory exists
+    if [ ! -d "$ssh_dir" ]; then
+        shell::colored_echo "ERR: SSH directory '$ssh_dir' not found." 196
+        return 1
+    fi
+
+    # Find potential key files in the SSH directory
+    local key_files
+    key_files=$(find "$ssh_dir" -maxdepth 1 -type f \( ! -name "known_hosts*" ! -name "config" ! -name "authorized_keys*" ! -name "*.log" \) 2>/dev/null)
+
+    if [ -z "$key_files" ]; then
+        shell::colored_echo "WARN: No SSH key files found in '$ssh_dir'." 11
+        return 0
+    fi
+
+    # Use fzf to select one or more files
+    # --multi allows selecting multiple files.
+    # --prompt sets the prompt text.
+    # --preview shows the contents of the selected file in a wrapped window.
+    local selected_files
+    selected_files=$(echo "$key_files" | fzf --multi --prompt="Select SSH key files to remove: ")
+
+    # Check if any files were selected
+    if [ -z "$selected_files" ]; then
+        shell::colored_echo "ERR: No SSH key files selected." 196
+        return 1
+    fi
+
+    shell::colored_echo "DEBUG: Selected files for removal:" 244
+    echo "$selected_files"
+
+    shell::colored_echo "[q] Are you sure you want to delete the selected file(s)? [y/N]" 208
+    read -r confirm
+    if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+        shell::colored_echo "WARN: Deletion cancelled." 11
+        return 0
+    fi
+
+    # Remove each selected file
+    # Using a while loop to read each line (file path) from the selected files.
+    # Using sudo rm -f to ensure files are removed even if they are protected.
+    while IFS= read -r file; do
+        local cmd="sudo rm -f \"$file\""
+        if [ "$dry_run" = "true" ]; then
+            shell::on_evict "$cmd"
+        else
+            shell::run_cmd_eval "$cmd"
+        fi
+    done <<<"$selected_files"
+
+    shell::colored_echo "INFO: SSH key file removal process completed." 46
+    return 0
+}

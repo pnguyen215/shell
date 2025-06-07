@@ -3629,3 +3629,21 @@ excluding common non-key files. It uses fzf to provide an interactive
 selection interface with a preview window that shows the contents of
 each file in real-time. The preview is wrapped for readability.
 "
+
+USAGE_SHELL_FZF_REMOVE_SSH_KEYS="
+shell::fzf_remove_ssh_keys function
+Interactively selects one or more SSH key files from HOME/.ssh using fzf and removes them.
+
+Usage:
+shell::fzf_remove_ssh_keys [-n] [-h]
+
+Parameters:
+  - -n : Optional dry-run flag. If provided, the removal command is printed using shell::on_evict instead of executed.
+  - -h : Optional. Displays this help message.
+
+Description:
+This function lists SSH key files in the user's SSH directory (HOME/.ssh),
+excluding common non-key files. It uses fzf with multi-select to allow the user
+to choose one or more files to delete. After confirmation, the selected files
+are removed using (rm). In dry-run mode, the removal commands are printed instead.
+"
