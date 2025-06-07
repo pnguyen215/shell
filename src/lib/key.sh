@@ -1155,7 +1155,6 @@ shell::list_groups() {
         return 1
     fi
 
-    shell::colored_echo "📁 Group Names:" 33
     echo "$groups"
 }
 
@@ -1393,7 +1392,7 @@ shell::sync_key_group_conf() {
         return 1
     fi
 
-    shell::colored_echo "🔄 Syncing group configuration..." 33
+    shell::colored_echo "DEBUG: Syncing group configuration..." 244
 
     # Create a temporary file for the updated configuration.
     local temp_file
@@ -1429,12 +1428,13 @@ shell::sync_key_group_conf() {
         if [ -n "$new_keys" ]; then
             echo "${group_name}=${new_keys}" >>"$temp_file"
         else
-            shell::colored_echo "WARN: Group '$group_name' has no valid keys and will be removed." 33
+            shell::colored_echo "WARN: Group '$group_name' has no valid keys and will be removed." 11
         fi
     done <"$SHELL_GROUP_CONF_FILE"
 
+    # If dry-run mode is enabled, print the new configuration and remove the temporary file.
+    # Otherwise, replace the original configuration file with the new one.
     if [ "$dry_run" = "true" ]; then
-        shell::colored_echo "🔍 View in clipboard" 33
         shell::clip_value "$(cat "$temp_file")"
         shell::run_cmd_eval "sudo rm $temp_file"
     else
