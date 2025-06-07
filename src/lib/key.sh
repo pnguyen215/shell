@@ -685,6 +685,23 @@ shell::is_protected_key() {
     fi
 
     local key="$1"
+    local file="$SHELL_KEY_CONF_FILE_PROTECTED"
+
+    # Check if the key exists in the protected configuration file.
+    # If the key is found, echo "true" and return 0.
+    if [ -f "$file" ] && grep -q "^${key}$" "$file"; then
+        echo "true"
+        return 0
+    fi
+
+    # If the key is not found in the protected configuration file,
+    # check against the SHELL_PROTECTED_KEYS array.
+    if [ -z "${SHELL_PROTECTED_KEYS+x}" ]; then
+        shell::colored_echo "ERR: SHELL_PROTECTED_KEYS array is not defined." 196
+        return 1
+    fi
+    # Iterate over the SHELL_PROTECTED_KEYS array to check if the key is protected.
+    # If the key matches any entry in the array, echo "true" and return 0.
     for protected in "${SHELL_PROTECTED_KEYS[@]}"; do
         if [ "$protected" = "$key" ]; then
             echo "true"
