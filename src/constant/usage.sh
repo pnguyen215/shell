@@ -3584,3 +3584,20 @@ Description:
 This function reads the protected.conf file, uses fzf to let the user select a key,
 and removes the selected key using sed. In dry-run mode, the command is printed instead of executed.
 "
+
+USAGE_SHELL_SYNC_PROTECTED_KEY="
+shell::sync_protected_key function
+Synchronizes the protected.conf file by removing keys that no longer exist in key.conf.
+
+Usage:
+shell::sync_protected_key [-n] [-h]
+
+Parameters:
+  - -n : Optional dry-run flag. If provided, the updated protected.conf is printed using shell::on_evict instead of being applied.
+  - -h : Optional. Displays this help message.
+
+Description:
+This function compares the keys listed in protected.conf with those in key.conf.
+Any protected key that is not found in key.conf will be removed.
+In dry-run mode, the updated list is printed instead of being written to the file.
+"

@@ -1868,3 +1868,81 @@ shell::fzf_remove_protected_key() {
         shell::colored_echo "INFO: Removed protected key: $selected_key" 46
     fi
 }
+
+# shell::sync_protected_key function
+# Synchronizes the protected.conf file by removing keys that no longer exist in key.conf.
+#
+# Usage:
+# shell::sync_protected_key [-n]
+#
+# Parameters:
+# - -n : Optional dry-run flag. If provided, the updated protected.conf is printed using shell::on_evict instead of being applied.
+#
+# Description:
+# This function compares the keys listed in protected.conf with those in key.conf.
+# Any protected key that is not found in key.conf will be removed.
+# In dry-run mode, the updated list is printed instead of being written to the file.
+shell::sync_protected_key() {
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_SYNC_PROTECTED_KEY"
+        return 0
+    fi
+
+    local key_file="$SHELL_KEY_CONF_FILE"
+    local protected_file="$SHELL_KEY_CONF_FILE_PROTECTED"
+
+    # Check if the protected.conf file and key.conf file exist.
+    # If either file does not exist, print an error message and return.
+    if [ ! -f "$protected_file" ]; then
+        shell::colored_echo "ERR: Protected key file '$protected_file' not found." 196
+        return 1
+    fi
+
+    # Check if the key configuration file exists.
+    # If it does not exist, print an error message and return.
+    if [ ! -f "$key_file" ]; then
+        shell::colored_echo "ERR: Key configuration file '$key_file' not found." 196
+        return 1
+    fi
+
+    shell::colored_echo "DEBUG: Syncing protected keys..." 244
+
+    # Create a temporary file to store the updated protected keys.
+    # Use mktemp to create a temporary file for the updated protected keys.
+    local temp_file
+    temp_file=$(mktemp) || {
+        shell::colored_echo "ERR: Unable to create temporary file." 196
+        return 1
+    }
+
+    # Read the protected keys from the protected.conf file.
+    # Use a while loop to read each line from the protected.conf file.
+    # For each key, check if it exists in the key.conf file.
+    # If the key exists, write it to the temporary file.
+    # If the key does not exist, print a warning message.
+    while IFS= read -r key; do
+        [ -z "$key" ] && continue
+        if grep -q "^${key}=" "$key_file"; then
+            echo "$key" >>"$temp_file"
+        else
+            shell::colored_echo "WARN: Removing undefined protected key: $key" 11
+        fi
+    done <"$protected_file"
+
+    # If dry-run mode is enabled, print the updated protected keys and remove the temporary file.
+    # Otherwise, move the temporary file to the protected.conf file.
+    if [ "$dry_run" = "true" ]; then
+        shell::colored_echo "DEBUG: Dry-run: Updated protected keys:" 244
+        cat "$temp_file"
+        shell::run_cmd_eval "sudo rm \"$temp_file\""
+    else
+        shell::run_cmd_eval "sudo mv \"$temp_file\" \"$protected_file\""
+        shell::colored_echo "INFO: Protected keys synchronized successfully." 46
+    fi
+}
