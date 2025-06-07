@@ -2409,3 +2409,71 @@ shell::set_permissions() {
         shell::colored_echo "INFO: Permissions set to $mode for '$target'" 46
     fi
 }
+
+# shell::fzf_chmod function
+# Interactively selects permissions for a file or directory using fzf and applies them via shell::set_permissions.
+#
+# Usage:
+# shell::fzf_chmod [-n] <target>
+#
+# Parameters:
+# - -n : Optional dry-run flag. If provided, the chmod command is printed using shell::on_evict instead of executed.
+# - <target> : The file or directory to modify permissions for.
+#
+# Description:
+# This function prompts the user to select permissions for owner, group, and others using fzf.
+# It then delegates the permission setting to shell::set_permissions.
+shell::fzf_chmod() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_CHMOD"
+        return 0
+    fi
+
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if [ $# -lt 1 ]; then
+        echo "Usage: shell::fzf_chmod [-n] <target>"
+        return 1
+    fi
+
+    local target="$1"
+    if [ ! -e "$target" ]; then
+        shell::colored_echo "ERR: Target '$target' does not exist." 196
+        return 1
+    fi
+
+    # Ensure fzf is installed
+    shell::install_package fzf
+
+    # Define permission options
+    # This array contains the different permission levels that can be selected.
+    local perms=("none" "read" "write" "execute" "read,write" "read,execute" "write,execute" "read,write,execute")
+
+    # Prompt user to select permissions for owner, group, and others
+    # The user is prompted to select permissions for each category (owner, group, others) using fzf.
+    # The selected permissions are stored in variables for later use.
+    local owner=$(printf "%s\n" "${perms[@]}" | fzf --prompt="Select owner permissions: ")
+    local group=$(printf "%s\n" "${perms[@]}" | fzf --prompt="Select group permissions: ")
+    local others=$(printf "%s\n" "${perms[@]}" | fzf --prompt="Select others permissions: ")
+
+    # Check if any permission selection is empty
+    # If any of the selections are empty, an error message is displayed and the function exits.
+    if [ -z "$owner" ] || [ -z "$group" ] || [ -z "$others" ]; then
+        shell::colored_echo "ERR: Permission selection incomplete. Aborting." 196
+        return 1
+    fi
+
+    # If dry-run mode is enabled, print the command instead of executing it
+    # This allows the user to see what permissions would be set without actually changing them.
+    # If dry_run is true, the command is printed using shell::on_evict.
+    # Otherwise, the command is executed to set the permissions.
+    if [ "$dry_run" = "true" ]; then
+        shell::set_permissions "-n" "$target" "owner=$owner" "group=$group" "others=$others"
+    else
+        shell::set_permissions "$target" "owner=$owner" "group=$group" "others=$others"
+    fi
+}

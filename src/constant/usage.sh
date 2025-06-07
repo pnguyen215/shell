@@ -3624,3 +3624,20 @@ Description:
   The function checks if the target exists and is accessible before attempting to change permissions.
   It also validates the permission groups and provides error messages for invalid inputs.
 "
+
+USAGE_SHELL_FZF_CHMOD="
+shell::fzf_chmod function
+Interactively selects permissions for a file or directory using fzf and applies them via shell::set_permissions.
+
+Usage:
+shell::fzf_chmod [-n] [-h] <target>
+
+Parameters:
+  - -n        : Optional dry-run flag. If provided, the chmod command is printed using shell::on_evict instead of executed.
+  - -h        : Optional. Displays this help message.
+  - <target>  : The file or directory to modify permissions for.
+
+Description:
+This function prompts the user to select permissions for owner, group, and others using fzf.
+It then delegates the permission setting to shell::set_permissions.
+"
