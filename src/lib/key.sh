@@ -372,7 +372,8 @@ shell::fzf_remove_conf() {
 
     # Extract only the keys from the configuration file and select one using fzf.
     local selected_key
-    selected_key=$(cut -d '=' -f 1 "$SHELL_KEY_CONF_FILE" | fzf --prompt="Select config key to remove: ")
+    # selected_key=$(cut -d '=' -f 1 "$SHELL_KEY_CONF_FILE" | fzf --prompt="Select config key to remove: ")
+    selected_key=$(grep -v '^\s*#' "$SHELL_KEY_CONF_FILE" | cut -d '=' -f 1 | fzf --prompt="Select config key to remove: ")
     if [ -z "$selected_key" ]; then
         shell::colored_echo "ERR: No configuration selected." 196
         return 1
