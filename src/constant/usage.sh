@@ -3610,3 +3610,22 @@ Description:
 This function prompts the user to select permissions for owner, group, and others using fzf.
 It then delegates the permission setting to shell::set_permissions.
 "
+
+USAGE_SHELL_FZF_SSH_KEYS_VIZ="
+shell::fzf_ssh_keys_viz function
+Interactively selects an SSH key file from HOME/.ssh using fzf,
+and previews its contents in real-time in a wrapped preview window.
+
+Usage:
+shell::fzf_ssh_keys_viz [-n] [-h]
+
+Parameters:
+  - -n : Optional dry-run flag. If provided, the preview command is printed using shell::on_evict instead of executed.
+  - -h : Optional. Displays this help message.
+
+Description:
+This function lists files within the user's SSH directory (HOME/.ssh),
+excluding common non-key files. It uses fzf to provide an interactive
+selection interface with a preview window that shows the contents of
+each file in real-time. The preview is wrapped for readability.
+"

@@ -654,3 +654,69 @@ shell::gen_ssh_key() {
 
     return 0
 }
+
+# shell::fzf_ssh_keys_viz function
+# Interactively selects an SSH key file from $HOME/.ssh using fzf,
+# and previews its contents in real-time in a wrapped preview window.
+#
+# Usage:
+# shell::fzf_ssh_keys_viz [-n]
+#
+# Parameters:
+# - -n : Optional dry-run flag. If provided, the preview command is printed using shell::on_evict instead of executed.
+#
+# Description:
+# This function lists files within the user's SSH directory ($HOME/.ssh),
+# excluding common non-key files. It uses fzf to provide an interactive
+# selection interface with a preview window that shows the contents of
+# each file in real-time. The preview is wrapped for readability.
+#
+# Example usage:
+# shell::fzf_ssh_keys_viz       # Launch fzf to preview SSH key files.
+# shell::fzf_ssh_keys_viz -n    # Dry-run: show the preview command without executing.
+shell::fzf_ssh_keys_viz() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_SSH_KEYS_VIZ"
+        return 0
+    fi
+
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    # Ensure fzf is installed
+    shell::install_package fzf
+
+    # Define the SSH directory
+    local ssh_dir="${SHELL_CONF_SSH_DIR_WORKING:-$HOME/.ssh}"
+
+    # Check if the SSH directory exists
+    if [ ! -d "$ssh_dir" ]; then
+        shell::colored_echo "ERR: SSH directory '$ssh_dir' not found." 196
+        return 1
+    fi
+
+    # Find potential key files in the SSH directory
+    # # Exclude common non-key files and directories.
+    # Using find to get full paths for fzf.
+    local key_files
+    key_files=$(find "$ssh_dir" -maxdepth 1 -type f \( ! -name "known_hosts*" ! -name "config" ! -name "authorized_keys*" ! -name "*.log" \) 2>/dev/null)
+
+    if [ -z "$key_files" ]; then
+        shell::colored_echo "WARN: No potential SSH key files found in '$ssh_dir'." 11
+        return 0
+    fi
+
+    # Build the fzf command with preview
+    local fzf_cmd
+    fzf_cmd="echo \"$key_files\" | fzf --ansi --prompt='Preview SSH key file: ' --preview='cat {}' --preview-window=up:wrap"
+
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "$fzf_cmd"
+        return 0
+    else
+        eval "$fzf_cmd"
+    fi
+}
