@@ -550,37 +550,6 @@ Description:
   In dry-run mode, the new group configuration is printed via shell::on_evict without modifying the file.
 "
 
-USAGE_SHELL_LOAD_INI_CONF="
-shell::load_ini_conf function
-Reads a .ini.conf file and loads key-value pairs as environment variables.
-Lines starting with '#' or ';' are treated as comments and ignored.
-Empty lines are also ignored.
-Each valid line in 'key=value' format is exported as an environment variable.
-
-Usage:
-  shell::load_ini_conf [-h] <file_path>
-
-Parameters:
-    - -h            : Optional. Displays this help message.
-    - <file_path>   : The path to the .ini.conf file to load.
-
-Description:
-  This function parses the specified configuration file. For each line that is
-  not a comment or empty, it attempts to split the line at the first '=' sign.
-  The part before the '=' is treated as the variable name (key), and the part
-  after the '=' is treated as the variable value. Leading and trailing whitespace
-  is trimmed from both the key and the value. The resulting key-value pair is
-  then exported as an environment variable in the current shell. This makes the
-  configuration settings available to subsequently executed commands and scripts.
-  The function provides feedback on whether the file was found and loaded.
-
-Example usage:
-  shell::load_ini_conf \"CONF_DIR/my_app.ini.conf\" # Load configurations from my_app.ini.conf
-
-Requirements:
-  - Assumes the presence of helper function: shell::colored_echo.
-"
-
 USAGE_SHELL_FATAL="
 shell::fatal function
 Prints a fatal error message along with the function call stack, then exits the script.
