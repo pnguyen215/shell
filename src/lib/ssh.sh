@@ -699,20 +699,28 @@ shell::fzf_ssh_keys_viz() {
     fi
 
     # Find potential key files in the SSH directory
-    # # Exclude common non-key files and directories.
+    # Exclude common non-key files and directories.
     # Using find to get full paths for fzf.
     local key_files
     key_files=$(find "$ssh_dir" -maxdepth 1 -type f \( ! -name "known_hosts*" ! -name "config" ! -name "authorized_keys*" ! -name "*.log" \) 2>/dev/null)
 
+    # Check if any potential key files were found
     if [ -z "$key_files" ]; then
         shell::colored_echo "WARN: No potential SSH key files found in '$ssh_dir'." 11
         return 0
     fi
 
-    # Build the fzf command with preview
+    # Use fzf to select a key file interactively with a preview
+    # The preview shows the contents of the selected file in a wrapped window.
+    # Using --ansi to allow colored output in the preview.
+    # Using --preview-window=up:wrap to show the preview above the selection.
+    # Using echo to pass the key files to fzf.
     local fzf_cmd
     fzf_cmd="echo \"$key_files\" | fzf --ansi --prompt='Preview SSH key file: ' --preview='cat {}' --preview-window=up:wrap"
 
+    # If dry-run is enabled, print the command instead of executing it
+    # This allows the user to see what would happen without making changes.
+    # If not dry-run, execute the command.
     if [ "$dry_run" = "true" ]; then
         shell::on_evict "$fzf_cmd"
         return 0
