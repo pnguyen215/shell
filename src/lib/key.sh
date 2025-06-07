@@ -1624,9 +1624,13 @@ shell::fzf_get_conf_visualization() {
     fi
     # Use fzf with a preview window to show only the decoded value
     local selected_key
+    # selected_key=$(echo "$key_list" | fzf --ansi \
+    #     --prompt="Select config key: " \
+    #     --preview="grep '^{}=.*' \"$SHELL_KEY_CONF_FILE\" | cut -d '=' -f 2- | $base64_decode_cmd 2>/dev/null || echo 'Invalid Base64'")
+
     selected_key=$(echo "$key_list" | fzf --ansi \
-        --prompt="Select config key: " \
-        --preview="grep '^{}=.*' \"$SHELL_KEY_CONF_FILE\" | cut -d '=' -f 2- | $base64_decode_cmd 2>/dev/null || echo 'Invalid Base64'")
+            --prompt="Select config key: " \
+            --preview="grep '^{}=' \"$SHELL_KEY_CONF_FILE\" | cut -d '=' -f 2- | $base64_decode_cmd 2>/dev/null || echo 'Invalid Base64'")
 
     # Extract the uncolored key (remove ANSI codes)
     selected_key=$(echo "$selected_key" | sed "s/$(echo -e "\033")[0-9;]*m//g")
