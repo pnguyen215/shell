@@ -508,7 +508,7 @@ shell::create_python_env() {
     # Verify and provide activation instructions
     if [ "$dry_run" = "false" ] && [ -f "$venv_path/bin/activate" ]; then
         shell::colored_echo "INFO: Virtual environment created successfully at '$venv_path'." 46
-        shell::colored_echo "🔑 To activate, run: $activate_cmd" 33
+        shell::colored_echo "[a] To activate, run: $activate_cmd" 33
         shell::clip_value "$activate_cmd"
     elif [ "$dry_run" = "false" ]; then
         shell::colored_echo "ERR: Failed to create virtual environment." 196

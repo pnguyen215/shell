@@ -264,7 +264,7 @@ shell::fzf_get_conf() {
         decoded_value=$(echo "$encoded_value" | base64 -d)
     fi
 
-    shell::colored_echo "🔑 Key: $selected_key" 33
+    shell::colored_echo "[k] Key: $selected_key" 33
     shell::clip_value "$decoded_value"
 }
 
@@ -1256,8 +1256,8 @@ shell::fzf_select_group() {
     fi
 
     # Display the results.
-    shell::colored_echo "📁 Group: $selected_group" 33
-    shell::colored_echo "🔑 Key: $selected_key" 33
+    shell::colored_echo "[g] Group: $selected_group" 33
+    shell::colored_echo "[k] Key: $selected_key" 33
     shell::clip_value "$decoded_value"
 }
 
