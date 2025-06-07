@@ -1778,6 +1778,12 @@ shell::fzf_add_protected_key() {
         return 1
     fi
 
-    # Call shell::add_protected_key to add the selected key to the protected list.
-    shell::add_protected_key ${dry_run:+-n} "$selected_key"
+    # Verify dry-run mode.
+    # If dry-run mode is enabled, print the command to add the protected key.
+    # Otherwise, call shell::add_protected_key to add the key.
+    if [ "$dry_run" = "true" ]; then
+        shell::add_protected_key "-n" "$selected_key"
+    else
+        shell::add_protected_key "$selected_key"
+    fi
 }
