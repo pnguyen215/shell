@@ -1768,7 +1768,6 @@ shell::fzf_add_protected_key() {
         fzf --ansi --prompt="Select key to protect: ")
 
     local selected_key
-    # selected_key=$(echo "$selected_key_colored" | sed -E 's/\x1B\[[0-9;]*m//g')
     selected_key=$(echo "$selected_key_colored" | sed "s/$(echo -e "\033")[0-9;]*m//g")
 
     # Check if a key was selected.
