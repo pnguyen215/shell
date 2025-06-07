@@ -1,5 +1,5 @@
 #!/bin/bash
-# constant.sh
+# settings.sh
 
 # SHELL_CONF_WORKING constant
 # This variable defines the working directory where the shell configuration files are stored.

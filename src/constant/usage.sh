@@ -1,5 +1,5 @@
 #!/bin/bash
-# help.sh
+# usage.sh
 
 USAGE_SHELL_GEN_SSH_KEY="
 shell::gen_ssh_key function
