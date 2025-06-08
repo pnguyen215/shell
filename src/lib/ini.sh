@@ -2662,10 +2662,9 @@ shell::fzf_ini_remove_sections() {
 # Interactively previews all key-value pairs in each section of an INI file using fzf in a real-time wrapped vertical layout.
 #
 # Usage:
-# shell::fzf_get_ini_viz [-n] <file>
+# shell::fzf_get_ini_viz <file>
 #
 # Parameters:
-# - -n : Optional dry-run flag. If provided, the preview command is printed using shell::on_evict instead of executed.
 # - <file> : The path to the INI file.
 #
 # Description:
@@ -2682,33 +2681,34 @@ shell::fzf_get_ini_viz() {
         return 0
     fi
 
-    local dry_run="false"
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
-
     if [ $# -lt 1 ]; then
-        echo "Usage: shell::fzf_get_ini_viz [-n] <file>"
+        echo "Usage: shell::fzf_get_ini_viz [-h] <file>"
         return 1
     fi
 
+    # Validate the file parameter.
+    # Ensure the file exists and is readable.
     local file="$1"
     if [ ! -f "$file" ]; then
         shell::colored_echo "ERR: File not found: $file" 196
         return 1
     fi
 
-    shell::install_package fzf || {
-        shell::colored_echo "ERR: fzf is required but could not be installed." 196
-        return 1
-    }
+    # Ensure fzf is installed.
+    shell::install_package fzf
 
+    # Set up color variables for fzf preview.
+    # Using tput to set colors for better visibility.
+    # Colors are set to ANSI escape codes for terminal compatibility.
     local yellow=$(tput setaf 3)
     local cyan=$(tput setaf 6)
     local green=$(tput setaf 2)
     local normal=$(tput sgr0)
 
+    # List sections and use fzf to select one.
+    # The preview command uses awk to format the output in a tree-like structure.
+    # It highlights keys and values with colors for better visibility.
+    # The preview window is set to wrap lines and display up to 60 lines.
     local section
     section=$(shell::ini_list_sections "$file" |
         awk -v y="$yellow" -v n="$normal" '{print y $0 n}' |
@@ -2729,12 +2729,16 @@ shell::fzf_get_ini_viz() {
         ' \"$file\"" \
             --preview-window=up:wrap:60%)
 
+    # Check if a section was selected.
+    # If not, print an error message and return.
     section=$(echo "$section" | sed "s/$(echo -e "\033")[0-9;]*m//g")
     if [ -z "$section" ]; then
         shell::colored_echo "ERR: No section selected." 196
         return 1
     fi
 
+    # Read all keys in the selected section and display them using fzf.
+    # The keys are colored for better visibility.
     local key
     key=$(shell::ini_list_keys "$file" "$section" |
         awk -v c="$cyan" -v n="$normal" '{print c $0 n}' |
@@ -2746,6 +2750,9 @@ shell::fzf_get_ini_viz() {
         return 1
     fi
 
+    # Read the value of the selected key in the specified section.
+    # The value is colored for better visibility.
+    # The value is then passed to shell::clip_value for further processing.
     local value
     value=$(shell::ini_read "$file" "$section" "$key")
     if [ $? -ne 0 ]; then
@@ -2755,259 +2762,6 @@ shell::fzf_get_ini_viz() {
 
     shell::colored_echo "DEBUG: [s] Section: $section" 244
     shell::colored_echo "DEBUG: [k] Key: $key" 244
-    shell::colored_echo "DEBUG: [v] Value: $value" 244
+    shell::colored_echo "INFO: [v] Value: $value" 46
     shell::clip_value "$value"
 }
-
-# shell::fzf_get_ini_viz() {
-#     local dry_run="false"
-#     if [ "$1" = "-n" ]; then
-#         dry_run="true"
-#         shift
-#     fi
-
-#     if [ "$1" = "-h" ]; then
-#         echo "$USAGE_SHELL_FZF_GET_INI_VIZ"
-#         return 0
-#     fi
-
-#     if [ $# -lt 1 ]; then
-#         echo "Usage: shell::fzf_get_ini_viz [-n] <file>"
-#         return 1
-#     fi
-
-#     local file="$1"
-#     if [ ! -f "$file" ]; then
-#         shell::colored_echo "ERR: File not found: $file" 196
-#         return 1
-#     fi
-
-#     shell::install_package fzf || {
-#         shell::colored_echo "ERR: fzf is required but could not be installed." 196
-#         return 1
-#     }
-
-#     local section
-#     section=$(shell::ini_list_sections "$file" |
-#         fzf --ansi \
-#             --prompt="Select section: " \
-#             --preview="awk -v s='{}' '
-#           BEGIN {
-#             in_section=0;
-#             srand();
-#           }
-#           /^\[.*\]/ {
-#             in_section = (\$0 == \"[\" s \"]\") ? 1 : 0;
-#             next;
-#           }
-#           in_section && /^[^#;]/ && /=/ {
-#             split(\$0, kv, \"=\");
-#             gsub(/^[ \t]+|[ \t]+$/, \"\", kv[1]);
-#             gsub(/^[ \t]+|[ \t]+$/, \"\", kv[2]);
-#             color = 30 + int(rand() * 8);  # ANSI color 30–37
-#             printf(\"  ├─ \033[1;%sm%s\033[0m: \033[0;%sm%s\033[0m\\n\", color, kv[1], color, kv[2]);
-#           }
-#         ' \"$file\"" \
-#             --preview-window=up:wrap:60%)
-
-#     section=$(echo "$section" | sed "s/$(echo -e "\033")[0-9;]*m//g")
-#     if [ -z "$section" ]; then
-#         shell::colored_echo "ERR: No section selected." 196
-#         return 1
-#     fi
-
-#     local key
-#     key=$(shell::ini_list_keys "$file" "$section" |
-#         fzf --ansi --prompt="Select key in [$section]: ")
-
-#     key=$(echo "$key" | sed "s/$(echo -e "\033")[0-9;]*m//g")
-#     if [ -z "$key" ]; then
-#         shell::colored_echo "ERR: No key selected." 196
-#         return 1
-#     fi
-
-#     local value
-#     value=$(shell::ini_read "$file" "$section" "$key")
-#     if [ $? -ne 0 ]; then
-#         shell::colored_echo "ERR: Failed to read value for key '$key' in section '$section'." 196
-#         return 1
-#     fi
-
-#     shell::colored_echo "[s] Section: $section" 33
-#     shell::colored_echo "[k] Key: $key" 33
-#     shell::colored_echo "[v] Value: $value" 46
-#     shell::clip_value "$value"
-# }
-
-# shell::fzf_get_ini_viz() {
-#     local dry_run="false"
-#     if [ "$1" = "-n" ]; then
-#         dry_run="true"
-#         shift
-#     fi
-
-#     if [ "$1" = "-h" ]; then
-#         echo "$USAGE_SHELL_FZF_GET_INI_VIZ"
-#         return 0
-#     fi
-
-#     if [ $# -lt 1 ]; then
-#         echo "Usage: shell::fzf_get_ini_viz [-n] <file>"
-#         return 1
-#     fi
-
-#     local file="$1"
-#     if [ ! -f "$file" ]; then
-#         shell::colored_echo "ERR: File not found: $file" 196
-#         return 1
-#     fi
-
-#     shell::install_package fzf || {
-#         shell::colored_echo "ERR: fzf is required but could not be installed." 196
-#         return 1
-#     }
-
-#     local section
-#     section=$(shell::ini_list_sections "$file" |
-#         fzf --ansi --prompt="Select section: ")
-#     section=$(echo "$section" | sed "s/$(echo -e "\033")[0-9;]*m//g")
-#     if [ -z "$section" ]; then
-#         shell::colored_echo "ERR: No section selected." 196
-#         return 1
-#     fi
-
-#     local yellow=$(tput setaf 3)
-#     local cyan=$(tput setaf 6)
-#     local green=$(tput setaf 2)
-#     local normal=$(tput sgr0)
-
-#     local preview_cmd
-#     preview_cmd="awk -v s='$section' '
-#     BEGIN { in_section=0; srand() }
-#     /^\[.*\]/ {
-#       in_section = (\$0 == \"[\" s \"]\") ? 1 : 0
-#       next
-#     }
-#     in_section && /^[^#;]/ && /=/ {
-#       split(\$0, kv, \"=\")
-#       gsub(/^[ \t]+|[ \t]+$/, \"\", kv[1])
-#       gsub(/^[ \t]+|[ \t]+$/, \"\", kv[2])
-#       color = 30 + int(rand() * 8)
-#       printf(\"  ├─ \033[1;%sm%s\033[0m: \033[0;%sm%s\033[0m\\n\", color, kv[1], color, kv[2])
-#     }
-#   ' \"$file\""
-
-#     local key
-#     key=$(shell::ini_list_keys "$file" "$section" |
-#         fzf --ansi \
-#             --prompt="Select key in [$section]: " \
-#             --preview="$preview_cmd" \
-#             --preview-window=up:wrap:60%)
-
-#     key=$(echo "$key" | sed "s/$(echo -e "\033")[0-9;]*m//g")
-#     if [ -z "$key" ]; then
-#         shell::colored_echo "ERR: No key selected." 196
-#         return 1
-#     fi
-
-#     local value
-#     value=$(shell::ini_read "$file" "$section" "$key")
-#     if [ $? -ne 0 ]; then
-#         shell::colored_echo "ERR: Failed to read value for key '$key' in section '$section'." 196
-#         return 1
-#     fi
-
-#     shell::colored_echo "[s] Section: $section" 33
-#     shell::colored_echo "[k] Key: $key" 33
-#     shell::colored_echo "[v] Value: $value" 46
-#     shell::clip_value "$value"
-# }
-
-# shell::fzf_get_ini_viz() {
-#     local dry_run="false"
-#     if [ "$1" = "-n" ]; then
-#         dry_run="true"
-#         shift
-#     fi
-
-#     if [ "$1" = "-h" ]; then
-#         echo "$USAGE_SHELL_FZF_GET_INI_VIZ"
-#         return 0
-#     fi
-
-#     if [ $# -lt 1 ]; then
-#         echo "Usage: shell::fzf_get_ini_viz [-n] <file>"
-#         return 1
-#     fi
-
-#     local file="$1"
-#     if [ ! -f "$file" ]; then
-#         shell::colored_echo "ERR: File not found: $file" 196
-#         return 1
-#     fi
-
-#     shell::install_package fzf || {
-#         shell::colored_echo "ERR: fzf is required but could not be installed." 196
-#         return 1
-#     }
-
-#     while true; do
-#         local section
-#         section=$(shell::ini_list_sections "$file" |
-#             fzf --ansi --prompt="Select section: ")
-#         section=$(echo "$section" | sed "s/$(echo -e "\033")[0-9;]*m//g")
-#         if [ -z "$section" ]; then
-#             shell::colored_echo "ERR: No section selected." 196
-#             return 1
-#         fi
-
-#         local preview_cmd
-#         preview_cmd="awk -v s='$section' '
-#       BEGIN { in_section=0; srand() }
-#       /^\[.*\]/ {
-#         in_section = (\$0 == \"[\" s \"]\") ? 1 : 0
-#         next
-#       }
-#       in_section && /^[^#;]/ && /=/ {
-#         split(\$0, kv, \"=\")
-#         gsub(/^[ \t]+|[ \t]+$/, \"\", kv[1])
-#         gsub(/^[ \t]+|[ \t]+$/, \"\", kv[2])
-#         color = 30 + int(rand() * 8)
-#         printf(\"  \033[1;%sm%s\033[0m: \033[0;%sm%s\033[0m\\n\", color, kv[1], color, kv[2])
-#       }
-#     ' \"$file\""
-
-#         local key
-#         key=$( (
-#             echo "[Back to section list]"
-#             shell::ini_list_keys "$file" "$section"
-#         ) |
-#             fzf --ansi \
-#                 --prompt="Select key in [$section]: " \
-#                 --preview="$preview_cmd" \
-#                 --preview-window=up:wrap:60%)
-
-#         key=$(echo "$key" | sed "s/$(echo -e "\033")[0-9;]*m//g")
-#         if [ -z "$key" ]; then
-#             shell::colored_echo "ERR: No key selected." 196
-#             return 1
-#         fi
-
-#         if [ "$key" = "[Back to section list]" ]; then
-#             continue
-#         fi
-
-#         local value
-#         value=$(shell::ini_read "$file" "$section" "$key")
-#         if [ $? -ne 0 ]; then
-#             shell::colored_echo "ERR: Failed to read value for key '$key' in section '$section'." 196
-#             return 1
-#         fi
-
-#         shell::colored_echo "[s] Section: $section" 33
-#         shell::colored_echo "[k] Key: $key" 33
-#         shell::colored_echo "[v] Value: $value" 46
-#         shell::clip_value "$value"
-#         break
-#     done
-# }
