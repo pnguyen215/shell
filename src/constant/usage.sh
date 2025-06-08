@@ -3682,3 +3682,28 @@ This function lists all sections in the specified INI file using shell::ini_list
 and uses fzf to preview all key-value pairs in each section in real-time.
 The preview window wraps lines and simulates a tree-like layout for readability.
 "
+
+USAGE_SHELL_FZF_VIEW_INI_VIZ_SUPER="
+shell::fzf_view_ini_viz_super function
+Interactively previews all key-value pairs in each section of an INI file using fzf in a real-time wrapped vertical layout.
+
+Usage:
+shell::fzf_view_ini_viz_super <file> [--json|--yaml|--multi]
+
+Parameters:
+  - <file>  : The path to the INI file.
+  - --json  : Optional. Export the selected section as JSON.
+  - --yaml  : Optional. Export the selected section as YAML.
+  - --multi : Optional. Allow multi-key selection and export.
+
+Description:
+This function lists all sections in the specified INI file using shell::ini_list_sections,
+and uses fzf to preview all key-value pairs in each section in real-time.
+The preview window wraps lines and simulates a tree-like layout for readability.
+It supports exporting the selected section as JSON or YAML, or selecting multiple keys for export.
+
+Example:
+shell::fzf_view_ini_viz_super config.ini
+shell::fzf_view_ini_viz_super config.ini --json
+shell::fzf_view_ini_viz_super config.ini --multi
+"

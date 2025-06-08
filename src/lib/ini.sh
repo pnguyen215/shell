@@ -2804,6 +2804,11 @@ shell::fzf_view_ini_viz_super() {
     local mode=""
     local multi="false"
 
+    # Process additional options: --json, --yaml, --multi
+    # These options determine how the selected section will be exported.
+    # --json: Export as JSON format.
+    # --yaml: Export as YAML format.
+    # --multi: Allow multi-key selection and export.
     for arg in "$@"; do
         case "$arg" in
         --json | --yaml) mode="$arg" ;;
@@ -2811,39 +2816,28 @@ shell::fzf_view_ini_viz_super() {
         esac
     done
 
+    # Validate the file parameter.
+    # Ensure the file exists and is readable.
     if [ ! -f "$file" ]; then
         shell::colored_echo "ERR: File not found: $file" 196
         return 1
     fi
 
+    # Ensure fzf is installed.
     shell::install_package fzf
 
+    # Set up color variables for fzf preview.
+    # Using tput to set colors for better visibility.
+    # Colors are set to ANSI escape codes for terminal compatibility.
     local yellow=$(tput setaf 3)
     local cyan=$(tput setaf 6)
     local green=$(tput setaf 2)
     local normal=$(tput sgr0)
 
+    # List sections and use fzf to select one.
+    # The preview command uses awk to format the output in a tree-like structure.
+    # It highlights keys and values with colors for better visibility.
     local section
-    # section=$(shell::ini_list_sections "$file" |
-    #     awk -v y="$yellow" -v n="$normal" '{print y $0 n}' |
-    #     fzf --ansi \
-    #         --prompt="Select section: " \
-    #         --preview="awk -v s='{}' '
-    #           BEGIN { in_section=0; srand() }
-    #           /^\[.*\]/ {
-    #             in_section = (\$0 == \"[\" s \"]\") ? 1 : 0
-    #             next
-    #           }
-    #           in_section && /^[^#;]/ && /=/ {
-    #             split(\$0, kv, \"=\")
-    #             gsub(/^[ \t]+|[ \t]+$/, \"\", kv[1])
-    #             gsub(/^[ \t]+|[ \t]+$/, \"\", kv[2])
-    #             color = 30 + int(rand() * 8)
-    #             printf(\"  \033[1;%sm%s\033[0m: \033[0;%sm%s\033[0m\\n\", color, kv[1], color, kv[2])
-    #           }
-    #         ' \"$file\"" \
-    #         --preview-window=up:wrap:60%)
-
     section=$(shell::ini_list_sections "$file" |
         awk -v y="$yellow" -v n="$normal" '{print y $0 n}' |
         fzf --ansi \
@@ -2863,12 +2857,16 @@ shell::fzf_view_ini_viz_super() {
         ' \"$file\"" \
             --preview-window=up:wrap:60%)
 
+    # Check if a section was selected.
+    # If not, print an error message and return.
     section=$(echo "$section" | sed "s/$(echo -e "\033")[0-9;]*m//g")
     if [ -z "$section" ]; then
         shell::colored_echo "ERR: No section selected." 196
         return 1
     fi
 
+    # Read all keys in the selected section and display them using fzf.
+    # The keys are colored for better visibility.
     local keys
     keys=$(shell::ini_list_keys "$file" "$section")
     if [ -z "$keys" ]; then
@@ -2876,6 +2874,10 @@ shell::fzf_view_ini_viz_super() {
         return 1
     fi
 
+    # If --json or --yaml mode is specified, format the output accordingly.
+    # --json: Export as JSON format.
+    # --yaml: Export as YAML format.
+    # --multi: Allow multi-key selection and export.
     if [ "$mode" = "--json" ] || [ "$mode" = "--yaml" ]; then
         local output=""
         while IFS= read -r key; do
@@ -2897,6 +2899,9 @@ shell::fzf_view_ini_viz_super() {
         return 0
     fi
 
+    # If --multi is specified, allow multi-key selection.
+    # Use fzf to select one or more keys from the section.
+    # The selected keys are then read and their values are displayed.
     local key_selection
     if [ "$multi" = "true" ]; then
         key_selection=$(echo "$keys" | fzf --ansi --multi --prompt="Select key(s) in [$section]: ")
@@ -2909,6 +2914,10 @@ shell::fzf_view_ini_viz_super() {
         return 1
     fi
 
+    # Process the selected keys and read their values.
+    # The values are colored for better visibility.
+    # The output is formatted as key=value pairs and copied to the clipboard.
+    # Each key-value pair is printed in a debug and info format.
     local output=""
     while IFS= read -r key; do
         key=$(echo "$key" | sed "s/$(echo -e "\033")[0-9;]*m//g")
