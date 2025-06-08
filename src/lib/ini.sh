@@ -3105,122 +3105,6 @@ shell::fzf_view_ini_viz_super_control() {
     done
 }
 
-# shell::ini_rename_key function
-# Renames a key within a specific section in an INI file.
-#
-# Usage:
-# shell::ini_rename_key [-n] <file> <section> <old_key> <new_key>
-#
-# Parameters:
-# - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
-# - <file> : The path to the INI file.
-# - <section> : The section containing the key to rename.
-# - <old_key> : The current key name.
-# - <new_key> : The new key name to replace the old one.
-#
-# Description:
-# This function renames a key in a specified section of an INI file.
-# It validates the file and section, checks if the old key exists,
-# and uses sed to perform an in-place rename of the key.
-#
-# Example:
-# shell::ini_rename_key config.ini Database host hostname
-# shell::ini_rename_key -n config.ini Server port server_port
-shell::ini_rename_key() {
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_INI_RENAME_KEY"
-        return 0
-    fi
-
-    local dry_run="false"
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
-
-    if [ $# -lt 4 ]; then
-        echo "Usage: shell::ini_rename_key [-n] <file> <section> <old_key> <new_key>"
-        return 1
-    fi
-
-    local file="$1"
-    local section="$2"
-    local old_key="$3"
-    local new_key="$4"
-
-    # Validate the file parameter.
-    # Ensure the file exists and is readable.
-    if [ ! -f "$file" ]; then
-        shell::colored_echo "ERR: File not found: $file" 196
-        return 1
-    fi
-
-    # Check if the section exists in the INI file.
-    # If the section does not exist, return an error.
-    if ! shell::ini_section_exists "$file" "$section"; then
-        return 1
-    fi
-
-    # Check if the old key exists in the specified section.
-    # If the old key does not exist, return an error.
-    if ! shell::ini_key_exists "$file" "$section" "$old_key"; then
-        return 1
-    fi
-
-    # Escape the section and old key for regex matching.
-    # This is necessary to handle special characters in the section and key names.
-    local escaped_section
-    escaped_section=$(shell::ini_escape_for_regex "$section")
-    local escaped_old_key
-    escaped_old_key=$(shell::ini_escape_for_regex "$old_key")
-
-    # Construct the sed command to rename the key.
-    # The command uses awk to process the file, looking for the specified section
-    # and replacing the old key with the new key.
-    local section_pattern="^\[$escaped_section\]"
-    local key_pattern="^[[:space:]]*$escaped_old_key[[:space:]]*="
-    new_key=$(shell::sanitize_upper_var_name "$new_key")
-    local os_type
-    os_type=$(shell::get_os_type)
-
-    # Determine the sed command based on the OS type.
-    # For macOS, we use awk for compatibility with BSD awk.
-    # For Linux, we can use GNU awk.
-    local sed_cmd
-    if [ "$os_type" = "macos" ]; then
-        sed_cmd="awk '
-            BEGIN { in_section=0 }
-            $0 ~ /^\\[$escaped_section\\]/ { in_section=1; print; next }
-            $0 ~ /^\\[/ && \$0 !~ /^\\[$escaped_section\\]/ { in_section=0 }
-            in_section && \$0 ~ /^$escaped_old_key[[:space:]]*=/ {
-                sub(/^$escaped_old_key[[:space:]]*=/, \"$new_key=\")
-            }
-            { print }
-        ' \"$file\" > \"$file.tmp\" && mv \"$file.tmp\" \"$file\""
-    else
-        sed_cmd="awk '
-            BEGIN { in_section=0 }
-            \$0 ~ /^\\[$escaped_section\\]/ { in_section=1; print; next }
-            \$0 ~ /^\\[/ && \$0 !~ /^\\[$escaped_section\\]/ { in_section=0 }
-            in_section && \$0 ~ /^$escaped_old_key[[:space:]]*=/ {
-                sub(/^$escaped_old_key[[:space:]]*=/, \"$new_key=\")
-            }
-            { print }
-        ' \"$file\" > \"$file.tmp\" && mv \"$file.tmp\" \"$file\""
-    fi
-
-    # If dry_run is true, print the command instead of executing it.
-    # This allows users to see what would happen without making changes.
-    if [ "$dry_run" = "true" ]; then
-        shell::on_evict "$sed_cmd"
-    else
-        shell::run_cmd_eval "$sed_cmd"
-        shell::colored_echo "INFO: Renamed key '$old_key' to '$new_key' in section [$section]" 46
-    fi
-
-    return 0
-}
-
 # shell::fzf_edit_ini_viz function
 # Interactively edits or renames a key in an INI file using fzf.
 #
@@ -3280,7 +3164,7 @@ shell::fzf_edit_ini_viz() {
     # The user can choose to edit the value of the key or rename the key.
     # The options are presented in a numbered list using select.
     shell::colored_echo "Choose action for key '$key' in section [$section]:" 33
-    select action in "Edit Value" "Rename Key" "Cancel"; do
+    select action in "Edit Value" "Remove Key" "Cancel"; do
         case $REPLY in
         1)
             shell::colored_echo "Enter new value for '$key':" 33
@@ -3289,9 +3173,14 @@ shell::fzf_edit_ini_viz() {
             return $?
             ;;
         2)
-            shell::colored_echo "Enter new name for key '$key':" 33
-            read -r new_key
-            shell::ini_rename_key "$file" "$section" "$key" "$new_key"
+            shell::colored_echo "Are you sure you want to remove the key '$key' from section [$section]? (y/n)" 33
+            read -r confirmation
+            if [[ "$confirmation" != "y" && "$confirmation" != "Y" ]]; then
+                shell::colored_echo "WARN: Key removal cancelled." 11
+                return 0
+            fi
+            shell::colored_echo "DEBUG: Removing key '$key' from section [$section] in file '$file'..." 244
+            shell::ini_remove_key "$file" "$section" "$key"
             return $?
             ;;
         3)
