@@ -2878,22 +2878,58 @@ shell::fzf_view_ini_viz_super() {
     # --json: Export as JSON format.
     # --yaml: Export as YAML format.
     # --multi: Allow multi-key selection and export.
-    if [ "$mode" = "--json" ] || [ "$mode" = "--yaml" ]; then
+    # if [ "$mode" = "--json" ] || [ "$mode" = "--yaml" ]; then
+    #     local output=""
+    #     while IFS= read -r key; do
+    #         local val
+    #         val=$(shell::ini_read "$file" "$section" "$key")
+    #         if [ "$mode" = "--json" ]; then
+    #             output="${output}\"$key\": \"$val\",\n"
+    #         else
+    #             output="${output}$key: $val\n"
+    #         fi
+    #     done <<<"$keys"
+
+    #     if [ "$mode" = "--json" ]; then
+    #         output="{\n${output%,\n}\n}"
+    #     fi
+
+    #     echo -e "$output"
+    #     shell::clip_value "$output"
+    #     return 0
+    # fi
+
+    # If --json mode is specified, format the output as JSON.
+    # --json: Export as JSON format.
+    if [ "$mode" = "--json" ]; then
+        local output="{"
+        local first=1
+        while IFS= read -r key; do
+            local val
+            val=$(shell::ini_read "$file" "$section" "$key")
+            val=$(echo "$val" | sed 's/"/\\"/g') # escape double quotes
+            if [ $first -eq 1 ]; then
+                output="$output\n  \"$key\": \"$val\""
+                first=0
+            else
+                output="$output,\n  \"$key\": \"$val\""
+            fi
+        done <<<"$keys"
+        output="$output\n}"
+        echo -e "$output"
+        shell::clip_value "$output"
+        return 0
+    fi
+
+    # If --yaml mode is specified, format the output as YAML.
+    # --yaml: Export as YAML format.
+    if [ "$mode" = "--yaml" ]; then
         local output=""
         while IFS= read -r key; do
             local val
             val=$(shell::ini_read "$file" "$section" "$key")
-            if [ "$mode" = "--json" ]; then
-                output="${output}\"$key\": \"$val\",\n"
-            else
-                output="${output}$key: $val\n"
-            fi
+            output="${output}$key: $val\n"
         done <<<"$keys"
-
-        if [ "$mode" = "--json" ]; then
-            output="{\n${output%,\n}\n}"
-        fi
-
         echo -e "$output"
         shell::clip_value "$output"
         return 0
