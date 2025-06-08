@@ -724,7 +724,6 @@ shell::ini_write() {
 
     # Validate parameters
     if [ -z "$file" ] || [ -z "$section" ] || [ -z "$key" ]; then
-        shell::colored_echo "shell::ini_write: Missing required parameters" 196
         echo "Usage: shell::ini_write [-h] <file> <section> <key> <value>"
         return 1
     fi
@@ -767,7 +766,7 @@ shell::ini_write() {
     local temp_file
     temp_file=$(shell::ini_create_temp_file)
 
-    shell::colored_echo "Writing key '$key' with value '$value' to section '$section' in file: $file" 11
+    shell::colored_echo "DEBUG: Writing key '$key' with value '$value' to section '$section' in file: $file" 244
 
     # Special handling for values with quotes or special characters (remains the same)
     # Assumes SHELL_INI_STRICT is defined.
@@ -775,6 +774,9 @@ shell::ini_write() {
         value="\"${value//\"/\\\"}\""
         shell::colored_echo "Value contains special characters, quoting: $value" 11
     fi
+
+    # Sanitize the key to ensure it is a valid variable name.
+    key=$(shell::ini_sanitize_var_name "$key")
 
     # Process the file line by line
     # Use `|| [ -n "$line" ]` to ensure the last line is processed even if it doesn't end with a newline.
