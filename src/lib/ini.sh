@@ -2924,11 +2924,11 @@ shell::fzf_view_ini_viz_super() {
     return 0
 }
 
-# shell::fzf_view_ini_viz_super function
+# shell::fzf_view_ini_viz_super_control function
 # Interactively previews all key-value pairs in each section of an INI file using fzf in a real-time wrapped vertical layout.
 #
 # Usage:
-# shell::fzf_view_ini_viz_super <file> [--json|--yaml|--multi]
+# shell::fzf_view_ini_viz_super_control <file> [--json|--yaml|--multi]
 #
 # Parameters:
 # - <file> : The path to the INI file.
@@ -2944,17 +2944,17 @@ shell::fzf_view_ini_viz_super() {
 # A [Previous Section] option is included to allow users to return to section selection.
 #
 # Example:
-# shell::fzf_view_ini_viz_super config.ini
-# shell::fzf_view_ini_viz_super config.ini --json
-# shell::fzf_view_ini_viz_super config.ini --multi
-shell::fzf_view_ini_viz_super2() {
+# shell::fzf_view_ini_viz_super_control config.ini
+# shell::fzf_view_ini_viz_super_control config.ini --json
+# shell::fzf_view_ini_viz_super_control config.ini --multi
+shell::fzf_view_ini_viz_super_control() {
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_FZF_VIEW_INI_VIZ_SUPER"
         return 0
     fi
 
     if [ $# -lt 1 ]; then
-        echo "Usage: shell::fzf_view_ini_viz_super <file> [--json|--yaml|--multi]"
+        echo "Usage: shell::fzf_view_ini_viz_super_control <file> [--json|--yaml|--multi]"
         return 1
     fi
 
@@ -3011,7 +3011,7 @@ shell::fzf_view_ini_viz_super2() {
                     printf(\" %s%s%s: %s%s%s\\n\", \"\033[36m\", kv[1], \"\033[0m\", \"\033[32m\", kv[2], \"\033[0m\")
                   }
                 ' \"$file\"" \
-                --preview-window=up:wrap:60)
+                --preview-window=up:wrap)
 
         # Check if a section was selected.
         section=$(echo "$section" | sed "s/$(echo -e "\033")[0-9;]*m//g")
