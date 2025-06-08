@@ -776,7 +776,7 @@ shell::ini_write() {
     fi
 
     # Sanitize the key to ensure it is a valid variable name.
-    key=$(shell::ini_sanitize_var_name "$key")
+    key=$(shell::sanitize_upper_var_name "$key")
 
     # Process the file line by line
     # Use `|| [ -n "$line" ]` to ensure the last line is processed even if it doesn't end with a newline.
@@ -1641,50 +1641,6 @@ shell::ini_key_exists() {
     fi
 }
 
-# shell::ini_sanitize_var_name function
-# Converts a string into a format suitable for an environment variable name.
-# Replaces non-alphanumeric characters (except underscore) with underscores,
-# and converts to uppercase.
-#
-# Usage:
-#   shell::ini_sanitize_var_name <string>
-#
-# Parameters:
-#   - <string> : The input string (e.g., INI section or key name).
-#
-# Returns:
-#   The sanitized string suitable for a shell variable name.
-#
-# Example:
-#   sanitized=$(shell::ini_sanitize_var_name "My-Section.Key_Name") # Outputs "MY_SECTION_KEY_NAME"
-shell::ini_sanitize_var_name() {
-    local input="$1"
-    # Convert to uppercase, replace non-alphanumeric and non-underscore with underscore
-    echo "$input" | tr '[:lower:]' '[:upper:]' | sed -e 's/[^A-Z0-9_]/_/g'
-}
-
-# shell::ini_sanitize_lower_var_name function
-# Converts a string into a format suitable for a lower-case environment variable name.
-# Replaces non-alphanumeric characters (except underscore) with underscores,
-# and converts to lowercase.
-#
-# Usage:
-#   shell::ini_sanitize_lower_var_name <string>
-#
-# Parameters:
-#   - <string> : The input string (e.g., INI section or key name).
-#
-# Returns:
-#   The sanitized string suitable for a lower-case shell variable name.
-#
-# Example:
-#   sanitized=$(shell::ini_sanitize_lower_var_name "My-Section.Key_Name") # Outputs "my_section_key_name"
-shell::ini_sanitize_lower_var_name() {
-    local input="$1"
-    # Convert to lowercase, replace non-alphanumeric and non-underscore with underscore
-    echo "$input" | tr '[:upper:]' '[:lower:]' | sed -e 's/[^a-z0-9_]/_/g'
-}
-
 # shell::ini_expose_env function
 # Exports key-value pairs from an INI file as environment variables.
 #
@@ -1788,14 +1744,14 @@ shell::ini_expose_env() {
             # Only export if shell::ini_read was successful (key found and read).
             if [ $read_status -eq 0 ]; then
                 local sanitized_section
-                sanitized_section=$(shell::ini_sanitize_var_name "$section")
+                sanitized_section=$(shell::sanitize_upper_var_name "$section")
                 local sanitized_key
-                sanitized_key=$(shell::ini_sanitize_var_name "$key")
+                sanitized_key=$(shell::sanitize_upper_var_name "$key")
 
                 local var_name
                 if [ -n "$prefix" ]; then
                     local sanitized_prefix
-                    sanitized_prefix=$(shell::ini_sanitize_var_name "$prefix")
+                    sanitized_prefix=$(shell::sanitize_upper_var_name "$prefix")
                     var_name="${sanitized_prefix}_${sanitized_section}_${sanitized_key}"
                 else
                     var_name="${sanitized_section}_${sanitized_key}"
@@ -1828,14 +1784,14 @@ shell::ini_expose_env() {
 
                 if [ $read_status -eq 0 ]; then
                     local sanitized_section
-                    sanitized_section=$(shell::ini_sanitize_var_name "$current_section")
+                    sanitized_section=$(shell::sanitize_upper_var_name "$current_section")
                     local sanitized_key
-                    sanitized_key=$(shell::ini_sanitize_var_name "$key")
+                    sanitized_key=$(shell::sanitize_upper_var_name "$key")
 
                     local var_name
                     if [ -n "$prefix" ]; then
                         local sanitized_prefix
-                        sanitized_prefix=$(shell::ini_sanitize_var_name "$prefix")
+                        sanitized_prefix=$(shell::sanitize_upper_var_name "$prefix")
                         var_name="${sanitized_prefix}_${sanitized_section}_${sanitized_key}"
                     else
                         var_name="${sanitized_section}_${sanitized_key}"
@@ -1939,17 +1895,17 @@ shell::ini_destroy_keys() {
         fi
 
         local sanitized_section
-        sanitized_section=$(shell::ini_sanitize_var_name "$section")
+        sanitized_section=$(shell::sanitize_upper_var_name "$section")
 
         # Safely read keys line by line using process substitution.
         while IFS= read -r key; do
             local sanitized_key
-            sanitized_key=$(shell::ini_sanitize_var_name "$key")
+            sanitized_key=$(shell::sanitize_upper_var_name "$key")
 
             local var_name
             if [ -n "$prefix" ]; then
                 local sanitized_prefix
-                sanitized_prefix=$(shell::ini_sanitize_var_name "$prefix")
+                sanitized_prefix=$(shell::sanitize_upper_var_name "$prefix")
                 var_name="${sanitized_prefix}_${sanitized_section}_${sanitized_key}"
             else
                 var_name="${sanitized_section}_${sanitized_key}"
@@ -1975,17 +1931,17 @@ shell::ini_destroy_keys() {
             fi
 
             local sanitized_section
-            sanitized_section=$(shell::ini_sanitize_var_name "$current_section")
+            sanitized_section=$(shell::sanitize_upper_var_name "$current_section")
 
             # Safely read keys from the current section.
             while IFS= read -r key; do
                 local sanitized_key
-                sanitized_key=$(shell::ini_sanitize_var_name "$key")
+                sanitized_key=$(shell::sanitize_upper_var_name "$key")
 
                 local var_name
                 if [ -n "$prefix" ]; then
                     local sanitized_prefix
-                    sanitized_prefix=$(shell::ini_sanitize_var_name "$prefix")
+                    sanitized_prefix=$(shell::sanitize_upper_var_name "$prefix")
                     var_name="${sanitized_prefix}_${sanitized_section}_${sanitized_key}"
                 else
                     var_name="${sanitized_section}_${sanitized_key}"

@@ -3120,7 +3120,7 @@ Returns:
 Notes:
   - Affects the current shell session's environment.
   - Relies on 'shell::ini_list_sections', 'shell::ini_list_keys', 'shell::ini_read',
-    'shell::ini_sanitize_var_name', and 'shell::colored_echo'.
+    'shell::sanitize_upper_var_name', and 'shell::colored_echo'.
   - If SHELL_INI_STRICT is enabled, section and key names will be validated prior
     to reading.
 "
@@ -3171,7 +3171,7 @@ Notes:
   - This function attempts to unset variables; it does not report an error if a
     variable was not found or was already unset.
   - Relies on 'shell::ini_list_sections', 'shell::ini_list_keys',
-    'shell::ini_sanitize_var_name', and 'shell::colored_echo'.
+    'shell::sanitize_upper_var_name', and 'shell::colored_echo'.
   - It does NOT rely on 'shell::ini_read' for values, only for deriving names.
 "
 

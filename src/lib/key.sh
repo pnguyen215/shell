@@ -99,7 +99,7 @@ shell::add_conf() {
 
     local key="$1"
     local value="$2"
-    key=$(shell::ini_sanitize_var_name "$key")
+    key=$(shell::sanitize_upper_var_name "$key")
 
     # Encode the value using Base64 and remove any newlines.
     local encoded_value
@@ -172,7 +172,7 @@ shell::add_conf_comment() {
     local value="$2"
     local comment="$3"
 
-    key=$(shell::ini_sanitize_var_name "$key")
+    key=$(shell::sanitize_upper_var_name "$key")
 
     # Encode the value using Base64 and remove any newlines
     local encoded_value
@@ -623,7 +623,7 @@ shell::fzf_rename_key_conf() {
     fi
 
     # sanitized key
-    new_key=$(shell::ini_sanitize_var_name "$new_key")
+    new_key=$(shell::sanitize_upper_var_name "$new_key")
 
     # Check if the new key already exists.
     local exist
