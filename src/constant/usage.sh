@@ -3666,3 +3666,19 @@ Description:
   with the key in yellow and the value in cyan. Once a key is selected, its decoded value
   is copied to the clipboard unless in dry-run mode, where the copy command is printed.
 "
+
+USAGE_SHELL_FZF_GET_INI_VIZ="
+shell::fzf_get_ini_viz function
+Interactively previews all key-value pairs in each section of an INI file using fzf in a real-time wrapped vertical layout.
+
+Usage:
+shell::fzf_get_ini_viz <file>
+
+Parameters:
+  - <file> : The path to the INI file.
+
+Description:
+This function lists all sections in the specified INI file using shell::ini_list_sections,
+and uses fzf to preview all key-value pairs in each section in real-time.
+The preview window wraps lines and simulates a tree-like layout for readability.
+"
