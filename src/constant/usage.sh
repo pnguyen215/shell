@@ -3668,11 +3668,11 @@ Description:
 "
 
 USAGE_SHELL_FZF_GET_INI_VIZ="
-shell::fzf_get_ini_viz function
+shell::fzf_view_ini_viz function
 Interactively previews all key-value pairs in each section of an INI file using fzf in a real-time wrapped vertical layout.
 
 Usage:
-shell::fzf_get_ini_viz <file>
+shell::fzf_view_ini_viz <file>
 
 Parameters:
   - <file> : The path to the INI file.

@@ -2658,11 +2658,11 @@ shell::fzf_ini_remove_sections() {
     return $success
 }
 
-# shell::fzf_get_ini_viz function
+# shell::fzf_view_ini_viz function
 # Interactively previews all key-value pairs in each section of an INI file using fzf in a real-time wrapped vertical layout.
 #
 # Usage:
-# shell::fzf_get_ini_viz <file>
+# shell::fzf_view_ini_viz <file>
 #
 # Parameters:
 # - <file> : The path to the INI file.
@@ -2673,16 +2673,16 @@ shell::fzf_ini_remove_sections() {
 # The preview window wraps lines and simulates a tree-like layout for readability.
 #
 # Example:
-# shell::fzf_get_ini_viz config.ini
-# shell::fzf_get_ini_viz -n config.ini
-shell::fzf_get_ini_viz() {
+# shell::fzf_view_ini_viz config.ini
+# shell::fzf_view_ini_viz -n config.ini
+shell::fzf_view_ini_viz() {
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_FZF_GET_INI_VIZ"
         return 0
     fi
 
     if [ $# -lt 1 ]; then
-        echo "Usage: shell::fzf_get_ini_viz [-h] <file>"
+        echo "Usage: shell::fzf_view_ini_viz [-h] <file>"
         return 1
     fi
 
