@@ -2824,24 +2824,43 @@ shell::fzf_view_ini_viz_super() {
     local normal=$(tput sgr0)
 
     local section
+    # section=$(shell::ini_list_sections "$file" |
+    #     awk -v y="$yellow" -v n="$normal" '{print y $0 n}' |
+    #     fzf --ansi \
+    #         --prompt="Select section: " \
+    #         --preview="awk -v s='{}' '
+    #           BEGIN { in_section=0; srand() }
+    #           /^\[.*\]/ {
+    #             in_section = (\$0 == \"[\" s \"]\") ? 1 : 0
+    #             next
+    #           }
+    #           in_section && /^[^#;]/ && /=/ {
+    #             split(\$0, kv, \"=\")
+    #             gsub(/^[ \t]+|[ \t]+$/, \"\", kv[1])
+    #             gsub(/^[ \t]+|[ \t]+$/, \"\", kv[2])
+    #             color = 30 + int(rand() * 8)
+    #             printf(\"  \033[1;%sm%s\033[0m: \033[0;%sm%s\033[0m\\n\", color, kv[1], color, kv[2])
+    #           }
+    #         ' \"$file\"" \
+    #         --preview-window=up:wrap:60%)
+
     section=$(shell::ini_list_sections "$file" |
         awk -v y="$yellow" -v n="$normal" '{print y $0 n}' |
         fzf --ansi \
             --prompt="Select section: " \
             --preview="awk -v s='{}' '
-              BEGIN { in_section=0; srand() }
-              /^\[.*\]/ {
-                in_section = (\$0 == \"[\" s \"]\") ? 1 : 0
-                next
-              }
-              in_section && /^[^#;]/ && /=/ {
-                split(\$0, kv, \"=\")
-                gsub(/^[ \t]+|[ \t]+$/, \"\", kv[1])
-                gsub(/^[ \t]+|[ \t]+$/, \"\", kv[2])
-                color = 30 + int(rand() * 8)
-                printf(\"  \033[1;%sm%s\033[0m: \033[0;%sm%s\033[0m\\n\", color, kv[1], color, kv[2])
-              }
-            ' \"$file\"" \
+          BEGIN { in_section=0 }
+          /^\[.*\]/ {
+            in_section = (\$0 == \"[\" s \"]\") ? 1 : 0
+            next
+          }
+          in_section && /^[^#;]/ && /=/ {
+            split(\$0, kv, \"=\")
+            gsub(/^[ \t]+|[ \t]+$/, \"\", kv[1])
+            gsub(/^[ \t]+|[ \t]+$/, \"\", kv[2])
+            printf(\"├─ %s%s%s: %s%s%s\\n\", \"\033[36m\", kv[1], \"\033[0m\", \"\033[32m\", kv[2], \"\033[0m\")
+          }
+        ' \"$file\"" \
             --preview-window=up:wrap:60%)
 
     section=$(echo "$section" | sed "s/$(echo -e "\033")[0-9;]*m//g")
