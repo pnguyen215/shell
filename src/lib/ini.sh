@@ -610,7 +610,7 @@ shell::ini_section_exists() {
     local escaped_section
     escaped_section=$(shell::ini_escape_for_regex "$section")
 
-    shell::colored_echo "Checking if section '$section' exists in file: $file" 11
+    shell::colored_echo "DEBUG: Checking if section '$section' exists in file: $file" 244
 
     # Check if section exists
     grep -q "^\[$escaped_section\]" "$file"
@@ -944,7 +944,7 @@ shell::ini_remove_section() {
         return 0
     fi
 
-    shell::colored_echo "Removing section '$section' from file: $file" 11
+    shell::colored_echo "DEBUG: Removing section '$section' from file: $file" 244
 
     local section_pattern="^\[$escaped_section\]" # Regex for the target section header
     local any_section_pattern="^\[[^]]+\]"        # Regex for any section header
@@ -2377,7 +2377,7 @@ shell::ini_clone_section() {
         return 1
     fi
 
-    shell::colored_echo "Cloning section '$source_section' to '$destination_section' in file: $file" 11
+    shell::colored_echo "DEBUG: Cloning section '$source_section' to '$destination_section' in file: $file" 244
 
     local escaped_source_section
     escaped_source_section=$(shell::ini_escape_for_regex "$source_section")
@@ -2532,14 +2532,14 @@ shell::fzf_ini_clone_section() {
         return 1
     fi
 
-    shell::colored_echo "Selected section for cloning: '$selected_section'" 33
+    shell::colored_echo "DEBUG: Selected section for cloning: '$selected_section'" 244
 
     # Prompt for the new section name, with "_clone" appended as a suggestion.
     shell::colored_echo ">> Enter new section name (e.g., ${selected_section}_clone):" 33
     read -r new_section_name
     if [ -z "$new_section_name" ]; then
         new_section_name="${selected_section}_clone"
-        shell::colored_echo "Using default new section name: '$new_section_name'" 11
+        shell::colored_echo "DEBUG: Using default new section name: '$new_section_name'" 244
     fi
 
     # Perform the clone operation using shell::ini_clone_section
@@ -2626,7 +2626,7 @@ shell::fzf_ini_remove_sections() {
         return 1
     fi
 
-    shell::colored_echo "Selected sections for removal: ${selected_sections[*]}" 33
+    shell::colored_echo "DEBUG: Selected sections for removal: ${selected_sections[*]}" 244
 
     local success=0
     # Process each selected section
