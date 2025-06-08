@@ -2657,3 +2657,76 @@ shell::fzf_ini_remove_sections() {
 
     return $success
 }
+
+# shell::fzf_get_ini_viz function
+# Interactively previews all key-value pairs in each section of an INI file using fzf in a real-time wrapped vertical layout.
+#
+# Usage:
+# shell::fzf_get_ini_viz [-n] <file>
+#
+# Parameters:
+# - -n : Optional dry-run flag. If provided, the preview command is printed using shell::on_evict instead of executed.
+# - <file> : The path to the INI file.
+#
+# Description:
+# This function lists all sections in the specified INI file using shell::ini_list_sections,
+# and uses fzf to preview all key-value pairs in each section in real-time.
+# The preview window wraps lines and simulates a tree-like layout for readability.
+#
+# Example:
+# shell::fzf_get_ini_viz config.ini
+# shell::fzf_get_ini_viz -n config.ini
+shell::fzf_get_ini_viz() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_GET_INI_VIZ"
+        return 0
+    fi
+
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if [ $# -lt 1 ]; then
+        echo "Usage: shell::fzf_get_ini_viz [-n] <file>"
+        return 1
+    fi
+
+    local file="$1"
+
+    if [ ! -f "$file" ]; then
+        shell::colored_echo "ERR: File not found: $file" 196
+        return 1
+    fi
+
+    shell::install_package fzf || {
+        shell::colored_echo "ERR: fzf is required but could not be installed." 196
+        return 1
+    }
+
+    local preview_cmd
+    preview_cmd="awk -v section='{}' '
+    BEGIN { in_section=0 }
+    /^\[.*\]/ {
+      in_section = (\$0 == \"[\" section \"]\") ? 1 : 0
+      next
+    }
+    in_section && /^[^#;]/ && /=/ {
+      key=\$0
+      gsub(/^[ \t]+|[ \t]+$/, \"\", key)
+      print \"  ├─ \" key
+    }
+  ' \"$file\""
+
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "$preview_cmd"
+        return 0
+    fi
+
+    shell::ini_list_sections "$file" |
+        fzf --ansi \
+            --prompt="Select section: " \
+            --preview="$preview_cmd" \
+            --preview-window=up:wrap:60%
+}
