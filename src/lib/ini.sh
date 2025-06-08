@@ -2694,7 +2694,6 @@ shell::fzf_get_ini_viz() {
     fi
 
     local file="$1"
-
     if [ ! -f "$file" ]; then
         shell::colored_echo "ERR: File not found: $file" 196
         return 1
@@ -2705,28 +2704,57 @@ shell::fzf_get_ini_viz() {
         return 1
     }
 
-    local preview_cmd
-    preview_cmd="awk -v section='{}' '
-    BEGIN { in_section=0 }
-    /^\[.*\]/ {
-      in_section = (\$0 == \"[\" section \"]\") ? 1 : 0
-      next
-    }
-    in_section && /^[^#;]/ && /=/ {
-      key=\$0
-      gsub(/^[ \t]+|[ \t]+$/, \"\", key)
-      print \"  ├─ \" key
-    }
-  ' \"$file\""
+    local yellow=$(tput setaf 3)
+    local cyan=$(tput setaf 6)
+    local green=$(tput setaf 2)
+    local normal=$(tput sgr0)
 
-    if [ "$dry_run" = "true" ]; then
-        shell::on_evict "$preview_cmd"
-        return 0
-    fi
-
-    shell::ini_list_sections "$file" |
+    local section
+    section=$(shell::ini_list_sections "$file" |
+        awk -v y="$yellow" -v n="$normal" '{print y $0 n}' |
         fzf --ansi \
             --prompt="Select section: " \
-            --preview="$preview_cmd" \
-            --preview-window=up:wrap:60%
+            --preview="awk -v s='{}' '
+          BEGIN { in_section=0 }
+          /^\[.*\]/ {
+            in_section = (\$0 == \"[\" s \"]\") ? 1 : 0
+            next
+          }
+          in_section && /^[^#;]/ && /=/ {
+            split(\$0, kv, \"=\")
+            gsub(/^[ \t]+|[ \t]+$/, \"\", kv[1])
+            gsub(/^[ \t]+|[ \t]+$/, \"\", kv[2])
+            printf(\"  ├─ %s%s%s: %s%s%s\\n\", \"\033[36m\", kv[1], \"\033[0m\", \"\033[32m\", kv[2], \"\033[0m\")
+          }
+        ' \"$file\"" \
+            --preview-window=up:wrap:60%)
+
+    section=$(echo "$section" | sed "s/$(echo -e "\033")[0-9;]*m//g")
+    if [ -z "$section" ]; then
+        shell::colored_echo "ERR: No section selected." 196
+        return 1
+    fi
+
+    local key
+    key=$(shell::ini_list_keys "$file" "$section" |
+        awk -v c="$cyan" -v n="$normal" '{print c $0 n}' |
+        fzf --ansi --prompt="Select key in [$section]: ")
+
+    key=$(echo "$key" | sed "s/$(echo -e "\033")[0-9;]*m//g")
+    if [ -z "$key" ]; then
+        shell::colored_echo "ERR: No key selected." 196
+        return 1
+    fi
+
+    local value
+    value=$(shell::ini_read "$file" "$section" "$key")
+    if [ $? -ne 0 ]; then
+        shell::colored_echo "ERR: Failed to read value for key '$key' in section '$section'." 196
+        return 1
+    fi
+
+    shell::colored_echo "DEBUG: [s] Section: $section" 244
+    shell::colored_echo "DEBUG: [k] Key: $key" 244
+    shell::colored_echo "DEBUG: [v] Value: $value" 244
+    shell::clip_value "$value"
 }
