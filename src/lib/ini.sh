@@ -2852,31 +2852,6 @@ shell::fzf_view_ini_viz_super() {
         return 1
     fi
 
-    # If --json or --yaml mode is specified, format the output accordingly.
-    # --json: Export as JSON format.
-    # --yaml: Export as YAML format.
-    # --multi: Allow multi-key selection and export.
-    # if [ "$mode" = "--json" ] || [ "$mode" = "--yaml" ]; then
-    #     local output=""
-    #     while IFS= read -r key; do
-    #         local val
-    #         val=$(shell::ini_read "$file" "$section" "$key")
-    #         if [ "$mode" = "--json" ]; then
-    #             output="${output}\"$key\": \"$val\",\n"
-    #         else
-    #             output="${output}$key: $val\n"
-    #         fi
-    #     done <<<"$keys"
-
-    #     if [ "$mode" = "--json" ]; then
-    #         output="{\n${output%,\n}\n}"
-    #     fi
-
-    #     echo -e "$output"
-    #     shell::clip_value "$output"
-    #     return 0
-    # fi
-
     # If --json mode is specified, format the output as JSON.
     # --json: Export as JSON format.
     if [ "$mode" = "--json" ]; then
@@ -2886,6 +2861,7 @@ shell::fzf_view_ini_viz_super() {
             local val
             val=$(shell::ini_read "$file" "$section" "$key")
             val=$(echo "$val" | sed 's/"/\\"/g') # escape double quotes
+            key=$(shell::sanitize_lower_var_name "$key")
             if [ $first -eq 1 ]; then
                 output="$output\n  \"$key\": \"$val\""
                 first=0
@@ -2906,6 +2882,7 @@ shell::fzf_view_ini_viz_super() {
         while IFS= read -r key; do
             local val
             val=$(shell::ini_read "$file" "$section" "$key")
+            key=$(shell::sanitize_lower_var_name "$key")
             output="${output}$key: $val\n"
         done <<<"$keys"
         echo -e "$output"
@@ -2939,6 +2916,7 @@ shell::fzf_view_ini_viz_super() {
         value=$(shell::ini_read "$file" "$section" "$key")
         shell::colored_echo "DEBUG: [k] $key" 244
         shell::colored_echo "INFO: [v] $value" 46
+        key=$(shell::sanitize_lower_var_name "$key")
         output="${output}$key=$value\n"
     done <<<"$key_selection"
 
