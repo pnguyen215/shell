@@ -3104,3 +3104,78 @@ shell::fzf_view_ini_viz_super_control() {
         return 0
     done
 }
+
+# shell::fzf_edit_ini_viz function
+# Interactively edits or renames a key in an INI file using fzf.
+#
+# Usage:
+# shell::fzf_edit_ini_viz <file>
+#
+# Parameters:
+# - <file> : The path to the INI file.
+#
+# Description:
+# This function allows the user to select a section and a key from an INI file,
+# then choose to either edit the value of the key or rename the key.
+# It uses fzf for interactive selection and sed for in-place editing.
+#
+# Example:
+# shell::fzf_edit_ini_viz config.ini
+shell::fzf_edit_ini_viz() {
+    if [ "$1" = "-h" ]; then
+        echo "Usage: shell::fzf_edit_ini_viz <file>"
+        return 0
+    fi
+
+    if [ $# -lt 1 ]; then
+        echo "Usage: shell::fzf_edit_ini_viz <file>"
+        return 1
+    fi
+
+    local file="$1"
+    if [ ! -f "$file" ]; then
+        shell::colored_echo "ERR: File not found: $file" 196
+        return 1
+    fi
+
+    shell::install_package fzf
+
+    local section
+    section=$(shell::ini_list_sections "$file" | fzf --prompt="Select section to edit: ")
+    if [ -z "$section" ]; then
+        shell::colored_echo "ERR: No section selected." 196
+        return 1
+    fi
+
+    local key
+    key=$(shell::ini_list_keys "$file" "$section" | fzf --prompt="Select key to edit/rename: ")
+    if [ -z "$key" ]; then
+        shell::colored_echo "ERR: No key selected." 196
+        return 1
+    fi
+
+    shell::colored_echo "Choose action for key '$key' in section [$section]:" 33
+    select action in "Edit Value" "Rename Key" "Cancel"; do
+        case $REPLY in
+        1)
+            shell::colored_echo "Enter new value for '$key':" 33
+            read -r new_value
+            shell::ini_write "$file" "$section" "$key" "$new_value"
+            return $?
+            ;;
+        2)
+            shell::colored_echo "Enter new name for key '$key':" 33
+            read -r new_key
+            shell::rename_key_conf_profile "$file" "$section" "$key" "$new_key"
+            return $?
+            ;;
+        3)
+            shell::colored_echo "Cancelled." 11
+            return 0
+            ;;
+        *)
+            shell::colored_echo "Invalid option." 196
+            ;;
+        esac
+    done
+}
