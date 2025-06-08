@@ -2702,7 +2702,7 @@ shell::fzf_view_ini_viz() {
             split(\$0, kv, \"=\")
             gsub(/^[ \t]+|[ \t]+$/, \"\", kv[1])
             gsub(/^[ \t]+|[ \t]+$/, \"\", kv[2])
-            printf(\"├─ %s%s%s: %s%s%s\\n\", \"\033[36m\", kv[1], \"\033[0m\", \"\033[32m\", kv[2], \"\033[0m\")
+            printf(\" %s%s%s: %s%s%s\\n\", \"\033[36m\", kv[1], \"\033[0m\", \"\033[32m\", kv[2], \"\033[0m\")
           }
         ' \"$file\"" \
             --preview-window=up:wrap:60%)
@@ -2830,7 +2830,7 @@ shell::fzf_view_ini_viz_super() {
             split(\$0, kv, \"=\")
             gsub(/^[ \t]+|[ \t]+$/, \"\", kv[1])
             gsub(/^[ \t]+|[ \t]+$/, \"\", kv[2])
-            printf(\"├─ %s%s%s: %s%s%s\\n\", \"\033[36m\", kv[1], \"\033[0m\", \"\033[32m\", kv[2], \"\033[0m\")
+            printf(\" %s%s%s: %s%s%s\\n\", \"\033[36m\", kv[1], \"\033[0m\", \"\033[32m\", kv[2], \"\033[0m\")
           }
         ' \"$file\"" \
             --preview-window=up:wrap:60%)
