@@ -3707,3 +3707,20 @@ shell::fzf_view_ini_viz_super config.ini
 shell::fzf_view_ini_viz_super config.ini --json
 shell::fzf_view_ini_viz_super config.ini --multi
 "
+
+USAGE_SHELL_FZF_EDIT_INI_VIZ="
+shell::fzf_edit_ini_viz function
+Interactively edits or renames a key in an INI file using fzf.
+
+Usage:
+shell::fzf_edit_ini_viz [-h] <file>
+
+Parameters:
+  - -h        : Optional. Displays this help message.
+  - <file>    : The path to the INI file.
+
+Description:
+This function allows the user to select a section and a key from an INI file,
+then choose to either edit the value of the key or rename the key.
+It uses fzf for interactive selection and sed for in-place editing.
+"

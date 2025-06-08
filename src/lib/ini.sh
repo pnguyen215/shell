@@ -3123,7 +3123,7 @@ shell::fzf_view_ini_viz_super_control() {
 # shell::fzf_edit_ini_viz config.ini
 shell::fzf_edit_ini_viz() {
     if [ "$1" = "-h" ]; then
-        echo "Usage: shell::fzf_edit_ini_viz <file>"
+        echo "$USAGE_SHELL_FZF_EDIT_INI_VIZ"
         return 0
     fi
 
