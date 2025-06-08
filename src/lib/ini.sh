@@ -2923,3 +2923,184 @@ shell::fzf_view_ini_viz_super() {
     shell::clip_value "$output"
     return 0
 }
+
+# shell::fzf_view_ini_viz_super function
+# Interactively previews all key-value pairs in each section of an INI file using fzf in a real-time wrapped vertical layout.
+#
+# Usage:
+# shell::fzf_view_ini_viz_super <file> [--json|--yaml|--multi]
+#
+# Parameters:
+# - <file> : The path to the INI file.
+# - --json : Optional. Export the selected section as JSON.
+# - --yaml : Optional. Export the selected section as YAML.
+# - --multi : Optional. Allow multi-key selection and export.
+#
+# Description:
+# This function lists all sections in the specified INI file using shell::ini_list_sections,
+# and uses fzf to preview all key-value pairs in each section in real-time.
+# The preview window wraps lines and simulates a tree-like layout for readability.
+# It supports exporting the selected section as JSON or YAML, or selecting multiple keys for export.
+# A [Previous Section] option is included to allow users to return to section selection.
+#
+# Example:
+# shell::fzf_view_ini_viz_super config.ini
+# shell::fzf_view_ini_viz_super config.ini --json
+# shell::fzf_view_ini_viz_super config.ini --multi
+shell::fzf_view_ini_viz_super2() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_VIEW_INI_VIZ_SUPER"
+        return 0
+    fi
+
+    if [ $# -lt 1 ]; then
+        echo "Usage: shell::fzf_view_ini_viz_super <file> [--json|--yaml|--multi]"
+        return 1
+    fi
+
+    local file="$1"
+    shift
+    local mode=""
+    local multi="false"
+
+    # Process additional options: --json, --yaml, --multi
+    # These options determine how the selected section will be exported.
+    for arg in "$@"; do
+        case "$arg" in
+        --json | --yaml) mode="$arg" ;;
+        --multi) multi="true" ;;
+        esac
+    done
+
+    # Validate the file parameter.
+    # Ensure the file exists and is readable.
+    if [ ! -f "$file" ]; then
+        shell::colored_echo "ERR: File not found: $file" 196
+        return 1
+    fi
+
+    # Ensure fzf is installed.
+    shell::install_package fzf
+
+    # Set up color variables for fzf preview.
+    # Using tput to set colors for better visibility.
+    local yellow=$(tput setaf 3)
+    local cyan=$(tput setaf 6)
+    local green=$(tput setaf 2)
+    local normal=$(tput sgr0)
+
+    # Begin interactive loop to allow returning to section selection.
+    while true; do
+        # List sections and use fzf to select one.
+        # The preview command uses awk to format the output in a tree-like structure.
+        local section
+        section=$(shell::ini_list_sections "$file" |
+            awk -v y="$yellow" -v n="$normal" '{print y $0 n}' |
+            fzf --ansi \
+                --prompt="Select section: " \
+                --preview="awk -v s='{}' '
+                  BEGIN { in_section=0 }
+                  /^\[.*\]/ {
+                    in_section = (\$0 == \"[\" s \"]\") ? 1 : 0
+                    next
+                  }
+                  in_section && /^[^#;]/ && /=/ {
+                    split(\$0, kv, \"=\")
+                    gsub(/^[ \t]+|[ \t]+$/, \"\", kv[1])
+                    gsub(/^[ \t]+|[ \t]+$/, \"\", kv[2])
+                    printf(\" %s%s%s: %s%s%s\\n\", \"\033[36m\", kv[1], \"\033[0m\", \"\033[32m\", kv[2], \"\033[0m\")
+                  }
+                ' \"$file\"" \
+                --preview-window=up:wrap:60)
+
+        # Check if a section was selected.
+        section=$(echo "$section" | sed "s/$(echo -e "\033")[0-9;]*m//g")
+        if [ -z "$section" ]; then
+            shell::colored_echo "ERR: No section selected." 196
+            return 1
+        fi
+
+        # Read all keys in the selected section.
+        local keys
+        keys=$(shell::ini_list_keys "$file" "$section")
+        if [ -z "$keys" ]; then
+            shell::colored_echo "WARN: No keys found in section '$section'." 33
+            continue
+        fi
+
+        # If --json mode is specified, format the output as JSON.
+        if [ "$mode" = "--json" ]; then
+            local output="{"
+            local first=1
+            while IFS= read -r key; do
+                local val
+                val=$(shell::ini_read "$file" "$section" "$key")
+                val=$(echo "$val" | sed 's/"/\\"/g')
+                key=$(shell::sanitize_lower_var_name "$key")
+                if [ $first -eq 1 ]; then
+                    output="$output\n  \"$key\": \"$val\""
+                    first=0
+                else
+                    output="$output,\n  \"$key\": \"$val\""
+                fi
+            done <<<"$keys"
+            output="$output\n}"
+            echo -e "$output"
+            shell::clip_value "$output"
+            return 0
+        fi
+
+        # If --yaml mode is specified, format the output as YAML.
+        if [ "$mode" = "--yaml" ]; then
+            local output=""
+            while IFS= read -r key; do
+                local val
+                val=$(shell::ini_read "$file" "$section" "$key")
+                key=$(shell::sanitize_lower_var_name "$key")
+                output="${output}$key: $val\n"
+            done <<<"$keys"
+            echo -e "$output"
+            shell::clip_value "$output"
+            return 0
+        fi
+
+        # If --multi is specified, allow multi-key selection.
+        # Add [Previous Section] as the first option.
+        local key_selection
+        key_selection=$( (
+            echo "[Previous Section]"
+            echo "$keys"
+        ) |
+            fzf --ansi ${multi:+--multi} --prompt="Select key(s) in [$section]: ")
+
+        # Clean ANSI color codes from selection.
+        key_selection=$(echo "$key_selection" | sed "s/$(echo -e "\033")[0-9;]*m//g")
+
+        # If no key was selected, return with error.
+        if [ -z "$key_selection" ]; then
+            shell::colored_echo "ERR: No key selected." 196
+            return 1
+        fi
+
+        # If user selected [Previous Section], restart loop.
+        if [ "$key_selection" = "[Previous Section]" ]; then
+            continue
+        fi
+
+        # Process the selected keys and read their values.
+        # The values are colored for better visibility.
+        local output=""
+        while IFS= read -r key; do
+            key=$(echo "$key" | sed "s/$(echo -e "\033")[0-9;]*m//g")
+            local value
+            value=$(shell::ini_read "$file" "$section" "$key")
+            shell::colored_echo "DEBUG: [k] $key" 244
+            shell::colored_echo "INFO: [v] $value" 46
+            key=$(shell::sanitize_lower_var_name "$key")
+            output="${output}$key=$value\n"
+        done <<<"$key_selection"
+
+        shell::clip_value "$output"
+        return 0
+    done
+}
