@@ -2684,6 +2684,11 @@ shell::fzf_view_ini_viz() {
     local normal=$(tput sgr0)
     local os_type
     os_type=$(shell::get_os_type)
+
+    # Determine the base64 decode command based on the OS type.
+    # This is used to decode values that might be base64 encoded.
+    # macOS uses 'base64 -D', while Linux typically uses 'base64 -d'.
+    # This ensures compatibility across different operating systems.
     local decode_cmd
     [ "$os_type" = "macos" ] && decode_cmd="base64 -D" || decode_cmd="base64 -d"
 
@@ -2708,26 +2713,6 @@ shell::fzf_view_ini_viz() {
     #         gsub(/^[ \t]+|[ \t]+$/, \"\", kv[2])
     #         printf(\" %s%s%s: %s%s%s\\n\", \"\033[36m\", kv[1], \"\033[0m\", \"\033[32m\", kv[2], \"\033[0m\")
     #       }
-    #     ' \"$file\"" \
-    #         --preview-window=up:wrap:60%)
-
-    # section=$(shell::ini_list_sections "$file" |
-    #     awk -v y="$yellow" -v n="$normal" '{print y $0 n}' |
-    #     fzf --ansi \
-    #         --prompt="Select section: " \
-    #         --preview="awk -v s='{}' '
-    #         BEGIN { in_section=0 }
-    #         /^\[.*\]/ {
-    #             in_section = (\$0 == \"[\" s \"]\") ? 1 : 0
-    #             next
-    #         }
-    #         in_section && /^[^#;]/ && /=/ {
-    #             split(\$0, kv, \"=\")
-    #             cmd = \"echo \" kv[2] \" | $decode_cmd\"
-    #             cmd | getline decoded
-    #             close(cmd)
-    #             printf(\" %s%s%s: %s%s%s\\n\", \"\033[36m\", kv[1], \"\033[0m\", \"\033[32m\", decoded, \"\033[0m\")
-    #         }
     #     ' \"$file\"" \
     #         --preview-window=up:wrap:60%)
 
