@@ -114,8 +114,25 @@ shell::sanitize_first_upper_var_name() {
 #   sanitized=$(shell::sanitize_first_lower_var_name "My-Section.Key_Name") # Outputs "my_section_key_name"
 shell::sanitize_first_lower_var_name() {
     local input="$1"
-    # Convert first character to lowercase, replace non-alphanumeric and non-underscore with underscore
-    echo "$input" | sed -e 's/^\(.\)/\L\1/' -e 's/[^a-z0-9_]/_/g'
+
+    # Handle empty input gracefully
+    if [ -z "$input" ]; then
+        echo ""
+        return
+    fi
+
+    local lowercased_string
+    # Convert the entire input string to lowercase first to match the example's desired output
+    # (all characters after the first are also lowercased if they were uppercase).
+    lowercased_string=$(echo "$input" | tr '[:upper:]' '[:lower:]')
+
+    # Sanitize the lowercased string using the same robust tr command:
+    # - Replaces all non-alphanumeric and non-underscore characters with a single underscore.
+    local sanitized_output
+    sanitized_output=$(echo "$lowercased_string" | tr -cs '[:alnum:]_' '_')
+
+    # Remove any leading or trailing underscores that might have been introduced by tr.
+    echo "$sanitized_output" | sed 's/^_//;s/_$//'
 }
 
 # shell::camel_case function
