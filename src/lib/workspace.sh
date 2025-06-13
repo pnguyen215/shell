@@ -41,7 +41,7 @@ shell::add_workspace() {
     local dir="$base/$name"
     local profile="$dir/profile.conf"
     local ssh_dir="$dir/.ssh"
-    local ssh_files=("db.conf" "redis.conf" "rmq.conf" "wordpress.conf")
+    local ssh_files=("server.conf" "db.conf" "redis.conf" "rmq.conf" "ast.conf" "kafka.conf" "zookeeper.conf" "nginx.conf" "web.conf" "app.conf" "api.conf" "cache.conf" "search.conf")
 
     # Check if workspace already exists
     # If the directory already exists, we return an error
