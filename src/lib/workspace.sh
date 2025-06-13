@@ -722,6 +722,7 @@ shell::clone_workspace() {
         shell::on_evict "$cmd"
     else
         shell::run_cmd_eval "$cmd"
+        shell::unlock_permissions "$destination_dir"
         shell::colored_echo "INFO: Workspace cloned from '$source' to '$destination'" 46
     fi
 }
