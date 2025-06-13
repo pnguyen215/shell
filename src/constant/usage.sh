@@ -3791,3 +3791,19 @@ This function locates all .conf files under $SHELL_CONF_WORKING_WORKSPACE/<works
 and uses fzf to let the user select one. The selected file is then passed to shell::fzf_edit_ini_viz
 for editing.
 "
+
+USAGE_SHELL_FZF_REMOVE_WORKSPACE="
+shell::fzf_remove_workspace function
+Interactively selects a workspace using fzf and removes it after confirmation.
+
+Usage:
+shell::fzf_remove_workspace [-n] [-h]
+
+Parameters:
+  - -n : Optional dry-run flag. If provided, the removal command is printed using shell::on_evict instead of executed.
+  - -h : Optional. Displays this help message.
+
+Description:
+This function lists all workspace directories under $SHELL_CONF_WORKING_WORKSPACE,
+uses fzf to let the user select one, and then calls shell::remove_workspace to delete it.
+"

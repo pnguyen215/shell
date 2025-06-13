@@ -289,3 +289,64 @@ shell::fzf_edit_workspace() {
     # Call shell::fzf_edit_ini_viz to edit the selected file
     shell::fzf_edit_ini_viz "$selected_file"
 }
+
+# shell::fzf_remove_workspace function
+# Interactively selects a workspace using fzf and removes it after confirmation.
+#
+# Usage:
+# shell::fzf_remove_workspace [-n]
+#
+# Parameters:
+# - -n : Optional dry-run flag. If provided, the removal command is printed using shell::on_evict instead of executed.
+#
+# Description:
+# This function lists all workspace directories under $SHELL_CONF_WORKING_WORKSPACE,
+# uses fzf to let the user select one, and then calls shell::remove_workspace to delete it.
+#
+# Example:
+# shell::fzf_remove_workspace
+shell::fzf_remove_workspace() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_REMOVE_WORKSPACE"
+        return 0
+    fi
+
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    local base="$SHELL_CONF_WORKING_WORKSPACE"
+    local workspace_dir="$base"
+
+    # Check if workspace directory exists
+    if [ ! -d "$workspace_dir" ]; then
+        shell::colored_echo "ERR: Workspace directory '$workspace_dir' not found." 196
+        return 1
+    fi
+
+    # Ensure fzf is installed
+    shell::install_package fzf
+
+    # List all workspace directories and use fzf to select one
+    # We use find to locate directories under the workspace directory
+    local selected
+    selected=$(find "$workspace_dir" -mindepth 1 -maxdepth 1 -type d |
+        xargs -n 1 basename |
+        fzf --prompt="Select workspace to remove: ")
+
+    # If no workspace was selected, we print an error message and return
+    if [ -z "$selected" ]; then
+        shell::colored_echo "ERR: No workspace selected." 196
+        return 1
+    fi
+
+    # If the dry mode is enabled, we print the command to remove the workspace
+    # This allows us to see what would be done without actually deleting anything
+    if [ "$dry_run" = "true" ]; then
+        shell::remove_workspace -n "$selected"
+    else
+        shell::remove_workspace "$selected"
+    fi
+}
