@@ -3826,3 +3826,20 @@ This function renames a workspace directory under $SHELL_CONF_WORKING_WORKSPACE
 from <old_name> to <new_name>. It checks for the existence of the old workspace
 and ensures the new name does not already exist. If valid, it renames the directory.
 "
+
+USAGE_SHELL_FZF_RENAME_WORKSPACE="
+shell::fzf_rename_workspace function
+Interactively selects a workspace using fzf and renames it.
+
+Usage:
+shell::fzf_rename_workspace [-n] [-h]
+
+Parameters:
+  - -n : Optional dry-run flag. If provided, the rename command is printed using shell::on_evict instead of executed.
+  - -h : Optional. Displays this help message.
+
+Description:
+This function lists all workspace directories under $SHELL_CONF_WORKING_WORKSPACE,
+uses fzf to let the user select one, prompts for a new name, and then calls shell::rename_workspace
+to rename the selected workspace.
+"

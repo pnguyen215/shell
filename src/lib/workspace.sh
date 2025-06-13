@@ -428,3 +428,79 @@ shell::rename_workspace() {
         shell::colored_echo "INFO: Workspace renamed from '$old_name' to '$new_name'" 46
     fi
 }
+
+# shell::fzf_rename_workspace function
+# Interactively selects a workspace using fzf and renames it.
+#
+# Usage:
+# shell::fzf_rename_workspace [-n]
+#
+# Parameters:
+# - -n : Optional dry-run flag. If provided, the rename command is printed using shell::on_evict instead of executed.
+#
+# Description:
+# This function lists all workspace directories under $SHELL_CONF_WORKING_WORKSPACE,
+# uses fzf to let the user select one, prompts for a new name, and then calls shell::rename_workspace
+# to rename the selected workspace.
+#
+# Example:
+# shell::fzf_rename_workspace
+shell::fzf_rename_workspace() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_RENAME_WORKSPACE"
+        return 0
+    fi
+
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    local base="$SHELL_CONF_WORKING_WORKSPACE"
+    local workspace_dir="$base"
+
+    # Check if workspace directory exists
+    if [ ! -d "$workspace_dir" ]; then
+        shell::colored_echo "ERR: Workspace directory '$workspace_dir' not found." 196
+        return 1
+    fi
+
+    # Ensure fzf is installed
+    shell::install_package fzf
+
+    # List all workspace directories and use fzf to select one
+    local selected
+    selected=$(find "$workspace_dir" -mindepth 1 -maxdepth 1 -type d |
+        xargs -n 1 basename |
+        fzf --prompt="Select workspace to rename: ")
+
+    # Check if a workspace was selected
+    # If no workspace was selected, we print an error message and return
+    # This ensures the user knows they need to select a workspace
+    # We check if the selected variable is empty
+    # If it is empty, we print an error message and return
+    if [ -z "$selected" ]; then
+        shell::colored_echo "ERR: No workspace selected." 196
+        return 1
+    fi
+
+    shell::colored_echo "[e] Enter new name for workspace '$selected':" 208
+    read -r new_name
+
+    # Check if a new name was entered
+    # If no new name was entered, we print an error message and return
+    # This ensures the user knows they need to provide a new name
+    if [ -z "$new_name" ]; then
+        shell::colored_echo "ERR: No new name entered. Aborting rename." 196
+        return 1
+    fi
+
+    # If dry mode is enabled, we print the command to rename the workspace
+    # This allows us to see what would be done without actually renaming anything
+    if [ "$dry_run" = "true" ]; then
+        shell::rename_workspace -n "$selected" "$new_name"
+    else
+        shell::rename_workspace "$selected" "$new_name"
+    fi
+}
