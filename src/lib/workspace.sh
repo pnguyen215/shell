@@ -56,7 +56,7 @@ shell::add_workspace() {
     # We use touch to create the profile.conf and .ssh/*.conf files
     # The command is constructed as a single string to be executed later
     # This allows us to handle dry-run mode by simply printing the command instead of executing it
-    local cmd="sudo mkdir -p \"$ssh_dir\" && sudo touch \"$profile\""
+    local cmd="mkdir -p \"$ssh_dir\" && touch \"$profile\""
     for f in "${ssh_files[@]}"; do
         cmd="$cmd && touch \"$ssh_dir/$f\""
     done
@@ -67,6 +67,8 @@ shell::add_workspace() {
     if [ "$dry_run" = "true" ]; then
         shell::on_evict "$cmd"
     else
+        shell::create_file_if_not_exists "$profile"
+        shell::create_file_if_not_exists "$ssh_dir"
         shell::run_cmd_eval "$cmd"
         shell::colored_echo "INFO: Workspace '$name' created at '$dir'" 46
 
