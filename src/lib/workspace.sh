@@ -58,7 +58,7 @@ shell::add_workspace() {
     # This allows us to handle dry-run mode by simply printing the command instead of executing it
     local cmd="sudo mkdir -p \"$ssh_dir\" && sudo touch \"$profile\""
     for f in "${ssh_files[@]}"; do
-        cmd="$cmd && sudo touch \"$ssh_dir/$f\""
+        cmd="$cmd && touch \"$ssh_dir/$f\""
     done
 
     # If dry-run mode is enabled, we print the command instead of executing it
