@@ -154,3 +154,51 @@ shell::camel_case() {
     # Remove non-alphanumeric characters, split by underscores, capitalize first letter of each word
     echo "$input" | sed -e 's/[^a-zA-Z0-9_]/ /g' -e 's/_/ /g' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) substr($i,2)}1' | tr -d ' '
 }
+
+# shell::capitalize_each_word function
+# Capitalizes the first letter of each word in a space-separated string.
+#
+# Usage:
+#   shell::capitalize_each_word <string>
+#
+# Parameters:
+#   - <string> : The input string (e.g., "my section key name").
+#
+# Returns:
+#   The string with the first letter of each word capitalized.
+#
+# Example:
+#   capitalized=$(shell::capitalize_each_word "my section key name") # Outputs "My Section Key Name"
+shell::capitalize_each_word() {
+    local input="$1"
+    local output_words=() # Initialize an empty array to store processed words
+
+    # Handle empty input gracefully
+    if [ -z "$input" ]; then
+        echo ""
+        return
+    fi
+
+    # Read the input string word by word.
+    # The `for word in $input` syntax splits the string by default whitespace.
+    for word in $input; do
+        # Extract the first character of the current word
+        local first_char="${word:0:1}"
+        # Extract the rest of the word
+        local rest_of_word="${word:1}"
+
+        # Convert the first character to uppercase using 'tr' for portability.
+        local capitalized_first_char=$(echo "$first_char" | tr '[:lower:]' '[:upper:]')
+
+        # Combine the capitalized first character with the rest of the word.
+        local capitalized_word="${capitalized_first_char}${rest_of_word}"
+
+        # Add the processed word to our array
+        output_words+=("$capitalized_word")
+    done
+
+    # Join the words in the array back together with spaces.
+    # "${output_words[@]}" expands all elements of the array, and they are joined by
+    # the first character of IFS (Internal Field Separator), which is space by default.
+    echo "${output_words[@]}"
+}
