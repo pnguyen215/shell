@@ -3879,3 +3879,20 @@ This function clones a workspace directory under $SHELL_CONF_WORKING_WORKSPACE
 from <source_workspace> to <destination_workspace>. It checks for the existence of the source
 and ensures the destination does not already exist. If valid, it copies the entire directory.
 "
+
+USAGE_SHELL_FZF_CLONE_WORKSPACE="
+shell::fzf_clone_workspace function
+Interactively selects a workspace using fzf and clones it to a new workspace.
+
+Usage:
+shell::fzf_clone_workspace [-n] [-h]
+
+Parameters:
+  - -n : Optional dry-run flag. If provided, the clone command is printed using shell::on_evict instead of executed.
+  - -h : Optional. Displays this help message.
+
+Description:
+This function lists all workspace directories under $SHELL_CONF_WORKING_WORKSPACE,
+uses fzf to let the user select one, prompts for a new name, and then calls shell::clone_workspace
+to clone the selected workspace.
+"

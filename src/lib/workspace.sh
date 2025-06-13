@@ -726,3 +726,82 @@ shell::clone_workspace() {
         shell::colored_echo "INFO: Workspace cloned from '$source' to '$destination'" 46
     fi
 }
+
+# shell::fzf_clone_workspace function
+# Interactively selects a workspace using fzf and clones it to a new workspace.
+#
+# Usage:
+# shell::fzf_clone_workspace [-n]
+#
+# Parameters:
+# - -n : Optional dry-run flag. If provided, the clone command is printed using shell::on_evict instead of executed.
+#
+# Description:
+# This function lists all workspace directories under $SHELL_CONF_WORKING_WORKSPACE,
+# uses fzf to let the user select one, prompts for a new name, and then calls shell::clone_workspace
+# to clone the selected workspace.
+#
+# Example:
+# shell::fzf_clone_workspace
+shell::fzf_clone_workspace() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_CLONE_WORKSPACE"
+        return 0
+    fi
+
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    # Check if the workspace directory exists
+    # We check if the base directory for workspaces exists
+    # If it does not exist, we print an error message and return
+    local base="$SHELL_CONF_WORKING_WORKSPACE"
+    if [ ! -d "$base" ]; then
+        shell::colored_echo "ERR: Workspace directory '$base' not found." 196
+        return 1
+    fi
+
+    # Ensure fzf is installed
+    shell::install_package fzf
+
+    # List all workspace directories and use fzf to select one
+    # We use find to locate directories under the workspace directory
+    # We use xargs to convert the output of find into a list of directory names
+    # We use fzf to let the user select one of the directories
+    local selected
+    selected=$(find "$base" -mindepth 1 -maxdepth 1 -type d |
+        xargs -n 1 basename |
+        fzf --prompt="Select workspace to clone: ")
+
+    # Check if a workspace was selected
+    # If no workspace was selected, we print an error message and return
+    # This ensures the user knows they need to select a workspace
+    # We check if the selected variable is empty
+    # If it is empty, we print an error message and return
+    if [ -z "$selected" ]; then
+        shell::colored_echo "ERR: No workspace selected." 196
+        return 1
+    fi
+
+    shell::colored_echo "[e] Enter new name for cloned workspace of '$selected':" 208
+    read -r new_name
+
+    # Check if a new name was entered
+    # If no new name was entered, we print an error message and return
+    # This ensures the user knows they need to provide a new name
+    if [ -z "$new_name" ]; then
+        shell::colored_echo "ERR: No new name entered. Aborting clone." 196
+        return 1
+    fi
+
+    # If dry mode is enabled, we print the command to clone the workspace
+    # This allows us to see what would be done without actually cloning anything
+    if [ "$dry_run" = "true" ]; then
+        shell::clone_workspace -n "$selected" "$new_name"
+    else
+        shell::clone_workspace "$selected" "$new_name"
+    fi
+}
