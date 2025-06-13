@@ -905,32 +905,32 @@ shell::dump_workspace_json() {
     # These fields correspond to the keys in the .conf file
     # We use an array to store the field names
     # This allows us to easily iterate over the fields later
-    local all_fields=(
-        SSH_DESC
-        SSH_PRIVATE_KEY_REF
-        SSH_SERVER_ADDR
-        SSH_SERVER_PORT
-        SSH_SERVER_USER
-        SSH_LOCAL_ADDR
-        SSH_LOCAL_PORT
-    )
+    # local all_fields=(
+    #     SSH_DESC
+    #     SSH_PRIVATE_KEY_REF
+    #     SSH_SERVER_ADDR
+    #     SSH_SERVER_PORT
+    #     SSH_SERVER_USER
+    #     SSH_LOCAL_ADDR
+    #     SSH_LOCAL_PORT
+    # )
 
     # Use fzf to select fields to export
     # We use printf to create a list of all fields, which is then piped into fzf
     # We use --multi to allow the user to select multiple fields
     # We use --prompt to customize the prompt message shown to the user
-    local selected_fields
-    selected_fields=$(printf "%s\n" "${all_fields[@]}" |
-        fzf --multi --prompt="Select fields to export as JSON: ")
+    # local selected_fields
+    # selected_fields=$(printf "%s\n" "${all_fields[@]}" |
+    #     fzf --multi --prompt="Select fields to export as JSON: ")
 
     # Check if any fields were selected
     # If no fields were selected, we print an error message and return
     # This ensures the user knows they need to select at least one field
     # We check if the selected_fields variable is empty
-    if [ -z "$selected_fields" ]; then
-        shell::colored_echo "ERR: No fields selected. Aborting." 196
-        return 1
-    fi
+    # if [ -z "$selected_fields" ]; then
+    #     shell::colored_echo "ERR: No fields selected. Aborting." 196
+    #     return 1
+    # fi
 
     # Get the name of the .conf file
     # We use basename to extract the file name from the full path
@@ -945,7 +945,27 @@ shell::dump_workspace_json() {
     # We use shell::ini_read to read the values for each field
     # We use shell::sanitize_lower_var_name to ensure the keys are valid JSON keys
     # We build the JSON string incrementally
-    # local json="{ \"$workspace\": {"
+    # local json="{ \"$workspace\": { \"$config_name\": {"
+    # local first_section=1
+    # while IFS= read -r section; do
+    #     [ $first_section -eq 0 ] && json+=","
+    #     json+=" \"$section\": {"
+    #     local first_field=1
+    #     while IFS= read -r key; do
+    #         local value
+    #         # value=$(shell::ini_read "$conf_file" "$section" "$key" 2>/dev/null)
+    #         # value=$(shell::ini_read "$conf_file" "$section" "$key" 2>/dev/null | tail -n 1)
+    #         value=$(shell::ini_read "$conf_file" "$section" "$key" 2>/dev/null | sed 's/^value=//')
+    #         [ $first_field -eq 0 ] && json+=","
+    #         key=$(shell::sanitize_lower_var_name "$key") # Ensure the key is a valid JSON key
+    #         json+=" \"$key\": \"${value}\""
+    #         first_field=0
+    #     done <<<"$selected_fields"
+    #     json+=" }"
+    #     first_section=0
+    # done <<<"$sections"
+    # json+=" } } }"
+
     local json="{ \"$workspace\": { \"$config_name\": {"
     local first_section=1
     while IFS= read -r section; do
@@ -954,18 +974,17 @@ shell::dump_workspace_json() {
         local first_field=1
         while IFS= read -r key; do
             local value
-            # value=$(shell::ini_read "$conf_file" "$section" "$key" 2>/dev/null)
-            # value=$(shell::ini_read "$conf_file" "$section" "$key" 2>/dev/null | tail -n 1)
             value=$(shell::ini_read "$conf_file" "$section" "$key" 2>/dev/null | sed 's/^value=//')
             [ $first_field -eq 0 ] && json+=","
-            key=$(shell::sanitize_lower_var_name "$key") # Ensure the key is a valid JSON key
+            # Ensure the key is a valid JSON key
+            key=$(shell::sanitize_lower_var_name "$key")
+            # Escape double quotes in the value to ensure valid JSON
             json+=" \"$key\": \"${value}\""
             first_field=0
-        done <<<"$selected_fields"
+        done < <(shell::ini_list_keys "$conf_file" "$section" 2>/dev/null)
         json+=" }"
         first_section=0
     done <<<"$sections"
-    # json+=" } }"
     json+=" } } }"
 
     shell::colored_echo "$json" 33
