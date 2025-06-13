@@ -171,48 +171,21 @@ shell::camel_case() {
 #   capitalized=$(shell::capitalize_each_word "my section key name") # Outputs "My Section Key Name"
 shell::capitalize_each_word() {
     local input="$1"
-    local output_string="" # Initialize an empty string to build the output
-    local word             # Declare word variable for the loop
+    local output_string=""
 
-    # Check if the input is empty
-    # If the input is empty, return an empty string
-    # This prevents unnecessary processing and handles edge cases gracefully.
-    # If the input is empty, we return an empty string.
-    if [ -z "$input" ]; then
-        echo ""
-        return
-    fi
+    # Return early if input is empty
+    [ -z "$input" ] && echo "" && return
 
-    # Save the current IFS (Internal Field Separator)
-    local original_ifs="$IFS"
-    # Set IFS to space to ensure the 'for' loop splits words correctly by spaces
-    IFS=' '
-
-    # Iterate over each word in the input string.
-    # The 'for word in $input' syntax will split the input string based on IFS.
-    for word in $input; do
-        if [ -n "$word" ]; then # Ensure the word is not empty
-            local first_char="${word:0:1}"
-            local rest_of_word="${word:1}"
-
-            # Convert the first character to uppercase using 'tr' for portability.
-            local capitalized_first_char=$(echo "$first_char" | tr '[:lower:]' '[:upper:]')
-
-            # Combine the capitalized first character with the rest of the word.
-            local capitalized_word="${capitalized_first_char}${rest_of_word}"
-
-            # Append the capitalized word to the output string.
-            # Add a space before it if it's not the very first word being added.
-            if [ -n "$output_string" ]; then
-                output_string="${output_string} ${capitalized_word}"
-            else
-                output_string="${capitalized_word}"
-            fi
+    # Use a while-read loop for better word splitting and IFS safety
+    while IFS= read -r -d ' ' word || [ -n "$word" ]; do
+        if [ -n "$word" ]; then
+            # Capitalize first letter and append rest
+            first_char=$(printf "%s" "${word:0:1}" | tr '[:lower:]' '[:upper:]')
+            rest="${word:1}"
+            output_string+="${first_char}${rest} "
         fi
-    done
+    done <<<"${input} "
 
-    # Restore the original IFS to prevent unexpected behavior in other parts of the script
-    IFS="$original_ifs"
-
-    echo "$output_string"
+    # Trim trailing space
+    echo "${output_string%" "}"
 }
