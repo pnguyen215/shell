@@ -3742,3 +3742,19 @@ This function creates a new workspace directory under $SHELL_CONF_WORKING_WORKSP
 initializes a profile.conf file and a .ssh/ directory with default SSH config templates (db.conf, redis.conf, etc.).
 It uses shell::ini_write to populate each .conf file with [dev] and [uat] blocks.
 "
+
+USAGE_SHELL_REMOVE_WORKSPACE="
+shell::remove_workspace function
+Removes a workspace directory after confirmation.
+
+Usage:
+shell::remove_workspace [-n] [-h] <workspace_name>
+
+Parameters:
+  - -n               : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+  - -h               : Optional. Displays this help message.
+  - <workspace_name> : The name of the workspace to remove.
+
+Description:
+Prompts for confirmation before deleting the workspace directory.
+"
