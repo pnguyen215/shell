@@ -47,7 +47,7 @@ shell::read_ini() {
 
     # Validate section and key names only if strict mode is enabled
     if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
-        shell::ini_validate_section_name "$section" || return 1
+        shell::validate_ini_section_name "$section" || return 1
         shell::ini_validate_key_name "$key" || return 1
     fi
 
@@ -127,13 +127,13 @@ shell::read_ini() {
     return 1
 }
 
-# shell::ini_validate_section_name function
+# shell::validate_ini_section_name function
 # Validates an INI section name based on defined strictness levels.
 # It checks for empty names and disallowed characters or spaces according to
 # SHELL_INI_STRICT and SHELL_INI_ALLOW_SPACES_IN_NAMES variables.
 #
 # Usage:
-#   shell::ini_validate_section_name <section_name>
+#   shell::validate_ini_section_name <section_name>
 #
 # Parameters:
 #   <section_name> : The name of the INI section to validate.
@@ -149,10 +149,10 @@ shell::read_ini() {
 #
 # Example usage:
 #   # Assuming SHELL_INI_STRICT=1 and SHELL_INI_ALLOW_SPACES_IN_NAMES=0
-#   shell::ini_validate_section_name "MySection"   # Valid
-#   shell::ini_validate_section_name "My Section"  # Invalid (contains space)
-#   shell::ini_validate_section_name "My[Section]" # Invalid (contains illegal character)
-#   shell::ini_validate_section_name ""            # Invalid (empty)
+#   shell::validate_ini_section_name "MySection"   # Valid
+#   shell::validate_ini_section_name "My Section"  # Invalid (contains space)
+#   shell::validate_ini_section_name "My[Section]" # Invalid (contains illegal character)
+#   shell::validate_ini_section_name ""            # Invalid (empty)
 #
 # Returns:
 #   0 if the section name is valid, 1 otherwise.
@@ -161,7 +161,7 @@ shell::read_ini() {
 #   - Relies on the shell::colored_echo function for output.
 #   - The behavior is controlled by the SHELL_INI_STRICT and
 #     SHELL_INI_ALLOW_SPACES_IN_NAMES environment variables or constants.
-shell::ini_validate_section_name() {
+shell::validate_ini_section_name() {
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_INI_VALIDATE_SECTION_NAME"
@@ -172,7 +172,7 @@ shell::ini_validate_section_name() {
 
     if [ -z "$section" ]; then
         shell::colored_echo "ERR: Section name cannot be empty" 196
-        echo "Usage: shell::ini_validate_section_name [-h] <section_name>"
+        echo "Usage: shell::validate_ini_section_name [-h] <section_name>"
         return 1
     fi
 
@@ -505,7 +505,7 @@ shell::ini_list_keys() {
 
     # Validate section name only if strict mode is enabled
     if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
-        shell::ini_validate_section_name "$section" || return 1
+        shell::validate_ini_section_name "$section" || return 1
     fi
 
     # Check if file exists
@@ -596,7 +596,7 @@ shell::ini_section_exists() {
 
     # Validate section name only if strict mode is enabled
     if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
-        shell::ini_validate_section_name "$section" || return 1
+        shell::validate_ini_section_name "$section" || return 1
     fi
 
     # Check if file exists
@@ -660,7 +660,7 @@ shell::ini_add_section() {
 
     # Validate section name only if strict mode is enabled
     if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
-        shell::ini_validate_section_name "$section" || return 1
+        shell::validate_ini_section_name "$section" || return 1
     fi
 
     # Check and create file if needed
@@ -728,9 +728,9 @@ shell::ini_write() {
     fi
 
     # Validate section and key names only if strict mode is enabled
-    # Assumes shell::ini_validate_section_name and shell::ini_validate_key_name exist.
+    # Assumes shell::validate_ini_section_name and shell::ini_validate_key_name exist.
     if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
-        shell::ini_validate_section_name "$section" || return 1
+        shell::validate_ini_section_name "$section" || return 1
         shell::ini_validate_key_name "$key" || return 1
     fi
 
@@ -901,7 +901,7 @@ shell::ini_write() {
 #   - Assumes the INI file has sections enclosed in square brackets (e.g., [section]).
 #   - Empty lines and lines outside of sections are preserved.
 #   - Relies on helper functions like shell::colored_echo, shell::ini_escape_for_regex,
-#     shell::ini_create_temp_file, and optionally shell::ini_validate_section_name
+#     shell::ini_create_temp_file, and optionally shell::validate_ini_section_name
 #     if SHELL_INI_STRICT is enabled. (Note: shell::ini_escape_for_regex and
 #     shell::ini_create_temp_file are not provided in this snippet, but are assumed
 #     to exist based on usage.)
@@ -924,9 +924,9 @@ shell::ini_remove_section() {
     fi
 
     # Validate section name only if strict mode is enabled (optional, based on existing code).
-    # Assumes shell::ini_validate_section_name function exists.
+    # Assumes shell::validate_ini_section_name function exists.
     if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
-        shell::ini_validate_section_name "$section" || return 1
+        shell::validate_ini_section_name "$section" || return 1
     fi
 
     # Check if the specified file exists.
@@ -1208,7 +1208,7 @@ shell::fzf_ini_remove_key() {
 #   - Assumes the INI file has sections enclosed in square brackets (e.g., [section]) and key=value pairs.
 #   - Empty lines and lines outside of sections are preserved.
 #   - Relies on helper functions like shell::colored_echo, shell::ini_escape_for_regex,
-#     shell::ini_create_temp_file, and optionally shell::ini_validate_section_name,
+#     shell::ini_create_temp_file, and optionally shell::validate_ini_section_name,
 #     shell::ini_validate_key_name if SHELL_INI_STRICT is enabled.
 #   - Uses atomic operation (mv) to replace the original file, reducing risk of data loss.
 shell::ini_remove_key() {
@@ -1238,9 +1238,9 @@ shell::ini_remove_key() {
     local key="$3"
 
     # Validate section and key names only if strict mode is enabled (optional, based on existing code).
-    # Assumes shell::ini_validate_section_name and shell::ini_validate_key_name functions exist.
+    # Assumes shell::validate_ini_section_name and shell::ini_validate_key_name functions exist.
     if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
-        shell::ini_validate_section_name "$section" || return 1
+        shell::validate_ini_section_name "$section" || return 1
         shell::ini_validate_key_name "$key" || return 1
     fi
 
@@ -1624,7 +1624,7 @@ shell::ini_key_exists() {
     # Validate section and key names if strict mode is enabled.
     # The called validation functions will print their own error messages if validation fails.
     if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
-        shell::ini_validate_section_name "$section" || return 1
+        shell::validate_ini_section_name "$section" || return 1
         shell::ini_validate_key_name "$key" || return 1
     fi
 
@@ -1730,7 +1730,7 @@ shell::ini_expose_env() {
     if [ -n "$section" ]; then
         # Validate section name if strict mode is enabled.
         if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
-            shell::ini_validate_section_name "$section" || return 1
+            shell::validate_ini_section_name "$section" || return 1
         fi
 
         # Safely read keys line by line using process substitution to handle spaces in names.
@@ -1768,7 +1768,7 @@ shell::ini_expose_env() {
         while IFS= read -r current_section; do
             # Validate current section name if strict mode is enabled.
             if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
-                shell::ini_validate_section_name "$current_section" || {
+                shell::validate_ini_section_name "$current_section" || {
                     shell::colored_echo "ERR: Skipping invalid section name '$current_section' in strict mode." 196
                     continue # Skip to the next section
                 }
@@ -1887,7 +1887,7 @@ shell::ini_destroy_keys() {
     if [ -n "$section" ]; then
         # Validate section name if strict mode is enabled.
         if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
-            shell::ini_validate_section_name "$section" || {
+            shell::validate_ini_section_name "$section" || {
                 shell::colored_echo "ERR: Cannot destroy keys: Invalid section name '$section' in strict mode." 196
                 return 1
             }
@@ -1923,7 +1923,7 @@ shell::ini_destroy_keys() {
         while IFS= read -r current_section; do
             # Validate current section name if strict mode is enabled.
             if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
-                shell::ini_validate_section_name "$current_section" || {
+                shell::validate_ini_section_name "$current_section" || {
                     shell::colored_echo "ERR: Skipping section with invalid name '$current_section' in strict mode." 196
                     continue
                 }
@@ -2075,7 +2075,7 @@ shell::ini_get_or_default() {
 #
 # Notes:
 #   - Relies on shell::colored_echo, shell::ini_check_file, shell::ini_section_exists,
-#     shell::ini_escape_for_regex, shell::ini_validate_section_name, and shell::run_cmd_eval.
+#     shell::ini_escape_for_regex, shell::validate_ini_section_name, and shell::run_cmd_eval.
 shell::ini_rename_section() {
     local dry_run="false"
     local opt_h_found="false"
@@ -2116,8 +2116,8 @@ shell::ini_rename_section() {
 
     # Validate section names if strict mode is enabled.
     if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
-        shell::ini_validate_section_name "$old_section" || return 1
-        shell::ini_validate_section_name "$new_section" || return 1
+        shell::validate_ini_section_name "$old_section" || return 1
+        shell::validate_ini_section_name "$new_section" || return 1
     fi
 
     # Check if the file exists and is writable.
@@ -2332,8 +2332,8 @@ shell::ini_clone_section() {
 
     # Validate section names if strict mode is enabled
     if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
-        shell::ini_validate_section_name "$source_section" || return 1
-        shell::ini_validate_section_name "$destination_section" || return 1
+        shell::validate_ini_section_name "$source_section" || return 1
+        shell::validate_ini_section_name "$destination_section" || return 1
     fi
 
     # Check if file exists

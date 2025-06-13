@@ -2689,13 +2689,13 @@ Description:
 "
 
 USAGE_SHELL_INI_VALIDATE_SECTION_NAME="
-shell::ini_validate_section_name function
+shell::validate_ini_section_name function
 Validates an INI section name based on defined strictness levels.
 It checks for empty names and disallowed characters or spaces according to
 SHELL_INI_STRICT and SHELL_INI_ALLOW_SPACES_IN_NAMES variables.
 
 Usage:
-  shell::ini_validate_section_name [-h] <section_name>
+  shell::validate_ini_section_name [-h] <section_name>
 
 Parameters:
   - -h              : Optional. Displays this help message.
@@ -2712,10 +2712,10 @@ Description:
 
 Example usage:
   # Assuming SHELL_INI_STRICT=1 and SHELL_INI_ALLOW_SPACES_IN_NAMES=0
-  shell::ini_validate_section_name \"MySection\"   # Valid
-  shell::ini_validate_section_name \"My Section\"  # Invalid (contains space)
-  shell::ini_validate_section_name \"My[Section]\" # Invalid (contains illegal character)
-  shell::ini_validate_section_name \"\"            # Invalid (empty)
+  shell::validate_ini_section_name \"MySection\"   # Valid
+  shell::validate_ini_section_name \"My Section\"  # Invalid (contains space)
+  shell::validate_ini_section_name \"My[Section]\" # Invalid (contains illegal character)
+  shell::validate_ini_section_name \"\"            # Invalid (empty)
 "
 
 USAGE_SHELL_INI_VALIDATE_KEY_NAME="
