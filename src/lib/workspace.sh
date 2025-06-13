@@ -596,13 +596,24 @@ shell::fzf_manage_workspace() {
         shell::fzf_edit_workspace "$selected"
         ;;
     rename)
+        shell::colored_echo "[e] Enter new name for workspace '$selected':" 208
+        read -r new_name
+        # Check if a new name was entered
+        if [ -z "$new_name" ]; then
+            shell::colored_echo "ERR: No new name entered. Aborting rename." 196
+            return 1
+        fi
+        # If dry mode is enabled, we print the command to rename the workspace
+        # This allows us to see what would be done without actually renaming anything
         if [ "$dry_run" = "true" ]; then
-            shell::rename_workspace -n "$selected"
+            shell::rename_workspace -n "$selected" "$new_name"
         else
-            shell::rename_workspace "$selected"
+            shell::rename_workspace "$selected" "$new_name"
         fi
         ;;
     remove)
+        # If dry mode is enabled, we print the command to remove the workspace
+        # This allows us to see what would be done without actually deleting anything
         if [ "$dry_run" = "true" ]; then
             shell::remove_workspace -n "$selected"
         else
