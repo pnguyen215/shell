@@ -504,3 +504,114 @@ shell::fzf_rename_workspace() {
         shell::rename_workspace "$selected" "$new_name"
     fi
 }
+
+# shell::fzf_manage_workspace function
+# Interactively selects a workspace and performs an action (view, edit, rename, remove) using fzf.
+#
+# Usage:
+# shell::fzf_manage_workspace [-n]
+#
+# Parameters:
+# - -n : Optional dry-run flag. If provided, actions that support dry-run will be executed in dry-run mode.
+#
+# Description:
+# This function lists all workspace directories under $SHELL_CONF_WORKING_WORKSPACE,
+# uses fzf to let the user select one, then presents a list of actions to perform on the selected workspace.
+# Supported actions include: view, edit, rename, and remove.
+#
+# Example:
+# shell::fzf_manage_workspace
+shell::fzf_manage_workspace() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_MANAGE_WORKSPACE"
+        return 0
+    fi
+
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    # Check if the workspace directory exists
+    # We check if the base directory for workspaces exists
+    # If it does not exist, we print an error message and return
+    local base="$SHELL_CONF_WORKING_WORKSPACE"
+    if [ ! -d "$base" ]; then
+        shell::colored_echo "ERR: Workspace directory '$base' not found." 196
+        return 1
+    fi
+
+    # Ensure fzf is installed
+    shell::install_package fzf
+
+    # List all workspace directories and use fzf to select one
+    # We use find to locate directories under the workspace directory
+    # We use xargs to convert the output of find into a list of directory names
+    # We use fzf to let the user select one of the directories
+    local selected
+    selected=$(find "$base" -mindepth 1 -maxdepth 1 -type d |
+        xargs -n 1 basename |
+        fzf --prompt="Select workspace: ")
+
+    # Check if a workspace was selected
+    # If no workspace was selected, we print an error message and return
+    # This ensures the user knows they need to select a workspace
+    if [ -z "$selected" ]; then
+        shell::colored_echo "ERR: No workspace selected." 196
+        return 1
+    fi
+
+    # Prompt for action to perform on the selected workspace
+    # We present a list of actions to the user using fzf
+    # The actions include: view, edit, rename, and remove
+    # We use printf to create a list of actions, which is then piped into fzf
+    local action
+    action=$(printf "view\nedit\nrename\nremove" |
+        fzf --prompt="Action for workspace '$selected': ")
+
+    # Check if an action was selected
+    # If no action was selected, we print an error message and return
+    # This ensures the user knows they need to select an action
+    # We check if the action variable is empty
+    # If it is empty, we print an error message and return
+    if [ -z "$action" ]; then
+        shell::colored_echo "ERR: No action selected." 196
+        return 1
+    fi
+
+    # Perform the selected action on the workspace
+    # We use a case statement to determine which action was selected
+    # Depending on the action, we call the appropriate function
+    # If the action is 'view', we call shell::fzf_view_workspace
+    # If the action is 'edit', we call shell::fzf_edit_workspace
+    # If the action is 'rename', we call shell::rename_workspace
+    # If the action is 'remove', we call shell::remove_workspace
+    # If the action is not recognized, we print an error message and return
+    case "$action" in
+    view)
+        shell::fzf_view_workspace "$selected"
+        ;;
+    edit)
+        shell::fzf_edit_workspace "$selected"
+        ;;
+    rename)
+        if [ "$dry_run" = "true" ]; then
+            shell::rename_workspace -n "$selected"
+        else
+            shell::rename_workspace "$selected"
+        fi
+        ;;
+    remove)
+        if [ "$dry_run" = "true" ]; then
+            shell::remove_workspace -n "$selected"
+        else
+            shell::remove_workspace "$selected"
+        fi
+        ;;
+    *)
+        shell::colored_echo "ERR: Unknown action '$action'" 196
+        return 1
+        ;;
+    esac
+}

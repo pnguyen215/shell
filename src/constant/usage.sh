@@ -3843,3 +3843,20 @@ This function lists all workspace directories under $SHELL_CONF_WORKING_WORKSPAC
 uses fzf to let the user select one, prompts for a new name, and then calls shell::rename_workspace
 to rename the selected workspace.
 "
+
+USAGE_SHELL_FZF_MANAGE_WORKSPACE="
+shell::fzf_manage_workspace function
+Interactively selects a workspace and performs an action (view, edit, rename, remove) using fzf.
+
+Usage:
+shell::fzf_manage_workspace [-n] [-h]
+
+Parameters:
+  - -n : Optional dry-run flag. If provided, actions that support dry-run will be executed in dry-run mode.
+  - -h : Optional. Displays this help message.
+
+Description:
+This function lists all workspace directories under $SHELL_CONF_WORKING_WORKSPACE,
+uses fzf to let the user select one, then presents a list of actions to perform on the selected workspace.
+Supported actions include: view, edit, rename, and remove.
+"
