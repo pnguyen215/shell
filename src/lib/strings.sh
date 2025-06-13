@@ -183,36 +183,36 @@ shell::capitalize_each_word() {
         return
     fi
 
-    # Convert spaces in the input string to newlines, then pipe to while read.
-    # This ensures that 'read' processes each word as a distinct line.
-    echo "$input" | while IFS= read -r word; do
-        # We need to handle potential multiple spaces creating empty "words"
-        # and also split by space for the individual words.
-        # Temporarily set IFS to handle spaces, then iterate.
-        local current_word_list
-        # Split the line into words by space using a temporary IFS
-        IFS=' ' read -ra current_word_list <<<"$word"
+    # Save the current IFS (Internal Field Separator)
+    local original_ifs="$IFS"
+    # Set IFS to space to ensure the 'for' loop splits words correctly by spaces
+    IFS=' '
 
-        for sub_word in "${current_word_list[@]}"; do
-            if [ -n "$sub_word" ]; then # Ensure the sub_word is not empty
-                local first_char="${sub_word:0:1}"
-                local rest_of_word="${sub_word:1}"
+    # Iterate over each word in the input string.
+    # The 'for word in $input' syntax will split the input string based on IFS.
+    for word in $input; do
+        if [ -n "$word" ]; then # Ensure the word is not empty
+            local first_char="${word:0:1}"
+            local rest_of_word="${word:1}"
 
-                # Convert the first character to uppercase using 'tr' for portability.
-                local capitalized_first_char=$(echo "$first_char" | tr '[:lower:]' '[:upper:]')
+            # Convert the first character to uppercase using 'tr' for portability.
+            local capitalized_first_char=$(echo "$first_char" | tr '[:lower:]' '[:upper:]')
 
-                # Combine the capitalized first character with the rest of the word.
-                local capitalized_word="${capitalized_first_char}${rest_of_word}"
+            # Combine the capitalized first character with the rest of the word.
+            local capitalized_word="${capitalized_first_char}${rest_of_word}"
 
-                # Append the capitalized word to the output string.
-                # Add a space before it if it's not the very first word being added.
-                if [ -n "$output_string" ]; then
-                    output_string="${output_string} ${capitalized_word}"
-                else
-                    output_string="${capitalized_word}"
-                fi
+            # Append the capitalized word to the output string.
+            # Add a space before it if it's not the very first word being added.
+            if [ -n "$output_string" ]; then
+                output_string="${output_string} ${capitalized_word}"
+            else
+                output_string="${capitalized_word}"
             fi
-        done
+        fi
     done
+
+    # Restore the original IFS to prevent unexpected behavior in other parts of the script
+    IFS="$original_ifs"
+
     echo "$output_string"
 }
