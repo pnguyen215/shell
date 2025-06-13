@@ -165,11 +165,11 @@ shell::remove_workspace() {
     fi
 }
 
-# shell::view_workspace function
+# shell::fzf_view_workspace function
 # Interactively selects a .ssh/*.conf file from a workspace and previews it using shell::fzf_view_ini_viz.
 #
 # Usage:
-# shell::view_workspace <workspace_name>
+# shell::fzf_view_workspace <workspace_name>
 #
 # Parameters:
 # - <workspace_name> : The name of the workspace to view.
@@ -180,15 +180,15 @@ shell::remove_workspace() {
 # for real-time preview of all decoded values.
 #
 # Example:
-# shell::view_workspace dxc
-shell::view_workspace() {
+# shell::fzf_view_workspace dxc
+shell::fzf_view_workspace() {
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_VIEW_WORKSPACE"
+        echo "$USAGE_SHELL_FZF_VIEW_WORKSPACE"
         return 0
     fi
 
     if [ $# -lt 1 ]; then
-        echo "Usage: shell::view_workspace <workspace_name>"
+        echo "Usage: shell::fzf_view_workspace <workspace_name>"
         return 1
     fi
 
@@ -218,6 +218,8 @@ shell::view_workspace() {
     local selected_file
     selected_file=$(echo "$conf_files" | fzf --prompt="Select a config file to view: ")
 
+    # If no file was selected, we print an error message and return
+    # This ensures the user knows they need to select a file
     if [ -z "$selected_file" ]; then
         shell::colored_echo "ERR: No file selected." 196
         return 1
