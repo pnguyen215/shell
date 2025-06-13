@@ -3724,3 +3724,21 @@ This function allows the user to select a section and a key from an INI file,
 then choose to either edit the value of the key or rename the key.
 It uses fzf for interactive selection and sed for in-place editing.
 "
+
+USAGE_SHELL_ADD_WORKSPACE="
+shell::add_workspace function
+Creates a new workspace with profile.conf and default .ssh/*.conf templates populated via shell::ini_write.
+
+Usage:
+shell::add_workspace [-n] [-h] <workspace_name>
+
+Parameters:
+  - -n                : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+  - -h                : Optional. Displays this help message.
+  - <workspace_name>  : The name of the workspace to create.
+
+Description:
+This function creates a new workspace directory under $SHELL_CONF_WORKING_WORKSPACE/<workspace_name>,
+initializes a profile.conf file and a .ssh/ directory with default SSH config templates (db.conf, redis.conf, etc.).
+It uses shell::ini_write to populate each .conf file with [dev] and [uat] blocks.
+"
