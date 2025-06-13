@@ -174,36 +174,45 @@ shell::capitalize_each_word() {
     local output_string="" # Initialize an empty string to build the output
     local word             # Declare word variable for the loop
 
+    # Check if the input is empty
+    # If the input is empty, return an empty string
+    # This prevents unnecessary processing and handles edge cases gracefully.
+    # If the input is empty, we return an empty string.
     if [ -z "$input" ]; then
         echo ""
         return
     fi
 
-    # Use a while read loop to robustly process each word in the input string.
-    # `IFS=' '` temporarily sets the Internal Field Separator to a single space,
-    # ensuring correct word splitting even with multiple spaces.
-    # `read -r word` reads each word into the 'word' variable; '-r' prevents backslash interpretation.
-    # `<<< "$input"` is a "here string" that feeds the input directly to the while loop.
-    while IFS=' ' read -r word; do
-        if [ -n "$word" ]; then # Ensure the word is not empty (can happen with multiple spaces)
-            local first_char="${word:0:1}"
-            local rest_of_word="${word:1}"
+    # Convert spaces in the input string to newlines, then pipe to while read.
+    # This ensures that 'read' processes each word as a distinct line.
+    echo "$input" | while IFS= read -r word; do
+        # We need to handle potential multiple spaces creating empty "words"
+        # and also split by space for the individual words.
+        # Temporarily set IFS to handle spaces, then iterate.
+        local current_word_list
+        # Split the line into words by space using a temporary IFS
+        IFS=' ' read -ra current_word_list <<<"$word"
 
-            # Convert the first character to uppercase using 'tr' for portability.
-            local capitalized_first_char=$(echo "$first_char" | tr '[:lower:]' '[:upper:]')
+        for sub_word in "${current_word_list[@]}"; do
+            if [ -n "$sub_word" ]; then # Ensure the sub_word is not empty
+                local first_char="${sub_word:0:1}"
+                local rest_of_word="${sub_word:1}"
 
-            # Combine the capitalized first character with the rest of the word.
-            local capitalized_word="${capitalized_first_char}${rest_of_word}"
+                # Convert the first character to uppercase using 'tr' for portability.
+                local capitalized_first_char=$(echo "$first_char" | tr '[:lower:]' '[:upper:]')
 
-            # Append the capitalized word to the output string.
-            # Add a space before it if it's not the very first word being added.
-            if [ -n "$output_string" ]; then
-                output_string="${output_string} ${capitalized_word}"
-            else
-                output_string="${capitalized_word}"
+                # Combine the capitalized first character with the rest of the word.
+                local capitalized_word="${capitalized_first_char}${rest_of_word}"
+
+                # Append the capitalized word to the output string.
+                # Add a space before it if it's not the very first word being added.
+                if [ -n "$output_string" ]; then
+                    output_string="${output_string} ${capitalized_word}"
+                else
+                    output_string="${capitalized_word}"
+                fi
             fi
-        fi
-    done <<<"$input"
-
+        done
+    done
     echo "$output_string"
 }
