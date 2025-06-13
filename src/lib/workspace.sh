@@ -805,3 +805,94 @@ shell::fzf_clone_workspace() {
         shell::clone_workspace "$selected" "$new_name"
     fi
 }
+
+# shell::dump_workspace_json function
+# Interactively selects a workspace, section, and fields to export as JSON from .ssh/*.conf files.
+#
+# Usage:
+# shell::dump_workspace_json
+#
+# Description:
+# This function uses fzf to let the user select a workspace, then a section (e.g., [dev], [uat]),
+# and then one or more fields to export. It reads values from .ssh/*.conf files and outputs a JSON
+# structure to the terminal and copies it to the clipboard.
+#
+# Example:
+# shell::dump_workspace_json
+shell::dump_workspace_json() {
+    shell::install_package fzf
+
+    local base="$SHELL_CONF_WORKING_WORKSPACE"
+    if [ ! -d "$base" ]; then
+        shell::colored_echo "ERR: Workspace directory '$base' not found." 196
+        return 1
+    fi
+
+    local workspace
+    workspace=$(find "$base" -mindepth 1 -maxdepth 1 -type d |
+        xargs -n 1 basename |
+        fzf --prompt="Select workspace: ")
+
+    if [ -z "$workspace" ]; then
+        shell::colored_echo "ERR: No workspace selected." 196
+        return 1
+    fi
+
+    local ssh_dir="$base/$workspace/.ssh"
+    if [ ! -d "$ssh_dir" ]; then
+        shell::colored_echo "ERR: Workspace '$workspace' has no .ssh directory." 196
+        return 1
+    fi
+
+    local conf_file
+    conf_file=$(find "$ssh_dir" -type f -name "*.conf" |
+        fzf --prompt="Select .conf file to export: ")
+
+    if [ -z "$conf_file" ]; then
+        shell::colored_echo "ERR: No .conf file selected." 196
+        return 1
+    fi
+
+    local section
+    section=$(shell::ini_list_sections "$conf_file" |
+        fzf --prompt="Select section to export: ")
+
+    if [ -z "$section" ]; then
+        shell::colored_echo "ERR: No section selected." 196
+        return 1
+    fi
+
+    local all_fields=(
+        SSH_DESC
+        SSH_PRIVATE_KEY_REF
+        SSH_SERVER_ADDR
+        SSH_SERVER_PORT
+        SSH_SERVER_USER
+        SSH_LOCAL_ADDR
+        SSH_LOCAL_PORT
+    )
+
+    local selected_fields
+    selected_fields=$(printf "%s\n" "${all_fields[@]}" |
+        fzf --multi --prompt="Select fields to export as JSON: ")
+
+    if [ -z "$selected_fields" ]; then
+        shell::colored_echo "ERR: No fields selected. Aborting." 196
+        return 1
+    fi
+
+    local json="{ \"$workspace\": { \"$section\": {"
+    local first=1
+    while IFS= read -r key; do
+        local value
+        value=$(shell::ini_read "$conf_file" "$section" "$key" 2>/dev/null)
+        [ $first -eq 0 ] && json+=","
+        key=$(shell::sanitize_lower_var_name "$key")
+        json+=" \"$key\": \"${value}\""
+        first=0
+    done <<<"$selected_fields"
+    json+=" } } }"
+
+    shell::colored_echo "$json" 255
+    shell::clip_value "$json"
+}
