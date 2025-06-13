@@ -3896,3 +3896,19 @@ This function lists all workspace directories under $SHELL_CONF_WORKING_WORKSPAC
 uses fzf to let the user select one, prompts for a new name, and then calls shell::clone_workspace
 to clone the selected workspace.
 "
+
+USAGE_SHELL_DUMP_WORKSPACE_JSON="
+shell::dump_workspace_json function
+Interactively selects a workspace, section, and fields to export as JSON from .ssh/*.conf files.
+
+Usage:
+shell::dump_workspace_json [-h]
+
+Parameters:
+  - -h        : Optional. Displays this help message.
+
+Description:
+This function uses fzf to let the user select a workspace, then a section (e.g., [dev], [uat]),
+and then one or more fields to export. It reads values from .ssh/*.conf files and outputs a JSON
+structure to the terminal and copies it to the clipboard.
+"

@@ -810,7 +810,10 @@ shell::fzf_clone_workspace() {
 # Interactively selects a workspace, section, and fields to export as JSON from .ssh/*.conf files.
 #
 # Usage:
-# shell::dump_workspace_json
+# shell::dump_workspace_json [-h]
+#
+# Parameters:
+# - -h : Show help message.
 #
 # Description:
 # This function uses fzf to let the user select a workspace, then a section (e.g., [dev], [uat]),
@@ -820,48 +823,88 @@ shell::fzf_clone_workspace() {
 # Example:
 # shell::dump_workspace_json
 shell::dump_workspace_json() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_DUMP_WORKSPACE_JSON"
+        return 0
+    fi
+
+    # Ensure fzf is installed
     shell::install_package fzf
 
+    # Check if the workspace directory exists
+    # We check if the base directory for workspaces exists
+    # If it does not exist, we print an error message and return
     local base="$SHELL_CONF_WORKING_WORKSPACE"
     if [ ! -d "$base" ]; then
         shell::colored_echo "ERR: Workspace directory '$base' not found." 196
         return 1
     fi
 
+    # List all workspace directories and use fzf to select one
+    # We use find to locate directories under the workspace directory
+    # We use xargs to convert the output of find into a list of directory names
+    # We use fzf to let the user select one of the directories
     local workspace
     workspace=$(find "$base" -mindepth 1 -maxdepth 1 -type d |
         xargs -n 1 basename |
         fzf --prompt="Select workspace: ")
 
+    # Check if a workspace was selected
+    # If no workspace was selected, we print an error message and return
+    # This ensures the user knows they need to select a workspace
+    # We check if the workspace variable is empty
+    # If it is empty, we print an error message and return
     if [ -z "$workspace" ]; then
         shell::colored_echo "ERR: No workspace selected." 196
         return 1
     fi
 
+    # Check if the selected workspace has a .ssh directory
+    # We check if the .ssh directory exists under the selected workspace
+    # If the .ssh directory does not exist, we print an error message and return
     local ssh_dir="$base/$workspace/.ssh"
     if [ ! -d "$ssh_dir" ]; then
         shell::colored_echo "ERR: Workspace '$workspace' has no .ssh directory." 196
         return 1
     fi
 
+    # Find all .conf files in the .ssh directory
+    # We use find to locate all .conf files under the .ssh directory
     local conf_file
     conf_file=$(find "$ssh_dir" -type f -name "*.conf" |
         fzf --prompt="Select .conf file to export: ")
 
+    # Check if a .conf file was selected
+    # If no .conf file was selected, we print an error message and return
+    # This ensures the user knows they need to select a .conf file
+    # We check if the conf_file variable is empty
+    # If it is empty, we print an error message and return
     if [ -z "$conf_file" ]; then
         shell::colored_echo "ERR: No .conf file selected." 196
         return 1
     fi
 
+    # Check if the selected .conf file exists
+    # We check if the conf_file exists
+    # If the conf_file does not exist, we print an error message and return
     local section
     section=$(shell::ini_list_sections "$conf_file" |
         fzf --prompt="Select section to export: ")
 
+    # Check if a section was selected
+    # If no section was selected, we print an error message and return
+    # This ensures the user knows they need to select a section
+    # We check if the section variable is empty
     if [ -z "$section" ]; then
         shell::colored_echo "ERR: No section selected." 196
         return 1
     fi
 
+    # All possible fields to export
+    # We define an array of all possible fields that can be exported as JSON
+    # These fields correspond to the keys in the .conf file
+    # We use an array to store the field names
+    # This allows us to easily iterate over the fields later
     local all_fields=(
         SSH_DESC
         SSH_PRIVATE_KEY_REF
@@ -872,27 +915,41 @@ shell::dump_workspace_json() {
         SSH_LOCAL_PORT
     )
 
+    # Use fzf to select fields to export
+    # We use printf to create a list of all fields, which is then piped into fzf
+    # We use --multi to allow the user to select multiple fields
+    # We use --prompt to customize the prompt message shown to the user
     local selected_fields
     selected_fields=$(printf "%s\n" "${all_fields[@]}" |
         fzf --multi --prompt="Select fields to export as JSON: ")
 
+    # Check if any fields were selected
+    # If no fields were selected, we print an error message and return
+    # This ensures the user knows they need to select at least one field
+    # We check if the selected_fields variable is empty
     if [ -z "$selected_fields" ]; then
         shell::colored_echo "ERR: No fields selected. Aborting." 196
         return 1
     fi
 
+    # Construct the JSON output
+    # We start with a JSON object that contains the workspace and section
+    # We iterate over the selected fields and read their values from the .conf file
+    # We use shell::ini_read to read the values for each field
+    # We use shell::sanitize_lower_var_name to ensure the keys are valid JSON keys
+    # We build the JSON string incrementally
     local json="{ \"$workspace\": { \"$section\": {"
     local first=1
     while IFS= read -r key; do
         local value
         value=$(shell::ini_read "$conf_file" "$section" "$key" 2>/dev/null)
         [ $first -eq 0 ] && json+=","
-        key=$(shell::sanitize_lower_var_name "$key")
+        key=$(shell::sanitize_lower_var_name "$key") # Ensure the key is a valid JSON key
         json+=" \"$key\": \"${value}\""
         first=0
     done <<<"$selected_fields"
     json+=" } } }"
 
-    shell::colored_echo "$json" 255
+    shell::colored_echo "$json" 33
     shell::clip_value "$json"
 }
