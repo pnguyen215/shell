@@ -966,22 +966,65 @@ shell::dump_workspace_json() {
     # done <<<"$sections"
     # json+=" } } }"
 
+    # local json="{ \"$workspace\": { \"$config_name\": {"
+    # local first_section=1
+    # while IFS= read -r section; do
+    #     [ $first_section -eq 0 ] && json+=","
+    #     json+=" \"$section\": {"
+    #     local first_field=1
+    #     while IFS= read -r key; do
+    #         local value
+    #         value=$(shell::ini_read "$conf_file" "$section" "$key" 2>/dev/null | sed 's/^value=//')
+    #         [ $first_field -eq 0 ] && json+=","
+    #         key=$(shell::sanitize_lower_var_name "$key")
+    #         json+=" \"$key\": \"${value}\""
+    #         first_field=0
+    #     done < <(shell::ini_list_keys "$conf_file" "$section" 2>/dev/null)
+    #     json+=" }"
+    #     first_section=0
+    # done <<<"$sections"
+    # json+=" } } }"
+
     local json="{ \"$workspace\": { \"$config_name\": {"
     local first_section=1
     while IFS= read -r section; do
         [ $first_section -eq 0 ] && json+=","
         json+=" \"$section\": {"
+
+        # Get keys in the section
+        # We use shell::ini_list_keys to get the keys in the section
+        # If no keys are found, we print a warning and skip to the next section
+        # We use shell::ini_list_keys to get the keys in the section
+        # If no keys are found, we print a warning and skip to the next section
+        local keys
+        keys=$(shell::ini_list_keys "$conf_file" "$section")
+        if [ -z "$keys" ]; then
+            shell::colored_echo "WARN: No keys found in section '$section'" 11
+            continue
+        fi
+
+        # Use fzf to select keys to export
+        # We use fzf to let the user select one or more keys from the section
+        # We use --multi to allow multiple selections
+        # We use --prompt to customize the prompt message shown to the user
+        # We store the selected keys in a variable
+        local selected_keys
+        selected_keys=$(echo "$keys" | fzf --multi --prompt="Select keys in [$section] to export: ")
+        if [ -z "$selected_keys" ]; then
+            shell::colored_echo "WARN: No keys selected in section '$section'. Skipping." 11
+            continue
+        fi
+
         local first_field=1
         while IFS= read -r key; do
             local value
             value=$(shell::ini_read "$conf_file" "$section" "$key" 2>/dev/null | sed 's/^value=//')
             [ $first_field -eq 0 ] && json+=","
-            # Ensure the key is a valid JSON key
             key=$(shell::sanitize_lower_var_name "$key")
-            # Escape double quotes in the value to ensure valid JSON
             json+=" \"$key\": \"${value}\""
             first_field=0
-        done < <(shell::ini_list_keys "$conf_file" "$section" 2>/dev/null)
+        done <<<"$selected_keys"
+
         json+=" }"
         first_section=0
     done <<<"$sections"
