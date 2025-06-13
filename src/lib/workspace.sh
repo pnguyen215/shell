@@ -68,7 +68,7 @@ shell::add_workspace() {
         shell::on_evict "$cmd"
     else
         shell::create_file_if_not_exists "$profile"
-        shell::create_file_if_not_exists "$ssh_dir"
+        shell::create_directory_if_not_exists "$ssh_dir"
         shell::run_cmd_eval "$cmd"
         shell::colored_echo "INFO: Workspace '$name' created at '$dir'" 46
 
