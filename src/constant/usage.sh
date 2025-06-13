@@ -3775,3 +3775,19 @@ This function locates all .conf files under $SHELL_CONF_WORKING_WORKSPACE/<works
 and uses fzf to let the user select one. The selected file is then passed to shell::fzf_view_ini_viz
 for real-time preview of all decoded values.
 "
+
+USAGE_SHELL_FZF_EDIT_WORKSPACE="
+shell::fzf_edit_workspace function
+Interactively selects a .ssh/*.conf file from a workspace and opens it for editing using shell::fzf_edit_ini_viz.
+Usage:
+shell::fzf_edit_workspace [-h] <workspace_name>
+
+Parameters:
+  - -h                : Optional. Displays this help message.
+  - <workspace_name>  : The name of the workspace to edit.
+
+Description:
+This function locates all .conf files under $SHELL_CONF_WORKING_WORKSPACE/<workspace_name>/.ssh/,
+and uses fzf to let the user select one. The selected file is then passed to shell::fzf_edit_ini_viz
+for editing.
+"

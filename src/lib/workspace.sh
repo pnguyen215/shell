@@ -175,7 +175,7 @@ shell::remove_workspace() {
 # - <workspace_name> : The name of the workspace to view.
 #
 # Description:
-# This function locates all .conf files under $SHELL_CONF_WORKING_WORKSPACE/workspace/<workspace_name>/.ssh/,
+# This function locates all .conf files under $SHELL_CONF_WORKING_WORKSPACE/<workspace_name>/.ssh/,
 # and uses fzf to let the user select one. The selected file is then passed to shell::fzf_view_ini_viz
 # for real-time preview of all decoded values.
 #
@@ -226,4 +226,66 @@ shell::fzf_view_workspace() {
     fi
 
     shell::fzf_view_ini_viz "$selected_file"
+}
+
+# shell::fzf_edit_workspace function
+# Interactively selects a .ssh/*.conf file from a workspace and opens it for editing using shell::fzf_edit_ini_viz.
+# Usage:
+# shell::fzf_edit_workspace <workspace_name>
+#
+# Parameters:
+# - <workspace_name> : The name of the workspace to edit.
+#
+# Description:
+# This function locates all .conf files under $SHELL_CONF_WORKING_WORKSPACE/<workspace_name>/.ssh/,
+# and uses fzf to let the user select one. The selected file is then passed to shell::fzf_edit_ini_viz
+# for editing.
+#
+# Example:
+# shell::fzf_edit_workspace dxc
+shell::fzf_edit_workspace() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_EDIT_WORKSPACE"
+        return 0
+    fi
+
+    if [ $# -lt 1 ]; then
+        echo "Usage: shell::fzf_edit_workspace <workspace_name>"
+        return 1
+    fi
+
+    local name="$1"
+    local base="$SHELL_CONF_WORKING_WORKSPACE"
+    local ssh_dir="$base/$name/.ssh"
+
+    # Check if workspace exists
+    if [ ! -d "$ssh_dir" ]; then
+        shell::colored_echo "ERR: Workspace '$name' does not exist or has no .ssh directory." 196
+        return 1
+    fi
+
+    # Find all .conf files in the .ssh directory
+    local conf_files
+    conf_files=$(find "$ssh_dir" -type f -name "*.conf")
+
+    if [ -z "$conf_files" ]; then
+        shell::colored_echo "WARN: No .conf files found in '$ssh_dir'" 11
+        return 0
+    fi
+
+    # Ensure fzf is installed
+    shell::install_package fzf
+
+    # Use fzf to select one of the .conf files for editing
+    local selected_file
+    selected_file=$(echo "$conf_files" | fzf --prompt="Select a config file to edit: ")
+
+    # If no file was selected, we print an error message and return
+    if [ -z "$selected_file" ]; then
+        shell::colored_echo "ERR: No file selected." 196
+        return 1
+    fi
+
+    # Call shell::fzf_edit_ini_viz to edit the selected file
+    shell::fzf_edit_ini_viz "$selected_file"
 }
