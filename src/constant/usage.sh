@@ -3369,11 +3369,11 @@ Description:
 "
 
 USAGE_SHELL_FZF_REMOVE_SECTIONS="
-shell::fzf_ini_remove_sections function
+shell::fzf_remove_ini_sections function
 Interactively removes sections from an INI file using fzf.
 
 Usage:
-  shell::fzf_ini_remove_sections [-n] [-h] <file>
+  shell::fzf_remove_ini_sections [-n] [-h] <file>
 
 Parameters:
   - -n        : Optional. Dry-run mode. Prints the command without executing it.
