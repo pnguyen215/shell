@@ -932,13 +932,21 @@ shell::dump_workspace_json() {
         return 1
     fi
 
+    # Get the name of the .conf file
+    # We use basename to extract the file name from the full path
+    # This allows us to use the file name as part of the JSON output
+    # We store the file name in a variable for later use
+    local config_name
+    config_name=$(basename "$conf_file")
+
     # Construct the JSON output
     # We start with a JSON object that contains the workspace and section
     # We iterate over the selected fields and read their values from the .conf file
     # We use shell::ini_read to read the values for each field
     # We use shell::sanitize_lower_var_name to ensure the keys are valid JSON keys
     # We build the JSON string incrementally
-    local json="{ \"$workspace\": {"
+    # local json="{ \"$workspace\": {"
+    local json="{ \"$workspace\": { \"$config_name\": {"
     local first_section=1
     while IFS= read -r section; do
         [ $first_section -eq 0 ] && json+=","
@@ -957,7 +965,8 @@ shell::dump_workspace_json() {
         json+=" }"
         first_section=0
     done <<<"$sections"
-    json+=" } }"
+    # json+=" } }"
+    json+=" } } }"
 
     shell::colored_echo "$json" 33
     shell::clip_value "$json"
