@@ -2682,28 +2682,52 @@ shell::fzf_view_ini_viz() {
     local cyan=$(tput setaf 6)
     local green=$(tput setaf 2)
     local normal=$(tput sgr0)
+    local os_type
+    os_type=$(shell::get_os_type)
+    local decode_cmd
+    [ "$os_type" = "macos" ] && decode_cmd="base64 -D" || decode_cmd="base64 -d"
 
     # List sections and use fzf to select one.
     # The preview command uses awk to format the output in a tree-like structure.
     # It highlights keys and values with colors for better visibility.
     # The preview window is set to wrap lines and display up to 60 lines.
     local section
+    # section=$(shell::ini_list_sections "$file" |
+    #     awk -v y="$yellow" -v n="$normal" '{print y $0 n}' |
+    #     fzf --ansi \
+    #         --prompt="Select section: " \
+    #         --preview="awk -v s='{}' '
+    #       BEGIN { in_section=0 }
+    #       /^\[.*\]/ {
+    #         in_section = (\$0 == \"[\" s \"]\") ? 1 : 0
+    #         next
+    #       }
+    #       in_section && /^[^#;]/ && /=/ {
+    #         split(\$0, kv, \"=\")
+    #         gsub(/^[ \t]+|[ \t]+$/, \"\", kv[1])
+    #         gsub(/^[ \t]+|[ \t]+$/, \"\", kv[2])
+    #         printf(\" %s%s%s: %s%s%s\\n\", \"\033[36m\", kv[1], \"\033[0m\", \"\033[32m\", kv[2], \"\033[0m\")
+    #       }
+    #     ' \"$file\"" \
+    #         --preview-window=up:wrap:60%)
+
     section=$(shell::ini_list_sections "$file" |
         awk -v y="$yellow" -v n="$normal" '{print y $0 n}' |
         fzf --ansi \
             --prompt="Select section: " \
             --preview="awk -v s='{}' '
-          BEGIN { in_section=0 }
-          /^\[.*\]/ {
-            in_section = (\$0 == \"[\" s \"]\") ? 1 : 0
-            next
-          }
-          in_section && /^[^#;]/ && /=/ {
-            split(\$0, kv, \"=\")
-            gsub(/^[ \t]+|[ \t]+$/, \"\", kv[1])
-            gsub(/^[ \t]+|[ \t]+$/, \"\", kv[2])
-            printf(\" %s%s%s: %s%s%s\\n\", \"\033[36m\", kv[1], \"\033[0m\", \"\033[32m\", kv[2], \"\033[0m\")
-          }
+            BEGIN { in_section=0 }
+            /^\[.*\]/ {
+                in_section = (\$0 == \"[\" s \"]\") ? 1 : 0
+                next
+            }
+            in_section && /^[^#;]/ && /=/ {
+                split(\$0, kv, \"=\")
+                cmd = \"echo \" kv[2] \" | $decode_cmd\"
+                cmd | getline decoded
+                close(cmd)
+                printf(\" %s%s%s: %s%s%s\\n\", \"\033[36m\", kv[1], \"\033[0m\", \"\033[32m\", decoded, \"\033[0m\")
+            }
         ' \"$file\"" \
             --preview-window=up:wrap:60%)
 
