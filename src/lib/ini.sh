@@ -2711,24 +2711,45 @@ shell::fzf_view_ini_viz() {
     #     ' \"$file\"" \
     #         --preview-window=up:wrap:60%)
 
+    # section=$(shell::ini_list_sections "$file" |
+    #     awk -v y="$yellow" -v n="$normal" '{print y $0 n}' |
+    #     fzf --ansi \
+    #         --prompt="Select section: " \
+    #         --preview="awk -v s='{}' '
+    #         BEGIN { in_section=0 }
+    #         /^\[.*\]/ {
+    #             in_section = (\$0 == \"[\" s \"]\") ? 1 : 0
+    #             next
+    #         }
+    #         in_section && /^[^#;]/ && /=/ {
+    #             split(\$0, kv, \"=\")
+    #             cmd = \"echo \" kv[2] \" | $decode_cmd\"
+    #             cmd | getline decoded
+    #             close(cmd)
+    #             printf(\" %s%s%s: %s%s%s\\n\", \"\033[36m\", kv[1], \"\033[0m\", \"\033[32m\", decoded, \"\033[0m\")
+    #         }
+    #     ' \"$file\"" \
+    #         --preview-window=up:wrap:60%)
+
     section=$(shell::ini_list_sections "$file" |
         awk -v y="$yellow" -v n="$normal" '{print y $0 n}' |
         fzf --ansi \
             --prompt="Select section: " \
-            --preview="awk -v s='{}' '
-            BEGIN { in_section=0 }
-            /^\[.*\]/ {
-                in_section = (\$0 == \"[\" s \"]\") ? 1 : 0
-                next
-            }
-            in_section && /^[^#;]/ && /=/ {
-                split(\$0, kv, \"=\")
-                cmd = \"echo \" kv[2] \" | $decode_cmd\"
-                cmd | getline decoded
-                close(cmd)
-                printf(\" %s%s%s: %s%s%s\\n\", \"\033[36m\", kv[1], \"\033[0m\", \"\033[32m\", decoded, \"\033[0m\")
-            }
-        ' \"$file\"" \
+            --preview="bash -c '
+        section=\"{}\"; in_section=0
+        while IFS= read -r line; do
+          [[ \"\$line\" =~ ^\\[.*\\]$ ]] && {
+            [[ \"\$line\" == \"[\$section]\" ]] && in_section=1 || in_section=0
+            continue
+          }
+          [[ \$in_section -eq 1 && \"\$line\" =~ = ]] && {
+            key=\${line%%=*}
+            val=\${line#*=}
+            decoded=\$(echo \"\$val\" | $decode_cmd 2>/dev/null)
+            printf \"  \033[36m%s\033[0m: \033[32m%s\033[0m\n\" \"\$key\" \"\$decoded\"
+          }
+        done < \"$file\"
+      '" \
             --preview-window=up:wrap:60%)
 
     # Check if a section was selected.
