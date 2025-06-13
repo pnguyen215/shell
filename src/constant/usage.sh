@@ -3807,3 +3807,22 @@ Description:
 This function lists all workspace directories under $SHELL_CONF_WORKING_WORKSPACE,
 uses fzf to let the user select one, and then calls shell::remove_workspace to delete it.
 "
+
+USAGE_SHELL_RENAME_WORKSPACE="
+shell::rename_workspace function
+Renames a workspace directory from an old name to a new name.
+
+Usage:
+shell::rename_workspace [-n] [-h] <old_name> <new_name>
+
+Parameters:
+  - -n          : Optional dry-run flag. If provided, the rename command is printed using shell::on_evict instead of executed.
+  - -h          : Optional. Displays this help message.
+  - <old_name>  : The current name of the workspace.
+  - <new_name>  : The new name for the workspace.
+
+Description:
+This function renames a workspace directory under $SHELL_CONF_WORKING_WORKSPACE
+from <old_name> to <new_name>. It checks for the existence of the old workspace
+and ensures the new name does not already exist. If valid, it renames the directory.
+"

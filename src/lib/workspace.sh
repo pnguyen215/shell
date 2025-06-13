@@ -350,3 +350,81 @@ shell::fzf_remove_workspace() {
         shell::remove_workspace "$selected"
     fi
 }
+
+# shell::rename_workspace function
+# Renames a workspace directory from an old name to a new name.
+#
+# Usage:
+# shell::rename_workspace [-n] <old_name> <new_name>
+#
+# Parameters:
+# - -n : Optional dry-run flag. If provided, the rename command is printed using shell::on_evict instead of executed.
+# - <old_name> : The current name of the workspace.
+# - <new_name> : The new name for the workspace.
+#
+# Description:
+# This function renames a workspace directory under $SHELL_CONF_WORKING_WORKSPACE
+# from <old_name> to <new_name>. It checks for the existence of the old workspace
+# and ensures the new name does not already exist. If valid, it renames the directory.
+#
+# Example:
+# shell::rename_workspace dxc dxc-renamed
+# shell::rename_workspace -n dxc dxc-renamed
+shell::rename_workspace() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_RENAME_WORKSPACE"
+        return 0
+    fi
+
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    # Check if old and new workspace names are provided
+    # If not, we print usage information and return an error
+    # This ensures the user knows how to use the command correctly
+    # We check if at least two arguments are provided
+    # The first argument is the old name and the second is the new name
+    # If less than two arguments are provided, we print usage information
+    # and return an error code
+    if [ $# -lt 2 ]; then
+        echo "Usage: shell::rename_workspace [-n] <old_name> <new_name>"
+        return 1
+    fi
+
+    local old_name="$1"
+    local new_name="$2"
+    local base="$SHELL_CONF_WORKING_WORKSPACE"
+    local old_dir="$base/$old_name"
+    local new_dir="$base/$new_name"
+
+    # Check if the old workspace exists and the new workspace does not
+    # We check if the old directory exists and if the new directory does not
+    # If the old directory does not exist, we print an error message and return
+    if [ ! -d "$old_dir" ]; then
+        shell::colored_echo "ERR: Workspace '$old_name' does not exist at '$old_dir'" 196
+        return 1
+    fi
+
+    # Check if the new workspace already exists
+    # If the new directory already exists, we print an error message and return
+    # This prevents overwriting an existing workspace
+    if [ -d "$new_dir" ]; then
+        shell::colored_echo "ERR: Workspace '$new_name' already exists at '$new_dir'" 196
+        return 1
+    fi
+
+    # Construct the command to rename the workspace directory
+    # We use sudo mv to move the old directory to the new directory
+    # This effectively renames the workspace
+    # If dry-run mode is enabled, we print the command instead of executing it
+    local cmd="sudo mv \"$old_dir\" \"$new_dir\""
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "$cmd"
+    else
+        shell::run_cmd_eval "$cmd"
+        shell::colored_echo "INFO: Workspace renamed from '$old_name' to '$new_name'" 46
+    fi
+}
