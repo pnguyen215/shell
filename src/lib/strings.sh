@@ -171,34 +171,39 @@ shell::camel_case() {
 #   capitalized=$(shell::capitalize_each_word "my section key name") # Outputs "My Section Key Name"
 shell::capitalize_each_word() {
     local input="$1"
-    local output_words=() # Initialize an empty array to store processed words
+    local output_string="" # Initialize an empty string to build the output
+    local word             # Declare word variable for the loop
 
-    # Handle empty input gracefully
     if [ -z "$input" ]; then
         echo ""
         return
     fi
 
-    # Read the input string word by word.
-    # The `for word in $input` syntax splits the string by default whitespace.
-    for word in $input; do
-        # Extract the first character of the current word
-        local first_char="${word:0:1}"
-        # Extract the rest of the word
-        local rest_of_word="${word:1}"
+    # Use a while read loop to robustly process each word in the input string.
+    # `IFS=' '` temporarily sets the Internal Field Separator to a single space,
+    # ensuring correct word splitting even with multiple spaces.
+    # `read -r word` reads each word into the 'word' variable; '-r' prevents backslash interpretation.
+    # `<<< "$input"` is a "here string" that feeds the input directly to the while loop.
+    while IFS=' ' read -r word; do
+        if [ -n "$word" ]; then # Ensure the word is not empty (can happen with multiple spaces)
+            local first_char="${word:0:1}"
+            local rest_of_word="${word:1}"
 
-        # Convert the first character to uppercase using 'tr' for portability.
-        local capitalized_first_char=$(echo "$first_char" | tr '[:lower:]' '[:upper:]')
+            # Convert the first character to uppercase using 'tr' for portability.
+            local capitalized_first_char=$(echo "$first_char" | tr '[:lower:]' '[:upper:]')
 
-        # Combine the capitalized first character with the rest of the word.
-        local capitalized_word="${capitalized_first_char}${rest_of_word}"
+            # Combine the capitalized first character with the rest of the word.
+            local capitalized_word="${capitalized_first_char}${rest_of_word}"
 
-        # Add the processed word to our array
-        output_words+=("$capitalized_word")
-    done
+            # Append the capitalized word to the output string.
+            # Add a space before it if it's not the very first word being added.
+            if [ -n "$output_string" ]; then
+                output_string="${output_string} ${capitalized_word}"
+            else
+                output_string="${capitalized_word}"
+            fi
+        fi
+    done <<<"$input"
 
-    # Join the words in the array back together with spaces.
-    # "${output_words[@]}" expands all elements of the array, and they are joined by
-    # the first character of IFS (Internal Field Separator), which is space by default.
-    echo "${output_words[@]}"
+    echo "$output_string"
 }
