@@ -942,7 +942,7 @@ shell::dump_workspace_json() {
     # Construct the JSON output
     # We start with a JSON object that contains the workspace and section
     # We iterate over the selected fields and read their values from the .conf file
-    # We use shell::ini_read to read the values for each field
+    # We use shell::read_ini to read the values for each field
     # We use shell::sanitize_lower_var_name to ensure the keys are valid JSON keys
     # We build the JSON string incrementally
     # local json="{ \"$workspace\": { \"$config_name\": {"
@@ -953,9 +953,9 @@ shell::dump_workspace_json() {
     #     local first_field=1
     #     while IFS= read -r key; do
     #         local value
-    #         # value=$(shell::ini_read "$conf_file" "$section" "$key" 2>/dev/null)
-    #         # value=$(shell::ini_read "$conf_file" "$section" "$key" 2>/dev/null | tail -n 1)
-    #         value=$(shell::ini_read "$conf_file" "$section" "$key" 2>/dev/null | sed 's/^value=//')
+    #         # value=$(shell::read_ini "$conf_file" "$section" "$key" 2>/dev/null)
+    #         # value=$(shell::read_ini "$conf_file" "$section" "$key" 2>/dev/null | tail -n 1)
+    #         value=$(shell::read_ini "$conf_file" "$section" "$key" 2>/dev/null | sed 's/^value=//')
     #         [ $first_field -eq 0 ] && json+=","
     #         key=$(shell::sanitize_lower_var_name "$key") # Ensure the key is a valid JSON key
     #         json+=" \"$key\": \"${value}\""
@@ -999,7 +999,7 @@ shell::dump_workspace_json() {
         local first_field=1
         while IFS= read -r key; do
             local value
-            value=$(shell::ini_read "$conf_file" "$section" "$key" 2>/dev/null | sed 's/^value=//')
+            value=$(shell::read_ini "$conf_file" "$section" "$key" 2>/dev/null | sed 's/^value=//')
             [ $first_field -eq 0 ] && json+=","
             key=$(shell::sanitize_lower_var_name "$key")
             json+=" \"$key\": \"${value}\""

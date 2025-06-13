@@ -1,11 +1,11 @@
 #!/bin/bash
 # ini.sh
 
-# shell::ini_read function
+# shell::read_ini function
 # Reads the value of a specified key from a given section in an INI file.
 #
 # Usage:
-#   shell::ini_read <file> <section> <key>
+#   shell::read_ini <file> <section> <key>
 #
 # Parameters:
 #   - <file>    : The path to the INI file.
@@ -19,7 +19,7 @@
 #   The function handles comments, empty lines, and quoted values within the INI file.
 #
 # Example:
-#   shell::ini_read config.ini MySection MyKey  # Retrieves the value of MyKey in MySection.
+#   shell::read_ini config.ini MySection MyKey  # Retrieves the value of MyKey in MySection.
 #
 # Returns:
 #   The value of the specified key if found, or an error message if the key is not found.
@@ -27,7 +27,7 @@
 # Notes:
 #   - Relies on the shell::colored_echo function for output.
 #   - The behavior is controlled by the SHELL_INI_STRICT environment variable.
-shell::ini_read() {
+shell::read_ini() {
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_INI_READ"
@@ -40,8 +40,8 @@ shell::ini_read() {
 
     # Validate parameters
     if [ -z "$file" ] || [ -z "$section" ] || [ -z "$key" ]; then
-        shell::colored_echo "shell::ini_read: Missing required parameters" 196 >&2
-        echo "Usage: shell::ini_read [-h] <file> <section> <key>"
+        shell::colored_echo "shell::read_ini: Missing required parameters" 196 >&2
+        echo "Usage: shell::read_ini [-h] <file> <section> <key>"
         return 1
     fi
 
@@ -1443,7 +1443,7 @@ shell::ini_set_array_value() {
 #
 # Description:
 #   This function first reads the raw string value of a specified key from an INI file
-#   using 'shell::ini_read'. It then meticulously parses this string to extract
+#   using 'shell::read_ini'. It then meticulously parses this string to extract
 #   individual array elements. The parsing logic correctly handles comma delimiters
 #   and preserves values enclosed in double quotes, including those containing
 #   spaces, commas, or escaped double quotes within the value itself.
@@ -1468,7 +1468,7 @@ shell::ini_set_array_value() {
 #   The parsed array items are echoed to standard output, one per line.
 #
 # Notes:
-#   - Relies on 'shell::ini_read' to retrieve the raw value.
+#   - Relies on 'shell::read_ini' to retrieve the raw value.
 #   - Relies on 'shell::ini_trim' for whitespace removal from individual items.
 #   - The parsing logic is custom-built to handle INI-style quoted comma-separated lists.
 #   - Interaction with SHELL_INI_STRICT in 'shell::ini_write': Values formatted by
@@ -1496,14 +1496,14 @@ shell::ini_get_array_value() {
 
     # Read the raw string value from the INI file.
     local value
-    # Capture stderr from shell::ini_read to prevent its error messages from appearing if not desired,
+    # Capture stderr from shell::read_ini to prevent its error messages from appearing if not desired,
     # but still allow it to return status.
-    value=$(shell::ini_read "$file" "$section" "$key")
+    value=$(shell::read_ini "$file" "$section" "$key")
     local ini_read_status=$?
 
-    # Check if shell::ini_read failed (e.g., file/section/key not found).
+    # Check if shell::read_ini failed (e.g., file/section/key not found).
     if [ $ini_read_status -ne 0 ]; then
-        # shell::ini_read already prints specific error messages, so just indicate general failure here.
+        # shell::read_ini already prints specific error messages, so just indicate general failure here.
         shell::colored_echo "ERR: Failed to read raw value for key '$key' from section '$section'." 196
         return 1
     fi
@@ -1574,13 +1574,13 @@ shell::ini_get_array_value() {
 # Description:
 #   This function provides a convenient way to verify the presence of a specific
 #   key within a designated section of an INI configuration file. It acts as a
-#   wrapper around 'shell::ini_read', using its capabilities to determine if
+#   wrapper around 'shell::read_ini', using its capabilities to determine if
 #   the key can be successfully retrieved.
 #   If strict mode is active (SHELL_INI_STRICT is set to 1), it first
 #   validates the format of the section and key names, returning an error if
 #   they do not conform to the defined naming conventions.
 #   The function ensures its own output is clean by suppressing the internal
-#   logging of 'shell::ini_read', providing clear, colored messages indicating
+#   logging of 'shell::read_ini', providing clear, colored messages indicating
 #   whether the key was found or not.
 #
 # Example:
@@ -1599,9 +1599,9 @@ shell::ini_get_array_value() {
 #
 # Notes:
 #   - This function does not output the value of the key, only its existence status.
-#   - It leverages 'shell::ini_read' and other 'shell::ini_validate_*' functions for its operations.
+#   - It leverages 'shell::read_ini' and other 'shell::ini_validate_*' functions for its operations.
 #   - For detailed reasons why a key might not be found (e.g., file doesn't exist,
-#     section doesn't exist), 'shell::ini_read' or 'shell::ini_section_exists'
+#     section doesn't exist), 'shell::read_ini' or 'shell::ini_section_exists'
 #     will provide their own specific error messages if called directly.
 shell::ini_key_exists() {
     # Check for the help flag (-h)
@@ -1629,9 +1629,9 @@ shell::ini_key_exists() {
     fi
 
     # Attempt to read the key's value.
-    # Redirect stdout and stderr to /dev/null to prevent shell::ini_read's output/errors
+    # Redirect stdout and stderr to /dev/null to prevent shell::read_ini's output/errors
     # from cluttering the console, as this function provides its own status messages.
-    if shell::ini_read "$file" "$section" "$key" >/dev/null 2>&1; then
+    if shell::read_ini "$file" "$section" "$key" >/dev/null 2>&1; then
         shell::colored_echo "INFO: Key found: '$key' in section '$section'." 46
         return 0
     else
@@ -1737,10 +1737,10 @@ shell::ini_expose_env() {
         while IFS= read -r key; do
             local value
             # Attempt to read the key's value. Suppress ini_read's output for cleaner logging here.
-            value=$(shell::ini_read "$file" "$section" "$key" 2>/dev/null)
-            local read_status=$? # Capture exit status of shell::ini_read
+            value=$(shell::read_ini "$file" "$section" "$key" 2>/dev/null)
+            local read_status=$? # Capture exit status of shell::read_ini
 
-            # Only export if shell::ini_read was successful (key found and read).
+            # Only export if shell::read_ini was successful (key found and read).
             if [ $read_status -eq 0 ]; then
                 local sanitized_section
                 sanitized_section=$(shell::sanitize_upper_var_name "$section")
@@ -1778,7 +1778,7 @@ shell::ini_expose_env() {
             while IFS= read -r key; do
                 local value
                 # Attempt to read the key's value. Suppress ini_read's output for cleaner logging here.
-                value=$(shell::ini_read "$file" "$current_section" "$key" 2>/dev/null)
+                value=$(shell::read_ini "$file" "$current_section" "$key" 2>/dev/null)
                 local read_status=$?
 
                 if [ $read_status -eq 0 ]; then
@@ -1977,10 +1977,10 @@ shell::ini_destroy_keys() {
 #   It takes the file path, section name, and key as mandatory arguments.
 #   An optional 'default_value' can be provided.
 #
-#   The function first tries to read the key's value using 'shell::ini_read'.
-#   If 'shell::ini_read' successfully finds and returns a value (exit status 0),
+#   The function first tries to read the key's value using 'shell::read_ini'.
+#   If 'shell::read_ini' successfully finds and returns a value (exit status 0),
 #   that value is echoed to standard output.
-#   If 'shell::ini_read' fails to find the key or encounters any other issue
+#   If 'shell::read_ini' fails to find the key or encounters any other issue
 #   (e.g., file not found, section not found), the 'default_value' is echoed
 #   to standard output instead. If 'default_value' is not provided, an empty
 #   string is used as the default.
@@ -2006,7 +2006,7 @@ shell::ini_destroy_keys() {
 #   The retrieved value or default value is echoed to standard output.
 #
 # Notes:
-#   - 'shell::ini_read' error messages (e.g., "File not found", "Key not found") are
+#   - 'shell::read_ini' error messages (e.g., "File not found", "Key not found") are
 #     suppressed to avoid clutter when a default value is being returned.
 #     This function provides its own consolidated logging.
 #   - Ensures cross-platform compatibility by relying on standard Bash features
@@ -2031,8 +2031,8 @@ shell::ini_get_or_default() {
     fi
 
     local value
-    # Try to read the value, suppressing shell::ini_read's error output.
-    value=$(shell::ini_read "$file" "$section" "$key" 2>/dev/null)
+    # Try to read the value, suppressing shell::read_ini's error output.
+    value=$(shell::read_ini "$file" "$section" "$key" 2>/dev/null)
     local read_status=$?
 
     # Return the value if read successfully, otherwise return the default_value.
@@ -2761,7 +2761,7 @@ shell::fzf_view_ini_viz() {
     # The value is colored for better visibility.
     # The value is then passed to shell::clip_value for further processing.
     local value
-    value=$(shell::ini_read "$file" "$section" "$key")
+    value=$(shell::read_ini "$file" "$section" "$key")
     if [ $? -ne 0 ]; then
         shell::colored_echo "ERR: Failed to read value for key '$key' in section '$section'." 196
         return 1
@@ -2888,7 +2888,7 @@ shell::fzf_view_ini_viz_super() {
         local first=1
         while IFS= read -r key; do
             local val
-            val=$(shell::ini_read "$file" "$section" "$key")
+            val=$(shell::read_ini "$file" "$section" "$key")
             val=$(echo "$val" | sed 's/"/\\"/g') # escape double quotes
             key=$(shell::sanitize_lower_var_name "$key")
             if [ $first -eq 1 ]; then
@@ -2910,7 +2910,7 @@ shell::fzf_view_ini_viz_super() {
         local output=""
         while IFS= read -r key; do
             local val
-            val=$(shell::ini_read "$file" "$section" "$key")
+            val=$(shell::read_ini "$file" "$section" "$key")
             key=$(shell::sanitize_lower_var_name "$key")
             output="${output}$key: $val\n"
         done <<<"$keys"
@@ -2942,7 +2942,7 @@ shell::fzf_view_ini_viz_super() {
     while IFS= read -r key; do
         key=$(echo "$key" | sed "s/$(echo -e "\033")[0-9;]*m//g")
         local value
-        value=$(shell::ini_read "$file" "$section" "$key")
+        value=$(shell::read_ini "$file" "$section" "$key")
         shell::colored_echo "DEBUG: [k] $key" 244
         shell::colored_echo "INFO: [v] $value" 46
         key=$(shell::sanitize_lower_var_name "$key")
@@ -3063,7 +3063,7 @@ shell::fzf_view_ini_viz_super_control() {
             local first=1
             while IFS= read -r key; do
                 local val
-                val=$(shell::ini_read "$file" "$section" "$key")
+                val=$(shell::read_ini "$file" "$section" "$key")
                 val=$(echo "$val" | sed 's/"/\\"/g')
                 key=$(shell::sanitize_lower_var_name "$key")
                 if [ $first -eq 1 ]; then
@@ -3084,7 +3084,7 @@ shell::fzf_view_ini_viz_super_control() {
             local output=""
             while IFS= read -r key; do
                 local val
-                val=$(shell::ini_read "$file" "$section" "$key")
+                val=$(shell::read_ini "$file" "$section" "$key")
                 key=$(shell::sanitize_lower_var_name "$key")
                 output="${output}$key: $val\n"
             done <<<"$keys"
@@ -3122,7 +3122,7 @@ shell::fzf_view_ini_viz_super_control() {
         while IFS= read -r key; do
             key=$(echo "$key" | sed "s/$(echo -e "\033")[0-9;]*m//g")
             local value
-            value=$(shell::ini_read "$file" "$section" "$key")
+            value=$(shell::read_ini "$file" "$section" "$key")
             shell::colored_echo "DEBUG: [k] $key" 244
             shell::colored_echo "INFO: [v] $value" 46
             key=$(shell::sanitize_lower_var_name "$key")

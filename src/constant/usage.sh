@@ -2777,11 +2777,11 @@ Example:
 "
 
 USAGE_SHELL_INI_READ="
-shell::ini_read function
+shell::read_ini function
 Reads the value of a specified key from a given section in an INI file.
 
 Usage:
-  shell::ini_read [-h] <file> <section> <key>
+  shell::read_ini [-h] <file> <section> <key>
 
 Parameters:
   - -h        : Optional. Displays this help message.
@@ -2796,7 +2796,7 @@ Description:
   The function handles comments, empty lines, and quoted values within the INI file.
 
 Example:
-  shell::ini_read config.ini MySection MyKey  # Retrieves the value of MyKey in MySection.
+  shell::read_ini config.ini MySection MyKey  # Retrieves the value of MyKey in MySection.
 "
 
 USAGE_SHELL_INI_LIST_SECTIONS="
@@ -3023,7 +3023,7 @@ Parameters:
 
 Description:
   This function first reads the raw string value of a specified key from an INI file
-  using 'shell::ini_read'. It then meticulously parses this string to extract
+  using 'shell::read_ini'. It then meticulously parses this string to extract
   individual array elements. The parsing logic correctly handles comma delimiters
   and preserves values enclosed in double quotes, including those containing
   spaces, commas, or escaped double quotes within the value itself.
@@ -3059,13 +3059,13 @@ Parameters:
 Description:
   This function provides a convenient way to verify the presence of a specific
   key within a designated section of an INI configuration file. It acts as a
-  wrapper around 'shell::ini_read', using its capabilities to determine if
+  wrapper around 'shell::read_ini', using its capabilities to determine if
   the key can be successfully retrieved.
   If strict mode is active (SHELL_INI_STRICT is set to 1), it first
   validates the format of the section and key names, returning an error if
   they do not conform to the defined naming conventions.
   The function ensures its own output is clean by suppressing the internal
-  logging of 'shell::ini_read', providing clear, colored messages indicating
+  logging of 'shell::read_ini', providing clear, colored messages indicating
   whether the key was found or not.
 
 Example:
@@ -3119,7 +3119,7 @@ Returns:
 
 Notes:
   - Affects the current shell session's environment.
-  - Relies on 'shell::ini_list_sections', 'shell::ini_list_keys', 'shell::ini_read',
+  - Relies on 'shell::ini_list_sections', 'shell::ini_list_keys', 'shell::read_ini',
     'shell::sanitize_upper_var_name', and 'shell::colored_echo'.
   - If SHELL_INI_STRICT is enabled, section and key names will be validated prior
     to reading.
@@ -3172,7 +3172,7 @@ Notes:
     variable was not found or was already unset.
   - Relies on 'shell::ini_list_sections', 'shell::ini_list_keys',
     'shell::sanitize_upper_var_name', and 'shell::colored_echo'.
-  - It does NOT rely on 'shell::ini_read' for values, only for deriving names.
+  - It does NOT rely on 'shell::read_ini' for values, only for deriving names.
 "
 
 USAGE_SHELL_INI_GET_OR_DEFAULT="
@@ -3214,8 +3214,8 @@ Returns:
   The retrieved value or the default value is echoed to standard output.
 
 Notes:
-  - Relies on 'shell::ini_read' for file parsing.
-  - Error messages from 'shell::ini_read' are suppressed, as this function
+  - Relies on 'shell::read_ini' for file parsing.
+  - Error messages from 'shell::read_ini' are suppressed, as this function
     provides its own feedback regarding value retrieval or default usage.
   - Console logging is used for status updates.
 "
