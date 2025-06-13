@@ -567,7 +567,7 @@ shell::fzf_manage_workspace() {
     # The actions include: view, edit, rename, and remove
     # We use printf to create a list of actions, which is then piped into fzf
     local action
-    action=$(printf "view\nedit\nrename\nremove" |
+    action=$(printf "view\nedit\nrename\nremove\nclone" |
         fzf --prompt="Action for workspace '$selected': ")
 
     # Check if an action was selected
@@ -618,6 +618,24 @@ shell::fzf_manage_workspace() {
             shell::remove_workspace -n "$selected"
         else
             shell::remove_workspace "$selected"
+        fi
+        ;;
+    clone)
+        # If the action is 'clone', we call shell::clone_workspace
+        # We prompt for the new workspace name to clone to
+        shell::colored_echo "[e] Enter new name for cloned workspace from '$selected':" 208
+        read -r new_name
+        # Check if a new name was entered
+        if [ -z "$new_name" ]; then
+            shell::colored_echo "ERR: No new name entered. Aborting clone." 196
+            return 1
+        fi
+        # If dry mode is enabled, we print the command to clone the workspace
+        # This allows us to see what would be done without actually cloning anything
+        if [ "$dry_run" = "true" ]; then
+            shell::clone_workspace -n "$selected" "$new_name"
+        else
+            shell::clone_workspace "$selected" "$new_name"
         fi
         ;;
     *)
