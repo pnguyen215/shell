@@ -303,7 +303,7 @@ shell::get_profile() {
         shell::colored_echo "ERR: Profile configuration file '$profile_conf' not found." 196
         return 1
     fi
-    shell::colored_echo "📄 Contents of '$profile_conf':" 33
+    shell::colored_echo "DEBUG: Contents of '$profile_conf':" 244
     shell::run_cmd_eval cat "$profile_conf"
 }
 
