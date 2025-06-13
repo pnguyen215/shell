@@ -1445,11 +1445,11 @@ shell::sync_key_group_conf() {
     fi
 }
 
-# shell::fzf_get_conf_viz function
+# shell::fzf_view_conf_viz function
 # Interactively selects a configuration key using fzf and displays its decoded value in real-time.
 #
 # Usage:
-#   shell::fzf_get_conf_viz [-n] [-h]
+#   shell::fzf_view_conf_viz [-n] [-h]
 #
 # Parameters:
 #   - -n : Optional dry-run flag. If provided, the clipboard copy command is printed instead of executed.
@@ -1468,8 +1468,8 @@ shell::sync_key_group_conf() {
 #   - Helper functions: shell::install_package, shell::colored_echo, shell::get_os_type, shell::clip_value, shell::on_evict.
 #
 # Example usage:
-#   shell::fzf_get_conf_viz         # Select a key and copy its decoded value.
-#   shell::fzf_get_conf_viz -n      # Dry-run: print the clipboard copy command.
+#   shell::fzf_view_conf_viz         # Select a key and copy its decoded value.
+#   shell::fzf_view_conf_viz -n      # Dry-run: print the clipboard copy command.
 #
 # Returns:
 #   0 on success, 1 on failure (e.g., no config file, fzf not installed, no selection).
@@ -1478,7 +1478,7 @@ shell::sync_key_group_conf() {
 #   - Compatible with both macOS and Linux.
 #   - Uses ANSI color codes for formatting (yellow for key, cyan for value).
 #   - The configuration file is expected to contain key=value pairs with Base64-encoded values.
-shell::fzf_get_conf_viz() {
+shell::fzf_view_conf_viz() {
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_FZF_GET_CONF_VISUALIZATION"
         return 0

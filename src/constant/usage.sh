@@ -3649,11 +3649,11 @@ are removed using (rm). In dry-run mode, the removal commands are printed instea
 "
 
 USAGE_SHELL_FZF_GET_CONF_VISUALIZATION="
-shell::fzf_get_conf_viz function
+shell::fzf_view_conf_viz function
 Interactively selects a configuration key using fzf and displays its decoded value in real-time.
 
 Usage:
-  shell::fzf_get_conf_viz [-n] [-h]
+  shell::fzf_view_conf_viz [-n] [-h]
 
 Parameters:
   - -n : Optional dry-run flag. If provided, the clipboard copy command is printed instead of executed.
