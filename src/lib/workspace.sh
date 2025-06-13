@@ -626,3 +626,84 @@ shell::fzf_manage_workspace() {
         ;;
     esac
 }
+
+# shell::clone_workspace function
+# Clones an existing workspace to a new workspace directory.
+#
+# Usage:
+# shell::clone_workspace [-n] <source_workspace> <destination_workspace>
+#
+# Parameters:
+# - -n : Optional dry-run flag. If provided, the clone command is printed using shell::on_evict instead of executed.
+# - <source_workspace> : The name of the existing workspace to clone.
+# - <destination_workspace> : The name of the new workspace to create.
+#
+# Description:
+# This function clones a workspace directory under $SHELL_CONF_WORKING_WORKSPACE
+# from <source_workspace> to <destination_workspace>. It checks for the existence of the source
+# and ensures the destination does not already exist. If valid, it copies the entire directory.
+#
+# Example:
+# shell::clone_workspace dxc dxc-clone
+# shell::clone_workspace -n dxc dxc-clone
+shell::clone_workspace() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_CLONE_WORKSPACE"
+        return 0
+    fi
+
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    # Check if source and destination workspace names are provided
+    # If not, we print usage information and return an error
+    # This ensures the user knows how to use the command correctly
+    # We check if at least two arguments are provided
+    # The first argument is the source workspace and the second is the destination workspace
+    # If less than two arguments are provided, we print usage information
+    # and return an error code
+    if [ $# -lt 2 ]; then
+        echo "Usage: shell::clone_workspace [-n] <source_workspace> <destination_workspace>"
+        return 1
+    fi
+
+    local source="$1"
+    local destination="$2"
+    local base="$SHELL_CONF_WORKING_WORKSPACE"
+    local source_dir="$base/$source"
+    local destination_dir="$base/$destination"
+
+    # Check if the source workspace exists and the destination does not
+    # We check if the source directory exists and if the destination directory does not
+    # If the source directory does not exist, we print an error message and return
+    # If the destination directory already exists, we print an error message and return
+    if [ ! -d "$source_dir" ]; then
+        shell::colored_echo "ERR: Source workspace '$source' does not exist at '$source_dir'" 196
+        return 1
+    fi
+
+    # Check if the destination workspace already exists
+    # If the destination directory already exists, we print an error message and return
+    # This prevents overwriting an existing workspace
+    if [ -d "$destination_dir" ]; then
+        shell::colored_echo "ERR: Destination workspace '$destination' already exists at '$destination_dir'" 196
+        return 1
+    fi
+
+    # Construct the command to clone the workspace directory
+    # We use sudo cp -r to recursively copy the source directory to the destination directory
+    # This effectively clones the workspace
+    local cmd="sudo cp -r \"$source_dir\" \"$destination_dir\""
+
+    # If dry-run mode is enabled, we print the command instead of executing it
+    # This allows us to see what would be done without making any changes
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "$cmd"
+    else
+        shell::run_cmd_eval "$cmd"
+        shell::colored_echo "INFO: Workspace cloned from '$source' to '$destination'" 46
+    fi
+}
