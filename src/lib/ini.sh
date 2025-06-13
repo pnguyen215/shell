@@ -68,7 +68,6 @@ shell::ini_read() {
     local in_target_section=0
     local os_type=$(shell::get_os_type)
     local decoded_value
-    # shell::colored_echo "🔵 Reading key '$key' from section '$section' in file: $file" 11
 
     while IFS= read -r line || [ -n "$line" ]; do
         # Skip comments and empty lines

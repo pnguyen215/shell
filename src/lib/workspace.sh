@@ -887,9 +887,6 @@ shell::dump_workspace_json() {
     # Check if the selected .conf file exists
     # We check if the conf_file exists
     # If the conf_file does not exist, we print an error message and return
-    # local section
-    # section=$(shell::ini_list_sections "$conf_file" |
-    #     fzf --prompt="Select section to export: ")
     local sections
     sections=$(shell::ini_list_sections "$conf_file" |
         fzf --multi --prompt="Select sections to export: ")
@@ -898,10 +895,6 @@ shell::dump_workspace_json() {
     # If no section was selected, we print an error message and return
     # This ensures the user knows they need to select a section
     # We check if the section variable is empty
-    # if [ -z "$section" ]; then
-    #     shell::colored_echo "ERR: No section selected." 196
-    #     return 1
-    # fi
     if [ -z "$sections" ]; then
         shell::colored_echo "ERR: No sections selected." 196
         return 1
@@ -945,18 +938,6 @@ shell::dump_workspace_json() {
     # We use shell::ini_read to read the values for each field
     # We use shell::sanitize_lower_var_name to ensure the keys are valid JSON keys
     # We build the JSON string incrementally
-    # local json="{ \"$workspace\": { \"$section\": {"
-    # local first=1
-    # while IFS= read -r key; do
-    #     local value
-    #     value=$(shell::ini_read "$conf_file" "$section" "$key" 2>/dev/null)
-    #     [ $first -eq 0 ] && json+=","
-    #     key=$(shell::sanitize_lower_var_name "$key") # Ensure the key is a valid JSON key
-    #     json+=" \"$key\": \"${value}\""
-    #     first=0
-    # done <<<"$selected_fields"
-    # json+=" } } }"
-
     local json="{ \"$workspace\": {"
     local first_section=1
     while IFS= read -r section; do
