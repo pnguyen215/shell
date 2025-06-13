@@ -170,13 +170,20 @@ shell::camel_case() {
 # Example:
 #   capitalized=$(shell::capitalize_each_word "my section key name") # Outputs "My Section Key Name"
 shell::capitalize_each_word() {
+    if [ $# -ne 1 ]; then
+        echo "Usage: shell::capitalize_each_word <string>"
+        return 1
+    fi
+
     local input="$1"
     local output_string=""
 
-    # Return early if input is empty
+    # Check if input is empty
+    # If input is empty, return an empty string
     [ -z "$input" ] && echo "" && return
 
     # Use a while-read loop for better word splitting and IFS safety
+    # IFS is set to read words separated by spaces
     while IFS= read -r -d ' ' word || [ -n "$word" ]; do
         if [ -n "$word" ]; then
             # Capitalize first letter and append rest
