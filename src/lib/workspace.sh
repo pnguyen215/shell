@@ -965,7 +965,8 @@ shell::dump_workspace_json() {
         local first_field=1
         while IFS= read -r key; do
             local value
-            value=$(shell::ini_read "$conf_file" "$section" "$key" 2>/dev/null)
+            # value=$(shell::ini_read "$conf_file" "$section" "$key" 2>/dev/null)
+            value=$(shell::ini_read "$conf_file" "$section" "$key" 2>/dev/null | tail -n 1)
             [ $first_field -eq 0 ] && json+=","
             key=$(shell::sanitize_lower_var_name "$key") # Ensure the key is a valid JSON key
             json+=" \"$key\": \"${value}\""
