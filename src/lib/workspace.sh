@@ -46,7 +46,7 @@ shell::add_workspace() {
     # Check if workspace already exists
     # If the directory already exists, we return an error
     if [ -d "$dir" ]; then
-        shell::colored_echo "ERROR: Workspace '$name' already exists at '$dir'" 196
+        shell::colored_echo "ERR: Workspace '$name' already exists at '$dir'" 196
         return 1
     fi
 
@@ -56,9 +56,9 @@ shell::add_workspace() {
     # We use touch to create the profile.conf and .ssh/*.conf files
     # The command is constructed as a single string to be executed later
     # This allows us to handle dry-run mode by simply printing the command instead of executing it
-    local cmd="mkdir -p \"$ssh_dir\" && touch \"$profile\""
+    local cmd="sudo mkdir -p \"$ssh_dir\" && sudo touch \"$profile\""
     for f in "${ssh_files[@]}"; do
-        cmd="$cmd && touch \"$ssh_dir/$f\""
+        cmd="$cmd && sudo touch \"$ssh_dir/$f\""
     done
 
     # If dry-run mode is enabled, we print the command instead of executing it
