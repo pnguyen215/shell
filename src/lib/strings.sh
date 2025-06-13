@@ -89,7 +89,12 @@ shell::sanitize_first_upper_var_name() {
     # -s: Squeezes repeated output characters. This means if there are multiple consecutive
     #     non-alphanumeric/non-underscore characters (e.g., "--" or "."), they will be
     #     replaced by a single underscore.
-    echo "$temp_string" | tr -cs '[:alnum:]_' '_'
+    local sanitized_output
+    sanitized_output=$(echo "$temp_string" | tr -cs '[:alnum:]_' '_')
+
+    # Remove any leading or trailing underscores that might have been introduced by tr.
+    # This uses sed to remove an underscore at the start (^) or end ($) of the string.
+    echo "$sanitized_output" | sed 's/^_//;s/_$//'
 }
 
 # shell::sanitize_first_lower_var_name function
