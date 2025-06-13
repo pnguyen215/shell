@@ -63,8 +63,33 @@ shell::sanitize_lower_var_name() {
 #   sanitized=$(shell::sanitize_first_upper_var_name "my-section.key_name") # Outputs "My_section_key_name"
 shell::sanitize_first_upper_var_name() {
     local input="$1"
-    # Convert first character to uppercase, replace non-alphanumeric and non-underscore with underscore
-    echo "$input" | sed -e 's/^\(.\)/\U\1/' -e 's/[^A-Z0-9_]/_/g'
+
+    # Handle empty input gracefully
+    if [ -z "$input" ]; then
+        echo ""
+        return
+    fi
+
+    local first_char_upper
+    # Extract the first character and convert it to uppercase using tr.
+    # tr '[:lower:]' '[:upper:]' is highly portable for case conversion.
+    first_char_upper=$(echo "${input:0:1}" | tr '[:lower:]' '[:upper:]')
+
+    # Get the rest of the string after the first character.
+    local rest_of_string="${input:1}"
+
+    # Combine the converted first character with the rest of the string.
+    local temp_string="${first_char_upper}${rest_of_string}"
+
+    # Sanitize the entire string:
+    # tr -cs '[:alnum:]_' '_' does the following:
+    # -c: Complements the set of characters, meaning it matches characters NOT in '[:alnum:]_'.
+    #     '[:alnum:]' includes all alphanumeric characters (a-z, A-Z, 0-9).
+    #     '_' is explicitly included in the set.
+    # -s: Squeezes repeated output characters. This means if there are multiple consecutive
+    #     non-alphanumeric/non-underscore characters (e.g., "--" or "."), they will be
+    #     replaced by a single underscore.
+    echo "$temp_string" | tr -cs '[:alnum:]_' '_'
 }
 
 # shell::sanitize_first_lower_var_name function
