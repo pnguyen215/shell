@@ -966,25 +966,6 @@ shell::dump_workspace_json() {
     # done <<<"$sections"
     # json+=" } } }"
 
-    # local json="{ \"$workspace\": { \"$config_name\": {"
-    # local first_section=1
-    # while IFS= read -r section; do
-    #     [ $first_section -eq 0 ] && json+=","
-    #     json+=" \"$section\": {"
-    #     local first_field=1
-    #     while IFS= read -r key; do
-    #         local value
-    #         value=$(shell::ini_read "$conf_file" "$section" "$key" 2>/dev/null | sed 's/^value=//')
-    #         [ $first_field -eq 0 ] && json+=","
-    #         key=$(shell::sanitize_lower_var_name "$key")
-    #         json+=" \"$key\": \"${value}\""
-    #         first_field=0
-    #     done < <(shell::ini_list_keys "$conf_file" "$section" 2>/dev/null)
-    #     json+=" }"
-    #     first_section=0
-    # done <<<"$sections"
-    # json+=" } } }"
-
     local json="{ \"$workspace\": { \"$config_name\": {"
     local first_section=1
     while IFS= read -r section; do
