@@ -521,11 +521,11 @@ shell::get_profile_conf() {
     shell::clip_value "$decoded_value"
 }
 
-# shell::get_value_profile_conf function
+# shell::get_profile_conf_value function
 # Retrieves a configuration value for a given profile and key by decoding its base64-encoded value.
 #
 # Usage:
-#   shell::get_value_profile_conf [-n] <profile_name> <key>
+#   shell::get_profile_conf_value [-n] <profile_name> <key>
 #
 # Parameters:
 #   - -n (optional): Dry-run mode. Instead of executing commands, prints them using shell::on_evict.
@@ -539,17 +539,17 @@ shell::get_profile_conf() {
 #   asynchronously copies the decoded value to the clipboard, and finally outputs the decoded value.
 #
 # Example:
-#   shell::get_value_profile_conf my_profile API_KEY
-#   shell::get_value_profile_conf -n my_profile API_KEY   # Dry-run: prints commands without executing them.
-shell::get_value_profile_conf() {
+#   shell::get_profile_conf_value my_profile API_KEY
+#   shell::get_profile_conf_value -n my_profile API_KEY   # Dry-run: prints commands without executing them.
+shell::get_profile_conf_value() {
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_GET_VALUE_PROFILE_CONF"
+        echo "$USAGE_SHELL_GET_PROFILE_CONF_VALUE"
         return 0
     fi
 
     if [ $# -lt 2 ]; then
-        echo "Usage: shell::get_value_profile_conf <profile_name> <key>"
+        echo "Usage: shell::get_profile_conf_value <profile_name> <key>"
         return 1
     fi
     shell::ensure_workspace
