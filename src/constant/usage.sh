@@ -3126,11 +3126,11 @@ Notes:
 "
 
 USAGE_SHELL_INI_DESTROY_KEYS="
-shell::ini_destroy_keys function
+shell::destroy_ini_env function
 Unsets environment variables previously exported from an INI file.
 
 Usage:
-  shell::ini_destroy_keys [-h] <file> [prefix] [section]
+  shell::destroy_ini_env [-h] <file> [prefix] [section]
 
 Parameters:
   - -h        : Optional. Displays this help message.
@@ -3155,13 +3155,13 @@ Description:
 
 Example:
   # To unset all variables exported from 'config.ini' without a prefix:
-  shell::ini_destroy_keys config.ini
+  shell::destroy_ini_env config.ini
 
   # To unset variables exported from 'config.ini' with the 'APP_CONFIG' prefix:
-  shell::ini_destroy_keys config.ini APP_CONFIG
+  shell::destroy_ini_env config.ini APP_CONFIG
 
   # To unset variables from the 'Database' section of 'config.ini' with the 'DB' prefix:
-  shell::ini_destroy_keys config.ini DB Database
+  shell::destroy_ini_env config.ini DB Database
 
 Returns:
   0 on successful completion, 1 on failure (e.g., missing file, invalid parameters).

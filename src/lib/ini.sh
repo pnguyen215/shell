@@ -1809,11 +1809,11 @@ shell::expose_ini_env() {
     return 0
 }
 
-# shell::ini_destroy_keys function
+# shell::destroy_ini_env function
 # Unsets environment variables previously exported from an INI file.
 #
 # Usage:
-#   shell::ini_destroy_keys [-h] <file> [prefix] [section]
+#   shell::destroy_ini_env [-h] <file> [prefix] [section]
 #
 # Parameters:
 #   - -h        : Optional. Displays this help message.
@@ -1844,7 +1844,7 @@ shell::expose_ini_env() {
 #   # To export variables from 'dev.ini' with prefix 'DEV_APP':
 #   # shell::expose_ini_env dev.ini DEV_APP
 #   # To then destroy these variables:
-#   # shell::ini_destroy_keys dev.ini DEV_APP
+#   # shell::destroy_ini_env dev.ini DEV_APP
 #
 # Returns:
 #   0 (success) on completion of the unsetting process.
@@ -1859,7 +1859,7 @@ shell::expose_ini_env() {
 #   - This function uses process substitution (`< <(...)`) for portability
 #     when iterating over lists of sections/keys, making it compatible with
 #     older Bash versions (e.g., Bash 3 on macOS) as well as newer ones.
-shell::ini_destroy_keys() {
+shell::destroy_ini_env() {
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_INI_DESTROY_KEYS"
@@ -1872,8 +1872,8 @@ shell::ini_destroy_keys() {
 
     # Validate required parameters.
     if [ -z "$file" ]; then
-        shell::colored_echo "ERR: shell::ini_destroy_keys: Missing file parameter." 196
-        echo "Usage: shell::ini_destroy_keys [-h] <file> [prefix] [section]"
+        shell::colored_echo "ERR: shell::destroy_ini_env: Missing file parameter." 196
+        echo "Usage: shell::destroy_ini_env [-h] <file> [prefix] [section]"
         return 1
     fi
 
