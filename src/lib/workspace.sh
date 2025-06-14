@@ -207,6 +207,13 @@ shell::fzf_view_workspace() {
     fi
 
     local name="$1"
+
+    # Sanitize the workspace name
+    # We use shell::sanitize_lower_var_name to ensure the name is in lowercase and safe for use as a directory name
+    # This function replaces non-alphanumeric characters with underscores
+    # This helps prevent issues with invalid directory names
+    name=$(shell::sanitize_lower_var_name "$name")
+
     local base="$SHELL_CONF_WORKING_WORKSPACE"
     local ssh_dir="$base/$name/.ssh"
 
