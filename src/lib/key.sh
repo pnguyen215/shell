@@ -324,12 +324,12 @@ shell::get_key_conf_value() {
     echo "$decoded_value"
 }
 
-# shell::fzf_remove_conf function
+# shell::fzf_remove_key_conf function
 # Interactively selects a configuration key from a constant configuration file using fzf,
 # then removes the corresponding entry from the configuration file.
 #
 # Usage:
-#   shell::fzf_remove_conf [-n]
+#   shell::fzf_remove_key_conf [-n]
 #
 # Parameters:
 #   - -n : Optional dry-run flag. If provided, the removal command is printed using shell::on_evict instead of executed.
@@ -343,9 +343,9 @@ shell::get_key_conf_value() {
 #   In dry-run mode, the command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
 #
 # Example:
-#   shell::fzf_remove_conf         # Interactively select a key and remove its configuration entry.
-#   shell::fzf_remove_conf -n      # Prints the removal command without executing it.
-shell::fzf_remove_conf() {
+#   shell::fzf_remove_key_conf         # Interactively select a key and remove its configuration entry.
+#   shell::fzf_remove_key_conf -n      # Prints the removal command without executing it.
+shell::fzf_remove_key_conf() {
     local dry_run="false"
 
     # Check for the optional dry-run flag (-n)
@@ -356,7 +356,7 @@ shell::fzf_remove_conf() {
 
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_REMOVE_CONF"
+        echo "$USAGE_SHELL_FZF_REMOVE_KEY_CONF"
         return 0
     fi
 

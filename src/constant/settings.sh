@@ -33,7 +33,7 @@ SHELL_CONF_WORKING_BOOKMARK="$SHELL_CONF_WORKING/bookmarks"
 # The file stores individual configuration entries in the following format:
 #   key=encoded_value
 # where each value is encoded using Base64 (with newlines removed).
-# Functions such as shell::add_key_conf, shell::fzf_get_key_conf, shell::fzf_update_conf, and shell::fzf_remove_conf use this file to store and manage configuration settings.
+# Functions such as shell::add_key_conf, shell::fzf_get_key_conf, shell::fzf_update_conf, and shell::fzf_remove_key_conf use this file to store and manage configuration settings.
 #
 # Example:
 #   SHELL_KEY_CONF_FILE="$HOME/.shell-config/key.conf"
