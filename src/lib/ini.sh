@@ -367,7 +367,7 @@ shell::ini_escape_for_regex() {
 shell::check_ini_file() {
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_INI_CHECK_FILE"
+        echo "$USAGE_SHELL_CHECK_INI_FILE"
         return 0
     fi
 
