@@ -1047,7 +1047,7 @@ shell::fzf_remove_ini_key() {
 
     # Check for the optional dry-run flag (-n)
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_INI_REMOVE_KEY"
+        echo "$USAGE_SHELL_FZF_REMOVE_INI_KEY"
         return 0
     fi
 

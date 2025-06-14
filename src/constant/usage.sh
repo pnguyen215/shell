@@ -2931,7 +2931,7 @@ Example usage:
   shell::remove_ini_section /path/to/config.ini \"database\"
 "
 
-USAGE_SHELL_FZF_INI_REMOVE_KEY="
+USAGE_SHELL_FZF_REMOVE_INI_KEY="
 shell::fzf_remove_ini_key function
 Interactively selects a key from a specific section in an INI file using fzf
 and then removes the selected key from that section.
