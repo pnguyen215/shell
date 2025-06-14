@@ -275,7 +275,7 @@ Access the shell library by opening your terminal and using the commands below. 
   - `shell::add_key_conf my_setting "some secret value" `
   - `shell::add_key_conf -n my_setting "some secret value"`
 
-- **`shell::fzf_get_conf`**
+- **`shell::fzf_get_key_conf`**
   Interactively selects a configuration key from a constant configuration file using fzf,
   then decodes and displays its corresponding value.
 

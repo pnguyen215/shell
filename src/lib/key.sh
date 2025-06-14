@@ -202,12 +202,12 @@ shell::add_key_conf_comment() {
     fi
 }
 
-# shell::fzf_get_conf function
+# shell::fzf_get_key_conf function
 # Interactively selects a configuration key from a constant configuration file using fzf,
 # then decodes and displays its corresponding value.
 #
 # Usage:
-#   shell::fzf_get_conf
+#   shell::fzf_get_key_conf
 #
 # Description:
 #   The function reads the configuration file defined by the constant SHELL_KEY_CONF_FILE,
@@ -219,11 +219,10 @@ shell::add_key_conf_comment() {
 #   and its decoded value.
 #
 # Example:
-#   shell::fzf_get_conf      # Interactively select a key and display its decoded value.
-shell::fzf_get_conf() {
-    # Check for the help flag (-h)
+#   shell::fzf_get_key_conf      # Interactively select a key and display its decoded value.
+shell::fzf_get_key_conf() {
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_GET_CONF"
+        echo "$USAGE_SHELL_FZF_GET_KEY_CONF"
         return 0
     fi
 
@@ -1479,7 +1478,7 @@ shell::sync_key_group_conf() {
 #   - The configuration file is expected to contain key=value pairs with Base64-encoded values.
 shell::fzf_view_conf_viz() {
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_GET_CONF_VISUALIZATION"
+        echo "$USAGE_SHELL_FZF_GET_KEY_CONF_VISUALIZATION"
         return 0
     fi
 

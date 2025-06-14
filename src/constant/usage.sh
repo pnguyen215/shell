@@ -200,13 +200,13 @@ Example:
   shell::add_key_conf -n my_setting \"some secret value\"      # Prints the command without executing it.
 "
 
-USAGE_SHELL_FZF_GET_CONF="
-shell::fzf_get_conf function
+USAGE_SHELL_FZF_GET_KEY_CONF="
+shell::fzf_get_key_conf function
 Interactively selects a configuration key from a constant configuration file using fzf,
 then decodes and displays its corresponding value.
 
 Usage:
-  shell::fzf_get_conf [-h]
+  shell::fzf_get_key_conf [-h]
 
 Parameters:
   - -h              : Optional. Displays this help message.
@@ -221,7 +221,7 @@ Description:
   and its decoded value.
 
 Example:
-  shell::fzf_get_conf      # Interactively select a key and display its decoded value.
+  shell::fzf_get_key_conf      # Interactively select a key and display its decoded value.
 "
 
 USAGE_SHELL_GET_VALUE_CONF="
@@ -3608,7 +3608,7 @@ to choose one or more files to delete. After confirmation, the selected files
 are removed using (rm). In dry-run mode, the removal commands are printed instead.
 "
 
-USAGE_SHELL_FZF_GET_CONF_VISUALIZATION="
+USAGE_SHELL_FZF_GET_KEY_CONF_VISUALIZATION="
 shell::fzf_view_conf_viz function
 Interactively selects a configuration key using fzf and displays its decoded value in real-time.
 
