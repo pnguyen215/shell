@@ -2799,7 +2799,7 @@ Example:
   shell::read_ini config.ini MySection MyKey  # Retrieves the value of MyKey in MySection.
 "
 
-USAGE_SHELL_INI_LIST_SECTIONS="
+USAGE_SHELL_LIST_INI_SECTIONS="
 shell::list_ini_sections function
 Lists all section names from a given INI file.
 

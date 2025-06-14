@@ -436,7 +436,7 @@ shell::check_ini_file() {
 shell::list_ini_sections() {
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_INI_LIST_SECTIONS"
+        echo "$USAGE_SHELL_LIST_INI_SECTIONS"
         return 0
     fi
 
