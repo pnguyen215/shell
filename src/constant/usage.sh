@@ -2956,7 +2956,7 @@ Example:
   shell::fzf_remove_ini_key -n settings.ini \"API\"  # Dry-run: show commands to remove a key from the API section.
 "
 
-USAGE_SHELL_INI_REMOVE_KEY="
+USAGE_SHELL_REMOVE_INI_KEY="
 shell::remove_ini_key function
 Removes a specified key from a specific section in an INI formatted file.
 

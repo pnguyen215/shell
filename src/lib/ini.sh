@@ -1216,7 +1216,7 @@ shell::remove_ini_key() {
 
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_INI_REMOVE_KEY"
+        echo "$USAGE_SHELL_REMOVE_INI_KEY"
         return 0
     fi
 
