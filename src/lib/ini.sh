@@ -1336,11 +1336,11 @@ shell::remove_ini_key() {
     fi
 }
 
-# shell::ini_set_array_value function
+# shell::set_array_ini_value function
 # Writes an array of values to a specified key in an INI file.
 #
 # Usage:
-#   shell::ini_set_array_value [-h] <file> <section> <key> [value1] [value2 ...]
+#   shell::set_array_ini_value [-h] <file> <section> <key> [value1] [value2 ...]
 #
 # Parameters:
 #   - -h        : Optional. Displays this help message.
@@ -1358,7 +1358,7 @@ shell::remove_ini_key() {
 #   which handles file and section existence, creation, and updates.
 #
 # Example:
-#   shell::ini_set_array_value config.ini MySection MyList "alpha" "beta gamma" "delta,epsilon"
+#   shell::set_array_ini_value config.ini MySection MyList "alpha" "beta gamma" "delta,epsilon"
 #   # This would result in MyList=alpha,"beta gamma","delta,epsilon" in config.ini
 #
 # Returns:
@@ -1371,7 +1371,7 @@ shell::remove_ini_key() {
 #     function if it contains spaces or quotes, potentially leading to double-quoting
 #     (e.g., value becoming ""item1\",\"item 2""). This function aims to produce a
 #     standard, internally-quoted INI array value.
-shell::ini_set_array_value() {
+shell::set_array_ini_value() {
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_INI_SET_ARRAY_VALUE"
@@ -1386,8 +1386,8 @@ shell::ini_set_array_value() {
 
     # Validate parameters
     if [ -z "$file" ] || [ -z "$section" ] || [ -z "$key" ]; then
-        shell::colored_echo "ERR: shell::ini_set_array_value: Missing required parameters." 196
-        echo "Usage: shell::ini_set_array_value [-h] <file> <section> <key> [value1] [value2 ...]"
+        shell::colored_echo "ERR: shell::set_array_ini_value: Missing required parameters." 196
+        echo "Usage: shell::set_array_ini_value [-h] <file> <section> <key> [value1] [value2 ...]"
         return 1
     fi
 
@@ -1472,7 +1472,7 @@ shell::ini_set_array_value() {
 #   - Relies on 'shell::trim_ini' for whitespace removal from individual items.
 #   - The parsing logic is custom-built to handle INI-style quoted comma-separated lists.
 #   - Interaction with SHELL_INI_STRICT in 'shell::write_ini': Values formatted by
-#     'shell::ini_set_array_value' (which are read by this function) are intended to be
+#     'shell::set_array_ini_value' (which are read by this function) are intended to be
 #     interpreted as single strings by 'shell::write_ini'. If 'SHELL_INI_STRICT' is 1
 #     during writing, the entire formatted string might be re-quoted. This function correctly
 #     parses values regardless of outer re-quoting, as it targets the internal array structure.

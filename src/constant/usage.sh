@@ -2982,11 +2982,11 @@ Example usage:
 "
 
 USAGE_SHELL_INI_SET_ARRAY_VALUE="
-shell::ini_set_array_value function
+shell::set_array_ini_value function
 Writes an array of values to a specified key in an INI file.
 
 Usage:
-  shell::ini_set_array_value [-h] <file> <section> <key> [value1] [value2 ...]
+  shell::set_array_ini_value [-h] <file> <section> <key> [value1] [value2 ...]
 
 Parameters:
   - -h        : Optional. Displays this help message.
@@ -3004,7 +3004,7 @@ Description:
   which handles file and section existence, creation, and updates.
 
 Example:
-  shell::ini_set_array_value config.ini MySection MyList \"alpha\" \"beta gamma\" \"delta,epsilon\"
+  shell::set_array_ini_value config.ini MySection MyList \"alpha\" \"beta gamma\" \"delta,epsilon\"
   # This would result in MyList=alpha,\"beta gamma\",\"delta,epsilon\" in config.ini
 "
 
