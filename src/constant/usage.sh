@@ -2476,12 +2476,12 @@ Example:
   shell::get_value_profile_conf -n my_profile API_KEY   # Dry-run: prints commands without executing them.
 "
 
-USAGE_SHELL_REMOVE_CONF_PROFILE="
-shell::remove_conf_profile function
+USAGE_SHELL_REMOVE_PROFILE_CONF="
+shell::remove_profile_conf function
 Removes a configuration key from a given profile's configuration file.
 
 Usage:
-  shell::remove_conf_profile [-n] [-h] <profile_name>
+  shell::remove_profile_conf [-n] [-h] <profile_name>
 
 Parameters:
   - -n (optional)   : Dry-run mode. Instead of executing commands, prints them using shell::on_evict.
@@ -2496,8 +2496,8 @@ Description:
   using shell::async with shell::run_cmd_eval.
 
 Example:
-  shell::remove_conf_profile my_profile
-  shell::remove_conf_profile -n my_profile   # Dry-run: prints the removal command without executing.
+  shell::remove_profile_conf my_profile
+  shell::remove_profile_conf -n my_profile   # Dry-run: prints the removal command without executing.
 "
 
 USAGE_SHELL_UPDATE_CONF_PROFILE="
