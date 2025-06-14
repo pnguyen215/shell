@@ -2101,11 +2101,11 @@ shell::ls() {
     return 0
 }
 
-# shell::analyze_perms function
+# shell::analyze_permissions function
 # Explains a file permission string (e.g., -rwxr-xr-x) in a human-readable way for developers.
 #
 # Usage:
-#   shell::analyze_perms [-h] [--file <path>] [--debug] [permission_string]
+#   shell::analyze_permissions [-h] [--file <path>] [--debug] [permission_string]
 #
 # Parameters:
 #   - -h : Optional. Displays this help message.
@@ -2124,10 +2124,10 @@ shell::ls() {
 #   - Helper functions: shell::colored_echo, shell::get_os_type.
 #
 # Example usage:
-#   shell::analyze_perms -rwxr-xr-x       # Explain -rwxr-xr-x permissions.
-#   shell::analyze_perms --file script.sh # Explain permissions of script.sh.
-#   shell::analyze_perms -h               # Show help message.
-#   shell::analyze_perms --debug          # Explain default permissions with debug output.
+#   shell::analyze_permissions -rwxr-xr-x       # Explain -rwxr-xr-x permissions.
+#   shell::analyze_permissions --file script.sh # Explain permissions of script.sh.
+#   shell::analyze_permissions -h               # Show help message.
+#   shell::analyze_permissions --debug          # Explain default permissions with debug output.
 #
 # Returns:
 #   0 on success, 1 on failure (e.g., invalid permission string, file not found).
@@ -2136,7 +2136,7 @@ shell::ls() {
 #   - Colors are applied using tput for consistency with shell::colored_echo.
 #   - Supports standard Unix permission strings (10 characters).
 #   - Provides octal values for use with chmod.
-shell::analyze_perms() {
+shell::analyze_permissions() {
     local permission_string=""
     local file_path=""
     local debug="false"
@@ -2145,7 +2145,7 @@ shell::analyze_perms() {
     while [ $# -gt 0 ]; do
         case "$1" in
         -h)
-            echo "Usage: shell::analyze_perms [-h] [--file <path>] [--debug] [permission_string]"
+            echo "Usage: shell::analyze_permissions [-h] [--file <path>] [--debug] [permission_string]"
             echo "  -h : Display this help message."
             echo "  --file <path> : Use permissions of the specified file."
             echo "  --debug : Enable debug output."
