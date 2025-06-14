@@ -2688,7 +2688,7 @@ Description:
   It utilizes shell::run_cmd_outlet for command execution and output capture.
 "
 
-USAGE_SHELL_INI_VALIDATE_SECTION_NAME="
+USAGE_SHELL_VALIDATE_INI_SECTION_NAME="
 shell::validate_ini_section_name function
 Validates an INI section name based on defined strictness levels.
 It checks for empty names and disallowed characters or spaces according to

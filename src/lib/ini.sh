@@ -164,7 +164,7 @@ shell::read_ini() {
 shell::validate_ini_section_name() {
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_INI_VALIDATE_SECTION_NAME"
+        echo "$USAGE_SHELL_VALIDATE_INI_SECTION_NAME"
         return 0
     fi
 
