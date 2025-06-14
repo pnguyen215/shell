@@ -21,20 +21,18 @@
 #   shell::read_conf ~/.my-config                # Sources the configuration file.
 #   shell::read_conf -n ~/.my-config             # Prints the sourcing command without executing it.
 shell::read_conf() {
-    local dry_run="false"
-
-    # Check for the optional dry-run flag (-n)
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
-
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_READ_CONF"
         return 0
     fi
 
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    # Check if a filename is provided.
     if [ $# -lt 1 ]; then
         echo "Usage: shell::read_conf [-n] <filename>"
         return 1
@@ -48,7 +46,9 @@ shell::read_conf() {
         return 1
     fi
 
-    # Build and execute (or print) the command to source the configuration file.
+    # Check if dry mode is enabled.
+    # If so, print the command to source the file.
+    # Otherwise, source the file.
     if [ "$dry_run" = "true" ]; then
         shell::on_evict "source \"$filename\""
     else
