@@ -3301,11 +3301,11 @@ Example:
 "
 
 USAGE_SHELL_INI_RENAME_SECTION="
-shell::ini_rename_section function
+shell::rename_ini_section function
 Renames a section in an INI file.
 
 Usage:
-  shell::ini_rename_section [-n] [-h] <file> <old_section> <new_section>
+  shell::rename_ini_section [-n] [-h] <file> <old_section> <new_section>
 
 Parameters:
   - -n        : Optional. Dry-run mode. Prints the command without executing it.

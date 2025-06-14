@@ -2045,11 +2045,11 @@ shell::get_or_default_ini_value() {
     return 0
 }
 
-# shell::ini_rename_section function
+# shell::rename_ini_section function
 # Renames an existing section in an INI file.
 #
 # Usage:
-#   shell::ini_rename_section [-n] <file> <old_section> <new_section>
+#   shell::rename_ini_section [-n] <file> <old_section> <new_section>
 #
 # Parameters:
 #   - -n          : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
@@ -2066,8 +2066,8 @@ shell::get_or_default_ini_value() {
 #   macOS (BSD sed) and Linux (GNU sed) for cross-platform compatibility.
 #
 # Example usage:
-#   shell::ini_rename_section config.ini "OldSection" "NewSection"
-#   shell::ini_rename_section -n settings.ini "Database" "ProductionDB" # Dry-run mode
+#   shell::rename_ini_section config.ini "OldSection" "NewSection"
+#   shell::rename_ini_section -n settings.ini "Database" "ProductionDB" # Dry-run mode
 #
 # Returns:
 #   0 on success, 1 on failure (e.g., missing parameters, file not found,
@@ -2076,7 +2076,7 @@ shell::get_or_default_ini_value() {
 # Notes:
 #   - Relies on shell::colored_echo, shell::check_ini_file, shell::exist_ini_section,
 #     shell::ini_escape_for_regex, shell::validate_ini_section_name, and shell::run_cmd_eval.
-shell::ini_rename_section() {
+shell::rename_ini_section() {
     local dry_run="false"
     local opt_h_found="false"
 
@@ -2105,8 +2105,8 @@ shell::ini_rename_section() {
 
     # Validate required parameters: file, old_section, new_section.
     if [ $# -lt 3 ]; then
-        shell::colored_echo "ERR: shell::ini_rename_section: Missing required parameters." 196
-        echo "Usage: shell::ini_rename_section [-n] [-h] <file> <old_section> <new_section>"
+        shell::colored_echo "ERR: shell::rename_ini_section: Missing required parameters." 196
+        echo "Usage: shell::rename_ini_section [-n] [-h] <file> <old_section> <new_section>"
         return 1
     fi
 
@@ -2178,7 +2178,7 @@ shell::ini_rename_section() {
 #   shell::list_ini_sections. It then presents these sections to the user
 #   via fzf for interactive selection. Once a section is chosen, the user is
 #   prompted to enter a new name for it. The renaming operation is then
-#   delegated to the shell::ini_rename_section function.
+#   delegated to the shell::rename_ini_section function.
 #   It includes checks for file existence and fzf installation.
 #
 # Example:
@@ -2191,7 +2191,7 @@ shell::ini_rename_section() {
 #
 # Notes:
 #   - Relies on shell::colored_echo, shell::install_package, shell::list_ini_sections,
-#     and shell::ini_rename_section.
+#     and shell::rename_ini_section.
 shell::fzf_ini_rename_section() {
     local dry_run="false"
     local opt_h_found="false" # Flag to track if -h was explicitly passed
@@ -2268,7 +2268,7 @@ shell::fzf_ini_rename_section() {
     if [ "$dry_run" = "true" ]; then
         rename_args=("-n" "${rename_args[@]}")
     fi
-    shell::ini_rename_section "${rename_args[@]}"
+    shell::rename_ini_section "${rename_args[@]}"
 }
 
 # shell::ini_clone_section function
