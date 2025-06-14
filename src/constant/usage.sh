@@ -3175,7 +3175,7 @@ Notes:
   - It does NOT rely on 'shell::read_ini' for values, only for deriving names.
 "
 
-USAGE_SHELL_INI_GET_OR_DEFAULT="
+USAGE_SHELL_GET_OR_DEFAULT_INI_VALUE="
 shell::get_or_default_ini_value function
 Reads a key's value from an INI file or returns a default if not found.
 

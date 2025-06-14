@@ -2014,7 +2014,7 @@ shell::destroy_ini_env() {
 shell::get_or_default_ini_value() {
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_INI_GET_OR_DEFAULT"
+        echo "$USAGE_SHELL_GET_OR_DEFAULT_INI_VALUE"
         return 0
     fi
 
