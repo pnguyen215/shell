@@ -736,11 +736,11 @@ shell::update_profile_conf() {
     fi
 }
 
-# shell::exist_key_conf_profile function
+# shell::exist_profile_conf function
 # Checks whether a specified key exists in the configuration file of a given profile.
 #
 # Usage:
-#   shell::exist_key_conf_profile <profile_name> <key>
+#   shell::exist_profile_conf <profile_name> <key>
 #
 # Parameters:
 #   - <profile_name>: The name of the profile.
@@ -752,16 +752,16 @@ shell::update_profile_conf() {
 #   The function outputs "true" if the key is found and "false" otherwise.
 #
 # Example:
-#   shell::exist_key_conf_profile my_profile my_key
-shell::exist_key_conf_profile() {
+#   shell::exist_profile_conf my_profile my_key
+shell::exist_profile_conf() {
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_EXIST_KEY_CONF_PROFILE"
+        echo "$USAGE_SHELL_EXIST_PROFILE_CONF"
         return 0
     fi
 
     if [ $# -lt 2 ]; then
-        echo "Usage: shell::exist_key_conf_profile <profile_name> <key>"
+        echo "Usage: shell::exist_profile_conf <profile_name> <key>"
         return 1
     fi
     local profile_name="$1"

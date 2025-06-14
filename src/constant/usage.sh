@@ -2522,12 +2522,12 @@ Example:
   shell::update_profile_conf -n my_profile   # dry-run mode
 "
 
-USAGE_SHELL_EXIST_KEY_CONF_PROFILE="
-shell::exist_key_conf_profile function
+USAGE_SHELL_EXIST_PROFILE_CONF="
+shell::exist_profile_conf function
 Checks whether a specified key exists in the configuration file of a given profile.
 
 Usage:
-  shell::exist_key_conf_profile [-h] <profile_name> <key>
+  shell::exist_profile_conf [-h] <profile_name> <key>
 
 Parameters:
   - -h            : Optional. Displays this help message.
@@ -2540,7 +2540,7 @@ Description:
   The function outputs "true" if the key is found and "false" otherwise.
 
 Example:
-  shell::exist_key_conf_profile my_profile my_key
+  shell::exist_profile_conf my_profile my_key
 "
 
 USAGE_SHELL_RENAME_KEY_CONF_PROFILE="
