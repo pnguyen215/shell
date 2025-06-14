@@ -3667,7 +3667,7 @@ Description:
   is copied to the clipboard unless in dry-run mode, where the copy command is printed.
 "
 
-USAGE_SHELL_FZF_GET_INI_VIZ="
+USAGE_SHELL_FZF_VIEW_INI_VIZ="
 shell::fzf_view_ini_viz function
 Interactively previews all key-value pairs in each section of an INI file using fzf in a real-time wrapped vertical layout.
 

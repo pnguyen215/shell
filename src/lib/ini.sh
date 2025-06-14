@@ -2654,7 +2654,7 @@ shell::fzf_remove_ini_sections() {
 # shell::fzf_view_ini_viz -n config.ini
 shell::fzf_view_ini_viz() {
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_GET_INI_VIZ"
+        echo "$USAGE_SHELL_FZF_VIEW_INI_VIZ"
         return 0
     fi
 
