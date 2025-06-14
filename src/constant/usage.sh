@@ -2957,11 +2957,11 @@ Example:
 "
 
 USAGE_SHELL_INI_REMOVE_KEY="
-shell::ini_remove_key function
+shell::remove_ini_key function
 Removes a specified key from a specific section in an INI formatted file.
 
 Usage:
-  shell::ini_remove_key [-n] <file> <section> <key>
+  shell::remove_ini_key [-n] <file> <section> <key>
 
 Parameters:
   - -n        : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
@@ -2977,8 +2977,8 @@ Description:
   the original file.
 
 Example usage:
-  shell::ini_remove_key /path/to/config.ini \"database\" \"username\"
-  shell::ini_remove_key -n /path/to/config.ini \"api\" \"api_key\" # Dry-run mode
+  shell::remove_ini_key /path/to/config.ini \"database\" \"username\"
+  shell::remove_ini_key -n /path/to/config.ini \"api\" \"api_key\" # Dry-run mode
 "
 
 USAGE_SHELL_INI_SET_ARRAY_VALUE="

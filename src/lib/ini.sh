@@ -1181,11 +1181,11 @@ shell::fzf_remove_ini_key() {
     return 0
 }
 
-# shell::ini_remove_key function
+# shell::remove_ini_key function
 # Removes a specified key from a specific section in an INI formatted file.
 #
 # Usage:
-#   shell::ini_remove_key [-n] <file> <section> <key>
+#   shell::remove_ini_key [-n] <file> <section> <key>
 #
 # Parameters:
 #   - -n        : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
@@ -1201,8 +1201,8 @@ shell::fzf_remove_ini_key() {
 #   the original file.
 #
 # Example usage:
-#   shell::ini_remove_key /path/to/config.ini "database" "username"
-#   shell::ini_remove_key -n /path/to/config.ini "api" "api_key" # Dry-run mode
+#   shell::remove_ini_key /path/to/config.ini "database" "username"
+#   shell::remove_ini_key -n /path/to/config.ini "api" "api_key" # Dry-run mode
 #
 # Notes:
 #   - Assumes the INI file has sections enclosed in square brackets (e.g., [section]) and key=value pairs.
@@ -1211,7 +1211,7 @@ shell::fzf_remove_ini_key() {
 #     shell::create_ini_temp_file, and optionally shell::validate_ini_section_name,
 #     shell::validate_ini_key_name if SHELL_INI_STRICT is enabled.
 #   - Uses atomic operation (mv) to replace the original file, reducing risk of data loss.
-shell::ini_remove_key() {
+shell::remove_ini_key() {
     local dry_run="false"
 
     # Check for the help flag (-h)
@@ -1228,8 +1228,8 @@ shell::ini_remove_key() {
 
     # Validate required parameters: file path, section name, and key name.
     if [ $# -lt 3 ]; then
-        shell::colored_echo "shell::ini_remove_key: Missing required parameters" 196
-        echo "Usage: shell::ini_remove_key [-n] <file> <section> <key>"
+        shell::colored_echo "shell::remove_ini_key: Missing required parameters" 196
+        echo "Usage: shell::remove_ini_key [-n] <file> <section> <key>"
         return 1
     fi
 
@@ -3209,7 +3209,7 @@ shell::fzf_edit_ini_viz() {
                 return 0
             fi
             shell::colored_echo "DEBUG: Removing key '$key' from section [$section] in file '$file'..." 244
-            shell::ini_remove_key "$file" "$section" "$key"
+            shell::remove_ini_key "$file" "$section" "$key"
             return $?
             ;;
         3)
