@@ -119,12 +119,12 @@ Access the shell library by opening your terminal and using the commands below. 
   - `shell::check_port 8080`
   - `shell::check_port 8080 -n`
 
-- **`shell::port_kill`**  
+- **`shell::kill_port`**  
   Terminates all processes listening on a specified TCP port. Use `-n` for silent operation.  
   _Examples:_
 
-  - `shell::port_kill 8080`
-  - `shell::port_kill 8080 -n`
+  - `shell::kill_port 8080`
+  - `shell::kill_port 8080 -n`
 
 - **`shell::copy_files`**  
   Copies a source file to one or more destination filenames in the current directory.  

@@ -1611,12 +1611,12 @@ Example:
   shell::check_port 8080 -n     # Prints the command (dry-run mode) without executing it.
 "
 
-USAGE_SHELL_PORT_KILL="
-shell::port_kill function
+USAGE_SHELL_KILL_PORT="
+shell::kill_port function
 Terminates all processes listening on the specified TCP port(s).
 
 Usage:
-  shell::port_kill [-n] [-h] <port> [<port> ...]
+  shell::kill_port [-n] [-h] <port> [<port> ...]
 
 Parameters:
     - -n        : Optional flag to enable dry-run mode (print commands without execution).
@@ -1629,8 +1629,8 @@ Description:
   In dry-run mode (enabled by the -n flag), the kill command is printed using shell::on_evict instead of executed.
 
 Example:
-  shell::port_kill 8080              # Kills processes on port 8080.
-  shell::port_kill -n 8080 3000       # Prints the kill commands for ports 8080 and 3000 without executing.
+  shell::kill_port 8080              # Kills processes on port 8080.
+  shell::kill_port -n 8080 3000       # Prints the kill commands for ports 8080 and 3000 without executing.
 "
 
 USAGE_SHELL_COPY_FILES="
@@ -1656,12 +1656,12 @@ Example:
   shell::copy_files myfile.txt newfile.txt            # Copies myfile.txt to newfile.txt.
   shell::copy_files -n myfile.txt newfile1.txt newfile2.txt  # Prints the copy commands without executing them.
 "
-USAGE_SHELL_PORT_KILL="
-shell::port_kill function
+USAGE_SHELL_KILL_PORT="
+shell::kill_port function
 Terminates all processes listening on the specified TCP port(s).
 
 Usage:
-  shell::port_kill [-n] [-h] <port> [<port> ...]
+  shell::kill_port [-n] [-h] <port> [<port> ...]
 
 Parameters:
   - -n    : Optional flag to enable dry-run mode (print commands without execution).
@@ -1674,8 +1674,8 @@ Description:
   In dry-run mode (enabled by the -n flag), the kill command is printed using shell::on_evict instead of executed.
 
 Example:
-  shell::port_kill 8080              # Kills processes on port 8080.
-  shell::port_kill -n 8080 3000      # Prints the kill commands for ports 8080 and 3000 without executing.
+  shell::kill_port 8080              # Kills processes on port 8080.
+  shell::kill_port -n 8080 3000      # Prints the kill commands for ports 8080 and 3000 without executing.
 "
 
 USAGE_SHELL_COPY_FILES="
