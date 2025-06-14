@@ -3009,11 +3009,11 @@ Example:
 "
 
 USAGE_SHELL_INI_GET_ARRAY_VALUE="
-shell::ini_get_array_value function
+shell::get_array_ini_value function
 Reads and parses an array of values from a specified key in an INI file.
 
 Usage:
-  shell::ini_get_array_value [-h] <file> <section> <key>
+  shell::get_array_ini_value [-h] <file> <section> <key>
 
 Parameters:
   - -h        : Optional. Displays this help message.
@@ -3035,7 +3035,7 @@ Example:
   # [Settings]
   # MyArray=item1,\"item with spaces\",\"item,with,commas\",\"item with \\\"escaped\\\" quotes\"
 
-  shell::ini_get_array_value my_config.ini Settings MyArray
+  shell::get_array_ini_value my_config.ini Settings MyArray
   # Expected output:
   # item1
   # item with spaces

@@ -1429,11 +1429,11 @@ shell::set_array_ini_value() {
     return $status
 }
 
-# shell::ini_get_array_value function
+# shell::get_array_ini_value function
 # Reads and parses an array of values from a specified key in an INI file.
 #
 # Usage:
-#   shell::ini_get_array_value [-h] <file> <section> <key>
+#   shell::get_array_ini_value [-h] <file> <section> <key>
 #
 # Parameters:
 #   - -h        : Optional. Displays this help message.
@@ -1455,7 +1455,7 @@ shell::set_array_ini_value() {
 #   # [Settings]
 #   # MyArray=item1,\"item with spaces\",\"item,with,commas\",\"item with \\\"escaped\\\" quotes\"
 #
-#   shell::ini_get_array_value my_config.ini Settings MyArray
+#   shell::get_array_ini_value my_config.ini Settings MyArray
 #   # Expected output:
 #   # item1
 #   # item with spaces
@@ -1476,7 +1476,7 @@ shell::set_array_ini_value() {
 #     interpreted as single strings by 'shell::write_ini'. If 'SHELL_INI_STRICT' is 1
 #     during writing, the entire formatted string might be re-quoted. This function correctly
 #     parses values regardless of outer re-quoting, as it targets the internal array structure.
-shell::ini_get_array_value() {
+shell::get_array_ini_value() {
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_INI_GET_ARRAY_VALUE"
@@ -1489,8 +1489,8 @@ shell::ini_get_array_value() {
 
     # Validate required parameters.
     if [ -z "$file" ] || [ -z "$section" ] || [ -z "$key" ]; then
-        shell::colored_echo "ERR: shell::ini_get_array_value: Missing required parameters." 196
-        echo "Usage: shell::ini_get_array_value [-h] <file> <section> <key>"
+        shell::colored_echo "ERR: shell::get_array_ini_value: Missing required parameters." 196
+        echo "Usage: shell::get_array_ini_value [-h] <file> <section> <key>"
         return 1
     fi
 
