@@ -2248,11 +2248,11 @@ Example:
 "
 
 USAGE_SHELL_GET_PROFILE_DIR="
-shell::get@_profile_dir function
+shell::get_profile_workspace function
 Returns the path to the profile directory for a given profile name.
 
 Usage:
-  shell::get@_profile_dir [-h] <profile_name>
+  shell::get_profile_workspace [-h] <profile_name>
 
 Parameters:
   - -h            : Optional. Displays this help message.
@@ -2581,7 +2581,7 @@ Parameters:
   - <destination_profile> : The name of the destination profile.
 
 Description:
-  This function retrieves the source and destination profile directories using shell::get@_profile_dir,
+  This function retrieves the source and destination profile directories using shell::get_profile_workspace,
   verifies that the source profile exists and has a profile.conf file, and ensures that the destination
   profile does not already exist. If validations pass, it clones the configuration by creating the destination
   directory and copying the profile.conf file from the source to the destination. When the dry-run flag (-n)
