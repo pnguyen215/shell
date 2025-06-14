@@ -31,30 +31,6 @@ shell::get_profile_path() {
     echo "$SHELL_CONF_WORKING_WORKSPACE/$profile_name"
 }
 
-# shell::ensure_workspace function
-# Ensures that the workspace directory exists.
-#
-# Usage:
-#   shell::ensure_workspace
-#
-# Description:
-#   Checks if the workspace directory ($SHELL_CONF_WORKING/workspace) exists.
-#   If it does not exist, creates it using mkdir -p.
-#
-# Example:
-#   shell::ensure_workspace
-shell::ensure_workspace() {
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_ENSURE_WORKSPACE"
-        return 0
-    fi
-
-    if [ ! -d "$SHELL_CONF_WORKING_WORKSPACE" ]; then
-        shell::run_cmd_eval sudo mkdir -p "$SHELL_CONF_WORKING_WORKSPACE"
-    fi
-}
-
 # shell::add_profile function
 # Creates a new profile directory and initializes it with a profile.conf file.
 #
