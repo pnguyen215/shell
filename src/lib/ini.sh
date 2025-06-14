@@ -1862,7 +1862,7 @@ shell::expose_ini_env() {
 shell::destroy_ini_env() {
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_INI_DESTROY_KEYS"
+        echo "$USAGE_SHELL_DESTROY_INI_ENV"
         return 0
     fi
 

@@ -3125,7 +3125,7 @@ Notes:
     to reading.
 "
 
-USAGE_SHELL_INI_DESTROY_KEYS="
+USAGE_SHELL_DESTROY_INI_ENV="
 shell::destroy_ini_env function
 Unsets environment variables previously exported from an INI file.
 
