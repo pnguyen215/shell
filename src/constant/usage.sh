@@ -1538,7 +1538,7 @@ Example usage:
   shell::create_file_if_not_exists /absolute/path/to/file.txt
 "
 
-USAGE_SHELL_SET_PERMS_777="
+USAGE_SHELL_UNLOCK_PERMISSIONS="
 shell::unlock_permissions function
 Sets full permissions (read, write, and execute) for the specified file or directory.
 

@@ -788,34 +788,38 @@ shell::create_file_if_not_exists() {
 #   shell::unlock_permissions ./my_script.sh
 #   shell::unlock_permissions -n ./my_script.sh  # Dry-run: prints the command without executing.
 shell::unlock_permissions() {
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_SET_PERMS_777"
+        echo "$USAGE_SHELL_UNLOCK_PERMISSIONS"
         return 0
     fi
 
     local dry_run="false"
-
-    # Check for the optional dry-run flag (-n)
     if [ "$1" = "-n" ]; then
         dry_run="true"
         shift
     fi
 
+    # Check if a target is provided
+    # If no target is provided, print usage information and exit.
     if [ $# -lt 1 ]; then
         echo "Usage: shell::unlock_permissions [-n] <file/dir>"
         return 1
     fi
 
+    # Check if the target exists
+    # If the target does not exist, print an error message and exit.
+    # If the target is a directory, it will be created if it does not exist.
     local target="$1"
-
-    # Verify that the target exists
     if [ ! -e "$target" ]; then
         shell::colored_echo "ERR: Target '$target' does not exist." 196
         return 1
     fi
 
     # Determine the current permission of the target
+    # This is done using the `stat` command, which varies between macOS and Linux.
+    # On macOS, use `stat -f "%Lp"`; on Linux, use `stat -c "%a"`.
+    # The current permission is stored in the variable `current_perm`.
+    # This will be used to check if the target already has 777 permissions.
     local current_perm=""
     local os_type
     os_type=$(shell::get_os_type)
@@ -825,19 +829,21 @@ shell::unlock_permissions() {
         current_perm=$(stat -c "%a" "$target")
     fi
 
-    # Build the chmod command
+    # Build the chmod command to set full permissions (777) recursively.
+    # This command will be executed asynchronously.
     local chmod_cmd="sudo chmod -R 777 \"$target\""
 
-    # Execute the chmod command asynchronously or print it in dry-run mode
+    # If dry-run mode is enabled, print the command instead of executing it.
+    # If the target already has 777 permissions, skip execution.
     if [ "$dry_run" = "true" ]; then
         shell::on_evict "$chmod_cmd"
     else
-        # If the target already has 777 permissions, skip execution.
+        # If the current permission is not 777, execute the chmod command.
         if [ "$current_perm" -eq 777 ]; then
             return 0
         fi
         shell::run_cmd_eval "$chmod_cmd"
-        shell::colored_echo "INFO: Permissions for '$target' set to full (read,write,execute)" 46
+        shell::colored_echo "DEBUG: Permissions set to (read,write,execute) for '$target'" 244
         return 0
     fi
 }
