@@ -930,7 +930,7 @@ shell::dump_workspace_json() {
     # We check if the conf_file exists
     # If the conf_file does not exist, we print an error message and return
     local sections
-    sections=$(shell::ini_list_sections "$conf_file" |
+    sections=$(shell::list_ini_sections "$conf_file" |
         fzf --multi --prompt="Select sections to export: ")
 
     # Check if a section was selected

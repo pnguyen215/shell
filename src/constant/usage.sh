@@ -2800,11 +2800,11 @@ Example:
 "
 
 USAGE_SHELL_INI_LIST_SECTIONS="
-shell::ini_list_sections function
+shell::list_ini_sections function
 Lists all section names from a given INI file.
 
 Usage:
-  shell::ini_list_sections [-h] <file>
+  shell::list_ini_sections [-h] <file>
 
 Parameters:
   - -h     : Optional. Displays this help message.
@@ -2816,7 +2816,7 @@ Description:
   without the enclosing square brackets.
 
 Example:
-  shell::ini_list_sections config.ini  # Lists all sections in config.ini.
+  shell::list_ini_sections config.ini  # Lists all sections in config.ini.
 "
 
 USAGE_SHELL_INI_LIST_KEYS="
@@ -3119,7 +3119,7 @@ Returns:
 
 Notes:
   - Affects the current shell session's environment.
-  - Relies on 'shell::ini_list_sections', 'shell::ini_list_keys', 'shell::read_ini',
+  - Relies on 'shell::list_ini_sections', 'shell::ini_list_keys', 'shell::read_ini',
     'shell::sanitize_upper_var_name', and 'shell::colored_echo'.
   - If SHELL_INI_STRICT is enabled, section and key names will be validated prior
     to reading.
@@ -3170,7 +3170,7 @@ Returns:
 Notes:
   - This function attempts to unset variables; it does not report an error if a
     variable was not found or was already unset.
-  - Relies on 'shell::ini_list_sections', 'shell::ini_list_keys',
+  - Relies on 'shell::list_ini_sections', 'shell::ini_list_keys',
     'shell::sanitize_upper_var_name', and 'shell::colored_echo'.
   - It does NOT rely on 'shell::read_ini' for values, only for deriving names.
 "
@@ -3678,7 +3678,7 @@ Parameters:
   - <file> : The path to the INI file.
 
 Description:
-This function lists all sections in the specified INI file using shell::ini_list_sections,
+This function lists all sections in the specified INI file using shell::list_ini_sections,
 and uses fzf to preview all key-value pairs in each section in real-time.
 The preview window wraps lines and simulates a tree-like layout for readability.
 "
@@ -3697,7 +3697,7 @@ Parameters:
   - --multi : Optional. Allow multi-key selection and export.
 
 Description:
-This function lists all sections in the specified INI file using shell::ini_list_sections,
+This function lists all sections in the specified INI file using shell::list_ini_sections,
 and uses fzf to preview all key-value pairs in each section in real-time.
 The preview window wraps lines and simulates a tree-like layout for readability.
 It supports exporting the selected section as JSON or YAML, or selecting multiple keys for export.

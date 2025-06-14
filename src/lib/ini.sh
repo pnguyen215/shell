@@ -410,11 +410,11 @@ shell::check_ini_file() {
     return 0
 }
 
-# shell::ini_list_sections function
+# shell::list_ini_sections function
 # Lists all section names from a given INI file.
 #
 # Usage:
-#   shell::ini_list_sections [-h] <file>
+#   shell::list_ini_sections [-h] <file>
 #
 # Parameters:
 #   - -h     : Optional. Displays this help message.
@@ -426,14 +426,14 @@ shell::check_ini_file() {
 #   without the enclosing square brackets.
 #
 # Example:
-#   shell::ini_list_sections config.ini  # Lists all sections in config.ini.
+#   shell::list_ini_sections config.ini  # Lists all sections in config.ini.
 #
 # Returns:
 #   0 on success, 1 if the file is missing or not found.
 #
 # Notes:
 #   - Relies on the shell::colored_echo function for output.
-shell::ini_list_sections() {
+shell::list_ini_sections() {
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_INI_LIST_SECTIONS"
@@ -444,8 +444,8 @@ shell::ini_list_sections() {
 
     # Validate parameters
     if [ -z "$file" ]; then
-        shell::colored_echo "shell::ini_list_sections: Missing file parameter" 196
-        echo "Usage: shell::ini_list_sections [-h] <file>"
+        shell::colored_echo "shell::list_ini_sections: Missing file parameter" 196
+        echo "Usage: shell::list_ini_sections [-h] <file>"
         return 1
     fi
 
@@ -1802,7 +1802,7 @@ shell::ini_expose_env() {
                     shell::colored_echo "  WARN: Failed to read key '$key' from section '$current_section'. Skipping export." 33
                 fi
             done < <(shell::ini_list_keys "$file" "$current_section")
-        done < <(shell::ini_list_sections "$file")
+        done < <(shell::list_ini_sections "$file")
     fi
 
     shell::colored_echo "INFO: Environment variables export completed." 46
@@ -1951,7 +1951,7 @@ shell::ini_destroy_keys() {
                     shell::colored_echo "  🗑️ Unset: ${var_name}" 208
                 fi
             done < <(shell::ini_list_keys "$file" "$current_section")
-        done < <(shell::ini_list_sections "$file")
+        done < <(shell::list_ini_sections "$file")
     fi
 
     shell::colored_echo "INFO: Environment variables destruction completed." 46
@@ -2175,7 +2175,7 @@ shell::ini_rename_section() {
 #
 # Description:
 #   This function first lists all sections in the specified INI file using
-#   shell::ini_list_sections. It then presents these sections to the user
+#   shell::list_ini_sections. It then presents these sections to the user
 #   via fzf for interactive selection. Once a section is chosen, the user is
 #   prompted to enter a new name for it. The renaming operation is then
 #   delegated to the shell::ini_rename_section function.
@@ -2190,7 +2190,7 @@ shell::ini_rename_section() {
 #   fzf not installed, or underlying rename failure).
 #
 # Notes:
-#   - Relies on shell::colored_echo, shell::install_package, shell::ini_list_sections,
+#   - Relies on shell::colored_echo, shell::install_package, shell::list_ini_sections,
 #     and shell::ini_rename_section.
 shell::fzf_ini_rename_section() {
     local dry_run="false"
@@ -2246,7 +2246,7 @@ shell::fzf_ini_rename_section() {
 
     # Get the list of sections and use fzf to select one.
     local selected_section
-    selected_section=$(shell::ini_list_sections "$file" | fzf --prompt="Select section to rename: ")
+    selected_section=$(shell::list_ini_sections "$file" | fzf --prompt="Select section to rename: ")
 
     # Check if a section was selected.
     if [ -z "$selected_section" ]; then
@@ -2461,7 +2461,7 @@ shell::ini_clone_section() {
 #   0 on success, 1 on failure (e.g., missing parameters, file not found, no section selected).
 #
 # Notes:
-#   - Relies on shell::colored_echo, shell::install_package, shell::ini_list_sections,
+#   - Relies on shell::colored_echo, shell::install_package, shell::list_ini_sections,
 #     shell::ini_clone_section, and shell::on_evict.
 #   - Provides interactive selection and auto-suggestion for the cloned section name.
 shell::fzf_ini_clone_section() {
@@ -2501,7 +2501,7 @@ shell::fzf_ini_clone_section() {
 
     # Get the list of sections and use fzf to select one.
     local selected_section
-    selected_section=$(shell::ini_list_sections "$file" | fzf --prompt="Select section to clone: ")
+    selected_section=$(shell::list_ini_sections "$file" | fzf --prompt="Select section to clone: ")
 
     # Check if a section was selected.
     if [ -z "$selected_section" ]; then
@@ -2555,7 +2555,7 @@ shell::fzf_ini_clone_section() {
 #   0 on success, 1 on failure (e.g., missing parameters, file not found, no section selected).
 #
 # Notes:
-#   - Relies on shell::colored_echo, shell::install_package, shell::ini_list_sections,
+#   - Relies on shell::colored_echo, shell::install_package, shell::list_ini_sections,
 #     shell::run_cmd_eval, shell::on_evict, and shell::ini_escape_for_regex.
 #   - Uses fzf's multi-select feature (TAB key) for selecting multiple sections.
 shell::fzf_remove_ini_sections() {
@@ -2595,7 +2595,7 @@ shell::fzf_remove_ini_sections() {
 
     # Get the list of sections in the specified file and use fzf to select multiple
     local IFS=$'\n'
-    local selected_sections=($(shell::ini_list_sections "$file" | fzf --multi --prompt="Select sections to remove from '$file': "))
+    local selected_sections=($(shell::list_ini_sections "$file" | fzf --multi --prompt="Select sections to remove from '$file': "))
 
     # Check if any sections were selected
     if [ ${#selected_sections[@]} -eq 0 ]; then
@@ -2645,7 +2645,7 @@ shell::fzf_remove_ini_sections() {
 # - <file> : The path to the INI file.
 #
 # Description:
-# This function lists all sections in the specified INI file using shell::ini_list_sections,
+# This function lists all sections in the specified INI file using shell::list_ini_sections,
 # and uses fzf to preview all key-value pairs in each section in real-time.
 # The preview window wraps lines and simulates a tree-like layout for readability.
 #
@@ -2696,7 +2696,7 @@ shell::fzf_view_ini_viz() {
     # It highlights keys and values with colors for better visibility.
     # The preview window is set to wrap lines and display up to 60 lines.
     local section
-    # section=$(shell::ini_list_sections "$file" |
+    # section=$(shell::list_ini_sections "$file" |
     #     awk -v y="$yellow" -v n="$normal" '{print y $0 n}' |
     #     fzf --ansi \
     #         --prompt="Select section: " \
@@ -2715,7 +2715,7 @@ shell::fzf_view_ini_viz() {
     #     ' \"$file\"" \
     #         --preview-window=up:wrap:60%)
 
-    section=$(shell::ini_list_sections "$file" |
+    section=$(shell::list_ini_sections "$file" |
         awk -v y="$yellow" -v n="$normal" '{print y $0 n}' |
         fzf --ansi \
             --prompt="Select section: " \
@@ -2786,7 +2786,7 @@ shell::fzf_view_ini_viz() {
 # - --multi : Optional. Allow multi-key selection and export.
 #
 # Description:
-# This function lists all sections in the specified INI file using shell::ini_list_sections,
+# This function lists all sections in the specified INI file using shell::list_ini_sections,
 # and uses fzf to preview all key-value pairs in each section in real-time.
 # The preview window wraps lines and simulates a tree-like layout for readability.
 # It supports exporting the selected section as JSON or YAML, or selecting multiple keys for export.
@@ -2845,7 +2845,7 @@ shell::fzf_view_ini_viz_super() {
     # The preview command uses awk to format the output in a tree-like structure.
     # It highlights keys and values with colors for better visibility.
     local section
-    section=$(shell::ini_list_sections "$file" |
+    section=$(shell::list_ini_sections "$file" |
         awk -v y="$yellow" -v n="$normal" '{print y $0 n}' |
         fzf --ansi \
             --prompt="Select section: " \
@@ -2966,7 +2966,7 @@ shell::fzf_view_ini_viz_super() {
 # - --multi : Optional. Allow multi-key selection and export.
 #
 # Description:
-# This function lists all sections in the specified INI file using shell::ini_list_sections,
+# This function lists all sections in the specified INI file using shell::list_ini_sections,
 # and uses fzf to preview all key-value pairs in each section in real-time.
 # The preview window wraps lines and simulates a tree-like layout for readability.
 # It supports exporting the selected section as JSON or YAML, or selecting multiple keys for export.
@@ -3023,7 +3023,7 @@ shell::fzf_view_ini_viz_super_control() {
         # List sections and use fzf to select one.
         # The preview command uses awk to format the output in a tree-like structure.
         local section
-        section=$(shell::ini_list_sections "$file" |
+        section=$(shell::list_ini_sections "$file" |
             awk -v y="$yellow" -v n="$normal" '{print y $0 n}' |
             fzf --ansi \
                 --prompt="Select section: " \
@@ -3174,7 +3174,7 @@ shell::fzf_edit_ini_viz() {
 
     # Get the list of sections in the specified file and use fzf to select one.
     local section
-    section=$(shell::ini_list_sections "$file" | fzf --prompt="Select section to edit: ")
+    section=$(shell::list_ini_sections "$file" | fzf --prompt="Select section to edit: ")
     if [ -z "$section" ]; then
         shell::colored_echo "ERR: No section selected." 196
         return 1
