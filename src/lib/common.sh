@@ -1733,7 +1733,7 @@ shell::execute_or_evict() {
 # Description:
 #   This function lists all files and folders in the current directory with a visually appealing layout.
 #   It uses colors to differentiate file types (blue for directories, green for executables, white for regular files),
-#   includes icons (📁 for directories, 📄 for files, ⚙️ for executables), and aligns output in a tabulated format.
+#   includes icons ([d] for directories, [f] for files, [e] for executables), and aligns output in a tabulated format.
 #   The long format (-l) includes permissions, human-readable file size, and last modified date.
 #   The function is compatible with both macOS and Linux, handling differences in ls and stat commands.
 #
@@ -1842,13 +1842,13 @@ shell::ls() {
         [ "$debug" = "true" ] && echo "Processing file: $file" >&2
 
         # Determine file type and icon
-        local icon="📄"
+        local icon="[f]"
         local color="$white"
         if [ -d "$file" ]; then
-            icon="📁"
+            icon="[d]"
             color="$blue"
         elif [ -x "$file" ] && [ ! -d "$file" ]; then
-            icon="⚙️"
+            icon="[e]"
             color="$green"
         fi
 

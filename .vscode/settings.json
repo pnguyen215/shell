@@ -32,6 +32,7 @@
     "setuptools",
     "shell::opent",
     "softprops",
+    "sprintf",
     "srand",
     "tmpbak",
     "toplevel",
