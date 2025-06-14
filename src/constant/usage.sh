@@ -2908,7 +2908,7 @@ Example:
   shell::write_ini config.ini MySection MyKey MyValue  # Writes MyKey=MyValue in MySection.
 "
 
-USAGE_SHELL_INI_REMOVE_SECTION="
+USAGE_SHELL_REMOVE_INI_SECTION="
 shell::remove_ini_section function
 Removes a specified section and its key-value pairs from an INI formatted file.
 

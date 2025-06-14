@@ -909,7 +909,7 @@ shell::write_ini() {
 shell::remove_ini_section() {
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_INI_REMOVE_SECTION"
+        echo "$USAGE_SHELL_REMOVE_INI_SECTION"
         return 0
     fi
 
