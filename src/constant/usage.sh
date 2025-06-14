@@ -3300,7 +3300,7 @@ Example:
   hashed_pass=(shell::cryptography::create_password_hash 1 "MySecurePassword123!")
 "
 
-USAGE_SHELL_INI_RENAME_SECTION="
+USAGE_SHELL_RENAME_INI_SECTION="
 shell::rename_ini_section function
 Renames a section in an INI file.
 

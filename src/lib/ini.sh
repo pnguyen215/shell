@@ -2099,7 +2099,7 @@ shell::rename_ini_section() {
 
     # If -h was found, display usage and exit immediately regardless of other args
     if [ "$opt_h_found" = "true" ]; then
-        echo "$USAGE_SHELL_INI_RENAME_SECTION"
+        echo "$USAGE_SHELL_RENAME_INI_SECTION"
         return 0
     fi
 
