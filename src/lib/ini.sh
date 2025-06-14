@@ -1559,11 +1559,11 @@ shell::get_array_ini_value() {
     return 0
 }
 
-# shell::ini_key_exists function
+# shell::exist_ini_key function
 # Checks if a specified key exists within a section in an INI file.
 #
 # Usage:
-#   shell::ini_key_exists [-h] <file> <section> <key>
+#   shell::exist_ini_key [-h] <file> <section> <key>
 #
 # Parameters:
 #   - -h        : Optional. Displays this help message.
@@ -1585,7 +1585,7 @@ shell::get_array_ini_value() {
 #
 # Example:
 #   # Check if a 'port' key exists in the 'Network' section of 'settings.ini'
-#   if shell::ini_key_exists settings.ini Network port; then
+#   if shell::exist_ini_key settings.ini Network port; then
 #     shell::colored_echo "Found 'port' setting." 46
 #   else
 #     shell::colored_echo "The 'port' setting is missing." 196
@@ -1603,7 +1603,7 @@ shell::get_array_ini_value() {
 #   - For detailed reasons why a key might not be found (e.g., file doesn't exist,
 #     section doesn't exist), 'shell::read_ini' or 'shell::exist_ini_section'
 #     will provide their own specific error messages if called directly.
-shell::ini_key_exists() {
+shell::exist_ini_key() {
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_INI_KEY_EXISTS"
@@ -1616,8 +1616,8 @@ shell::ini_key_exists() {
 
     # Validate required parameters.
     if [ -z "$file" ] || [ -z "$section" ] || [ -z "$key" ]; then
-        shell::colored_echo "ERR: shell::ini_key_exists: Missing required parameters: file, section, or key." 196
-        echo "Usage: shell::ini_key_exists [-h] <file> <section> <key>"
+        shell::colored_echo "ERR: shell::exist_ini_key: Missing required parameters: file, section, or key." 196
+        echo "Usage: shell::exist_ini_key [-h] <file> <section> <key>"
         return 1
     fi
 

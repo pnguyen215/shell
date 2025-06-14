@@ -3044,11 +3044,11 @@ Example:
 "
 
 USAGE_SHELL_INI_KEY_EXISTS="
-shell::ini_key_exists function
+shell::exist_ini_key function
 Checks if a specified key exists within a section in an INI file.
 
 Usage:
-  shell::ini_key_exists [-h] <file> <section> <key>
+  shell::exist_ini_key [-h] <file> <section> <key>
 
 Parameters:
   - -h        : Optional. Displays this help message.
@@ -3070,7 +3070,7 @@ Description:
 
 Example:
   # Check if a 'port' key exists in the 'Network' section of 'settings.ini'
-  if shell::ini_key_exists settings.ini Network port; then
+  if shell::exist_ini_key settings.ini Network port; then
     shell::colored_echo \"Found 'port' setting.\" 46
   else
     shell::colored_echo \"The 'port' setting is missing.\" 196
