@@ -2909,11 +2909,11 @@ Example:
 "
 
 USAGE_SHELL_INI_REMOVE_SECTION="
-shell::ini_remove_section function
+shell::remove_ini_section function
 Removes a specified section and its key-value pairs from an INI formatted file.
 
 Usage:
-  shell::ini_remove_section [-h] <file> <section>
+  shell::remove_ini_section [-h] <file> <section>
 
 Parameters:
   - -h        : Optional. Displays this help message.
@@ -2928,7 +2928,7 @@ Description:
   which then replaces the original file.
 
 Example usage:
-  shell::ini_remove_section /path/to/config.ini \"database\"
+  shell::remove_ini_section /path/to/config.ini \"database\"
 "
 
 USAGE_SHELL_FZF_INI_REMOVE_KEY="

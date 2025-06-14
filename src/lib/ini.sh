@@ -877,11 +877,11 @@ shell::write_ini() {
     return 0
 }
 
-# shell::ini_remove_section function
+# shell::remove_ini_section function
 # Removes a specified section and its key-value pairs from an INI formatted file.
 #
 # Usage:
-#   shell::ini_remove_section <file> <section>
+#   shell::remove_ini_section <file> <section>
 #
 # Parameters:
 #   - <file>: The path to the INI file.
@@ -895,7 +895,7 @@ shell::write_ini() {
 #   which then replaces the original file.
 #
 # Example usage:
-#   shell::ini_remove_section /path/to/config.ini "database"
+#   shell::remove_ini_section /path/to/config.ini "database"
 #
 # Notes:
 #   - Assumes the INI file has sections enclosed in square brackets (e.g., [section]).
@@ -906,7 +906,7 @@ shell::write_ini() {
 #     shell::create_ini_temp_file are not provided in this snippet, but are assumed
 #     to exist based on usage.)
 #   - Uses atomic operation (mv) to replace the original file, reducing risk of data loss.
-shell::ini_remove_section() {
+shell::remove_ini_section() {
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_INI_REMOVE_SECTION"
@@ -918,8 +918,8 @@ shell::ini_remove_section() {
 
     # Validate required parameters: file path and section name.
     if [ -z "$file" ] || [ -z "$section" ]; then
-        shell::colored_echo "shell::ini_remove_section: Missing required parameters" 196
-        echo "Usage: shell::ini_remove_section [-h] <file> <section>"
+        shell::colored_echo "shell::remove_ini_section: Missing required parameters" 196
+        echo "Usage: shell::remove_ini_section [-h] <file> <section>"
         return 1
     fi
 
@@ -2609,14 +2609,14 @@ shell::fzf_remove_ini_sections() {
     # Process each selected section
     for section in "${selected_sections[@]}"; do
         if [ "$dry_run" = "true" ]; then
-            # In dry-run mode, pass the -n flag to shell::ini_remove_section
-            shell::ini_remove_section -n "$file" "$section"
+            # In dry-run mode, pass the -n flag to shell::remove_ini_section
+            shell::remove_ini_section -n "$file" "$section"
             if [ $? -ne 0 ]; then
                 success=1
             fi
         else
             # Execute the removal of the section
-            shell::ini_remove_section "$file" "$section"
+            shell::remove_ini_section "$file" "$section"
             if [ $? -ne 0 ]; then
                 success=1
             fi
