@@ -1729,12 +1729,12 @@ Example:
   shell::move_files -n /path/to/dest file1.txt file2.txt     # Prints the move commands without executing them.
 "
 
-USAGE_SHELL_REMOVE_DATASET="
-shell::remove_dataset function
+USAGE_SHELL_REMOVE_FILES="
+shell::remove_files function
 Removes a file or directory using sudo rm -rf.
 
 Usage:
-  shell::remove_dataset [-n] [-h] <filename/dir>
+  shell::remove_files [-n] [-h] <filename/dir>
 
 Parameters:
   - -n            : Optional dry-run flag. If provided, the command will be printed using shell::on_evict instead of executed.
@@ -1747,8 +1747,8 @@ Description:
   In dry-run mode, the command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd.
 
 Example:
-  shell::remove_dataset my-dir         # Removes the directory 'my-dir'.
-  shell::remove_dataset -n myfile.txt  # Prints the removal command without executing it.
+  shell::remove_files my-dir         # Removes the directory 'my-dir'.
+  shell::remove_files -n myfile.txt  # Prints the removal command without executing it.
 "
 
 USAGE_SHELL_EDITOR="
