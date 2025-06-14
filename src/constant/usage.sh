@@ -2841,11 +2841,11 @@ Example:
 "
 
 USAGE_SHELL_INI_SECTION_EXISTS="
-shell::ini_section_exists function
+shell::exist_ini_section function
 Checks if a specified section exists in a given INI file.
 
 Usage:
-  shell::ini_section_exists [-h] <file> <section>
+  shell::exist_ini_section [-h] <file> <section>
 
 Parameters:
   - -h        : Optional. Displays this help message.
@@ -2859,7 +2859,7 @@ Description:
   to search for the section header within the file.
 
 Example:
-  shell::ini_section_exists config.ini MySection  # Checks if MySection exists in config.ini.
+  shell::exist_ini_section config.ini MySection  # Checks if MySection exists in config.ini.
 "
 
 USAGE_SHELL_INI_ADD_SECTION="

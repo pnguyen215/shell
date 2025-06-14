@@ -558,11 +558,11 @@ shell::list_ini_keys() {
     return 0
 }
 
-# shell::ini_section_exists function
+# shell::exist_ini_section function
 # Checks if a specified section exists in a given INI file.
 #
 # Usage:
-#   shell::ini_section_exists [-h] <file> <section>
+#   shell::exist_ini_section [-h] <file> <section>
 #
 # Parameters:
 #   - -h        : Optional. Displays this help message.
@@ -576,8 +576,8 @@ shell::list_ini_keys() {
 #   to search for the section header within the file.
 #
 # Example:
-#   shell::ini_section_exists config.ini MySection  # Checks if MySection exists in config.ini.
-shell::ini_section_exists() {
+#   shell::exist_ini_section config.ini MySection  # Checks if MySection exists in config.ini.
+shell::exist_ini_section() {
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_INI_SECTION_EXISTS"
@@ -589,8 +589,8 @@ shell::ini_section_exists() {
 
     # Validate parameters
     if [ -z "$file" ] || [ -z "$section" ]; then
-        shell::colored_echo "shell::ini_section_exists: Missing required parameters" 196
-        echo "Usage: shell::ini_section_exists [-h] <file> <section>"
+        shell::colored_echo "shell::exist_ini_section: Missing required parameters" 196
+        echo "Usage: shell::exist_ini_section [-h] <file> <section>"
         return 1
     fi
 
@@ -667,7 +667,7 @@ shell::ini_add_section() {
     shell::create_file_if_not_exists "$file"
 
     # Check if section already exists
-    if shell::ini_section_exists "$file" "$section"; then
+    if shell::exist_ini_section "$file" "$section"; then
         shell::colored_echo "Section already exists: $section" 11
         return 0
     fi
@@ -1073,8 +1073,8 @@ shell::fzf_ini_remove_key() {
     fi
 
     # Check if the section exists in the file.
-    if ! shell::ini_section_exists "$file" "$section"; then
-        # shell::ini_section_exists prints an error if the section is not found
+    if ! shell::exist_ini_section "$file" "$section"; then
+        # shell::exist_ini_section prints an error if the section is not found
         return 1
     fi
 
@@ -1251,8 +1251,8 @@ shell::ini_remove_key() {
     fi
 
     # Check if the section exists in the file before attempting removal.
-    if ! shell::ini_section_exists "$file" "$section"; then
-        # shell::ini_section_exists prints an error if the section is not found
+    if ! shell::exist_ini_section "$file" "$section"; then
+        # shell::exist_ini_section prints an error if the section is not found
         return 1
     fi
 
@@ -1601,7 +1601,7 @@ shell::ini_get_array_value() {
 #   - This function does not output the value of the key, only its existence status.
 #   - It leverages 'shell::read_ini' and other 'shell::ini_validate_*' functions for its operations.
 #   - For detailed reasons why a key might not be found (e.g., file doesn't exist,
-#     section doesn't exist), 'shell::read_ini' or 'shell::ini_section_exists'
+#     section doesn't exist), 'shell::read_ini' or 'shell::exist_ini_section'
 #     will provide their own specific error messages if called directly.
 shell::ini_key_exists() {
     # Check for the help flag (-h)
@@ -2074,7 +2074,7 @@ shell::ini_get_or_default() {
 #   section not found, new section already exists, or validation failure).
 #
 # Notes:
-#   - Relies on shell::colored_echo, shell::check_ini_file, shell::ini_section_exists,
+#   - Relies on shell::colored_echo, shell::check_ini_file, shell::exist_ini_section,
 #     shell::ini_escape_for_regex, shell::validate_ini_section_name, and shell::run_cmd_eval.
 shell::ini_rename_section() {
     local dry_run="false"
@@ -2125,15 +2125,15 @@ shell::ini_rename_section() {
         return 1
     fi
 
-    # Check if the old section exists. Suppress output as shell::ini_section_exists
+    # Check if the old section exists. Suppress output as shell::exist_ini_section
     # already provides verbose messages.
-    if ! shell::ini_section_exists "$file" "$old_section" >/dev/null 2>&1; then
+    if ! shell::exist_ini_section "$file" "$old_section" >/dev/null 2>&1; then
         shell::colored_echo "ERR: Section to rename ('$old_section') not found in file: $file" 196
         return 1
     fi
 
     # Check if the new section name already exists.
-    if shell::ini_section_exists "$file" "$new_section" >/dev/null 2>&1; then
+    if shell::exist_ini_section "$file" "$new_section" >/dev/null 2>&1; then
         shell::colored_echo "ERR: New section name ('$new_section') already exists in file: $file. Aborting rename." 196
         return 1
     fi
@@ -2302,7 +2302,7 @@ shell::fzf_ini_rename_section() {
 #   destination section already exists in strict mode, or write errors).
 #
 # Notes:
-#   - Relies on shell::colored_echo, shell::ini_section_exists, shell::ini_add_section,
+#   - Relies on shell::colored_echo, shell::exist_ini_section, shell::ini_add_section,
 #     shell::ini_write, shell::create_ini_temp_file, and shell::ini_escape_for_regex.
 #   - Honors SHELL_INI_STRICT for section name validation.
 shell::ini_clone_section() {
@@ -2343,13 +2343,13 @@ shell::ini_clone_section() {
     fi
 
     # Check if source section exists
-    if ! shell::ini_section_exists "$file" "$source_section"; then
+    if ! shell::exist_ini_section "$file" "$source_section"; then
         shell::colored_echo "ERR: Source section '$source_section' not found in file: $file" 196
         return 1
     fi
 
     # Check if destination section already exists
-    if shell::ini_section_exists "$file" "$destination_section"; then
+    if shell::exist_ini_section "$file" "$destination_section"; then
         shell::colored_echo "WARN: Destination section '$destination_section' already exists. Aborting clone to prevent overwrite." 11
         return 1
     fi
