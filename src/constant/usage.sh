@@ -3353,11 +3353,11 @@ Description:
 "
 
 USAGE_SHELL_FZF_INI_CLONE_SECTION="
-shell::fzf_ini_clone_section function
+shell::fzf_clone_ini_section function
 Interactively clones a section from one INI file to another using fzf.
 
 Usage:
-  shell::fzf_ini_clone_section [-n] [-h] <file>
+  shell::fzf_clone_ini_section [-n] [-h] <file>
 
 Parameters:
   - -n        : Optional. Dry-run mode. Prints the command without executing it.

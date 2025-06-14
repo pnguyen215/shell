@@ -2434,12 +2434,12 @@ shell::clone_ini_section() {
     fi
 }
 
-# shell::fzf_ini_clone_section function
+# shell::fzf_clone_ini_section function
 # Interactively selects a section to clone from an INI file using fzf,
 # prompts for a new name (with "_clone" prefix), and then clones the section.
 #
 # Usage:
-#   shell::fzf_ini_clone_section [-n] <file>
+#   shell::fzf_clone_ini_section [-n] <file>
 #
 # Parameters:
 #   - -n        : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
@@ -2454,8 +2454,8 @@ shell::clone_ini_section() {
 #   The function handles dry-run mode, where it only prints the commands that would be executed.
 #
 # Example:
-#   shell::fzf_ini_clone_section config.ini   # Interactively clone a section.
-#   shell::fzf_ini_clone_section -n config.ini # Dry-run: show commands to clone a section.
+#   shell::fzf_clone_ini_section config.ini   # Interactively clone a section.
+#   shell::fzf_clone_ini_section -n config.ini # Dry-run: show commands to clone a section.
 #
 # Returns:
 #   0 on success, 1 on failure (e.g., missing parameters, file not found, no section selected).
@@ -2464,7 +2464,7 @@ shell::clone_ini_section() {
 #   - Relies on shell::colored_echo, shell::install_package, shell::list_ini_sections,
 #     shell::clone_ini_section, and shell::on_evict.
 #   - Provides interactive selection and auto-suggestion for the cloned section name.
-shell::fzf_ini_clone_section() {
+shell::fzf_clone_ini_section() {
     local dry_run="false"
 
     if [ "$1" = "-h" ]; then
@@ -2480,8 +2480,8 @@ shell::fzf_ini_clone_section() {
 
     # Validate required parameters
     if [ $# -lt 1 ]; then
-        shell::colored_echo "ERR: shell::fzf_ini_clone_section: Missing file parameter." 196
-        echo "Usage: shell::fzf_ini_clone_section [-n] [-h] <file>"
+        shell::colored_echo "ERR: shell::fzf_clone_ini_section: Missing file parameter." 196
+        echo "Usage: shell::fzf_clone_ini_section [-n] [-h] <file>"
         return 1
     fi
 
