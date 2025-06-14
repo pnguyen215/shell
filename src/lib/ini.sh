@@ -2271,12 +2271,12 @@ shell::fzf_rename_ini_section() {
     shell::rename_ini_section "${rename_args[@]}"
 }
 
-# shell::ini_clone_section function
+# shell::clone_ini_section function
 # Clones an existing section to a new section within the same INI file.
 # All key-value pairs from the source section are copied to the destination section.
 #
 # Usage:
-#   shell::ini_clone_section [-n] <file> <source_section> <destination_section>
+#   shell::clone_ini_section [-n] <file> <source_section> <destination_section>
 #
 # Parameters:
 #   - -n                 : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
@@ -2294,8 +2294,8 @@ shell::fzf_rename_ini_section() {
 #   replacing the original file.
 #
 # Example:
-#   shell::ini_clone_section config.ini "Development" "Staging"
-#   shell::ini_clone_section -n config.ini "Production" "Backup_Prod"
+#   shell::clone_ini_section config.ini "Development" "Staging"
+#   shell::clone_ini_section -n config.ini "Production" "Backup_Prod"
 #
 # Returns:
 #   0 on success, 1 on failure (e.g., missing parameters, file/section not found,
@@ -2305,7 +2305,7 @@ shell::fzf_rename_ini_section() {
 #   - Relies on shell::colored_echo, shell::exist_ini_section, shell::add_ini_section,
 #     shell::write_ini, shell::create_ini_temp_file, and shell::ini_escape_for_regex.
 #   - Honors SHELL_INI_STRICT for section name validation.
-shell::ini_clone_section() {
+shell::clone_ini_section() {
     local dry_run="false"
 
     # Check for the optional dry-run flag (-n)
@@ -2325,8 +2325,8 @@ shell::ini_clone_section() {
 
     # Validate parameters
     if [ -z "$file" ] || [ -z "$source_section" ] || [ -z "$destination_section" ]; then
-        shell::colored_echo "ERR: shell::ini_clone_section: Missing required parameters." 196
-        echo "Usage: shell::ini_clone_section [-n] [-h] <file> <source_section> <destination_section>"
+        shell::colored_echo "ERR: shell::clone_ini_section: Missing required parameters." 196
+        echo "Usage: shell::clone_ini_section [-n] [-h] <file> <source_section> <destination_section>"
         return 1
     fi
 
@@ -2450,7 +2450,7 @@ shell::ini_clone_section() {
 #   given INI file and uses fzf to allow the user to interactively select a section.
 #   After selection, it prompts the user for a new section name, appending "_clone"
 #   to the selected section name as a suggestion. Finally, it calls
-#   shell::ini_clone_section to perform the cloning operation.
+#   shell::clone_ini_section to perform the cloning operation.
 #   The function handles dry-run mode, where it only prints the commands that would be executed.
 #
 # Example:
@@ -2462,7 +2462,7 @@ shell::ini_clone_section() {
 #
 # Notes:
 #   - Relies on shell::colored_echo, shell::install_package, shell::list_ini_sections,
-#     shell::ini_clone_section, and shell::on_evict.
+#     shell::clone_ini_section, and shell::on_evict.
 #   - Provides interactive selection and auto-suggestion for the cloned section name.
 shell::fzf_ini_clone_section() {
     local dry_run="false"
@@ -2519,11 +2519,11 @@ shell::fzf_ini_clone_section() {
         shell::colored_echo "DEBUG: Using default new section name: '$new_section_name'" 244
     fi
 
-    # Perform the clone operation using shell::ini_clone_section
+    # Perform the clone operation using shell::clone_ini_section
     if [ "$dry_run" = "true" ]; then
-        shell::ini_clone_section -n "$file" "$selected_section" "$new_section_name"
+        shell::clone_ini_section -n "$file" "$selected_section" "$new_section_name"
     else
-        shell::ini_clone_section "$file" "$selected_section" "$new_section_name"
+        shell::clone_ini_section "$file" "$selected_section" "$new_section_name"
     fi
 
     return $?

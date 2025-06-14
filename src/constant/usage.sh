@@ -3335,11 +3335,11 @@ Description:
 "
 
 USAGE_SHELL_INI_CLONE_SECTION="
-shell::ini_clone_section function
+shell::clone_ini_section function
 Clones a section from one INI file to another.
 
 Usage:
-  shell::ini_clone_section [-n] [-h] <file> <source_section> <destination_section> 
+  shell::clone_ini_section [-n] [-h] <file> <source_section> <destination_section> 
 
 Parameters:
   - -n                    : Optional. Dry-run mode. Prints the command without executing it.
