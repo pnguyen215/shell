@@ -462,11 +462,11 @@ shell::list_ini_sections() {
     return 0
 }
 
-# shell::ini_list_keys function
+# shell::list_ini_keys function
 # Lists all key names from a specified section in a given INI file.
 #
 # Usage:
-#   shell::ini_list_keys [-h] <file> <section>
+#   shell::list_ini_keys [-h] <file> <section>
 #
 # Parameters:
 #   - -h        : Optional. Displays this help message.
@@ -479,14 +479,14 @@ shell::list_ini_sections() {
 #   if SHELL_INI_STRICT is set. The function handles comments and empty lines within the INI file.
 #
 # Example:
-#   shell::ini_list_keys config.ini MySection  # Lists all keys in MySection.
+#   shell::list_ini_keys config.ini MySection  # Lists all keys in MySection.
 #
 # Returns:
 #   0 on success, 1 if the file or section is missing or not found.
 #
 # Notes:
 #   - Relies on the shell::colored_echo function for output.
-shell::ini_list_keys() {
+shell::list_ini_keys() {
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_INI_LIST_KEYS"
@@ -498,8 +498,8 @@ shell::ini_list_keys() {
 
     # Validate parameters
     if [ -z "$file" ] || [ -z "$section" ]; then
-        shell::colored_echo "shell::ini_list_keys: Missing required parameters" 196
-        echo "Usage: shell::ini_list_keys [-h] <file> <section>"
+        shell::colored_echo "shell::list_ini_keys: Missing required parameters" 196
+        echo "Usage: shell::list_ini_keys [-h] <file> <section>"
         return 1
     fi
 
@@ -1034,7 +1034,7 @@ shell::ini_remove_section() {
 #
 # Description:
 #   This function validates the input file and section, lists keys within the section
-#   using shell::ini_list_keys, presents the keys for interactive selection using fzf,
+#   using shell::list_ini_keys, presents the keys for interactive selection using fzf,
 #   and then removes the chosen key-value pair from the specified section in the INI file.
 #   It handles cases where the file or section does not exist and provides feedback
 #   using shell::colored_echo.
@@ -1086,7 +1086,7 @@ shell::fzf_ini_remove_key() {
 
     # Get the list of keys in the specified section and use fzf to select one.
     local selected_key
-    selected_key=$(shell::ini_list_keys "$file" "$section" | fzf --prompt="Select key to remove from section '$section': ")
+    selected_key=$(shell::list_ini_keys "$file" "$section" | fzf --prompt="Select key to remove from section '$section': ")
 
     # Check if a key was selected.
     if [ -z "$selected_key" ]; then
@@ -1167,7 +1167,7 @@ shell::fzf_ini_remove_key() {
             if [ $key_removed -eq 1 ]; then
                 shell::colored_echo "INFO: Successfully removed key '$selected_key' from section '$section'" 46
             else
-                # This case should not be reached if shell::ini_list_keys and fzf worked correctly,
+                # This case should not be reached if shell::list_ini_keys and fzf worked correctly,
                 # but it's a safeguard.
                 shell::colored_echo "WARN: Key '$selected_key' was selected but not found in section '$section' during removal process." 11
                 return 1
@@ -1761,7 +1761,7 @@ shell::ini_expose_env() {
             else
                 shell::colored_echo "  WARN: Failed to read key '$key' from section '$section'. Skipping export." 33
             fi
-        done < <(shell::ini_list_keys "$file" "$section") # Use process substitution for robust key listing
+        done < <(shell::list_ini_keys "$file" "$section") # Use process substitution for robust key listing
 
     else # No specific section specified, export keys from all sections.
         # Safely read sections line by line.
@@ -1801,7 +1801,7 @@ shell::ini_expose_env() {
                 else
                     shell::colored_echo "  WARN: Failed to read key '$key' from section '$current_section'. Skipping export." 33
                 fi
-            done < <(shell::ini_list_keys "$file" "$current_section")
+            done < <(shell::list_ini_keys "$file" "$current_section")
         done < <(shell::list_ini_sections "$file")
     fi
 
@@ -1916,7 +1916,7 @@ shell::ini_destroy_keys() {
                 unset "$var_name"
                 shell::colored_echo "📍 Unset: ${var_name}" 208
             fi
-        done < <(shell::ini_list_keys "$file" "$section")
+        done < <(shell::list_ini_keys "$file" "$section")
 
     else # No specific section specified, target keys from all sections.
         # Safely read sections line by line.
@@ -1950,7 +1950,7 @@ shell::ini_destroy_keys() {
                     unset "$var_name"
                     shell::colored_echo "  🗑️ Unset: ${var_name}" 208
                 fi
-            done < <(shell::ini_list_keys "$file" "$current_section")
+            done < <(shell::list_ini_keys "$file" "$current_section")
         done < <(shell::list_ini_sections "$file")
     fi
 
@@ -2747,7 +2747,7 @@ shell::fzf_view_ini_viz() {
     # Read all keys in the selected section and display them using fzf.
     # The keys are colored for better visibility.
     local key
-    key=$(shell::ini_list_keys "$file" "$section" |
+    key=$(shell::list_ini_keys "$file" "$section" |
         awk -v c="$cyan" -v n="$normal" '{print c $0 n}' |
         fzf --ansi --prompt="Select key in [$section]: ")
 
@@ -2875,7 +2875,7 @@ shell::fzf_view_ini_viz_super() {
     # Read all keys in the selected section and display them using fzf.
     # The keys are colored for better visibility.
     local keys
-    keys=$(shell::ini_list_keys "$file" "$section")
+    keys=$(shell::list_ini_keys "$file" "$section")
     if [ -z "$keys" ]; then
         shell::colored_echo "WARN: No keys found in section '$section'." 33
         return 1
@@ -3051,7 +3051,7 @@ shell::fzf_view_ini_viz_super_control() {
 
         # Read all keys in the selected section.
         local keys
-        keys=$(shell::ini_list_keys "$file" "$section")
+        keys=$(shell::list_ini_keys "$file" "$section")
         if [ -z "$keys" ]; then
             shell::colored_echo "WARN: No keys found in section '$section'." 33
             continue
@@ -3183,7 +3183,7 @@ shell::fzf_edit_ini_viz() {
     # Get the list of keys in the selected section and use fzf to select one.
     # The keys are colored for better visibility.
     local key
-    key=$(shell::ini_list_keys "$file" "$section" | fzf --prompt="Select key to edit/rename: ")
+    key=$(shell::list_ini_keys "$file" "$section" | fzf --prompt="Select key to edit/rename: ")
     if [ -z "$key" ]; then
         shell::colored_echo "ERR: No key selected." 196
         return 1

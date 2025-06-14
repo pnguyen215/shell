@@ -1015,12 +1015,12 @@ shell::dump_workspace_json() {
         json+=" \"$section\": {"
 
         # Get keys in the section
-        # We use shell::ini_list_keys to get the keys in the section
+        # We use shell::list_ini_keys to get the keys in the section
         # If no keys are found, we print a warning and skip to the next section
-        # We use shell::ini_list_keys to get the keys in the section
+        # We use shell::list_ini_keys to get the keys in the section
         # If no keys are found, we print a warning and skip to the next section
         local keys
-        keys=$(shell::ini_list_keys "$conf_file" "$section")
+        keys=$(shell::list_ini_keys "$conf_file" "$section")
         if [ -z "$keys" ]; then
             shell::colored_echo "WARN: No keys found in section '$section'" 11
             continue

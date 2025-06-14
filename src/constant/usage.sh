@@ -2820,11 +2820,11 @@ Example:
 "
 
 USAGE_SHELL_INI_LIST_KEYS="
-shell::ini_list_keys function
+shell::list_ini_keys function
 Lists all key names from a specified section in a given INI file.
 
 Usage:
-  shell::ini_list_keys [-h] <file> <section>
+  shell::list_ini_keys [-h] <file> <section>
 
 Parameters:
   - -h        : Optional. Displays this help message.
@@ -2837,7 +2837,7 @@ Description:
   if SHELL_INI_STRICT is set. The function handles comments and empty lines within the INI file.
 
 Example:
-  shell::ini_list_keys config.ini MySection  # Lists all keys in MySection.
+  shell::list_ini_keys config.ini MySection  # Lists all keys in MySection.
 "
 
 USAGE_SHELL_INI_SECTION_EXISTS="
@@ -2946,7 +2946,7 @@ Parameters:
 
 Description:
   This function validates the input file and section, lists keys within the section
-  using shell::ini_list_keys, presents the keys for interactive selection using fzf,
+  using shell::list_ini_keys, presents the keys for interactive selection using fzf,
   and then removes the chosen key-value pair from the specified section in the INI file.
   It handles cases where the file or section does not exist and provides feedback
   using shell::colored_echo.
@@ -3119,7 +3119,7 @@ Returns:
 
 Notes:
   - Affects the current shell session's environment.
-  - Relies on 'shell::list_ini_sections', 'shell::ini_list_keys', 'shell::read_ini',
+  - Relies on 'shell::list_ini_sections', 'shell::list_ini_keys', 'shell::read_ini',
     'shell::sanitize_upper_var_name', and 'shell::colored_echo'.
   - If SHELL_INI_STRICT is enabled, section and key names will be validated prior
     to reading.
@@ -3170,7 +3170,7 @@ Returns:
 Notes:
   - This function attempts to unset variables; it does not report an error if a
     variable was not found or was already unset.
-  - Relies on 'shell::list_ini_sections', 'shell::ini_list_keys',
+  - Relies on 'shell::list_ini_sections', 'shell::list_ini_keys',
     'shell::sanitize_upper_var_name', and 'shell::colored_echo'.
   - It does NOT rely on 'shell::read_ini' for values, only for deriving names.
 "
