@@ -645,7 +645,7 @@ shell::exist_ini_section() {
 shell::add_ini_section() {
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_INI_ADD_SECTION"
+        echo "$USAGE_SHELL_ADD_INI_SECTION"
         return 0
     fi
 

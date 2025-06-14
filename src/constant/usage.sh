@@ -2862,7 +2862,7 @@ Example:
   shell::exist_ini_section config.ini MySection  # Checks if MySection exists in config.ini.
 "
 
-USAGE_SHELL_INI_ADD_SECTION="
+USAGE_SHELL_ADD_INI_SECTION="
 shell::add_ini_section function
 Adds a new section to a specified INI file if it does not already exist.
 
