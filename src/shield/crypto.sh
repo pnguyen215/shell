@@ -111,7 +111,7 @@ shell::encode::aes256cbc() {
     if [ -z "$key" ]; then
         local hasKey=$(shell::exist_key_conf "SHELL_SHIELD_ENCRYPTION_KEY")
         if [ "$hasKey" = "false" ]; then
-            shell::add_conf "SHELL_SHIELD_ENCRYPTION_KEY" "$(shell::generate_random_key 32)"
+            shell::add_key_conf "SHELL_SHIELD_ENCRYPTION_KEY" "$(shell::generate_random_key 32)"
         fi
         key=$(shell::get_value_conf "SHELL_SHIELD_ENCRYPTION_KEY")
     fi
@@ -120,7 +120,7 @@ shell::encode::aes256cbc() {
     if [ -z "$iv" ]; then
         local hasIv=$(shell::exist_key_conf "SHELL_SHIELD_ENCRYPTION_IV")
         if [ "$hasIv" = "false" ]; then
-            shell::add_conf "SHELL_SHIELD_ENCRYPTION_IV" "$(shell::generate_random_key 16)"
+            shell::add_key_conf "SHELL_SHIELD_ENCRYPTION_IV" "$(shell::generate_random_key 16)"
         fi
         iv=$(shell::get_value_conf "SHELL_SHIELD_ENCRYPTION_IV")
     fi
@@ -400,7 +400,7 @@ shell::encode::file::aes256cbc() {
     if [ -z "$key" ]; then
         local hasKey=$(shell::exist_key_conf "SHELL_SHIELD_ENCRYPTION_KEY")
         if [ "$hasKey" = "false" ]; then
-            shell::add_conf "SHELL_SHIELD_ENCRYPTION_KEY" "$(shell::generate_random_key 32)"
+            shell::add_key_conf "SHELL_SHIELD_ENCRYPTION_KEY" "$(shell::generate_random_key 32)"
         fi
         key=$(shell::get_value_conf "SHELL_SHIELD_ENCRYPTION_KEY")
     fi
@@ -409,7 +409,7 @@ shell::encode::file::aes256cbc() {
     if [ -z "$iv" ]; then
         local hasIv=$(shell::exist_key_conf "SHELL_SHIELD_ENCRYPTION_IV")
         if [ "$hasIv" = "false" ]; then
-            shell::add_conf "SHELL_SHIELD_ENCRYPTION_IV" "$(shell::generate_random_key 16)"
+            shell::add_key_conf "SHELL_SHIELD_ENCRYPTION_IV" "$(shell::generate_random_key 16)"
         fi
         iv=$(shell::get_value_conf "SHELL_SHIELD_ENCRYPTION_IV")
     fi

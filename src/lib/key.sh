@@ -56,12 +56,12 @@ shell::read_conf() {
     fi
 }
 
-# shell::add_conf function
+# shell::add_key_conf function
 # Adds a configuration entry (key=value) to a constant configuration file.
 # The value is encoded using Base64 before being saved.
 #
 # Usage:
-#   shell::add_conf [-n] <key> <value>
+#   shell::add_key_conf [-n] <key> <value>
 #
 # Parameters:
 #   - -n       : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
@@ -75,25 +75,24 @@ shell::read_conf() {
 #   to a constant configuration file (defined by SHELL_KEY_CONF_FILE). If the configuration file does not exist, it is created.
 #
 # Example:
-#   shell::add_conf my_setting "some secret value"         # Encodes the value and adds the entry.
-#   shell::add_conf -n my_setting "some secret value"      # Prints the command without executing it.
-shell::add_conf() {
-    local dry_run="false"
+#   shell::add_key_conf my_setting "some secret value"         # Encodes the value and adds the entry.
+#   shell::add_key_conf -n my_setting "some secret value"      # Prints the command without executing it.
+shell::add_key_conf() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_ADD_KEY_CONF"
+        return 0
+    fi
 
-    # Check for the optional dry-run flag (-n)
+    local dry_run="false"
     if [ "$1" = "-n" ]; then
         dry_run="true"
         shift
     fi
 
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_ADD_CONF"
-        return 0
-    fi
-
+    # Check if a key and value are provided.
+    # If not, print usage information and return an error.
     if [ $# -lt 2 ]; then
-        echo "Usage: shell::add_conf [-n] <key> <value>"
+        echo "Usage: shell::add_key_conf [-n] <key> <value>"
         return 1
     fi
 
@@ -112,6 +111,9 @@ shell::add_conf() {
     # Build the command to append the key and encoded value to the configuration file.
     local cmd="echo \"$key=$encoded_value\" >> \"$SHELL_KEY_CONF_FILE\""
 
+    # Check if the dry mode is enabled.
+    # If so, print the command to be executed.
+    # Otherwise, execute the command to add the configuration entry.
     if [ "$dry_run" = "true" ]; then
         shell::on_evict "$cmd"
     else
@@ -125,12 +127,12 @@ shell::add_conf() {
     fi
 }
 
-# shell::add_conf_comment function
+# shell::add_key_conf_comment function
 # Adds a configuration entry (key=value) with an optional comment to the constant configuration file.
 # The value is encoded using Base64 before being saved.
 #
 # Usage:
-# shell::add_conf_comment [-n] <key> <value> [comment]
+# shell::add_key_conf_comment [-n] <key> <value> [comment]
 #
 # Parameters:
 # - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
@@ -146,9 +148,9 @@ shell::add_conf() {
 # If the key already exists, a warning is shown and the function exits.
 #
 # Example:
-# shell::add_conf_comment my_key "my secret" "This is a comment"
-# shell::add_conf_comment -n my_key "my secret" "Dry-run with comment"
-shell::add_conf_comment() {
+# shell::add_key_conf_comment my_key "my secret" "This is a comment"
+# shell::add_key_conf_comment -n my_key "my secret" "Dry-run with comment"
+shell::add_key_conf_comment() {
     local dry_run="false"
 
     # Check for the optional dry-run flag (-n)
@@ -159,12 +161,12 @@ shell::add_conf_comment() {
 
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_ADD_CONF_COMMENT"
+        echo "$USAGE_SHELL_ADD_KEY_CONF_COMMENT"
         return 0
     fi
 
     if [ $# -lt 2 ]; then
-        echo "Usage: shell::add_conf_comment [-n] <key> <value> [comment]"
+        echo "Usage: shell::add_key_conf_comment [-n] <key> <value> [comment]"
         return 1
     fi
 

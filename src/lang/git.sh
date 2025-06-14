@@ -15,7 +15,7 @@
 #   The function first checks if the dry-run flag is provided. It then verifies the existence of the
 #   configuration keys "SHELL_HISTORICAL_GH_TELEGRAM_BOT_TOKEN" and "SHELL_HISTORICAL_GH_TELEGRAM_CHAT_ID".
 #   If either key is missing, a warning is printed and the corresponding key is copied to the clipboard
-#   to prompt the user to add it using shell::add_conf. If both keys exist, it retrieves their values and
+#   to prompt the user to add it using shell::add_key_conf. If both keys exist, it retrieves their values and
 #   calls shell::send_telegram_message (with the dry-run flag, if enabled) to send the message.
 #
 # Example:
@@ -46,7 +46,7 @@ shell::send_telegram_historical_gh_message() {
     local hasToken
     hasToken=$(shell::exist_key_conf "SHELL_HISTORICAL_GH_TELEGRAM_BOT_TOKEN")
     if [ "$hasToken" = "false" ]; then
-        shell::colored_echo "WARN: The key 'SHELL_HISTORICAL_GH_TELEGRAM_BOT_TOKEN' does not exist. Please consider adding it by using shell::add_conf" 11
+        shell::colored_echo "WARN: The key 'SHELL_HISTORICAL_GH_TELEGRAM_BOT_TOKEN' does not exist. Please consider adding it by using shell::add_key_conf" 11
         shell::clip_value "SHELL_HISTORICAL_GH_TELEGRAM_BOT_TOKEN"
         return 1
     fi
@@ -55,7 +55,7 @@ shell::send_telegram_historical_gh_message() {
     local hasChatID
     hasChatID=$(shell::exist_key_conf "SHELL_HISTORICAL_GH_TELEGRAM_CHAT_ID")
     if [ "$hasChatID" = "false" ]; then
-        shell::colored_echo "WARN: The key 'SHELL_HISTORICAL_GH_TELEGRAM_CHAT_ID' does not exist. Please consider adding it by using shell::add_conf" 11
+        shell::colored_echo "WARN: The key 'SHELL_HISTORICAL_GH_TELEGRAM_CHAT_ID' does not exist. Please consider adding it by using shell::add_key_conf" 11
         shell::clip_value "SHELL_HISTORICAL_GH_TELEGRAM_CHAT_ID"
         return 1
     fi

@@ -175,13 +175,13 @@ Example:
   shell::read_conf -n ~/.my-config             # Prints the sourcing command without executing it.
 "
 
-USAGE_SHELL_ADD_CONF="
-shell::add_conf function
+USAGE_SHELL_ADD_KEY_CONF="
+shell::add_key_conf function
 Adds a configuration entry (key=value) to a constant configuration file.
 The value is encoded using Base64 before being saved.
 
 Usage:
-  shell::add_conf [-n] [-h] <key> <value>
+  shell::add_key_conf [-n] [-h] <key> <value>
 
 Parameters:
   - -n       : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
@@ -196,8 +196,8 @@ Description:
   to a constant configuration file (defined by SHELL_KEY_CONF_FILE). If the configuration file does not exist, it is created.
 
 Example:
-  shell::add_conf my_setting \"some secret value\"         # Encodes the value and adds the entry.
-  shell::add_conf -n my_setting \"some secret value\"      # Prints the command without executing it.
+  shell::add_key_conf my_setting \"some secret value\"         # Encodes the value and adds the entry.
+  shell::add_key_conf -n my_setting \"some secret value\"      # Prints the command without executing it.
 "
 
 USAGE_SHELL_FZF_GET_CONF="
@@ -646,7 +646,7 @@ Description:
   The function first checks if the dry-run flag is provided. It then verifies the existence of the
   configuration keys \"SHELL_HISTORICAL_GH_TELEGRAM_BOT_TOKEN\" and \"SHELL_HISTORICAL_GH_TELEGRAM_CHAT_ID\".
   If either key is missing, a warning is printed and the corresponding key is copied to the clipboard
-  to prompt the user to add it using shell::add_conf. If both keys exist, it retrieves their values and
+  to prompt the user to add it using shell::add_key_conf. If both keys exist, it retrieves their values and
   calls shell::send_telegram_message (with the dry-run flag, if enabled) to send the message.
 
 Example:
@@ -3443,13 +3443,13 @@ Description:
   This function removes inactive bookmark paths from the bookmarks file using fzf.
 "
 
-USAGE_SHELL_ADD_CONF_COMMENT="
-shell::add_conf_comment function
+USAGE_SHELL_ADD_KEY_CONF_COMMENT="
+shell::add_key_conf_comment function
 Adds a configuration entry (key=value) with an optional comment to the constant configuration file.
 The value is encoded using Base64 before being saved.
 
 Usage:
-shell::add_conf_comment [-n] <key> <value> [comment]
+shell::add_key_conf_comment [-n] <key> <value> [comment]
 
 Parameters:
   - -n        : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
