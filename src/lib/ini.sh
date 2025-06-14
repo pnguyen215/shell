@@ -347,11 +347,11 @@ shell::ini_escape_for_regex() {
     echo "$1" | sed -e 's/[]\/()$*.^|[]/\\&/g'
 }
 
-# shell::ini_check_file function
+# shell::check_ini_file function
 # Validates the existence and write ability of a specified file, creating it if necessary.
 #
 # Usage:
-#   shell::ini_check_file [-h] <file>
+#   shell::check_ini_file [-h] <file>
 #
 # Parameters:
 #   - <file> : The path to the file to check or create.
@@ -363,8 +363,8 @@ shell::ini_escape_for_regex() {
 #   returns a non-zero status.
 #
 # Example:
-#   shell::ini_check_file /path/to/config.ini  # Checks or creates the file at the specified path.
-shell::ini_check_file() {
+#   shell::check_ini_file /path/to/config.ini  # Checks or creates the file at the specified path.
+shell::check_ini_file() {
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_INI_CHECK_FILE"
@@ -376,7 +376,7 @@ shell::ini_check_file() {
     # Check if file parameter is provided
     if [ -z "$file" ]; then
         shell::colored_echo "File path is required" 196
-        echo "Usage: shell::ini_check_file [-h] <file>"
+        echo "Usage: shell::check_ini_file [-h] <file>"
         return 1
     fi
 
@@ -1067,8 +1067,8 @@ shell::fzf_ini_remove_key() {
     local section="$2"
 
     # Check if the specified file exists.
-    if ! shell::ini_check_file "$file"; then
-        # shell::ini_check_file prints an error if the file is not found
+    if ! shell::check_ini_file "$file"; then
+        # shell::check_ini_file prints an error if the file is not found
         return 1
     fi
 
@@ -2074,7 +2074,7 @@ shell::ini_get_or_default() {
 #   section not found, new section already exists, or validation failure).
 #
 # Notes:
-#   - Relies on shell::colored_echo, shell::ini_check_file, shell::ini_section_exists,
+#   - Relies on shell::colored_echo, shell::check_ini_file, shell::ini_section_exists,
 #     shell::ini_escape_for_regex, shell::validate_ini_section_name, and shell::run_cmd_eval.
 shell::ini_rename_section() {
     local dry_run="false"
@@ -2121,7 +2121,7 @@ shell::ini_rename_section() {
     fi
 
     # Check if the file exists and is writable.
-    if ! shell::ini_check_file "$file"; then
+    if ! shell::check_ini_file "$file"; then
         return 1
     fi
 
