@@ -224,7 +224,7 @@ shell::validate_ini_section_name() {
 shell::validate_ini_key_name() {
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_INI_VALIDATE_KEY_NAME"
+        echo "$USAGE_SHELL_VALIDATE_INI_KEY_NAME"
         return 0
     fi
 

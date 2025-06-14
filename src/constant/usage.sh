@@ -2718,7 +2718,7 @@ Example usage:
   shell::validate_ini_section_name \"\"            # Invalid (empty)
 "
 
-USAGE_SHELL_INI_VALIDATE_KEY_NAME="
+USAGE_SHELL_VALIDATE_INI_KEY_NAME="
 shell::validate_ini_key_name function
 Validates an INI key name based on defined strictness levels.
 It checks for empty names and disallowed characters or spaces according to
