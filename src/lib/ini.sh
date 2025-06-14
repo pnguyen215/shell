@@ -2562,7 +2562,7 @@ shell::fzf_remove_ini_sections() {
     local dry_run="false"
 
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_REMOVE_SECTIONS"
+        echo "$USAGE_SHELL_FZF_REMOVE_INI_SECTIONS"
         return 0
     fi
 
