@@ -2883,7 +2883,7 @@ Example:
   shell::add_ini_section config.ini NewSection  # Adds NewSection to config.ini if it doesn't exist.
 "
 
-USAGE_SHELL_INI_WRITE="
+USAGE_SHELL_WRITE_INI="
 shell::write_ini function
 Writes a key-value pair to a specified section in an INI file.
 

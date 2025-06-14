@@ -712,7 +712,7 @@ shell::add_ini_section() {
 shell::write_ini() {
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_INI_WRITE"
+        echo "$USAGE_SHELL_WRITE_INI"
         return 0
     fi
 
