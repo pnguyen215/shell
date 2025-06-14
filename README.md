@@ -76,9 +76,9 @@ Access the shell library by opening your terminal and using the commands below. 
   Installs a package using the appropriate package manager for the OS (e.g., `apt` for Linux, `brew` for macOS).  
   _Example:_ `shell::install_package git`
 
-- **`shell::removal_package`**  
+- **`shell::remove_package`**  
   Uninstalls a package using the OS-appropriate package manager.  
-  _Example:_ `shell::removal_package git`
+  _Example:_ `shell::remove_package git`
 
 - **`shell::list_installed_packages`**  
   Lists all packages installed on the system via the native package manager.  
