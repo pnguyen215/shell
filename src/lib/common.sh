@@ -641,86 +641,6 @@ shell::create_file_if_not_exists() {
     return 0
 }
 
-# shell::unlock_permissions function
-# Sets full permissions (read, write, and execute) for the specified file or directory.
-#
-# Usage:
-#   shell::unlock_permissions [-n] <file/dir>
-#
-# Parameters:
-#   - -n (optional): Dry-run mode. Instead of executing the command, prints it using shell::on_evict.
-#   - <file/dir> : The path to the file or directory to modify.
-#
-# Description:
-#   This function checks the current permission of the target. If it is already set to 777,
-#   it logs a message and exits without making any changes.
-#   Otherwise, it builds and executes (or prints, in dry-run mode) the chmod command asynchronously
-#   to grant full permissions recursively.
-#
-# Example:
-#   shell::unlock_permissions ./my_script.sh
-#   shell::unlock_permissions -n ./my_script.sh  # Dry-run: prints the command without executing.
-shell::unlock_permissions() {
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_UNLOCK_PERMISSIONS"
-        return 0
-    fi
-
-    local dry_run="false"
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
-
-    # Check if a target is provided
-    # If no target is provided, print usage information and exit.
-    if [ $# -lt 1 ]; then
-        echo "Usage: shell::unlock_permissions [-n] <file/dir>"
-        return 1
-    fi
-
-    # Check if the target exists
-    # If the target does not exist, print an error message and exit.
-    # If the target is a directory, it will be created if it does not exist.
-    local target="$1"
-    if [ ! -e "$target" ]; then
-        shell::colored_echo "ERR: Target '$target' does not exist." 196
-        return 1
-    fi
-
-    # Determine the current permission of the target
-    # This is done using the `stat` command, which varies between macOS and Linux.
-    # On macOS, use `stat -f "%Lp"`; on Linux, use `stat -c "%a"`.
-    # The current permission is stored in the variable `current_perm`.
-    # This will be used to check if the target already has 777 permissions.
-    local current_perm=""
-    local os_type
-    os_type=$(shell::get_os_type)
-    if [ "$os_type" = "macos" ]; then
-        current_perm=$(stat -f "%Lp" "$target")
-    else
-        current_perm=$(stat -c "%a" "$target")
-    fi
-
-    # Build the chmod command to set full permissions (777) recursively.
-    # This command will be executed asynchronously.
-    local chmod_cmd="sudo chmod -R 777 \"$target\""
-
-    # If dry-run mode is enabled, print the command instead of executing it.
-    # If the target already has 777 permissions, skip execution.
-    if [ "$dry_run" = "true" ]; then
-        shell::on_evict "$chmod_cmd"
-    else
-        # If the current permission is not 777, execute the chmod command.
-        if [ "$current_perm" -eq 777 ]; then
-            return 0
-        fi
-        shell::run_cmd_eval "$chmod_cmd"
-        shell::colored_echo "DEBUG: Permissions set to (read,write,execute) for '$target'" 244
-        return 0
-    fi
-}
-
 # shell::clip_cwd function
 # Copies the current directory path to the clipboard.
 #
@@ -1973,6 +1893,251 @@ shell::ls() {
     return 0
 }
 
+# shell::set_permissions function
+# Sets file or directory permissions using human-readable group syntax.
+#
+# Usage:
+# shell::set_permissions [-n] <target> [owner=...] [group=...] [others=...]
+#
+# Description:
+#   This function allows you to set permissions on a file or directory using a human-readable format.
+#   It supports specifying permissions for the owner, group, and others using keywords like read, write, and execute.
+#   The function constructs a chmod command based on the provided arguments and executes it.
+#   If the -n flag is provided, it prints the command instead of executing it.
+#   The function checks if the target exists and is accessible before attempting to change permissions.
+#   It also validates the permission groups and provides error messages for invalid inputs.
+#
+# Parameters:
+#   - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+#   - <target> : The file or directory to set permissions on.
+#   - [owner=...] : Optional. Set permissions for the owner (e.g., owner=read,write).
+#   - [group=...] : Optional. Set permissions for the group (e.g., group=read,execute).
+#   - [others=...] : Optional. Set permissions for others (e.g., others=read).
+#
+# Example:
+# shell::set_permissions myfile.txt owner=read,write group=read others=read
+# shell::set_permissions -n script.sh owner=read,write,execute group=read,execute others=none
+shell::set_permissions() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_SET_PERMISSIONS"
+        return 0
+    fi
+
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if [ $# -lt 2 ]; then
+        echo "Usage: shell::set_permissions [-n] <target> [owner=...] [group=...] [others=...]"
+        return 1
+    fi
+
+    local target="$1"
+    shift
+
+    if [ ! -e "$target" ]; then
+        shell::colored_echo "ERR: Target '$target' does not exist." 196
+        return 1
+    fi
+
+    # Owner, group, and others permissions initialized to 0
+    # These variables will hold the numeric values for each permission group.
+    local owner_perm="0"
+    local group_perm="0"
+    local others_perm="0"
+
+    # Process each permission argument
+    # This loop iterates over each argument provided after the target.
+    # It extracts the entity (owner, group, others) and the permissions string,
+    # calculates the corresponding numeric value, and assigns it to the appropriate variable.
+    # The permissions are expected in the format: owner=..., group=..., others=...
+    # Each permission string can include read, write, and execute keywords.
+    # The function supports multiple permission groups and calculates the octal value for chmod.
+    # It also handles errors for unknown permission groups and invalid formats.
+    for arg in "$@"; do
+        local entity="${arg%%=*}"
+        local perms="${arg#*=}"
+        local value=0
+
+        [[ "$perms" =~ read ]] && ((value += 4))
+        [[ "$perms" =~ write ]] && ((value += 2))
+        [[ "$perms" =~ execute ]] && ((value += 1))
+
+        case "$entity" in
+        owner) owner_perm="$value" ;;
+        group) group_perm="$value" ;;
+        others) others_perm="$value" ;;
+        *)
+            shell::colored_echo "ERR: Unknown permission group '$entity'. Use owner=..., group=..., others=..." 196
+            return 1
+            ;;
+        esac
+    done
+
+    local mode="${owner_perm}${group_perm}${others_perm}"
+    local cmd="chmod $mode \"$target\""
+
+    # If dry-mode is enabled, print the command instead of executing it
+    # This allows for a dry-run to see what would happen without making changes.
+    # This is useful for testing or when you want to ensure the command is correct before applying it.
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "$cmd"
+    else
+        shell::run_cmd_eval "$cmd"
+        shell::colored_echo "INFO: Permissions set to $mode for '$target'" 46
+    fi
+}
+
+# shell::unlock_permissions function
+# Sets full permissions (read, write, and execute) for the specified file or directory.
+#
+# Usage:
+#   shell::unlock_permissions [-n] <file/dir>
+#
+# Parameters:
+#   - -n (optional): Dry-run mode. Instead of executing the command, prints it using shell::on_evict.
+#   - <file/dir> : The path to the file or directory to modify.
+#
+# Description:
+#   This function checks the current permission of the target. If it is already set to 777,
+#   it logs a message and exits without making any changes.
+#   Otherwise, it builds and executes (or prints, in dry-run mode) the chmod command asynchronously
+#   to grant full permissions recursively.
+#
+# Example:
+#   shell::unlock_permissions ./my_script.sh
+#   shell::unlock_permissions -n ./my_script.sh  # Dry-run: prints the command without executing.
+shell::unlock_permissions() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_UNLOCK_PERMISSIONS"
+        return 0
+    fi
+
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    # Check if a target is provided
+    # If no target is provided, print usage information and exit.
+    if [ $# -lt 1 ]; then
+        echo "Usage: shell::unlock_permissions [-n] <file/dir>"
+        return 1
+    fi
+
+    # Check if the target exists
+    # If the target does not exist, print an error message and exit.
+    # If the target is a directory, it will be created if it does not exist.
+    local target="$1"
+    if [ ! -e "$target" ]; then
+        shell::colored_echo "ERR: Target '$target' does not exist." 196
+        return 1
+    fi
+
+    # Determine the current permission of the target
+    # This is done using the `stat` command, which varies between macOS and Linux.
+    # On macOS, use `stat -f "%Lp"`; on Linux, use `stat -c "%a"`.
+    # The current permission is stored in the variable `current_perm`.
+    # This will be used to check if the target already has 777 permissions.
+    local current_perm=""
+    local os_type
+    os_type=$(shell::get_os_type)
+    if [ "$os_type" = "macos" ]; then
+        current_perm=$(stat -f "%Lp" "$target")
+    else
+        current_perm=$(stat -c "%a" "$target")
+    fi
+
+    # Build the chmod command to set full permissions (777) recursively.
+    # This command will be executed asynchronously.
+    local chmod_cmd="sudo chmod -R 777 \"$target\""
+
+    # If dry-run mode is enabled, print the command instead of executing it.
+    # If the target already has 777 permissions, skip execution.
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "$chmod_cmd"
+    else
+        # If the current permission is not 777, execute the chmod command.
+        if [ "$current_perm" -eq 777 ]; then
+            return 0
+        fi
+        shell::run_cmd_eval "$chmod_cmd"
+        shell::colored_echo "DEBUG: Permissions set to (read,write,execute) for '$target'" 244
+        return 0
+    fi
+}
+
+# shell::fzf_set_permissions function
+# Interactively selects permissions for a file or directory using fzf and applies them via shell::set_permissions.
+#
+# Usage:
+# shell::fzf_set_permissions [-n] <target>
+#
+# Parameters:
+# - -n : Optional dry-run flag. If provided, the chmod command is printed using shell::on_evict instead of executed.
+# - <target> : The file or directory to modify permissions for.
+#
+# Description:
+# This function prompts the user to select permissions for owner, group, and others using fzf.
+# It then delegates the permission setting to shell::set_permissions.
+shell::fzf_set_permissions() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_SET_PERMISSIONS"
+        return 0
+    fi
+
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if [ $# -lt 1 ]; then
+        echo "Usage: shell::fzf_set_permissions [-n] <target>"
+        return 1
+    fi
+
+    local target="$1"
+    if [ ! -e "$target" ]; then
+        shell::colored_echo "ERR: Target '$target' does not exist." 196
+        return 1
+    fi
+
+    # Ensure fzf is installed
+    shell::install_package fzf
+
+    # Define permission options
+    # This array contains the different permission levels that can be selected.
+    local perms=("none" "read" "write" "execute" "read,write" "read,execute" "write,execute" "read,write,execute")
+
+    # Prompt user to select permissions for owner, group, and others
+    # The user is prompted to select permissions for each category (owner, group, others) using fzf.
+    # The selected permissions are stored in variables for later use.
+    local owner=$(printf "%s\n" "${perms[@]}" | fzf --prompt="Select owner permissions: ")
+    local group=$(printf "%s\n" "${perms[@]}" | fzf --prompt="Select group permissions: ")
+    local others=$(printf "%s\n" "${perms[@]}" | fzf --prompt="Select others permissions: ")
+
+    # Check if any permission selection is empty
+    # If any of the selections are empty, an error message is displayed and the function exits.
+    if [ -z "$owner" ] || [ -z "$group" ] || [ -z "$others" ]; then
+        shell::colored_echo "ERR: Permission selection incomplete. Aborting." 196
+        return 1
+    fi
+
+    # If dry-run mode is enabled, print the command instead of executing it
+    # This allows the user to see what permissions would be set without actually changing them.
+    # If dry_run is true, the command is printed using shell::on_evict.
+    # Otherwise, the command is executed to set the permissions.
+    if [ "$dry_run" = "true" ]; then
+        shell::set_permissions "-n" "$target" "owner=$owner" "group=$group" "others=$others"
+    else
+        shell::set_permissions "$target" "owner=$owner" "group=$group" "others=$others"
+    fi
+}
+
 # shell::analyze_permissions function
 # Explains a file permission string (e.g., -rwxr-xr-x) in a human-readable way for developers.
 #
@@ -2159,169 +2324,4 @@ shell::analyze_permissions() {
     [ "$debug" = "true" ] && echo "Debug: Parsed file type='$file_type', owner='$owner_perms', group='$group_perms', others='$others_perms', octal='$octal'" >&2
 
     return 0
-}
-
-# shell::set_permissions function
-# Sets file or directory permissions using human-readable group syntax.
-#
-# Usage:
-# shell::set_permissions [-n] <target> [owner=...] [group=...] [others=...]
-#
-# Description:
-#   This function allows you to set permissions on a file or directory using a human-readable format.
-#   It supports specifying permissions for the owner, group, and others using keywords like read, write, and execute.
-#   The function constructs a chmod command based on the provided arguments and executes it.
-#   If the -n flag is provided, it prints the command instead of executing it.
-#   The function checks if the target exists and is accessible before attempting to change permissions.
-#   It also validates the permission groups and provides error messages for invalid inputs.
-#
-# Parameters:
-#   - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
-#   - <target> : The file or directory to set permissions on.
-#   - [owner=...] : Optional. Set permissions for the owner (e.g., owner=read,write).
-#   - [group=...] : Optional. Set permissions for the group (e.g., group=read,execute).
-#   - [others=...] : Optional. Set permissions for others (e.g., others=read).
-#
-# Example:
-# shell::set_permissions myfile.txt owner=read,write group=read others=read
-# shell::set_permissions -n script.sh owner=read,write,execute group=read,execute others=none
-shell::set_permissions() {
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_SET_PERMISSIONS"
-        return 0
-    fi
-
-    local dry_run="false"
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
-
-    if [ $# -lt 2 ]; then
-        echo "Usage: shell::set_permissions [-n] <target> [owner=...] [group=...] [others=...]"
-        return 1
-    fi
-
-    local target="$1"
-    shift
-
-    if [ ! -e "$target" ]; then
-        shell::colored_echo "ERR: Target '$target' does not exist." 196
-        return 1
-    fi
-
-    # Owner, group, and others permissions initialized to 0
-    # These variables will hold the numeric values for each permission group.
-    local owner_perm="0"
-    local group_perm="0"
-    local others_perm="0"
-
-    # Process each permission argument
-    # This loop iterates over each argument provided after the target.
-    # It extracts the entity (owner, group, others) and the permissions string,
-    # calculates the corresponding numeric value, and assigns it to the appropriate variable.
-    # The permissions are expected in the format: owner=..., group=..., others=...
-    # Each permission string can include read, write, and execute keywords.
-    # The function supports multiple permission groups and calculates the octal value for chmod.
-    # It also handles errors for unknown permission groups and invalid formats.
-    for arg in "$@"; do
-        local entity="${arg%%=*}"
-        local perms="${arg#*=}"
-        local value=0
-
-        [[ "$perms" =~ read ]] && ((value += 4))
-        [[ "$perms" =~ write ]] && ((value += 2))
-        [[ "$perms" =~ execute ]] && ((value += 1))
-
-        case "$entity" in
-        owner) owner_perm="$value" ;;
-        group) group_perm="$value" ;;
-        others) others_perm="$value" ;;
-        *)
-            shell::colored_echo "ERR: Unknown permission group '$entity'. Use owner=..., group=..., others=..." 196
-            return 1
-            ;;
-        esac
-    done
-
-    local mode="${owner_perm}${group_perm}${others_perm}"
-    local cmd="chmod $mode \"$target\""
-
-    # If dry-mode is enabled, print the command instead of executing it
-    # This allows for a dry-run to see what would happen without making changes.
-    # This is useful for testing or when you want to ensure the command is correct before applying it.
-    if [ "$dry_run" = "true" ]; then
-        shell::on_evict "$cmd"
-    else
-        shell::run_cmd_eval "$cmd"
-        shell::colored_echo "INFO: Permissions set to $mode for '$target'" 46
-    fi
-}
-
-# shell::fzf_set_permissions function
-# Interactively selects permissions for a file or directory using fzf and applies them via shell::set_permissions.
-#
-# Usage:
-# shell::fzf_set_permissions [-n] <target>
-#
-# Parameters:
-# - -n : Optional dry-run flag. If provided, the chmod command is printed using shell::on_evict instead of executed.
-# - <target> : The file or directory to modify permissions for.
-#
-# Description:
-# This function prompts the user to select permissions for owner, group, and others using fzf.
-# It then delegates the permission setting to shell::set_permissions.
-shell::fzf_set_permissions() {
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_SET_PERMISSIONS"
-        return 0
-    fi
-
-    local dry_run="false"
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
-
-    if [ $# -lt 1 ]; then
-        echo "Usage: shell::fzf_set_permissions [-n] <target>"
-        return 1
-    fi
-
-    local target="$1"
-    if [ ! -e "$target" ]; then
-        shell::colored_echo "ERR: Target '$target' does not exist." 196
-        return 1
-    fi
-
-    # Ensure fzf is installed
-    shell::install_package fzf
-
-    # Define permission options
-    # This array contains the different permission levels that can be selected.
-    local perms=("none" "read" "write" "execute" "read,write" "read,execute" "write,execute" "read,write,execute")
-
-    # Prompt user to select permissions for owner, group, and others
-    # The user is prompted to select permissions for each category (owner, group, others) using fzf.
-    # The selected permissions are stored in variables for later use.
-    local owner=$(printf "%s\n" "${perms[@]}" | fzf --prompt="Select owner permissions: ")
-    local group=$(printf "%s\n" "${perms[@]}" | fzf --prompt="Select group permissions: ")
-    local others=$(printf "%s\n" "${perms[@]}" | fzf --prompt="Select others permissions: ")
-
-    # Check if any permission selection is empty
-    # If any of the selections are empty, an error message is displayed and the function exits.
-    if [ -z "$owner" ] || [ -z "$group" ] || [ -z "$others" ]; then
-        shell::colored_echo "ERR: Permission selection incomplete. Aborting." 196
-        return 1
-    fi
-
-    # If dry-run mode is enabled, print the command instead of executing it
-    # This allows the user to see what permissions would be set without actually changing them.
-    # If dry_run is true, the command is printed using shell::on_evict.
-    # Otherwise, the command is executed to set the permissions.
-    if [ "$dry_run" = "true" ]; then
-        shell::set_permissions "-n" "$target" "owner=$owner" "group=$group" "others=$others"
-    else
-        shell::set_permissions "$target" "owner=$owner" "group=$group" "others=$others"
-    fi
 }
