@@ -2543,12 +2543,12 @@ Example:
   shell::exist_profile_conf my_profile my_key
 "
 
-USAGE_SHELL_RENAME_KEY_CONF_PROFILE="
-shell::rename_key_conf_profile function
+USAGE_SHELL_RENAME_PROFILE_CONF_KEY="
+shell::rename_profile_conf_key function
 Renames an existing configuration key in a given profile.
 
 Usage:
-  shell::rename_key_conf_profile [-n] [-h] <profile_name>
+  shell::rename_profile_conf_key [-n] [-h] <profile_name>
 
 Parameters:
   - -n            : Optional dry-run flag. If provided, prints the sed command using shell::on_evict without executing.
@@ -2563,8 +2563,8 @@ Description:
   In dry-run mode, the command is printed via shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
 
 Example:
-  shell::rename_key_conf_profile my_profile
-  shell::rename_key_conf_profile -n my_profile   # dry-run mode
+  shell::rename_profile_conf_key my_profile
+  shell::rename_profile_conf_key -n my_profile   # dry-run mode
 "
 
 USAGE_SHELL_CLONE_CONF_PROFILE="
