@@ -2162,11 +2162,11 @@ shell::rename_ini_section() {
     return 0
 }
 
-# shell::fzf_ini_rename_section function
+# shell::fzf_rename_ini_section function
 # Interactively selects a section from an INI file using fzf and renames it.
 #
 # Usage:
-#   shell::fzf_ini_rename_section [-n] [-h] <file>
+#   shell::fzf_rename_ini_section [-n] [-h] <file>
 #
 # Parameters:
 #   - -n     : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
@@ -2182,8 +2182,8 @@ shell::rename_ini_section() {
 #   It includes checks for file existence and fzf installation.
 #
 # Example:
-#   shell::fzf_ini_rename_section config.ini  # Interactively rename a section in config.ini.
-#   shell::fzf_ini_rename_section -n settings.ini # Dry-run: show commands to rename a section.
+#   shell::fzf_rename_ini_section config.ini  # Interactively rename a section in config.ini.
+#   shell::fzf_rename_ini_section -n settings.ini # Dry-run: show commands to rename a section.
 #
 # Returns:
 #   0 on success, 1 on failure (e.g., missing file, no section selected,
@@ -2192,7 +2192,7 @@ shell::rename_ini_section() {
 # Notes:
 #   - Relies on shell::colored_echo, shell::install_package, shell::list_ini_sections,
 #     and shell::rename_ini_section.
-shell::fzf_ini_rename_section() {
+shell::fzf_rename_ini_section() {
     local dry_run="false"
     local opt_h_found="false" # Flag to track if -h was explicitly passed
     local file_param=""       # To store the actual file parameter after option parsing
@@ -2225,8 +2225,8 @@ shell::fzf_ini_rename_section() {
 
     # Validate required parameter: file path.
     if [ -z "$file_param" ]; then
-        shell::colored_echo "ERR: shell::fzf_ini_rename_section: Missing required file parameter." 196
-        echo "Usage: shell::fzf_ini_rename_section [-n] [-h] <file>"
+        shell::colored_echo "ERR: shell::fzf_rename_ini_section: Missing required file parameter." 196
+        echo "Usage: shell::fzf_rename_ini_section [-n] [-h] <file>"
         return 1
     fi
 
