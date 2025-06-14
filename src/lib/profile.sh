@@ -1,11 +1,11 @@
 #!/bin/bash
 # profile.sh
 
-# shell::get_profile_workspace function
+# shell::get_profile_path function
 # Returns the path to the profile directory for a given profile name.
 #
 # Usage:
-#   shell::get_profile_workspace <profile_name>
+#   shell::get_profile_path <profile_name>
 #
 # Parameters:
 #   - <profile_name>: The name of the profile.
@@ -15,16 +15,16 @@
 #   located at $SHELL_CONF_WORKING/workspace.
 #
 # Example:
-#   profile_dir=$(shell::get_profile_workspace "my_profile")  # Returns "$SHELL_CONF_WORKING/workspace/my_profile"
-shell::get_profile_workspace() {
+#   profile_dir=$(shell::get_profile_path "my_profile")  # Returns "$SHELL_CONF_WORKING/workspace/my_profile"
+shell::get_profile_path() {
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_GET_PROFILE_WORKSPACE"
+        echo "$USAGE_SHELL_GET_PROFILE_PATH"
         return 0
     fi
 
     if [ $# -lt 1 ]; then
-        echo "Usage: shell::get_profile_workspace <profile_name>"
+        echo "Usage: shell::get_profile_path <profile_name>"
         return 1
     fi
     local profile_name="$1"
@@ -90,7 +90,7 @@ shell::add_profile() {
         return 1
     fi
     local profile_name="$1"
-    local profile_dir=$(shell::get_profile_workspace "$profile_name")
+    local profile_dir=$(shell::get_profile_path "$profile_name")
     if [ -d "$profile_dir" ]; then
         shell::colored_echo "WARN: Profile '$profile_name' already exists." 11
         return 1
@@ -141,7 +141,7 @@ shell::read_profile() {
         return 1
     fi
     local profile_name="$1"
-    local profile_dir=$(shell::get_profile_workspace "$profile_name")
+    local profile_dir=$(shell::get_profile_path "$profile_name")
     local profile_conf="$profile_dir/profile.conf"
     if [ ! -d "$profile_dir" ]; then
         shell::colored_echo "ERR: Profile '$profile_name' does not exist." 196
@@ -193,7 +193,7 @@ shell::update_profile() {
         return 1
     fi
     local profile_name="$1"
-    local profile_dir=$(shell::get_profile_workspace "$profile_name")
+    local profile_dir=$(shell::get_profile_path "$profile_name")
     local profile_conf="$profile_dir/profile.conf"
     if [ ! -d "$profile_dir" ]; then
         shell::colored_echo "ERR: Profile '$profile_name' does not exist." 196
@@ -247,7 +247,7 @@ shell::remove_profile() {
         return 1
     fi
     local profile_name="$1"
-    local profile_dir=$(shell::get_profile_workspace "$profile_name")
+    local profile_dir=$(shell::get_profile_path "$profile_name")
     if [ ! -d "$profile_dir" ]; then
         shell::colored_echo "ERR: Profile '$profile_name' does not exist." 196
         return 1
@@ -293,7 +293,7 @@ shell::get_profile() {
         return 1
     fi
     local profile_name="$1"
-    local profile_dir=$(shell::get_profile_workspace "$profile_name")
+    local profile_dir=$(shell::get_profile_path "$profile_name")
     local profile_conf="$profile_dir/profile.conf"
     if [ ! -d "$profile_dir" ]; then
         shell::colored_echo "ERR: Profile '$profile_name' does not exist." 196
@@ -344,8 +344,8 @@ shell::rename_profile() {
     fi
     local old_name="$1"
     local new_name="$2"
-    local old_dir=$(shell::get_profile_workspace "$old_name")
-    local new_dir=$(shell::get_profile_workspace "$new_name")
+    local old_dir=$(shell::get_profile_path "$old_name")
+    local new_dir=$(shell::get_profile_path "$new_name")
     if [ ! -d "$old_dir" ]; then
         shell::colored_echo "ERR: Profile '$old_name' does not exist." 196
         return 1
@@ -412,8 +412,8 @@ shell::add_profile_conf() {
     # sanitized key
     key=$(shell::sanitize_upper_var_name "$key")
 
-    # Get the profile directory (assumes shell::get_profile_workspace is defined elsewhere)
-    local profile_dir=$(shell::get_profile_workspace "$profile_name")
+    # Get the profile directory (assumes shell::get_profile_path is defined elsewhere)
+    local profile_dir=$(shell::get_profile_path "$profile_name")
 
     # Ensure the profile directory exists
     if [ ! -d "$profile_dir" ]; then
@@ -484,7 +484,7 @@ shell::get_profile_conf() {
     fi
     shell::ensure_workspace
     local profile_name="$1"
-    local profile_dir=$(shell::get_profile_workspace "$profile_name")
+    local profile_dir=$(shell::get_profile_path "$profile_name")
     local profile_conf="$profile_dir/profile.conf"
     if [ ! -d "$profile_dir" ]; then
         shell::colored_echo "ERR: Profile '$profile_name' does not exist." 196
@@ -555,7 +555,7 @@ shell::get_profile_conf_value() {
     shell::ensure_workspace
     local profile_name="$1"
     local key="$2"
-    local profile_dir=$(shell::get_profile_workspace "$profile_name")
+    local profile_dir=$(shell::get_profile_path "$profile_name")
     local profile_conf="$profile_dir/profile.conf"
     # sanitized key
     key=$(shell::sanitize_upper_var_name "$key")
@@ -626,7 +626,7 @@ shell::remove_profile_conf() {
     fi
     shell::ensure_workspace
     local profile_name="$1"
-    local profile_dir=$(shell::get_profile_workspace "$profile_name")
+    local profile_dir=$(shell::get_profile_path "$profile_name")
     local profile_conf="$profile_dir/profile.conf"
     if [ ! -d "$profile_dir" ]; then
         shell::colored_echo "ERR: Profile '$profile_name' does not exist." 196
@@ -695,7 +695,7 @@ shell::update_profile_conf() {
         return 1
     fi
     local profile_name="$1"
-    local profile_dir=$(shell::get_profile_workspace "$profile_name")
+    local profile_dir=$(shell::get_profile_path "$profile_name")
     local profile_conf="$profile_dir/profile.conf"
     if [ ! -d "$profile_dir" ]; then
         shell::colored_echo "ERR: Profile '$profile_name' does not exist." 196
@@ -766,7 +766,7 @@ shell::exist_profile_conf_key() {
     fi
     local profile_name="$1"
     local key="$2"
-    local profile_dir=$(shell::get_profile_workspace "$profile_name")
+    local profile_dir=$(shell::get_profile_path "$profile_name")
     local profile_conf="$profile_dir/profile.conf"
     # sanitized key
     key=$(shell::sanitize_upper_var_name "$key")
@@ -826,7 +826,7 @@ shell::rename_profile_conf_key() {
         return 1
     fi
     local profile_name="$1"
-    local profile_dir=$(shell::get_profile_workspace "$profile_name")
+    local profile_dir=$(shell::get_profile_path "$profile_name")
     local profile_conf="$profile_dir/profile.conf"
     if [ ! -d "$profile_dir" ]; then
         shell::colored_echo "ERR: Profile '$profile_name' does not exist." 196
@@ -884,7 +884,7 @@ shell::rename_profile_conf_key() {
 #   - <destination_profile> : The name of the destination profile.
 #
 # Description:
-#   This function retrieves the source and destination profile directories using shell::get_profile_workspace,
+#   This function retrieves the source and destination profile directories using shell::get_profile_path,
 #   verifies that the source profile exists and has a profile.conf file, and ensures that the destination
 #   profile does not already exist. If validations pass, it clones the configuration by creating the destination
 #   directory and copying the profile.conf file from the source to the destination. When the dry-run flag (-n)
@@ -911,8 +911,8 @@ shell::clone_profile_conf() {
     fi
     local source_profile="$1"
     local destination_profile="$2"
-    local source_dir=$(shell::get_profile_workspace "$source_profile")
-    local destination_dir=$(shell::get_profile_workspace "$destination_profile")
+    local source_dir=$(shell::get_profile_path "$source_profile")
+    local destination_dir=$(shell::get_profile_path "$destination_profile")
     local source_conf="$source_dir/profile.conf"
     local destination_conf="$destination_dir/profile.conf"
     if [ ! -d "$source_dir" ]; then

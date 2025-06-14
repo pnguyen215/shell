@@ -2247,12 +2247,12 @@ Example:
   shell::send_telegram_attachment -n 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 \"Report\" file1.pdf
 "
 
-USAGE_SHELL_GET_PROFILE_WORKSPACE="
-shell::get_profile_workspace function
+USAGE_SHELL_GET_PROFILE_PATH="
+shell::get_profile_path function
 Returns the path to the profile directory for a given profile name.
 
 Usage:
-  shell::get_profile_workspace [-h] <profile_name>
+  shell::get_profile_path [-h] <profile_name>
 
 Parameters:
   - -h            : Optional. Displays this help message.
@@ -2581,7 +2581,7 @@ Parameters:
   - <destination_profile> : The name of the destination profile.
 
 Description:
-  This function retrieves the source and destination profile directories using shell::get_profile_workspace,
+  This function retrieves the source and destination profile directories using shell::get_profile_path,
   verifies that the source profile exists and has a profile.conf file, and ensures that the destination
   profile does not already exist. If validations pass, it clones the configuration by creating the destination
   directory and copying the profile.conf file from the source to the destination. When the dry-run flag (-n)
