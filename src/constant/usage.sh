@@ -3334,7 +3334,7 @@ Description:
   This function renames a section in an INI file using fzf.
 "
 
-USAGE_SHELL_INI_CLONE_SECTION="
+USAGE_SHELL_CLONE_INI_SECTION="
 shell::clone_ini_section function
 Clones a section from one INI file to another.
 

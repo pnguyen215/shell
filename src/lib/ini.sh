@@ -2310,7 +2310,7 @@ shell::clone_ini_section() {
 
     # Check for the optional dry-run flag (-n)
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_INI_CLONE_SECTION"
+        echo "$USAGE_SHELL_CLONE_INI_SECTION"
         return 0
     fi
 
