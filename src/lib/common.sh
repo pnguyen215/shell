@@ -220,7 +220,6 @@ shell::run_cmd() {
 #     command injection vulnerabilities. Ensure the command is sanitized before using this function.
 #   - Prefer the 'wsd_exe_cmd' function for simpler commands without special characters or pipes.
 shell::run_cmd_eval() {
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_RUN_CMD_EVAL"
         return 0
@@ -273,7 +272,6 @@ shell::run_cmd_eval() {
 #     as it can lead to command injection vulnerabilities. Ensure the command is
 #     sanitized before using this function.
 shell::run_cmd_outlet() {
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_RUN_CMD_OUTLET"
         return 0
