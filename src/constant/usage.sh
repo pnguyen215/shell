@@ -3318,7 +3318,7 @@ Description:
   This function renames a section in an INI file.
 "
 
-USAGE_SHELL_FZF_INI_RENAME_SECTION="
+USAGE_SHELL_FZF_RENAME_INI_SECTION="
 shell::fzf_rename_ini_section function
 Interactively renames a section in an INI file using fzf.
 
