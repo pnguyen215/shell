@@ -151,18 +151,15 @@ shell::add_key_conf() {
 # shell::add_key_conf_comment my_key "my secret" "This is a comment"
 # shell::add_key_conf_comment -n my_key "my secret" "Dry-run with comment"
 shell::add_key_conf_comment() {
-    local dry_run="false"
-
-    # Check for the optional dry-run flag (-n)
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
-
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_ADD_KEY_CONF_COMMENT"
         return 0
+    fi
+
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
     fi
 
     if [ $# -lt 2 ]; then
