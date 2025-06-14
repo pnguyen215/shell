@@ -2591,12 +2591,12 @@ Example:
   shell::clone_profile_conf my_profile backup_profile   # Clones profile.conf from 'my_profile' to 'backup_profile'
 "
 
-USAGE_SHELL_LIST_CONF_PROFILE="
-shell::list_conf_profile function
+USAGE_SHELL_LIST_PROFILE_CONF="
+shell::list_profile_conf function
 Lists all available configuration profiles in the workspace.
 
 Usage:
-  shell::list_conf_profile [-h]
+  shell::list_profile_conf [-h]
 
 Parameters:
   - -h      : Optional. Displays this help message.
@@ -2607,7 +2607,7 @@ Description:
   If no profiles are found, an appropriate message is displayed.
 
 Example:
-  shell::list_conf_profile       # Displays the names of all profiles in the workspace.
+  shell::list_profile_conf       # Displays the names of all profiles in the workspace.
 "
 
 USAGE_SHELL_RETRIEVE_GH_REPOSITORY_INFO="

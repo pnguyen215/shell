@@ -936,11 +936,11 @@ shell::clone_profile_conf() {
     fi
 }
 
-# shell::list_conf_profile function
+# shell::list_profile_conf function
 # Lists all available configuration profiles in the workspace.
 #
 # Usage:
-#   shell::list_conf_profile
+#   shell::list_profile_conf
 #
 # Description:
 #   This function checks that the workspace directory ($SHELL_CONF_WORKING/workspace) exists.
@@ -948,11 +948,11 @@ shell::clone_profile_conf() {
 #   If no profiles are found, an appropriate message is displayed.
 #
 # Example:
-#   shell::list_conf_profile       # Displays the names of all profiles in the workspace.
-shell::list_conf_profile() {
+#   shell::list_profile_conf       # Displays the names of all profiles in the workspace.
+shell::list_profile_conf() {
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_LIST_CONF_PROFILE"
+        echo "$USAGE_SHELL_LIST_PROFILE_CONF"
         return 0
     fi
 
