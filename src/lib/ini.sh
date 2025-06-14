@@ -30,7 +30,7 @@
 shell::read_ini() {
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_INI_READ"
+        echo "$USAGE_SHELL_READ_INI"
         return 0
     fi
 

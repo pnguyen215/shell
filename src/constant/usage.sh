@@ -2776,7 +2776,7 @@ Example:
   escaped_string=(shell::ini_escape_for_regex \"example(string)\")  # Outputs \"example\(string\)\"
 "
 
-USAGE_SHELL_INI_READ="
+USAGE_SHELL_READ_INI="
 shell::read_ini function
 Reads the value of a specified key from a given section in an INI file.
 
