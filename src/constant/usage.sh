@@ -2733,11 +2733,11 @@ Parameters:
 "
 
 USAGE_SHELL_INI_TRIM="
-shell::ini_trim function
+shell::trim_ini function
 Trims leading and trailing whitespace from a given string.
 
 Usage:
-  shell::ini_trim [-h] <string>
+  shell::trim_ini [-h] <string>
 
 Parameters:
   - -h          : Optional. Displays this help message.

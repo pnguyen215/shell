@@ -101,7 +101,7 @@ shell::read_ini() {
             if [[ "$line" =~ $key_pattern ]]; then
                 local value="${line#*=}"
                 # Trim whitespace
-                value=$(shell::ini_trim "$value")
+                value=$(shell::trim_ini "$value")
 
                 # Check for quoted values
                 if [[ "$value" =~ ^\"(.*)\"$ ]]; then
@@ -283,11 +283,11 @@ shell::create_ini_temp_file() {
     mktemp "${TMPDIR:-/tmp}/shell_ini_XXXXXXXXXX"
 }
 
-# shell::ini_trim function
+# shell::trim_ini function
 # Trims leading and trailing whitespace from a given string.
 #
 # Usage:
-#   shell::ini_trim <string>
+#   shell::trim_ini <string>
 #
 # Parameters:
 #   - <string> : The string from which to remove leading and trailing whitespace.
@@ -301,8 +301,8 @@ shell::create_ini_temp_file() {
 #   the whitespace and then outputs the cleaned string.
 #
 # Example:
-#   trimmed_string=$(shell::ini_trim "  example string  ")  # Outputs "example string"
-shell::ini_trim() {
+#   trimmed_string=$(shell::trim_ini "  example string  ")  # Outputs "example string"
+shell::trim_ini() {
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_INI_TRIM"
@@ -543,7 +543,7 @@ shell::ini_list_keys() {
         # Extract key name from current section
         if [ $in_section -eq 1 ] && [[ "$line" =~ ^[[:space:]]*[^=]+= ]]; then
             local key="${line%%=*}"
-            key=$(shell::ini_trim "$key")
+            key=$(shell::trim_ini "$key")
             echo "$key"
             found_keys=1
         fi
@@ -957,7 +957,7 @@ shell::ini_remove_section() {
     while IFS= read -r line || [ -n "$line" ]; do
         # Trim the line for processing but preserve the original for output
         local trimmed_line
-        trimmed_line=$(shell::ini_trim "$line")
+        trimmed_line=$(shell::trim_ini "$line")
 
         # Check if the line is empty
         if [ -z "$trimmed_line" ]; then
@@ -1469,7 +1469,7 @@ shell::ini_set_array_value() {
 #
 # Notes:
 #   - Relies on 'shell::read_ini' to retrieve the raw value.
-#   - Relies on 'shell::ini_trim' for whitespace removal from individual items.
+#   - Relies on 'shell::trim_ini' for whitespace removal from individual items.
 #   - The parsing logic is custom-built to handle INI-style quoted comma-separated lists.
 #   - Interaction with SHELL_INI_STRICT in 'shell::ini_write': Values formatted by
 #     'shell::ini_set_array_value' (which are read by this function) are intended to be
@@ -1528,7 +1528,7 @@ shell::ini_get_array_value() {
             fi
         elif [ "$char" = ',' ] && [ "$in_quotes" -eq 0 ]; then
             # If a comma is encountered outside of quotes, it signifies the end of an item.
-            result+=("$(shell::ini_trim "$current_item")") # Add the trimmed item to the result array.
+            result+=("$(shell::trim_ini "$current_item")") # Add the trimmed item to the result array.
             current_item=""                                # Reset current_item for the next element.
         else
             # Append the current character to the current item being built.
@@ -1542,7 +1542,7 @@ shell::ini_get_array_value() {
     # 2. An empty 'current_item' is added if it implies a trailing comma (result already has items).
     # 3. Nothing is added if the initial 'value' was entirely empty (no items parsed, current_item is empty).
     if [ -n "$current_item" ] || [ ${#result[@]} -gt 0 ]; then
-        result+=("$(shell::ini_trim "$current_item")")
+        result+=("$(shell::trim_ini "$current_item")")
     fi
 
     # Output each item of the parsed array on a new line.
