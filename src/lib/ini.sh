@@ -2468,7 +2468,7 @@ shell::fzf_clone_ini_section() {
     local dry_run="false"
 
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_INI_CLONE_SECTION"
+        echo "$USAGE_SHELL_FZF_CLONE_INI_SECTION"
         return 0
     fi
 

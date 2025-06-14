@@ -3352,7 +3352,7 @@ Description:
   This function clones a section from one INI file to another.
 "
 
-USAGE_SHELL_FZF_INI_CLONE_SECTION="
+USAGE_SHELL_FZF_CLONE_INI_SECTION="
 shell::fzf_clone_ini_section function
 Interactively clones a section from one INI file to another using fzf.
 
