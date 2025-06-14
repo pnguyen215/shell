@@ -1606,7 +1606,7 @@ shell::get_array_ini_value() {
 shell::exist_ini_key() {
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_INI_KEY_EXISTS"
+        echo "$USAGE_SHELL_EXIST_INI_KEY"
         return 0
     fi
 

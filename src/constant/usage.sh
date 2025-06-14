@@ -3043,7 +3043,7 @@ Example:
   # item with "escaped" quotes
 "
 
-USAGE_SHELL_INI_KEY_EXISTS="
+USAGE_SHELL_EXIST_INI_KEY="
 shell::exist_ini_key function
 Checks if a specified key exists within a section in an INI file.
 
