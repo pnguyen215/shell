@@ -725,6 +725,13 @@ shell::clone_workspace() {
 
     local source="$1"
     local destination="$2"
+
+    # Sanitize the source and destination workspace names
+    # We use shell::sanitize_lower_var_name to ensure the names are in lowercase and safe for use as directory names
+    # This function replaces non-alphanumeric characters with underscores
+    source=$(shell::sanitize_lower_var_name "$source")
+    destination=$(shell::sanitize_lower_var_name "$destination")
+
     local base="$SHELL_CONF_WORKING_WORKSPACE"
     local source_dir="$base/$source"
     local destination_dir="$base/$destination"
