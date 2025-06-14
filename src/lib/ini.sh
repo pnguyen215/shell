@@ -1374,7 +1374,7 @@ shell::remove_ini_key() {
 shell::set_array_ini_value() {
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_INI_SET_ARRAY_VALUE"
+        echo "$USAGE_SHELL_SET_ARRAY_INI_VALUE"
         return 0
     fi
 

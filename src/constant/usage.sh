@@ -2981,7 +2981,7 @@ Example usage:
   shell::remove_ini_key -n /path/to/config.ini \"api\" \"api_key\" # Dry-run mode
 "
 
-USAGE_SHELL_INI_SET_ARRAY_VALUE="
+USAGE_SHELL_SET_ARRAY_INI_VALUE="
 shell::set_array_ini_value function
 Writes an array of values to a specified key in an INI file.
 
