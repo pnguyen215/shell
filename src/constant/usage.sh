@@ -3554,12 +3554,12 @@ Description:
   It also validates the permission groups and provides error messages for invalid inputs.
 "
 
-USAGE_SHELL_FZF_CHMOD="
-shell::fzf_chmod function
+USAGE_SHELL_FZF_SET_PERMISSIONS="
+shell::fzf_set_permissions function
 Interactively selects permissions for a file or directory using fzf and applies them via shell::set_permissions.
 
 Usage:
-shell::fzf_chmod [-n] [-h] <target>
+shell::fzf_set_permissions [-n] [-h] <target>
 
 Parameters:
   - -n        : Optional dry-run flag. If provided, the chmod command is printed using shell::on_evict instead of executed.

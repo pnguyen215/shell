@@ -2263,11 +2263,11 @@ shell::set_permissions() {
     fi
 }
 
-# shell::fzf_chmod function
+# shell::fzf_set_permissions function
 # Interactively selects permissions for a file or directory using fzf and applies them via shell::set_permissions.
 #
 # Usage:
-# shell::fzf_chmod [-n] <target>
+# shell::fzf_set_permissions [-n] <target>
 #
 # Parameters:
 # - -n : Optional dry-run flag. If provided, the chmod command is printed using shell::on_evict instead of executed.
@@ -2276,9 +2276,9 @@ shell::set_permissions() {
 # Description:
 # This function prompts the user to select permissions for owner, group, and others using fzf.
 # It then delegates the permission setting to shell::set_permissions.
-shell::fzf_chmod() {
+shell::fzf_set_permissions() {
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_CHMOD"
+        echo "$USAGE_SHELL_FZF_SET_PERMISSIONS"
         return 0
     fi
 
@@ -2289,7 +2289,7 @@ shell::fzf_chmod() {
     fi
 
     if [ $# -lt 1 ]; then
-        echo "Usage: shell::fzf_chmod [-n] <target>"
+        echo "Usage: shell::fzf_set_permissions [-n] <target>"
         return 1
     fi
 
