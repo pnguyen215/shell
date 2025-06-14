@@ -1424,12 +1424,12 @@ Example usage:
   shell::remove_package git
 "
 
-USAGE_SHELL_LIST_INSTALLED_PACKAGES="
-shell::list_installed_packages function
+USAGE_SHELL_LIST_PACKAGES_INSTALLED="
+shell::list_packages_installed function
 Lists all packages currently installed on Linux or macOS.
 
 Usage:
-  shell::list_installed_packages [-h]
+  shell::list_packages_installed [-h]
 
 Parameters:
     - -h                : Optional. Displays this help message.

@@ -428,11 +428,11 @@ shell::remove_package() {
     fi
 }
 
-# shell::list_installed_packages function
+# shell::list_packages_installed function
 # Lists all packages currently installed on Linux or macOS.
 #
 # Usage:
-#   shell::list_installed_packages
+#   shell::list_packages_installed
 #
 # Description:
 #   On Linux:
@@ -442,11 +442,10 @@ shell::remove_package() {
 #     - If Homebrew is available, it lists installed Homebrew packages.
 #
 # Example usage:
-#   shell::list_installed_packages
-shell::list_installed_packages() {
-    # Check for the help flag (-h)
+#   shell::list_packages_installed
+shell::list_packages_installed() {
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_LIST_INSTALLED_PACKAGES"
+        echo "$USAGE_SHELL_LIST_PACKAGES_INSTALLED"
         return 0
     fi
 
