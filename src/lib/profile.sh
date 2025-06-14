@@ -19,7 +19,7 @@
 shell::get_profile_workspace() {
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_GET_PROFILE_DIR"
+        echo "$USAGE_SHELL_GET_PROFILE_WORKSPACE"
         return 0
     fi
 

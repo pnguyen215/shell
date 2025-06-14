@@ -2247,7 +2247,7 @@ Example:
   shell::send_telegram_attachment -n 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 \"Report\" file1.pdf
 "
 
-USAGE_SHELL_GET_PROFILE_DIR="
+USAGE_SHELL_GET_PROFILE_WORKSPACE="
 shell::get_profile_workspace function
 Returns the path to the profile directory for a given profile name.
 
