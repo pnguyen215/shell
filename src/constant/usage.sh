@@ -2500,12 +2500,12 @@ Example:
   shell::remove_profile_conf -n my_profile   # Dry-run: prints the removal command without executing.
 "
 
-USAGE_SHELL_UPDATE_CONF_PROFILE="
-shell::update_conf_profile function
+USAGE_SHELL_UPDATE_PROFILE_CONF="
+shell::update_profile_conf function
 Updates a specified configuration key in a given profile by replacing its value.
 
 Usage:
-  shell::update_conf_profile [-n] [-h] <profile_name>
+  shell::update_profile_conf [-n] [-h] <profile_name>
 
 Parameters:
   - -n              : Optional dry-run flag. If provided, the update command is printed using shell::on_evict without executing.
@@ -2518,8 +2518,8 @@ Description:
   The sed command is executed asynchronously via the shell::async function (unless in dry-run mode).
 
 Example:
-  shell::update_conf_profile my_profile
-  shell::update_conf_profile -n my_profile   # dry-run mode
+  shell::update_profile_conf my_profile
+  shell::update_profile_conf -n my_profile   # dry-run mode
 "
 
 USAGE_SHELL_EXIST_KEY_CONF_PROFILE="

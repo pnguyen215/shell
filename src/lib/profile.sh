@@ -443,7 +443,7 @@ shell::add_profile_conf() {
     else
         # Check if the key already exists in the profile.conf
         if grep -q "^${key}=" "$profile_conf"; then
-            shell::colored_echo "WARN: The key '$key' already exists in profile '$profile_name'. Consider updating it using shell::update_conf_profile." 11
+            shell::colored_echo "WARN: The key '$key' already exists in profile '$profile_name'. Consider updating it using shell::update_profile_conf." 11
             return 0
         fi
         shell::unlock_permissions "$profile_conf"
@@ -659,11 +659,11 @@ shell::remove_profile_conf() {
     fi
 }
 
-# shell::update_conf_profile function
+# shell::update_profile_conf function
 # Updates a specified configuration key in a given profile by replacing its value.
 #
 # Usage:
-#   shell::update_conf_profile [-n] <profile_name>
+#   shell::update_profile_conf [-n] <profile_name>
 #
 # Parameters:
 #   - -n              : Optional dry-run flag. If provided, the update command is printed using shell::on_evict without executing.
@@ -675,9 +675,9 @@ shell::remove_profile_conf() {
 #   The sed command is executed asynchronously via the shell::async function (unless in dry-run mode).
 #
 # Example:
-#   shell::update_conf_profile my_profile
-#   shell::update_conf_profile -n my_profile   # dry-run mode
-shell::update_conf_profile() {
+#   shell::update_profile_conf my_profile
+#   shell::update_profile_conf -n my_profile   # dry-run mode
+shell::update_profile_conf() {
     local dry_run="false"
     if [ "$1" = "-n" ]; then
         dry_run="true"
@@ -686,12 +686,12 @@ shell::update_conf_profile() {
 
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_UPDATE_CONF_PROFILE"
+        echo "$USAGE_SHELL_UPDATE_PROFILE_CONF"
         return 0
     fi
 
     if [ $# -lt 1 ]; then
-        echo "Usage: shell::update_conf_profile [-n] <profile_name>"
+        echo "Usage: shell::update_profile_conf [-n] <profile_name>"
         return 1
     fi
     local profile_name="$1"
