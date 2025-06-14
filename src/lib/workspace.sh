@@ -43,6 +43,11 @@ shell::add_workspace() {
     local ssh_dir="$dir/.ssh"
     local ssh_files=("server.conf" "db.conf" "redis.conf" "rmq.conf" "ast.conf" "kafka.conf" "zookeeper.conf" "nginx.conf" "web.conf" "app.conf" "api.conf" "cache.conf" "search.conf")
 
+    # Sanitize the workspace name
+    # We use shell::sanitize_lower_var_name to ensure the name is in lowercase and safe for use as a directory name
+    # This function replaces non-alphanumeric characters with underscores
+    # This helps prevent issues with invalid directory names
+    name=$(shell::sanitize_lower_var_name "$name")
     # Check if workspace already exists
     # If the directory already exists, we return an error
     if [ -d "$dir" ]; then
@@ -396,6 +401,13 @@ shell::rename_workspace() {
 
     local old_name="$1"
     local new_name="$2"
+
+    # Sanitize the old and new workspace names
+    # We use shell::sanitize_lower_var_name to ensure the names are in lowercase and safe for use as directory names
+    # This function replaces non-alphanumeric characters with underscores
+    old_name=$(shell::sanitize_lower_var_name "$old_name")
+    new_name=$(shell::sanitize_lower_var_name "$new_name")
+
     local base="$SHELL_CONF_WORKING_WORKSPACE"
     local old_dir="$base/$old_name"
     local new_dir="$base/$new_name"
