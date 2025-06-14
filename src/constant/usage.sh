@@ -1589,12 +1589,12 @@ Example usage:
   shell::on_evict ls -l
 "
 
-USAGE_SHELL_PORT_CHECK="
-shell::port_check function
+USAGE_SHELL_CHECK_PORT="
+shell::check_port function
 Checks if a specific TCP port is in use (listening).
 
 Usage:
-  shell::port_check [-h] <port> [-n]
+  shell::check_port [-h] <port> [-n]
 
 Parameters:
     - -h     : Optional. Displays this help message.
@@ -1607,8 +1607,8 @@ Description:
   When the dry-run flag (-n) is provided, the command is printed using shell::on_evict instead of being executed.
 
 Example:
-  shell::port_check 8080        # Executes the command.
-  shell::port_check 8080 -n     # Prints the command (dry-run mode) without executing it.
+  shell::check_port 8080        # Executes the command.
+  shell::check_port 8080 -n     # Prints the command (dry-run mode) without executing it.
 "
 
 USAGE_SHELL_PORT_KILL="

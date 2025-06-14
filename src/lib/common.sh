@@ -803,11 +803,11 @@ shell::on_evict() {
     shell::clip_value "$command"
 }
 
-# shell::port_check function
+# shell::check_port function
 # Checks if a specific TCP port is in use (listening).
 #
 # Usage:
-#   shell::port_check <port> [-n]
+#   shell::check_port <port> [-n]
 #
 # Parameters:
 #   - <port> : The TCP port number to check.
@@ -819,17 +819,16 @@ shell::on_evict() {
 #   When the dry-run flag (-n) is provided, the command is printed using shell::on_evict instead of being executed.
 #
 # Example:
-#   shell::port_check 8080        # Executes the command.
-#   shell::port_check 8080 -n     # Prints the command (dry-run mode) without executing it.
-shell::port_check() {
-    # Check for the help flag (-h)
+#   shell::check_port 8080        # Executes the command.
+#   shell::check_port 8080 -n     # Prints the command (dry-run mode) without executing it.
+shell::check_port() {
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_PORT_CHECK"
+        echo "$USAGE_SHELL_CHECK_PORT"
         return 0
     fi
 
     if [ $# -lt 1 ]; then
-        echo "Usage: shell::port_check <port> [-n]"
+        echo "Usage: shell::check_port <port> [-n]"
         return 1
     fi
 
