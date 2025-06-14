@@ -489,7 +489,7 @@ shell::list_ini_sections() {
 shell::list_ini_keys() {
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_INI_LIST_KEYS"
+        echo "$USAGE_SHELL_LIST_INI_KEYS"
         return 0
     fi
 

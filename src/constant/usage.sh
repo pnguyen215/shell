@@ -2819,7 +2819,7 @@ Example:
   shell::list_ini_sections config.ini  # Lists all sections in config.ini.
 "
 
-USAGE_SHELL_INI_LIST_KEYS="
+USAGE_SHELL_LIST_INI_KEYS="
 shell::list_ini_keys function
 Lists all key names from a specified section in a given INI file.
 
