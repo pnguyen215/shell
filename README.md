@@ -279,11 +279,11 @@ Access the shell library by opening your terminal and using the commands below. 
   Interactively selects a configuration key from a constant configuration file using fzf,
   then decodes and displays its corresponding value.
 
-- **`shell::get_value_conf`**
+- **`shell::get_key_conf_value`**
   Retrieves and outputs the decoded value for a given configuration key from the key configuration file.
   _Example:_
 
-  - `shell::get_value_conf my_setting`
+  - `shell::get_key_conf_value my_setting`
 
 - **`shell::fzf_remove_conf`**
   Interactively selects a configuration key from a constant configuration file using fzf,

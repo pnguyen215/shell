@@ -113,7 +113,7 @@ shell::encode::aes256cbc() {
         if [ "$hasKey" = "false" ]; then
             shell::add_key_conf "SHELL_SHIELD_ENCRYPTION_KEY" "$(shell::generate_random_key 32)"
         fi
-        key=$(shell::get_value_conf "SHELL_SHIELD_ENCRYPTION_KEY")
+        key=$(shell::get_key_conf_value "SHELL_SHIELD_ENCRYPTION_KEY")
     fi
 
     # Use SHELL_SHIELD_ENCRYPTION_IV if no iv is provided
@@ -122,7 +122,7 @@ shell::encode::aes256cbc() {
         if [ "$hasIv" = "false" ]; then
             shell::add_key_conf "SHELL_SHIELD_ENCRYPTION_IV" "$(shell::generate_random_key 16)"
         fi
-        iv=$(shell::get_value_conf "SHELL_SHIELD_ENCRYPTION_IV")
+        iv=$(shell::get_key_conf_value "SHELL_SHIELD_ENCRYPTION_IV")
     fi
 
     # Validate key length (64 bytes for AES-256)
@@ -209,7 +209,7 @@ shell::decode::aes256cbc() {
             shell::colored_echo "ERR: shell::decode::aes256cbc: SHELL_SHIELD_ENCRYPTION_KEY is not set. Please set it or provide a key." 196 >&2
             return 1
         fi
-        key=$(shell::get_value_conf "SHELL_SHIELD_ENCRYPTION_KEY")
+        key=$(shell::get_key_conf_value "SHELL_SHIELD_ENCRYPTION_KEY")
     fi
 
     # Use SHELL_SHIELD_ENCRYPTION_IV if no iv is provided
@@ -219,7 +219,7 @@ shell::decode::aes256cbc() {
             shell::colored_echo "ERR: shell::decode::aes256cbc: SHELL_SHIELD_ENCRYPTION_IV is not set. Please set it or provide a key." 196 >&2
             return 1
         fi
-        iv=$(shell::get_value_conf "SHELL_SHIELD_ENCRYPTION_IV")
+        iv=$(shell::get_key_conf_value "SHELL_SHIELD_ENCRYPTION_IV")
     fi
 
     # Validate key length (64 bytes for AES-256)
@@ -402,7 +402,7 @@ shell::encode::file::aes256cbc() {
         if [ "$hasKey" = "false" ]; then
             shell::add_key_conf "SHELL_SHIELD_ENCRYPTION_KEY" "$(shell::generate_random_key 32)"
         fi
-        key=$(shell::get_value_conf "SHELL_SHIELD_ENCRYPTION_KEY")
+        key=$(shell::get_key_conf_value "SHELL_SHIELD_ENCRYPTION_KEY")
     fi
 
     # Use SHELL_SHIELD_ENCRYPTION_IV if no iv is provided
@@ -411,7 +411,7 @@ shell::encode::file::aes256cbc() {
         if [ "$hasIv" = "false" ]; then
             shell::add_key_conf "SHELL_SHIELD_ENCRYPTION_IV" "$(shell::generate_random_key 16)"
         fi
-        iv=$(shell::get_value_conf "SHELL_SHIELD_ENCRYPTION_IV")
+        iv=$(shell::get_key_conf_value "SHELL_SHIELD_ENCRYPTION_IV")
     fi
 
     # Validate key length (64 bytes for AES-256)
@@ -532,7 +532,7 @@ shell::decode::file::aes256cbc() {
             shell::colored_echo "ERR: shell::decode::file::aes256cbc: SHELL_SHIELD_ENCRYPTION_KEY is not set. Please set it or provide a key." 196 >&2
             return 1
         fi
-        key=$(shell::get_value_conf "SHELL_SHIELD_ENCRYPTION_KEY")
+        key=$(shell::get_key_conf_value "SHELL_SHIELD_ENCRYPTION_KEY")
     fi
 
     # Use SHELL_SHIELD_ENCRYPTION_IV if no iv is provided
@@ -542,7 +542,7 @@ shell::decode::file::aes256cbc() {
             shell::colored_echo "ERR: shell::decode::file::aes256cbc: SHELL_SHIELD_ENCRYPTION_IV is not set. Please set it or provide an IV." 196 >&2
             return 1
         fi
-        iv=$(shell::get_value_conf "SHELL_SHIELD_ENCRYPTION_IV")
+        iv=$(shell::get_key_conf_value "SHELL_SHIELD_ENCRYPTION_IV")
     fi
 
     # Validate key length (64 bytes for AES-256)

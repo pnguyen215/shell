@@ -266,11 +266,11 @@ shell::fzf_get_key_conf() {
     shell::clip_value "$decoded_value"
 }
 
-# shell::get_value_conf function
+# shell::get_key_conf_value function
 # Retrieves and outputs the decoded value for a given configuration key from the key configuration file.
 #
 # Usage:
-#   shell::get_value_conf <key>
+#   shell::get_key_conf_value <key>
 #
 # Parameters:
 #   - <key>: The configuration key whose value should be retrieved.
@@ -283,16 +283,15 @@ shell::fzf_get_key_conf() {
 #   and outputs the decoded value to standard output.
 #
 # Example:
-#   shell::get_value_conf my_setting   # Outputs the decoded value for the key 'my_setting'.
-shell::get_value_conf() {
-    # Check for the help flag (-h)
+#   shell::get_key_conf_value my_setting   # Outputs the decoded value for the key 'my_setting'.
+shell::get_key_conf_value() {
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_GET_VALUE_CONF"
+        echo "$USAGE_SHELL_GET_KEY_CONF_VALUE"
         return 0
     fi
 
     if [ $# -lt 1 ]; then
-        echo "Usage: shell::get_value_conf [-h] <key>"
+        echo "Usage: shell::get_key_conf_value [-h] <key>"
         return 1
     fi
 
@@ -1550,7 +1549,7 @@ shell::fzf_view_conf_viz() {
         return 1
     fi
     shell::colored_echo "INFO: Selected key: $selected_key" 46
-    shell::clip_value $(shell::get_value_conf "$selected_key")
+    shell::clip_value $(shell::get_key_conf_value "$selected_key")
 }
 
 # shell::add_protected_key function
