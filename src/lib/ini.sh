@@ -262,11 +262,11 @@ shell::validate_ini_key_name() {
     return 0
 }
 
-# shell::ini_create_temp_file function
+# shell::create_ini_temp_file function
 # Creates a temporary file with a unique name in the system's temporary directory.
 #
 # Usage:
-#   shell::ini_create_temp_file
+#   shell::create_ini_temp_file
 #
 # Returns:
 #   The path to the newly created temporary file.
@@ -278,8 +278,8 @@ shell::validate_ini_key_name() {
 #   followed by a series of random characters to ensure uniqueness.
 #
 # Example:
-#   temp_file=$(shell::ini_create_temp_file)  # Creates a temporary file and stores its path in temp_file.
-shell::ini_create_temp_file() {
+#   temp_file=$(shell::create_ini_temp_file)  # Creates a temporary file and stores its path in temp_file.
+shell::create_ini_temp_file() {
     mktemp "${TMPDIR:-/tmp}/shell_ini_XXXXXXXXXX"
 }
 
@@ -763,7 +763,7 @@ shell::ini_write() {
     local in_target_section=0 # Flag: are we currently inside the target section?
     local key_handled=0       # Flag: has the key been found and updated, or added?
     local temp_file
-    temp_file=$(shell::ini_create_temp_file)
+    temp_file=$(shell::create_ini_temp_file)
 
     shell::colored_echo "DEBUG: Writing key '$key' with value '$value' to section '$section' in file: $file" 244
 
@@ -901,9 +901,9 @@ shell::ini_write() {
 #   - Assumes the INI file has sections enclosed in square brackets (e.g., [section]).
 #   - Empty lines and lines outside of sections are preserved.
 #   - Relies on helper functions like shell::colored_echo, shell::ini_escape_for_regex,
-#     shell::ini_create_temp_file, and optionally shell::validate_ini_section_name
+#     shell::create_ini_temp_file, and optionally shell::validate_ini_section_name
 #     if SHELL_INI_STRICT is enabled. (Note: shell::ini_escape_for_regex and
-#     shell::ini_create_temp_file are not provided in this snippet, but are assumed
+#     shell::create_ini_temp_file are not provided in this snippet, but are assumed
 #     to exist based on usage.)
 #   - Uses atomic operation (mv) to replace the original file, reducing risk of data loss.
 shell::ini_remove_section() {
@@ -950,7 +950,7 @@ shell::ini_remove_section() {
     local in_target_section=0                     # Flag: are we in the target section?
     local section_removed=0                       # Flag: has the section been removed?
     local temp_file
-    temp_file=$(shell::ini_create_temp_file)
+    temp_file=$(shell::create_ini_temp_file)
     local last_line_was_blank=0 # Flag: was the last written line blank?
 
     # Process the file line by line
@@ -1112,7 +1112,7 @@ shell::fzf_ini_remove_key() {
     local in_target_section=0 # Flag: are we currently inside the target section?
     local key_removed=0       # Flag: has the key been found and removed?
     local temp_file
-    temp_file=$(shell::ini_create_temp_file)
+    temp_file=$(shell::create_ini_temp_file)
 
     shell::colored_echo "Removing key '$selected_key' from section '$section' in file: $file" 11
 
@@ -1208,7 +1208,7 @@ shell::fzf_ini_remove_key() {
 #   - Assumes the INI file has sections enclosed in square brackets (e.g., [section]) and key=value pairs.
 #   - Empty lines and lines outside of sections are preserved.
 #   - Relies on helper functions like shell::colored_echo, shell::ini_escape_for_regex,
-#     shell::ini_create_temp_file, and optionally shell::validate_ini_section_name,
+#     shell::create_ini_temp_file, and optionally shell::validate_ini_section_name,
 #     shell::validate_ini_key_name if SHELL_INI_STRICT is enabled.
 #   - Uses atomic operation (mv) to replace the original file, reducing risk of data loss.
 shell::ini_remove_key() {
@@ -1271,7 +1271,7 @@ shell::ini_remove_key() {
     local in_target_section=0 # Flag: are we currently inside the target section?
     local key_removed=0       # Flag: has the key been found and removed?
     local temp_file
-    temp_file=$(shell::ini_create_temp_file)
+    temp_file=$(shell::create_ini_temp_file)
 
     # Process the file line by line
     # Use `|| [ -n "$line" ]` to ensure the last line is processed even if it doesn't end with a newline.
@@ -2303,7 +2303,7 @@ shell::fzf_ini_rename_section() {
 #
 # Notes:
 #   - Relies on shell::colored_echo, shell::ini_section_exists, shell::ini_add_section,
-#     shell::ini_write, shell::ini_create_temp_file, and shell::ini_escape_for_regex.
+#     shell::ini_write, shell::create_ini_temp_file, and shell::ini_escape_for_regex.
 #   - Honors SHELL_INI_STRICT for section name validation.
 shell::ini_clone_section() {
     local dry_run="false"
@@ -2364,7 +2364,7 @@ shell::ini_clone_section() {
     local in_source_section_to_clone=0
     local cloned_section_content=""
     local temp_file
-    temp_file=$(shell::ini_create_temp_file)
+    temp_file=$(shell::create_ini_temp_file)
 
     # Read original file line by line to capture content and build the new file
     while IFS= read -r line || [ -n "$line" ]; do
