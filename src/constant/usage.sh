@@ -1442,26 +1442,6 @@ Description:
     - If Homebrew is available, it lists installed Homebrew packages.
 "
 
-USAGE_SHELL_LIST_PATH_INSTALLED_PACKAGES="
-shell::list_path_installed_packages function
-Lists all packages installed via directory-based package installation on Linux or macOS,
-along with their installation paths.
-
-Usage:
-  shell::list_path_installed_packages [-h] [base_install_path]
-
-Parameters:
-    - -h                 : Optional. Displays this help message.
-    - [base_install_path]: Optional. The base directory where packages are installed.
-        Defaults to:
-          - /usr/local on macOS
-          - /opt on Linux
-
-Example usage:
-  shell::list_path_installed_packages
-  shell::list_path_installed_packages /custom/install/path
-"
-
 USAGE_SHELL_IS_PACKAGE_INSTALLED_LINUX="
 shell::is_package_installed_linux function
 Checks if a package is installed on Linux.

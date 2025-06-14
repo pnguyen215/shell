@@ -481,60 +481,6 @@ shell::list_installed_packages() {
     fi
 }
 
-# shell::list_path_installed_packages function
-# Lists all packages installed via directory-based package installation on Linux or macOS,
-# along with their installation paths.
-#
-# Usage:
-#   shell::list_path_installed_packages [base_install_path]
-#
-# Parameters:
-#   - [base_install_path]: Optional. The base directory where packages are installed.
-#         Defaults to:
-#           - /usr/local on macOS
-#           - /opt on Linux
-#
-# Example usage:
-#   shell::list_path_installed_packages
-#   shell::list_path_installed_packages /custom/install/path
-shell::list_path_installed_packages() {
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_LIST_PATH_INSTALLED_PACKAGES"
-        return 0
-    fi
-
-    local base_path="$1"
-    local os_type
-    os_type=$(shell::get_os_type)
-
-    # Set default installation directory if not provided.
-    if [ -z "$base_path" ]; then
-        if [ "$os_type" = "macos" ]; then
-            base_path="/usr/local"
-        elif [ "$os_type" = "linux" ]; then
-            base_path="/opt"
-        else
-            shell::colored_echo "ERR: Unsupported operating system for package path listing." 196
-            return 1
-        fi
-    fi
-
-    # Verify the base installation directory exists.
-    if [ ! -d "$base_path" ]; then
-        shell::colored_echo "ERR: The specified installation path '$base_path' does not exist." 196
-        return 1
-    fi
-
-    shell::colored_echo "Listing packages installed in: $base_path" 36
-    # List only directories (assumed to be package folders) at one level below base_path.
-    find "$base_path" -maxdepth 1 -mindepth 1 -type d | sort | while read -r package_dir; do
-        local package_name
-        package_name=$(basename "$package_dir")
-        shell::colored_echo "📦 Package: $package_name DEBUG: Path: $package_dir"
-    done
-}
-
 # shell::is_package_installed_linux function
 # Checks if a package is installed on Linux.
 #
