@@ -872,11 +872,11 @@ shell::rename_profile_conf_key() {
     fi
 }
 
-# shell::clone_conf_profile function
+# shell::clone_profile_conf function
 # Clones a configuration profile by copying its profile.conf from a source profile to a destination profile.
 #
 # Usage:
-#   shell::clone_conf_profile [-n] <source_profile> <destination_profile>
+#   shell::clone_profile_conf [-n] <source_profile> <destination_profile>
 #
 # Parameters:
 #   - -n               : (Optional) Dry-run flag. If provided, the command is printed but not executed.
@@ -891,8 +891,8 @@ shell::rename_profile_conf_key() {
 #   is provided, it prints the command without executing it.
 #
 # Example:
-#   shell::clone_conf_profile my_profile backup_profile   # Clones profile.conf from 'my_profile' to 'backup_profile'
-shell::clone_conf_profile() {
+#   shell::clone_profile_conf my_profile backup_profile   # Clones profile.conf from 'my_profile' to 'backup_profile'
+shell::clone_profile_conf() {
     local dry_run="false"
     if [ "$1" = "-n" ]; then
         dry_run="true"
@@ -901,12 +901,12 @@ shell::clone_conf_profile() {
 
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_CLONE_CONF_PROFILE"
+        echo "$USAGE_SHELL_CLONE_PROFILE_CONF"
         return 0
     fi
 
     if [ $# -lt 2 ]; then
-        echo "Usage: shell::clone_conf_profile [-n] <source_profile> <destination_profile>"
+        echo "Usage: shell::clone_profile_conf [-n] <source_profile> <destination_profile>"
         return 1
     fi
     local source_profile="$1"
