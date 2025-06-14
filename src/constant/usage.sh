@@ -3077,7 +3077,7 @@ Example:
   fi
 "
 
-USAGE_SHELL_INI_TO_ENV="
+USAGE_SHELL_EXPOSE_INI_ENV="
 shell::expose_ini_env function
 Exports key-value pairs from an INI file as environment variables.
 

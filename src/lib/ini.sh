@@ -1703,7 +1703,7 @@ shell::exist_ini_key() {
 shell::expose_ini_env() {
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_INI_TO_ENV"
+        echo "$USAGE_SHELL_EXPOSE_INI_ENV"
         return 0
     fi
 
