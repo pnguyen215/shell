@@ -975,8 +975,6 @@ shell::list_profile_conf() {
         return 1
     fi
 
-    shell::colored_echo "DEBUG: Available profiles:" 244
-
     # List profile names by extracting the basename from each directory path.
     echo "$profiles" | xargs -n 1 basename
 }
