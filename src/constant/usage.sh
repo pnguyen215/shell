@@ -2840,7 +2840,7 @@ Example:
   shell::list_ini_keys config.ini MySection  # Lists all keys in MySection.
 "
 
-USAGE_SHELL_INI_SECTION_EXISTS="
+USAGE_SHELL_EXIST_INI_SECTION="
 shell::exist_ini_section function
 Checks if a specified section exists in a given INI file.
 

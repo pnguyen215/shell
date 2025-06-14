@@ -580,7 +580,7 @@ shell::list_ini_keys() {
 shell::exist_ini_section() {
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_INI_SECTION_EXISTS"
+        echo "$USAGE_SHELL_EXIST_INI_SECTION"
         return 0
     fi
 
