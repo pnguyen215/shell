@@ -2884,11 +2884,11 @@ Example:
 "
 
 USAGE_SHELL_INI_WRITE="
-shell::ini_write function
+shell::write_ini function
 Writes a key-value pair to a specified section in an INI file.
 
 Usage:
-  shell::ini_write [-h] <file> <section> <key> <value>
+  shell::write_ini [-h] <file> <section> <key> <value>
 
 Parameters:
   - -h        : Optional. Displays this help message.
@@ -2905,7 +2905,7 @@ Description:
   in values by quoting them if necessary.
 
 Example:
-  shell::ini_write config.ini MySection MyKey MyValue  # Writes MyKey=MyValue in MySection.
+  shell::write_ini config.ini MySection MyKey MyValue  # Writes MyKey=MyValue in MySection.
 "
 
 USAGE_SHELL_INI_REMOVE_SECTION="
@@ -3000,7 +3000,7 @@ Description:
   string, and writes this string as the value for a specified key in an INI file.
   Values containing spaces, commas, or double quotes are automatically enclosed
   in double quotes, and internal double quotes are escaped (e.g., \"value with \"quote\"\").
-  The final formatted string is passed to 'shell::ini_write' for atomic writing,
+  The final formatted string is passed to 'shell::write_ini' for atomic writing,
   which handles file and section existence, creation, and updates.
 
 Example:
@@ -3727,7 +3727,7 @@ It uses fzf for interactive selection and sed for in-place editing.
 
 USAGE_SHELL_ADD_WORKSPACE="
 shell::add_workspace function
-Creates a new workspace with profile.conf and default .ssh/*.conf templates populated via shell::ini_write.
+Creates a new workspace with profile.conf and default .ssh/*.conf templates populated via shell::write_ini.
 
 Usage:
 shell::add_workspace [-n] [-h] <workspace_name>
@@ -3740,7 +3740,7 @@ Parameters:
 Description:
 This function creates a new workspace directory under $SHELL_CONF_WORKING_WORKSPACE/<workspace_name>,
 initializes a profile.conf file and a .ssh/ directory with default SSH config templates (db.conf, redis.conf, etc.).
-It uses shell::ini_write to populate each .conf file with [dev] and [uat] blocks.
+It uses shell::write_ini to populate each .conf file with [dev] and [uat] blocks.
 "
 
 USAGE_SHELL_REMOVE_WORKSPACE="

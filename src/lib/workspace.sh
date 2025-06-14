@@ -2,7 +2,7 @@
 # workspace.sh
 
 # shell::add_workspace function
-# Creates a new workspace with profile.conf and default .ssh/*.conf templates populated via shell::ini_write.
+# Creates a new workspace with profile.conf and default .ssh/*.conf templates populated via shell::write_ini.
 #
 # Usage:
 # shell::add_workspace [-n] <workspace_name>
@@ -14,7 +14,7 @@
 # Description:
 # This function creates a new workspace directory under $SHELL_CONF_WORKING_WORKSPACE/workspace/<workspace_name>,
 # initializes a profile.conf file and a .ssh/ directory with default SSH config templates (db.conf, redis.conf, etc.).
-# It uses shell::ini_write to populate each .conf file with [dev] and [uat] blocks.
+# It uses shell::write_ini to populate each .conf file with [dev] and [uat] blocks.
 #
 # Example:
 # shell::add_workspace dxc
@@ -80,28 +80,28 @@ shell::add_workspace() {
         shell::colored_echo "INFO: Workspace '$name' created at '$dir'" 46
 
         # Populate profile.conf with default values
-        # We use shell::ini_write to write default values to the profile.conf file
+        # We use shell::write_ini to write default values to the profile.conf file
         # This includes the workspace name, description, and other relevant fields
-        # We use the shell::ini_write function to write these values
+        # We use the shell::write_ini function to write these values
         for f in "${ssh_files[@]}"; do
             local file="$ssh_dir/$f"
             shell::colored_echo "DEBUG: Populating '$f' with default [dev] and [uat] blocks..." 244
 
-            shell::ini_write "$file" "dev" "SSH_DESC" "Development Tunnel for $f"
-            shell::ini_write "$file" "dev" "SSH_PRIVATE_KEY_REF" "$HOME/.ssh/id_rsa"
-            shell::ini_write "$file" "dev" "SSH_SERVER_ADDR" "127.0.0.1"
-            shell::ini_write "$file" "dev" "SSH_SERVER_PORT" "2222"
-            shell::ini_write "$file" "dev" "SSH_SERVER_USER" "sysadmin"
-            shell::ini_write "$file" "dev" "SSH_LOCAL_ADDR" "127.0.0.1"
-            shell::ini_write "$file" "dev" "SSH_LOCAL_PORT" "5432"
+            shell::write_ini "$file" "dev" "SSH_DESC" "Development Tunnel for $f"
+            shell::write_ini "$file" "dev" "SSH_PRIVATE_KEY_REF" "$HOME/.ssh/id_rsa"
+            shell::write_ini "$file" "dev" "SSH_SERVER_ADDR" "127.0.0.1"
+            shell::write_ini "$file" "dev" "SSH_SERVER_PORT" "2222"
+            shell::write_ini "$file" "dev" "SSH_SERVER_USER" "sysadmin"
+            shell::write_ini "$file" "dev" "SSH_LOCAL_ADDR" "127.0.0.1"
+            shell::write_ini "$file" "dev" "SSH_LOCAL_PORT" "5432"
 
-            shell::ini_write "$file" "uat" "SSH_DESC" "UAT Tunnel for $f"
-            shell::ini_write "$file" "uat" "SSH_PRIVATE_KEY_REF" "$HOME/.ssh/id_rsa"
-            shell::ini_write "$file" "uat" "SSH_SERVER_ADDR" "127.0.0.1"
-            shell::ini_write "$file" "uat" "SSH_SERVER_PORT" "2223"
-            shell::ini_write "$file" "uat" "SSH_SERVER_USER" "sysadmin"
-            shell::ini_write "$file" "uat" "SSH_LOCAL_ADDR" "127.0.0.1"
-            shell::ini_write "$file" "uat" "SSH_LOCAL_PORT" "5432"
+            shell::write_ini "$file" "uat" "SSH_DESC" "UAT Tunnel for $f"
+            shell::write_ini "$file" "uat" "SSH_PRIVATE_KEY_REF" "$HOME/.ssh/id_rsa"
+            shell::write_ini "$file" "uat" "SSH_SERVER_ADDR" "127.0.0.1"
+            shell::write_ini "$file" "uat" "SSH_SERVER_PORT" "2223"
+            shell::write_ini "$file" "uat" "SSH_SERVER_USER" "sysadmin"
+            shell::write_ini "$file" "uat" "SSH_LOCAL_ADDR" "127.0.0.1"
+            shell::write_ini "$file" "uat" "SSH_LOCAL_PORT" "5432"
         done
     fi
 }
