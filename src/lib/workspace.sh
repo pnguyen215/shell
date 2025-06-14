@@ -37,17 +37,19 @@ shell::add_workspace() {
     fi
 
     local name="$1"
-    local base="$SHELL_CONF_WORKING_WORKSPACE"
-    local dir="$base/$name"
-    local profile="$dir/profile.conf"
-    local ssh_dir="$dir/.ssh"
-    local ssh_files=("server.conf" "db.conf" "redis.conf" "rmq.conf" "ast.conf" "kafka.conf" "zookeeper.conf" "nginx.conf" "web.conf" "app.conf" "api.conf" "cache.conf" "search.conf")
 
     # Sanitize the workspace name
     # We use shell::sanitize_lower_var_name to ensure the name is in lowercase and safe for use as a directory name
     # This function replaces non-alphanumeric characters with underscores
     # This helps prevent issues with invalid directory names
     name=$(shell::sanitize_lower_var_name "$name")
+
+    local base="$SHELL_CONF_WORKING_WORKSPACE"
+    local dir="$base/$name"
+    local profile="$dir/profile.conf"
+    local ssh_dir="$dir/.ssh"
+    local ssh_files=("server.conf" "db.conf" "redis.conf" "rmq.conf" "ast.conf" "kafka.conf" "zookeeper.conf" "nginx.conf" "web.conf" "app.conf" "api.conf" "cache.conf" "search.conf")
+
     # Check if workspace already exists
     # If the directory already exists, we return an error
     if [ -d "$dir" ]; then
