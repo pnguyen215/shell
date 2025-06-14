@@ -3176,11 +3176,11 @@ Notes:
 "
 
 USAGE_SHELL_INI_GET_OR_DEFAULT="
-shell::ini_get_or_default function
+shell::get_or_default_ini_value function
 Reads a key's value from an INI file or returns a default if not found.
 
 Usage:
-  shell::ini_get_or_default [-h] <file> <section> <key> [default_value]
+  shell::get_or_default_ini_value [-h] <file> <section> <key> [default_value]
 
 Parameters:
   - -h          : Optional. Displays this help message.
@@ -3200,11 +3200,11 @@ Description:
 
 Example:
   # Get 'api_key' from 'Settings' or return 'no_key' if not found
-  api_key=(shell::ini_get_or_default config.ini Settings api_key "no_key")
+  api_key=(shell::get_or_default_ini_value config.ini Settings api_key "no_key")
   echo \"API Key: $api_key\"
 
   # Get 'debug_mode' or default to empty string if not found
-  debug_mode=(shell::ini_get_or_default app.ini General debug_mode)
+  debug_mode=(shell::get_or_default_ini_value app.ini General debug_mode)
   if [ -n \"$debug_mode\" ]; then
     echo \"Debug mode is enabled.\"
   fi

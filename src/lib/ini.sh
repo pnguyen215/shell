@@ -1958,11 +1958,11 @@ shell::destroy_ini_env() {
     return 0
 }
 
-# shell::ini_get_or_default function
+# shell::get_or_default_ini_value function
 # Reads a key's value from an INI file or returns a default if not found.
 #
 # Usage:
-#   shell::ini_get_or_default [-h] <file> <section> <key> [default_value]
+#   shell::get_or_default_ini_value [-h] <file> <section> <key> [default_value]
 #
 # Parameters:
 #   - -h          : Optional. Displays this help message.
@@ -1991,11 +1991,11 @@ shell::destroy_ini_env() {
 #
 # Example:
 #   # Read 'timeout' from 'Network' section, default to '30'
-#   TIMEOUT=$(shell::ini_get_or_default app.ini Network timeout 30)
+#   TIMEOUT=$(shell::get_or_default_ini_value app.ini Network timeout 30)
 #   echo "Connection Timeout: $TIMEOUT seconds"
 #
 #   # Read 'feature_flag' or default to empty string
-#   FLAG=$(shell::ini_get_or_default settings.ini Features feature_flag)
+#   FLAG=$(shell::get_or_default_ini_value settings.ini Features feature_flag)
 #   if [ "$FLAG" = "enabled" ]; then
 #     echo "Feature is ON."
 #   fi
@@ -2011,7 +2011,7 @@ shell::destroy_ini_env() {
 #     This function provides its own consolidated logging.
 #   - Ensures cross-platform compatibility by relying on standard Bash features
 #     and existing cross-platform helper functions.
-shell::ini_get_or_default() {
+shell::get_or_default_ini_value() {
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_INI_GET_OR_DEFAULT"
@@ -2025,8 +2025,8 @@ shell::ini_get_or_default() {
 
     # Validate mandatory parameters.
     if [ -z "$file" ] || [ -z "$section" ] || [ -z "$key" ]; then
-        shell::colored_echo "ERR: shell::ini_get_or_default: Missing required parameters: file, section, or key." 196
-        echo "Usage: shell::ini_get_or_default [-h] <file> <section> <key> [default_value]"
+        shell::colored_echo "ERR: shell::get_or_default_ini_value: Missing required parameters: file, section, or key." 196
+        echo "Usage: shell::get_or_default_ini_value [-h] <file> <section> <key> [default_value]"
         return 1
     fi
 
