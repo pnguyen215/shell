@@ -452,11 +452,11 @@ shell::add_profile_conf() {
     fi
 }
 
-# shell::get_conf_profile function
+# shell::get_profile_conf function
 # Retrieves a configuration profile value by prompting the user to select a config key from the profile's configuration file.
 #
 # Usage:
-#   shell::get_conf_profile [-n] <profile_name>
+#   shell::get_profile_conf [-n] <profile_name>
 #
 # Parameters:
 #   - -n (optional): Dry-run mode. Instead of executing commands, prints them using shell::on_evict.
@@ -469,17 +469,17 @@ shell::add_profile_conf() {
 #   and finally copies the decoded value to the clipboard asynchronously.
 #
 # Example:
-#   shell::get_conf_profile my_profile          # Retrieves and processes the 'my_profile' profile.
-#   shell::get_conf_profile -n my_profile       # Dry-run mode: prints the commands without executing them.
-shell::get_conf_profile() {
+#   shell::get_profile_conf my_profile          # Retrieves and processes the 'my_profile' profile.
+#   shell::get_profile_conf -n my_profile       # Dry-run mode: prints the commands without executing them.
+shell::get_profile_conf() {
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_GET_CONF_PROFILE"
+        echo "$USAGE_SHELL_GET_PROFILE_CONF"
         return 0
     fi
 
     if [ $# -lt 1 ]; then
-        echo "Usage: shell::get_conf_profile <profile_name>"
+        echo "Usage: shell::get_profile_conf <profile_name>"
         return 1
     fi
     shell::ensure_workspace

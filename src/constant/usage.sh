@@ -2429,12 +2429,12 @@ Example:
   shell::add_profile_conf -n my_profile my_setting \"some secret value\"      # Prints the command without executing it
 "
 
-USAGE_SHELL_GET_CONF_PROFILE="
-shell::get_conf_profile function
+USAGE_SHELL_GET_PROFILE_CONF="
+shell::get_profile_conf function
 Retrieves a configuration profile value by prompting the user to select a config key from the profile's configuration file.
 
 Usage:
-  shell::get_conf_profile [-n] [-h] <profile_name>
+  shell::get_profile_conf [-n] [-h] <profile_name>
 
 Parameters:
   - -n (optional)   : Dry-run mode. Instead of executing commands, prints them using shell::on_evict.
@@ -2448,8 +2448,8 @@ Description:
   and finally copies the decoded value to the clipboard asynchronously.
 
 Example:
-  shell::get_conf_profile my_profile          # Retrieves and processes the 'my_profile' profile.
-  shell::get_conf_profile -n my_profile       # Dry-run mode: prints the commands without executing them.
+  shell::get_profile_conf my_profile          # Retrieves and processes the 'my_profile' profile.
+  shell::get_profile_conf -n my_profile       # Dry-run mode: prints the commands without executing them.
 "
 
 USAGE_SHELL_GET_VALUE_CONF_PROFILE="
