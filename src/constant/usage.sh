@@ -1462,26 +1462,6 @@ Example usage:
   shell::list_path_installed_packages /custom/install/path
 "
 
-USAGE_SHELL_LIST_PATH_INSTALLED_PACKAGES_DETAILS="
-shell::list_path_installed_packages_details function
-Lists detailed information (including full path, directory size, and modification date)
-for all packages installed via directory-based methods on Linux or macOS.
-
-Usage:
-  shell::list_path_installed_packages_details [-h] [base_install_path]
-
-Parameters:
-    - -h                 : Optional. Displays this help message.
-    - [base_install_path]: Optional. The base directory where packages are installed.
-        Defaults to:
-          - /usr/local on macOS
-          - /opt on Linux
-
-Example usage:
-  shell::list_path_installed_packages_details
-  shell::list_path_installed_packages_details /custom/install/path
-"
-
 USAGE_SHELL_IS_PACKAGE_INSTALLED_LINUX="
 shell::is_package_installed_linux function
 Checks if a package is installed on Linux.
