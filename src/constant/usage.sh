@@ -2932,12 +2932,12 @@ Example usage:
 "
 
 USAGE_SHELL_FZF_INI_REMOVE_KEY="
-shell::fzf_ini_remove_key function
+shell::fzf_remove_ini_key function
 Interactively selects a key from a specific section in an INI file using fzf
 and then removes the selected key from that section.
 
 Usage:
-  shell::fzf_ini_remove_key [-n] <file> <section>
+  shell::fzf_remove_ini_key [-n] <file> <section>
 
 Parameters:
   - -n        : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
@@ -2952,8 +2952,8 @@ Description:
   using shell::colored_echo.
 
 Example:
-  shell::fzf_ini_remove_key config.ini \"Database\"  # Interactively remove a key from the Database section.
-  shell::fzf_ini_remove_key -n settings.ini \"API\"  # Dry-run: show commands to remove a key from the API section.
+  shell::fzf_remove_ini_key config.ini \"Database\"  # Interactively remove a key from the Database section.
+  shell::fzf_remove_ini_key -n settings.ini \"API\"  # Dry-run: show commands to remove a key from the API section.
 "
 
 USAGE_SHELL_INI_REMOVE_KEY="

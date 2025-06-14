@@ -1020,12 +1020,12 @@ shell::remove_ini_section() {
     return 0
 }
 
-# shell::fzf_ini_remove_key function
+# shell::fzf_remove_ini_key function
 # Interactively selects a key from a specific section in an INI file using fzf
 # and then removes the selected key from that section.
 #
 # Usage:
-#   shell::fzf_ini_remove_key [-n] <file> <section>
+#   shell::fzf_remove_ini_key [-n] <file> <section>
 #
 # Parameters:
 #   - -n        : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
@@ -1040,9 +1040,9 @@ shell::remove_ini_section() {
 #   using shell::colored_echo.
 #
 # Example:
-#   shell::fzf_ini_remove_key config.ini "Database"  # Interactively remove a key from the Database section.
-#   shell::fzf_ini_remove_key -n settings.ini "API"  # Dry-run: show commands to remove a key from the API section.
-shell::fzf_ini_remove_key() {
+#   shell::fzf_remove_ini_key config.ini "Database"  # Interactively remove a key from the Database section.
+#   shell::fzf_remove_ini_key -n settings.ini "API"  # Dry-run: show commands to remove a key from the API section.
+shell::fzf_remove_ini_key() {
     local dry_run="false"
 
     # Check for the optional dry-run flag (-n)
@@ -1058,8 +1058,8 @@ shell::fzf_ini_remove_key() {
 
     # Validate required parameters: file path and section name.
     if [ $# -lt 2 ]; then
-        shell::colored_echo "shell::fzf_ini_remove_key: Missing required parameters" 196
-        echo "Usage: shell::fzf_ini_remove_key [-n] <file> <section>"
+        shell::colored_echo "shell::fzf_remove_ini_key: Missing required parameters" 196
+        echo "Usage: shell::fzf_remove_ini_key [-n] <file> <section>"
         return 1
     fi
 
