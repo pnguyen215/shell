@@ -48,7 +48,7 @@ shell::read_ini() {
     # Validate section and key names only if strict mode is enabled
     if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
         shell::validate_ini_section_name "$section" || return 1
-        shell::ini_validate_key_name "$key" || return 1
+        shell::validate_ini_key_name "$key" || return 1
     fi
 
     # Check if file exists
@@ -202,13 +202,13 @@ shell::validate_ini_section_name() {
     return 0
 }
 
-# shell::ini_validate_key_name function
+# shell::validate_ini_key_name function
 # Validates an INI key name based on defined strictness levels.
 # It checks for empty names and disallowed characters or spaces according to
 # SHELL_INI_STRICT and SHELL_INI_ALLOW_SPACES_IN_NAMES variables.
 
 # Usage:
-#   shell::ini_validate_key_name [-h] <key_name>
+#   shell::validate_ini_key_name [-h] <key_name>
 
 # Parameters:
 #   - -h         : Optional. Displays this help message.
@@ -221,7 +221,7 @@ shell::validate_ini_section_name() {
 #   - Relies on the shell::colored_echo function for output.
 #   - The behavior is controlled by the SHELL_INI_STRICT and
 #     SHELL_INI_ALLOW_SPACES_IN_NAMES environment variables or constants.
-shell::ini_validate_key_name() {
+shell::validate_ini_key_name() {
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_INI_VALIDATE_KEY_NAME"
@@ -232,7 +232,7 @@ shell::ini_validate_key_name() {
 
     if [ -z "$key" ]; then
         shell::colored_echo "ERR: Key name cannot be empty" 196
-        echo "Usage: shell::ini_validate_key_name [-h] <key_name>"
+        echo "Usage: shell::validate_ini_key_name [-h] <key_name>"
         return 1
     fi
 
@@ -728,10 +728,10 @@ shell::ini_write() {
     fi
 
     # Validate section and key names only if strict mode is enabled
-    # Assumes shell::validate_ini_section_name and shell::ini_validate_key_name exist.
+    # Assumes shell::validate_ini_section_name and shell::validate_ini_key_name exist.
     if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
         shell::validate_ini_section_name "$section" || return 1
-        shell::ini_validate_key_name "$key" || return 1
+        shell::validate_ini_key_name "$key" || return 1
     fi
 
     # Check for empty value if not allowed
@@ -1209,7 +1209,7 @@ shell::fzf_ini_remove_key() {
 #   - Empty lines and lines outside of sections are preserved.
 #   - Relies on helper functions like shell::colored_echo, shell::ini_escape_for_regex,
 #     shell::ini_create_temp_file, and optionally shell::validate_ini_section_name,
-#     shell::ini_validate_key_name if SHELL_INI_STRICT is enabled.
+#     shell::validate_ini_key_name if SHELL_INI_STRICT is enabled.
 #   - Uses atomic operation (mv) to replace the original file, reducing risk of data loss.
 shell::ini_remove_key() {
     local dry_run="false"
@@ -1238,10 +1238,10 @@ shell::ini_remove_key() {
     local key="$3"
 
     # Validate section and key names only if strict mode is enabled (optional, based on existing code).
-    # Assumes shell::validate_ini_section_name and shell::ini_validate_key_name functions exist.
+    # Assumes shell::validate_ini_section_name and shell::validate_ini_key_name functions exist.
     if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
         shell::validate_ini_section_name "$section" || return 1
-        shell::ini_validate_key_name "$key" || return 1
+        shell::validate_ini_key_name "$key" || return 1
     fi
 
     # Check if the specified file exists.
@@ -1625,7 +1625,7 @@ shell::ini_key_exists() {
     # The called validation functions will print their own error messages if validation fails.
     if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
         shell::validate_ini_section_name "$section" || return 1
-        shell::ini_validate_key_name "$key" || return 1
+        shell::validate_ini_key_name "$key" || return 1
     fi
 
     # Attempt to read the key's value.

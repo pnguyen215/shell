@@ -2719,13 +2719,13 @@ Example usage:
 "
 
 USAGE_SHELL_INI_VALIDATE_KEY_NAME="
-shell::ini_validate_key_name function
+shell::validate_ini_key_name function
 Validates an INI key name based on defined strictness levels.
 It checks for empty names and disallowed characters or spaces according to
 SHELL_INI_STRICT and SHELL_INI_ALLOW_SPACES_IN_NAMES variables.
 
 Usage:
-  shell::ini_validate_key_name [-h] <key_name>
+  shell::validate_ini_key_name [-h] <key_name>
 
 Parameters:
   - -h         : Optional. Displays this help message.
