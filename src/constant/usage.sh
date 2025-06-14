@@ -3008,7 +3008,7 @@ Example:
   # This would result in MyList=alpha,\"beta gamma\",\"delta,epsilon\" in config.ini
 "
 
-USAGE_SHELL_INI_GET_ARRAY_VALUE="
+USAGE_SHELL_GET_ARRAY_INI_VALUE="
 shell::get_array_ini_value function
 Reads and parses an array of values from a specified key in an INI file.
 

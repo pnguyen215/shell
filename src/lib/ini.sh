@@ -1479,7 +1479,7 @@ shell::set_array_ini_value() {
 shell::get_array_ini_value() {
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_INI_GET_ARRAY_VALUE"
+        echo "$USAGE_SHELL_GET_ARRAY_INI_VALUE"
         return 0
     fi
 
