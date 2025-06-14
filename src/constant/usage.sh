@@ -3078,11 +3078,11 @@ Example:
 "
 
 USAGE_SHELL_INI_TO_ENV="
-shell::ini_expose_env function
+shell::expose_ini_env function
 Exports key-value pairs from an INI file as environment variables.
 
 Usage:
-  shell::ini_expose_env [-h] <file> [prefix] [section]
+  shell::expose_ini_env [-h] <file> [prefix] [section]
 
 Parameters:
   - -h        : Optional. Displays this help message.
@@ -3104,13 +3104,13 @@ Description:
 
 Example:
   # Export all keys from config.ini without a prefix
-  shell::ini_expose_env config.ini
+  shell::expose_ini_env config.ini
 
   # Export all keys from config.ini with 'APP_CONFIG' prefix
-  shell::ini_expose_env config.ini APP_CONFIG
+  shell::expose_ini_env config.ini APP_CONFIG
 
   # Export keys from 'Database' section of config.ini with 'DB' prefix
-  shell::ini_expose_env config.ini DB Database
+  shell::expose_ini_env config.ini DB Database
 
 Returns:
   0 on success, 1 on failure (e.g., missing file, invalid parameters, or issues
@@ -3142,16 +3142,16 @@ Parameters:
                 sections (matching the prefix, if given) will be targeted.
 
 Description:
-  This function reverses the action of 'shell::ini_expose_env'. It reads the specified
+  This function reverses the action of 'shell::expose_ini_env'. It reads the specified
   INI file (or a specific section within it) and generates the expected environment
   variable names based on the file's structure and the provided prefix (if any).
   For each generated variable name, it checks if the variable is currently set
   in the environment and, if so, unsets it.
 
   It's crucial to provide the *exact same* 'file', 'prefix', and 'section' arguments
-  that were used when calling 'shell::ini_expose_env' to ensure the correct variables
+  that were used when calling 'shell::expose_ini_env' to ensure the correct variables
   are targeted for unsetting. Variable names are sanitized using the same logic
-  as 'shell::ini_expose_env' to accurately match previously exported variables.
+  as 'shell::expose_ini_env' to accurately match previously exported variables.
 
 Example:
   # To unset all variables exported from 'config.ini' without a prefix:
