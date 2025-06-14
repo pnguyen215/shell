@@ -2863,11 +2863,11 @@ Example:
 "
 
 USAGE_SHELL_INI_ADD_SECTION="
-shell::ini_add_section function
+shell::add_ini_section function
 Adds a new section to a specified INI file if it does not already exist.
 
 Usage:
-  shell::ini_add_section [-h] <file> <section>
+  shell::add_ini_section [-h] <file> <section>
 
 Parameters:
   - -h        : Optional. Displays this help message.
@@ -2880,7 +2880,7 @@ Description:
   if SHELL_INI_STRICT is set. The function handles the creation of the file if it does not exist.
 
 Example:
-  shell::ini_add_section config.ini NewSection  # Adds NewSection to config.ini if it doesn't exist.
+  shell::add_ini_section config.ini NewSection  # Adds NewSection to config.ini if it doesn't exist.
 "
 
 USAGE_SHELL_INI_WRITE="

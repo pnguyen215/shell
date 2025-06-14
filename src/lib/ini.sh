@@ -624,11 +624,11 @@ shell::exist_ini_section() {
     return $result
 }
 
-# shell::ini_add_section function
+# shell::add_ini_section function
 # Adds a new section to a specified INI file if it does not already exist.
 #
 # Usage:
-#   shell::ini_add_section [-h] <file> <section>
+#   shell::add_ini_section [-h] <file> <section>
 #
 # Parameters:
 #   - -h        : Optional. Displays this help message.
@@ -641,8 +641,8 @@ shell::exist_ini_section() {
 #   if SHELL_INI_STRICT is set. The function handles the creation of the file if it does not exist.
 #
 # Example:
-#   shell::ini_add_section config.ini NewSection  # Adds NewSection to config.ini if it doesn't exist.
-shell::ini_add_section() {
+#   shell::add_ini_section config.ini NewSection  # Adds NewSection to config.ini if it doesn't exist.
+shell::add_ini_section() {
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_INI_ADD_SECTION"
@@ -653,8 +653,8 @@ shell::ini_add_section() {
     local section="$2"
 
     if [ -z "$file" ] || [ -z "$section" ]; then
-        shell::colored_echo "shell::ini_add_section: Missing required parameters" 196
-        echo "Usage: shell::ini_add_section [-h] <file> <section>"
+        shell::colored_echo "shell::add_ini_section: Missing required parameters" 196
+        echo "Usage: shell::add_ini_section [-h] <file> <section>"
         return 1
     fi
 
@@ -745,9 +745,9 @@ shell::ini_write() {
     shell::create_file_if_not_exists "$file"
 
     # Ensure the target section exists in the file. Add it if it doesn't.
-    # Assumes shell::ini_add_section function exists and handles adding a blank line
+    # Assumes shell::add_ini_section function exists and handles adding a blank line
     # before a new section if the file is not empty.
-    shell::ini_add_section "$file" "$section" || return 1
+    shell::add_ini_section "$file" "$section" || return 1
 
     # Escape section and key for regex pattern
     # Assumes shell::ini_escape_for_regex function exists.
@@ -868,7 +868,7 @@ shell::ini_write() {
     if [ $key_handled -eq 1 ]; then
         shell::colored_echo "INFO: Successfully wrote key '$key' with value '$value' to section '$section'" 46
     else
-        # This case should ideally not be reached if shell::ini_add_section ensures
+        # This case should ideally not be reached if shell::add_ini_section ensures
         # the section exists and the logic is correct. It's a safeguard.
         shell::colored_echo "WARN: Section '$section' processed, but key '$key' was not added or updated." 11
         return 1
@@ -2302,7 +2302,7 @@ shell::fzf_ini_rename_section() {
 #   destination section already exists in strict mode, or write errors).
 #
 # Notes:
-#   - Relies on shell::colored_echo, shell::exist_ini_section, shell::ini_add_section,
+#   - Relies on shell::colored_echo, shell::exist_ini_section, shell::add_ini_section,
 #     shell::ini_write, shell::create_ini_temp_file, and shell::ini_escape_for_regex.
 #   - Honors SHELL_INI_STRICT for section name validation.
 shell::ini_clone_section() {
