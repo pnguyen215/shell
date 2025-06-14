@@ -305,7 +305,7 @@ shell::create_ini_temp_file() {
 shell::trim_ini() {
     # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_INI_TRIM"
+        echo "$USAGE_SHELL_TRIM_INI"
         return 0
     fi
 

@@ -2732,7 +2732,7 @@ Parameters:
   - <key_name> : The name of the INI key to validate.
 "
 
-USAGE_SHELL_INI_TRIM="
+USAGE_SHELL_TRIM_INI="
 shell::trim_ini function
 Trims leading and trailing whitespace from a given string.
 
