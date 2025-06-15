@@ -1643,25 +1643,25 @@ shell::add_protected_key_conf() {
     fi
 }
 
-# shell::fzf_add_protected_key function
+# shell::fzf_add_protected_key_conf function
 # Interactively selects a key from the configuration file and adds it to the protected list.
 #
 # Usage:
-# shell::fzf_add_protected_key [-n]
+# shell::fzf_add_protected_key_conf [-n]
 #
 # Description:
 # This function uses fzf to select a key from the configuration file (excluding comments),
 # and adds it to the protected.conf file.
-shell::fzf_add_protected_key() {
+shell::fzf_add_protected_key_conf() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_ADD_PROTECTED_KEY_CONF"
+        return 0
+    fi
+
     local dry_run="false"
     if [ "$1" = "-n" ]; then
         dry_run="true"
         shift
-    fi
-
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_ADD_PROTECTED_KEY"
-        return 0
     fi
 
     # Ensure the configuration file exists.

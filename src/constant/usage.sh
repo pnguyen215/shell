@@ -3482,12 +3482,12 @@ Parameters:
   - <key> : The key to mark as protected.
 "
 
-USAGE_SHELL_FZF_ADD_PROTECTED_KEY="
-shell::fzf_add_protected_key function
+USAGE_SHELL_FZF_ADD_PROTECTED_KEY_CONF="
+shell::fzf_add_protected_key_conf function
 Interactively selects a key from the configuration file and adds it to the protected list.
 
 Usage:
-shell::fzf_add_protected_key [-n] [-h]
+shell::fzf_add_protected_key_conf [-n] [-h]
 
 Parameters:
   - -n        : Optional. Dry-run mode. Prints the command without executing it.
