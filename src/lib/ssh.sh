@@ -210,12 +210,12 @@ shell::list_ssh_tunnels() {
     shell::run_cmd_eval rm -f "$temp_file"
 }
 
-# shell::fzf_ssh_keys function
+# shell::fzf_cwd_ssh_key function
 # Interactively selects an SSH key file (private or public) from $HOME/.ssh using fzf,
 # displays the absolute path of the selected file, and copies the path to the clipboard.
 #
 # Usage:
-#   shell::fzf_ssh_keys
+#   shell::fzf_cwd_ssh_key
 #
 # Description:
 #   This function lists files within the user's SSH directory ($HOME/.ssh).
@@ -224,16 +224,15 @@ shell::list_ssh_tunnels() {
 #   and automatically copied to the system clipboard using the shell::clip_value function.
 #
 # Example usage:
-#   shell::fzf_ssh_keys # Launch fzf to select an SSH key and copy its path.
+#   shell::fzf_cwd_ssh_key # Launch fzf to select an SSH key and copy its path.
 #
 # Requirements:
 #   - fzf must be installed.
 #   - The user must have a $HOME/.ssh directory.
 #   - Assumes the presence of helper functions: shell::install_package, shell::colored_echo, shell::clip_value, and shell::is_command_available.
-shell::fzf_ssh_keys() {
-    # Check for the help flag (-h)
+shell::fzf_cwd_ssh_key() {
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_SSH_KEY"
+        echo "$USAGE_SHELL_FZF_CWD_SSH_KEY"
         return 0
     fi
 

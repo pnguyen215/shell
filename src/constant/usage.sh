@@ -100,13 +100,13 @@ Notes:
   - Leverages shell::run_cmd_eval for command execution and shell::on_evict for dry-run mode
 "
 
-USAGE_SHELL_FZF_SSH_KEY="
-shell::fzf_ssh_keys function
+USAGE_SHELL_FZF_CWD_SSH_KEY="
+shell::fzf_cwd_ssh_key function
 Interactively selects an SSH key file (private or public) from $HOME/.ssh using fzf,
 displays the absolute path of the selected file, and copies the path to the clipboard.
 
 Usage:
-  shell::fzf_ssh_keys [-h]
+  shell::fzf_cwd_ssh_key [-h]
 
 Parameters:
   - -h              : Optional. Displays this help message.
@@ -118,7 +118,7 @@ Description:
   and automatically copied to the system clipboard using the shell::clip_value function.
 
 Example usage:
-  shell::fzf_ssh_keys # Launch fzf to select an SSH key and copy its path.
+  shell::fzf_cwd_ssh_key # Launch fzf to select an SSH key and copy its path.
 
 Requirements:
   - fzf must be installed.
