@@ -1572,11 +1572,11 @@ shell::fzf_view_key_conf_viz() {
     shell::clip_value $(shell::get_key_conf_value "$selected_key")
 }
 
-# shell::add_protected_key function
+# shell::add_protected_key_conf function
 # Adds a key to the protected key list stored in protected.conf.
 #
 # Usage:
-# shell::add_protected_key [-n] <key>
+# shell::add_protected_key_conf [-n] <key>
 #
 # Parameters:
 # - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
@@ -1585,20 +1585,20 @@ shell::fzf_view_key_conf_viz() {
 # Description:
 # This function appends a key to the protected.conf file located at $SHELL_CONF_WORKING/protected.conf.
 # If the key already exists in the file, it will not be added again.
-shell::add_protected_key() {
+shell::add_protected_key_conf() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_ADD_PROTECTED_KEY_CONF"
+        return 0
+    fi
+
     local dry_run="false"
     if [ "$1" = "-n" ]; then
         dry_run="true"
         shift
     fi
 
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_ADD_PROTECTED_KEY"
-        return 0
-    fi
-
     if [ $# -lt 1 ]; then
-        echo "Usage: shell::add_protected_key [-n] <key>"
+        echo "Usage: shell::add_protected_key_conf [-n] <key>"
         return 1
     fi
 
@@ -1696,11 +1696,11 @@ shell::fzf_add_protected_key() {
 
     # Verify dry-run mode.
     # If dry-run mode is enabled, print the command to add the protected key.
-    # Otherwise, call shell::add_protected_key to add the key.
+    # Otherwise, call shell::add_protected_key_conf to add the key.
     if [ "$dry_run" = "true" ]; then
-        shell::add_protected_key "-n" "$selected_key"
+        shell::add_protected_key_conf "-n" "$selected_key"
     else
-        shell::add_protected_key "$selected_key"
+        shell::add_protected_key_conf "$selected_key"
     fi
 }
 

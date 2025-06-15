@@ -3465,12 +3465,12 @@ to the configuration file defined by SHELL_KEY_CONF_FILE.
 If the key already exists, a warning is shown and the function exits.
 "
 
-USAGE_SHELL_ADD_PROTECTED_KEY="
-shell::add_protected_key function
+USAGE_SHELL_ADD_PROTECTED_KEY_CONF="
+shell::add_protected_key_conf function
 Adds a key to the protected key list stored in protected.conf.
 
 Usage:
-shell::add_protected_key [-n] [-h] <key>
+shell::add_protected_key_conf [-n] [-h] <key>
 
 Parameters:
   - -n        : Optional. Dry-run mode. Prints the command without executing it.
