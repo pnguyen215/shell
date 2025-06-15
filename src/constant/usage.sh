@@ -271,13 +271,13 @@ Example:
   shell::fzf_remove_key_conf -n      # Prints the removal command without executing it.
 "
 
-USAGE_SHELL_FZF_UPDATE_CONF="
-shell::fzf_update_conf function
+USAGE_SHELL_FZF_UPDATE_KEY_CONF="
+shell::fzf_update_key_conf function
 Interactively updates the value for a configuration key in a constant configuration file.
 The new value is encoded using Base64 before updating the file.
 
 Usage:
-  shell::fzf_update_conf [-n] [-h]
+  shell::fzf_update_key_conf [-n] [-h]
 
 Parameters:
   - -n              : Optional dry-run flag. If provided, the update command is printed using shell::on_evict instead of executed.
@@ -292,8 +292,8 @@ Description:
   The sed command used for in-place update differs between macOS and Linux.
 
 Example:
-  shell::fzf_update_conf       # Interactively select a key, enter a new value, and update its entry.
-  shell::fzf_update_conf -n    # Prints the update command without executing it.
+  shell::fzf_update_key_conf       # Interactively select a key, enter a new value, and update its entry.
+  shell::fzf_update_key_conf -n    # Prints the update command without executing it.
 "
 
 USAGE_SHELL_EXIST_KEY_CONF="

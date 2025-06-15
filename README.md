@@ -293,13 +293,13 @@ Access the shell library by opening your terminal and using the commands below. 
   - `shell::fzf_remove_key_conf`
   - `shell::fzf_remove_key_conf -n`
 
-- **`shell::fzf_update_conf`**
+- **`shell::fzf_update_key_conf`**
   Interactively updates the value for a configuration key in a constant configuration file.
   The new value is encoded using Base64 before updating the file.
   _Example:_
 
-  - `shell::fzf_update_conf`
-  - `shell::fzf_update_conf -n`
+  - `shell::fzf_update_key_conf`
+  - `shell::fzf_update_key_conf -n`
 
 - **`shell::exist_key_conf`**
   Checks if a configuration key exists in the key configuration file.
