@@ -234,7 +234,6 @@ shell::add_workspace() {
     local dir="$base/$name"
     local profile="$dir/profile.conf"
     local ssh_dir="$dir/.ssh"
-    # local ssh_files=("server.conf" "db.conf" "redis.conf" "rmq.conf" "ast.conf" "kafka.conf" "zookeeper.conf" "nginx.conf" "web.conf" "app.conf" "api.conf" "cache.conf" "search.conf")
 
     # Check if workspace already exists
     # If the directory already exists, we return an error
@@ -268,9 +267,6 @@ shell::add_workspace() {
     # The command is constructed as a single string to be executed later
     # This allows us to handle dry-run mode by simply printing the command instead of executing it
     local cmd="mkdir -p \"$ssh_dir\" && touch \"$profile\""
-    # for f in "${ssh_files[@]}"; do
-    #     cmd="$cmd && touch \"$ssh_dir/$f\""
-    # done
     while IFS= read -r f; do
         cmd="$cmd && touch \"$ssh_dir/$f\""
     done <<<"$selected_files"
@@ -295,27 +291,6 @@ shell::add_workspace() {
             shell::colored_echo "DEBUG: Populating '$f' with default [dev] and [uat] blocks..." 244
             shell::populate_ssh_conf "$file" "$f"
         done <<<"$selected_files"
-
-        # for f in "${ssh_files[@]}"; do
-        #     local file="$ssh_dir/$f"
-        #     shell::colored_echo "DEBUG: Populating '$f' with default [dev] and [uat] blocks..." 244
-
-        #     shell::write_ini "$file" "dev" "SSH_DESC" "Development Tunnel for $f"
-        #     shell::write_ini "$file" "dev" "SSH_PRIVATE_KEY_REF" "$HOME/.ssh/id_rsa"
-        #     shell::write_ini "$file" "dev" "SSH_SERVER_ADDR" "127.0.0.1"
-        #     shell::write_ini "$file" "dev" "SSH_SERVER_PORT" "2222"
-        #     shell::write_ini "$file" "dev" "SSH_SERVER_USER" "sysadmin"
-        #     shell::write_ini "$file" "dev" "SSH_LOCAL_ADDR" "127.0.0.1"
-        #     shell::write_ini "$file" "dev" "SSH_LOCAL_PORT" "5432"
-
-        #     shell::write_ini "$file" "uat" "SSH_DESC" "UAT Tunnel for $f"
-        #     shell::write_ini "$file" "uat" "SSH_PRIVATE_KEY_REF" "$HOME/.ssh/id_rsa"
-        #     shell::write_ini "$file" "uat" "SSH_SERVER_ADDR" "127.0.0.1"
-        #     shell::write_ini "$file" "uat" "SSH_SERVER_PORT" "2223"
-        #     shell::write_ini "$file" "uat" "SSH_SERVER_USER" "sysadmin"
-        #     shell::write_ini "$file" "uat" "SSH_LOCAL_ADDR" "127.0.0.1"
-        #     shell::write_ini "$file" "uat" "SSH_LOCAL_PORT" "5432"
-        # done
     fi
 }
 
