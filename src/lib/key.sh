@@ -1174,13 +1174,13 @@ shell::list_group_key_conf() {
     echo "$groups"
 }
 
-# shell::fzf_select_group function
+# shell::fzf_view_group_key_conf function
 # Interactively selects a group name from the group configuration file using fzf,
 # then lists all keys belonging to the selected group and uses fzf to choose one key,
 # finally displaying the decoded value for the selected key.
 #
 # Usage:
-#   shell::fzf_select_group
+#   shell::fzf_view_group_key_conf
 #
 # Description:
 #   The function reads the configuration file defined by SHELL_GROUP_CONF_FILE, where each line is in the format:
@@ -1192,11 +1192,10 @@ shell::list_group_key_conf() {
 #   decodes the Base64-encoded value (using -D on macOS and -d on Linux), and displays the group name, key, and decoded value.
 #
 # Example:
-#   shell::fzf_select_group   # Prompts to select a group, then a key within that group, and displays the decoded value.
-shell::fzf_select_group() {
-    # Check for the help flag (-h)
+#   shell::fzf_view_group_key_conf   # Prompts to select a group, then a key within that group, and displays the decoded value.
+shell::fzf_view_group_key_conf() {
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_SELECT_GROUP"
+        echo "$USAGE_SHELL_FZF_VIEW_GROUP_KEY_CONF"
         return 0
     fi
 
@@ -1270,7 +1269,6 @@ shell::fzf_select_group() {
         decoded_value=$(echo "$encoded_value" | base64 -d)
     fi
 
-    # Display the results.
     shell::colored_echo "[g] Group: $selected_group" 33
     shell::colored_echo "[k] Key: $selected_key" 33
     shell::clip_value "$decoded_value"

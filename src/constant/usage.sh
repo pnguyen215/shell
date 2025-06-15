@@ -486,14 +486,14 @@ Description:
   using the 'cut' command.
 "
 
-USAGE_SHELL_FZF_SELECT_GROUP="
-shell::fzf_select_group function
+USAGE_SHELL_FZF_VIEW_GROUP_KEY_CONF="
+shell::fzf_view_group_key_conf function
 Interactively selects a group name from the group configuration file using fzf,
 then lists all keys belonging to the selected group and uses fzf to choose one key,
 finally displaying the decoded value for the selected key.
 
 Usage:
-  shell::fzf_select_group [-h]
+  shell::fzf_view_group_key_conf [-h]
 
 Parameters:
   - -h   : Optional. Displays this help message.

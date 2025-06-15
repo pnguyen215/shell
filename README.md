@@ -355,7 +355,7 @@ Access the shell library by opening your terminal and using the commands below. 
 - **`shell::list_group_key_conf`**
   Lists all group names defined in the group configuration file.
 
-- **`shell::fzf_select_group`**
+- **`shell::fzf_view_group_key_conf`**
   Interactively selects a group name from the group configuration file using fzf,
   then lists all keys belonging to the selected group and uses fzf to choose one key,
   finally displaying the decoded value for the selected key.
