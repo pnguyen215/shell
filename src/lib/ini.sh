@@ -3193,16 +3193,16 @@ shell::fzf_edit_ini_viz() {
     # The user can choose to edit the value of the key or rename the key.
     # The options are presented in a numbered list using select.
     shell::colored_echo "Choose action for key '$key' in section [$section]:" 33
-    select action in "Edit Value" "Remove Key" "Cancel"; do
+    select action in "Edit Value" "Remove Key" "Remove Section" "Rename Section" "Add Section" "Cancel"; do
         case $REPLY in
         1)
-            shell::colored_echo "Enter new value for '$key':" 33
+            shell::colored_echo "[e] Enter new value for '$key':" 208
             read -r new_value
             shell::write_ini "$file" "$section" "$key" "$new_value"
             return $?
             ;;
         2)
-            shell::colored_echo "Are you sure you want to remove the key '$key' from section [$section]? (y/n)" 33
+            shell::colored_echo "[q] Are you sure you want to remove the key '$key' from section [$section]? (y/n)" 208
             read -r confirmation
             if [[ "$confirmation" != "y" && "$confirmation" != "Y" ]]; then
                 shell::colored_echo "WARN: Key removal cancelled." 11
@@ -3213,6 +3213,43 @@ shell::fzf_edit_ini_viz() {
             return $?
             ;;
         3)
+            shell::colored_echo "[q] Are you sure you want to remove the entire section [$section]? (y/n)" 208
+            read -r confirmation
+            if [[ "$confirmation" != "y" && "$confirmation" != "Y" ]]; then
+                shell::colored_echo "WARN: Section removal cancelled." 11
+                return 0
+            fi
+            shell::colored_echo "DEBUG: Removing section [$section] from file '$file'..." 244
+            shell::remove_ini_section "$file" "$section"
+            return $?
+            ;;
+        4)
+            shell::colored_echo "[q] Are you sure you want to rename the section [$section]? (y/n)" 208
+            read -r confirmation
+            if [[ "$confirmation" != "y" && "$confirmation" != "Y" ]]; then
+                shell::colored_echo "WARN: Section rename cancelled." 11
+                return 0
+            fi
+            shell::colored_echo "[e] Enter new name for section [$section]:" 208
+            read -r new_section_name
+            if [ -z "$new_section_name" ]; then
+                shell::colored_echo "ERR: New section name cannot be empty." 196
+                return 1
+            fi
+            shell::rename_ini_section "$file" "$section" "$new_section_name"
+            return $?
+            ;;
+        5)
+            shell::colored_echo "[e] Enter new section name to add:" 208
+            read -r new_section_name
+            if [ -z "$new_section_name" ]; then
+                shell::colored_echo "ERR: New section name cannot be empty." 196
+                return 1
+            fi
+            shell::add_ini_section "$file" "$new_section_name"
+            return $?
+            ;;
+        6)
             shell::colored_echo "WARN: Cancelled." 11
             return 0
             ;;
