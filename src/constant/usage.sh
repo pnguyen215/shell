@@ -3498,12 +3498,12 @@ This function uses fzf to select a key from the configuration file (excluding co
 and adds it to the protected.conf file.
 "
 
-USAGE_SHELL_FZF_REMOVE_PROTECTED_KEY="
-shell::fzf_remove_protected_key function
+USAGE_SHELL_FZF_REMOVE_PROTECTED_KEY_CONF="
+shell::fzf_remove_protected_key_conf function
 Interactively selects a protected key using fzf and removes it from protected.conf.
 
 Usage:
-shell::fzf_remove_protected_key [-n] [-h]
+shell::fzf_remove_protected_key_conf [-n] [-h]
 
 Parameters:
   - -n : Optional dry-run flag. If provided, the removal command is printed using shell::on_evict instead of executed.

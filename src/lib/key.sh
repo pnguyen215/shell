@@ -1704,11 +1704,11 @@ shell::fzf_add_protected_key_conf() {
     fi
 }
 
-# shell::fzf_remove_protected_key function
+# shell::fzf_remove_protected_key_conf function
 # Interactively selects a protected key using fzf and removes it from protected.conf.
 #
 # Usage:
-# shell::fzf_remove_protected_key [-n]
+# shell::fzf_remove_protected_key_conf [-n]
 #
 # Parameters:
 # - -n : Optional dry-run flag. If provided, the removal command is printed using shell::on_evict instead of executed.
@@ -1716,16 +1716,16 @@ shell::fzf_add_protected_key_conf() {
 # Description:
 # This function reads the protected.conf file, uses fzf to let the user select a key,
 # and removes the selected key using sed. In dry-run mode, the command is printed instead of executed.
-shell::fzf_remove_protected_key() {
+shell::fzf_remove_protected_key_conf() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_REMOVE_PROTECTED_KEY_CONF"
+        return 0
+    fi
+
     local dry_run="false"
     if [ "$1" = "-n" ]; then
         dry_run="true"
         shift
-    fi
-
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_REMOVE_PROTECTED_KEY"
-        return 0
     fi
 
     local file="$SHELL_KEY_CONF_FILE_PROTECTED"
