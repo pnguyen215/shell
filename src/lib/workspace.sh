@@ -90,7 +90,8 @@ shell::populate_ssh_conf() {
     # We write the dev and uat blocks with environment-specific settings
     for env in dev uat; do
         local port=$([ "$env" = "dev" ] && echo "$base_port" || echo "$uat_port")
-        shell::write_ini "$file" "$env" "SSH_DESC" "${env^^} Tunnel for $name"
+        # shell::write_ini "$file" "$env" "SSH_DESC" "${env^^} Tunnel for $name"
+        shell::write_ini "$file" "$env" "SSH_DESC" "$(echo "$env" | tr '[:lower:]' '[:upper:]') Tunnel for $name"
         shell::write_ini "$file" "$env" "SSH_SERVER_PORT" "$port"
         shell::write_ini "$file" "$env" "SSH_LOCAL_PORT" "$port"
 
