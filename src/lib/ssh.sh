@@ -655,12 +655,12 @@ shell::gen_ssh_key() {
     return 0
 }
 
-# shell::fzf_ssh_keys_viz function
+# shell::fzf_view_ssh_key function
 # Interactively selects an SSH key file from $HOME/.ssh using fzf,
 # and previews its contents in real-time in a wrapped preview window.
 #
 # Usage:
-# shell::fzf_ssh_keys_viz [-n]
+# shell::fzf_view_ssh_key [-n]
 #
 # Parameters:
 # - -n : Optional dry-run flag. If provided, the preview command is printed using shell::on_evict instead of executed.
@@ -672,11 +672,11 @@ shell::gen_ssh_key() {
 # each file in real-time. The preview is wrapped for readability.
 #
 # Example usage:
-# shell::fzf_ssh_keys_viz       # Launch fzf to preview SSH key files.
-# shell::fzf_ssh_keys_viz -n    # Dry-run: show the preview command without executing.
-shell::fzf_ssh_keys_viz() {
+# shell::fzf_view_ssh_key       # Launch fzf to preview SSH key files.
+# shell::fzf_view_ssh_key -n    # Dry-run: show the preview command without executing.
+shell::fzf_view_ssh_key() {
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_SSH_KEYS_VIZ"
+        echo "$USAGE_SHELL_FZF_VIEW_SSH_KEY"
         return 0
     fi
 

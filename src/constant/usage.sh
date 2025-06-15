@@ -3571,13 +3571,13 @@ This function prompts the user to select permissions for owner, group, and other
 It then delegates the permission setting to shell::set_permissions.
 "
 
-USAGE_SHELL_FZF_SSH_KEYS_VIZ="
-shell::fzf_ssh_keys_viz function
+USAGE_SHELL_FZF_VIEW_SSH_KEY="
+shell::fzf_view_ssh_key function
 Interactively selects an SSH key file from HOME/.ssh using fzf,
 and previews its contents in real-time in a wrapped preview window.
 
 Usage:
-shell::fzf_ssh_keys_viz [-n] [-h]
+shell::fzf_view_ssh_key [-n] [-h]
 
 Parameters:
   - -n : Optional dry-run flag. If provided, the preview command is printed using shell::on_evict instead of executed.
