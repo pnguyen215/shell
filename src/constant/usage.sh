@@ -3428,12 +3428,12 @@ Example:
   shell::decode::file::aes256cbc -n encrypted.bin decrypted.txt  # Prints decryption command without executing
 "
 
-USAGE_SHELL_FZF_REMOVE_GOTO="
-shell::fzf_remove_goto function
+USAGE_SHELL_FZF_REMOVE_BOOKMARK_DOWN="
+shell::fzf_remove_bookmark_down function
 Interactively selects inactive bookmark paths using fzf and removes them from the bookmarks file.
 
 Usage:
-  shell::fzf_remove_goto [-n] [-h]
+  shell::fzf_remove_bookmark_down [-n] [-h]
 
 Parameters:
   - -n        : Optional. Dry-run mode. Prints the command without executing it.

@@ -551,11 +551,11 @@ shell::fzf_list_bookmark_alive() {
     return 0
 }
 
-# shell::fzf_remove_goto function
+# shell::fzf_remove_bookmark_down function
 # Interactively selects inactive bookmark paths using fzf and removes them from the bookmarks file.
 #
 # Usage:
-#   shell::fzf_remove_goto [-n] [-h]
+#   shell::fzf_remove_bookmark_down [-n] [-h]
 #
 # Parameters:
 #   - -n : Optional dry-run flag. If provided, the removal commands are printed instead of executed.
@@ -574,8 +574,8 @@ shell::fzf_list_bookmark_alive() {
 #   - Helper functions: shell::install_package, shell::colored_echo, shell::on_evict, shell::run_cmd_eval.
 #
 # Example usage:
-#   shell::fzf_remove_goto         # Interactively select and remove inactive bookmarks.
-#   shell::fzf_remove_goto -n      # Dry-run: print removal commands without executing.
+#   shell::fzf_remove_bookmark_down         # Interactively select and remove inactive bookmarks.
+#   shell::fzf_remove_bookmark_down -n      # Dry-run: print removal commands without executing.
 #
 # Returns:
 #   0 on success, 1 on failure (e.g., no bookmarks file, fzf not installed, no selection).
@@ -584,9 +584,9 @@ shell::fzf_list_bookmark_alive() {
 #   - Uses a secure temporary file created with mktemp to safely update the bookmarks file.
 #   - Compatible with both macOS and Linux.
 #   - Inactive bookmarks are those whose associated directories do not exist.
-shell::fzf_remove_goto() {
+shell::fzf_remove_bookmark_down() {
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_REMOVE_GOTO"
+        echo "$USAGE_SHELL_FZF_REMOVE_BOOKMARK_DOWN"
         return 0
     fi
 
