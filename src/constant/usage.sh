@@ -468,12 +468,12 @@ Example:
   shell::fzf_rename_group_key_conf -n      # Prints the renaming command without executing it.
 "
 
-USAGE_SHELL_LIST_GROUP="
-shell::list_groups function
+USAGE_SHELL_LIST_GROUP_KEY_CONF="
+shell::list_group_key_conf function
 Lists all group names defined in the group configuration file.
 
 Usage:
-  shell::list_groups [-h]
+  shell::list_group_key_conf [-h]
 
 Parameters:
   - -h   : Optional. Displays this help message.

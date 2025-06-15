@@ -1137,11 +1137,11 @@ shell::fzf_rename_group_key_conf() {
     fi
 }
 
-# shell::list_groups function
+# shell::list_group_key_conf function
 # Lists all group names defined in the group configuration file.
 #
 # Usage:
-#   shell::list_groups
+#   shell::list_group_key_conf
 #
 # Description:
 #   This function reads the configuration file defined by SHELL_GROUP_CONF_FILE,
@@ -1151,11 +1151,10 @@ shell::fzf_rename_group_key_conf() {
 #   using the 'cut' command.
 #
 # Example:
-#   shell::list_groups       # Displays all group names.
-shell::list_groups() {
-    # Check for the help flag (-h)
+#   shell::list_group_key_conf       # Displays all group names.
+shell::list_group_key_conf() {
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_LIST_GROUP"
+        echo "$USAGE_SHELL_LIST_GROUP_KEY_CONF"
         return 0
     fi
 

@@ -352,7 +352,7 @@ Access the shell library by opening your terminal and using the commands below. 
 
   - `shell::fzf_rename_group_key_conf [-n]`
 
-- **`shell::list_groups`**
+- **`shell::list_group_key_conf`**
   Lists all group names defined in the group configuration file.
 
 - **`shell::fzf_select_group`**
