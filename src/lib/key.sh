@@ -766,7 +766,7 @@ shell::fzf_add_group_key_conf() {
     # Use fzf with multi-select to choose keys from SHELL_KEY_CONF_FILE.
     local selected_keys
     # selected_keys=$(cut -d '=' -f 1 "$SHELL_KEY_CONF_FILE" | fzf --multi --prompt="Select config keys for group '$group_name': ")
-    selected_key=$(grep -v '^\s*#' "$SHELL_KEY_CONF_FILE" | cut -d '=' -f 1 | fzf --multi --prompt="Select config keys for group '$group_name': ")
+    selected_keys=$(grep -v '^\s*#' "$SHELL_KEY_CONF_FILE" | cut -d '=' -f 1 | fzf --multi --prompt="Select config keys for group '$group_name': ")
 
     # Check if any keys were selected.
     # If no keys were selected, print an error message and return.
