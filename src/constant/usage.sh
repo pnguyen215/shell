@@ -443,12 +443,12 @@ Example:
   shell::fzf_update_group_key_conf -n      # Prints the update command without executing it.
 "
 
-USAGE_SHELL_FZF_RENAME_GROUP="
-shell::fzf_rename_group function
+USAGE_SHELL_FZF_RENAME_GROUP_KEY_CONF="
+shell::fzf_rename_group_key_conf function
 Renames an existing group in the group configuration file.
 
 Usage:
-  shell::fzf_rename_group [-n] [-h]
+  shell::fzf_rename_group_key_conf [-n] [-h]
 
 Parameters:
   - -n   : Optional dry-run flag. If provided, the renaming command is printed using shell::on_evict instead of executed.
@@ -464,8 +464,8 @@ Description:
   In dry-run mode, the command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
 
 Example:
-  shell::fzf_rename_group         # Interactively select a group and rename it.
-  shell::fzf_rename_group -n      # Prints the renaming command without executing it.
+  shell::fzf_rename_group_key_conf         # Interactively select a group and rename it.
+  shell::fzf_rename_group_key_conf -n      # Prints the renaming command without executing it.
 "
 
 USAGE_SHELL_LIST_GROUP="

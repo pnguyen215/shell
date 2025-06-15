@@ -1056,11 +1056,11 @@ shell::fzf_update_group_key_conf() {
     fi
 }
 
-# shell::fzf_rename_group function
+# shell::fzf_rename_group_key_conf function
 # Renames an existing group in the group configuration file.
 #
 # Usage:
-#   shell::fzf_rename_group [-n]
+#   shell::fzf_rename_group_key_conf [-n]
 #
 # Parameters:
 #   - -n : Optional dry-run flag. If provided, the renaming command is printed using shell::on_evict instead of executed.
@@ -1075,19 +1075,18 @@ shell::fzf_update_group_key_conf() {
 #   In dry-run mode, the command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
 #
 # Example:
-#   shell::fzf_rename_group         # Interactively select a group and rename it.
-#   shell::fzf_rename_group -n      # Prints the renaming command without executing it.
-shell::fzf_rename_group() {
+#   shell::fzf_rename_group_key_conf         # Interactively select a group and rename it.
+#   shell::fzf_rename_group_key_conf -n      # Prints the renaming command without executing it.
+shell::fzf_rename_group_key_conf() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_RENAME_GROUP_KEY_CONF"
+        return 0
+    fi
+
     local dry_run="false"
-    # Check for the optional dry-run flag (-n)
     if [ "$1" = "-n" ]; then
         dry_run="true"
         shift
-    fi
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_RENAME_GROUP"
-        return 0
     fi
 
     if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
@@ -1106,12 +1105,17 @@ shell::fzf_rename_group() {
     fi
 
     # Prompt for the new group name.
-    shell::colored_echo "Enter new name for group '$old_group':" 33
+    shell::colored_echo "[e] Enter new name for group '$old_group':" 208
     read -r new_group
     if [ -z "$new_group" ]; then
         shell::colored_echo "ERR: No new group name entered. Aborting rename." 196
         return 1
     fi
+
+    # Sanitize the new group name to ensure it is a valid variable name.
+    # This is done to avoid issues with special characters or spaces in the group name.
+    # shell::sanitize_upper_var_name function is expected to be defined elsewhere in the script.
+    new_group=$(shell::sanitize_upper_var_name "$new_group")
 
     # Construct the sed command to update the group name while preserving the keys.
     local os_type
