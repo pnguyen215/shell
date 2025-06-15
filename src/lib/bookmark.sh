@@ -10,112 +10,6 @@ if [[ ! -f $bookmarks_file ]]; then
     mkdir -p "$SHELL_CONF_WORKING_BOOKMARK" && touch "$SHELL_KEY_CONF_FILE_BOOKMARK"
 fi
 
-# shell::uplink function
-# Creates a hard link between the specified source and destination.
-#
-# Usage:
-#   shell::uplink <source name> <destination name>
-#
-# Description:
-#   The 'shell::uplink' function creates a hard link between the specified source file and destination file.
-#   This allows multiple file names to refer to the same file content.
-#
-# Dependencies:
-#   - The 'ln' command for creating hard links.
-#   - The 'chmod' command to modify file permissions.
-shell::uplink() {
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_UPLINK"
-        return 0
-    fi
-
-    # If two arguments are provided, use them as source and destination.
-    if [ "$#" -eq 2 ]; then
-        local src="$1"
-        local dest="$2"
-        ln -vif "$src" "$dest" && chmod +x "$dest"
-        return $?
-    fi
-
-    # Otherwise, expect a .link file containing link pairs separated by "→".
-    local link_file=".link"
-    if [[ ! -f $link_file ]]; then
-        shell::colored_echo "No link file found" 196
-        return 1
-    fi
-
-    # Process each line in the .link file that contains the delimiter "→".
-    while IFS= read -r line; do
-        if echo "$line" | grep -q "→"; then
-            # Extract the source and destination, trimming any extra whitespace.
-            local src
-            local dest
-            src=$(echo "$line" | cut -d'→' -f1 | xargs)
-            dest=$(echo "$line" | cut -d'→' -f2 | xargs)
-            if [ -n "$src" ] && [ -n "$dest" ]; then
-                ln -vif "$src" "$dest" && chmod +x "$dest"
-            else
-                shell::colored_echo "ERR: Invalid link specification in .link: $line" 196
-            fi
-        fi
-    done <"$link_file"
-}
-
-# shell::opent function
-# Opens the specified directory in a new Finder tab (Mac OS only).
-#
-# Usage:
-#   shell::opent [directory]
-#
-# Description:
-#   The 'shell::opent' function opens the specified directory in a new Finder tab on Mac OS.
-#   If no directory is specified, it opens the current directory.
-#
-# Dependencies:
-#   - The 'osascript' command for AppleScript support.
-shell::opent() {
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_OPENT"
-        return 0
-    fi
-
-    local os
-    os=$(shell::get_os_type)
-
-    local dir
-    local name
-
-    # If no directory is provided, use the current directory.
-    if [ "$#" -eq 0 ]; then
-        dir=$(pwd)
-        name=$(basename "$dir")
-    else
-        dir="$1"
-        name=$(basename "$dir")
-    fi
-
-    if [ "$os" = "macos" ]; then
-        osascript -e 'tell application "Finder"' \
-            -e 'activate' \
-            -e 'tell application "System Events"' \
-            -e 'keystroke "t" using command down' \
-            -e 'end tell' \
-            -e 'set target of front Finder window to ("'"$dir"'" as POSIX file)' \
-            -e 'end tell' \
-            -e '--say "'"$name"'"'
-    elif [ "$os" = "linux" ]; then
-        # Use xdg-open to open the directory in the default file manager.
-        xdg-open "$dir"
-    else
-        shell::colored_echo "ERR: Unsupported operating system for shell::opent function." 196
-        return 1
-    fi
-
-    shell::colored_echo "DEBUG: Opening \"$name\" ..." 244
-}
-
 # shell::add_bookmark function
 # Adds a bookmark for the current directory with the specified name.
 #
@@ -285,27 +179,6 @@ shell::remove_bookmark_linux() {
     fi
 }
 
-# shell::list_bookmark function
-# Displays a formatted list of all bookmarks.
-#
-# Usage:
-#   shell::list_bookmark
-#
-# Description:
-#   The 'shell::list_bookmark' function lists all bookmarks in a formatted manner,
-#   showing the bookmark name (field 2) in yellow and the associated directory (field 1) in default color.
-shell::list_bookmark() {
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_LIST_BOOKMARK"
-        return 0
-    fi
-
-    local yellow normal
-    yellow=$(tput setaf 3)
-    normal=$(tput sgr0)
-    awk -v yellow="$yellow" -v normal="$normal" 'BEGIN { FS="|"} { printf "DEBUG: %s%-10s%s %s\n", yellow, $2, normal, $1 }' "$bookmarks_file"
-}
-
 # shell::go_bookmark function
 # Navigates to the directory associated with the specified bookmark name.
 #
@@ -343,22 +216,25 @@ shell::go_bookmark() {
     fi
 }
 
-# shell::go_back function
-# Navigates to the previous working directory.
+# shell::list_bookmark function
+# Displays a formatted list of all bookmarks.
 #
 # Usage:
-#   shell::go_back
+#   shell::list_bookmark
 #
 # Description:
-#   The 'shell::go_back' function changes the current working directory to the previous directory in the history.
-shell::go_back() {
-    # Check for the help flag (-h)
+#   The 'shell::list_bookmark' function lists all bookmarks in a formatted manner,
+#   showing the bookmark name (field 2) in yellow and the associated directory (field 1) in default color.
+shell::list_bookmark() {
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_GO_BACK"
+        echo "$USAGE_SHELL_LIST_BOOKMARK"
         return 0
     fi
 
-    cd $OLDPWD
+    local yellow normal
+    yellow=$(tput setaf 3)
+    normal=$(tput sgr0)
+    awk -v yellow="$yellow" -v normal="$normal" 'BEGIN { FS="|"} { printf "DEBUG: %s%-10s%s %s\n", yellow, $2, normal, $1 }' "$bookmarks_file"
 }
 
 # shell::fzf_list_bookmark function
