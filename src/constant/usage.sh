@@ -340,12 +340,12 @@ Example:
   shell::fzf_rename_key_conf -n      # Prints the renaming command without executing it.
 "
 
-USAGE_SHELL_PROTECTED_KEY="
-shell::is_protected_key function
+USAGE_SHELL_IS_PROTECTED_KEY_CONF="
+shell::is_protected_key_conf function
 Checks if the specified configuration key is protected.
 
 Usage:
-  shell::is_protected_key [-h] <key>
+  shell::is_protected_key_conf [-h] <key>
 
 Parameters:
   - -h   : Optional. Displays this help message.

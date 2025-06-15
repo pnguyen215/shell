@@ -376,7 +376,7 @@ shell::fzf_remove_key_conf() {
         return 1
     fi
 
-    if [ "$(shell::is_protected_key "$selected_key")" = "true" ]; then
+    if [ "$(shell::is_protected_key_conf "$selected_key")" = "true" ]; then
         shell::colored_echo "ERR: '$selected_key' is a protected key and cannot be modified." 196
         return 1
     fi
@@ -606,7 +606,7 @@ shell::fzf_rename_key_conf() {
         return 1
     fi
 
-    if [ "$(shell::is_protected_key "$old_key")" = "true" ]; then
+    if [ "$(shell::is_protected_key_conf "$old_key")" = "true" ]; then
         shell::colored_echo "ERR: '$old_key' is a protected key and cannot be modified." 196
         return 1
     fi
@@ -650,11 +650,11 @@ shell::fzf_rename_key_conf() {
     fi
 }
 
-# shell::is_protected_key function
+# shell::is_protected_key_conf function
 # Checks if the specified configuration key is protected.
 #
 # Usage:
-#   shell::is_protected_key <key>
+#   shell::is_protected_key_conf <key>
 #
 # Parameters:
 #   - <key>: The configuration key to check.
@@ -665,19 +665,18 @@ shell::fzf_rename_key_conf() {
 #   Otherwise, it echoes "false" and returns 1.
 #
 # Example:
-#   if shell::is_protected_key "HOST"; then
+#   if shell::is_protected_key_conf "HOST"; then
 #       shell::colored_echo "ERR: 'HOST' is a protected key and cannot be modified." 196
 #       return 1
 #   fi
-shell::is_protected_key() {
-    # Check for the help flag (-h)
+shell::is_protected_key_conf() {
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_PROTECTED_KEY"
+        echo "$USAGE_SHELL_IS_PROTECTED_KEY_CONF"
         return 0
     fi
 
     if [ $# -lt 1 ]; then
-        echo "Usage: shell::is_protected_key <key>"
+        echo "Usage: shell::is_protected_key_conf <key>"
         return 1
     fi
 

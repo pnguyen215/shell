@@ -314,11 +314,11 @@ Access the shell library by opening your terminal and using the commands below. 
 
   - `shell::fzf_rename_key_conf [-n]`
 
-- **`shell::is_protected_key`**
+- **`shell::is_protected_key_conf`**
   Checks if the specified configuration key is protected.
   _Example:_
 
-  - `shell::is_protected_key <key>`
+  - `shell::is_protected_key_conf <key>`
 
 - **`shell::add_group`**
   Groups selected configuration keys under a specified group name.
