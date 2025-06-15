@@ -361,11 +361,11 @@ shell::go_back() {
     cd $OLDPWD
 }
 
-# shell::fzf_goto function
+# shell::fzf_list_bookmark function
 # Interactively selects a path from the bookmarks file using fzf and navigates to it.
 #
 # Usage:
-#   shell::fzf_goto [-n] [-h]
+#   shell::fzf_list_bookmark [-n] [-h]
 #
 # Parameters:
 #   - -h : Optional help flag. Displays this help message.
@@ -385,17 +385,15 @@ shell::go_back() {
 #   - Helper functions: shell::install_package, shell::colored_echo, shell::on_evict.
 #
 # Example usage:
-#   shell::fzf_goto         # Interactively select a bookmark and navigate to it.
-#   shell::fzf_goto -n      # Dry-run: print the navigation command without executing.
-shell::fzf_goto() {
-    local dry_run="false"
-
+#   shell::fzf_list_bookmark         # Interactively select a bookmark and navigate to it.
+#   shell::fzf_list_bookmark -n      # Dry-run: print the navigation command without executing.
+shell::fzf_list_bookmark() {
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_GOTO"
+        echo "$USAGE_SHELL_FZF_LIST_BOOKMARK"
         return 0
     fi
 
-    # Check for the optional dry-run flag (-n)
+    local dry_run="false"
     if [ "$1" = "-n" ]; then
         dry_run="true"
         shift

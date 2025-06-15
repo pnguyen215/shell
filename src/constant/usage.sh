@@ -3344,12 +3344,12 @@ Description:
   This function removes sections from an INI file using fzf.
 "
 
-USAGE_SHELL_FZF_GOTO="
-shell::fzf_goto function
+USAGE_SHELL_FZF_LIST_BOOKMARK="
+shell::fzf_list_bookmark function
 Interactively selects a path from the bookmarks file using fzf and navigates to it.
 
 Usage:
-  shell::fzf_goto [-n] [-h]
+  shell::fzf_list_bookmark [-n] [-h]
 
 Parameters:
   - -n        : Optional. Dry-run mode. Prints the command without executing it.
