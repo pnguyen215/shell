@@ -1274,11 +1274,11 @@ shell::fzf_view_group_key_conf() {
     shell::clip_value "$decoded_value"
 }
 
-# shell::fzf_clone_group function
+# shell::fzf_clone_group_key_conf function
 # Clones an existing group by creating a new group with the same keys.
 #
 # Usage:
-#   shell::fzf_clone_group [-n]
+#   shell::fzf_clone_group_key_conf [-n]
 #
 # Parameters:
 #   - -n : Optional dry-run flag. If provided, the cloning command is printed using shell::on_evict instead of executed.
@@ -1293,19 +1293,18 @@ shell::fzf_view_group_key_conf() {
 #   In dry-run mode, the final command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
 #
 # Example:
-#   shell::fzf_clone_group         # Interactively select a group and create a clone with a new group name.
-#   shell::fzf_clone_group -n      # Prints the cloning command without executing it.
-shell::fzf_clone_group() {
+#   shell::fzf_clone_group_key_conf         # Interactively select a group and create a clone with a new group name.
+#   shell::fzf_clone_group_key_conf -n      # Prints the cloning command without executing it.
+shell::fzf_clone_group_key_conf() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_CLONE_GROUP_KEY_CONF"
+        return 0
+    fi
+
     local dry_run="false"
     if [ "$1" = "-n" ]; then
         dry_run="true"
         shift
-    fi
-
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_CLONE_GROUP"
-        return 0
     fi
 
     # Ensure the group configuration file exists.
@@ -1340,12 +1339,17 @@ shell::fzf_clone_group() {
     fi
 
     # Prompt for the new group name.
-    shell::colored_echo "Enter new group name for the clone of '$selected_group':" 33
+    shell::colored_echo "[e] Enter new group name for the clone of '$selected_group':" 208
     read -r new_group
     if [ -z "$new_group" ]; then
         shell::colored_echo "ERR: No new group name entered. Aborting clone." 196
         return 1
     fi
+
+    # Sanitize the new group name to ensure it is a valid variable name.
+    # This is done to avoid issues with special characters or spaces in the group name.
+    # shell::sanitize_upper_var_name function is expected to be defined elsewhere in the script.
+    new_group=$(shell::sanitize_upper_var_name "$new_group")
 
     # Check if the new group name already exists.
     if grep -q "^${new_group}=" "$SHELL_GROUP_CONF_FILE"; then

@@ -508,12 +508,12 @@ Description:
   decodes the Base64-encoded value (using -D on macOS and -d on Linux), and displays the group name, key, and decoded value.
 "
 
-USAGE_SHELL_FZF_CLONE_GROUP="
-shell::fzf_clone_group function
+USAGE_SHELL_FZF_CLONE_GROUP_KEY_CONF="
+shell::fzf_clone_group_key_conf function
 Clones an existing group by creating a new group with the same keys.
 
 Usage:
-  shell::fzf_clone_group [-n] [-h]
+  shell::fzf_clone_group_key_conf [-n] [-h]
 
 Parameters:
   - -n   : Optional dry-run flag. If provided, the cloning command is printed using shell::on_evict instead of executed.
