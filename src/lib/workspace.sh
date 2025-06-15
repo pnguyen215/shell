@@ -1,6 +1,166 @@
 #!/bin/bash
 # workspace.sh
 
+# shell::populate_ssh_conf function
+# Populates a .conf file with default [base], [dev], and [uat] blocks using shell::write_ini.
+#
+# Usage:
+# shell::populate_ssh_conf <file_path> <file_name>
+#
+# Parameters:
+# - <file_path> : The full path to the .conf file to populate.
+# - <file_name> : The name of the .conf file (e.g., server.conf, kafka.conf).
+#
+# Description:
+# This function writes default SSH tunnel configuration blocks to the specified .conf file.
+# It includes a [base] block with shared SSH settings, and [dev] and [uat] blocks with
+# environment-specific overrides. Additional service-specific keys are added based on the
+# file name (e.g., kafka.conf, nginx.conf).
+#
+# The function uses shell::write_ini to write each key-value pair into the appropriate section.
+# Port numbers are assigned based on a predefined mapping, with +1 offset for UAT.
+#
+# Example:
+# shell::populate_ssh_conf "$HOME/.shell-config/workspace/my-app/.ssh/server.conf" "server.conf"
+shell::populate_ssh_conf() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_POPULATE_SSH_CONF"
+        return 0
+    fi
+
+    local file="$1"
+    local name="$2"
+
+    # Check if file path and name are provided
+    if [ -z "$file" ] || [ -z "$name" ]; then
+        echo "Usage: shell::populate_ssh_conf <file_path> <file_name>"
+        return 1
+    fi
+
+    # Check if the file path is valid
+    # We check if the directory for the file exists
+    # If the directory does not exist, we print an error message and return
+    if [ ! -d "$(dirname "$file")" ]; then
+        shell::colored_echo "ERR: Directory for '$file' does not exist." 196
+        return 1
+    fi
+
+    # Check if the file already exists
+    # If the file already exists, we print a debug message
+    # This is useful for debugging purposes to know if we are overwriting an existing file
+    if [ -f "$file" ]; then
+        shell::colored_echo "DEBUG: File '$file' already exists. Overwriting..." 244
+    fi
+
+    # Define port mappings for different services
+    # We use an associative array to map service names to their base port numbers
+    # This allows us to easily retrieve the base port for each service
+    # The base port is used for the dev environment, and the uat port is calculated as base + 1
+    declare -A ports=(
+        ["server.conf"]=22
+        ["kafka.conf"]=9092
+        ["zookeeper.conf"]=2181
+        ["nginx.conf"]=80
+        ["web.conf"]=3000
+        ["app.conf"]=4000
+        ["api.conf"]=5000
+        ["cache.conf"]=6379
+        ["search.conf"]=9200
+    )
+
+    # Determine the base port and uat port for the service
+    # We use the service name to look up the base port in the ports associative array
+    # If the service name is not found, we default to port 5432
+    # The uat port is calculated as base port + 1
+    # This allows us to have separate ports for dev and uat environments
+    local base_port="${ports[$name]:-5432}"
+    local uat_port=$((base_port + 1))
+
+    # Base block: shared across all environments
+    # We write the base SSH configuration that is common to all environments
+    shell::write_ini "$file" "base" "SSH_PRIVATE_KEY_REF" "$HOME/.ssh/id_rsa"
+    shell::write_ini "$file" "base" "SSH_SERVER_ADDR" "127.0.0.1"
+    shell::write_ini "$file" "base" "SSH_LOCAL_ADDR" "127.0.0.1"
+    shell::write_ini "$file" "base" "SSH_SERVER_USER" "sysadmin"
+    shell::write_ini "$file" "base" "SSH_TIMEOUT" "10"
+    shell::write_ini "$file" "base" "SSH_KEEP_ALIVE" "yes"
+    shell::write_ini "$file" "base" "SSH_RETRY" "3"
+
+    # Environment-specific blocks: dev and uat
+    # We write the dev and uat blocks with environment-specific settings
+    for env in dev uat; do
+        local port=$([ "$env" = "dev" ] && echo "$base_port" || echo "$uat_port")
+        shell::write_ini "$file" "$env" "SSH_DESC" "${env^^} Tunnel for $name"
+        shell::write_ini "$file" "$env" "SSH_SERVER_PORT" "$port"
+        shell::write_ini "$file" "$env" "SSH_LOCAL_PORT" "$port"
+
+        case "$name" in
+        "server.conf")
+            shell::write_ini "$file" "$env" "SERVER_ROLE" "gateway"
+            shell::write_ini "$file" "$env" "SERVER_ENV" "$env"
+            shell::write_ini "$file" "$env" "SERVER_HEALTHCHECK" "http://localhost:8080/health"
+            shell::write_ini "$file" "$env" "SERVER_LOG_LEVEL" "info"
+            ;;
+        "kafka.conf")
+            shell::write_ini "$file" "$env" "KAFKA_CLUSTER_ID" "${env}-cluster"
+            shell::write_ini "$file" "$env" "KAFKA_TOPIC" "${env}-events"
+            shell::write_ini "$file" "$env" "KAFKA_REPLICATION_FACTOR" "1"
+            shell::write_ini "$file" "$env" "KAFKA_PARTITIONS" "3"
+            shell::write_ini "$file" "$env" "KAFKA_LOG_DIR" "/var/log/kafka"
+            ;;
+        "zookeeper.conf")
+            shell::write_ini "$file" "$env" "ZK_DATA_DIR" "/var/lib/zookeeper"
+            shell::write_ini "$file" "$env" "ZK_CLIENT_PORT" "$base_port"
+            shell::write_ini "$file" "$env" "ZK_TICK_TIME" "2000"
+            shell::write_ini "$file" "$env" "ZK_INIT_LIMIT" "5"
+            shell::write_ini "$file" "$env" "ZK_SYNC_LIMIT" "2"
+            ;;
+        "nginx.conf")
+            shell::write_ini "$file" "$env" "NGINX_CONF_PATH" "/etc/nginx/nginx.conf"
+            shell::write_ini "$file" "$env" "NGINX_DOC_ROOT" "/var/www/html"
+            shell::write_ini "$file" "$env" "NGINX_WORKER_PROCESSES" "auto"
+            shell::write_ini "$file" "$env" "NGINX_ERROR_LOG" "/var/log/nginx/error.log"
+            shell::write_ini "$file" "$env" "NGINX_ACCESS_LOG" "/var/log/nginx/access.log"
+            ;;
+        "web.conf")
+            shell::write_ini "$file" "$env" "WEB_FRAMEWORK" "bash-sh"
+            shell::write_ini "$file" "$env" "WEB_ENV" "$env"
+            shell::write_ini "$file" "$env" "WEB_PORT" "$base_port"
+            shell::write_ini "$file" "$env" "WEB_STATIC_DIR" "public"
+            shell::write_ini "$file" "$env" "WEB_API_PROXY" "http://localhost:5000"
+            ;;
+        "app.conf")
+            shell::write_ini "$file" "$env" "APP_NAME" "shell"
+            shell::write_ini "$file" "$env" "APP_ENV" "$env"
+            shell::write_ini "$file" "$env" "APP_LOG_LEVEL" "debug"
+            shell::write_ini "$file" "$env" "APP_CONFIG_PATH" "./config/app.yaml"
+            shell::write_ini "$file" "$env" "APP_SESSION_TIMEOUT" "3600"
+            ;;
+        "api.conf")
+            shell::write_ini "$file" "$env" "API_VERSION" "v1"
+            shell::write_ini "$file" "$env" "API_BASE_URL" "http://localhost:$port"
+            shell::write_ini "$file" "$env" "API_TIMEOUT" "5000"
+            shell::write_ini "$file" "$env" "API_KEY_HEADER" "X-API-KEY"
+            shell::write_ini "$file" "$env" "API_DOCS_URL" "http://localhost:$port/docs"
+            ;;
+        "cache.conf")
+            shell::write_ini "$file" "$env" "CACHE_ENGINE" "redis"
+            shell::write_ini "$file" "$env" "CACHE_TTL" "3600"
+            shell::write_ini "$file" "$env" "CACHE_MAX_MEMORY" "256mb"
+            shell::write_ini "$file" "$env" "CACHE_POLICY" "allkeys-lru"
+            shell::write_ini "$file" "$env" "CACHE_CLUSTER_MODE" "no"
+            ;;
+        "search.conf")
+            shell::write_ini "$file" "$env" "SEARCH_ENGINE" "elasticsearch"
+            shell::write_ini "$file" "$env" "SEARCH_INDEX" "${env}-index"
+            shell::write_ini "$file" "$env" "SEARCH_REPLICAS" "1"
+            shell::write_ini "$file" "$env" "SEARCH_SHARDS" "1"
+            shell::write_ini "$file" "$env" "SEARCH_LOG_PATH" "/var/log/elasticsearch"
+            ;;
+        esac
+    done
+}
+
 # shell::ensure_workspace function
 # Ensures that the workspace directory exists.
 #

@@ -3872,3 +3872,28 @@ This function uses fzf to let the user select a workspace, then a section (e.g.,
 and then one or more fields to export. It reads values from .ssh/*.conf files and outputs a JSON
 structure to the terminal and copies it to the clipboard.
 "
+
+USAGE_SHELL_POPULATE_SSH_CONF="
+shell::populate_ssh_conf function
+Populates a .conf file with default [base], [dev], and [uat] blocks using shell::write_ini.
+
+Usage:
+shell::populate_ssh_conf [-h] <file_path> <file_name>
+
+Parameters:
+  - -h          : Optional. Displays this help message.
+  - <file_path> : The full path to the .conf file to populate.
+  - <file_name> : The name of the .conf file (e.g., server.conf, kafka.conf).
+
+Description:
+This function writes default SSH tunnel configuration blocks to the specified .conf file.
+It includes a [base] block with shared SSH settings, and [dev] and [uat] blocks with
+environment-specific overrides. Additional service-specific keys are added based on the
+file name (e.g., kafka.conf, nginx.conf).
+
+The function uses shell::write_ini to write each key-value pair into the appropriate section.
+Port numbers are assigned based on a predefined mapping, with +1 offset for UAT.
+
+Example:
+shell::populate_ssh_conf "$HOME/.shell-config/workspace/my-app/.ssh/server.conf" "server.conf"
+"
