@@ -529,14 +529,14 @@ Description:
   In dry-run mode, the final command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
 "
 
-USAGE_SHELL_SYNC_KEY_GROUP_CONF="
-shell::sync_key_group_conf function
+USAGE_SHELL_SYNC_GROUP_KEY_CONF="
+shell::sync_group_key_conf function
 Synchronizes group configurations by ensuring that each group's keys exist in the key configuration file.
 If a key listed in a group does not exist, it is removed from that group.
 If a group ends up with no valid keys, that group entry is removed.
 
 Usage:
-  shell::sync_key_group_conf [-n] [-h]
+  shell::sync_group_key_conf [-n] [-h]
 
 Parameters:
   - -n   : Optional dry-run flag. If provided, the new group configuration is printed using shell::on_evict instead of being applied.
