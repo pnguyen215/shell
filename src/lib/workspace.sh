@@ -390,6 +390,106 @@ shell::add_workspace_ssh_conf() {
     fi
 }
 
+# shell::fzf_add_workspace_ssh_conf function
+# Interactively selects a workspace and SSH config to add using fzf.
+#
+# Usage:
+# shell::fzf_add_workspace_ssh_conf [-n]
+#
+# Parameters:
+# - -n : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+#
+# Description:
+# This function uses fzf to select a workspace and a missing SSH configuration file.
+# It then calls shell::add_workspace_ssh_conf to add the selected file if it does not exist.
+#
+# Example:
+# shell::fzf_add_workspace_ssh_conf
+# shell::fzf_add_workspace_ssh_conf -n
+shell::fzf_add_workspace_ssh_conf() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_ADD_WORKSPACE_SSH_CONF"
+        return 0
+    fi
+
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    # Ensure fzf is installed
+    shell::install_package fzf
+
+    # Check if the workspace directory exists
+    # We check if the directory defined by $SHELL_CONF_WORKING_WORKSPACE exists
+    local base="$SHELL_CONF_WORKING_WORKSPACE"
+    if [ ! -d "$base" ]; then
+        shell::colored_echo "ERR: Workspace directory '$base' not found." 196
+        return 1
+    fi
+
+    # List all workspace directories and use fzf to select one
+    # We use find to locate directories under the workspace directory
+    # We use xargs to get the basename of each directory
+    # We use fzf to allow the user to select a workspace interactively
+    local workspace
+    workspace=$(find "$base" -mindepth 1 -maxdepth 1 -type d | xargs -n 1 basename | fzf --prompt="Select workspace: ")
+
+    # If no workspace was selected, we print an error message and return
+    # This ensures the user knows they need to select a workspace
+    if [ -z "$workspace" ]; then
+        shell::colored_echo "ERR: No workspace selected." 196
+        return 1
+    fi
+
+    # Check if the selected workspace has a .ssh directory
+    # We construct the path to the .ssh directory for the selected workspace
+    local ssh_dir="$base/$workspace/.ssh"
+    if [ ! -d "$ssh_dir" ]; then
+        shell::colored_echo "ERR: Workspace '$workspace' has no .ssh directory." 196
+        return 1
+    fi
+
+    # List all possible SSH config files and check which ones are missing
+    # We define an array of all possible SSH config files
+    local all_files=("server.conf" "db.conf" "redis.conf" "rmq.conf" "ast.conf" "kafka.conf" "zookeeper.conf" "nginx.conf" "web.conf" "app.conf" "api.conf" "cache.conf" "search.conf")
+    local missing_files=()
+    for f in "${all_files[@]}"; do
+        [ ! -f "$ssh_dir/$f" ] && missing_files+=("$f")
+    done
+
+    # If no files are missing, we print a message and return
+    # This means all SSH config files already exist in the workspace
+    if [ ${#missing_files[@]} -eq 0 ]; then
+        shell::colored_echo "INFO: All SSH config files already exist in workspace '$workspace'." 46
+        return 0
+    fi
+
+    # Use fzf to select one of the missing SSH config files
+    # We use printf to list the missing files and pipe it to fzf
+    # The user can select one of the missing files to add to the workspace
+    local selected_conf
+    selected_conf=$(printf "%s\n" "${missing_files[@]}" | fzf --prompt="Select SSH config to add: ")
+
+    # If no SSH config was selected, we print an error message and return
+    # This ensures the user knows they need to select a file
+    # If the user did not select a file, we print an error message and return
+    if [ -z "$selected_conf" ]; then
+        shell::colored_echo "ERR: No SSH config selected." 196
+        return 1
+    fi
+
+    # Check if the dry run mode is enabled
+    # If dry_run is true, we print the command to add the SSH config file
+    # This allows us to see what would be done without actually adding the file
+    if [ "$dry_run" = "true" ]; then
+        shell::add_workspace_ssh_conf -n "$workspace" "$selected_conf"
+    else
+        shell::add_workspace_ssh_conf "$workspace" "$selected_conf"
+    fi
+}
+
 # shell::remove_workspace function
 # Removes a workspace directory after confirmation.
 #

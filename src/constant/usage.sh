@@ -3919,3 +3919,23 @@ Example:
 shell::add_workspace_ssh_conf my-app kafka.conf
 shell::add_workspace_ssh_conf -n my-app kafka.conf
 "
+
+USAGE_SHELL_FZF_ADD_WORKSPACE_SSH_CONF="
+shell::fzf_add_workspace_ssh_conf function
+Interactively selects a workspace and SSH config to add using fzf.
+
+Usage:
+shell::fzf_add_workspace_ssh_conf [-n] [-h]
+
+Parameters:
+  - -n : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+  - -h : Optional. Displays this help message.
+
+Description:
+This function uses fzf to select a workspace and a missing SSH configuration file.
+It then calls shell::add_workspace_ssh_conf to add the selected file if it does not exist.
+
+Example:
+shell::fzf_add_workspace_ssh_conf
+shell::fzf_add_workspace_ssh_conf -n
+"
