@@ -3608,12 +3608,12 @@ to choose one or more files to delete. After confirmation, the selected files
 are removed using (rm). In dry-run mode, the removal commands are printed instead.
 "
 
-USAGE_SHELL_FZF_GET_KEY_CONF_VISUALIZATION="
-shell::fzf_view_conf_viz function
+USAGE_SHELL_FZF_VIEW_KEY_CONF_VISUALIZATION="
+shell::fzf_view_key_conf_viz function
 Interactively selects a configuration key using fzf and displays its decoded value in real-time.
 
 Usage:
-  shell::fzf_view_conf_viz [-n] [-h]
+  shell::fzf_view_key_conf_viz [-n] [-h]
 
 Parameters:
   - -n : Optional dry-run flag. If provided, the clipboard copy command is printed instead of executed.
