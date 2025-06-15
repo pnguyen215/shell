@@ -454,11 +454,11 @@ shell::fzf_goto() {
     return 0
 }
 
-# shell::fzf_goto_verifier function
+# shell::fzf_alive_goto function
 # Interactively selects a path from the bookmarks file using fzf and displays its availability status.
 #
 # Usage:
-#   shell::fzf_goto_verifier [-n]
+#   shell::fzf_alive_goto [-n]
 #
 # Parameters:
 #   - -n : Optional dry-run flag. If provided, the verification commands are printed instead of executing checks.
@@ -477,17 +477,15 @@ shell::fzf_goto() {
 #   - Helper functions: shell::install_package, shell::colored_echo, shell::on_evict.
 #
 # Example usage:
-#   shell::fzf_goto_verifier         # Interactively select a bookmark and verify its path.
-#   shell::fzf_goto_verifier -n      # Dry-run: print verification commands without executing.
-shell::fzf_goto_verifier() {
-    local dry_run="false"
-
+#   shell::fzf_alive_goto         # Interactively select a bookmark and verify its path.
+#   shell::fzf_alive_goto -n      # Dry-run: print verification commands without executing.
+shell::fzf_alive_goto() {
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_GOTO_VERIFIER"
+        echo "$USAGE_SHELL_FZF_ALIVE_GOTO"
         return 0
     fi
 
-    # Check for the optional dry-run flag (-n)
+    local dry_run="false"
     if [ "$1" = "-n" ]; then
         dry_run="true"
         shift
