@@ -379,12 +379,12 @@ Example:
   shell::fzf_add_group_key_conf -n      # Prints the command for creating/updating the group without executing it.
 "
 
-USAGE_SHELL_READ_GROUP="
-shell::read_group function
+USAGE_SHELL_READ_GROUP_KEY_CONF="
+shell::read_group_key_conf function
 Reads and displays the configurations for a given group by group name.
 
 Usage:
-  shell::read_group [-h] <group_name>
+  shell::read_group_key_conf [-h] <group_name>
 
 Parameters:
   - -h   : Optional. Displays this help message.

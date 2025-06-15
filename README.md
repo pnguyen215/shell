@@ -326,12 +326,12 @@ Access the shell library by opening your terminal and using the commands below. 
 
   - `shell::fzf_add_group_key_conf [-n]`
 
-- **`shell::read_group`**
+- **`shell::read_group_key_conf`**
   Reads and displays the configurations for a given group by group name.
   _Example:_
 
-  - `shell::read_group <group_name>`
-  - `shell::read_group my_group`
+  - `shell::read_group_key_conf <group_name>`
+  - `shell::read_group_key_conf my_group`
 
 - **`shell::fzf_remove_group`**
   Interactively selects a group name from the group configuration file using fzf,

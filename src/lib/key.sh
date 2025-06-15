@@ -742,7 +742,7 @@ shell::fzf_add_group_key_conf() {
     shell::unlock_permissions "$SHELL_GROUP_CONF_FILE"
 
     # Prompt the user for a group name.
-    shell::colored_echo "Enter group name:" 33
+    shell::colored_echo "[e] Enter group name:" 208
     read -r group_name
     if [ -z "$group_name" ]; then
         shell::colored_echo "ERR: No group name entered. Aborting." 196
@@ -809,11 +809,11 @@ shell::fzf_add_group_key_conf() {
     fi
 }
 
-# shell::read_group function
+# shell::read_group_key_conf function
 # Reads and displays the configurations for a given group by group name.
 #
 # Usage:
-#   shell::read_group <group_name>
+#   shell::read_group_key_conf <group_name>
 #
 # Description:
 #   This function looks up the group entry in SHELL_GROUP_CONF_FILE for the specified group name.
@@ -824,16 +824,15 @@ shell::fzf_add_group_key_conf() {
 #   into a JSON object which is displayed.
 #
 # Example:
-#   shell::read_group my_group   # Displays the configurations for the keys in the group 'my_group'.
-shell::read_group() {
-    # Check for the help flag (-h)
+#   shell::read_group_key_conf my_group   # Displays the configurations for the keys in the group 'my_group'.
+shell::read_group_key_conf() {
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_READ_GROUP"
+        echo "$USAGE_SHELL_READ_GROUP_KEY_CONF"
         return 0
     fi
 
     if [ $# -lt 1 ]; then
-        echo "Usage: shell::read_group [-h] <group_name>"
+        echo "Usage: shell::read_group_key_conf [-h] <group_name>"
         return 1
     fi
 
