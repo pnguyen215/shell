@@ -1,6 +1,31 @@
 #!/bin/bash
 # workspace.sh
 
+# shell::ensure_workspace function
+# Ensures that the workspace directory exists.
+#
+# Usage:
+#   shell::ensure_workspace
+#
+# Description:
+#   Checks if the workspace directory ($SHELL_CONF_WORKING/workspace) exists.
+#   If it does not exist, creates it using mkdir -p.
+#
+# Example:
+#   shell::ensure_workspace
+shell::ensure_workspace() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_ENSURE_WORKSPACE"
+        return 0
+    fi
+
+    # Check if the workspace directory exists
+    # We check if the directory defined by $SHELL_CONF_WORKING_WORKSPACE exists
+    if [ ! -d "$SHELL_CONF_WORKING_WORKSPACE" ]; then
+        shell::run_cmd_eval sudo mkdir -p "$SHELL_CONF_WORKING_WORKSPACE"
+    fi
+}
+
 # shell::populate_ssh_conf function
 # Populates a .conf file with default [base], [dev], and [uat] blocks using shell::write_ini.
 #
@@ -160,31 +185,6 @@ shell::populate_ssh_conf() {
             ;;
         esac
     done
-}
-
-# shell::ensure_workspace function
-# Ensures that the workspace directory exists.
-#
-# Usage:
-#   shell::ensure_workspace
-#
-# Description:
-#   Checks if the workspace directory ($SHELL_CONF_WORKING/workspace) exists.
-#   If it does not exist, creates it using mkdir -p.
-#
-# Example:
-#   shell::ensure_workspace
-shell::ensure_workspace() {
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_ENSURE_WORKSPACE"
-        return 0
-    fi
-
-    # Check if the workspace directory exists
-    # We check if the directory defined by $SHELL_CONF_WORKING_WORKSPACE exists
-    if [ ! -d "$SHELL_CONF_WORKING_WORKSPACE" ]; then
-        shell::run_cmd_eval sudo mkdir -p "$SHELL_CONF_WORKING_WORKSPACE"
-    fi
 }
 
 # shell::add_workspace function
