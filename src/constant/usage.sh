@@ -3359,12 +3359,12 @@ Description:
   This function selects a path from the bookmarks file using fzf and navigates to it.
 "
 
-USAGE_SHELL_FZF_ALIVE_GOTO="
-shell::fzf_alive_goto function
+USAGE_SHELL_FZF_LIST_BOOKMARK_ALIVE="
+shell::fzf_list_bookmark_alive function
 Interactively selects a path from the bookmarks file using fzf and displays its availability status.
 
 Usage:
-  shell::fzf_alive_goto [-n] [-h]
+  shell::fzf_list_bookmark_alive [-n] [-h]
 
 Parameters:
   - -n        : Optional. Dry-run mode. Prints the command without executing it.
