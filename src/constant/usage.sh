@@ -357,12 +357,12 @@ Description:
   Otherwise, it echoes "false" and returns 1.
 "
 
-USAGE_SHELL_ADD_GROUP="
-shell::add_group function
+USAGE_SHELL_FZF_ADD_GROUP_KEY_CONF="
+shell::fzf_add_group_key_conf function
 Groups selected configuration keys under a specified group name.
 
 Usage:
-  shell::add_group [-n] [-h]
+  shell::fzf_add_group_key_conf [-n] [-h]
 
 Parameters:
   - -h   : Optional. Displays this help message.
@@ -375,8 +375,8 @@ Description:
   An optional dry-run flag (-n) can be used to print the command via shell::on_evict instead of executing it.
 
 Example:
-  shell::add_group         # Prompts for a group name and lets you select keys to group.
-  shell::add_group -n      # Prints the command for creating/updating the group without executing it.
+  shell::fzf_add_group_key_conf         # Prompts for a group name and lets you select keys to group.
+  shell::fzf_add_group_key_conf -n      # Prints the command for creating/updating the group without executing it.
 "
 
 USAGE_SHELL_READ_GROUP="

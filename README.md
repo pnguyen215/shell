@@ -320,11 +320,11 @@ Access the shell library by opening your terminal and using the commands below. 
 
   - `shell::is_protected_key_conf <key>`
 
-- **`shell::add_group`**
+- **`shell::fzf_add_group_key_conf`**
   Groups selected configuration keys under a specified group name.
   _Example:_
 
-  - `shell::add_group [-n]`
+  - `shell::fzf_add_group_key_conf [-n]`
 
 - **`shell::read_group`**
   Reads and displays the configurations for a given group by group name.

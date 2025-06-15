@@ -709,11 +709,11 @@ shell::is_protected_key_conf() {
     return 1
 }
 
-# shell::add_group function
+# shell::fzf_add_group_key_conf function
 # Groups selected configuration keys under a specified group name.
 #
 # Usage:
-#   shell::add_group [-n]
+#   shell::fzf_add_group_key_conf [-n]
 #
 # Description:
 #   This function prompts you to enter a group name, then uses fzf (with multi-select) to let you choose
@@ -723,18 +723,18 @@ shell::is_protected_key_conf() {
 #   An optional dry-run flag (-n) can be used to print the command via shell::on_evict instead of executing it.
 #
 # Example:
-#   shell::add_group         # Prompts for a group name and lets you select keys to group.
-#   shell::add_group -n      # Prints the command for creating/updating the group without executing it.
-shell::add_group() {
+#   shell::fzf_add_group_key_conf         # Prompts for a group name and lets you select keys to group.
+#   shell::fzf_add_group_key_conf -n      # Prints the command for creating/updating the group without executing it.
+shell::fzf_add_group_key_conf() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_ADD_GROUP_KEY_CONF"
+        return 0
+    fi
+
     local dry_run="false"
     if [ "$1" = "-n" ]; then
         dry_run="true"
         shift
-    fi
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_ADD_GROUP"
-        return 0
     fi
 
     # Ensure the group configuration file exists.
