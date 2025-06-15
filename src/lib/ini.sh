@@ -3193,7 +3193,7 @@ shell::fzf_edit_ini_viz() {
     # The user can choose to edit the value of the key or rename the key.
     # The options are presented in a numbered list using select.
     shell::colored_echo "Choose action for key '$key' in section [$section]:" 33
-    select action in "Edit Value" "Remove Key" "Remove Section" "Rename Section" "Add Section" "Cancel"; do
+    select action in "Edit Value" "Remove Key" "Remove Section" "Rename Section" "Add Section" "Add Key" "Cancel"; do
         case $REPLY in
         1)
             shell::colored_echo "[e] Enter new value for '$key':" 208
@@ -3250,6 +3250,22 @@ shell::fzf_edit_ini_viz() {
             return $?
             ;;
         6)
+            shell::colored_echo "[e] Enter new key name to add in section [$section]:" 208
+            read -r new_key_name
+            if [ -z "$new_key_name" ]; then
+                shell::colored_echo "ERR: New key name cannot be empty." 196
+                return 1
+            fi
+            shell::colored_echo "[e] Enter value for new key '$new_key_name':" 208
+            read -r new_key_value
+            if [ -z "$new_key_value" ]; then
+                shell::colored_echo "ERR: New key value cannot be empty." 196
+                return 1
+            fi
+            shell::write_ini "$file" "$section" "$new_key_name" "$new_key_value"
+            return $?
+            ;;
+        7)
             shell::colored_echo "WARN: Cancelled." 11
             return 0
             ;;
