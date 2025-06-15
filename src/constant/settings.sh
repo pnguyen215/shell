@@ -74,7 +74,7 @@ SHELL_KEY_CONF_FILE_BOOKMARK="$SHELL_CONF_WORKING_BOOKMARK/.bookmarks"
 # The file stores group definitions in the following format:
 #   group_name=key1,key2,...,keyN
 # Each group maps a name to a comma-separated list of keys from the key configuration file.
-# Functions such as shell::fzf_add_group_key_conf, shell::read_group_key_conf, shell::fzf_remove_group_key_conf, shell::fzf_update_group, and shell::fzf_clone_group use this file
+# Functions such as shell::fzf_add_group_key_conf, shell::read_group_key_conf, shell::fzf_remove_group_key_conf, shell::fzf_update_group_key_conf, and shell::fzf_clone_group use this file
 # to manage groups of configuration keys.
 #
 # Example:

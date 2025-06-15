@@ -421,12 +421,12 @@ Example:
   shell::fzf_remove_group_key_conf -n      # Prints the removal command without executing it.
 "
 
-USAGE_SHELL_FZF_UPDATE_GROUP="
-shell::fzf_update_group function
+USAGE_SHELL_FZF_UPDATE_GROUP_KEY_CONF="
+shell::fzf_update_group_key_conf function
 Interactively updates an existing group by letting you select new keys for that group.
 
 Usage:
-  shell::fzf_update_group [-n] [-h]
+  shell::fzf_update_group_key_conf [-n] [-h]
 
 Parameters:
   - -n : Optional dry-run flag. If provided, the update command is printed using shell::on_evict instead of executed.
@@ -439,8 +439,8 @@ Description:
   (using sed with options appropriate for macOS or Linux). If the file is not writable, sudo is used.
 
 Example:
-  shell::fzf_update_group         # Interactively select a group, update its keys, and update the group entry.
-  shell::fzf_update_group -n      # Prints the update command without executing it.
+  shell::fzf_update_group_key_conf         # Interactively select a group, update its keys, and update the group entry.
+  shell::fzf_update_group_key_conf -n      # Prints the update command without executing it.
 "
 
 USAGE_SHELL_FZF_RENAME_GROUP="

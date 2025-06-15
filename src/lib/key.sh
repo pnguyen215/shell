@@ -973,11 +973,11 @@ shell::fzf_remove_group_key_conf() {
     fi
 }
 
-# shell::fzf_update_group function
+# shell::fzf_update_group_key_conf function
 # Interactively updates an existing group by letting you select new keys for that group.
 #
 # Usage:
-#   shell::fzf_update_group [-n] [-h]
+#   shell::fzf_update_group_key_conf [-n] [-h]
 #
 # Parameters:
 #   - -n : Optional dry-run flag. If provided, the update command is printed using shell::on_evict instead of executed.
@@ -989,19 +989,18 @@ shell::fzf_remove_group_key_conf() {
 #   (using sed with options appropriate for macOS or Linux). If the file is not writable, sudo is used.
 #
 # Example:
-#   shell::fzf_update_group         # Interactively select a group, update its keys, and update the group entry.
-#   shell::fzf_update_group -n      # Prints the update command without executing it.
-shell::fzf_update_group() {
+#   shell::fzf_update_group_key_conf         # Interactively select a group, update its keys, and update the group entry.
+#   shell::fzf_update_group_key_conf -n      # Prints the update command without executing it.
+shell::fzf_update_group_key_conf() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_UPDATE_GROUP_KEY_CONF"
+        return 0
+    fi
+
     local dry_run="false"
     if [ "$1" = "-n" ]; then
         dry_run="true"
         shift
-    fi
-
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_UPDATE_GROUP"
-        return 0
     fi
 
     if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
@@ -1027,7 +1026,11 @@ shell::fzf_update_group() {
 
     # Let the user select new keys for the group from all available keys.
     local new_keys
-    new_keys=$(cut -d '=' -f 1 "$SHELL_KEY_CONF_FILE" | fzf --multi --prompt="Select new keys for group '$selected_group': " | paste -sd "," -)
+    # new_keys=$(cut -d '=' -f 1 "$SHELL_KEY_CONF_FILE" | fzf --multi --prompt="Select new keys for group '$selected_group': " | paste -sd "," -)
+    new_keys=$(grep -v '^\s*#' "$SHELL_KEY_CONF_FILE" | cut -d '=' -f 1 | fzf --multi --prompt="Select new keys for group '$selected_group': " | paste -sd "," -)
+
+    # Check if any keys were selected.
+    # If no keys were selected, print an error message and return.
     if [ -z "$new_keys" ]; then
         shell::colored_echo "ERR: No keys selected. Aborting update." 196
         return 1

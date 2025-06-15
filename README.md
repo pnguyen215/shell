@@ -340,11 +340,11 @@ Access the shell library by opening your terminal and using the commands below. 
 
   - `shell::fzf_remove_group_key_conf [-n]`
 
-- **`shell::fzf_update_group`**
+- **`shell::fzf_update_group_key_conf`**
   Interactively updates an existing group by letting you select new keys for that group.
   _Example:_
 
-  - `shell::fzf_update_group [-n]`
+  - `shell::fzf_update_group_key_conf [-n]`
 
 - **`shell::fzf_rename_group`**
   Renames an existing group in the group configuration file.
