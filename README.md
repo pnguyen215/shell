@@ -333,12 +333,12 @@ Access the shell library by opening your terminal and using the commands below. 
   - `shell::read_group_key_conf <group_name>`
   - `shell::read_group_key_conf my_group`
 
-- **`shell::fzf_remove_group`**
+- **`shell::fzf_remove_group_key_conf`**
   Interactively selects a group name from the group configuration file using fzf,
   then removes the corresponding group entry.
   _Example:_
 
-  - `shell::fzf_remove_group [-n]`
+  - `shell::fzf_remove_group_key_conf [-n]`
 
 - **`shell::fzf_update_group`**
   Interactively updates an existing group by letting you select new keys for that group.

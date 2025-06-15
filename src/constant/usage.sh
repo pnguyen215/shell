@@ -398,13 +398,13 @@ Description:
   into a JSON object which is displayed.
 "
 
-USAGE_SHELL_FZF_REMOVE_GROUP="
-shell::fzf_remove_group function
+USAGE_SHELL_FZF_REMOVE_GROUP_KEY_CONF="
+shell::fzf_remove_group_key_conf function
 Interactively selects a group name from the group configuration file using fzf,
 then removes the corresponding group entry.
 
 Usage:
-  shell::fzf_remove_group [-n] [-h]
+  shell::fzf_remove_group_key_conf [-n] [-h]
 
 Parameters:
   - -n   : Optional dry-run flag. If provided, the removal command is printed using shell::on_evict instead of executed.
@@ -417,8 +417,8 @@ Description:
   If the file is not writable, sudo is prepended. In dry-run mode, the command is printed via shell::on_evict.
 
 Example:
-  shell::fzf_remove_group         # Interactively select a group and remove its entry.
-  shell::fzf_remove_group -n      # Prints the removal command without executing it.
+  shell::fzf_remove_group_key_conf         # Interactively select a group and remove its entry.
+  shell::fzf_remove_group_key_conf -n      # Prints the removal command without executing it.
 "
 
 USAGE_SHELL_FZF_UPDATE_GROUP="

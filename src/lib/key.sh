@@ -909,12 +909,12 @@ shell::read_group_key_conf() {
     shell::clip_value "$json_obj"
 }
 
-# shell::fzf_remove_group function
+# shell::fzf_remove_group_key_conf function
 # Interactively selects a group name from the group configuration file using fzf,
 # then removes the corresponding group entry.
 #
 # Usage:
-#   shell::fzf_remove_group [-n]
+#   shell::fzf_remove_group_key_conf [-n]
 #
 # Parameters:
 #   - -n : Optional dry-run flag. If provided, the removal command is printed using shell::on_evict instead of executed.
@@ -926,19 +926,18 @@ shell::read_group_key_conf() {
 #   If the file is not writable, sudo is prepended. In dry-run mode, the command is printed via shell::on_evict.
 #
 # Example:
-#   shell::fzf_remove_group         # Interactively select a group and remove its entry.
-#   shell::fzf_remove_group -n      # Prints the removal command without executing it.
-shell::fzf_remove_group() {
+#   shell::fzf_remove_group_key_conf         # Interactively select a group and remove its entry.
+#   shell::fzf_remove_group_key_conf -n      # Prints the removal command without executing it.
+shell::fzf_remove_group_key_conf() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_REMOVE_GROUP_KEY_CONF"
+        return 0
+    fi
+
     local dry_run="false"
     if [ "$1" = "-n" ]; then
         dry_run="true"
         shift
-    fi
-
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_REMOVE_GROUP"
-        return 0
     fi
 
     if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
