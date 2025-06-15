@@ -838,10 +838,16 @@ shell::read_group_key_conf() {
 
     local group_name="$1"
 
+    # Check if the group configuration file exists.
     if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
         shell::colored_echo "ERR: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
         return 1
     fi
+
+    # Sanitize the group name to ensure it is a valid variable name.
+    # This is done to avoid issues with special characters or spaces in the group name.
+    # shell::sanitize_upper_var_name function is expected to be defined elsewhere in the script.
+    group_name=$(shell::sanitize_upper_var_name "$group_name")
 
     # Retrieve the group entry for the specified group name.
     local group_entry
