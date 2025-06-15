@@ -6,8 +6,9 @@ alias sve="shell::version"
 alias sup="shell::upgrade"
 alias sac="shell::add_key_conf"
 alias sgc="shell::fzf_get_key_conf"
-alias snv="shell::fzf_goto_verifier"    # navigate check path
-alias sdc="shell::editor .shell-config" # edit shell config
+alias snv="shell::fzf_goto_verifier"         # navigate check path
+alias sec="shell::editor .shell-config"      # edit shell config
+alias sec-n="shell::editor -n .shell-config" # edit shell config with dry mode
 
 # Kernel alias
 alias c="clear"
