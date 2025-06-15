@@ -1769,11 +1769,11 @@ shell::fzf_remove_protected_key_conf() {
     fi
 }
 
-# shell::sync_protected_key function
+# shell::sync_protected_key_conf function
 # Synchronizes the protected.conf file by removing keys that no longer exist in key.conf.
 #
 # Usage:
-# shell::sync_protected_key [-n]
+# shell::sync_protected_key_conf [-n]
 #
 # Parameters:
 # - -n : Optional dry-run flag. If provided, the updated protected.conf is printed using shell::on_evict instead of being applied.
@@ -1782,16 +1782,16 @@ shell::fzf_remove_protected_key_conf() {
 # This function compares the keys listed in protected.conf with those in key.conf.
 # Any protected key that is not found in key.conf will be removed.
 # In dry-run mode, the updated list is printed instead of being written to the file.
-shell::sync_protected_key() {
+shell::sync_protected_key_conf() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_SYNC_PROTECTED_KEY_CONF"
+        return 0
+    fi
+
     local dry_run="false"
     if [ "$1" = "-n" ]; then
         dry_run="true"
         shift
-    fi
-
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_SYNC_PROTECTED_KEY"
-        return 0
     fi
 
     local key_file="$SHELL_KEY_CONF_FILE"

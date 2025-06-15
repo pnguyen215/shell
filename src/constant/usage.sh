@@ -3514,12 +3514,12 @@ This function reads the protected.conf file, uses fzf to let the user select a k
 and removes the selected key using sed. In dry-run mode, the command is printed instead of executed.
 "
 
-USAGE_SHELL_SYNC_PROTECTED_KEY="
-shell::sync_protected_key function
+USAGE_SHELL_SYNC_PROTECTED_KEY_CONF="
+shell::sync_protected_key_conf function
 Synchronizes the protected.conf file by removing keys that no longer exist in key.conf.
 
 Usage:
-shell::sync_protected_key [-n] [-h]
+shell::sync_protected_key_conf [-n] [-h]
 
 Parameters:
   - -n : Optional dry-run flag. If provided, the updated protected.conf is printed using shell::on_evict instead of being applied.
