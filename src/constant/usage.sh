@@ -3897,3 +3897,25 @@ Port numbers are assigned based on a predefined mapping, with +1 offset for UAT.
 Example:
 shell::populate_ssh_conf "$HOME/.shell-config/workspace/my-app/.ssh/server.conf" "server.conf"
 "
+
+USAGE_SHELL_ADD_WORKSPACE_SSH_CONF="
+shell::add_workspace_ssh_conf function
+Adds a missing SSH configuration file to a specified workspace.
+
+Usage:
+shell::add_workspace_ssh_conf [-n] [-h] <workspace_name> <ssh_conf_name>
+
+Parameters:
+  - -n                : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+  - -h                : Optional. Displays this help message.
+  - <workspace_name>  : The name of the workspace.
+  - <ssh_conf_name>   : The name of the SSH configuration file to add (e.g., kafka.conf).
+
+Description:
+This function checks if the specified SSH configuration file exists in the workspace's .ssh directory.
+If it does not exist, it creates the file and populates it using shell::populate_ssh_conf.
+
+Example:
+shell::add_workspace_ssh_conf my-app kafka.conf
+shell::add_workspace_ssh_conf -n my-app kafka.conf
+"

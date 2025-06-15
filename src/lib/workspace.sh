@@ -294,6 +294,102 @@ shell::add_workspace() {
     fi
 }
 
+# shell::add_workspace_ssh_conf function
+# Adds a missing SSH configuration file to a specified workspace.
+#
+# Usage:
+# shell::add_workspace_ssh_conf [-n] <workspace_name> <ssh_conf_name>
+#
+# Parameters:
+# - -n : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+# - <workspace_name> : The name of the workspace.
+# - <ssh_conf_name> : The name of the SSH configuration file to add (e.g., kafka.conf).
+#
+# Description:
+# This function checks if the specified SSH configuration file exists in the workspace's .ssh directory.
+# If it does not exist, it creates the file and populates it using shell::populate_ssh_conf.
+#
+# Example:
+# shell::add_workspace_ssh_conf my-app kafka.conf
+# shell::add_workspace_ssh_conf -n my-app kafka.conf
+shell::add_workspace_ssh_conf() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_ADD_WORKSPACE_SSH_CONF"
+        return 0
+    fi
+
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    # Check if workspace name and SSH configuration name are provided
+    # If not, we print usage information and return an error
+    if [ $# -lt 2 ]; then
+        echo "Usage: shell::add_workspace_ssh_conf [-n] <workspace_name> <ssh_conf_name>"
+        return 1
+    fi
+
+    # Get the workspace name and SSH configuration name from the arguments
+    local name="$1"
+    if [ -z "$name" ]; then
+        shell::colored_echo "ERR: Workspace name is required." 196
+        return 1
+    fi
+
+    # Get the SSH configuration name from the arguments
+    local conf="$2"
+    if [ -z "$conf" ]; then
+        shell::colored_echo "ERR: SSH configuration name is required." 196
+        return 1
+    fi
+
+    # Sanitize the workspace name
+    # We use shell::sanitize_lower_var_name to ensure the name is in lowercase and safe for use as a directory name
+    # This function replaces non-alphanumeric characters with underscores
+    # This helps prevent issues with invalid directory names
+    # We use shell::sanitize_lower_var_name to ensure the name is in lowercase and safe for use as a directory name
+    # This function replaces non-alphanumeric characters with underscores
+    # This helps prevent issues with invalid directory names
+    name=$(shell::sanitize_lower_var_name "$name")
+
+    # Construct the directory and file paths
+    # We define the base directory for the workspace and the .ssh directory
+    # The file path is constructed by combining the workspace directory, .ssh directory, and the SSH configuration name
+    local dir="$SHELL_CONF_WORKING_WORKSPACE/$name/.ssh"
+    local file="$dir/$conf"
+
+    # Check if the workspace directory exists
+    # We check if the directory for the workspace exists
+    # If the directory does not exist, we print an error message and return
+    if [ ! -d "$dir" ]; then
+        shell::colored_echo "ERR: Workspace '$name' does not exist or has no .ssh directory." 196
+        return 1
+    fi
+
+    # Check if the SSH configuration file already exists
+    # We check if the specified file already exists in the .ssh directory
+    # If the file exists, we print a message and return
+    # This prevents overwriting an existing configuration file
+    if [ -f "$file" ]; then
+        shell::colored_echo "DEBUG: '$conf' already exists in workspace '$name'." 244
+        return 0
+    fi
+
+    # Check if the dry run mode is enabled
+    # If dry_run is true, we print the command to create the file and populate it
+    # This allows us to see what would be done without actually creating the file
+    # If dry_run is false, we create the file and populate it with default values
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "touch \"$file\" && shell::populate_ssh_conf \"$file\" \"$conf\""
+    else
+        shell::create_file_if_not_exists "$file"
+        shell::populate_ssh_conf "$file" "$conf"
+        shell::colored_echo "INFO: '$conf' added to workspace '$name'." 46
+    fi
+}
+
 # shell::remove_workspace function
 # Removes a workspace directory after confirmation.
 #
