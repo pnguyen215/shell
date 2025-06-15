@@ -373,7 +373,7 @@ shell::add_workspace_ssh_conf() {
     # If the file exists, we print a message and return
     # This prevents overwriting an existing configuration file
     if [ -f "$file" ]; then
-        shell::colored_echo "DEBUG: '$conf' already exists in workspace '$name'." 244
+        shell::colored_echo "WARN: '$conf' already exists in workspace '$name'." 11
         return 0
     fi
 
