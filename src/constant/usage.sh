@@ -1246,18 +1246,18 @@ Description:
   The sed command is constructed differently for macOS and Linux due to differences in the in-place edit flag.
 "
 
-USAGE_SHELL_SHOW_BOOKMARK="
-shell::show_bookmark function
+USAGE_SHELL_LIST_BOOKMARK="
+shell::list_bookmark function
 Displays a formatted list of all bookmarks.
 
 Usage:
-  shell::show_bookmark [-h]
+  shell::list_bookmark [-h]
 
 Parameters:
   - -h              : Optional. Displays this help message.
 
 Description:
-  The 'shell::show_bookmark' function lists all bookmarks in a formatted manner,
+  The 'shell::list_bookmark' function lists all bookmarks in a formatted manner,
   showing the bookmark name (field 2) in yellow and the associated directory (field 1) in default color.
 "
 

@@ -285,18 +285,18 @@ shell::remove_bookmark_linux() {
     fi
 }
 
-# shell::show_bookmark function
+# shell::list_bookmark function
 # Displays a formatted list of all bookmarks.
 #
 # Usage:
-#   shell::show_bookmark
+#   shell::list_bookmark
 #
 # Description:
-#   The 'shell::show_bookmark' function lists all bookmarks in a formatted manner,
+#   The 'shell::list_bookmark' function lists all bookmarks in a formatted manner,
 #   showing the bookmark name (field 2) in yellow and the associated directory (field 1) in default color.
-shell::show_bookmark() {
+shell::list_bookmark() {
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_SHOW_BOOKMARK"
+        echo "$USAGE_SHELL_LIST_BOOKMARK"
         return 0
     fi
 

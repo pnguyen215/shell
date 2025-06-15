@@ -22,7 +22,7 @@ shell::goto_version() {
 #   The 'shell::goto' function processes user commands to navigate directories, manage bookmarks,
 shell::goto() {
     if [ $# -eq 0 ]; then
-        shell::show_bookmark
+        shell::list_bookmark
     fi
     while [ $# -gt 0 ]; do
         arg=$1
@@ -54,7 +54,7 @@ shell::goto() {
             ;;
 
         "-list" | "-all" | "-l")
-            shell::show_bookmark
+            shell::list_bookmark
             break
             ;;
 

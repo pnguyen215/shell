@@ -215,9 +215,9 @@ Access the shell library by opening your terminal and using the commands below. 
 
   - `shell::remove_bookmark_linux <bookmark_name>`
 
-- **`shell::show_bookmark`**
+- **`shell::list_bookmark`**
   Displays a formatted list of all bookmarks.
-  _Example:_ `shell::show_bookmark`
+  _Example:_ `shell::list_bookmark`
 
 - **`shell::go_bookmark`**
   Navigates to the directory associated with the specified bookmark name.
