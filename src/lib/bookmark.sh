@@ -938,3 +938,97 @@ shell::rename_dir_base_bookmark() {
         shell::colored_echo "INFO: Renamed directory '$old_path' to '$new_path'" 46
     fi
 }
+
+# shell::fzf_rename_dir_base_bookmark function
+# Interactively selects a bookmark using fzf and renames its associated directory.
+#
+# Usage:
+#   shell::fzf_rename_dir_base_bookmark [-n] [-h]
+#
+# Parameters:
+#   - -n : Optional dry-run flag. If provided, the rename command is printed instead of executed.
+#   - -h : Optional help flag. Displays this help message.
+#
+# Description:
+#   This function checks if the bookmarks file exists. If not, it displays an error.
+#   It then reads all bookmarks, formats them for fzf display, and allows the user to
+#   interactively select a bookmark. The user is prompted to enter a new directory name,
+#   and the shell::rename_dir_base_bookmark function is called to perform the rename.
+#
+# Requirements:
+#   - fzf must be installed.
+#   - The 'bookmarks_file' variable must be set.
+#   - Helper functions: shell::install_package, shell::colored_echo, shell::on_evict, shell::rename_dir_base_bookmark.
+#
+# Example usage:
+#   shell::fzf_rename_dir_base_bookmark       # Interactively select and rename a directory.
+#   shell::fzf_rename_dir_base_bookmark -n    # Dry-run: print rename command without executing.
+shell::fzf_rename_dir_base_bookmark() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_RENAME_DIR_BASE_BOOKMARK"
+        return 0
+    fi
+
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    # Validate bookmarks file existence
+    # This checks if the bookmarks file exists before proceeding.
+    # If the bookmarks file does not exist, it displays an error and returns.
+    if [ ! -f "$bookmarks_file" ]; then
+        shell::colored_echo "ERR: Bookmarks file '$bookmarks_file' not found." 196
+        return 1
+    fi
+
+    # Ensure fzf is installed
+    shell::install_package fzf
+
+    local yellow=$(tput setaf 3)
+    local cyan=$(tput setaf 6)
+    local normal=$(tput sgr0)
+
+    # Display bookmarks in the format "name (path)" for fzf.
+    # The original full line from the file is also passed through so we can easily grep for it.
+    # This uses awk to format the output with colors.
+    # The awk command formats each line with colors for better visibility in fzf.
+    local selected_display_line
+    selected_display_line=$(awk -F'|' -v yellow="$yellow" -v cyan="$cyan" -v normal="$normal" \
+        '{print yellow $2 normal " (" cyan $1 normal ")"}' "$bookmarks_file" |
+        fzf --ansi --prompt="Select bookmark to rename its directory: ")
+
+    # Check if a bookmark was selected
+    # This checks if the user selected a bookmark. If not, it displays an error and returns.
+    # If no bookmark is selected, it will return an empty string.
+    if [ -z "$selected_display_line" ]; then
+        shell::colored_echo "ERR: No bookmark selected. Aborting." 196
+        return 1
+    fi
+
+    # Extract the bookmark name from the selected display line
+    # This assumes the format "name (path)" and removes the " (path)" part.
+    local bookmark_name
+    bookmark_name=$(echo "$selected_display_line" | sed 's/ *(.*)//')
+
+    # shell::colored_echo "[e] Enter new name for directory of bookmark '$bookmark_name':" 208
+    # read -r new_dir_name
+
+    # Check if the new directory name is empty
+    # If the new_dir_name is empty, it displays an error message and returns.
+    # This ensures that the user provides a valid new directory name.
+    # if [ -z "$new_dir_name" ]; then
+    #     shell::colored_echo "ERR: No new name entered. Aborting rename." 196
+    #     return 1
+    # fi
+
+    # Check if the dry mode is enabled
+    # If dry-run is true, we prepare the command to rename the directory without executing it.
+    # Otherwise, we execute the command to rename the directory.
+    if [ "$dry_run" = "true" ]; then
+        shell::rename_dir_base_bookmark -n "$bookmark_name" "$bookmark_name"
+    else
+        shell::rename_dir_base_bookmark "$bookmark_name" "$bookmark_name"
+    fi
+}
