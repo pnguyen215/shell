@@ -307,7 +307,6 @@ shell::fzf_cwd_ssh_key() {
 #   - fzf must be installed.
 #   - Assumes the presence of helper functions: shell::install_package, shell::colored_echo, shell::run_cmd_eval.
 shell::fzf_kill_ssh_tunnels() {
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_FZF_KILL_SSH_TUNNEL"
         return 0
@@ -315,7 +314,6 @@ shell::fzf_kill_ssh_tunnels() {
 
     # Ensure fzf is installed.
     shell::install_package fzf
-    shell::colored_echo "🔍 Searching for active SSH tunnel processes..." 33
 
     # Find SSH processes with tunnel flags (-L, -R, -D).
     # Using ps and grep, compatible with both Linux and MacOS.
@@ -347,8 +345,6 @@ shell::fzf_kill_ssh_tunnels() {
         return 0
     fi
 
-    shell::colored_echo "✅ Found potential SSH tunnels. Use fzf to select:" 46
-
     # Use fzf to select tunnels. Pipe the info and let fzf handle the selection.
     # --multi allows selecting multiple lines.
     local selected_tunnels
@@ -360,7 +356,7 @@ shell::fzf_kill_ssh_tunnels() {
         return 1
     fi
 
-    shell::colored_echo "Selected tunnels:" 33
+    shell::colored_echo "DEBUG: Selected tunnels:" 244
     echo "$selected_tunnels" # Display selected tunnels to the user
 
     # Extract PIDs from selected lines (PID is typically the second column in ps aux/ax output).
@@ -368,11 +364,11 @@ shell::fzf_kill_ssh_tunnels() {
     pids_to_kill=$(echo "$selected_tunnels" | awk '{print $2}') # Assuming PID is the second column
 
     # Ask for confirmation before killing.
-    shell::colored_echo "WARN: Are you sure you want to kill the following PID(s)? $pids_to_kill [y/N]" 208
+    shell::colored_echo "[q] Are you sure you want to kill the following PID(s)? $pids_to_kill [y/N]" 208
     read -r confirmation
 
     if [[ "$confirmation" =~ ^[Yy]$ ]]; then
-        shell::colored_echo "🔪 Killing PID(s): $pids_to_kill" 208
+        shell::colored_echo "DEBUG: Killing PID(s): $pids_to_kill" 244
         # Kill the selected processes.
         # Use command substitution to pass PIDs to kill.
         # shell::run_cmd_eval "kill $pids_to_kill" # Using the helper if preferred
@@ -388,7 +384,7 @@ shell::fzf_kill_ssh_tunnels() {
         shell::colored_echo "INFO: Kill command sent for PID(s): $pids_to_kill. Verify they are stopped." 46
 
     else
-        shell::colored_echo "❌ Kill operation cancelled." 11
+        shell::colored_echo "WARN: Kill operation cancelled." 11
         return 0
     fi
 
