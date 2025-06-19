@@ -3939,3 +3939,25 @@ Example:
 shell::fzf_add_workspace_ssh_conf
 shell::fzf_add_workspace_ssh_conf -n
 "
+
+USAGE_SHELL_FZF_REMOVE_BOOKMARK="
+shell::fzf_remove_bookmark function
+Interactively selects a bookmark using fzf and removes it from the bookmarks file.
+
+Usage:
+  shell::fzf_remove_bookmark [-n] [-h]
+
+Parameters:
+  - -n : Optional dry-run flag. If provided, the removal command is printed instead of executed.
+  - -h : Optional help flag. Displays this help message.
+
+Description:
+  This function checks if the bookmarks file exists. If not, it displays an error.
+  It then reads all bookmarks, formats them for fzf display, and allows the user to
+  interactively select a bookmark to remove. The selected bookmark is removed from
+  the bookmarks file using a secure temporary file.
+
+Example usage:
+  shell::fzf_remove_bookmark       # Interactively select and remove a bookmark.
+  shell::fzf_remove_bookmark -n    # Dry-run: print removal command without executing.
+"

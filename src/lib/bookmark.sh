@@ -547,3 +547,93 @@ shell::fzf_remove_bookmark_down() {
 
     return 0
 }
+
+# shell::fzf_remove_bookmark function
+# Interactively selects a bookmark using fzf and removes it from the bookmarks file.
+#
+# Usage:
+#   shell::fzf_remove_bookmark [-n] [-h]
+#
+# Parameters:
+#   - -n : Optional dry-run flag. If provided, the removal command is printed instead of executed.
+#   - -h : Optional help flag. Displays this help message.
+#
+# Description:
+#   This function checks if the bookmarks file exists. If not, it displays an error.
+#   It then reads all bookmarks, formats them for fzf display, and allows the user to
+#   interactively select a bookmark to remove. The selected bookmark is removed from
+#   the bookmarks file using a secure temporary file.
+#
+# Requirements:
+#   - fzf must be installed.
+#   - The 'bookmarks_file' variable must be set.
+#   - Helper functions: shell::install_package, shell::colored_echo, shell::on_evict, shell::run_cmd_eval.
+#
+# Example usage:
+#   shell::fzf_remove_bookmark       # Interactively select and remove a bookmark.
+#   shell::fzf_remove_bookmark -n    # Dry-run: print removal command without executing.
+shell::fzf_remove_bookmark() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_REMOVE_BOOKMARK"
+        return 0
+    fi
+
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    # Validate bookmarks file existence
+    # This checks if the bookmarks file exists before proceeding.
+    if [ ! -f "$bookmarks_file" ]; then
+        shell::colored_echo "ERR: Bookmarks file '$bookmarks_file' not found." 196
+        return 1
+    fi
+
+    # Ensure fzf is installed
+    shell::install_package fzf || {
+        shell::colored_echo "ERR: fzf is required but could not be installed." 196
+        return 1
+    }
+
+    local yellow=$(tput setaf 3)
+    local cyan=$(tput setaf 6)
+    local normal=$(tput sgr0)
+
+    # Format bookmarks for fzf display
+    # This will display each bookmark in the format "name (path)".
+    local selected_display_line
+    selected_display_line=$(awk -F'\n' -v yellow="$yellow" -v cyan="$cyan" -v normal="$normal" \
+        '{print yellow $2 normal " (" cyan $1 normal ")"}' "$bookmarks_file" |
+        fzf --ansi --prompt="Select bookmark to remove: ")
+
+    # Check if a bookmark was selected
+    # If no bookmark was selected, we exit the function with an error message.
+    if [ -z "$selected_display_line" ]; then
+        shell::colored_echo "ERR: No bookmark selected. Aborting." 196
+        return 1
+    fi
+
+    # Extract the bookmark name from the selected display line.
+    # Assuming the format is "name (path)", we remove the " (path)" part.
+    local selected_bookmark_name
+    selected_bookmark_name=$(echo "$selected_display_line" | sed 's/ *(.*)//')
+
+    local os_type=$(shell::get_os_type)
+    # Check if the dry-run is enabled
+    # If dry-run is true, we prepare the command to remove the bookmark without executing it.
+    if [ "$dry_run" = "true" ]; then
+        if [[ "$os_type" == "linux" ]]; then
+            shell::on_evict "shell::remove_bookmark_linux \"$selected_bookmark_name\""
+        else
+            shell::on_evict "shell::remove_bookmark \"$selected_bookmark_name\""
+        fi
+    else
+        if [[ "$os_type" == "linux" ]]; then
+            shell::remove_bookmark_linux "$selected_bookmark_name"
+        else
+            shell::remove_bookmark "$selected_bookmark_name"
+        fi
+    fi
+}
