@@ -717,7 +717,7 @@ shell::rename_bookmark() {
     # Sanitize the bookmark names to ensure they are valid variable names.
     # This function should be defined in shell::sanitize_lower_var_name
     # It should convert the names to lowercase and replace invalid characters.
-    old_name=$(shell::sanitize_lower_var_name "$old_name")
+    # old_name=$(shell::sanitize_lower_var_name "$old_name")
     new_name=$(shell::sanitize_lower_var_name "$new_name")
 
     # Check if the old bookmark exists
