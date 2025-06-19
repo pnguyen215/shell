@@ -1000,15 +1000,21 @@ shell::fzf_rename_dir_base_bookmark() {
     local yellow=$(tput setaf 3)
     local cyan=$(tput setaf 6)
     local normal=$(tput sgr0)
+    local home_prefix="$HOME"
 
     # Display bookmarks in the format "name (path)" for fzf.
     # The original full line from the file is also passed through so we can easily grep for it.
     # This uses awk to format the output with colors.
     # The awk command formats each line with colors for better visibility in fzf.
     local selected_display_line
-    selected_display_line=$(awk -F'|' -v yellow="$yellow" -v cyan="$cyan" -v normal="$normal" \
-        '{print yellow $2 normal " (" cyan $1 normal ")"}' "$bookmarks_file" |
-        fzf --ansi --prompt="Select bookmark to rename its directory: ")
+    # selected_display_line=$(awk -F'|' -v yellow="$yellow" -v cyan="$cyan" -v normal="$normal" \
+    #     '{print yellow $2 normal " (" cyan $1 normal ")"}' "$bookmarks_file" |
+    #     fzf --ansi --prompt="Select bookmark to rename its directory: ")
+
+    selected_display_line=$(awk -F'|' -v yellow="$yellow" -v cyan="$cyan" -v normal="$normal" -v home="$home_prefix" '
+        $1 !~ "^" home {
+            print yellow $2 normal " (" cyan $1 normal ")"
+        }' "$bookmarks_file" | fzf --ansi --prompt="Select bookmark to rename its directory: ")
 
     # Check if a bookmark was selected
     # This checks if the user selected a bookmark. If not, it displays an error and returns.
