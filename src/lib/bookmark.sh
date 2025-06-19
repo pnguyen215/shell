@@ -597,28 +597,39 @@ shell::fzf_remove_bookmark() {
         return 1
     }
 
-    local yellow=$(tput setaf 3)
-    local cyan=$(tput setaf 6)
-    local normal=$(tput sgr0)
+    # Define ANSI color codes using tput
+    local yellow=$(tput setaf 3) # Yellow for bookmark name
+    local cyan=$(tput setaf 6)   # Cyan for path
+    local green=$(tput setaf 2)  # Green for [active]
+    local red=$(tput setaf 1)    # Red for [inactive]
+    local normal=$(tput sgr0)    # Reset to normal
 
-    # Format bookmarks for fzf display
-    # This will display each bookmark in the format "name (path)".
     local selected_display_line
-    selected_display_line=$(awk -F'\n' -v yellow="$yellow" -v cyan="$cyan" -v normal="$normal" \
-        '{print yellow $2 normal " (" cyan $1 normal ")"}' "$bookmarks_file" |
-        fzf --ansi --prompt="Select bookmark to remove: ")
+    # Display bookmarks in the format "name (path) [status]" with colors for fzf.
+    # Check each path's existence and append [active] or [inactive] with appropriate color.
+    selected_display_line=$(awk -F'|' -v yellow="$yellow" -v cyan="$cyan" -v green="$green" -v red="$red" -v normal="$normal" \
+        '{status = system("[ -d \"" $1 "\" ]") == 0 ? green "[active]" normal : red "[inactive]" normal; print yellow $2 normal " (" cyan $1 normal ") " status}' \
+        "$bookmarks_file" | fzf --ansi --prompt="Select a bookmarked path: ")
 
-    # Check if a bookmark was selected
-    # If no bookmark was selected, we exit the function with an error message.
     if [ -z "$selected_display_line" ]; then
         shell::colored_echo "ERR: No bookmark selected. Aborting." 196
         return 1
     fi
 
-    # Extract the bookmark name from the selected display line.
-    # Assuming the format is "name (path)", we remove the " (path)" part.
     local selected_bookmark_name
-    selected_bookmark_name=$(echo "$selected_display_line" | sed 's/ *(.*)//')
+    # Extract only the bookmark name from the selected display line, e.g., "working-service-path"
+    # This assumes the format "name (path) [status]" and removes both " (path)" and " [status]".
+    selected_bookmark_name=$(echo "$selected_display_line" | sed 's/ *(.*) *\[.*\]//')
+
+    local target_path
+    # Find the original line in the bookmarks_file using the extracted name
+    # Then cut the path (first field) from that line.
+    target_path=$(grep "^.*|${selected_bookmark_name}$" "$bookmarks_file" | cut -d'|' -f1)
+
+    if [ -z "$target_path" ]; then
+        shell::colored_echo "ERR: Could not find path for selected bookmark '$selected_bookmark_name'." 196
+        return 1
+    fi
 
     local os_type=$(shell::get_os_type)
     # Check if the dry-run is enabled
