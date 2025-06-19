@@ -843,3 +843,98 @@ shell::fzf_rename_bookmark() {
         shell::rename_bookmark "$old_name" "$new_name"
     fi
 }
+
+# shell::rename_dir_base_bookmark function
+# Renames the directory associated with a bookmark.
+#
+# Usage:
+#   shell::rename_dir_base_bookmark [-n] <bookmark_name> <new_dir_name>
+#
+# Parameters:
+#   - -n : Optional dry-run flag. If provided, the rename command is printed instead of executed.
+#   - <bookmark_name> : The name of the bookmark whose directory should be renamed.
+#   - <new_dir_name> : The new name for the directory.
+#
+# Description:
+#   This function finds the directory path associated with the given bookmark name
+#   and renames the directory to the new name provided. It validates that the bookmark exists,
+#   the directory exists, and the target name does not already exist.
+#
+# Example usage:
+#   shell::rename_dir_base_bookmark my-bookmark new-dir-name
+#   shell::rename_dir_base_bookmark -n my-bookmark new-dir-name
+shell::rename_dir_base_bookmark() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_RENAME_DIR_BASE_BOOKMARK"
+        return 0
+    fi
+
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    # Check if the required parameters are provided
+    # This checks if at least two parameters are provided (bookmark_name and new_dir_name).
+    if [ $# -lt 2 ]; then
+        echo "Usage: shell::rename_dir_base_bookmark [-n] <bookmark_name> <new_dir_name>"
+        return 1
+    fi
+
+    # Validate the parameters
+    # This checks if the bookmark_name and new_dir_name are not empty.
+    # If they are empty, it displays an error message and returns.
+    local bookmark_name="$1"
+    local new_dir_name="$2"
+
+    # Check if the bookmarks file exists
+    # This checks if the bookmarks file exists before proceeding.
+    if [ ! -f "$bookmarks_file" ]; then
+        shell::colored_echo "ERR: Bookmarks file '$bookmarks_file' not found." 196
+        return 1
+    fi
+
+    # Check if the bookmark exists
+    # This checks if there is an entry in the bookmarks file that ends with "|<bookmark_name>".
+    # If not, it displays an error message and returns.
+    local old_path
+    old_path=$(grep "^.*|${bookmark_name}$" "$bookmarks_file" | cut -d'|' -f1)
+
+    # Check if the old_path is empty
+    # If the old_path is empty, it means the bookmark was not found.
+    # It displays an error message and returns.
+    if [ -z "$old_path" ]; then
+        shell::colored_echo "ERR: Bookmark '$bookmark_name' not found." 196
+        return 1
+    fi
+
+    # Check if the old_path is a directory
+    # This checks if the old_path is a valid directory.
+    # If it is not a directory, it displays an error message and returns.
+    if [ ! -d "$old_path" ]; then
+        shell::colored_echo "ERR: Directory '$old_path' does not exist." 196
+        return 1
+    fi
+
+    # Check if the new_dir_name is empty
+    # If the new_dir_name is empty, it displays an error message and returns.
+    # This ensures that the user provides a valid new directory name.
+    local new_path="$(dirname "$old_path")/$new_dir_name"
+    if [ -e "$new_path" ]; then
+        shell::colored_echo "ERR: Target directory '$new_path' already exists." 196
+        return 1
+    fi
+
+    local cmd="mv \"$old_path\" \"$new_path\""
+
+    # Check if dry-run is enabled
+    # If dry-run is true, we prepare the command to rename the directory without executing it.
+    # Otherwise, we execute the command to rename the directory.
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "$cmd"
+    else
+        shell::run_cmd_eval "$cmd"
+        shell::colored_echo "INFO: Renamed directory '$old_path' to '$new_path'" 46
+    fi
+}

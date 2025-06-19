@@ -4006,3 +4006,26 @@ Example usage:
   shell::fzf_rename_bookmark       # Interactively select and rename a bookmark.
   shell::fzf_rename_bookmark -n    # Dry-run: print rename command without executing.
 "
+
+USAGE_SHELL_RENAME_DIR_BASE_BOOKMARK="
+shell::rename_dir_base_bookmark function
+Renames the directory associated with a bookmark.
+
+Usage:
+  shell::rename_dir_base_bookmark [-n] [-h] <bookmark_name> <new_dir_name>
+
+Parameters:
+  - -n              : Optional dry-run flag. If provided, the rename command is printed instead of executed.
+  - -h              : Optional help flag. Displays this help message.
+  - <bookmark_name> : The name of the bookmark whose directory should be renamed.
+  - <new_dir_name>  : The new name for the directory.
+
+Description:
+  This function finds the directory path associated with the given bookmark name
+  and renames the directory to the new name provided. It validates that the bookmark exists,
+  the directory exists, and the target name does not already exist.
+
+Example usage:
+  shell::rename_dir_base_bookmark my-bookmark new-dir-name
+  shell::rename_dir_base_bookmark -n my-bookmark new-dir-name
+"
