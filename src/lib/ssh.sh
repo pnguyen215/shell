@@ -203,7 +203,7 @@ shell::list_ssh_tunnels() {
     # Print a summary if tunnels were found
     if [ "$tunnel_count" -gt 0 ]; then
         echo "==========================================================="
-        shell::colored_echo "🔍 Found $tunnel_count active SSH tunnel(s)" 46
+        shell::colored_echo "INFO: Found $tunnel_count active SSH tunnel(s)" 46
     fi
 
     # Clean up
