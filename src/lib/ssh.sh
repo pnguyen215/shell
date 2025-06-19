@@ -479,7 +479,7 @@ shell::kill_ssh_tunnels() {
         return 0
     fi
 
-    shell::colored_echo "The following SSH tunnel PIDs were found:" 33
+    shell::colored_echo "DEBUG: SSH tunnel(s) PIDs were found:" 244
     echo "${pids_to_kill[*]}"
 
     if [ "$dry_run" = "true" ]; then
@@ -490,11 +490,11 @@ shell::kill_ssh_tunnels() {
     else
         # Ask for confirmation before killing
         # Use printf for prompt to avoid issues with colored_echo potentially adding newlines
-        printf "%s" "$(shell::colored_echo '❓ Do you want to kill these processes? (y/N): ' 33)"
+        printf "%s" "$(shell::colored_echo '[q] Do you want to kill these processes? (y/N): ' 208)"
         read -r confirm
 
         if [[ $confirm =~ ^[Yy]$ ]]; then
-            shell::colored_echo "Killing SSH tunnels..." 196
+            shell::colored_echo "DEBUG: Killing SSH tunnels..." 244
             local kill_count=0
             for pid in "${pids_to_kill[@]}"; do
                 if shell::run_cmd kill "$pid"; then
@@ -504,7 +504,7 @@ shell::kill_ssh_tunnels() {
                     shell::colored_echo "ERR: Failed to kill PID $pid." 196
                 fi
             done
-            shell::colored_echo "✅ Killed $kill_count out of ${#pids_to_kill[@]} SSH tunnel process(es)." 46
+            shell::colored_echo "INFO: Killed $kill_count out of ${#pids_to_kill[@]} SSH tunnel process(es)." 46
         else
             shell::colored_echo "WARN: Aborted by user. No processes were killed." 11
         fi
