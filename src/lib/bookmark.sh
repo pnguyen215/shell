@@ -33,6 +33,12 @@ shell::add_bookmark() {
         return 1
     fi
 
+    # Sanitize the bookmark name to ensure it is a valid variable name.
+    # This function should be defined in shell::sanitize_lower_var_name
+    # It should convert the name to lowercase and replace invalid characters.
+    bookmark_name=$(shell::sanitize_lower_var_name "$bookmark_name")
+
+    # Check if the bookmark name is empty after sanitization.
     local bookmark
     bookmark="$(pwd)|$bookmark_name" # Store the bookmark as folder|name
 
