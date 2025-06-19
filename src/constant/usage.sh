@@ -3984,3 +3984,25 @@ Example usage:
   shell::rename_bookmark old_name new_name
   shell::rename_bookmark -n old_name new_name
 "
+
+USAGE_SHELL_FZF_RENAME_BOOKMARK="
+shell::fzf_rename_bookmark function
+Interactively selects a bookmark using fzf and renames it.
+
+Usage:
+  shell::fzf_rename_bookmark [-n] [-h]
+
+Parameters:
+  - -n : Optional dry-run flag. If provided, the rename command is printed instead of executed.
+  - -h : Optional help flag. Displays this help message.
+
+Description:
+  This function checks if the bookmarks file exists. If not, it displays an error.
+  It then reads all bookmarks, formats them for fzf display, and allows the user to
+  interactively select a bookmark to rename. The user is prompted to enter a new name,
+  and the shell::rename_bookmark function is called to perform the rename.
+
+Example usage:
+  shell::fzf_rename_bookmark       # Interactively select and rename a bookmark.
+  shell::fzf_rename_bookmark -n    # Dry-run: print rename command without executing.
+"

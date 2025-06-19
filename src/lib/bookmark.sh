@@ -757,3 +757,89 @@ shell::rename_bookmark() {
         shell::colored_echo "INFO: Renamed bookmark '$old_name' to '$new_name'" 46
     fi
 }
+
+# shell::fzf_rename_bookmark function
+# Interactively selects a bookmark using fzf and renames it.
+#
+# Usage:
+#   shell::fzf_rename_bookmark [-n] [-h]
+#
+# Parameters:
+#   - -n : Optional dry-run flag. If provided, the rename command is printed instead of executed.
+#   - -h : Optional help flag. Displays this help message.
+#
+# Description:
+#   This function checks if the bookmarks file exists. If not, it displays an error.
+#   It then reads all bookmarks, formats them for fzf display, and allows the user to
+#   interactively select a bookmark to rename. The user is prompted to enter a new name,
+#   and the shell::rename_bookmark function is called to perform the rename.
+#
+# Example usage:
+#   shell::fzf_rename_bookmark       # Interactively select and rename a bookmark.
+#   shell::fzf_rename_bookmark -n    # Dry-run: print rename command without executing.
+shell::fzf_rename_bookmark() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_RENAME_BOOKMARK"
+        return 0
+    fi
+
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    # Validate bookmarks file existence
+    # This checks if the bookmarks file exists before proceeding.
+    if [ ! -f "$bookmarks_file" ]; then
+        shell::colored_echo "ERR: Bookmarks file '$bookmarks_file' not found." 196
+        return 1
+    fi
+
+    # Ensure fzf is installed
+    shell::install_package fzf
+
+    local yellow=$(tput setaf 3)
+    local cyan=$(tput setaf 6)
+    local normal=$(tput sgr0)
+
+    # Display bookmarks in the format "name (path)" for fzf.
+    # The original full line from the file is also passed through so we can easily grep for it.
+    # This uses awk to format the output with colors.
+    local selected_display_line
+    selected_display_line=$(awk -F'|' -v yellow="$yellow" -v cyan="$cyan" -v normal="$normal" \
+        '{print yellow $2 normal " (" cyan $1 normal ")"}' "$bookmarks_file" |
+        fzf --ansi --prompt="Select bookmark to rename: ")
+
+    # Check if a bookmark was selected
+    # This checks if the user selected a bookmark. If not, it displays an error and returns.
+    # If no bookmark is selected, it will return an empty string.
+    if [ -z "$selected_display_line" ]; then
+        shell::colored_echo "ERR: No bookmark selected. Aborting." 196
+        return 1
+    fi
+
+    # Extract the old bookmark name from the selected display line
+    # This assumes the format "name (path)" and removes the " (path)" part.
+    local old_name
+    old_name=$(echo "$selected_display_line" | sed 's/ *(.*)//')
+
+    shell::colored_echo "[e] Enter new name for bookmark '$old_name':" 208
+    read -r new_name
+
+    # Check if the new name is empty
+    # This checks if the user entered a new name. If not, it displays an error and returns.
+    if [ -z "$new_name" ]; then
+        shell::colored_echo "ERR: No new name entered. Aborting rename." 196
+        return 1
+    fi
+
+    # Check if the dry mode is enabled
+    # If dry-run is true, we prepare the command to rename the bookmark without executing it.
+    # Otherwise, we execute the command to rename the bookmark.
+    if [ "$dry_run" = "true" ]; then
+        shell::rename_bookmark -n "$old_name" "$new_name"
+    else
+        shell::rename_bookmark "$old_name" "$new_name"
+    fi
+}
