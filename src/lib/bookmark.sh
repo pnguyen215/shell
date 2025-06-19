@@ -654,3 +654,106 @@ shell::fzf_remove_bookmark() {
         fi
     fi
 }
+
+# shell::rename_bookmark function
+# Renames a bookmark in the bookmarks file.
+#
+# Usage:
+#   shell::rename_bookmark [-n] <old_name> <new_name>
+#
+# Parameters:
+#   - -n : Optional dry-run flag. If provided, the rename command is printed instead of executed.
+#   - <old_name> : The current name of the bookmark.
+#   - <new_name> : The new name to assign to the bookmark.
+#
+# Description:
+#   This function searches for a bookmark entry in the bookmarks file that ends with "|<old_name>".
+#   If found, it replaces the bookmark name with the new name using a sed command.
+#   The sed command is constructed differently for macOS and Linux due to differences in the in-place edit flag.
+#
+# Requirements:
+#   - The 'bookmarks_file' variable must be set.
+#   - Helper functions: shell::colored_echo, shell::on_evict, shell::run_cmd_eval, shell::get_os_type.
+#
+# Example usage:
+#   shell::rename_bookmark old_name new_name
+#   shell::rename_bookmark -n old_name new_name
+shell::rename_bookmark() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_RENAME_BOOKMARK"
+        return 0
+    fi
+
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    # Check if the required parameters are provided
+    # This checks if at least two parameters are provided (old_name and new_name).
+    if [ $# -lt 2 ]; then
+        echo "Usage: shell::rename_bookmark [-n] <old_name> <new_name>"
+        return 1
+    fi
+
+    local old_name="$1"
+    local new_name="$2"
+
+    # Check if the bookmarks file exists
+    # This checks if the bookmarks file exists before proceeding.
+    if [ ! -f "$bookmarks_file" ]; then
+        shell::colored_echo "ERR: Bookmarks file '$bookmarks_file' not found." 196
+        return 1
+    fi
+
+    # Check if old_name and new_name are provided
+    # This checks if both old_name and new_name are not empty.
+    if [[ -z "$old_name" || -z "$new_name" ]]; then
+        shell::colored_echo "ERR: Both old and new bookmark names must be provided." 196
+        return 1
+    fi
+
+    # Sanitize the bookmark names to ensure they are valid variable names.
+    # This function should be defined in shell::sanitize_lower_var_name
+    # It should convert the names to lowercase and replace invalid characters.
+    old_name=$(shell::sanitize_lower_var_name "$old_name")
+    new_name=$(shell::sanitize_lower_var_name "$new_name")
+
+    # Check if the old bookmark exists
+    # This checks if there is an entry in the bookmarks file that ends with "|<old_name>".
+    # If not, it displays an error message and returns.
+    local old_entry
+    old_entry=$(grep "^.*|${old_name}$" "$bookmarks_file")
+    if [[ -z "$old_entry" ]]; then
+        shell::colored_echo "ERR: Bookmark '$old_name' does not exist." 196
+        return 1
+    fi
+
+    # Check if the new bookmark already exists
+    # This checks if there is an entry in the bookmarks file that ends with "|<new_name>".
+    local new_entry
+    new_entry=$(grep "^.*|${new_name}$" "$bookmarks_file")
+    if [[ -n "$new_entry" ]]; then
+        shell::colored_echo "ERR: Bookmark '$new_name' already exists." 196
+        return 1
+    fi
+
+    local os_type=$(shell::get_os_type)
+    local sed_cmd=""
+    if [[ "$os_type" == "macos" ]]; then
+        sed_cmd="sed -i '' 's/^\(.*|\)$old_name$/\1$new_name/' \"$bookmarks_file\""
+    else
+        sed_cmd="sed -i 's/^\(.*|\)$old_name$/\1$new_name/' \"$bookmarks_file\""
+    fi
+
+    # Check if dry-run is enabled
+    # If dry-run is true, we prepare the command to rename the bookmark without executing it.
+    # Otherwise, we execute the command to rename the bookmark.
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "$sed_cmd"
+    else
+        shell::run_cmd_eval "$sed_cmd"
+        shell::colored_echo "INFO: Renamed bookmark '$old_name' to '$new_name'" 46
+    fi
+}

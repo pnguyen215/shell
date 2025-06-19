@@ -3961,3 +3961,26 @@ Example usage:
   shell::fzf_remove_bookmark       # Interactively select and remove a bookmark.
   shell::fzf_remove_bookmark -n    # Dry-run: print removal command without executing.
 "
+
+USAGE_SHELL_RENAME_BOOKMARK="
+shell::rename_bookmark function
+Renames a bookmark in the bookmarks file.
+
+Usage:
+  shell::rename_bookmark [-n] [-h] <old_name> <new_name>
+
+Parameters:
+  - -n          : Optional dry-run flag. If provided, the rename command is printed instead of executed.
+  - -h          : Optional. Displays this help message.
+  - <old_name>  : The current name of the bookmark.
+  - <new_name>  : The new name to assign to the bookmark.
+
+Description:
+  This function searches for a bookmark entry in the bookmarks file that ends with <old_name>.
+  If found, it replaces the bookmark name with the new name using a sed command.
+  The sed command is constructed differently for macOS and Linux due to differences in the in-place edit flag.
+
+Example usage:
+  shell::rename_bookmark old_name new_name
+  shell::rename_bookmark -n old_name new_name
+"
