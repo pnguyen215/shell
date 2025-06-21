@@ -428,7 +428,6 @@ shell::check_ini_file() {
 # Notes:
 #   - Relies on the shell::colored_echo function for output.
 shell::list_ini_sections() {
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_LIST_INI_SECTIONS"
         return 0
@@ -438,18 +437,15 @@ shell::list_ini_sections() {
 
     # Validate parameters
     if [ -z "$file" ]; then
-        shell::colored_echo "shell::list_ini_sections: Missing file parameter" 196
-        echo "Usage: shell::list_ini_sections [-h] <file>"
+        shell::colored_echo "ERR: File path is required" 196
         return 1
     fi
 
     # Check if file exists
     if [ ! -f "$file" ]; then
-        shell::colored_echo "File not found: $file" 196
+        shell::colored_echo "ERR: File not found: $file" 196
         return 1
     fi
-
-    # shell::colored_echo "Listing sections in file: $file" 11
 
     # Extract section names
     grep -o '^\[[^]]*\]' "$file" 2>/dev/null | sed 's/^\[\(.*\)\]$/\1/'
