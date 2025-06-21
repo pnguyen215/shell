@@ -2446,3 +2446,78 @@ shell::go_back() {
 
     cd $OLDPWD
 }
+
+list_paths() {
+    if [ "$#" -eq 0 ]; then
+        echo "No paths selected to list."
+        return 1
+    fi
+
+    echo "--- Listing Contents for Selected Paths ---"
+    for path in "$@"; do
+        echo "Processing: '$path'"
+        if [ -d "$path" ]; then
+            echo "  (Directory Contents):"
+            # Use 'ls -lA' for detailed listing, excluding '.' and '..'
+            ls -lA "$path"
+        elif [ -f "$path" ]; then
+            echo "  (First 5 lines of file):"
+            head -n 5 "$path"
+        else
+            echo "  (Not a regular file or directory or does not exist)"
+        fi
+        echo "----------------------------------------"
+        sleep 0.1 # Small delay for better readability if many items
+    done
+    echo "--- Finished Listing All Selected Paths ---"
+}
+
+shell::list_paths() {
+    # --- Main Script Logic to Use fzf for Argument Selection ---
+
+    echo "Welcome to the Path Selector!"
+    echo "Use fzf to select one or more files/directories:"
+    echo "  - Type to filter."
+    echo "  - Press TAB to multi-select items."
+    echo "  - Press ENTER to confirm your selection(s)."
+    echo ""
+
+    # Generate a list of files and directories for fzf.
+    # This finds files/dirs in the current directory and one level deep.
+    # -print0: Prints results separated by null characters, safe for special characters in names.
+    # xargs -0 printf "%s\n": Converts null-separated input to newline-separated for fzf.
+    potential_paths=$(find . -maxdepth 2 -print0 | xargs -0 printf "%s\n")
+
+    # Check if find found any paths. If not, fzf won't have input.
+    if [ -z "$potential_paths" ]; then
+        echo "No files or directories found in the current or immediate subdirectories."
+        echo "Exiting."
+        exit 1
+    fi
+
+    # Use fzf to allow multi-selection of paths
+    # -m: Enable multi-select (TAB to toggle, ENTER to confirm)
+    # --prompt: Custom prompt for fzf
+    # --reverse: Display fzf from top to bottom
+    # --cycle: Allow cycling through options when reaching end/beginning of list
+    selected_paths=$(echo -e "$potential_paths" | fzf -m --prompt="Select paths > " --reverse --cycle)
+
+    # Check if any paths were actually selected by the user
+    if [ -z "$selected_paths" ]; then
+        echo "No paths selected. Script finished without processing."
+        exit 0
+    fi
+
+    # Convert the newline-separated string of selected paths into a Bash array.
+    # IFS=$'\n': Temporarily set Internal Field Separator to newline.
+    # read -r -d '' -a selected_paths_array: Reads into an array.
+    # <<< "$selected_paths": Here-string to feed the variable to read.
+    IFS=$'\n' read -r -d '' -a selected_paths_array <<<"$selected_paths"
+
+    # Call the list_paths function with the selected arguments.
+    # "${selected_paths_array[@]}": Expands array elements as separate arguments,
+    #                              preserving spaces within path names.
+    list_paths "${selected_paths_array[@]}"
+
+    echo "Script execution completed."
+}
