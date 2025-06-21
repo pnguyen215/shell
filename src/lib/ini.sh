@@ -500,7 +500,7 @@ shell::list_ini_keys() {
 
     # Check if file exists
     if [ ! -f "$file" ]; then
-        shell::colored_echo "File not found: $file" 196
+        shell::colored_echo "ERR: File not found: $file" 196
         return 1
     fi
 
@@ -568,19 +568,19 @@ shell::list_ini_keys() {
 # Example:
 #   shell::exist_ini_section config.ini MySection  # Checks if MySection exists in config.ini.
 shell::exist_ini_section() {
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_EXIST_INI_SECTION"
         return 0
     fi
 
     local file="$1"
+    if [ -z "$file" ]; then
+        shell::colored_echo "ERR: File path is required" 196
+        return 1
+    fi
     local section="$2"
-
-    # Validate parameters
-    if [ -z "$file" ] || [ -z "$section" ]; then
-        shell::colored_echo "shell::exist_ini_section: Missing required parameters" 196
-        echo "Usage: shell::exist_ini_section [-h] <file> <section>"
+    if [ -z "$section" ]; then
+        shell::colored_echo "ERR: Section name is required" 196
         return 1
     fi
 
@@ -591,7 +591,7 @@ shell::exist_ini_section() {
 
     # Check if file exists
     if [ ! -f "$file" ]; then
-        shell::colored_echo "File not found: $file" 196
+        shell::colored_echo "ERR: File not found: $file" 196
         return 1
     fi
 
