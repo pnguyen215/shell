@@ -107,15 +107,16 @@ shell::populate_ssh_conf() {
     shell::write_ini "$file" "base" "SSH_SERVER_ADDR" "127.0.0.1"
     shell::write_ini "$file" "base" "SSH_LOCAL_ADDR" "127.0.0.1"
     shell::write_ini "$file" "base" "SSH_SERVER_USER" "sysadmin"
-    shell::write_ini "$file" "base" "SSH_TIMEOUT" "10"
+    shell::write_ini "$file" "base" "SSH_TIMEOUT_SEC" "10"
     shell::write_ini "$file" "base" "SSH_KEEP_ALIVE" "yes"
     shell::write_ini "$file" "base" "SSH_RETRY" "3"
+    shell::write_ini "$file" "base" "SSH_SERVER_ALIVE_INTERVAL_SEC" "60"
+    shell::write_ini "$file" "base" "SSH_RETRY_DELAY_SEC" "10"
 
     # Environment-specific blocks: dev and uat
     # We write the dev and uat blocks with environment-specific settings
     for env in dev uat; do
         local port=$([ "$env" = "dev" ] && echo "$base_port" || echo "$uat_port")
-        # shell::write_ini "$file" "$env" "SSH_DESC" "${env^^} Tunnel for $name"
         shell::write_ini "$file" "$env" "SSH_DESC" "$(echo "$env" | tr '[:lower:]' '[:upper:]') Tunnel for $name"
         shell::write_ini "$file" "$env" "SSH_SERVER_PORT" "$port"
         shell::write_ini "$file" "$env" "SSH_LOCAL_PORT" "$port"
