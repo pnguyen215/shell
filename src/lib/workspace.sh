@@ -119,6 +119,8 @@ shell::populate_ssh_conf() {
         shell::write_ini "$file" "$env" "SSH_DESC" "$(echo "$env" | tr '[:lower:]' '[:upper:]') Tunnel for $name"
         shell::write_ini "$file" "$env" "SSH_SERVER_PORT" "$port"
         shell::write_ini "$file" "$env" "SSH_LOCAL_PORT" "$port"
+        shell::write_ini "$file" "$env" "SSH_SERVER_TARGET_SERVICE_ADDR" "127.0.0.1"
+        shell::write_ini "$file" "$env" "SSH_SERVER_TARGET_SERVICE_PORT" "$port"
 
         case "$name" in
         "server.conf")
