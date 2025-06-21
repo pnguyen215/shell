@@ -1497,6 +1497,10 @@ shell::get_array_ini_value() {
         return 1
     fi
 
+    # Sanitize section and key names to ensure they are in lowercase.
+    # This is to ensure consistency with how they are stored in the INI file.
+    section=$(shell::sanitize_lower_var_name "$section")
+
     # Read the raw string value from the INI file.
     local value
     # Capture stderr from shell::read_ini to prevent its error messages from appearing if not desired,
@@ -1619,10 +1623,15 @@ shell::exist_ini_key() {
 
     # Validate required parameters.
     if [ -z "$file" ] || [ -z "$section" ] || [ -z "$key" ]; then
-        shell::colored_echo "ERR: shell::exist_ini_key: Missing required parameters: file, section, or key." 196
         echo "Usage: shell::exist_ini_key [-h] <file> <section> <key>"
         return 1
     fi
+
+    # Sanitize section and key names to ensure they are in lowercase and valid.
+    # This is to ensure consistency with the validation functions.
+    # shell::sanitize_lower_var_name is assumed to be a function that converts
+    # the input to lowercase and replaces invalid characters with underscores.
+    section=$(shell::sanitize_lower_var_name "$section")
 
     # Validate section and key names if strict mode is enabled.
     # The called validation functions will print their own error messages if validation fails.
