@@ -2114,8 +2114,27 @@ shell::rename_ini_section() {
     fi
 
     local file="$1"
+    if [ ! -f "$file" ]; then
+        shell::colored_echo "ERR: File not found: $file" 196
+        return 1
+    fi
     local old_section="$2"
+    if [ -z "$old_section" ]; then
+        shell::colored_echo "ERR: Old section name cannot be empty." 196
+        return 1
+    fi
     local new_section="$3"
+    if [ -z "$new_section" ]; then
+        shell::colored_echo "ERR: New section name cannot be empty." 196
+        return 1
+    fi
+
+    # Sanitize section names to ensure they are in lowercase and valid.
+    # This is to ensure consistency and avoid issues with case sensitivity.
+    # The shell::sanitize_lower_var_name function is assumed to handle this.
+    # It should convert the section names to lowercase and replace invalid characters.
+    old_section=$(shell::sanitize_lower_var_name "$old_section")
+    new_section=$(shell::sanitize_lower_var_name "$new_section")
 
     # Validate section names if strict mode is enabled.
     if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
