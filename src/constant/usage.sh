@@ -4067,3 +4067,30 @@ Description:
   and presents them via fzf for selection. Once selected, the contents of the file
   are copied to the clipboard using shell::clip_value.
 "
+
+USAGE_SHELL_OPEN_SSH_TUNNEL="
+shell::open_ssh_tunnel function
+Opens a direct SSH tunnel connection using provided arguments.
+
+Usage:
+shell::open_ssh_tunnel [-n] [-h] <key_file> <local_port> <target_addr> <target_port> <user> <server_addr> <server_port> [alive_interval] [timeout]
+
+Parameters:
+- -n               : Optional dry-run flag.
+- -h               : Optional. Displays this help message.
+- <key_file>       : Path to the SSH private key.
+- <local_port>     : Local port to bind.
+- <target_addr>    : Target service address on the server.
+- <target_port>    : Target service port on the server.
+- <user>           : SSH username.
+- <server_addr>    : SSH server address.
+- <server_port>    : SSH server port.
+- [alive_interval] : Optional. ServerAliveInterval seconds (default: 60).
+- [timeout]        : Optional. ConnectTimeout seconds (default: 10).
+
+Description:
+Opens an SSH tunnel using the provided parameters. Supports dry-run mode.
+
+Example:
+shell::open_ssh_tunnel ~/.ssh/id_rsa 8080 127.0.0.1 80 sysadmin 192.168.1.10 22
+"

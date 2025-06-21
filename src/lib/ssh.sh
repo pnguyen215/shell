@@ -896,3 +896,79 @@ shell::fzf_remove_ssh_keys() {
     done <<<"$selected_files"
     return 0
 }
+
+# shell::open_ssh_tunnel function
+# Opens a direct SSH tunnel connection using provided arguments.
+#
+# Usage:
+# shell::open_ssh_tunnel [-n] <key_file> <local_port> <target_addr> <target_port> <user> <server_addr> <server_port> [alive_interval] [timeout]
+#
+# Parameters:
+# - -n               : Optional dry-run flag.
+# - <key_file>       : Path to the SSH private key.
+# - <local_port>     : Local port to bind.
+# - <target_addr>    : Target service address on the server.
+# - <target_port>    : Target service port on the server.
+# - <user>           : SSH username.
+# - <server_addr>    : SSH server address.
+# - <server_port>    : SSH server port.
+# - [alive_interval] : Optional. ServerAliveInterval (default: 60).
+# - [timeout]        : Optional. ConnectTimeout (default: 10).
+#
+# Description:
+# Opens an SSH tunnel using the provided parameters. Supports dry-run mode.
+#
+# Example:
+# shell::open_ssh_tunnel ~/.ssh/id_rsa 8080 127.0.0.1 80 sysadmin 192.168.1.10 22
+shell::open_ssh_tunnel() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_OPEN_SSH_TUNNEL"
+        return 0
+    fi
+
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if [ $# -lt 7 ]; then
+        echo "Usage: shell::open_ssh_tunnel [-n] <key_file> <local_port> <target_addr> <target_port> <user> <server_addr> <server_port> [alive_interval] [timeout]"
+        return 1
+    fi
+
+    # Extract parameters
+    # - key_file: Path to the SSH private key file.
+    # - local_port: Local port to bind for the tunnel.
+    # - target_addr: Address of the target service on the server.
+    # - target_port: Port of the target service on the server.
+    # - user: SSH username.
+    # - server_addr: Address of the SSH server.
+    # - server_port: Port of the SSH server.
+    # - alive_interval: Optional. ServerAliveInterval (default: 60).
+    # - timeout: Optional. ConnectTimeout (default: 10).
+    local key_file="$1"
+    local local_port="$2"
+    local target_addr="$3"
+    local target_port="$4"
+    local user="$5"
+    local server_addr="$6"
+    local server_port="$7"
+    local alive_interval="${8:-60}"
+    local timeout="${9:-10}"
+
+    local cmd="ssh -i \"$key_file\" -N -L $local_port:$target_addr:$target_port \
+    -o ServerAliveInterval=$alive_interval \
+    -o ConnectTimeout=$timeout \
+    -o ExitOnForwardFailure=yes \
+    $user@$server_addr -p $server_port -v &"
+
+    # Check if the dry mode is enabled
+    # If dry_run is true, we will not execute the command but print it instead.
+    # This allows the user to see what would happen without making changes.
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "$cmd"
+    else
+        shell::run_cmd_eval "$cmd"
+    fi
+}
