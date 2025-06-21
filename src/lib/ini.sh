@@ -1389,10 +1389,13 @@ shell::set_array_ini_value() {
 
     # Validate parameters
     if [ -z "$file" ] || [ -z "$section" ] || [ -z "$key" ]; then
-        shell::colored_echo "ERR: shell::set_array_ini_value: Missing required parameters." 196
         echo "Usage: shell::set_array_ini_value [-h] <file> <section> <key> [value1] [value2 ...]"
         return 1
     fi
+
+    # Sanitize section and key names to ensure they are in lowercase.
+    # This is to ensure consistency with how they are stored in the INI file.
+    section=$(shell::sanitize_lower_var_name "$section")
 
     local -a formatted_values=()
     local temp_value
