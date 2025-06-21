@@ -957,11 +957,18 @@ shell::open_ssh_tunnel() {
     local alive_interval="${8:-60}"
     local timeout="${9:-10}"
 
+    local placeholder="ssh -i <SSH_PRIVATE_KEY_REF> -N -L <SSH_LOCAL_PORT>:<SSH_SERVER_TARGET_SERVICE_ADDR>:<SSH_SERVER_TARGET_SERVICE_PORT> \
+    -o ServerAliveInterval=<SSH_SERVER_ALIVE_INTERVAL_SEC> \
+    -o ConnectTimeout=<SSH_TIMEOUT_SEC> \
+    -o ExitOnForwardFailure=yes \
+    <SSH_SERVER_USER>@<SSH_SERVER_ADDR> -p <SSH_SERVER_PORT> &"
     local cmd="ssh -i \"$key_file\" -N -L $local_port:$target_addr:$target_port \
     -o ServerAliveInterval=$alive_interval \
     -o ConnectTimeout=$timeout \
     -o ExitOnForwardFailure=yes \
     $user@$server_addr -p $server_port &"
+
+    shell::colored_echo "DEBUG: SSH tunnel command: $placeholder" 244
 
     # Check if the dry mode is enabled
     # If dry_run is true, we will not execute the command but print it instead.
