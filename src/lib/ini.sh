@@ -2328,14 +2328,12 @@ shell::fzf_rename_ini_section() {
 #     shell::write_ini, shell::create_ini_temp_file, and shell::ini_escape_for_regex.
 #   - Honors SHELL_INI_STRICT for section name validation.
 shell::clone_ini_section() {
-    local dry_run="false"
-
-    # Check for the optional dry-run flag (-n)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_CLONE_INI_SECTION"
         return 0
     fi
 
+    local dry_run="false"
     if [ "$1" = "-n" ]; then
         dry_run="true"
         shift
@@ -2347,10 +2345,15 @@ shell::clone_ini_section() {
 
     # Validate parameters
     if [ -z "$file" ] || [ -z "$source_section" ] || [ -z "$destination_section" ]; then
-        shell::colored_echo "ERR: shell::clone_ini_section: Missing required parameters." 196
         echo "Usage: shell::clone_ini_section [-n] [-h] <file> <source_section> <destination_section>"
         return 1
     fi
+
+    # Sanitize section names to ensure they are in lowercase and valid.
+    # This is to ensure consistency and avoid issues with case sensitivity.
+    # The shell::sanitize_lower_var_name function is assumed to handle this.
+    source_section=$(shell::sanitize_lower_var_name "$source_section")
+    destination_section=$(shell::sanitize_lower_var_name "$destination_section")
 
     # Validate section names if strict mode is enabled
     if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
