@@ -104,13 +104,11 @@ shell::populate_ssh_conf() {
     # Base block: shared across all environments
     # We write the base SSH configuration that is common to all environments
     shell::write_ini "$file" "base" "SSH_PRIVATE_KEY_REF" "$HOME/.ssh/id_rsa"
-    shell::write_ini "$file" "base" "SSH_SERVER_ADDR" "127.0.0.1"
     shell::write_ini "$file" "base" "SSH_LOCAL_ADDR" "127.0.0.1"
-    shell::write_ini "$file" "base" "SSH_SERVER_USER" "sysadmin"
     shell::write_ini "$file" "base" "SSH_TIMEOUT_SEC" "10"
     shell::write_ini "$file" "base" "SSH_KEEP_ALIVE" "yes"
-    shell::write_ini "$file" "base" "SSH_RETRY" "3"
     shell::write_ini "$file" "base" "SSH_SERVER_ALIVE_INTERVAL_SEC" "60"
+    shell::write_ini "$file" "base" "SSH_RETRY" "3"
     shell::write_ini "$file" "base" "SSH_RETRY_DELAY_SEC" "10"
 
     # Environment-specific blocks: dev and uat
@@ -118,7 +116,9 @@ shell::populate_ssh_conf() {
     for env in dev uat; do
         local port=$([ "$env" = "dev" ] && echo "$base_port" || echo "$uat_port")
         shell::write_ini "$file" "$env" "SSH_DESC" "$(echo "$env" | tr '[:lower:]' '[:upper:]') Tunnel for $name"
+        shell::write_ini "$file" "$env" "SSH_SERVER_ADDR" "127.0.0.1"
         shell::write_ini "$file" "$env" "SSH_SERVER_PORT" "$port"
+        shell::write_ini "$file" "$env" "SSH_SERVER_USER" "sysadmin"
         shell::write_ini "$file" "$env" "SSH_LOCAL_PORT" "$port"
         shell::write_ini "$file" "$env" "SSH_SERVER_TARGET_SERVICE_ADDR" "127.0.0.1"
         shell::write_ini "$file" "$env" "SSH_SERVER_TARGET_SERVICE_PORT" "$port"
@@ -1516,8 +1516,6 @@ shell::open_workspace_ssh_tunnel() {
     # This function reads the base section first, then overrides with values from the specified section
     local base_section="base"
     local key_file=$(shell::read_ini "$conf_path" "$base_section" SSH_PRIVATE_KEY_REF)
-    local local_addr=$(shell::read_ini "$conf_path" "$base_section" SSH_LOCAL_ADDR)
-    local user=$(shell::read_ini "$conf_path" "$base_section" SSH_SERVER_USER)
     local timeout=$(shell::read_ini "$conf_path" "$base_section" SSH_TIMEOUT_SEC)
     local alive_interval=$(shell::read_ini "$conf_path" "$base_section" SSH_SERVER_ALIVE_INTERVAL_SEC)
 
@@ -1525,6 +1523,7 @@ shell::open_workspace_ssh_tunnel() {
     local local_port=$(shell::read_ini "$conf_path" "$section" SSH_LOCAL_PORT)
     local target_addr=$(shell::read_ini "$conf_path" "$section" SSH_SERVER_TARGET_SERVICE_ADDR)
     local target_port=$(shell::read_ini "$conf_path" "$section" SSH_SERVER_TARGET_SERVICE_PORT)
+    local server_user=$(shell::read_ini "$conf_path" "$section" SSH_SERVER_USER)
     local server_addr=$(shell::read_ini "$conf_path" "$section" SSH_SERVER_ADDR)
     local server_port=$(shell::read_ini "$conf_path" "$section" SSH_SERVER_PORT)
     local server_desc=$(shell::read_ini "$conf_path" "$section" SSH_DESC)
@@ -1534,9 +1533,9 @@ shell::open_workspace_ssh_tunnel() {
     # This allows us to see what would be done without actually opening the SSH tunnel
     if [ "$dry_run" = "true" ]; then
         shell::colored_echo "DEBUG: Opening SSH tunnel for '$server_desc' at $server_addr:$server_port" 244
-        shell::open_ssh_tunnel -n "$key_file" "$local_port" "$target_addr" "$target_port" "$user" "$server_addr" "$server_port" "$alive_interval" "$timeout"
+        shell::open_ssh_tunnel -n "$key_file" "$local_port" "$target_addr" "$target_port" "$server_user" "$server_addr" "$server_port" "$alive_interval" "$timeout"
     else
         shell::colored_echo "INFO: Opening SSH tunnel for '$server_desc' at $server_addr:$server_port" 46
-        shell::open_ssh_tunnel "$key_file" "$local_port" "$target_addr" "$target_port" "$user" "$server_addr" "$server_port" "$alive_interval" "$timeout"
+        shell::open_ssh_tunnel "$key_file" "$local_port" "$target_addr" "$target_port" "$server_user" "$server_addr" "$server_port" "$alive_interval" "$timeout"
     fi
 }
