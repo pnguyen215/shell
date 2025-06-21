@@ -120,6 +120,7 @@ shell::populate_ssh_conf() {
         shell::write_ini "$file" "$env" "SSH_SERVER_PORT" "$port"
         shell::write_ini "$file" "$env" "SSH_SERVER_USER" "sysadmin"
         shell::write_ini "$file" "$env" "SSH_LOCAL_PORT" "$port"
+        shell::write_ini "$file" "$env" "SSH_PRIVATE_KEY_REF" "$HOME/.ssh/id_rsa"
         shell::write_ini "$file" "$env" "SSH_SERVER_TARGET_SERVICE_ADDR" "127.0.0.1"
         shell::write_ini "$file" "$env" "SSH_SERVER_TARGET_SERVICE_PORT" "$port"
 
@@ -1512,10 +1513,8 @@ shell::open_workspace_ssh_tunnel() {
 
     # Load base values
     # We read the base section of the configuration file
-    # We use shell::read_ini to read the values from the configuration file
     # This function reads the base section first, then overrides with values from the specified section
     local base_section="base"
-    local key_file=$(shell::read_ini "$conf_path" "$base_section" SSH_PRIVATE_KEY_REF)
     local timeout=$(shell::read_ini "$conf_path" "$base_section" SSH_TIMEOUT_SEC)
     local alive_interval=$(shell::read_ini "$conf_path" "$base_section" SSH_SERVER_ALIVE_INTERVAL_SEC)
 
@@ -1523,19 +1522,20 @@ shell::open_workspace_ssh_tunnel() {
     local local_port=$(shell::read_ini "$conf_path" "$section" SSH_LOCAL_PORT)
     local target_addr=$(shell::read_ini "$conf_path" "$section" SSH_SERVER_TARGET_SERVICE_ADDR)
     local target_port=$(shell::read_ini "$conf_path" "$section" SSH_SERVER_TARGET_SERVICE_PORT)
+    local server_desc=$(shell::read_ini "$conf_path" "$section" SSH_DESC)
+    local server_file=$(shell::read_ini "$conf_path" "$section" SSH_PRIVATE_KEY_REF)
     local server_user=$(shell::read_ini "$conf_path" "$section" SSH_SERVER_USER)
     local server_addr=$(shell::read_ini "$conf_path" "$section" SSH_SERVER_ADDR)
     local server_port=$(shell::read_ini "$conf_path" "$section" SSH_SERVER_PORT)
-    local server_desc=$(shell::read_ini "$conf_path" "$section" SSH_DESC)
 
     # Check if the dry-mode is enabled
     # If dry-run mode is enabled, we print the command instead of executing it
     # This allows us to see what would be done without actually opening the SSH tunnel
     if [ "$dry_run" = "true" ]; then
         shell::colored_echo "DEBUG: Opening SSH tunnel for '$server_desc' at $server_addr:$server_port" 244
-        shell::open_ssh_tunnel -n "$key_file" "$local_port" "$target_addr" "$target_port" "$server_user" "$server_addr" "$server_port" "$alive_interval" "$timeout"
+        shell::open_ssh_tunnel -n "$server_file" "$local_port" "$target_addr" "$target_port" "$server_user" "$server_addr" "$server_port" "$alive_interval" "$timeout"
     else
         shell::colored_echo "INFO: Opening SSH tunnel for '$server_desc' at $server_addr:$server_port" 46
-        shell::open_ssh_tunnel "$key_file" "$local_port" "$target_addr" "$target_port" "$server_user" "$server_addr" "$server_port" "$alive_interval" "$timeout"
+        shell::open_ssh_tunnel "$server_file" "$local_port" "$target_addr" "$target_port" "$server_user" "$server_addr" "$server_port" "$alive_interval" "$timeout"
     fi
 }
