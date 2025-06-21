@@ -2015,7 +2015,6 @@ shell::destroy_ini_env() {
 #   - Ensures cross-platform compatibility by relying on standard Bash features
 #     and existing cross-platform helper functions.
 shell::get_or_default_ini_value() {
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_GET_OR_DEFAULT_INI_VALUE"
         return 0
@@ -2028,10 +2027,14 @@ shell::get_or_default_ini_value() {
 
     # Validate mandatory parameters.
     if [ -z "$file" ] || [ -z "$section" ] || [ -z "$key" ]; then
-        shell::colored_echo "ERR: shell::get_or_default_ini_value: Missing required parameters: file, section, or key." 196
         echo "Usage: shell::get_or_default_ini_value [-h] <file> <section> <key> [default_value]"
         return 1
     fi
+
+    # Sanitize section and key names to ensure they are in lowercase and valid.
+    # The shell::sanitize_lower_var_name function is assumed to handle this.
+    # It should convert the section and key names to lowercase and replace invalid characters.
+    section=$(shell::sanitize_lower_var_name "$section")
 
     local value
     # Try to read the value, suppressing shell::read_ini's error output.
