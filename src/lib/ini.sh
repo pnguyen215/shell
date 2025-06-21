@@ -1046,14 +1046,12 @@ shell::remove_ini_section() {
 #   shell::fzf_remove_ini_key config.ini "Database"  # Interactively remove a key from the Database section.
 #   shell::fzf_remove_ini_key -n settings.ini "API"  # Dry-run: show commands to remove a key from the API section.
 shell::fzf_remove_ini_key() {
-    local dry_run="false"
-
-    # Check for the optional dry-run flag (-n)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_FZF_REMOVE_INI_KEY"
         return 0
     fi
 
+    local dry_run="false"
     if [ "$1" = "-n" ]; then
         dry_run="true"
         shift
@@ -1061,7 +1059,6 @@ shell::fzf_remove_ini_key() {
 
     # Validate required parameters: file path and section name.
     if [ $# -lt 2 ]; then
-        shell::colored_echo "shell::fzf_remove_ini_key: Missing required parameters" 196
         echo "Usage: shell::fzf_remove_ini_key [-n] <file> <section>"
         return 1
     fi
@@ -1097,7 +1094,7 @@ shell::fzf_remove_ini_key() {
         return 1
     fi
 
-    shell::colored_echo "Selected key for removal: '$selected_key'" 33
+    shell::colored_echo "DEBUG: Selected key for removal: '$selected_key'" 244
 
     local os_type
     os_type=$(shell::get_os_type)
@@ -1117,7 +1114,7 @@ shell::fzf_remove_ini_key() {
     local temp_file
     temp_file=$(shell::create_ini_temp_file)
 
-    shell::colored_echo "Removing key '$selected_key' from section '$section' in file: $file" 11
+    shell::colored_echo "DEBUG: Removing key '$selected_key' from section '$section' in file: $file" 244
 
     # Process the file line by line
     # Use `|| [ -n "$line" ]` to ensure the last line is processed even if it doesn't end with a newline.
