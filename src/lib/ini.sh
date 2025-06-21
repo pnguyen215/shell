@@ -28,7 +28,6 @@
 #   - Relies on the shell::colored_echo function for output.
 #   - The behavior is controlled by the SHELL_INI_STRICT environment variable.
 shell::read_ini() {
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_READ_INI"
         return 0
@@ -362,7 +361,6 @@ shell::ini_escape_for_regex() {
 # Example:
 #   shell::check_ini_file /path/to/config.ini  # Checks or creates the file at the specified path.
 shell::check_ini_file() {
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_CHECK_INI_FILE"
         return 0
@@ -372,35 +370,34 @@ shell::check_ini_file() {
 
     # Check if file parameter is provided
     if [ -z "$file" ]; then
-        shell::colored_echo "File path is required" 196
-        echo "Usage: shell::check_ini_file [-h] <file>"
+        shell::colored_echo "ERR: File path is required" 196
         return 1
     fi
 
     # Check if file exists
     if [ ! -f "$file" ]; then
-        shell::colored_echo "File does not exist, attempting to create: $file" 11
+        shell::colored_echo "WARN: File does not exist, attempting to create: $file" 11
         # Create directory if it doesn't exist
         local dir
         dir=$(dirname "$file")
         if [ ! -d "$dir" ]; then
             mkdir -p "$dir" 2>/dev/null || {
-                shell::colored_echo "Could not create directory: $dir" 196
+                shell::colored_echo "ERR: Could not create directory: $dir" 196
                 return 1
             }
         fi
 
         # Create the file
         if ! touch "$file" 2>/dev/null; then
-            shell::colored_echo "Could not create file: $file" 196
+            shell::colored_echo "ERR: Could not create file: $file" 196
             return 1
         fi
-        shell::colored_echo "File created successfully: $file" 46
+        shell::colored_echo "INFO: File created successfully: $file" 46
     fi
 
     # Check if file is writable
     if [ ! -w "$file" ]; then
-        shell::colored_echo "File is not writable: $file" 196
+        shell::colored_echo "ERR: File is not writable: $file" 196
         return 1
     fi
 
