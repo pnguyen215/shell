@@ -1215,15 +1215,12 @@ shell::fzf_remove_ini_key() {
 #     shell::validate_ini_key_name if SHELL_INI_STRICT is enabled.
 #   - Uses atomic operation (mv) to replace the original file, reducing risk of data loss.
 shell::remove_ini_key() {
-    local dry_run="false"
-
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_REMOVE_INI_KEY"
         return 0
     fi
 
-    # Check for the optional dry-run flag (-n)
+    local dry_run="false"
     if [ "$1" = "-n" ]; then
         dry_run="true"
         shift
@@ -1231,14 +1228,28 @@ shell::remove_ini_key() {
 
     # Validate required parameters: file path, section name, and key name.
     if [ $# -lt 3 ]; then
-        shell::colored_echo "shell::remove_ini_key: Missing required parameters" 196
         echo "Usage: shell::remove_ini_key [-n] <file> <section> <key>"
         return 1
     fi
 
     local file="$1"
+    if [ ! -f "$file" ]; then
+        shell::colored_echo "ERR: File not found: $file" 196
+        return 1
+    fi
     local section="$2"
+    if [ -z "$section" ]; then
+        shell::colored_echo "ERR: Section name cannot be empty." 196
+        return 1
+    fi
     local key="$3"
+    if [ -z "$key" ]; then
+        shell::colored_echo "ERR: Key name cannot be empty." 196
+        return 1
+    fi
+
+    # Sanitize the section and key names to ensure they are valid variable names.
+    section=$(shell::sanitize_lower_var_name "$section")
 
     # Validate section and key names only if strict mode is enabled (optional, based on existing code).
     # Assumes shell::validate_ini_section_name and shell::validate_ini_key_name functions exist.
@@ -1247,19 +1258,13 @@ shell::remove_ini_key() {
         shell::validate_ini_key_name "$key" || return 1
     fi
 
-    # Check if the specified file exists.
-    if [ ! -f "$file" ]; then
-        shell::colored_echo "File not found: $file" 196
-        return 1
-    fi
-
     # Check if the section exists in the file before attempting removal.
     if ! shell::exist_ini_section "$file" "$section"; then
         # shell::exist_ini_section prints an error if the section is not found
         return 1
     fi
 
-    shell::colored_echo "Attempting to remove key '$key' from section '$section' in file: $file" 11
+    shell::colored_echo "DEBUG: Attempting to remove key '$key' from section '$section' in file: $file" 244
 
     # Escape section and key for regex pattern
     local escaped_section
