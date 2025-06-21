@@ -910,32 +910,39 @@ shell::write_ini() {
 #     to exist based on usage.)
 #   - Uses atomic operation (mv) to replace the original file, reducing risk of data loss.
 shell::remove_ini_section() {
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_REMOVE_INI_SECTION"
         return 0
     fi
 
     local file="$1"
+    if [ -z "$file"]; then
+        shell::colored_echo "ERR: File is required" 196
+        return 1
+    fi
+    if [ ! -f "$file" ]; then
+        shell::colored_echo "ERR: File not found: $file" 196
+        return 1
+    fi
     local section="$2"
+    if [ -z "$section" ]; then
+        shell::colored_echo "ERR: Section is required" 196
+        return 1
+    fi
 
     # Validate required parameters: file path and section name.
     if [ -z "$file" ] || [ -z "$section" ]; then
-        shell::colored_echo "shell::remove_ini_section: Missing required parameters" 196
         echo "Usage: shell::remove_ini_section [-h] <file> <section>"
         return 1
     fi
+
+    # Sanitize the section name to ensure it is a valid variable name.
+    section=$(shell::sanitize_lower_var_name "$section")
 
     # Validate section name only if strict mode is enabled (optional, based on existing code).
     # Assumes shell::validate_ini_section_name function exists.
     if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
         shell::validate_ini_section_name "$section" || return 1
-    fi
-
-    # Check if the specified file exists.
-    if [ ! -f "$file" ]; then
-        shell::colored_echo "File not found: $file" 196
-        return 1
     fi
 
     # Check if the section exists in the file
