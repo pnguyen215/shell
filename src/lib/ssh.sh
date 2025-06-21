@@ -961,7 +961,7 @@ shell::open_ssh_tunnel() {
     -o ServerAliveInterval=$alive_interval \
     -o ConnectTimeout=$timeout \
     -o ExitOnForwardFailure=yes \
-    $user@$server_addr -p $server_port -v &"
+    $user@$server_addr -p $server_port &"
 
     # Check if the dry mode is enabled
     # If dry_run is true, we will not execute the command but print it instead.
