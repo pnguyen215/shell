@@ -4094,3 +4094,26 @@ Opens an SSH tunnel using the provided parameters. Supports dry-run mode.
 Example:
 shell::open_ssh_tunnel ~/.ssh/id_rsa 8080 127.0.0.1 80 sysadmin 192.168.1.10 22
 "
+
+USAGE_SHELL_OPEN_WORKSPACE_SSH_TUNNEL="
+shell::open_workspace_ssh_tunnel function
+Opens an SSH tunnel using configuration from a workspace .ssh/*.conf file.
+
+Usage:
+shell::open_workspace_ssh_tunnel [-n] [-h] <workspace_name> <conf_name> <section>
+
+Parameters:
+- -n               : Optional dry-run flag. If provided, the command is printed using shell::on_evict.
+- -h               : Optional. Displays this help message.
+- <workspace_name> : The name of the workspace.
+- <conf_name>      : The name of the SSH configuration file (e.g., kafka.conf).
+- <section>        : The section to use (e.g., dev, uat).
+
+Description:
+This function reads the [base] section first, then overrides with values from the specified section.
+It delegates the actual SSH tunnel execution to shell::open_ssh_tunnel.
+
+Example:
+shell::open_workspace_ssh_tunnel my-app db.conf dev
+shell::open_workspace_ssh_tunnel -n my-app kafka.conf uat
+"

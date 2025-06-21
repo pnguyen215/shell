@@ -1443,3 +1443,98 @@ shell::dump_workspace_json() {
     shell::colored_echo "$json" 33
     shell::clip_value "$json"
 }
+
+# shell::open_workspace_ssh_tunnel function
+# Opens an SSH tunnel using configuration from a workspace .ssh/*.conf file.
+#
+# Usage:
+# shell::open_workspace_ssh_tunnel [-n] <workspace_name> <conf_name> <section>
+#
+# Parameters:
+# - -n               : Optional dry-run flag. If provided, the command is printed using shell::on_evict.
+# - <workspace_name> : The name of the workspace.
+# - <conf_name>      : The name of the SSH configuration file (e.g., kafka.conf).
+# - <section>        : The section to use (e.g., dev, uat).
+#
+# Description:
+# This function reads the [base] section first, then overrides with values from the specified section.
+# It delegates the actual SSH tunnel execution to shell::open_ssh_tunnel.
+#
+# Example:
+# shell::open_workspace_ssh_tunnel my-app kafka.conf dev
+# shell::open_workspace_ssh_tunnel -n my-app kafka.conf uat
+shell::open_workspace_ssh_tunnel() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_OPEN_WORKSPACE_SSH_TUNNEL"
+        return 0
+    fi
+
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if [ $# -ne 3 ]; then
+        echo "Usage: shell::open_workspace_ssh_tunnel [-n] <workspace_name> <conf_name> <section>"
+        return 1
+    fi
+
+    local workspace="$1"
+    if [ -z "$workspace" ]; then
+        shell::colored_echo "ERR: Workspace name is required." 196
+        return 1
+    fi
+    local conf_name="$2"
+    if [ -z "$conf_name" ]; then
+        shell::colored_echo "ERR: Configuration name is required." 196
+        return 1
+    fi
+    local section="$3"
+    if [ -z "$section" ]; then
+        shell::colored_echo "ERR: Section name is required." 196
+        return 1
+    fi
+
+    # Sanitize the workspace name, configuration name and section name
+    # We use shell::sanitize_lower_var_name to ensure the names are in lowercase and safe for use as directory names
+    workspace=$(shell::sanitize_lower_var_name "$workspace")
+    conf_name=$(shell::sanitize_lower_var_name "$conf_name")
+    section=$(shell::sanitize_lower_var_name "$section")
+
+    local conf_path="$SHELL_CONF_WORKING_WORKSPACE/$workspace/.ssh/$conf_name"
+
+    # We check if the base directory for workspaces exists
+    # If it does not exist, we print an error message and return
+    if [ ! -f "$conf_path" ]; then
+        shell::colored_echo "ERR: Configuration file '$conf_path' not found." 196
+        return 1
+    fi
+
+    # Load base values
+    # We read the base section of the configuration file
+    # We use shell::read_ini to read the values from the configuration file
+    # This function reads the base section first, then overrides with values from the specified section
+    local base_section="base"
+    local key_file=$(shell::read_ini "$conf_path" "$base_section" SSH_PRIVATE_KEY_REF)
+    local server_addr=$(shell::read_ini "$conf_path" "$base_section" SSH_SERVER_ADDR)
+    local local_addr=$(shell::read_ini "$conf_path" "$base_section" SSH_LOCAL_ADDR)
+    local user=$(shell::read_ini "$conf_path" "$base_section" SSH_SERVER_USER)
+    local timeout=$(shell::read_ini "$conf_path" "$base_section" SSH_TIMEOUT_SEC)
+    local alive_interval=$(shell::read_ini "$conf_path" "$base_section" SSH_SERVER_ALIVE_INTERVAL_SEC)
+
+    # Load section overrides
+    local local_port=$(shell::read_ini "$conf_path" "$section" SSH_LOCAL_PORT)
+    local target_addr=$(shell::read_ini "$conf_path" "$section" SSH_SERVER_TARGET_SERVICE_ADDR)
+    local target_port=$(shell::read_ini "$conf_path" "$section" SSH_SERVER_TARGET_SERVICE_PORT)
+    local server_port=$(shell::read_ini "$conf_path" "$section" SSH_SERVER_PORT)
+
+    # Check if the dry-mode is enabled
+    # If dry-run mode is enabled, we print the command instead of executing it
+    # This allows us to see what would be done without actually opening the SSH tunnel
+    if [ "$dry_run" = "true" ]; then
+        shell::open_ssh_tunnel -n "$key_file" "$local_port" "$target_addr" "$target_port" "$user" "$server_addr" "$server_port" "$alive_interval" "$timeout"
+    else
+        shell::open_ssh_tunnel "$key_file" "$local_port" "$target_addr" "$target_port" "$user" "$server_addr" "$server_port" "$alive_interval" "$timeout"
+    fi
+}
