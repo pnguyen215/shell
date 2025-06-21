@@ -1516,7 +1516,6 @@ shell::open_workspace_ssh_tunnel() {
     # This function reads the base section first, then overrides with values from the specified section
     local base_section="base"
     local key_file=$(shell::read_ini "$conf_path" "$base_section" SSH_PRIVATE_KEY_REF)
-    local server_addr=$(shell::read_ini "$conf_path" "$base_section" SSH_SERVER_ADDR)
     local local_addr=$(shell::read_ini "$conf_path" "$base_section" SSH_LOCAL_ADDR)
     local user=$(shell::read_ini "$conf_path" "$base_section" SSH_SERVER_USER)
     local timeout=$(shell::read_ini "$conf_path" "$base_section" SSH_TIMEOUT_SEC)
@@ -1526,14 +1525,18 @@ shell::open_workspace_ssh_tunnel() {
     local local_port=$(shell::read_ini "$conf_path" "$section" SSH_LOCAL_PORT)
     local target_addr=$(shell::read_ini "$conf_path" "$section" SSH_SERVER_TARGET_SERVICE_ADDR)
     local target_port=$(shell::read_ini "$conf_path" "$section" SSH_SERVER_TARGET_SERVICE_PORT)
+    local server_addr=$(shell::read_ini "$conf_path" "$section" SSH_SERVER_ADDR)
     local server_port=$(shell::read_ini "$conf_path" "$section" SSH_SERVER_PORT)
+    local server_desc=$(shell::read_ini "$conf_path" "$section" SSH_DESC)
 
     # Check if the dry-mode is enabled
     # If dry-run mode is enabled, we print the command instead of executing it
     # This allows us to see what would be done without actually opening the SSH tunnel
     if [ "$dry_run" = "true" ]; then
+        shell::colored_echo "DEBUG: Opening SSH tunnel for '$server_desc' at $server_addr:$server_port" 244
         shell::open_ssh_tunnel -n "$key_file" "$local_port" "$target_addr" "$target_port" "$user" "$server_addr" "$server_port" "$alive_interval" "$timeout"
     else
+        shell::colored_echo "INFO: Opening SSH tunnel for '$server_desc' at $server_addr:$server_port" 46
         shell::open_ssh_tunnel "$key_file" "$local_port" "$target_addr" "$target_port" "$user" "$server_addr" "$server_port" "$alive_interval" "$timeout"
     fi
 }
