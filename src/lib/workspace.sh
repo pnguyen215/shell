@@ -1496,10 +1496,9 @@ shell::open_workspace_ssh_tunnel() {
         return 1
     fi
 
-    # Sanitize the workspace name, configuration name and section name
+    # Sanitize the workspace name and section name
     # We use shell::sanitize_lower_var_name to ensure the names are in lowercase and safe for use as directory names
     workspace=$(shell::sanitize_lower_var_name "$workspace")
-    conf_name=$(shell::sanitize_lower_var_name "$conf_name")
     section=$(shell::sanitize_lower_var_name "$section")
 
     local conf_path="$SHELL_CONF_WORKING_WORKSPACE/$workspace/.ssh/$conf_name"
