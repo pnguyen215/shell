@@ -4117,3 +4117,23 @@ Example:
 shell::open_workspace_ssh_tunnel my-app db.conf dev
 shell::open_workspace_ssh_tunnel -n my-app kafka.conf uat
 "
+
+USAGE_SHELL_FZF_OPEN_WORKSPACE_SSH_TUNNEL="
+shell::fzf_open_workspace_ssh_tunnel function
+Interactively selects a workspace and SSH config section to open an SSH tunnel.
+
+Usage:
+shell::fzf_open_workspace_ssh_tunnel [-n] [-h]
+
+Parameters:
+  - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict.
+  - -h : Optional. Displays this help message.
+
+Description:
+Uses fzf to select a workspace and a .conf file, then selects a section (dev or uat),
+and opens an SSH tunnel using shell::open_workspace_ssh_tunnel.
+
+Example:
+shell::fzf_open_workspace_ssh_tunnel
+shell::fzf_open_workspace_ssh_tunnel -n
+"

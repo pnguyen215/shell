@@ -1539,3 +1539,88 @@ shell::open_workspace_ssh_tunnel() {
         shell::open_ssh_tunnel "$server_file" "$local_port" "$target_addr" "$target_port" "$server_user" "$server_addr" "$server_port" "$alive_interval" "$timeout"
     fi
 }
+
+# shell::fzf_open_workspace_ssh_tunnel function
+# Interactively selects a workspace and SSH config section to open an SSH tunnel.
+#
+# Usage:
+# shell::fzf_open_workspace_ssh_tunnel [-n]
+#
+# Parameters:
+# - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict.
+#
+# Description:
+# Uses fzf to select a workspace and a .conf file, then selects a section (dev or uat),
+# and opens an SSH tunnel using shell::open_workspace_ssh_tunnel.
+#
+# Example:
+# shell::fzf_open_workspace_ssh_tunnel
+# shell::fzf_open_workspace_ssh_tunnel -n
+shell::fzf_open_workspace_ssh_tunnel() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_OPEN_WORKSPACE_SSH_TUNNEL"
+        return 0
+    fi
+
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    # Ensure the fzf package is installed
+    shell::install_package fzf
+
+    # Check if the workspace directory exists
+    local workspace
+    workspace=$(find "$SHELL_CONF_WORKING_WORKSPACE" -mindepth 1 -maxdepth 1 -type d |
+        xargs -n 1 basename |
+        fzf --prompt="Select workspace: ")
+
+    # Check if a workspace was selected
+    # If no workspace was selected, we print an error message and return
+    # This ensures the user knows they need to select a workspace
+    if [ -z "$workspace" ]; then
+        shell::colored_echo "ERR: No workspace selected." 196
+        return 1
+    fi
+
+    # Check if the selected workspace has a .ssh directory
+    # We check if the .ssh directory exists under the selected workspace
+    # If the .ssh directory does not exist, we print an error message and return
+    local ssh_dir="$SHELL_CONF_WORKING_WORKSPACE/$workspace/.ssh"
+    if [ ! -d "$ssh_dir" ]; then
+        shell::colored_echo "ERR: Workspace '$workspace' has no .ssh directory." 196
+        return 1
+    fi
+
+    # Find all .conf files in the .ssh directory
+    # We use find to locate all .conf files under the .ssh directory
+    # We use xargs to convert the output of find into a list of file names
+    local conf_file
+    conf_file=$(find "$ssh_dir" -type f -name "*.conf" |
+        xargs -n 1 basename |
+        fzf --prompt="Select SSH config file: ")
+
+    if [ -z "$conf_file" ]; then
+        shell::colored_echo "ERR: No config file selected." 196
+        return 1
+    fi
+
+    # Check if the selected .conf file exists
+    local section
+    section=$(printf "dev\nuat" | fzf --prompt="Select section: ")
+    if [ -z "$section" ]; then
+        shell::colored_echo "ERR: No section selected." 196
+        return 1
+    fi
+
+    # Check if the dry-mode is enabled
+    # If dry-run mode is enabled, we print the command instead of executing it
+    # This allows us to see what would be done without actually opening the SSH tunnel
+    if [ "$dry_run" = "true" ]; then
+        shell::open_workspace_ssh_tunnel -n "$workspace" "$conf_file" "$section"
+    else
+        shell::open_workspace_ssh_tunnel "$workspace" "$conf_file" "$section"
+    fi
+}
