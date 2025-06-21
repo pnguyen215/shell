@@ -40,7 +40,6 @@ shell::read_ini() {
 
     # Validate parameters
     if [ -z "$file" ] || [ -z "$section" ] || [ -z "$key" ]; then
-        shell::colored_echo "shell::read_ini: Missing required parameters" 196 >&2
         echo "Usage: shell::read_ini [-h] <file> <section> <key>"
         return 1
     fi
@@ -172,7 +171,6 @@ shell::validate_ini_section_name() {
 
     if [ -z "$section" ]; then
         shell::colored_echo "ERR: Section name cannot be empty" 196
-        echo "Usage: shell::validate_ini_section_name [-h] <section_name>"
         return 1
     fi
 
@@ -232,7 +230,6 @@ shell::validate_ini_key_name() {
 
     if [ -z "$key" ]; then
         shell::colored_echo "ERR: Key name cannot be empty" 196
-        echo "Usage: shell::validate_ini_key_name [-h] <key_name>"
         return 1
     fi
 
@@ -713,7 +710,6 @@ shell::add_ini_section() {
 # Example:
 #   shell::write_ini config.ini MySection MyKey MyValue  # Writes MyKey=MyValue in MySection.
 shell::write_ini() {
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_WRITE_INI"
         return 0
@@ -730,6 +726,9 @@ shell::write_ini() {
         return 1
     fi
 
+    # Sanitize the section names to ensure they are valid variable names.
+    section=$(shell::sanitize_lower_var_name "$section")
+
     # Validate section and key names only if strict mode is enabled
     # Assumes shell::validate_ini_section_name and shell::validate_ini_key_name exist.
     if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
@@ -739,7 +738,7 @@ shell::write_ini() {
 
     # Check for empty value if not allowed
     if [ -z "$value" ] && [ "${SHELL_INI_ALLOW_EMPTY_VALUES}" -eq 0 ]; then
-        shell::colored_echo "Empty values are not allowed" 196
+        shell::colored_echo "ERR: Empty values are not allowed" 196
         return 1
     fi
 
@@ -774,7 +773,7 @@ shell::write_ini() {
     # Assumes SHELL_INI_STRICT is defined.
     if [ "${SHELL_INI_STRICT}" -eq 1 ] && [[ "$value" =~ [[:space:]\"\'\`\&\|\<\>\;\$] ]]; then
         value="\"${value//\"/\\\"}\""
-        shell::colored_echo "Value contains special characters, quoting: $value" 11
+        shell::colored_echo "WARN: Value contains special characters, quoting: $value" 11
     fi
 
     # Sanitize the key to ensure it is a valid variable name.
