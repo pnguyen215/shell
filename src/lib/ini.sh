@@ -658,6 +658,9 @@ shell::add_ini_section() {
         return 1
     fi
 
+    # Sanitize the section name to ensure it is a valid variable name.
+    section=$(shell::sanitize_lower_var_name "$section")
+
     # Validate section name only if strict mode is enabled
     if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
         shell::validate_ini_section_name "$section" || return 1
