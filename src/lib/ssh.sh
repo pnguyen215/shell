@@ -968,7 +968,7 @@ shell::open_ssh_tunnel() {
     -o ExitOnForwardFailure=yes \
     $user@$server_addr -p $server_port &"
 
-    shell::colored_echo "DEBUG: SSH tunnel command: $placeholder" 244
+    shell::colored_echo "DEBUG: $placeholder" 244
 
     # Check if the dry mode is enabled
     # If dry_run is true, we will not execute the command but print it instead.
