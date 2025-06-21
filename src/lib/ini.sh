@@ -477,19 +477,19 @@ shell::list_ini_sections() {
 # Notes:
 #   - Relies on the shell::colored_echo function for output.
 shell::list_ini_keys() {
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_LIST_INI_KEYS"
         return 0
     fi
 
     local file="$1"
+    if [ -z "$file" ]; then
+        shell::colored_echo "ERR: File path is required" 196
+        return 1
+    fi
     local section="$2"
-
-    # Validate parameters
-    if [ -z "$file" ] || [ -z "$section" ]; then
-        shell::colored_echo "shell::list_ini_keys: Missing required parameters" 196
-        echo "Usage: shell::list_ini_keys [-h] <file> <section>"
+    if [ -z "$section" ]; then
+        shell::colored_echo "ERR: Section name is required" 196
         return 1
     fi
 
