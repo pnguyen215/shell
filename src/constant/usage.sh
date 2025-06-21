@@ -4051,3 +4051,19 @@ Example usage:
   shell::fzf_rename_dir_base_bookmark       # Interactively select and rename a directory.
   shell::fzf_rename_dir_base_bookmark -n    # Dry-run: print rename command without executing.
 "
+
+USAGE_SHELL_FZF_COPY_SSH_KEY_VALUE="
+shell::fzf_copy_ssh_key_value function
+Uses fzf to select an SSH key file and copies its contents to the clipboard using shell::clip_value.
+
+Usage:
+  shell::fzf_copy_ssh_key_value [-h]
+
+Parameters:
+  - -h : Optional help flag. Displays this help message.
+
+Description:
+  This function searches for SSH key files in ~/.ssh, filters out public keys and config files,
+  and presents them via fzf for selection. Once selected, the contents of the file
+  are copied to the clipboard using shell::clip_value.
+"

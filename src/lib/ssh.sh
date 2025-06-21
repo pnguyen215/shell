@@ -286,6 +286,81 @@ shell::fzf_cwd_ssh_key() {
     return 0
 }
 
+# shell::fzf_copy_ssh_key_value function
+# Uses fzf to select an SSH key file and copies its contents to the clipboard using shell::clip_value.
+#
+# Usage:
+#   shell::fzf_copy_ssh_key_value [-h]
+#
+# Parameters:
+#   - -h : Optional help flag. Displays this help message.
+#
+# Description:
+#   This function searches for SSH key files in ~/.ssh, filters out public keys and config files,
+#   and presents them via fzf for selection. Once selected, the contents of the file
+#   are copied to the clipboard using shell::clip_value.
+#
+# Requirements:
+#   - fzf must be installed.
+#   - The 'shell::clip_value' function must be available.
+#   - Helper functions: shell::install_package, shell::colored_echo, shell::clip_value.
+#
+# Example usage:
+#   shell::fzf_copy_ssh_key_value
+shell::fzf_copy_ssh_key_value() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_COPY_SSH_KEY_VALUE"
+        return 0
+    fi
+
+    # Ensure fzf is installed.
+    shell::install_package fzf
+
+    # Check the SSH directory.
+    # Use the configured SSH directory or default to $HOME/.ssh.
+    local ssh_dir="${SHELL_CONF_SSH_DIR_WORKING:-$HOME/.ssh}"
+    if [ ! -d "$ssh_dir" ]; then
+        shell::colored_echo "ERR: SSH directory '$ssh_dir' not found." 196
+        return 1
+    fi
+
+    # Find potential key files in the SSH directory, excluding common non-key files and directories.
+    # Using find to get full paths for fzf.
+    local key_files
+    key_files=$(find "$ssh_dir" -maxdepth 1 -type f \( ! -name "known_hosts*" ! -name "config" ! -name "authorized_keys*" ! -name "*.log" \) 2>/dev/null)
+
+    # Check if any potential key files were found.
+    if [ -z "$key_files" ]; then
+        shell::colored_echo "WARN: No potential SSH key files found in '"$ssh_dir"'." 11
+        return 0
+    fi
+
+    # Use fzf to select a key file interactively.
+    local selected_key
+    selected_key=$(echo "$key_files" | fzf --prompt="Select an SSH key file to copy: ")
+
+    # Check if a file was selected.
+    if [ ! -f "$selected_key" ]; then
+        shell::colored_echo "ERR: Selected file '$selected_key' does not exist." 196
+        return 1
+    fi
+
+    # Get the absolute path of the selected file.
+    local abs_key_path
+    # Use realpath if available for robustness, otherwise rely on find's output format.
+    if shell::is_command_available realpath; then
+        abs_key_path=$(realpath "$selected_key")
+    else
+        abs_key_path="$selected_key"
+    fi
+
+    local content
+    content=$(cat "$abs_key_path")
+
+    shell::clip_value "$content"
+    shell::colored_echo "INFO: SSH key file '$abs_key_path' copied to clipboard." 46
+}
+
 # shell::fzf_kill_ssh_tunnels function
 # Interactively selects one or more SSH tunnel processes using fzf and kills them.
 #
