@@ -22,6 +22,7 @@
     "HEALTHCHECK",
     "keygen",
     "MSYS",
+    "nslookup",
     "nuat",
     "numpy",
     "oneline",

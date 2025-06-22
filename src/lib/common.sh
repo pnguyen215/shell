@@ -2501,7 +2501,7 @@ shell::validate_ip_addr() {
 }
 
 # shell::validate_hostname function
-# Validates whether a given string is a valid hostname.
+# Validates whether a given string is a valid hostname using regex and DNS resolution.
 #
 # Usage:
 # shell::validate_hostname <hostname>
@@ -2509,9 +2509,11 @@ shell::validate_ip_addr() {
 # Description:
 # A valid hostname:
 # - Contains only letters, digits, and hyphens.
+# - Labels are separated by dots.
 # - Each label is 1-63 characters long.
 # - The full hostname is up to 253 characters.
 # - Labels cannot start or end with a hyphen.
+# Also checks if the hostname resolves via DNS.
 shell::validate_hostname() {
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_VALIDATE_HOSTNAME"
@@ -2531,18 +2533,19 @@ shell::validate_hostname() {
         return 1
     fi
 
-    # Split by dot and validate each label
-    OLD_IFS="$IFS"
-    IFS='.'
-    for label in $hostname; do
-        if ! echo "$label" | grep -Eq '^a-zA-Z0-9?$'; then
-            shell::colored_echo "ERR: Invalid label '$label' in hostname." 196
-            IFS="$OLD_IFS"
-            return 1
-        fi
-    done
-    IFS="$OLD_IFS"
+    # Regex for full hostname validation
+    # Allows single or multiple labels, each 1-63 characters, no leading/trailing hyphen
+    if ! [[ "$hostname" =~ ^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$ ]]; then
+        shell::colored_echo "ERR: '$hostname' is not a valid hostname format." 196
+        return 1
+    fi
 
-    shell::colored_echo "INFO: '$hostname' is a valid hostname." 46
-    return 0
+    # DNS resolution check
+    if nslookup "$hostname" >/dev/null 2>&1; then
+        shell::colored_echo "INFO: '$hostname' is a valid hostname and resolves via DNS." 46
+        return 0
+    else
+        shell::colored_echo "WARN: '$hostname' is valid but does not resolve via DNS." 11
+        return 0
+    fi
 }
