@@ -1624,3 +1624,88 @@ shell::fzf_open_workspace_ssh_tunnel() {
         shell::open_workspace_ssh_tunnel "$workspace" "$conf_file" "$section"
     fi
 }
+
+# shell::tune_workspace_ssh_tunnel function
+# Opens an SSH tunnel using configuration from a workspace .ssh/*.conf file, with tuning options.
+#
+# Usage:
+# shell::tune_workspace_ssh_tunnel [-n] <workspace_name> <conf_name> <section>
+#
+# Parameters:
+# - -n               : Optional dry-run flag. If provided, the command is printed using shell::on_evict.
+# - <workspace_name> : The name of the workspace.
+# - <conf_name>      : The name of the SSH configuration file (e.g., kafka.conf).
+# - <section>        : The section to use (e.g., dev, uat).
+#
+# Description:
+# This function reads the [base] section first, then overrides with values from the specified section.
+# It delegates the actual SSH tunnel execution to shell::tune_ssh_tunnel.
+#
+# Example:
+# shell::tune_workspace_ssh_tunnel my-app kafka.conf dev
+# shell::tune_workspace_ssh_tunnel -n my-app kafka.conf uat
+shell::tune_workspace_ssh_tunnel() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_TUNE_WORKSPACE_SSH_TUNNEL"
+        return 0
+    fi
+
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if [ $# -ne 3 ]; then
+        echo "Usage: shell::tune_workspace_ssh_tunnel [-n] <workspace_name> <conf_name> <section>"
+        return 1
+    fi
+
+    local workspace="$1"
+    if [ -z "$workspace" ]; then
+        shell::colored_echo "ERR: Workspace name is required." 196
+        return 1
+    fi
+    local conf_name="$2"
+    if [ -z "$conf_name" ]; then
+        shell::colored_echo "ERR: Configuration name is required." 196
+        return 1
+    fi
+    local section="$3"
+    if [ -z "$section" ]; then
+        shell::colored_echo "ERR: Section name is required." 196
+        return 1
+    fi
+
+    # Sanitize the workspace name and section name
+    # We use shell::sanitize_lower_var_name to ensure the names are in lowercase and safe for use as directory names
+    workspace=$(shell::sanitize_lower_var_name "$workspace")
+    section=$(shell::sanitize_lower_var_name "$section")
+
+    local conf_path="$SHELL_CONF_WORKING_WORKSPACE/$workspace/.ssh/$conf_name"
+
+    # We check if the base directory for workspaces exists
+    # If it does not exist, we print an error message and return
+    if [ ! -f "$conf_path" ]; then
+        shell::colored_echo "ERR: Configuration file '$conf_path' not found." 196
+        return 1
+    fi
+
+    # Load section overrides
+    local server_desc=$(shell::read_ini "$conf_path" "$section" SSH_DESC)
+    local server_file=$(shell::read_ini "$conf_path" "$section" SSH_PRIVATE_KEY_REF)
+    local server_user=$(shell::read_ini "$conf_path" "$section" SSH_SERVER_USER)
+    local server_addr=$(shell::read_ini "$conf_path" "$section" SSH_SERVER_ADDR)
+    local server_port=$(shell::read_ini "$conf_path" "$section" SSH_SERVER_PORT)
+
+    # Check if the dry-mode is enabled
+    # If dry-run mode is enabled, we print the command instead of executing it
+    # This allows us to see what would be done without actually opening the SSH tunnel
+    if [ "$dry_run" = "true" ]; then
+        shell::colored_echo "DEBUG: Tunning SSH tunnel for '$server_desc' at $server_addr:$server_port" 244
+        shell::tune_ssh_tunnel -n "$server_file" "$server_user" "$server_addr" "$server_port"
+    else
+        shell::colored_echo "INFO: Tunning SSH tunnel for '$server_desc' at $server_addr:$server_port" 46
+        shell::tune_ssh_tunnel "$server_file" "$server_user" "$server_addr" "$server_port"
+    fi
+}

@@ -4286,3 +4286,26 @@ Example:
 shell::tune_ssh_tunnel_builder
 shell::tune_ssh_tunnel_builder -n
 "
+
+USAGE_SHELL_TUNE_WORKSPACE_SSH_TUNNEL="
+shell::tune_workspace_ssh_tunnel function
+Opens an SSH tunnel using configuration from a workspace .ssh/*.conf file, with tuning options.
+
+Usage:
+shell::tune_workspace_ssh_tunnel [-n] [-h] <workspace_name> <conf_name> <section>
+
+Parameters:
+  - -n               : Optional dry-run flag. If provided, the command is printed using shell::on_evict.
+  - -h               : Optional. Displays this help message.
+  - <workspace_name> : The name of the workspace.
+  - <conf_name>      : The name of the SSH configuration file (e.g., kafka.conf).
+  - <section>        : The section to use (e.g., dev, uat).
+
+Description:
+This function reads the [base] section first, then overrides with values from the specified section.
+It delegates the actual SSH tunnel execution to shell::tune_ssh_tunnel.
+
+Example:
+shell::tune_workspace_ssh_tunnel my-app kafka.conf dev
+shell::tune_workspace_ssh_tunnel -n my-app kafka.conf uat
+"
