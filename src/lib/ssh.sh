@@ -1279,9 +1279,16 @@ shell::fzf_rename_ssh_key() {
     fi
 
     local old_name
+    local new_name=""
     old_name=$(basename "$selected")
-    shell::colored_echo "[e] Enter new name for '$old_name':" 208
-    read -r new_name
+
+    # Prompt for the new name of the selected SSH key file.
+    # Ensure the new name is not empty.
+    # Using a while loop to ensure the user enters a valid new name.
+    while [ -z "$new_name" ]; do
+        shell::colored_echo "[e] Enter new name for '$old_name':" 208
+        read -r new_name
+    done
 
     # Check if the new name is empty
     # If the new name is empty, print an error message and return.
