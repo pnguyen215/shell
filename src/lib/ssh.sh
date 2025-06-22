@@ -956,6 +956,7 @@ shell::open_ssh_tunnel() {
     local server_port="$7"
     local alive_interval="${8:-60}"
     local timeout="${9:-10}"
+    local retry=3
 
     local placeholder="ssh -i <SSH_PRIVATE_KEY_REF> -N -L <SSH_LOCAL_PORT>:<SSH_SERVER_TARGET_SERVICE_ADDR>:<SSH_SERVER_TARGET_SERVICE_PORT> \
     -o ServerAliveInterval=<SSH_SERVER_ALIVE_INTERVAL_SEC> \
@@ -975,9 +976,40 @@ shell::open_ssh_tunnel() {
     # This allows the user to see what would happen without making changes.
     if [ "$dry_run" = "true" ]; then
         shell::on_evict "$cmd"
-    else
-        shell::run_cmd_eval "$cmd"
+        return 0
     fi
+
+    local attempt=1
+    while [ $attempt -le $retry ]; do
+        shell::colored_echo "DEBUG: Attempting SSH tunnel (try $attempt of $retry)..." 244
+        eval "$cmd"
+        sleep 2
+
+        # Check if the SSH tunnel is established by looking for the local port in listening state.
+        # Using lsof to check if the local port is listening.
+        # This is a more reliable way to check if the tunnel is active.
+        if ! shell::is_command_available lsof; then
+            shell::colored_echo "ERR: lsof command is not available. Cannot check SSH tunnel status." 196
+            return 1
+        fi
+
+        if lsof -iTCP:"$local_port" -sTCP:LISTEN >/dev/null 2>&1; then
+            shell::colored_echo "INFO: SSH tunnel established successfully on port $local_port." 46
+            return 0
+        else
+            shell::colored_echo "ERR: SSH tunnel failed on attempt $attempt." 196
+            if [ $attempt -eq $retry ]; then
+                shell::colored_echo "ERR: Maximum retry attempts reached. SSH tunnel could not be established." 196
+                return 1
+            fi
+        fi
+
+        attempt=$((attempt + 1))
+        sleep 2
+    done
+
+    shell::colored_echo "ERR: Failed to establish SSH tunnel after $retry attempts." 196
+    return 1
 }
 
 # shell::open_ssh_tunnel_builder function
