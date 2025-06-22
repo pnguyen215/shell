@@ -1776,7 +1776,7 @@ shell::fzf_tune_workspace_ssh_tunnel() {
     # Check if the selected .conf file exists
     local section
     section=$(printf "dev\nuat" | fzf --prompt="Select section: ")
-    if [ -z "$section"]; then
+    if [ -z "$section" ]; then
         shell::colored_echo "ERR: No section selected." 196
         return 1
     fi
