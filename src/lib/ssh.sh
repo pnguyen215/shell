@@ -1019,28 +1019,9 @@ shell::open_ssh_tunnel_builder() {
         return 1
     fi
 
-    # Find potential key files in the SSH directory, excluding common non-key files and directories.
-    # Using find to get full paths for fzf.
-    # local key_file
-    # key_file=$(find "$ssh_dir" -type f \
-    #     ! -name "*.pub" \
-    #     ! -name "known_hosts" \
-    #     ! -name "known_hosts.old" |
-    #     fzf --prompt="Select SSH private key: ")
-
-    # # Check if a key file was selected.
-    # if [ -z "$key_file" ]; then
-    #     shell::colored_echo "ERR: No SSH key selected." 196
-    #     return 1
-    # fi
-
-    # # Check if the selected key file exists.
-    # # If the file does not exist, print an error message and exit.
-    # if [ ! -f "$key_file" ]; then
-    #     shell::colored_echo "ERR: Selected file '$key_file' does not exist." 196
-    #     return 1
-    # fi
-
+    # Prompt for SSH private key file selection using fzf.
+    # Exclude known_hosts, known_hosts.old, and public key files.
+    # Use find to get full paths for fzf.
     local key_file=""
     while [ -z "$key_file" ] || [ ! -f "$key_file" ]; do
         key_file=$(find "$ssh_dir" -type f \
@@ -1051,80 +1032,97 @@ shell::open_ssh_tunnel_builder() {
         [ -z "$key_file" ] && shell::colored_echo "ERR: SSH key is required." 196
     done
 
+    # Prompt for local port to bind.
+    # Ensure the port is a valid integer between 1 and 65535.
     local local_port=""
     while [[ -z "$local_port" || "$local_port" -lt 1 || "$local_port" -gt 65535 ]]; do
         shell::colored_echo "[q] Enter local port to bind (1-65535):" 208
         read -r local_port
     done
 
-    shell::colored_echo "[q] Enter server target service address:" 208
-    read -r target_addr
-    shell::colored_echo "[q] Enter server target service port:" 208
-    read -r target_port
-    shell::colored_echo "[q] Enter SSH username:" 208
-    read -r user
-    shell::colored_echo "[q] Enter SSH server address:" 208
-    read -r server_addr
-    shell::colored_echo "[q] Enter SSH server port:" 208
-    read -r server_port
-    shell::colored_echo "[q] Enter server alive interval (default: 60):" 208
-    read -r alive_interval
-    shell::colored_echo "[q] Enter server connection timeout (default: 10):" 208
-    read -r timeout
+    # Prompt for target service address and port.
+    # Validate the address format using shell::validate_ip_addr and shell::validate_hostname.
+    # Ensure the port is a valid integer between 1 and 65535.
+    local target_addr=""
+    while true; do
+        shell::colored_echo "[q] Enter server target service address:" 208
+        read -r target_addr
+        target_addr=$(echo "$target_addr" | tr -d '[:space:]')
+        if shell::validate_ip_addr "$target_addr" || shell::validate_hostname "$target_addr"; then
+            break
+        fi
+        shell::colored_echo "ERR: Invalid server target address format." 196
+    done
 
-    if [ -z "$local_port" ]; then
-        shell::colored_echo "ERR: Local port is required." 196
-        return 1
-    fi
-    if [ "$local_port" -lt 1 ] || [ "$local_port" -gt 65535 ]; then
-        shell::colored_echo "ERR: Local port must be between 1 and 65535." 196
-        return 1
-    fi
-    if [ -z "$target_addr" ]; then
-        shell::colored_echo "ERR: Server target service address is required." 196
-        return 1
-    fi
-    # Validate the target address format.
-    # It can be an IP address or a hostname.
-    # Using shell::validate_ip_addr and shell::validate_hostname to check the format.
-    # These functions should return 0 if the format is valid, 1 otherwise.
-    target_addr=$(echo "$target_addr" | tr -d '[:space:]') # Trim whitespace
-    if ! shell::validate_ip_addr "$target_addr" && ! shell::validate_hostname "$target_addr"; then
-        shell::colored_echo "ERR: Invalid server target service address format." 196
-        return 1
-    fi
-    if [ -z "$target_port" ]; then
-        shell::colored_echo "ERR: Server target service port is required." 196
-        return 1
-    fi
-    if [ "$target_port" -lt 1 ] || [ "$target_port" -gt 65535 ]; then
-        shell::colored_echo "ERR: Server target service port must be between 1 and 65535." 196
-        return 1
-    fi
-    if [ -z "$user" ]; then
-        shell::colored_echo "ERR: SSH username is required." 196
-        return 1
-    fi
-    if [ -z "$server_addr" ]; then
-        shell::colored_echo "ERR: SSH server address is required." 196
-        return 1
-    fi
-    # Validate the server address format.
-    # It can be an IP address or a hostname.
-    # Using shell::validate_ip_addr and shell::validate_hostname to check the format.
-    server_addr=$(echo "$server_addr" | tr -d '[:space:]') # Trim whitespace
-    if ! shell::validate_ip_addr "$server_addr" && ! shell::validate_hostname "$server_addr"; then
+    # Prompt for target service port.
+    # Ensure the port is a valid integer between 1 and 65535.
+    # This is the port on the target service that the SSH tunnel will connect to.
+    local target_port=""
+    while [[ -z "$target_port" || "$target_port" -lt 1 || "$target_port" -gt 65535 ]]; do
+        shell::colored_echo "[q] Enter server target service port (1-65535):" 208
+        read -r target_port
+    done
+
+    # Prompt for SSH username.
+    # This is the username used to authenticate with the SSH server.
+    local user=""
+    while [ -z "$user" ]; do
+        shell::colored_echo "[q] Enter SSH username:" 208
+        read -r user
+    done
+
+    # Prompt for SSH server address.
+    # Validate the address format using shell::validate_ip_addr and shell::validate_hostname.
+    # Ensure the port is a valid integer between 1 and 65535.
+    local server_addr=""
+    while true; do
+        shell::colored_echo "[q] Enter SSH server address:" 208
+        read -r server_addr
+        server_addr=$(echo "$server_addr" | tr -d '[:space:]')
+        if shell::validate_ip_addr "$server_addr" || shell::validate_hostname "$server_addr"; then
+            break
+        fi
         shell::colored_echo "ERR: Invalid SSH server address format." 196
-        return 1
-    fi
-    if [ -z "$server_port" ]; then
-        shell::colored_echo "ERR: SSH server port is required." 196
-        return 1
-    fi
-    if [ "$server_port" -lt 1 ] || [ "$server_port" -gt 65535 ]; then
-        shell::colored_echo "ERR: SSH server port must be between 1 and 65535." 196
-        return 1
-    fi
+    done
+
+    # Prompt for SSH server port.
+    # Ensure the port is a valid integer between 1 and 65535.
+    # This is the port on the SSH server that the tunnel will connect to.
+    local server_port=""
+    while [[ -z "$server_port" || "$server_port" -lt 1 || "$server_port" -gt 65535 ]]; do
+        shell::colored_echo "[q] Enter SSH server port (1-65535):" 208
+        read -r server_port
+    done
+
+    local alive_interval=""
+    local timeout=""
+    # Prompt for optional alive_interval
+    # This is the interval in seconds for sending keep-alive messages to the server.
+    while [[ -z "$alive_interval" || "$alive_interval" -lt 1 ]]; do
+        shell::colored_echo "[q] Enter server alive interval (default: 60):" 208
+        read -r alive_interval
+        alive_interval=$(echo "$alive_interval" | tr -d '[:space:]')
+        if [[ -z "$alive_interval" ]]; then
+            alive_interval=60
+        elif ! [[ "$alive_interval" =~ ^[0-9]+$ ]] || [ "$alive_interval" -lt 1 ]; then
+            shell::colored_echo "ERR: Invalid server alive interval format. Must be a positive integer." 196
+            alive_interval=""
+        fi
+    done
+
+    # Prompt for optional timeout
+    # This is the timeout in seconds for establishing the SSH connection.
+    while [[ -z "$timeout" || "$timeout" -lt 1 ]]; do
+        shell::colored_echo "[q] Enter server connection timeout (default: 10):" 208
+        read -r timeout
+        timeout=$(echo "$timeout" | tr -d '[:space:]')
+        if [[ -z "$timeout" ]]; then
+            timeout=10
+        elif ! [[ "$timeout" =~ ^[0-9]+$ ]] || [ "$timeout" -lt 1 ]; then
+            shell::colored_echo "ERR: Invalid server connection timeout format. Must be a positive integer." 196
+            timeout=""
+        fi
+    done
 
     # Set default values for alive_interval and timeout if not provided
     alive_interval="${alive_interval:-60}"
