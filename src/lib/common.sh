@@ -157,7 +157,6 @@ shell::colored_echo() {
 # Notes:
 #   - This function is useful for logging commands prior to execution.
 shell::run_cmd() {
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_RUN_CMD"
         return 0
@@ -178,7 +177,7 @@ shell::run_cmd() {
     fi
 
     # Print the command with OS-appropriate emoji
-    local emoji="🔍"
+    local emoji="[em]"
     if [ "$os_type" = "linux" ]; then
         emoji="[v]" # Penguin for Linux
     elif [ "$os_type" = "macos" ]; then
@@ -239,7 +238,7 @@ shell::run_cmd_eval() {
     fi
 
     # Print the command with OS-appropriate emoji
-    local emoji="🔍"
+    local emoji="[em]"
     if [ "$os_type" = "linux" ]; then
         emoji="[v]" # Penguin for Linux
     elif [ "$os_type" = "macos" ]; then
@@ -792,7 +791,6 @@ shell::get_temp_dir() {
 # Notes:
 #   - This function is useful for displaying commands in logs or hooks without execution.
 shell::on_evict() {
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_ON_EVICT"
         return 0

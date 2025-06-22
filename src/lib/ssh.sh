@@ -969,12 +969,11 @@ shell::open_ssh_tunnel() {
     -o ExitOnForwardFailure=yes \
     $user@$server_addr -p $server_port &"
 
-    shell::colored_echo "DEBUG: $placeholder" 244
-
     # Check if the dry mode is enabled
     # If dry_run is true, we will not execute the command but print it instead.
     # This allows the user to see what would happen without making changes.
     if [ "$dry_run" = "true" ]; then
+        shell::colored_echo "DEBUG: $placeholder" 244
         shell::on_evict "$cmd"
         return 0
     fi
@@ -983,7 +982,8 @@ shell::open_ssh_tunnel() {
     while [ $attempt -le $retry ]; do
         shell::colored_echo "DEBUG: Attempting SSH tunnel (try $attempt of $retry)..." 244
         eval "$cmd"
-        sleep 2
+        shell::on_evict "$cmd"
+        sleep 1
 
         # Check if the SSH tunnel is established by looking for the local port in listening state.
         # Using lsof to check if the local port is listening.
