@@ -4242,3 +4242,27 @@ excluding common non-key files. It uses fzf to provide an interactive selection 
 for renaming an SSH key file. The user is prompted to enter a new name for the selected key.
 If the dry-run flag is set, it prints the rename command instead of executing it.
 "
+
+USAGE_SHELL_TUNE_SSH_TUNNEL="
+shell::tune_ssh_tunnel function
+Opens an interactive SSH session using the provided SSH configuration parameters.
+
+Usage:
+shell::tune_ssh_tunnel [-n] [-h] <private_key> <user> <host> <port>
+
+Parameters:
+  - -n            : Optional dry-run flag. If provided, the SSH command is printed using shell::on_evict instead of executed.
+  - -h            : Optional. Displays this help message.
+  - <private_key> : Path to the SSH private key file.
+  - <user>        : SSH username.
+  - <host>        : SSH server address.
+  - <port>        : SSH server port.
+
+Description:
+This function constructs and executes an SSH command to connect to a remote server using the specified credentials.
+It supports dry-run mode for previewing the command.
+
+Example:
+shell::tune_ssh_tunnel ~/.ssh/id_rsa sysadmin 192.168.1.10 22
+shell::tune_ssh_tunnel -n ~/.ssh/id_rsa sysadmin example.com 2222
+"

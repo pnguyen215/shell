@@ -1170,6 +1170,97 @@ shell::open_ssh_tunnel_builder() {
     fi
 }
 
+# shell::tune_ssh_tunnel function
+# Opens an interactive SSH session using the provided SSH configuration parameters.
+#
+# Usage:
+# shell::tune_ssh_tunnel [-n] <private_key> <user> <host> <port>
+#
+# Parameters:
+# - -n : Optional dry-run flag. If provided, the SSH command is printed using shell::on_evict instead of executed.
+# - <private_key> : Path to the SSH private key file.
+# - <user> : SSH username.
+# - <host> : SSH server address.
+# - <port> : SSH server port.
+#
+# Description:
+# This function constructs and executes an SSH command to connect to a remote server using the specified credentials.
+# It supports dry-run mode for previewing the command.
+#
+# Example:
+# shell::tune_ssh_tunnel ~/.ssh/id_rsa sysadmin 192.168.1.10 22
+# shell::tune_ssh_tunnel -n ~/.ssh/id_rsa sysadmin example.com 2222
+shell::tune_ssh_tunnel() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_TUNE_SSH_TUNNEL"
+        return 0
+    fi
+
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if [ $# -ne 4 ]; then
+        echo "Usage: shell::tune_ssh_tunnel [-n] <private_key> <user> <host> <port>"
+        return 1
+    fi
+
+    local key="$1"
+    # Check if the SSH private key is provided
+    # If the key is not provided, print an error message and return.
+    if [ -z "$key" ]; then
+        shell::colored_echo "ERR: SSH private key is required." 196
+        return 1
+    fi
+    # Check if the key file is a valid file
+    # If the key file is not a valid file, print an error message and return.
+    if [ ! -f "$key" ]; then
+        shell::colored_echo "ERR: SSH private key not found: $key" 196
+        return 1
+    fi
+    local user="$2"
+    # Check if the SSH user is provided
+    # If the user is not provided, print an error message and return.
+    if [ -z "$user" ]; then
+        shell::colored_echo "ERR: SSH user is required." 196
+        return 1
+    fi
+    local host="$3"
+    # Check if the SSH host is provided
+    # If the host is not provided, print an error message and return.
+    if [ -z "$host" ]; then
+        shell::colored_echo "ERR: SSH host is required." 196
+        return 1
+    fi
+    local port="$4"
+    # Check if the SSH port is provided
+    # If the port is not provided, print an error message and return.
+    if [ -z "$port" ]; then
+        shell::colored_echo "ERR: SSH port is required." 196
+        return 1
+    fi
+    # Check if the port is a valid integer between 1 and 65535
+    if ! [[ "$port" =~ ^[0-9]+$ ]] || [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; then
+        shell::colored_echo "ERR: Invalid SSH port format. Must be a positive integer between 1 and 65535." 196
+        return 1
+    fi
+
+    local placeholder="ssh -i <SSH_PRIVATE_KEY_REF> <SSH_SERVER_USER>@<SSH_SERVER_ADDR> -p <SSH_SERVER_PORT>"
+    local cmd="ssh -i \"$key\" \"$user@$host\" -p \"$port\""
+
+    # Check if the dry mode is enabled
+    # If dry_run is true, we will not execute the command but print it instead.
+    # This allows the user to see what would happen without making changes.
+    if [ "$dry_run" = "true" ]; then
+        shell::colored_echo "DEBUG: $placeholder" 244
+        shell::on_evict "$cmd"
+    else
+        shell::run_cmd_eval "$cmd"
+    fi
+}
+
 # shell::rename_ssh_key function
 # Renames an SSH key file (private or public) in the SSH directory.
 #
