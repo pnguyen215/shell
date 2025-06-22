@@ -1021,28 +1021,42 @@ shell::open_ssh_tunnel_builder() {
 
     # Find potential key files in the SSH directory, excluding common non-key files and directories.
     # Using find to get full paths for fzf.
-    local key_file
-    key_file=$(find "$ssh_dir" -type f \
-        ! -name "*.pub" \
-        ! -name "known_hosts" \
-        ! -name "known_hosts.old" |
-        fzf --prompt="Select SSH private key: ")
+    # local key_file
+    # key_file=$(find "$ssh_dir" -type f \
+    #     ! -name "*.pub" \
+    #     ! -name "known_hosts" \
+    #     ! -name "known_hosts.old" |
+    #     fzf --prompt="Select SSH private key: ")
 
-    # Check if a key file was selected.
-    if [ -z "$key_file" ]; then
-        shell::colored_echo "ERR: No SSH key selected." 196
-        return 1
-    fi
+    # # Check if a key file was selected.
+    # if [ -z "$key_file" ]; then
+    #     shell::colored_echo "ERR: No SSH key selected." 196
+    #     return 1
+    # fi
 
-    # Check if the selected key file exists.
-    # If the file does not exist, print an error message and exit.
-    if [ ! -f "$key_file" ]; then
-        shell::colored_echo "ERR: Selected file '$key_file' does not exist." 196
-        return 1
-    fi
+    # # Check if the selected key file exists.
+    # # If the file does not exist, print an error message and exit.
+    # if [ ! -f "$key_file" ]; then
+    #     shell::colored_echo "ERR: Selected file '$key_file' does not exist." 196
+    #     return 1
+    # fi
 
-    shell::colored_echo "[q] Enter local port to bind:" 208
-    read -r local_port
+    local key_file=""
+    while [ -z "$key_file" ] || [ ! -f "$key_file" ]; do
+        key_file=$(find "$ssh_dir" -type f \
+            ! -name "*.pub" \
+            ! -name "known_hosts" \
+            ! -name "known_hosts.old" |
+            fzf --prompt="Select SSH private key: ")
+        [ -z "$key_file" ] && shell::colored_echo "ERR: SSH key is required." 196
+    done
+
+    local local_port=""
+    while [[ -z "$local_port" || "$local_port" -lt 1 || "$local_port" -gt 65535 ]]; do
+        shell::colored_echo "[q] Enter local port to bind (1-65535):" 208
+        read -r local_port
+    done
+
     shell::colored_echo "[q] Enter server target service address:" 208
     read -r target_addr
     shell::colored_echo "[q] Enter server target service port:" 208
