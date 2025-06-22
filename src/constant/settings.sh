@@ -45,6 +45,13 @@ SHELL_KEY_CONF_FILE="$SHELL_CONF_WORKING/key.conf"
 # It is intended for critical settings that are essential for the shell's operation.
 SHELL_KEY_CONF_FILE_PROTECTED="$SHELL_CONF_WORKING/protected.conf"
 
+# SHELL_KEY_CONF_VPN_FILE constant
+# This variable defines the path to the VPN configuration file used by the shell bash library.
+# The file stores VPN-related configuration entries, allowing users to manage their VPN settings easily.
+# It is typically used to store VPN connection details, such as server addresses, authentication credentials, and other relevant settings.
+# By default, this is set to "$SHELL_CONF_WORKING/vpn.conf". You can change this value if you want to store your VPN configurations in a different location.
+SHELL_KEY_CONF_VPN_FILE="$SHELL_CONF_WORKING/vpn.conf"
+
 # SHELL_KEY_CONF_FILE_WORKSPACE constant
 # This variable defines the path to the profile-specific configuration file within the workspace directory.
 # It is used to store configuration settings specific to a user's profile, allowing for personalized shell environments.
