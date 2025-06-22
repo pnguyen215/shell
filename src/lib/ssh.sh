@@ -1137,3 +1137,65 @@ shell::open_ssh_tunnel_builder() {
         shell::open_ssh_tunnel "$key_file" "$local_port" "$target_addr" "$target_port" "$user" "$server_addr" "$server_port" "$alive_interval" "$timeout"
     fi
 }
+
+# shell::rename_ssh_key function
+# Renames an SSH key file (private or public) in the SSH directory.
+#
+# Usage:
+# shell::rename_ssh_key [-n] <old_name> <new_name>
+#
+# Parameters:
+# - -n : Optional dry-run flag. If provided, the rename command is printed using shell::on_evict.
+# - <old_name> : The current name of the SSH key file.
+# - <new_name> : The new name for the SSH key file.
+shell::rename_ssh_key() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_RENAME_SSH_KEY"
+        return 0
+    fi
+
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if [ $# -ne 2 ]; then
+        echo "Usage: shell::rename_ssh_key [-n] <old_name> <new_name>"
+        return 1
+    fi
+
+    local ssh_dir="${SHELL_CONF_SSH_DIR_WORKING:-$HOME/.ssh}"
+    local old="$ssh_dir/$1"
+    local new="$ssh_dir/$2"
+
+    # Check if the SSH directory exists
+    if [ ! -d "$ssh_dir" ]; then
+        shell::colored_echo "ERR: SSH directory '$ssh_dir' not found." 196
+        return 1
+    fi
+    # Check if the old file exists
+    # If the old file does not exist, print an error message and return.
+    if [[ ! -f "$old" ]]; then
+        shell::colored_echo "ERR: File '$old' not found." 196
+        return 1
+    fi
+
+    # Check if the old file is a known_hosts file
+    # If the old file is a known_hosts file, print an error message and return.
+    if [[ "$old" == *known_hosts* ]]; then
+        shell::colored_echo "ERR: Cannot rename known_hosts files." 196
+        return 1
+    fi
+
+    local cmd="sudo mv \"$old\" \"$new\""
+
+    # If dry_run is true, we will not execute the command but print it instead.
+    # This allows the user to see what would happen without making changes.
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "$cmd"
+    else
+        shell::run_cmd_eval "$cmd"
+        shell::colored_echo "INFO: Renamed '$1' to '$2'" 46
+    fi
+}

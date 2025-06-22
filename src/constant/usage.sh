@@ -4202,3 +4202,25 @@ Example:
 shell::open_ssh_tunnel_builder
 shell::open_ssh_tunnel_builder -n
 "
+
+USAGE_SHELL_RENAME_SSH_KEY="
+shell::rename_ssh_key function
+Renames an SSH key file (private or public) in the SSH directory.
+
+Usage:
+shell::rename_ssh_key [-n] [-h] <old_name> <new_name>
+
+Parameters:
+  - -n          : Optional dry-run flag. If provided, the rename command is printed using shell::on_evict instead of executed.
+  - -h          : Optional. Displays this help message.
+  - <old_name>  : The current name of the SSH key file.
+  - <new_name>  : The new name for the SSH key file.
+
+Description:
+This function renames an SSH key file in the user's SSH directory (HOME/.ssh).
+It checks if the old key file exists, ensures the new name does not already exist,
+and performs the rename operation.
+
+Example:
+shell::rename_ssh_key old_key_name new_key_name
+"
