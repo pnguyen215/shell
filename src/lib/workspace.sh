@@ -1511,6 +1511,14 @@ shell::open_workspace_ssh_tunnel() {
         return 1
     fi
 
+    # Check if the section exists in the configuration file
+    # We use shell::exist_ini_section to check if the specified section exists in the configuration file
+    # If the section does not exist, we print an error message and return
+    if ! shell::exist_ini_section "$conf_path" "$section" >/dev/null 2>&1; then
+        shell::colored_echo "ERR: Section ('$section') not found in file: $file" 196
+        return 1
+    fi
+
     # Load base values
     # We read the base section of the configuration file
     # This function reads the base section first, then overrides with values from the specified section
@@ -1688,6 +1696,14 @@ shell::tune_workspace_ssh_tunnel() {
     # If it does not exist, we print an error message and return
     if [ ! -f "$conf_path" ]; then
         shell::colored_echo "ERR: Configuration file '$conf_path' not found." 196
+        return 1
+    fi
+
+    # Check if the section exists in the configuration file
+    # We use shell::exist_ini_section to check if the specified section exists in the configuration file
+    # If the section does not exist, we print an error message and return
+    if ! shell::exist_ini_section "$conf_path" "$section" >/dev/null 2>&1; then
+        shell::colored_echo "ERR: Section ('$section') not found in file: $file" 196
         return 1
     fi
 
