@@ -1408,6 +1408,20 @@ shell::rename_ssh_key() {
         return 1
     fi
 
+    # If the old name has ended by any extension (e.g., .pub), we will add that extension to new name
+    # This is to ensure that the new name has the same extension as the old name.
+    if [[ "$old_name" == *.* ]]; then
+        local extension="${old_name##*.}"
+        new="$new.$extension"
+    fi
+
+    # Check if the new file already exists
+    # If the new file already exists, print an error message and return.
+    if [[ -f "$new" ]]; then
+        shell::colored_echo "ERR: File '$new' already exists." 196
+        return 1
+    fi
+
     local cmd="sudo mv \"$old\" \"$new\""
 
     # If dry_run is true, we will not execute the command but print it instead.
