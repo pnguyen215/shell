@@ -4182,3 +4182,23 @@ Example:
 shell::validate_hostname example.com       # Valid
 shell::validate_hostname -invalid-hostname # Invalid
 "
+
+USAGE_SHELL_OPEN_SSH_TUNNEL_BUILDER="
+shell::open_ssh_tunnel_builder function
+Interactively builds and opens an SSH tunnel by prompting for each required field.
+
+Usage:
+shell::open_ssh_tunnel_builder [-n] [-h]
+
+Parameters:
+  - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict.
+  - -h : Optional. Displays this help message.
+
+Description:
+This function prompts the user to enter each required field for an SSH tunnel connection.
+It uses fzf to select the SSH private key file from HOME/.ssh and then calls shell::open_ssh_tunnel.
+
+Example:
+shell::open_ssh_tunnel_builder
+shell::open_ssh_tunnel_builder -n
+"

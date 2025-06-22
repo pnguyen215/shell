@@ -1067,8 +1067,12 @@ shell::open_ssh_tunnel_builder() {
         shell::colored_echo "ERR: Target service address is required." 196
         return 1
     fi
-    # Validate target_addr format (basic check)
-    if ! shell::is_valid_ip "$target_addr" && ! shell::is_valid_hostname "$target_addr"; then
+    # Validate the target address format.
+    # It can be an IP address or a hostname.
+    # Using shell::validate_ip_addr and shell::validate_hostname to check the format.
+    # These functions should return 0 if the format is valid, 1 otherwise.
+    target_addr=$(echo "$target_addr" | tr -d '[:space:]') # Trim whitespace
+    if ! shell::validate_ip_addr "$target_addr" && ! shell::validate_hostname "$target_addr"; then
         shell::colored_echo "ERR: Invalid target service address format." 196
         return 1
     fi
@@ -1086,6 +1090,14 @@ shell::open_ssh_tunnel_builder() {
     fi
     if [ -z "$server_addr" ]; then
         shell::colored_echo "ERR: SSH server address is required." 196
+        return 1
+    fi
+    # Validate the server address format.
+    # It can be an IP address or a hostname.
+    # Using shell::validate_ip_addr and shell::validate_hostname to check the format.
+    server_addr=$(echo "$server_addr" | tr -d '[:space:]') # Trim whitespace
+    if ! shell::validate_ip_addr "$server_addr" && ! shell::validate_hostname "$server_addr"; then
+        shell::colored_echo "ERR: Invalid SSH server address format." 196
         return 1
     fi
     if [ -z "$server_port" ]; then
