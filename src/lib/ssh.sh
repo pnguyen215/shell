@@ -1261,6 +1261,90 @@ shell::tune_ssh_tunnel() {
     fi
 }
 
+# shell::tune_ssh_tunnel_builder function
+# Interactively builds and opens an SSH tunnel by prompting for each required field.
+#
+# Usage:
+# shell::tune_ssh_tunnel_builder [-n]
+#
+# Parameters:
+# - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict.
+#
+# Description:
+# This function prompts the user to enter each required field for an SSH tunnel connection.
+# It uses fzf to select the SSH private key file from $HOME/.ssh and then calls shell::tune_ssh_tunnel.
+#
+# Example:
+# shell::tune_ssh_tunnel_builder
+# shell::tune_ssh_tunnel_builder -n
+shell::tune_ssh_tunnel_builder() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_TUNE_SSH_TUNNEL_BUILDER"
+        return 0
+    fi
+
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    # Ensure fzf is installed
+    shell::install_package fzf
+
+    # Prompt for SSH private key file selection using fzf.
+    local ssh_dir="${SHELL_CONF_SSH_DIR_WORKING:-$HOME/.ssh}"
+    if [ ! -d "$ssh_dir" ]; then
+        shell::colored_echo "ERR: SSH directory '$ssh_dir' not found." 196
+        return 1
+    fi
+
+    local key_file=""
+    while [ -z "$key_file" ] || [ ! -f "$key_file" ]; do
+        key_file=$(find "$ssh_dir" -type f \
+            ! -name "*.pub" \
+            ! -name "known_hosts" \
+            ! -name "known_hosts.old" |
+            fzf --prompt="Select SSH private key: ")
+        [ -z "$key_file" ] && shell::colored_echo "ERR: SSH key is required." 196
+    done
+
+    # Prompt for SSH username.
+    local user=""
+    while [ -z "$user" ]; do
+        shell::colored_echo "[q] Enter SSH username:" 208
+        read -r user
+    done
+
+    # Prompt for SSH server address.
+    local host=""
+    while true; do
+        shell::colored_echo "[q] Enter SSH server address:" 208
+        read -r host
+        host=$(echo "$host" | tr -d '[:space:]')
+        if shell::validate_ip_addr "$host" || shell::validate_hostname "$host"; then
+            break
+        fi
+        shell::colored_echo "ERR: Invalid SSH server address format." 196
+    done
+
+    # Prompt for SSH server port.
+    local port=""
+    while [[ -z "$port" || "$port" -lt 1 || "$port" -gt 65535 ]]; do
+        shell::colored_echo "[q] Enter SSH server port (1-65535):" 208
+        read -r port
+    done
+
+    # Check if the dry-mode is enabled.
+    # If dry_run is true, we will not execute the command but print it instead.
+    # This allows the user to see what would happen without making changes.
+    if [ "$dry_run" = "true" ]; then
+        shell::tune_ssh_tunnel -n "$key_file" "$user" "$host" "$port"
+    else
+        shell::tune_ssh_tunnel "$key_file" "$user" "$host" "$port"
+    fi
+}
+
 # shell::rename_ssh_key function
 # Renames an SSH key file (private or public) in the SSH directory.
 #
