@@ -1040,9 +1040,9 @@ shell::open_ssh_tunnel_builder() {
 
     shell::colored_echo "[q] Enter local port to bind:" 208
     read -r local_port
-    shell::colored_echo "[q] Enter target service address:" 208
+    shell::colored_echo "[q] Enter server target service address:" 208
     read -r target_addr
-    shell::colored_echo "[q] Enter target service port:" 208
+    shell::colored_echo "[q] Enter server target service port:" 208
     read -r target_port
     shell::colored_echo "[q] Enter SSH username:" 208
     read -r user
@@ -1052,7 +1052,7 @@ shell::open_ssh_tunnel_builder() {
     read -r server_port
     shell::colored_echo "[q] Enter server alive interval (default: 60):" 208
     read -r alive_interval
-    shell::colored_echo "[q] Enter connect timeout (default: 10):" 208
+    shell::colored_echo "[q] Enter server connection timeout (default: 10):" 208
     read -r timeout
 
     if [ -z "$local_port" ]; then
@@ -1064,7 +1064,7 @@ shell::open_ssh_tunnel_builder() {
         return 1
     fi
     if [ -z "$target_addr" ]; then
-        shell::colored_echo "ERR: Target service address is required." 196
+        shell::colored_echo "ERR: Server target service address is required." 196
         return 1
     fi
     # Validate the target address format.
@@ -1073,15 +1073,15 @@ shell::open_ssh_tunnel_builder() {
     # These functions should return 0 if the format is valid, 1 otherwise.
     target_addr=$(echo "$target_addr" | tr -d '[:space:]') # Trim whitespace
     if ! shell::validate_ip_addr "$target_addr" && ! shell::validate_hostname "$target_addr"; then
-        shell::colored_echo "ERR: Invalid target service address format." 196
+        shell::colored_echo "ERR: Invalid server target service address format." 196
         return 1
     fi
     if [ -z "$target_port" ]; then
-        shell::colored_echo "ERR: Target service port is required." 196
+        shell::colored_echo "ERR: Server target service port is required." 196
         return 1
     fi
     if [ "$target_port" -lt 1 ] || [ "$target_port" -gt 65535 ]; then
-        shell::colored_echo "ERR: Target service port must be between 1 and 65535." 196
+        shell::colored_echo "ERR: Server target service port must be between 1 and 65535." 196
         return 1
     fi
     if [ -z "$user" ]; then
