@@ -2506,20 +2506,12 @@ shell::validate_ip_addr() {
 # Usage:
 # shell::validate_hostname <hostname>
 #
-# Parameters:
-# - <hostname> : The hostname string to validate.
-#
 # Description:
-# This function checks if the input string is a valid hostname.
 # A valid hostname:
 # - Contains only letters, digits, and hyphens.
 # - Each label is 1-63 characters long.
 # - The full hostname is up to 253 characters.
 # - Labels cannot start or end with a hyphen.
-#
-# Example:
-# shell::validate_hostname example.com       # Valid
-# shell::validate_hostname -invalid-hostname # Invalid
 shell::validate_hostname() {
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_VALIDATE_HOSTNAME"
@@ -2539,14 +2531,17 @@ shell::validate_hostname() {
         return 1
     fi
 
-    # Validate each label
-    IFS='.' read -ra labels <<<"$hostname"
-    for label in "${labels[@]}"; do
-        if [ ! "$label" =~ ^[a-zA-Z0-9?$ ]]; then
+    # Split by dot and validate each label
+    OLD_IFS="$IFS"
+    IFS='.'
+    for label in $hostname; do
+        if ! echo "$label" | grep -Eq '^a-zA-Z0-9?$'; then
             shell::colored_echo "ERR: Invalid label '$label' in hostname." 196
+            IFS="$OLD_IFS"
             return 1
         fi
     done
+    IFS="$OLD_IFS"
 
     shell::colored_echo "INFO: '$hostname' is a valid hostname." 46
     return 0
