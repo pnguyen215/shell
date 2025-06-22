@@ -1022,7 +1022,10 @@ shell::open_ssh_tunnel_builder() {
     # Find potential key files in the SSH directory, excluding common non-key files and directories.
     # Using find to get full paths for fzf.
     local key_file
-    key_file=$(find "$ssh_dir" -type f ! -name "*.pub" |
+    key_file=$(find "$ssh_dir" -type f \
+        ! -name "*.pub" \
+        ! -name "known_hosts" \
+        ! -name "known_hosts.old" |
         fzf --prompt="Select SSH private key: ")
 
     # Check if a key file was selected.
