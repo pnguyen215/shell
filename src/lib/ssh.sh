@@ -979,3 +979,134 @@ shell::open_ssh_tunnel() {
         shell::run_cmd_eval "$cmd"
     fi
 }
+
+# shell::open_ssh_tunnel_builder function
+# Interactively builds and opens an SSH tunnel by prompting for each required field.
+#
+# Usage:
+# shell::open_ssh_tunnel_builder [-n]
+#
+# Parameters:
+# - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict.
+#
+# Description:
+# This function prompts the user to enter each required field for an SSH tunnel connection.
+# It uses fzf to select the SSH private key file from $HOME/.ssh and then calls shell::open_ssh_tunnel.
+#
+# Example:
+# shell::open_ssh_tunnel_builder
+# shell::open_ssh_tunnel_builder -n
+shell::open_ssh_tunnel_builder() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_OPEN_SSH_TUNNEL_BUILDER"
+        return 0
+    fi
+
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    # Ensure fzf is installed.
+    shell::install_package fzf
+
+    # Check the SSH directory.
+    # Use the configured SSH directory or default to $HOME/.ssh.
+    local ssh_dir="${SHELL_CONF_SSH_DIR_WORKING:-$HOME/.ssh}"
+    if [ ! -d "$ssh_dir" ]; then
+        shell::colored_echo "ERR: SSH directory '$ssh_dir' not found." 196
+        return 1
+    fi
+
+    # Find potential key files in the SSH directory, excluding common non-key files and directories.
+    # Using find to get full paths for fzf.
+    local key_file
+    key_file=$(find "$ssh_dir" -type f ! -name "*.pub" |
+        fzf --prompt="Select SSH private key: ")
+
+    # Check if a key file was selected.
+    if [ -z "$key_file" ]; then
+        shell::colored_echo "ERR: No SSH key selected." 196
+        return 1
+    fi
+
+    # Check if the selected key file exists.
+    # If the file does not exist, print an error message and exit.
+    if [ ! -f "$key_file" ]; then
+        shell::colored_echo "ERR: Selected file '$key_file' does not exist." 196
+        return 1
+    fi
+
+    shell::colored_echo "[q] Enter local port to bind:" 208
+    read -r local_port
+    shell::colored_echo "[q] Enter target service address:" 208
+    read -r target_addr
+    shell::colored_echo "[q] Enter target service port:" 208
+    read -r target_port
+    shell::colored_echo "[q] Enter SSH username:" 208
+    read -r user
+    shell::colored_echo "[q] Enter SSH server address:" 208
+    read -r server_addr
+    shell::colored_echo "[q] Enter SSH server port:" 208
+    read -r server_port
+    shell::colored_echo "[q] Enter server alive interval (default: 60):" 208
+    read -r alive_interval
+    shell::colored_echo "[q] Enter connect timeout (default: 10):" 208
+    read -r timeout
+
+    if [ -z "$local_port" ]; then
+        shell::colored_echo "ERR: Local port is required." 196
+        return 1
+    fi
+    if [ "$local_port" -lt 1 ] || [ "$local_port" -gt 65535 ]; then
+        shell::colored_echo "ERR: Local port must be between 1 and 65535." 196
+        return 1
+    fi
+    if [ -z "$target_addr" ]; then
+        shell::colored_echo "ERR: Target service address is required." 196
+        return 1
+    fi
+    # Validate target_addr format (basic check)
+    if ! shell::is_valid_ip "$target_addr" && ! shell::is_valid_hostname "$target_addr"; then
+        shell::colored_echo "ERR: Invalid target service address format." 196
+        return 1
+    fi
+    if [ -z "$target_port" ]; then
+        shell::colored_echo "ERR: Target service port is required." 196
+        return 1
+    fi
+    if [ "$target_port" -lt 1 ] || [ "$target_port" -gt 65535 ]; then
+        shell::colored_echo "ERR: Target service port must be between 1 and 65535." 196
+        return 1
+    fi
+    if [ -z "$user" ]; then
+        shell::colored_echo "ERR: SSH username is required." 196
+        return 1
+    fi
+    if [ -z "$server_addr" ]; then
+        shell::colored_echo "ERR: SSH server address is required." 196
+        return 1
+    fi
+    if [ -z "$server_port" ]; then
+        shell::colored_echo "ERR: SSH server port is required." 196
+        return 1
+    fi
+    if [ "$server_port" -lt 1 ] || [ "$server_port" -gt 65535 ]; then
+        shell::colored_echo "ERR: SSH server port must be between 1 and 65535." 196
+        return 1
+    fi
+
+    # Set default values for alive_interval and timeout if not provided
+    alive_interval="${alive_interval:-60}"
+    timeout="${timeout:-10}"
+
+    # Check if the dry-mode is enabled
+    # If dry_run is true, we will not execute the command but print it instead.
+    # This allows the user to see what would happen without making changes.
+    if [ "$dry_run" = "true" ]; then
+        shell::open_ssh_tunnel -n "$key_file" "$local_port" "$target_addr" "$target_port" "$user" "$server_addr" "$server_port" "$alive_interval" "$timeout"
+    else
+        shell::open_ssh_tunnel "$key_file" "$local_port" "$target_addr" "$target_port" "$user" "$server_addr" "$server_port" "$alive_interval" "$timeout"
+    fi
+}

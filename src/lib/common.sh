@@ -2446,3 +2446,56 @@ shell::go_back() {
 
     cd $OLDPWD
 }
+
+# shell::validate_ip_addr function
+# Validates whether a given string is a valid IPv4 or IPv6 address.
+#
+# Usage:
+# shell::validate_ip_addr <ip_address>
+#
+# Parameters:
+# - <ip_address> : The IP address string to validate.
+#
+# Description:
+# This function checks if the input string is a valid IPv4 or IPv6 address.
+# IPv4 format: X.X.X.X where each X is 0-255.
+# IPv6 format: eight groups of four hexadecimal digits separated by colons.
+#
+# Example:
+# shell::validate_ip_addr 192.168.1.1       # Valid IPv4
+# shell::validate_ip_addr fe80::1ff:fe23::1 # Valid IPv6
+shell::validate_ip_addr() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_VALIDATE_IP_ADDR"
+        return 0
+    fi
+
+    if [ $# -ne 1 ]; then
+        echo "Usage: shell::validate_ip_addr <ip_address>"
+        return 1
+    fi
+
+    local ip="$1"
+
+    # Validate IPv4
+    if [[ "$ip" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+        IFS='.' read -r o1 o2 o3 o4 <<<"$ip"
+        for octet in "$o1" "$o2" "$o3" "$o4"; do
+            if ((octet < 0 || octet > 255)); then
+                shell::colored_echo "ERR: IPv4 octet '$octet' out of range (0-255)." 196
+                return 1
+            fi
+        done
+        shell::colored_echo "INFO: '$ip' is a valid IPv4 address." 46
+        return 0
+    fi
+
+    # Validate IPv6
+    if [[ "$ip" =~ ^([0-9a-fA-F]{1,4}:){1,7}[0-9a-fA-F]{1,4}$ ]]; then
+        shell::colored_echo "INFO: '$ip' is a valid IPv6 address." 46
+        return 0
+    fi
+
+    shell::colored_echo "ERR: '$ip' is not a valid IPv4 or IPv6 address." 196
+    return 1
+}

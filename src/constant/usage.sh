@@ -4137,3 +4137,24 @@ Example:
 shell::fzf_open_workspace_ssh_tunnel
 shell::fzf_open_workspace_ssh_tunnel -n
 "
+
+USAGE_SHELL_VALIDATE_IP_ADDR="
+shell::validate_ip_addr function
+Validates whether a given string is a valid IPv4 or IPv6 address.
+
+Usage:
+shell::validate_ip_addr [-h] <ip_address>
+
+Parameters:
+  - -h        : Optional. Displays this help message.
+  - <ip_address> : The IP address string to validate.
+
+Description:
+This function checks if the input string is a valid IPv4 or IPv6 address.
+IPv4 format: X.X.X.X where each X is 0-255.
+IPv6 format: eight groups of four hexadecimal digits separated by colons.
+
+Example:
+shell::validate_ip_addr 192.168.1.1       # Valid IPv4
+shell::validate_ip_addr fe80::1ff:fe23::1 # Valid IPv6
+"
