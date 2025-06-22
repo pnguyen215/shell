@@ -4158,3 +4158,27 @@ Example:
 shell::validate_ip_addr 192.168.1.1       # Valid IPv4
 shell::validate_ip_addr fe80::1ff:fe23::1 # Valid IPv6
 "
+
+USAGE_SHELL_VALIDATE_HOSTNAME="
+shell::validate_hostname function
+Validates whether a given string is a valid hostname.
+
+Usage:
+shell::validate_hostname [-h] <hostname>
+
+Parameters:
+  - -h        : Optional. Displays this help message.
+  - <hostname> : The hostname string to validate.
+
+Description:
+This function checks if the input string is a valid hostname.
+A valid hostname:
+- Contains only letters, digits, and hyphens.
+- Each label is 1-63 characters long.
+- The full hostname is up to 253 characters.
+- Labels cannot start or end with a hyphen.
+
+Example:
+shell::validate_hostname example.com       # Valid
+shell::validate_hostname -invalid-hostname # Invalid
+"
