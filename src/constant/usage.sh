@@ -4309,3 +4309,18 @@ Example:
 shell::tune_workspace_ssh_tunnel my-app kafka.conf dev
 shell::tune_workspace_ssh_tunnel -n my-app kafka.conf uat
 "
+
+USAGE_SHELL_FZF_TUNE_WORKSPACE_SSH_TUNNEL="
+shell::fzf_tune_workspace_ssh_tunnel function
+Interactively selects a workspace and SSH config section to tune an SSH tunnel.
+
+Usage:
+shell::fzf_tune_workspace_ssh_tunnel [-n]
+
+Parameters:
+- -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict.
+
+Description:
+Uses fzf to select a workspace and a .conf file, then selects a section (dev or uat),
+and tunes an SSH tunnel using shell::tune_workspace_ssh_tunnel.
+"
