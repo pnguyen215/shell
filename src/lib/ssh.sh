@@ -1148,6 +1148,12 @@ shell::open_ssh_tunnel_builder() {
 # - -n : Optional dry-run flag. If provided, the rename command is printed using shell::on_evict.
 # - <old_name> : The current name of the SSH key file.
 # - <new_name> : The new name for the SSH key file.
+#
+# Description:
+# This function renames an SSH key file in the user's SSH directory ($HOME/.ssh).
+# It checks if the SSH directory exists, verifies that the old file exists,
+# and ensures that the old file is not a known_hosts file. If the dry-run flag is set,
+# it prints the rename command instead of executing it. Otherwise, it renames the file using `mv`.
 shell::rename_ssh_key() {
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_RENAME_SSH_KEY"
@@ -1166,8 +1172,15 @@ shell::rename_ssh_key() {
     fi
 
     local ssh_dir="${SHELL_CONF_SSH_DIR_WORKING:-$HOME/.ssh}"
-    local old="$ssh_dir/$1"
-    local new="$ssh_dir/$2"
+    local old_name="$1"
+    local new_name="$2"
+    # Sanitize the old and new names to ensure they are valid file names.
+    # This is to ensure the names are safe and follow conventions.
+    # shell::sanitize_lower_var_name is assumed to be a function that sanitizes the variable name.
+    new_name=$(shell::sanitize_lower_var_name "$new_name")
+
+    local old="$ssh_dir/$old_name"
+    local new="$ssh_dir/$new_name"
 
     # Check if the SSH directory exists
     if [ ! -d "$ssh_dir" ]; then
@@ -1196,6 +1209,83 @@ shell::rename_ssh_key() {
         shell::on_evict "$cmd"
     else
         shell::run_cmd_eval "$cmd"
-        shell::colored_echo "INFO: Renamed '$1' to '$2'" 46
+        shell::colored_echo "INFO: Renamed '$old_name' to '$new_name'" 46
+    fi
+}
+
+# shell::fzf_rename_ssh_key function
+# Interactively selects an SSH key file and renames it.
+#
+# Usage:
+# shell::fzf_rename_ssh_key [-n]
+#
+# Parameters:
+# - -n : Optional dry-run flag. If provided, the rename command is printed using shell::on_evict.
+#
+# Description:
+# This function lists SSH key files in the user's SSH directory ($HOME/.ssh),
+# excluding common non-key files. It uses fzf to provide an interactive selection interface
+# for renaming an SSH key file. The user is prompted to enter a new name for the selected key.
+# If the dry-run flag is set, it prints the rename command instead of executing it.
+shell::fzf_rename_ssh_key() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_RENAME_SSH_KEY"
+        return 0
+    fi
+
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    # Ensure fzf is installed
+    shell::install_package fzf
+
+    # Define the SSH directory
+    # Use the configured SSH directory or default to $HOME/.ssh.
+    local ssh_dir="${SHELL_CONF_SSH_DIR_WORKING:-$HOME/.ssh}"
+    if [ ! -d "$ssh_dir" ]; then
+        shell::colored_echo "ERR: SSH directory '$ssh_dir' not found." 196
+        return 1
+    fi
+
+    # Find potential key files in the SSH directory
+    # Exclude known_hosts, known_hosts.old, and public key files.
+    # Using find to get full paths for fzf.
+    # Using -maxdepth 1 to limit the search to the SSH directory only.
+    # Using -type f to ensure we only get files.
+    local selected
+    selected=$(find "$ssh_dir" -maxdepth 1 -type f \
+        ! -name "known_hosts*" \
+        -name "*.pub" -o -type f ! -name "*.pub" |
+        fzf --prompt="Select SSH key to rename: ")
+
+    # Check if a file was selected
+    # If no file was selected, print an error message and return.
+    if [ -z "$selected" ]; then
+        shell::colored_echo "ERR: No file selected." 196
+        return 1
+    fi
+
+    local old_name
+    old_name=$(basename "$selected")
+    shell::colored_echo "[e] Enter new name for '$old_name':" 208
+    read -r new_name
+
+    # Check if the new name is empty
+    # If the new name is empty, print an error message and return.
+    if [ -z "$new_name" ]; then
+        shell::colored_echo "ERR: No new name entered. Aborting rename." 196
+        return 1
+    fi
+
+    # Check if the dry-mode is enabled
+    # If dry_run is true, we will not execute the command but print it instead.
+    # This allows the user to see what would happen without making changes.
+    if [ "$dry_run" = "true" ]; then
+        shell::rename_ssh_key -n "$old_name" "$new_name"
+    else
+        shell::rename_ssh_key "$old_name" "$new_name"
     fi
 }

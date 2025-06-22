@@ -4224,3 +4224,21 @@ and performs the rename operation.
 Example:
 shell::rename_ssh_key old_key_name new_key_name
 "
+
+USAGE_SHELL_FZF_RENAME_SSH_KEY="
+shell::fzf_rename_ssh_key function
+Interactively selects an SSH key file and renames it.
+
+Usage:
+shell::fzf_rename_ssh_key [-n] [-h]
+
+Parameters:
+  - -n : Optional dry-run flag. If provided, the rename command is printed using shell::on_evict.
+  - -h : Optional. Displays this help message.
+
+Description:
+This function lists SSH key files in the user's SSH directory (HOME/.ssh),
+excluding common non-key files. It uses fzf to provide an interactive selection interface
+for renaming an SSH key file. The user is prompted to enter a new name for the selected key.
+If the dry-run flag is set, it prints the rename command instead of executing it.
+"
