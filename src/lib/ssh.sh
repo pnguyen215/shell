@@ -1250,16 +1250,26 @@ shell::fzf_rename_ssh_key() {
         return 1
     fi
 
-    # Find potential key files in the SSH directory
-    # Exclude known_hosts, known_hosts.old, and public key files.
+    # Find potential key files in the SSH directory, excluding common non-key files and directories.
     # Using find to get full paths for fzf.
-    # Using -maxdepth 1 to limit the search to the SSH directory only.
-    # Using -type f to ensure we only get files.
+    local key_files
+    key_files=$(find "$ssh_dir" -maxdepth 1 -type f \( ! -name "known_hosts*" ! -name "config" ! -name "authorized_keys*" ! -name "*.log" \) 2>/dev/null)
+
+    # Check if any potential key files were found.
+    if [ -z "$key_files" ]; then
+        shell::colored_echo "WARN: No potential SSH key files found in '"$ssh_dir"'." 11
+        return 0
+    fi
+
+    # Use fzf to select a key file interactively.
     local selected
-    selected=$(find "$ssh_dir" -maxdepth 1 -type f \
-        ! -name "known_hosts*" \
-        -name "*.pub" -o -type f ! -name "*.pub" |
-        fzf --prompt="Select SSH key to rename: ")
+    selected=$(echo "$key_files" | fzf --prompt="Select an SSH key file to rename: ")
+
+    # Check if a file was selected.
+    if [ ! -f "$selected" ]; then
+        shell::colored_echo "ERR: Selected file '$selected' does not exist." 196
+        return 1
+    fi
 
     # Check if a file was selected
     # If no file was selected, print an error message and return.
