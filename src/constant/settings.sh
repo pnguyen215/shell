@@ -101,6 +101,12 @@ SHELL_KEY_CONF_FILE_BOOKMARK="$SHELL_CONF_WORKING_BOOKMARK/.bookmarks"
 #   SHELL_GROUP_CONF_FILE="$HOME/.shell-config/group.conf"
 SHELL_GROUP_CONF_FILE="$SHELL_CONF_WORKING/group.conf"
 
+# SHELL_GROUP_CONF_BACKUP_FILE constant
+# This variable defines the path to the backup group configuration file used by the shell bash library.
+# The file is intended to store backup copies of group configurations, allowing for easy restoration in case of accidental changes or deletions.
+# By default, this is set to "$SHELL_CONF_WORKING_BACKUP/group.conf.bak". You can change this value if you want to store your group backups in a different location.
+SHELL_GROUP_CONF_BACKUP_FILE="$SHELL_CONF_WORKING_BACKUP/group.conf.bak"
+
 # SHELL_GH_CONF_FILE constant
 # This variable defines the path to the GitHub configuration file used by the shell bash library.
 # The file is intended to store settings related to GitHub or git activity, such as API tokens,

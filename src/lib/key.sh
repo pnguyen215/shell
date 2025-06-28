@@ -1455,7 +1455,11 @@ shell::sync_group_key_conf() {
         shell::clip_value "$(cat "$temp_file")"
         shell::run_cmd_eval "sudo rm $temp_file"
     else
-        local backup_file="${SHELL_GROUP_CONF_FILE}.bak"
+        local backup_file="$SHELL_GROUP_CONF_BACKUP_FILE"
+        # Check if the backup file does not exist, and create it if necessary.
+        if [ ! -f "$backup_file" ]; then
+            shell::create_file_if_not_exists "$backup_file"
+        fi
         shell::run_cmd_eval "sudo cp $SHELL_GROUP_CONF_FILE $backup_file"
         shell::run_cmd_eval "sudo mv $temp_file $SHELL_GROUP_CONF_FILE"
         shell::colored_echo "INFO: Group configuration synchronized successfully." 46
