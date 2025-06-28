@@ -227,78 +227,96 @@ shell::gemini_learn_english() {
 
     echo "BEFORE RESPONSE: $response"
 
-    # Sanitize the response to handle potential control characters
-    response=$(echo "$response" | sed 's/\\/\\\\/g; s/"/\\"/g; s/\n/\\n/g; s/\r/\\r/g; s/\t/\\t/g')
-
-    echo "FINAL RESPONSE: $response"
+    echo "BEFORE RESPONSE: $response"
 
     # Extract the raw text
-    # local raw_text
-    # raw_text=$(echo "$response" | jq -r '.candidates[0].content.parts[0].text')
+    local raw_text
+    raw_text=$(echo "$response" | jq -r '.candidates[0].content.parts[0].text')
 
-    # # Check if raw_text is empty or null
-    # if [ -z "$raw_text" ] || [ "$raw_text" = "null" ]; then
-    #     shell::colored_echo "ERR: No text field found in Gemini response." 196
-    #     echo "$response" >response.json
-    #     shell::colored_echo "DEBUG: Response saved to response.json" 244
-    #     return 1
-    # fi
+    # Check if raw_text is empty or null
+    if [ -z "$raw_text" ] || [ "$raw_text" = "null" ]; then
+        shell::colored_echo "ERR: No text field found in Gemini response." 196
+        echo "$response" >response.json
+        shell::colored_echo "DEBUG: Response saved to response.json" 244
+        return 1
+    fi
 
-    # # Save raw text for debugging
-    # echo "$raw_text" >raw_text.txt
-    # shell::colored_echo "DEBUG: Raw text saved to raw_text.txt" 244
+    # Debug: Display raw text structure
+    shell::colored_echo "DEBUG: Raw text preview (first 200 chars):" 244
+    echo "$raw_text" | head -c 200
+    echo "..."
 
-    # # Sanitize the raw text to escape control characters
-    # local sanitized_text
-    # sanitized_text=$(echo "$raw_text" | sed 's/\\/\\\\/g; s/"/\\"/g; s/\n/\\n/g; s/\r/\\r/g; s/\t/\\t/g')
+    # Method 1: Try to parse the raw text directly as JSON (if it's already valid JSON)
+    local parsed_json
+    if parsed_json=$(echo "$raw_text" | jq . 2>/dev/null); then
+        shell::colored_echo "INFO: Raw text is valid JSON, parsing directly" 46
+    else
+        shell::colored_echo "INFO: Raw text is not valid JSON, attempting to clean and parse" 244
 
-    # # Parse the sanitized text as JSON
-    # local parsed_json
-    # parsed_json=$(echo "$sanitized_text" | jq -r 'fromjson')
+        # Method 2: Clean the raw text and try to extract JSON
+        # Remove markdown code blocks if present
+        local cleaned_text
+        cleaned_text=$(echo "$raw_text" | sed -e 's/^```json$//' -e 's/^```$//' | grep -v '^$')
 
-    # # Check if parsing was successful
-    # if [ $? -ne 0 ]; then
-    #     shell::colored_echo "ERR: Failed to parse JSON from Gemini response." 196
-    #     echo "$sanitized_text" >sanitized_text.txt
-    #     shell::colored_echo "DEBUG: Sanitized text saved to sanitized_text.txt" 244
-    #     return 1
-    # fi
+        # Try parsing the cleaned text
+        if parsed_json=$(echo "$cleaned_text" | jq . 2>/dev/null); then
+            shell::colored_echo "INFO: Cleaned text parsed successfully" 46
+        else
+            # Method 3: Extract JSON from text using pattern matching
+            shell::colored_echo "INFO: Attempting to extract JSON pattern from text" 244
 
-    # # Extract correction and examples from the parsed JSON
-    # local correction
-    # correction=$(echo "$parsed_json" | jq -r '.[0].suggested_correction')
+            # Look for JSON array pattern in the text
+            local json_pattern
+            json_pattern=$(echo "$raw_text" | grep -o '\[.*\]' | head -1)
 
-    # local examples
-    # examples=$(echo "$parsed_json" | jq -r '.[0].example_sentences[] | "\(.en) (\(.vi))"')
+            if [ -n "$json_pattern" ]; then
+                if parsed_json=$(echo "$json_pattern" | jq . 2>/dev/null); then
+                    shell::colored_echo "INFO: JSON pattern extracted and parsed successfully" 46
+                else
+                    shell::colored_echo "ERR: Failed to parse extracted JSON pattern" 196
+                    shell::colored_echo "DEBUG: JSON pattern preview:" 244
+                    echo "$json_pattern" | head -c 200
+                    echo "..."
+                    return 1
+                fi
+            else
+                shell::colored_echo "ERR: No JSON pattern found in response" 196
+                return 1
+            fi
+        fi
+    fi
 
-    # # Display the results
-    # shell::colored_echo "INFO: Suggested Correction:" 46
-    # echo "$correction" | fzf --prompt="Correction: "
+    # Extract correction and examples from the parsed JSON
+    local correction
+    correction=$(echo "$parsed_json" | jq -r '.[0].suggested_correction // empty')
 
-    # shell::colored_echo "INFO: Example Sentences:" 46
-    # echo "$examples" | fzf --multi --prompt="Examples: "
+    if [ -z "$correction" ]; then
+        shell::colored_echo "WARN: No suggested_correction found, trying alternative field names" 244
+        correction=$(echo "$parsed_json" | jq -r '.[0].correction // .[0].suggestion // "No correction found"')
+    fi
 
-    # Extract the JSON directly from the text field without intermediate string parsing
-    # local parsed_json
-    # parsed_json=$(echo "$response" | jq -r '.candidates[0].content.parts[0].text | fromjson')
+    local examples
+    examples=$(echo "$parsed_json" | jq -r '.[0].example_sentences[]? // empty | "\(.en // .english // .) (\(.vi // .vietnamese // .))"' 2>/dev/null)
 
-    # # Check if parsing was successful
-    # if [ $? -ne 0 ]; then
-    #     shell::colored_echo "ERR: Failed to parse JSON from Gemini response." 196
-    #     return 1
-    # fi
+    if [ -z "$examples" ]; then
+        shell::colored_echo "WARN: No example_sentences found, trying alternative structure" 244
+        examples=$(echo "$parsed_json" | jq -r '.[] | select(.examples) | .examples[] | "\(.en // .english // .) (\(.vi // .vietnamese // .))"' 2>/dev/null)
+    fi
 
-    # # Extract correction and examples from the parsed JSON
-    # local correction
-    # correction=$(echo "$parsed_json" | jq -r '.[0].suggested_correction')
+    # Display the results
+    if [ -n "$correction" ]; then
+        shell::colored_echo "INFO: Suggested Correction:" 46
+        echo "$correction" | fzf --prompt="Correction: " --height=10 --layout=reverse
+    else
+        shell::colored_echo "WARN: No correction found in response" 244
+    fi
 
-    # local examples
-    # examples=$(echo "$parsed_json" | jq -r '.[0].example_sentences[] | "\(.en) (\(.vi))"')
-
-    # # Display the results
-    # shell::colored_echo "INFO: Suggested Correction:" 46
-    # echo "$correction" | fzf --prompt="Correction: "
-
-    # shell::colored_echo "INFO: Example Sentences:" 46
-    # echo "$examples" | fzf --multi --prompt="Examples: "
+    if [ -n "$examples" ]; then
+        shell::colored_echo "INFO: Example Sentences:" 46
+        echo "$examples" | fzf --multi --prompt="Examples: " --height=40% --layout=reverse
+    else
+        shell::colored_echo "WARN: No examples found in response" 244
+        shell::colored_echo "INFO: Full parsed JSON structure:" 244
+        echo "$parsed_json" | jq .
+    fi
 }
