@@ -12,6 +12,7 @@ LLM_DIR="$SHELL_DIR/src/llm"
 SHIELD_DIR="$SHELL_DIR/src/shield"
 BOT_DIR="$SHELL_DIR/src/bot"
 LLM_AGENT_DIR="$SHELL_DIR/src/llm/agents"
+LLM_PROMPTS_DIR="$SHELL_DIR/src/llm/prompts"
 
 # This function sources all .sh scripts in the specified directory.
 # It takes one argument: the directory containing the scripts.

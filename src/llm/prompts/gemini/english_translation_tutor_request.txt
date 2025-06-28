@@ -1,0 +1,116 @@
+{
+    "system_instruction": {
+        "parts": [
+            {
+                "text": "You are a native English speaker (US/UK) and an experienced English tutor for Vietnamese learners. Your goal is to help learners understand how native speakers use English naturally and correctly. Evaluate grammar, suggest corrections, and explain clearly using simple terms. Always include helpful insights like formality, common mistakes, US/UK usage notes, and natural alternatives. Provide both English and Vietnamese versions of example sentences. Be patient, accurate, and educational, making sure your responses are easy for English learners to follow."
+            }
+        ]
+    },
+    "contents": [
+        {
+            "role": "user",
+            "parts": [
+                {
+                    "text": "Evaluate the grammar of this English sentence: \"{ENTER_SENTENCE_ENGLISH}\". Explain if it is grammatically correct, what type of sentence it is (greeting, question, etc.), and provide one or more corrected versions if needed. Suggest a natural alternative that a native speaker (US/UK) might use in context. Translate to Vietnamese. Include pronunciation, formality level, regional usage notes, common mistakes, and several example sentences. Make the explanation simple enough for an English learner."
+                }
+            ]
+        }
+    ],
+    "generationConfig": {
+        "responseMimeType": "application/json",
+        "responseSchema": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 1,
+            "items": {
+                "type": "object",
+                "required": [
+                    "grammar_explanation",
+                    "is_grammatically_correct",
+                    "suggested_correction",
+                    "vietnamese_translation",
+                    "native_usage_probability",
+                    "natural_alternatives",
+                    "formality_level",
+                    "us_uk_difference",
+                    "common_mistakes",
+                    "example_sentences"
+                ],
+                "properties": {
+                    "grammar_explanation": {
+                        "type": "string",
+                        "description": "Explanation of grammatical correctness and sentence type."
+                    },
+                    "is_grammatically_correct": {
+                        "type": "boolean",
+                        "description": "Whether the original sentence is grammatically correct."
+                    },
+                    "suggested_correction": {
+                        "type": "string",
+                        "description": "Corrected version if needed. Same as input if already correct."
+                    },
+                    "vietnamese_translation": {
+                        "type": "string",
+                        "description": "Natural Vietnamese equivalent of the phrase."
+                    },
+                    "native_usage_probability": {
+                        "type": "number",
+                        "description": "Estimated likelihood (0–100) that native speakers use this phrase naturally."
+                    },
+                    "formality_level": {
+                        "type": "string",
+                        "description": "Formality level such as casual, neutral, or formal."
+                    },
+                    "us_uk_difference": {
+                        "type": "string",
+                        "description": "How the phrase is used differently in US vs UK English."
+                    },
+                    "common_mistakes": {
+                        "type": "string",
+                        "description": "Typical learner mistakes related to this phrase."
+                    },
+                    "example_sentences": {
+                        "type": "array",
+                        "description": "Example sentences with both English and Vietnamese translation.",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "en",
+                                "vi"
+                            ],
+                            "properties": {
+                                "en": {
+                                    "type": "string",
+                                    "description": "English example sentence."
+                                },
+                                "vi": {
+                                    "type": "string",
+                                    "description": "Vietnamese translation of the sentence."
+                                }
+                            }
+                        }
+                    },
+                    "natural_alternatives": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "List of natural phrases native speakers might use instead."
+                    }
+                },
+                "propertyOrdering": [
+                    "is_grammatically_correct",
+                    "grammar_explanation",
+                    "suggested_correction",
+                    "vietnamese_translation",
+                    "native_usage_probability",
+                    "natural_alternatives",
+                    "formality_level",
+                    "us_uk_difference",
+                    "common_mistakes",
+                    "example_sentences"
+                ]
+            }
+        }
+    }
+}
