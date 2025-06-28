@@ -4360,3 +4360,17 @@ Description:
 This function reads all sections and their keys from the specified INI file,
 decodes their values, and outputs them as a structured JSON object.
 "
+
+USAGE_SHELL_DUMP_GEMINI_CONF_JSON="
+shell::dump_gemini_conf_json function
+Dumps all sections from the Gemini config file as JSON.
+
+Usage:
+shell::dump_gemini_conf_json [-h]
+
+Parameters:
+  - -h : Optional. Displays this help message.
+
+Description:
+This function calls shell::dump_ini_json using SHELL_KEY_CONF_AGENT_GEMINI_FILE.
+"

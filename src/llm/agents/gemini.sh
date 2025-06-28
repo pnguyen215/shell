@@ -112,3 +112,19 @@ shell::fzf_edit_gemini_conf() {
     fi
     shell::fzf_edit_ini_viz "$file"
 }
+
+# shell::dump_gemini_conf_json function
+# Dumps all sections from the Gemini config file as JSON.
+#
+# Usage:
+# shell::dump_gemini_conf_json
+#
+# Description:
+# This function calls shell::dump_ini_json using SHELL_KEY_CONF_AGENT_GEMINI_FILE.
+shell::dump_gemini_conf_json() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_DUMP_GEMINI_CONF_JSON"
+        return 0
+    fi
+    shell::dump_ini_json "$SHELL_KEY_CONF_AGENT_GEMINI_FILE"
+}
