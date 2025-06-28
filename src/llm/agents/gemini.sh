@@ -225,37 +225,29 @@ shell::gemini_learn_english() {
         return 1
     fi
 
-    # local correction
-    # correction=$(echo "$response" | jq -r '.candidates[0].content.parts[0].text' | jq -r '.[0].suggested_correction')
-
-    # local examples
-    # examples=$(echo "$response" | jq -r '.candidates[0].content.parts[0].text' | jq -r '.[0].example_sentences[] | "\(.en) (\(.vi))"')
-
-    # Extract the JSON string from the response
-    # Extract the embedded JSON string
-
     echo "RESPONSE: $response"
 
-    local raw_json
-    raw_json=$(echo "$response" | jq -r '.candidates[0].content.parts[0].text')
-
-    # Decode escaped characters safely using printf
+    # Extract the JSON directly from the text field without intermediate string parsing
     local parsed_json
-    parsed_json=$(printf "%b" "$raw_json")
+    parsed_json=$(echo "$response" | jq -r '.candidates[0].content.parts[0].text | fromjson')
 
-    shell::colored_echo "DEBUG: Parsed JSON from Gemini response:" 244
-    echo "$parsed_json" | jq .
+    # Check if parsing was successful
+    if [ $? -ne 0 ]; then
+        shell::colored_echo "ERR: Failed to parse JSON from Gemini response." 196
+        return 1
+    fi
 
-    # Now parse the embedded JSON
+    # Extract correction and examples from the parsed JSON
     local correction
     correction=$(echo "$parsed_json" | jq -r '.[0].suggested_correction')
 
     local examples
     examples=$(echo "$parsed_json" | jq -r '.[0].example_sentences[] | "\(.en) (\(.vi))"')
 
-    # shell::colored_echo "INFO: Suggested Correction:" 46
-    # echo "$correction" | fzf --prompt="Correction: "
+    # Display the results
+    shell::colored_echo "INFO: Suggested Correction:" 46
+    echo "$correction" | fzf --prompt="Correction: "
 
-    # shell::colored_echo "INFO: Example Sentences:" 46
-    # echo "$examples" | fzf --multi --prompt="Examples: "
+    shell::colored_echo "INFO: Example Sentences:" 46
+    echo "$examples" | fzf --multi --prompt="Examples: "
 }
