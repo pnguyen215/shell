@@ -379,10 +379,16 @@ import json
 
 try:
     # Read the raw text
-    raw_content = sys.stdin.read()
+    raw_content = sys.stdin.read().strip()
     
-    # Replace literal \\n with actual newlines and handle other escapes
-    processed = raw_content.replace('\\\\n', '\n').replace('\\\\\"', '\"').replace('\\\\\\\\', '\\\\')
+    # Handle the double-escaped quotes and other escape sequences
+    # First pass: convert literal escape sequences
+    processed = raw_content.replace('\\\\n', '\n')
+    processed = processed.replace('\\\\\"', '\"')  
+    processed = processed.replace('\\\\\\\\', '\\\\')
+    
+    # Second pass: handle the remaining escaped quotes in the content
+    processed = processed.replace('\\\"', '\"')
     
     # Try to parse as JSON
     parsed = json.loads(processed)
@@ -390,8 +396,36 @@ try:
     # Output properly formatted JSON
     print(json.dumps(parsed, ensure_ascii=False, indent=2))
     
+except json.JSONDecodeError as e:
+    # If JSON parsing fails, try to fix common issues
+    try:
+        # Remove any trailing characters that might be breaking the JSON
+        lines = raw_content.strip().split('\n')
+        # Find the last line that looks like it ends the JSON structure
+        for i in range(len(lines)-1, -1, -1):
+            if '}]' in lines[i]:
+                processed_lines = lines[:i+1]
+                break
+        else:
+            processed_lines = lines
+            
+        cleaned_content = '\n'.join(processed_lines)
+        
+        # Clean up the content
+        cleaned_content = cleaned_content.replace('\\\\n', '\n')
+        cleaned_content = cleaned_content.replace('\\\\\"', '\"')
+        cleaned_content = cleaned_content.replace('\\\"', '\"')
+        
+        parsed = json.loads(cleaned_content)
+        print(json.dumps(parsed, ensure_ascii=False, indent=2))
+        
+    except Exception as e2:
+        print(f'JSON Error: {e}', file=sys.stderr)
+        print(f'Retry Error: {e2}', file=sys.stderr)
+        sys.exit(1)
+        
 except Exception as e:
-    print(f'Error: {e}', file=sys.stderr)
+    print(f'General Error: {e}', file=sys.stderr)
     sys.exit(1)
 ")
 
