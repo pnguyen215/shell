@@ -659,7 +659,7 @@ shell::add_ini_section() {
 
     # Check if section already exists
     if shell::exist_ini_section "$file" "$section"; then
-        shell::colored_echo "WARN: Section already exists: $section" 11
+        # shell::colored_echo "WARN: Section already exists: $section" 11
         return 0
     fi
 
