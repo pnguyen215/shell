@@ -320,3 +320,88 @@ except Exception as e:
         echo "$grammar_explanation" | fold -w 80 -s
     fi
 }
+
+# unescape_json_string: Unescapes a JSON-escaped string.
+# This function reverses the process of JSON escaping, converting sequences
+# like `\"`, `\\`, `\n`, `\t`, and `\uXXXX` back into their literal characters.
+#
+# Arguments:
+#   $1 - The JSON-escaped string to unescape.
+#
+# Output:
+#   The unescaped string is printed to standard output.
+#
+# Example:
+#   escaped_text="Hello\\nWorld!\\\""
+#   unescaped_text=$(unescape_json_string "$escaped_text")
+#   echo "$unescaped_text" # Output: Hello
+#                         #         World!"
+#
+#   unicode_escaped="Test\\u0041\\u0008Finished" # \u0041 is 'A', \u0008 is backspace
+#   unescaped_unicode=$(unescape_json_string "$unicode_escaped")
+#   echo "$unescaped_unicode" # Output: TestA(backspace)Finished (backspace character will be inserted)
+unescape_json_string() {
+    local input="$1"
+    local output=""
+    local i=0
+    local len=${#input}
+
+    while [ "$i" -lt "$len" ]; do
+        local char="${input:i:1}" # Get current character
+
+        if [ "$char" = "\\" ]; then
+            # Found a backslash, indicating a potential escape sequence
+            i=$((i + 1)) # Move to the character after the backslash
+
+            # Check if the backslash is at the end of the string
+            if [ "$i" -ge "$len" ]; then
+                output+="\\" # Treat as a literal backslash
+                break        # End of string
+            fi
+
+            local next_char="${input:i:1}" # Get the character after the backslash
+            case "$next_char" in
+            '"') output+='"' ;;   # Unescape double quote
+            '\') output+='\' ;;   # Unescape backslash
+            '/') output+='/' ;;   # Unescape solidus (forward slash), though optional in JSON
+            'b') output+=$'\b' ;; # Unescape backspace
+            'f') output+=$'\f' ;; # Unescape form feed
+            'n') output+=$'\n' ;; # Unescape newline
+            'r') output+=$'\r' ;; # Unescape carriage return
+            't') output+=$'\t' ;; # Unescape tab
+            'u')
+                # Handle Unicode escape sequence \uXXXX
+                # Ensure there are enough characters for the 4-digit hex code
+                if [ "$((i + 4))" -lt "$len" ]; then
+                    local hex_code="${input:i+1:4}" # Extract the 4 hex digits
+                    # Basic validation for hex code (optional but recommended)
+                    if [[ "$hex_code" =~ ^[0-9a-fA-F]{4}$ ]]; then
+                        # Convert hex code to the corresponding Unicode character
+                        # This uses bash's internal printf, which supports \uXXXX for output
+                        printf -v unicode_char "\u${hex_code}"
+                        output+="$unicode_char"
+                        i=$((i + 4)) # Move past the 4 hex digits
+                    else
+                        # Invalid hex code format, treat as literal \u and the invalid part
+                        output+="\\u${hex_code}"
+                        i=$((i + 4)) # Still consume the 4 characters to avoid infinite loop
+                    fi
+                else
+                    # Incomplete \u escape sequence, treat as literal \u and any remaining characters
+                    output+="\\u${input:i+1}"
+                    i=$((len)) # Advance cursor to the end of the string
+                fi
+                ;;
+            *)
+                # Unrecognized escape sequence, treat as literal backslash and the next character
+                output+="\\$next_char"
+                ;;
+            esac
+        else
+            # Not a backslash, append the character directly
+            output+="$char"
+        fi
+        i=$((i + 1)) # Move to the next character in the input string
+    done
+    echo "$output" # Print the final unescaped string
+}
