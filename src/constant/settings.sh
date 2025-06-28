@@ -16,6 +16,12 @@ SHELL_CONF_WORKING="$HOME/.shell-config"
 # By default, this is set to "$SHELL_CONF_WORKING/backup". You can change this value if you want to store your backups in a different location.
 SHELL_CONF_WORKING_BACKUP="$SHELL_CONF_WORKING/backup"
 
+# SHELL_CONF_WORKING_AGENT constant
+# This variable defines the path to the agents directory within the shell configuration working directory.
+# It is used to store agent-specific configurations and scripts, allowing for easy management of different agents.
+# By default, this is set to "$SHELL_CONF_WORKING/agents". You can change this value if you want to store your agents in a different location.
+SHELL_CONF_WORKING_AGENT="$SHELL_CONF_WORKING/agents"
+
 # SHELL_CONF_WORKING_WORKSPACE constant
 # This variable defines the path to the workspace directory within the shell configuration working directory.
 # It is used to store user-specific or profile-specific configurations and data.
@@ -58,12 +64,19 @@ SHELL_KEY_CONF_FILE_PROTECTED="$SHELL_CONF_WORKING/protected.conf"
 # By default, this is set to "$SHELL_CONF_WORKING/vpn.conf". You can change this value if you want to store your VPN configurations in a different location.
 SHELL_KEY_CONF_VPN_FILE="$SHELL_CONF_WORKING/vpn.conf"
 
-# SHELL_KEY_CONF_LLM_AGENT_FILE constant
-# This variable defines the path to the LLM (Large Language Model) agent configuration file used by the shell bash library.
-# The file stores configurations for LLM agents, which can include settings for various AI models or services.
-# It is typically used to manage configurations for agents that interact with LLMs, such as API keys, model parameters, and other relevant settings.
-# By default, this is set to "$SHELL_CONF_WORKING/agents.conf". You can change this value if you want to store your LLM agent configurations in a different location.
-SHELL_KEY_CONF_LLM_AGENT_FILE="$SHELL_CONF_WORKING/agents.conf"
+# SHELL_KEY_CONF_AGENT_GEMINI_FILE constant
+# This variable defines the path to the Gemini agent configuration file used by the shell bash library.
+# The file stores configurations specific to the Gemini agent, which may include settings for interacting with the Gemini AI model or service.
+# It is typically used to manage configurations for the Gemini agent, such as API keys, model parameters, and other relevant settings.
+# By default, this is set to "$SHELL_CONF_WORKING_AGENT/gemini.conf". You can change this value if you want to store your Gemini agent configurations in a different location.
+SHELL_KEY_CONF_AGENT_GEMINI_FILE="$SHELL_CONF_WORKING_AGENT/gemini.conf"
+
+# SHELL_KEY_CONF_AGENT_OPENAI_FILE constant
+# This variable defines the path to the OpenAI agent configuration file used by the shell bash library.
+# The file stores configurations specific to the OpenAI agent, which may include settings for interacting with OpenAI's models or services.
+# It is typically used to manage configurations for the OpenAI agent, such as API keys, model parameters, and other relevant settings.
+# By default, this is set to "$SHELL_CONF_WORKING_AGENT/openai.conf". You can change this value if you want to store your OpenAI agent configurations in a different location.
+SHELL_KEY_CONF_AGENT_OPENAI_FILE="$SHELL_CONF_WORKING_AGENT/openai.conf"
 
 # SHELL_KEY_CONF_FILE_WORKSPACE constant
 # This variable defines the path to the profile-specific configuration file within the workspace directory.
