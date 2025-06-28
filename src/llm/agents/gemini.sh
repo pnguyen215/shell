@@ -228,7 +228,7 @@ shell::gemini_learn_english() {
     echo "BEFORE RESPONSE: $response"
 
     # Sanitize the response to handle potential control characters
-    response=$(echo "$response" | sed 's/\\/\\\\/g; s/\r/\\r/g; s/\t/\\t/g')
+    response=$(echo "$response" | sed 's/\\/\\\\/g; s/"/\\"/g; s/\n/\\n/g; s/\r/\\r/g; s/\t/\\t/g')
 
     echo "FINAL RESPONSE: $response"
 
