@@ -235,16 +235,19 @@ shell::gemini_learn_english() {
     local raw_json
     raw_json=$(echo "$response" | jq -r '.candidates[0].content.parts[0].text')
 
+    shell::colored_echo "DEBUG: Raw JSON response:" 244
+    shell::colored_echo "$raw_json" 244
+
     # Clean and parse the embedded JSON string
-    local correction
-    correction=$(echo "$raw_json" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | jq -r '.[0].suggested_correction')
+    # local correction
+    # correction=$(echo "$raw_json" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | jq -r '.[0].suggested_correction')
 
-    local examples
-    examples=$(echo "$raw_json" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | jq -r '.[0].example_sentences[] | "\(.en) (\(.vi))"')
+    # local examples
+    # examples=$(echo "$raw_json" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | jq -r '.[0].example_sentences[] | "\(.en) (\(.vi))"')
 
-    shell::colored_echo "INFO: Suggested Correction:" 46
-    echo "$correction" | fzf --prompt="Correction: "
+    # shell::colored_echo "INFO: Suggested Correction:" 46
+    # echo "$correction" | fzf --prompt="Correction: "
 
-    shell::colored_echo "INFO: Example Sentences:" 46
-    echo "$examples" | fzf --multi --prompt="Examples: "
+    # shell::colored_echo "INFO: Example Sentences:" 46
+    # echo "$examples" | fzf --multi --prompt="Examples: "
 }
