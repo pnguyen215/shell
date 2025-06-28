@@ -266,7 +266,7 @@ except Exception as e:
     if [ $? -ne 0 ] || [ -z "$parsed_json" ] || [ "$parsed_json" = "null" ]; then
         shell::colored_echo "ERR: Failed to parse extracted text as JSON." 196
         shell::colored_echo "DEBUG: Text preview (first 300 chars):" 244
-        echo "$raw_text" | head -c 300
+        echo "$raw_text"
         echo "..."
         return 1
     fi
