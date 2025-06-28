@@ -227,65 +227,51 @@ shell::gemini_learn_english() {
 
     echo "BEFORE RESPONSE: $response"
 
-    # Extract the raw text using grep/sed instead of jq to avoid control character issues
+    # Extract the text field content between quotes, handling multiline content
     local raw_text
-    raw_text=$(echo "$response" | grep -o '"text": *"[^"]*"' | sed 's/"text": *"//' | sed 's/"$//')
+    raw_text=$(echo "$response" | python3 -c "
+import json
+import sys
 
-    # If that doesn't work, try a more robust extraction
-    if [ -z "$raw_text" ]; then
-        # Use awk to extract the text field value, handling multi-line content
-        raw_text=$(echo "$response" | awk '
-            BEGIN { in_text=0; text_content="" }
-            /"text":/ { 
-                in_text=1
-                # Extract everything after "text": "
-                sub(/.*"text": *"/, "")
-                text_content = $0
-                next
-            }
-            in_text && /"role":/ {
-                # End of text field when we hit the next field
-                # Remove the trailing quote and comma/brace
-                gsub(/"[[:space:]]*$/, "", text_content)
-                gsub(/,[[:space:]]*$/, "", text_content)
-                print text_content
-                exit
-            }
-            in_text { 
-                text_content = text_content "\n" $0 
-            }
-        ')
+try:
+    data = json.load(sys.stdin)
+    text_content = data['candidates'][0]['content']['parts'][0]['text']
+    print(text_content)
+except Exception as e:
+    print('', file=sys.stderr)
+    sys.exit(1)
+")
+
+    # Check if extraction failed
+    if [ $? -ne 0 ] || [ -z "$raw_text" ]; then
+        shell::colored_echo "ERR: Could not extract text field using Python JSON parser." 196
+
+        # Fallback: manual extraction using sed/awk
+        shell::colored_echo "INFO: Attempting manual text extraction..." 244
+        raw_text=$(echo "$response" | sed -n '/"text":/,/"role":/p' | sed '1s/.*"text": *"//; $s/".*//; $d' | sed 's/\\n/\n/g; s/\\"/"/g')
+
+        if [ -z "$raw_text" ]; then
+            shell::colored_echo "ERR: Manual extraction also failed." 196
+            return 1
+        fi
     fi
 
-    # Check if raw_text is empty
-    if [ -z "$raw_text" ]; then
-        shell::colored_echo "ERR: Could not extract text field from Gemini response." 196
-        shell::colored_echo "DEBUG: First 500 chars of response:" 244
-        echo "$response" | head -c 500
-        echo "..."
-        return 1
-    fi
+    shell::colored_echo "DEBUG: Successfully extracted text field" 46
 
-    shell::colored_echo "DEBUG: Extracted text field successfully" 46
-
-    # Convert literal \n to actual newlines, handle escaped quotes, and fix smart quotes
-    local processed_text
-    processed_text=$(echo "$raw_text" | sed 's/\\n/\n/g; s/\\"/"/g; s/\\\\/\\/g; s/"/"/g; s/"/"/g')
-
-    # Parse the processed JSON
+    # Now parse the extracted text as JSON
     local parsed_json
-    parsed_json=$(echo "$processed_text" | jq . 2>/dev/null)
+    parsed_json=$(echo "$raw_text" | jq . 2>/dev/null)
 
     # Check if parsing was successful
     if [ $? -ne 0 ] || [ -z "$parsed_json" ] || [ "$parsed_json" = "null" ]; then
-        shell::colored_echo "ERR: Failed to parse JSON after processing." 196
-        shell::colored_echo "DEBUG: Processed text preview (first 300 chars):" 244
-        echo "$processed_text" | head -c 300
+        shell::colored_echo "ERR: Failed to parse extracted text as JSON." 196
+        shell::colored_echo "DEBUG: Text preview (first 300 chars):" 244
+        echo "$raw_text" | head -c 300
         echo "..."
         return 1
     fi
 
-    shell::colored_echo "INFO: Successfully parsed JSON from response" 46
+    shell::colored_echo "INFO: Successfully parsed JSON content" 46
 
     # Extract correction and examples from the parsed JSON
     local correction
