@@ -225,17 +225,46 @@ shell::gemini_learn_english() {
         return 1
     fi
 
-    # Extract the raw text and properly handle escaped characters
+    # Extract the raw text using grep/sed instead of jq to avoid control character issues
     local raw_text
-    raw_text=$(echo "$response" | jq -r '.candidates[0].content.parts[0].text')
+    raw_text=$(echo "$response" | grep -o '"text": *"[^"]*"' | sed 's/"text": *"//' | sed 's/"$//')
 
-    # Check if raw_text is empty or null
-    if [ -z "$raw_text" ] || [ "$raw_text" = "null" ]; then
-        shell::colored_echo "ERR: No text field found in Gemini response." 196
-        shell::colored_echo "DEBUG: Response structure:" 244
-        echo "$response" | jq '.candidates[0].content.parts[0]'
+    # If that doesn't work, try a more robust extraction
+    if [ -z "$raw_text" ]; then
+        # Use awk to extract the text field value, handling multi-line content
+        raw_text=$(echo "$response" | awk '
+            BEGIN { in_text=0; text_content="" }
+            /"text":/ { 
+                in_text=1
+                # Extract everything after "text": "
+                sub(/.*"text": *"/, "")
+                text_content = $0
+                next
+            }
+            in_text && /"role":/ {
+                # End of text field when we hit the next field
+                # Remove the trailing quote and comma/brace
+                gsub(/"[[:space:]]*$/, "", text_content)
+                gsub(/,[[:space:]]*$/, "", text_content)
+                print text_content
+                exit
+            }
+            in_text { 
+                text_content = text_content "\n" $0 
+            }
+        ')
+    fi
+
+    # Check if raw_text is empty
+    if [ -z "$raw_text" ]; then
+        shell::colored_echo "ERR: Could not extract text field from Gemini response." 196
+        shell::colored_echo "DEBUG: First 500 chars of response:" 244
+        echo "$response" | head -c 500
+        echo "..."
         return 1
     fi
+
+    shell::colored_echo "DEBUG: Extracted text field successfully" 46
 
     # Convert literal \n to actual newlines and handle escaped quotes
     local processed_text
