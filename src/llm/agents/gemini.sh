@@ -233,6 +233,9 @@ shell::gemini_learn_english() {
 
     # Extract the JSON string from the response
     # Extract the embedded JSON string
+
+    echo "RESPONSE: $response"
+
     local raw_json
     raw_json=$(echo "$response" | jq -r '.candidates[0].content.parts[0].text')
 
