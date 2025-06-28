@@ -1456,6 +1456,8 @@ shell::sync_group_key_conf() {
         shell::run_cmd_eval "sudo rm $temp_file"
     else
         local backup_file="$SHELL_GROUP_CONF_BACKUP_FILE"
+        # Change end of the backup file with YYYYMMDD format.
+        backup_file="${backup_file}_$(date +%Y%m%d_%H%M%S)"
         # Check if the backup file does not exist, and create it if necessary.
         if [ ! -f "$backup_file" ]; then
             shell::create_file_if_not_exists "$backup_file"
