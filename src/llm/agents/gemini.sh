@@ -225,66 +225,36 @@ shell::gemini_learn_english() {
         return 1
     fi
 
-    echo "BEFORE RESPONSE: $response"
-
-    echo "BEFORE RESPONSE: $response"
-
-    # Extract the raw text
+    # Extract the raw text and properly handle escaped characters
     local raw_text
     raw_text=$(echo "$response" | jq -r '.candidates[0].content.parts[0].text')
 
     # Check if raw_text is empty or null
     if [ -z "$raw_text" ] || [ "$raw_text" = "null" ]; then
         shell::colored_echo "ERR: No text field found in Gemini response." 196
-        echo "$response" >response.json
-        shell::colored_echo "DEBUG: Response saved to response.json" 244
+        shell::colored_echo "DEBUG: Response structure:" 244
+        echo "$response" | jq '.candidates[0].content.parts[0]'
         return 1
     fi
 
-    # Debug: Display raw text structure
-    shell::colored_echo "DEBUG: Raw text preview (first 200 chars):" 244
-    echo "$raw_text" | head -c 200
-    echo "..."
+    # Convert literal \n to actual newlines and handle escaped quotes
+    local processed_text
+    processed_text=$(echo "$raw_text" | sed 's/\\n/\n/g; s/\\"/"/g; s/\\\\/\\/g')
 
-    # Method 1: Try to parse the raw text directly as JSON (if it's already valid JSON)
+    # Parse the processed JSON
     local parsed_json
-    if parsed_json=$(echo "$raw_text" | jq . 2>/dev/null); then
-        shell::colored_echo "INFO: Raw text is valid JSON, parsing directly" 46
-    else
-        shell::colored_echo "INFO: Raw text is not valid JSON, attempting to clean and parse" 244
+    parsed_json=$(echo "$processed_text" | jq . 2>/dev/null)
 
-        # Method 2: Clean the raw text and try to extract JSON
-        # Remove markdown code blocks if present
-        local cleaned_text
-        cleaned_text=$(echo "$raw_text" | sed -e 's/^```json$//' -e 's/^```$//' | grep -v '^$')
-
-        # Try parsing the cleaned text
-        if parsed_json=$(echo "$cleaned_text" | jq . 2>/dev/null); then
-            shell::colored_echo "INFO: Cleaned text parsed successfully" 46
-        else
-            # Method 3: Extract JSON from text using pattern matching
-            shell::colored_echo "INFO: Attempting to extract JSON pattern from text" 244
-
-            # Look for JSON array pattern in the text
-            local json_pattern
-            json_pattern=$(echo "$raw_text" | grep -o '\[.*\]' | head -1)
-
-            if [ -n "$json_pattern" ]; then
-                if parsed_json=$(echo "$json_pattern" | jq . 2>/dev/null); then
-                    shell::colored_echo "INFO: JSON pattern extracted and parsed successfully" 46
-                else
-                    shell::colored_echo "ERR: Failed to parse extracted JSON pattern" 196
-                    shell::colored_echo "DEBUG: JSON pattern preview:" 244
-                    echo "$json_pattern" | head -c 200
-                    echo "..."
-                    return 1
-                fi
-            else
-                shell::colored_echo "ERR: No JSON pattern found in response" 196
-                return 1
-            fi
-        fi
+    # Check if parsing was successful
+    if [ $? -ne 0 ] || [ -z "$parsed_json" ] || [ "$parsed_json" = "null" ]; then
+        shell::colored_echo "ERR: Failed to parse JSON after processing." 196
+        shell::colored_echo "DEBUG: Processed text preview (first 300 chars):" 244
+        echo "$processed_text" | head -c 300
+        echo "..."
+        return 1
     fi
+
+    shell::colored_echo "INFO: Successfully parsed JSON from response" 46
 
     # Extract correction and examples from the parsed JSON
     local correction
