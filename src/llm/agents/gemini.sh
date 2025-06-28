@@ -36,53 +36,22 @@ shell::populate_gemini_conf() {
     # Define default keys and their values
     # This associative array contains the default keys and their values for the Gemini configuration
     # Each key is a string, and the value is also a string
-    # declare -A defaults=(
-    #     ["MODEL"]="gemini-2.0-flash"
-    #     ["API_KEY"]="your-api-key-here"
-    #     ["TEMPERATURE"]="0.7"
-    #     ["MAX_TOKENS"]="2048"
-    #     ["TOP_P"]="1.0"
-    #     ["TOP_K"]="40"
-    #     ["STREAM"]="false"
-    #     ["SAFETY_SETTINGS"]="default"
-    #     ["LANGUAGE"]="en"
-    #     ["TIMEOUT"]="30"
-    #     ["RETRY_COUNT"]="3"
-    # )
-    local defaults=(
-        "MODEL" "gemini-2.0-flash"
-        "API_KEY" "your-api-key-here"
-        "TEMPERATURE" "0.7"
-        "MAX_TOKENS" "2048"
-        "TOP_P" "1.0"
-        "TOP_K" "40"
-        "STREAM" "false"
-        "SAFETY_SETTINGS" "default"
-        "LANGUAGE" "en"
-        "TIMEOUT" "30"
-        "RETRY_COUNT" "3"
+    declare -A default_keys=(
+        ["MODEL"]="gemini-2.0-flash"
+        ["API_KEY"]="your-api-key-here"
+        ["MAX_TOKENS"]="4096"
+        ["TEMPERATURE"]="0.7"
+        ["TOP_P"]="0.9"
+        ["FREQUENCY_PENALTY"]="0.0"
+        ["PRESENCE_PENALTY"]="0.0"
     )
 
-    # Populate the section with default keys if they do not exist
-    # This loop iterates over the defaults associative array
-    shell::colored_echo "DEBUG: Populating Gemini configuration in '$file' under section [$section]..." 244
-    # for key in "${!defaults[@]}"; do
-    #     if ! shell::exist_ini_key "$file" "$section" "$key" >/dev/null 2>&1; then
-    #         shell::write_ini "$file" "$section" "$key" "${defaults[$key]}"
-    #     else
-    #         shell::colored_echo "WARN: Key '$key' already exists in section [$section], skipping." 11
-    #     fi
-    # done
-    local i=0
-    while [ $i -lt ${#defaults[@]} ]; do
-        local key="${defaults[$i]}"
-        local value="${defaults[$((i + 1))]}"
+    shell::colored_echo "DEBUG: Default keys for Gemini configuration: ${!default_keys[@]}" 244
+    # Iterate over the default keys and write them to the INI file if they do not exist
+    for key in "${!default_keys[@]}"; do
         if ! shell::exist_ini_key "$file" "$section" "$key" >/dev/null 2>&1; then
-            shell::write_ini "$file" "$section" "$key" "$value"
-        else
-            shell::colored_echo "WARN: Key '$key' already exists in section [$section], skipping." 11
+            shell::write_ini "$file" "$section" "$key" "${default_keys[$key]}"
         fi
-        i=$((i + 2))
     done
 
     shell::colored_echo "INFO: Gemini configuration populated at '$file'" 46
