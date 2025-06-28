@@ -26,12 +26,6 @@ shell::populate_gemini_conf() {
     local file="${1:-$SHELL_KEY_CONF_AGENT_GEMINI_FILE}"
     local section="gemini"
 
-    # Create the file if it does not exist
-    # This function uses shell::create_file_if_not_exists to ensure the file is created
-    if [ ! -f "$file" ]; then
-        shell::create_file_if_not_exists "$file"
-    fi
-
     # Ensure the section exists in the INI file
     # This function uses shell::exist_ini_section to check if the section exists
     # If it does not exist, it adds the section using shell::add_ini_section
