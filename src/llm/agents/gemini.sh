@@ -227,98 +227,10 @@ shell::gemini_learn_english() {
 
     echo "BEFORE RESPONSE: $response"
 
-    # Improved JSON parsing section for shell::gemini_learn_english function
-    # Replace the existing JSON parsing logic with this improved version
+    local inner_json_string
+    inner_json_string=$(echo "$response" | jq -r '.candidates[0].content.parts[0].text')
 
-    # Extract and parse the nested JSON from Gemini response
-    local parsed_json
-    parsed_json=$(echo "$response" | python3 -c "
-import json
-import sys
-
-try:
-    # Load the main response JSON
-    data = json.load(sys.stdin)
-    
-    # Extract the text content from the nested structure
-    text_content = data['candidates'][0]['content']['parts'][0]['text']
-    
-    # The text_content is a JSON string that needs to be parsed
-    # It's already properly escaped, so we can parse it directly
-    parsed_content = json.loads(text_content)
-    
-    # Output the parsed content as properly formatted JSON
-    print(json.dumps(parsed_content, ensure_ascii=False, indent=2))
-    
-except KeyError as e:
-    print(f'KeyError: Missing expected field {e}', file=sys.stderr)
-    sys.exit(1)
-except json.JSONDecodeError as e:
-    print(f'JSONDecodeError: {e}', file=sys.stderr)
-    # Print the problematic text for debugging
-    try:
-        data = json.load(sys.stdin)
-        text_content = data['candidates'][0]['content']['parts'][0]['text']
-        print(f'Problematic text (first 500 chars): {text_content[:500]}', file=sys.stderr)
-    except:
-        pass
-    sys.exit(1)
-except Exception as e:
-    print(f'Unexpected error: {e}', file=sys.stderr)
-    sys.exit(1)
-")
-
-    # Check if Python parsing succeeded
-    if [ $? -ne 0 ] || [ -z "$parsed_json" ]; then
-        shell::colored_echo "ERR: Failed to parse JSON response from Gemini API." 196
-        shell::colored_echo "DEBUG: Raw response (first 500 chars):" 244
-        echo "$response"
-        echo "...ENDING"
-        return 1
-    fi
-
-    shell::colored_echo "INFO: Successfully parsed JSON content" 46
-
-    # Extract correction and examples from the parsed JSON
-    local correction
-    correction=$(echo "$parsed_json" | jq -r '.[0].suggested_correction // empty')
-
-    if [ -z "$correction" ]; then
-        shell::colored_echo "WARN: No suggested_correction found" 244
-        correction="No correction available"
-    fi
-
-    # Extract examples with better error handling
-    local examples
-    examples=$(echo "$parsed_json" | jq -r '
-    try (
-        .[0].example_sentences[] | 
-        "\(.en // .english // "No English text") (\(.vi // .vietnamese // "No Vietnamese text"))"
-    ) catch "No examples available"
-' 2>/dev/null)
-
-    # Display the results
-    shell::colored_echo "INFO: Suggested Correction:" 46
-    echo "$correction" | fzf --prompt="Correction: " --height=10 --layout=reverse --no-multi
-
-    if [ "$examples" != "No examples available" ] && [ -n "$examples" ]; then
-        shell::colored_echo "INFO: Example Sentences:" 46
-        echo "$examples" | fzf --multi --prompt="Examples: " --height=40% --layout=reverse
-    else
-        shell::colored_echo "WARN: No examples found in response" 244
-        # Show additional fields that might be available
-        shell::colored_echo "INFO: Available fields in response:" 244
-        echo "$parsed_json" | jq -r '.[0] | keys[]' 2>/dev/null | head -10
-    fi
-
-    # Optional: Display grammar explanation if available
-    local grammar_explanation
-    grammar_explanation=$(echo "$parsed_json" | jq -r '.[0].grammar_explanation // empty' 2>/dev/null)
-
-    if [ -n "$grammar_explanation" ]; then
-        shell::colored_echo "INFO: Grammar Explanation:" 46
-        echo "$grammar_explanation" | fold -w 80 -s
-    fi
+    echo "INNER JSON STRING: $inner_json_string"
 }
 
 # unescape_json_string: Unescapes a JSON-escaped string.
