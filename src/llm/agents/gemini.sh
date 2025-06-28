@@ -225,10 +225,10 @@ shell::gemini_learn_english() {
         return 1
     fi
     # Check if the response contains candidates
-    if ! echo "$response" | jq -e '.candidates' >/dev/null 2>&1; then
-        shell::colored_echo "ERR: No candidates found in Gemini API response." 196
-        return 1
-    fi
+    # if ! echo "$response" | jq -e '.candidates' >/dev/null 2>&1; then
+    #     shell::colored_echo "ERR: No candidates found in Gemini API response." 196
+    #     return 1
+    # fi
 
     local correction
     correction=$(echo "$response" | jq -r '.candidates[0].content.parts[0].text' | jq -r '.[0].suggested_correction')
