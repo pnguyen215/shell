@@ -272,8 +272,8 @@ except Exception as e:
     if [ $? -ne 0 ] || [ -z "$parsed_json" ]; then
         shell::colored_echo "ERR: Failed to parse JSON response from Gemini API." 196
         shell::colored_echo "DEBUG: Raw response (first 500 chars):" 244
-        echo "$response" | head -c 500
-        echo "..."
+        echo "$response"
+        echo "...ENDING"
         return 1
     fi
 
