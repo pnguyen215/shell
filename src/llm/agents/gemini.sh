@@ -38,21 +38,41 @@ shell::populate_gemini_conf() {
     # Each key is a string, and the value is also a string
     declare -A default_keys=(
         ["MODEL"]="gemini-2.0-flash"
-        ["API_KEY"]="your-api-key-here"
+        ["API_KEY"]="api-key-value"
         ["MAX_TOKENS"]="4096"
         ["TEMPERATURE"]="0.7"
         ["TOP_P"]="0.9"
+        ["TOP_K"]="40"
         ["FREQUENCY_PENALTY"]="0.0"
         ["PRESENCE_PENALTY"]="0.0"
     )
 
-    shell::colored_echo "DEBUG: Default keys for Gemini configuration: ${!default_keys[@]}" 244
-    # Iterate over the default keys and write them to the INI file if they do not exist
-    for key in "${!default_keys[@]}"; do
-        if ! shell::exist_ini_key "$file" "$section" "$key" >/dev/null 2>&1; then
-            shell::write_ini "$file" "$section" "$key" "${default_keys[$key]}"
-        fi
-    done
+    # Check and write each key if it does not exist
+    # If a key does not exist, it writes the default value using shell::write_ini
+    if ! shell::exist_ini_key "$file" "$section" "MODEL" >/dev/null 2>&1; then
+        shell::write_ini "$file" "$section" "MODEL" "${default_keys[MODEL]}"
+    fi
+    if ! shell::exist_ini_key "$file" "$section" "API_KEY" >/dev/null 2>&1; then
+        shell::write_ini "$file" "$section" "API_KEY" "${default_keys[API_KEY]}"
+    fi
+    if ! shell::exist_ini_key "$file" "$section" "MAX_TOKENS" >/dev/null 2>&1; then
+        shell::write_ini "$file" "$section" "MAX_TOKENS" "${default_keys[MAX_TOKENS]}"
+    fi
+    if ! shell::exist_ini_key "$file" "$section" "TEMPERATURE" >/dev/null 2>&1; then
+        shell::write_ini "$file" "$section" "TEMPERATURE" "${default_keys[TEMPERATURE]}"
+    fi
+    if ! shell::exist_ini_key "$file" "$section" "TOP_P" >/dev/null 2>&1; then
+        shell::write_ini "$file" "$section" "TOP_P" "${default_keys[TOP_P]}"
+    fi
+    if ! shell::exist_ini_key "$file" "$section" "TOP_K" >/dev/null 2>&1; then
+        shell::write_ini "$file" "$section" "TOP_K" "${default_keys[TOP_K]}"
+    fi
+    if ! shell::exist_ini_key "$file" "$section" "FREQUENCY_PENALTY" >/dev/null 2>&1; then
+        shell::write_ini "$file" "$section" "FREQUENCY_PENALTY" "${default_keys[FREQUENCY_PENALTY]}"
+    fi
+    if ! shell::exist_ini_key "$file" "$section" "PRESENCE_PENALTY" >/dev/null 2>&1; then
+        shell::write_ini "$file" "$section" "PRESENCE_PENALTY" "${default_keys[PRESENCE_PENALTY]}"
+    fi
 
     shell::colored_echo "INFO: Gemini configuration populated at '$file'" 46
 }
