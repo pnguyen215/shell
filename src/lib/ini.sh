@@ -633,7 +633,6 @@ shell::exist_ini_section() {
 # Example:
 #   shell::add_ini_section config.ini NewSection  # Adds NewSection to config.ini if it doesn't exist.
 shell::add_ini_section() {
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_ADD_INI_SECTION"
         return 0
@@ -643,7 +642,6 @@ shell::add_ini_section() {
     local section="$2"
 
     if [ -z "$file" ] || [ -z "$section" ]; then
-        shell::colored_echo "shell::add_ini_section: Missing required parameters" 196
         echo "Usage: shell::add_ini_section [-h] <file> <section>"
         return 1
     fi
@@ -661,11 +659,11 @@ shell::add_ini_section() {
 
     # Check if section already exists
     if shell::exist_ini_section "$file" "$section"; then
-        shell::colored_echo "Section already exists: $section" 11
+        shell::colored_echo "WARN: Section already exists: $section" 11
         return 0
     fi
 
-    shell::colored_echo "Adding section '$section' to file: $file" 11
+    shell::colored_echo "DEBUG: Adding section '$section' to file: $file" 244
 
     # Add a blank line before the new section unless the file is empty.
     # Use stat in case the file requires elevated permissions to read size.
