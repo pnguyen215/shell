@@ -52,6 +52,13 @@ SHELL_KEY_CONF_FILE_PROTECTED="$SHELL_CONF_WORKING/protected.conf"
 # By default, this is set to "$SHELL_CONF_WORKING/vpn.conf". You can change this value if you want to store your VPN configurations in a different location.
 SHELL_KEY_CONF_VPN_FILE="$SHELL_CONF_WORKING/vpn.conf"
 
+# SHELL_KEY_CONF_LLM_AGENT_FILE constant
+# This variable defines the path to the LLM (Large Language Model) agent configuration file used by the shell bash library.
+# The file stores configurations for LLM agents, which can include settings for various AI models or services.
+# It is typically used to manage configurations for agents that interact with LLMs, such as API keys, model parameters, and other relevant settings.
+# By default, this is set to "$SHELL_CONF_WORKING/agents.conf". You can change this value if you want to store your LLM agent configurations in a different location.
+SHELL_KEY_CONF_LLM_AGENT_FILE="$SHELL_CONF_WORKING/agents.conf"
+
 # SHELL_KEY_CONF_FILE_WORKSPACE constant
 # This variable defines the path to the profile-specific configuration file within the workspace directory.
 # It is used to store configuration settings specific to a user's profile, allowing for personalized shell environments.
