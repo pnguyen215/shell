@@ -3314,3 +3314,79 @@ shell::fzf_edit_ini_viz() {
         esac
     done
 }
+
+# shell::dump_ini_json function
+# Dumps all sections and their key-value pairs from an INI file as a JSON object.
+#
+# Usage:
+# shell::dump_ini_json <file>
+#
+# Parameters:
+# - <file> : The path to the INI file.
+#
+# Description:
+# This function reads all sections and their keys from the specified INI file,
+# decodes their values, and outputs them as a structured JSON object.
+shell::dump_ini_json() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_DUMP_BASE_JSON"
+        return 0
+    fi
+    if [ $# -lt 1 ]; then
+        echo "Usage: shell::dump_ini_json <file>"
+        return 1
+    fi
+
+    # Check if the file parameter is provided.
+    local file="$1"
+    if [ -z "$file" ]; then
+        echo "Usage: shell::dump_ini_json <file>"
+        return 1
+    fi
+
+    # Ensure the file exists and is readable.
+    if [ ! -f "$file" ]; then
+        shell::colored_echo "ERR: File not found: $file" 196
+        return 1
+    fi
+
+    # List all sections in the INI file.
+    # If no sections are found, print a warning and return.
+    local sections
+    sections=$(shell::list_ini_sections "$file")
+    if [ -z "$sections" ]; then
+        shell::colored_echo "WARN: No sections found in '$file'" 11
+        return 1
+    fi
+
+    # Initialize the JSON output.
+    # The output will be structured as a JSON object with sections as keys.
+    # Each section will contain its keys and values as key-value pairs.
+    local output="{"
+    local first_section=1
+    while IFS= read -r section; do
+        local keys
+        keys=$(shell::list_ini_keys "$file" "$section")
+        if [ -z "$keys" ]; then
+            continue
+        fi
+
+        [ $first_section -eq 0 ] && output+=","
+        output+="\n  \"$section\": {"
+        local first_key=1
+        while IFS= read -r key; do
+            local val
+            val=$(shell::read_ini "$file" "$section" "$key" 2>/dev/null)
+            val=$(echo "$val" | sed 's/"/\\"/g')
+            key=$(shell::sanitize_lower_var_name "$key")
+            [ $first_key -eq 0 ] && output+=","
+            output+="\n    \"$key\": \"$val\""
+            first_key=0
+        done <<<"$keys"
+        output+="\n  }"
+        first_section=0
+    done <<<"$sections"
+    output+="\n}"
+    echo -e "$output"
+    shell::clip_value "$output"
+}

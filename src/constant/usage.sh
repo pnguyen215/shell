@@ -4344,3 +4344,19 @@ Example:
 shell::populate_gemini_conf
 shell::populate_gemini_conf "User/.config/gemini.conf"
 "
+
+USAGE_SHELL_DUMP_BASE_JSON="
+shell::dump_ini_json function
+Dumps all sections and their key-value pairs from an INI file as a JSON object.
+
+Usage:
+shell::dump_ini_json [-h] <file>
+
+Parameters:
+  - -h      : Optional. Displays this help message.
+  - <file>  : The path to the INI file.
+
+Description:
+This function reads all sections and their keys from the specified INI file,
+decodes their values, and outputs them as a structured JSON object.
+"
