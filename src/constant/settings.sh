@@ -10,6 +10,12 @@
 #   SHELL_CONF_WORKING="$HOME/.shell-config"
 SHELL_CONF_WORKING="$HOME/.shell-config"
 
+# SHELL_CONF_WORKING_BACKUP constant
+# This variable defines the path to the backup directory within the shell configuration working directory.
+# It is used to store backup copies of configuration files, allowing for easy restoration in case of accidental changes or deletions.
+# By default, this is set to "$SHELL_CONF_WORKING/backup". You can change this value if you want to store your backups in a different location.
+SHELL_CONF_WORKING_BACKUP="$SHELL_CONF_WORKING/backup"
+
 # SHELL_CONF_WORKING_WORKSPACE constant
 # This variable defines the path to the workspace directory within the shell configuration working directory.
 # It is used to store user-specific or profile-specific configurations and data.
