@@ -224,17 +224,23 @@ shell::gemini_learn_english() {
         shell::colored_echo "ERR: Gemini API error: $error_message" 196
         return 1
     fi
-    # Check if the response contains candidates
-    # if ! echo "$response" | jq -e '.candidates' >/dev/null 2>&1; then
-    #     shell::colored_echo "ERR: No candidates found in Gemini API response." 196
-    #     return 1
-    # fi
 
+    # local correction
+    # correction=$(echo "$response" | jq -r '.candidates[0].content.parts[0].text' | jq -r '.[0].suggested_correction')
+
+    # local examples
+    # examples=$(echo "$response" | jq -r '.candidates[0].content.parts[0].text' | jq -r '.[0].example_sentences[] | "\(.en) (\(.vi))"')
+
+    # Extract the JSON string from the response
+    local raw_json
+    raw_json=$(echo "$response" | jq -r '.candidates[0].content.parts[0].text')
+
+    # Parse the embedded JSON string
     local correction
-    correction=$(echo "$response" | jq -r '.candidates[0].content.parts[0].text' | jq -r '.[0].suggested_correction')
+    correction=$(echo "$raw_json" | jq -r '.[0].suggested_correction')
 
     local examples
-    examples=$(echo "$response" | jq -r '.candidates[0].content.parts[0].text' | jq -r '.[0].example_sentences[] | "\(.en) (\(.vi))"')
+    examples=$(echo "$raw_json" | jq -r '.[0].example_sentences[] | "\(.en) (\(.vi))"')
 
     shell::colored_echo "INFO: Suggested Correction:" 46
     echo "$correction" | fzf --prompt="Correction: "
