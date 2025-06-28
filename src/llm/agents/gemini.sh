@@ -155,12 +155,8 @@ shell::gemini_learn_english() {
     fi
 
     # Check if the required parameters are provided
-    if [ -n "$1" ]; then
-        echo "Usage: shell::gemini_learn_english [-n] <sentence english>"
-        return 1
-    fi
     if [ -z "$1" ]; then
-        shell::colored_echo "ERR: No sentence provided for Gemini English learning." 196
+        echo "Usage: shell::gemini_learn_english [-n] <sentence english>"
         return 1
     fi
     # Ensure the sentence_english variable is set
