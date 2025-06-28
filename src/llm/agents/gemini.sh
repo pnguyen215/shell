@@ -94,3 +94,21 @@ shell::fzf_view_gemini_conf() {
     fi
     shell::fzf_view_ini_viz "$file"
 }
+
+# shell::fzf_edit_gemini_conf function
+# Interactively edits the Gemini configuration file using fzf.
+#
+# Usage:
+# shell::fzf_edit_gemini_conf
+#
+# Description:
+# This function opens the Gemini configuration file defined by SHELL_KEY_CONF_AGENT_GEMINI_FILE.
+# It uses fzf to select a key from the [gemini] section and allows editing its value.
+shell::fzf_edit_gemini_conf() {
+    local file="$SHELL_KEY_CONF_AGENT_GEMINI_FILE"
+    if [ ! -f "$file" ]; then
+        shell::colored_echo "ERR: Gemini config file not found at '$file'" 196
+        return 1
+    fi
+    shell::fzf_edit_ini_viz "$file"
+}
