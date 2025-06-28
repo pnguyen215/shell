@@ -4324,3 +4324,23 @@ Description:
 Uses fzf to select a workspace and a .conf file, then selects a section (dev or uat),
 and tunes an SSH tunnel using shell::tune_workspace_ssh_tunnel.
 "
+
+USAGE_SHELL_POPULATE_GEMINI_CONF="
+shell::populate_gemini_conf function
+Populates the Gemini agent configuration file with default keys if they do not already exist.
+
+Usage:
+shell::populate_gemini_conf [-h] [file_path]
+
+Parameters:
+  - -h          : Optional. Displays this help message.
+  - [file_path] : Optional. The path to the Gemini configuration file. Defaults to SHELL_KEY_CONF_AGENT_GEMINI_FILE.
+
+Description:
+This function writes default Gemini configuration keys to the specified file under the [gemini] section.
+It checks if each key already exists before writing. Values are encoded using Base64 and written using shell::write_ini.
+
+Example:
+shell::populate_gemini_conf
+shell::populate_gemini_conf "User/.config/gemini.conf"
+"
