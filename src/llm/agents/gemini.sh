@@ -225,6 +225,8 @@ shell::gemini_learn_english() {
         return 1
     fi
 
+    echo "BEFORE RESPONSE: $response"
+
     # Extract the raw text using grep/sed instead of jq to avoid control character issues
     local raw_text
     raw_text=$(echo "$response" | grep -o '"text": *"[^"]*"' | sed 's/"text": *"//' | sed 's/"$//')
@@ -266,9 +268,9 @@ shell::gemini_learn_english() {
 
     shell::colored_echo "DEBUG: Extracted text field successfully" 46
 
-    # Convert literal \n to actual newlines and handle escaped quotes
+    # Convert literal \n to actual newlines, handle escaped quotes, and fix smart quotes
     local processed_text
-    processed_text=$(echo "$raw_text" | sed 's/\\n/\n/g; s/\\"/"/g; s/\\\\/\\/g')
+    processed_text=$(echo "$raw_text" | sed 's/\\n/\n/g; s/\\"/"/g; s/\\\\/\\/g; s/"/"/g; s/"/"/g')
 
     # Parse the processed JSON
     local parsed_json
