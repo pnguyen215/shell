@@ -225,6 +225,88 @@ shell::gemini_learn_english() {
         return 1
     fi
 
+    #     echo "BEFORE RESPONSE: $response"
+
+    #     # Extract the text field content between quotes, handling multiline content
+    #     local raw_text
+    #     raw_text=$(echo "$response" | python3 -c "
+    # import json
+    # import sys
+
+    # try:
+    #     data = json.load(sys.stdin)
+    #     text_content = data['candidates'][0]['content']['parts'][0]['text']
+    #     print(text_content)
+    # except Exception as e:
+    #     print('', file=sys.stderr)
+    #     sys.exit(1)
+    # ")
+
+    #     # Check if extraction failed
+    #     if [ $? -ne 0 ] || [ -z "$raw_text" ]; then
+    #         shell::colored_echo "ERR: Could not extract text field using Python JSON parser." 196
+
+    #         # Fallback: manual extraction using sed/awk
+    #         shell::colored_echo "INFO: Attempting manual text extraction..." 244
+    #         raw_text=$(echo "$response" | sed -n '/"text":/,/"role":/p' | sed '1s/.*"text": *"//; $s/".*//; $d' | sed 's/\\n/\n/g; s/\\"/"/g')
+
+    #         if [ -z "$raw_text" ]; then
+    #             shell::colored_echo "ERR: Manual extraction also failed." 196
+    #             return 1
+    #         fi
+    #     fi
+
+    #     shell::colored_echo "DEBUG: Successfully extracted text field" 46
+
+    #     # Now parse the extracted text as JSON
+    #     local parsed_json
+    #     parsed_json=$(echo "$raw_text" | jq . 2>/dev/null)
+
+    #     # Check if parsing was successful
+    #     if [ $? -ne 0 ] || [ -z "$parsed_json" ] || [ "$parsed_json" = "null" ]; then
+    #         shell::colored_echo "ERR: Failed to parse extracted text as JSON." 196
+    #         shell::colored_echo "DEBUG: Text preview (first 300 chars):" 244
+    #         echo "$raw_text"
+    #         echo "..."
+    #         return 1
+    #     fi
+
+    #     shell::colored_echo "INFO: Successfully parsed JSON content" 46
+
+    #     # Extract correction and examples from the parsed JSON
+    #     local correction
+    #     correction=$(echo "$parsed_json" | jq -r '.[0].suggested_correction // empty')
+
+    #     if [ -z "$correction" ]; then
+    #         shell::colored_echo "WARN: No suggested_correction found, trying alternative field names" 244
+    #         correction=$(echo "$parsed_json" | jq -r '.[0].correction // .[0].suggestion // "No correction found"')
+    #     fi
+
+    #     local examples
+    #     examples=$(echo "$parsed_json" | jq -r '.[0].example_sentences[]? // empty | "\(.en // .english // .) (\(.vi // .vietnamese // .))"' 2>/dev/null)
+
+    #     if [ -z "$examples" ]; then
+    #         shell::colored_echo "WARN: No example_sentences found, trying alternative structure" 244
+    #         examples=$(echo "$parsed_json" | jq -r '.[] | select(.examples) | .examples[] | "\(.en // .english // .) (\(.vi // .vietnamese // .))"' 2>/dev/null)
+    #     fi
+
+    #     # Display the results
+    #     if [ -n "$correction" ]; then
+    #         shell::colored_echo "INFO: Suggested Correction:" 46
+    #         echo "$correction" | fzf --prompt="Correction: " --height=10 --layout=reverse
+    #     else
+    #         shell::colored_echo "WARN: No correction found in response" 244
+    #     fi
+
+    #     if [ -n "$examples" ]; then
+    #         shell::colored_echo "INFO: Example Sentences:" 46
+    #         echo "$examples" | fzf --multi --prompt="Examples: " --height=40% --layout=reverse
+    #     else
+    #         shell::colored_echo "WARN: No examples found in response" 244
+    #         shell::colored_echo "INFO: Full parsed JSON structure:" 244
+    #         echo "$parsed_json" | jq .
+    #     fi
+
     echo "BEFORE RESPONSE: $response"
 
     # Extract the text field content between quotes, handling multiline content
@@ -248,7 +330,7 @@ except Exception as e:
 
         # Fallback: manual extraction using sed/awk
         shell::colored_echo "INFO: Attempting manual text extraction..." 244
-        raw_text=$(echo "$response" | sed -n '/"text":/,/"role":/p' | sed '1s/.*"text": *"//; $s/".*//; $d' | sed 's/\\n/\n/g; s/\\"/"/g')
+        raw_text=$(echo "$response" | sed -n '/"text":/,/"role":/p' | sed '1s/.*"text": *"//; $d' | sed '$s/".*//' | sed 's/\\n/\n/g; s/\\"/"/g')
 
         if [ -z "$raw_text" ]; then
             shell::colored_echo "ERR: Manual extraction also failed." 196
@@ -266,7 +348,7 @@ except Exception as e:
     if [ $? -ne 0 ] || [ -z "$parsed_json" ] || [ "$parsed_json" = "null" ]; then
         shell::colored_echo "ERR: Failed to parse extracted text as JSON." 196
         shell::colored_echo "DEBUG: Text preview (first 300 chars):" 244
-        echo "$raw_text"
+        echo "$raw_text" | head -c 300
         echo "..."
         return 1
     fi
