@@ -309,7 +309,7 @@ shell::gemini_learn_english() {
 
     echo "BEFORE RESPONSE: $response"
 
-    # Extract the text field content between quotes, handling multiline content
+    # Extract the text field content and properly escape it as JSON
     local raw_text
     raw_text=$(echo "$response" | python3 -c "
 import json
@@ -318,39 +318,93 @@ import sys
 try:
     data = json.load(sys.stdin)
     text_content = data['candidates'][0]['content']['parts'][0]['text']
-    print(text_content)
+    # Parse the text content as JSON and re-output it properly formatted
+    parsed_content = json.loads(text_content)
+    print(json.dumps(parsed_content, ensure_ascii=False, indent=2))
 except Exception as e:
-    print('', file=sys.stderr)
+    print('PYTHON_PARSE_FAILED', file=sys.stderr)
     sys.exit(1)
 ")
 
-    # Check if extraction failed
-    if [ $? -ne 0 ] || [ -z "$raw_text" ]; then
-        shell::colored_echo "ERR: Could not extract text field using Python JSON parser." 196
+    # Check if Python parsing succeeded
+    if [ $? -eq 0 ] && [ -n "$raw_text" ]; then
+        shell::colored_echo "DEBUG: Successfully extracted and parsed text using Python" 46
+        parsed_json="$raw_text"
+    else
+        shell::colored_echo "INFO: Python parsing failed, attempting manual extraction and escaping..." 244
 
-        # Fallback: manual extraction using sed/awk
-        shell::colored_echo "INFO: Attempting manual text extraction..." 244
-        raw_text=$(echo "$response" | sed -n '/"text":/,/"role":/p' | sed '1s/.*"text": *"//; $d' | sed '$s/".*//' | sed 's/\\n/\n/g; s/\\"/"/g')
+        # Manual extraction: get the raw text content between "text": and "role":
+        local extracted_text
+        extracted_text=$(echo "$response" | awk '
+            BEGIN { 
+                in_text = 0
+                text_lines = ""
+                found_start = 0
+            }
+            /"text": *"/ {
+                in_text = 1
+                found_start = 1
+                # Get everything after "text": "
+                sub(/.*"text": *"/, "")
+                text_lines = $0
+                next
+            }
+            in_text && /"role":/ {
+                # End of text field - remove trailing quote
+                gsub(/"[[:space:]]*$/, "", text_lines)
+                print text_lines
+                exit
+            }
+            in_text {
+                text_lines = text_lines "\n" $0
+            }
+            END {
+                if (found_start && !in_text) {
+                    gsub(/"[[:space:]]*$/, "", text_lines)
+                    print text_lines
+                }
+            }
+        ')
 
-        if [ -z "$raw_text" ]; then
-            shell::colored_echo "ERR: Manual extraction also failed." 196
+        if [ -z "$extracted_text" ]; then
+            shell::colored_echo "ERR: Failed to extract text content." 196
             return 1
         fi
-    fi
 
-    shell::colored_echo "DEBUG: Successfully extracted text field" 46
+        # Convert escaped characters and create properly formatted JSON
+        local processed_text
+        processed_text=$(echo "$extracted_text" | python3 -c "
+import sys
+import json
 
-    # Now parse the extracted text as JSON
-    local parsed_json
-    parsed_json=$(echo "$raw_text" | jq . 2>/dev/null)
+try:
+    # Read the raw text
+    raw_content = sys.stdin.read()
+    
+    # Replace literal \\n with actual newlines and handle other escapes
+    processed = raw_content.replace('\\\\n', '\n').replace('\\\\\"', '\"').replace('\\\\\\\\', '\\\\')
+    
+    # Try to parse as JSON
+    parsed = json.loads(processed)
+    
+    # Output properly formatted JSON
+    print(json.dumps(parsed, ensure_ascii=False, indent=2))
+    
+except Exception as e:
+    print(f'Error: {e}', file=sys.stderr)
+    sys.exit(1)
+")
 
-    # Check if parsing was successful
-    if [ $? -ne 0 ] || [ -z "$parsed_json" ] || [ "$parsed_json" = "null" ]; then
-        shell::colored_echo "ERR: Failed to parse extracted text as JSON." 196
-        shell::colored_echo "DEBUG: Text preview (first 300 chars):" 244
-        echo "$raw_text"
-        echo "END"
-        return 1
+        if [ $? -eq 0 ] && [ -n "$processed_text" ]; then
+            shell::colored_echo "DEBUG: Successfully processed text manually" 46
+            parsed_json="$processed_text"
+        else
+            shell::colored_echo "ERR: Failed to process extracted text as JSON." 196
+            shell::colored_echo "DEBUG: Raw extracted text (first 300 chars):" 244
+            echo "$extracted_text" | head -c 300
+            echo "..."
+            return 1
+        fi
     fi
 
     shell::colored_echo "INFO: Successfully parsed JSON content" 46
