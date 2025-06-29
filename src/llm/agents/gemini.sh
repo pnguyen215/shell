@@ -247,23 +247,29 @@ shell::gemini_learn_english() {
     shell::colored_echo "DEBUG: Response from Gemini API: $response" 244
 
     # Alternative approach using temporary files for better handling
-    local tmp_response_file
-    tmp_response_file=$(mktemp)
-    echo "$response" >"$tmp_response_file"
+    # local tmp_response_file
+    # tmp_response_file=$(mktemp)
+    # echo "$response" >"$tmp_response_file"
 
-    cat "$tmp_response_file"
+    # cat "$tmp_response_file"
 
-    # Extract and save the raw text to a temporary file
-    local tmp_text_file
-    tmp_text_file=$(mktemp)
-    jq -r '.candidates[0].content.parts[0].text' "$tmp_response_file" >"$tmp_text_file"
+    # # Extract and save the raw text to a temporary file
+    # local tmp_text_file
+    # tmp_text_file=$(mktemp)
+    # jq -r '.candidates[0].content.parts[0].text' "$tmp_response_file" >"$tmp_text_file"
 
-    # Parse the JSON from the file
-    local parsed_json
-    parsed_json=$(jq '.' "$tmp_text_file")
+    # # Parse the JSON from the file
+    # local parsed_json
+    # parsed_json=$(jq '.' "$tmp_text_file")
 
-    # Clean up temporary files
-    rm -f "$tmp_response_file" "$tmp_text_file"
+    # # Clean up temporary files
+    # rm -f "$tmp_response_file" "$tmp_text_file"
 
-    shell::colored_echo "DEBUG: Parsed JSON: $parsed_json" 244
+    # shell::colored_echo "DEBUG: Parsed JSON: $parsed_json" 244
+
+    # Sanitize the JSON string by removing problematic characters and re-formatting
+    local sanitized_json
+    sanitized_json=$(echo "$response" | tr -d '\n\r\t' | sed 's/  */ /g')
+
+    shell::colored_echo "DEBUG: Sanitized JSON: $sanitized_json" 244
 }
