@@ -277,7 +277,7 @@ shell::gemini_learn_english() {
 
     # Method 2: Alternative approach using sed to clean escaped characters
     # Uncomment this if Method 1 doesn't work:
-    # text_json_clean=$(echo "$text_json_raw" | sed 's/\\"/"/g' | sed 's/\\n/\n/g' | sed 's/\\t/\t/g' | sed 's/\\r/\r/g')
+    text_json_clean=$(echo "$text_json_raw" | sed 's/\\"/"/g' | sed 's/\\n/\n/g' | sed 's/\\t/\t/g' | sed 's/\\r/\r/g')
 
     shell::colored_echo "DEBUG: Cleaned text JSON content: $text_json_clean" 244
 
