@@ -212,9 +212,15 @@ shell::gemini_learn_english() {
         return 0
     fi
 
+    local tmp_payload_file
+    tmp_payload_file=$(mktemp)
+    echo "$payload" >"$tmp_payload_file"
+
     # Send request and capture raw response
     local response
-    response=$(curl -s -X POST "$url" -H "Content-Type: application/json" -d $payload)
+    # response=$(curl -s -X POST $url -H "Content-Type: application/json" -d $payload)
+    response=$(curl -s -X POST "$url" -H "Content-Type: application/json" --data @"$tmp_payload_file")
+    rm -f "$tmp_payload_file"
 
     # Check if the response is empty
     # If the response is empty, it indicates that there was no response from the Gemini API
