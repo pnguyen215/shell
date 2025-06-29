@@ -200,21 +200,21 @@ shell::gemini_learn_english() {
     # This allows the prompt to be dynamically generated based on user input
     local payload=$(sed "s/{ENTER_SENTENCE_ENGLISH}/$sentence_english/" "$prompt_request")
 
-    # Prepare the curl command to send the request to the Gemini API
-    # The curl command is constructed to send a POST request with the payload
-    # The payload is a JSON object containing the model, prompt, and other parameters
-    local curl_cmd="curl -s -X POST \"$url\" -H \"Content-Type: application/json\" -d '$payload'"
-
     # Check if the dry-run is enabled
     # If dry_run is true, it will print the curl command instead of executing it
     # This is useful for debugging or testing purposes
     if [ "$dry_run" = "true" ]; then
+        # Prepare the curl command to send the request to the Gemini API
+        # The curl command is constructed to send a POST request with the payload
+        # The payload is a JSON object containing the model, prompt, and other parameters
+        local curl_cmd="curl -s -X POST \"$url\" -H \"Content-Type: application/json\" -d '$payload'"
         shell::on_evict "$curl_cmd"
         return 0
     fi
 
+    # Send request and capture raw response
     local response
-    response=$(eval "$curl_cmd")
+    response=$(curl -s -X POST "$url" -H "Content-Type: application/json" -d "$payload")
 
     # Check if the response is empty
     # If the response is empty, it indicates that there was no response from the Gemini API
