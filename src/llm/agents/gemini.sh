@@ -293,8 +293,8 @@ shell::gemini_learn_english() {
     fi
 
     # Use the new dump function for clean visualization
-    # shell::dump_gemini_conf_json "$parsed_embedded_json"
-    shell::dump_gemini_compact "$parsed_embedded_json"
+    shell::dump_gemini_conf_json "$parsed_embedded_json"
+    # shell::dump_gemini_compact "$parsed_embedded_json"
 }
 
 # New function for clean JSON visualization with real-time view board
@@ -344,18 +344,31 @@ shell::dump_gemini_conf_json() {
         esac
     done <<<"$keys"
 
-    # Interactive selection with clean fzf layout
+    # Create a simpler preview using basic shell commands and jq
     local selected_field
     selected_field=$(printf "%b" "$menu_items" | fzf \
         --height=70% \
         --layout=reverse \
         --border=rounded \
         --prompt="Select field > " \
-        --header="English Learning Data Viewer" \
+        --header="English Learning Data Viewer - Navigate with arrows, Enter to select" \
         --preview-window=right:60%:wrap \
-        --preview="shell::_preview_json_field '$json_data' {}" \
+        --preview="
+            key=\$(echo {} | sed 's/:.*\$//' | sed 's/ \[.*\]\$//')
+            echo '$json_data' | jq -r --arg k \"\$key\" '
+                if .[\$k] | type == \"array\" then
+                    \"ARRAY CONTENTS (\(.[\$k] | length) items):\\n\" + \"===============\\n\" + (.[\$k][] | tostring | .[0:100]) + (if (.[\$k] | length) > 5 then \"\\n... and more items\" else \"\" end)
+                elif .[\$k] | type == \"object\" then
+                    \"OBJECT STRUCTURE:\\n\" + \"==================\\n\" + (.[\$k] | to_entries | map(\"\(.key): \(.value)\") | join(\"\\n\"))
+                else
+                    \"VALUE:\\n\" + \"======\\n\" + (.[\$k] | tostring)
+                end
+            ' | fold -w 50
+        " \
         --bind='ctrl-c:abort' \
         --no-info)
+
+    # Remove temp file cleanup since we're not using it anymore
 
     if [ -n "$selected_field" ]; then
         # Extract just the key name (remove preview text and array indicators)
@@ -363,59 +376,6 @@ shell::dump_gemini_conf_json() {
         selected_key=$(echo "$selected_field" | sed 's/:.*$//' | sed 's/ \[.*\]$//')
         shell::_display_json_field_detailed "$json_data" "$selected_key"
     fi
-}
-
-# Preview function for real-time field viewing
-shell::_preview_json_field() {
-    local json_data="$1"
-    local field_line="$2"
-
-    # Extract key name from the field line
-    local key
-    key=$(echo "$field_line" | sed 's/:.*$//' | sed 's/ \[.*\]$//')
-
-    # Check if key exists
-    if ! echo "$json_data" | jq -e --arg k "$key" 'has($k)' >/dev/null 2>&1; then
-        echo "Field not found: $key"
-        return 1
-    fi
-
-    local value_type
-    value_type=$(echo "$json_data" | jq -r --arg k "$key" '.[$k] | type')
-
-    case "$value_type" in
-    "array")
-        echo "ARRAY CONTENTS:"
-        echo "==============="
-        local array_items
-        array_items=$(echo "$json_data" | jq -r --arg k "$key" '.[$k][]')
-        if [ -n "$array_items" ]; then
-            echo "$array_items" | nl -w2 -s'. ' | head -10
-            local total_count
-            total_count=$(echo "$json_data" | jq --arg k "$key" '.[$k] | length')
-            if [ "$total_count" -gt 10 ]; then
-                echo "... and $((total_count - 10)) more items"
-            fi
-        else
-            echo "Empty array"
-        fi
-        ;;
-    "object")
-        echo "OBJECT STRUCTURE:"
-        echo "=================="
-        echo "$json_data" | jq --arg k "$key" '.[$k]' | jq -r 'to_entries | map("\(.key): \(.value)") | .[]'
-        ;;
-    "string")
-        echo "TEXT CONTENT:"
-        echo "============="
-        echo "$json_data" | jq -r --arg k "$key" '.[$k]' | fold -w 50
-        ;;
-    *)
-        echo "VALUE:"
-        echo "======"
-        echo "$json_data" | jq -r --arg k "$key" '.[$k]'
-        ;;
-    esac
 }
 
 # Detailed display function with array handling
