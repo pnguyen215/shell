@@ -263,4 +263,14 @@ shell::gemini_learn_english() {
         shell::colored_echo "ERR: Failed to parse JSON response." 196
         return 1
     fi
+
+    local text_json
+    text_json=$(echo "$parsed_json" | jq -r '.candidates[0].content.parts[0].text')
+
+    shell::colored_echo "DEBUG: Text JSON content: $text_json" 244
+
+    local correction
+    correction=$(echo "$text_json" | jq -r '.[0].suggested_correction')
+
+    shell::colored_echo "DEBUG: Suggested correction: $correction" 244
 }
