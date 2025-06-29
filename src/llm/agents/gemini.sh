@@ -172,11 +172,15 @@ shell::gemini_learn_english() {
     local api_key=$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_FILE" "gemini" "API_KEY")
     local model=$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_FILE" "gemini" "MODEL")
 
-    # Check if API_KEY and MODEL are set in the Gemini config file
+    # Check if API_KEY is set in the Gemini config file
+    # If API_KEY is not set, it defaults to an empty string
     if [ -z "$api_key" ]; then
         shell::colored_echo "ERR: API_KEY config not found in Gemini config file ($SHELL_KEY_CONF_AGENT_GEMINI_FILE)." 196
         return 1
     fi
+
+    # Check if MODEL is set in the Gemini config file
+    # If MODEL is not set, it defaults to "gemini-2.0-flash"
     if [ -z "$model" ]; then
         shell::colored_echo "ERR: MODEL config not found in Gemini config file ($SHELL_KEY_CONF_AGENT_GEMINI_FILE)." 196
         return 1
@@ -184,7 +188,6 @@ shell::gemini_learn_english() {
 
     local url="https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${api_key}"
     local prompt_request="$LLM_PROMPTS_DIR/gemini/english_translation_tutor_request.txt"
-    local payload=$(sed "s/{ENTER_SENTENCE_ENGLISH}/$sentence_english/" "$prompt_request")
 
     # Check if the prompt file exists
     if [ ! -f "$prompt_request" ]; then
@@ -192,6 +195,14 @@ shell::gemini_learn_english() {
         return 1
     fi
 
+    # Replace the placeholder in the prompt file with the provided sentence
+    # The sed command replaces {ENTER_SENTENCE_ENGLISH} in the prompt file with the actual sentence_english
+    # This allows the prompt to be dynamically generated based on user input
+    local payload=$(sed "s/{ENTER_SENTENCE_ENGLISH}/$sentence_english/" "$prompt_request")
+
+    # Prepare the curl command to send the request to the Gemini API
+    # The curl command is constructed to send a POST request with the payload
+    # The payload is a JSON object containing the model, prompt, and other parameters
     local curl_cmd="curl -s -X POST \"$url\" -H \"Content-Type: application/json\" -d '$payload'"
 
     # Check if the dry-run is enabled
@@ -211,12 +222,14 @@ shell::gemini_learn_english() {
         shell::colored_echo "ERR: Failed to connect to Gemini API." 196
         return 1
     fi
+
     # Check if the response is empty
     # If the response is empty, it indicates that there was no response from the Gemini API
     if [ -z "$response" ]; then
         shell::colored_echo "ERR: No response from Gemini API." 196
         return 1
     fi
+
     # Check if the response contains an error
     if echo "$response" | jq -e '.error' >/dev/null 2>&1; then
         local error_message
@@ -225,95 +238,5 @@ shell::gemini_learn_english() {
         return 1
     fi
 
-    echo "BEFORE RESPONSE: $response"
-
-    local inner_json_string
-    inner_json_string=$(echo "$response" | jq -r '.candidates[0].content.parts[0].text')
-
-    echo "INNER JSON STRING: $inner_json_string"
-}
-
-# unescape_json_string: Unescapes a JSON-escaped string.
-# This function reverses the process of JSON escaping, converting sequences
-# like `\"`, `\\`, `\n`, `\t`, and `\uXXXX` back into their literal characters.
-#
-# Arguments:
-#   $1 - The JSON-escaped string to unescape.
-#
-# Output:
-#   The unescaped string is printed to standard output.
-#
-# Example:
-#   escaped_text="Hello\\nWorld!\\\""
-#   unescaped_text=$(unescape_json_string "$escaped_text")
-#   echo "$unescaped_text" # Output: Hello
-#                         #         World!"
-#
-#   unicode_escaped="Test\\u0041\\u0008Finished" # \u0041 is 'A', \u0008 is backspace
-#   unescaped_unicode=$(unescape_json_string "$unicode_escaped")
-#   echo "$unescaped_unicode" # Output: TestA(backspace)Finished (backspace character will be inserted)
-unescape_json_string() {
-    local input="$1"
-    local output=""
-    local i=0
-    local len=${#input}
-
-    while [ "$i" -lt "$len" ]; do
-        local char="${input:i:1}" # Get current character
-
-        if [ "$char" = "\\" ]; then
-            # Found a backslash, indicating a potential escape sequence
-            i=$((i + 1)) # Move to the character after the backslash
-
-            # Check if the backslash is at the end of the string
-            if [ "$i" -ge "$len" ]; then
-                output+="\\" # Treat as a literal backslash
-                break        # End of string
-            fi
-
-            local next_char="${input:i:1}" # Get the character after the backslash
-            case "$next_char" in
-            '"') output+='"' ;;   # Unescape double quote
-            '\') output+='\' ;;   # Unescape backslash
-            '/') output+='/' ;;   # Unescape solidus (forward slash), though optional in JSON
-            'b') output+=$'\b' ;; # Unescape backspace
-            'f') output+=$'\f' ;; # Unescape form feed
-            'n') output+=$'\n' ;; # Unescape newline
-            'r') output+=$'\r' ;; # Unescape carriage return
-            't') output+=$'\t' ;; # Unescape tab
-            'u')
-                # Handle Unicode escape sequence \uXXXX
-                # Ensure there are enough characters for the 4-digit hex code
-                if [ "$((i + 4))" -lt "$len" ]; then
-                    local hex_code="${input:i+1:4}" # Extract the 4 hex digits
-                    # Basic validation for hex code (optional but recommended)
-                    if [[ "$hex_code" =~ ^[0-9a-fA-F]{4}$ ]]; then
-                        # Convert hex code to the corresponding Unicode character
-                        # This uses bash's internal printf, which supports \uXXXX for output
-                        printf -v unicode_char "\u${hex_code}"
-                        output+="$unicode_char"
-                        i=$((i + 4)) # Move past the 4 hex digits
-                    else
-                        # Invalid hex code format, treat as literal \u and the invalid part
-                        output+="\\u${hex_code}"
-                        i=$((i + 4)) # Still consume the 4 characters to avoid infinite loop
-                    fi
-                else
-                    # Incomplete \u escape sequence, treat as literal \u and any remaining characters
-                    output+="\\u${input:i+1}"
-                    i=$((len)) # Advance cursor to the end of the string
-                fi
-                ;;
-            *)
-                # Unrecognized escape sequence, treat as literal backslash and the next character
-                output+="\\$next_char"
-                ;;
-            esac
-        else
-            # Not a backslash, append the character directly
-            output+="$char"
-        fi
-        i=$((i + 1)) # Move to the next character in the input string
-    done
-    echo "$output" # Print the final unescaped string
+    shell::colored_echo "DEBUG: Response from Gemini API: $response" 46
 }
