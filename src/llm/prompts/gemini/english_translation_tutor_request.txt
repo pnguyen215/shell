@@ -58,6 +58,7 @@
                     "formality_level": {
                         "type": "string",
                         "description": "Formality level such as casual, neutral, or formal."
+                        "enum": ["casual", "neutral", "formal"]
                     },
                     "us_uk_difference": {
                         "type": "string",
