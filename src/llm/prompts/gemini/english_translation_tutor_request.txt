@@ -70,6 +70,7 @@
                     },
                     "example_sentences": {
                         "type": "array",
+                        "maxItems": 5,
                         "description": "Example sentences with both English and Vietnamese translation.",
                         "items": {
                             "type": "object",
@@ -91,6 +92,7 @@
                     },
                     "natural_alternatives": {
                         "type": "array",
+                        "maxItems": 5,
                         "items": {
                             "type": "string"
                         },
