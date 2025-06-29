@@ -292,7 +292,7 @@ shell::gemini_learn_english() {
         return 1
     fi
 
-    shell::_show_gemini_fzf_menu "$response"
+    shell::_show_gemini_fzf_menu "$parsed_embedded_json"
 }
 
 # Interactive fzf menu for Gemini response
