@@ -37,7 +37,7 @@
                 "properties": {
                     "grammar_explanation": {
                         "type": "string",
-                        "description": "Explanation of grammatical correctness and sentence type."
+                        "description": "Explanation of grammatical correctness and sentence type, single quote."
                     },
                     "is_grammatically_correct": {
                         "type": "boolean",
@@ -65,7 +65,7 @@
                     },
                     "common_mistakes": {
                         "type": "string",
-                        "description": "Typical learner mistakes related to this phrase."
+                        "description": "Typical learner mistakes related to this phrase, single quote."
                     },
                     "example_sentences": {
                         "type": "array",
@@ -79,11 +79,11 @@
                             "properties": {
                                 "en": {
                                     "type": "string",
-                                    "description": "English example sentence."
+                                    "description": "English example sentence, single quote."
                                 },
                                 "vi": {
                                     "type": "string",
-                                    "description": "Vietnamese translation of the sentence."
+                                    "description": "Vietnamese translation of the sentence, single quote."
                                 }
                             }
                         }
