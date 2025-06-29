@@ -218,7 +218,7 @@ shell::gemini_learn_english() {
 
     # Send request and capture raw response
     local response
-    # response=$(curl -s -X POST $url -H "Content-Type: application/json" -d $payload)
+    # response=$(curl -s -X POST "$url" -H "Content-Type: application/json" -d $payload)
     response=$(curl -s -X POST "$url" -H "Content-Type: application/json" --data @"$tmp_payload_file")
     rm -f "$tmp_payload_file"
 
@@ -246,10 +246,24 @@ shell::gemini_learn_english() {
 
     shell::colored_echo "DEBUG: Response from Gemini API: $response" 244
 
-    # Step 1: Extract the embedded JSON string
-    local raw_text
-    raw_text=$(echo "$response" | jq -r '.candidates[0].content.parts[0].text')
+    # Alternative approach using temporary files for better handling
+    local tmp_response_file
+    tmp_response_file=$(mktemp)
+    echo "$response" >"$tmp_response_file"
 
-    shell::colored_echo "DEBUG: Embedded JSON string:" 244
-    echo "$raw_text"
+    cat "$tmp_response_file"
+
+    # Extract and save the raw text to a temporary file
+    local tmp_text_file
+    tmp_text_file=$(mktemp)
+    jq -r '.candidates[0].content.parts[0].text' "$tmp_response_file" >"$tmp_text_file"
+
+    # Parse the JSON from the file
+    local parsed_json
+    parsed_json=$(jq '.' "$tmp_text_file")
+
+    # Clean up temporary files
+    rm -f "$tmp_response_file" "$tmp_text_file"
+
+    shell::colored_echo "DEBUG: Parsed JSON: $parsed_json" 244
 }
