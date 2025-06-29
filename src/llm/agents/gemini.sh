@@ -292,139 +292,215 @@ shell::gemini_learn_english() {
         return 1
     fi
 
-    shell::_show_gemini_fzf_menu "$parsed_embedded_json"
+    # Use the new dump function for clean visualization
+    shell::dump_gemini_conf_json "$parsed_embedded_json"
 }
 
-# Interactive fzf menu for Gemini response
-shell::_show_gemini_fzf_menu() {
-    local data="$1"
+# New function for clean JSON visualization with real-time view board
+shell::dump_gemini_conf_json() {
+    local json_data="$1"
 
-    # Check if data is an array or single object
+    # Handle array input - take first element if array
     local is_array
-    is_array=$(echo "$data" | jq -r 'type == "array"')
+    is_array=$(echo "$json_data" | jq -r 'type == "array"')
 
     if [ "$is_array" = "true" ]; then
-        data=$(echo "$data" | jq '.[0]') # Take first element if array
+        json_data=$(echo "$json_data" | jq '.[0]')
     fi
 
-    # Create menu options with beautiful formatting
-    local menu_options
-    menu_options=$(
-        cat <<EOF
-📊 Grammar Check: $(echo "$data" | jq -r '.is_grammatically_correct // "N/A"')
-✨ Suggested Correction
-🇻🇳 Vietnamese Translation
-📈 Native Usage: $(echo "$data" | jq -r '.native_usage_probability // "N/A"')%
-🎯 Formality Level: $(echo "$data" | jq -r '.formality_level // "N/A"')
-🌍 US/UK Difference
-💡 Natural Alternatives
-📚 Example Sentences
-❌ Common Mistakes
-📖 Grammar Explanation
-EOF
-    )
+    # Get all keys from the JSON object
+    local keys
+    keys=$(echo "$json_data" | jq -r 'keys[]' 2>/dev/null)
 
-    # Interactive selection with fzf
-    local selected
-    selected=$(echo "$menu_options" | fzf \
-        --height=60% \
+    if [ -z "$keys" ]; then
+        echo "No data to display"
+        return 1
+    fi
+
+    # Create clean menu without icons or background colors
+    local menu_items=""
+    while IFS= read -r key; do
+        local value_type
+        value_type=$(echo "$json_data" | jq -r --arg k "$key" '.[$k] | type')
+
+        case "$value_type" in
+        "array")
+            local array_length
+            array_length=$(echo "$json_data" | jq --arg k "$key" '.[$k] | length')
+            menu_items="${menu_items}${key} [${array_length} items]\n"
+            ;;
+        "object")
+            menu_items="${menu_items}${key} [object]\n"
+            ;;
+        *)
+            local preview_value
+            preview_value=$(echo "$json_data" | jq -r --arg k "$key" '.[$k]' | head -c 60)
+            if [ ${#preview_value} -eq 60 ]; then
+                preview_value="${preview_value}..."
+            fi
+            menu_items="${menu_items}${key}: ${preview_value}\n"
+            ;;
+        esac
+    done <<<"$keys"
+
+    # Interactive selection with clean fzf layout
+    local selected_key
+    selected_key=$(echo -e "$menu_items" | fzf \
+        --height=70% \
         --layout=reverse \
-        --border=rounded \
-        --prompt="📝 Select to view details ❯ " \
-        --header="English Learning Assistant - Use ↑↓ to navigate, Enter to select" \
+        --border=none \
+        --prompt="Select field > " \
+        --header="English Learning Data Viewer" \
         --preview-window=right:60%:wrap \
-        --preview="shell::_preview_gemini_content '$data' {}" \
-        --color=fg:#f8f8f2,bg:#282a36,hl:#bd93f9 \
-        --color=fg+:#f8f8f2,bg+:#44475a,hl+:#bd93f9 \
-        --color=info:#ffb86c,prompt:#50fa7b,pointer:#ff79c6 \
-        --color=marker:#ff79c6,spinner:#ffb86c,header:#6272a4)
+        --preview="shell::_preview_json_field '$json_data' {}" \
+        --bind='enter:execute(shell::_display_json_field_detailed "$json_data" {})+abort' \
+        --no-info \
+        --no-separator)
 
-    if [ -n "$selected" ]; then
-        echo
-        shell::_display_selected_content "$data" "$selected"
+    if [ -n "$selected_key" ]; then
+        # Extract just the key name (remove preview text)
+        selected_key=$(echo "$selected_key" | cut -d':' -f1 | sed 's/ \[.*\]$//')
+        shell::_display_json_field_detailed "$json_data" "$selected_key"
     fi
 }
 
-# Preview function for fzf
-shell::_preview_gemini_content() {
-    local data="$1"
-    local selection="$2"
+# Preview function for real-time field viewing
+shell::_preview_json_field() {
+    local json_data="$1"
+    local field_line="$2"
 
-    case "$selection" in
-    *"Suggested Correction"*)
-        echo "$data" | jq -r '.suggested_correction // "Not available"' | fold -w 50
+    # Extract key name from the field line
+    local key
+    key=$(echo "$field_line" | cut -d':' -f1 | sed 's/ \[.*\]$//')
+
+    local value_type
+    value_type=$(echo "$json_data" | jq -r --arg k "$key" '.[$k] | type')
+
+    case "$value_type" in
+    "array")
+        echo "ARRAY CONTENTS:"
+        echo "==============="
+        echo "$json_data" | jq -r --arg k "$key" '.[$k][] | . as $item | if type == "object" then ($item | to_entries | map("\(.key): \(.value)") | join("; ")) else . end' | nl -w2 -s'. '
         ;;
-    *"Vietnamese Translation"*)
-        echo "$data" | jq -r '.vietnamese_translation // "Not available"' | fold -w 50
+    "object")
+        echo "OBJECT STRUCTURE:"
+        echo "=================="
+        echo "$json_data" | jq --arg k "$key" '.[$k]' | jq -r 'to_entries | map("\(.key): \(.value)") | .[]'
         ;;
-    *"US/UK Difference"*)
-        echo "$data" | jq -r '.us_uk_difference // "Not available"' | fold -w 50
-        ;;
-    *"Natural Alternatives"*)
-        echo "$data" | jq -r '.natural_alternatives[]? // "Not available"' | nl -w2 -s'. '
-        ;;
-    *"Example Sentences"*)
-        echo "$data" | jq -r '.example_sentences[]? | "🇺🇸 " + .en + "\n🇻🇳 " + .vi + "\n"'
-        ;;
-    *"Common Mistakes"*)
-        echo "$data" | jq -r '.common_mistakes // "Not available"' | fold -w 50
-        ;;
-    *"Grammar Explanation"*)
-        echo "$data" | jq -r '.grammar_explanation // "Not available"' | fold -w 50
+    "string")
+        echo "TEXT CONTENT:"
+        echo "============="
+        echo "$json_data" | jq -r --arg k "$key" '.[$k]' | fold -w 60
         ;;
     *)
-        echo "Select an item to view details"
+        echo "VALUE:"
+        echo "======"
+        echo "$json_data" | jq -r --arg k "$key" '.[$k]'
         ;;
     esac
 }
 
-# Display selected content in detail
-shell::_display_selected_content() {
-    local data="$1"
-    local selection="$2"
+# Detailed display function with array handling
+shell::_display_json_field_detailed() {
+    local json_data="$1"
+    local key="$2"
 
-    shell::colored_echo "═══════════════════════════════════════════════════════════════" 33
+    clear
 
-    case "$selection" in
-    *"Suggested Correction"*)
-        shell::colored_echo "✨ SUGGESTED CORRECTION:" 118
-        echo "$data" | jq -r '.suggested_correction // "Not available"'
+    # Display header
+    printf "%-20s\n" "$(echo "$key" | tr '[:lower:]' '[:upper:]')"
+    printf "%-20s\n" "$(printf '=%.0s' {1..20})"
+    echo
+
+    local value_type
+    value_type=$(echo "$json_data" | jq -r --arg k "$key" '.[$k] | type')
+
+    case "$value_type" in
+    "array")
+        # Handle arrays with fzf selection
+        local array_items
+        array_items=$(echo "$json_data" | jq -r --arg k "$key" '.[$k][] | . as $item | if type == "object" then ($item | to_entries | map("\(.key): \(.value)") | join(" | ")) else . end')
+
+        if [ -n "$array_items" ]; then
+            local selected_item
+            selected_item=$(echo "$array_items" | fzf \
+                --height=50% \
+                --layout=reverse \
+                --border=none \
+                --prompt="Select item > " \
+                --header="Array items for: $key" \
+                --preview='echo {} | fold -w 80' \
+                --no-info)
+
+            if [ -n "$selected_item" ]; then
+                echo "SELECTED ITEM:"
+                echo "=============="
+                echo "$selected_item" | fold -w 80
+            fi
+        else
+            echo "Empty array"
+        fi
         ;;
-    *"Vietnamese Translation"*)
-        shell::colored_echo "🇻🇳 VIETNAMESE TRANSLATION:" 118
-        echo "$data" | jq -r '.vietnamese_translation // "Not available"'
+    "object")
+        echo "$json_data" | jq --arg k "$key" '.[$k]' | jq -r 'to_entries | map("\(.key):\n  \(.value)\n") | .[]'
         ;;
-    *"US/UK Difference"*)
-        shell::colored_echo "🌍 US/UK DIFFERENCES:" 118
-        echo "$data" | jq -r '.us_uk_difference // "Not available"'
-        ;;
-    *"Natural Alternatives"*)
-        shell::colored_echo "💡 NATURAL ALTERNATIVES:" 118
-        echo "$data" | jq -r '.natural_alternatives[]?' | while IFS= read -r alt; do
-            echo "  • $alt"
-        done
-        ;;
-    *"Example Sentences"*)
-        shell::colored_echo "📚 EXAMPLE SENTENCES:" 118
-        echo "$data" | jq -r '.example_sentences[]?' | while IFS= read -r -d '' example; do
-            local en vi
-            en=$(echo "$example" | jq -r '.en')
-            vi=$(echo "$example" | jq -r '.vi')
-            echo
-            shell::colored_echo "  🇺🇸 $en" 81
-            shell::colored_echo "  🇻🇳 $vi" 222
-        done 2>/dev/null
-        ;;
-    *"Common Mistakes"*)
-        shell::colored_echo "❌ COMMON MISTAKES:" 118
-        echo "$data" | jq -r '.common_mistakes // "Not available"'
-        ;;
-    *"Grammar Explanation"*)
-        shell::colored_echo "📖 GRAMMAR EXPLANATION:" 118
-        echo "$data" | jq -r '.grammar_explanation // "Not available"'
+    *)
+        echo "$json_data" | jq -r --arg k "$key" '.[$k]' | fold -w 80
         ;;
     esac
 
-    shell::colored_echo "═══════════════════════════════════════════════════════════════" 33
     echo
+    echo "Press any key to continue..."
+    read -n 1 -s
+}
+
+# Alternative compact view function for quick overview
+shell::dump_gemini_compact() {
+    local json_data="$1"
+
+    # Handle array input
+    local is_array
+    is_array=$(echo "$json_data" | jq -r 'type == "array"')
+
+    if [ "$is_array" = "true" ]; then
+        json_data=$(echo "$json_data" | jq '.[0]')
+    fi
+
+    echo "ENGLISH LEARNING ANALYSIS"
+    echo "========================="
+    echo
+
+    # Key-value pairs in clean format
+    local keys
+    keys=$(echo "$json_data" | jq -r 'keys[]')
+
+    while IFS= read -r key; do
+        local value_type
+        value_type=$(echo "$json_data" | jq -r --arg k "$key" '.[$k] | type')
+
+        printf "%-25s: " "$(echo "$key" | tr '_' ' ' | sed 's/.*/\L&/; s/[a-z]/\u&/')"
+
+        case "$value_type" in
+        "array")
+            local count
+            count=$(echo "$json_data" | jq --arg k "$key" '.[$k] | length')
+            echo "[$count items - use detailed view]"
+            ;;
+        "boolean" | "number")
+            echo "$json_data" | jq -r --arg k "$key" '.[$k]'
+            ;;
+        *)
+            local value
+            value=$(echo "$json_data" | jq -r --arg k "$key" '.[$k]' | head -c 50)
+            if [ ${#value} -eq 50 ]; then
+                echo "${value}..."
+            else
+                echo "$value"
+            fi
+            ;;
+        esac
+    done <<<"$keys"
+
+    echo
+    echo "Use 'shell::dump_gemini_conf_json' for interactive detailed view"
 }
