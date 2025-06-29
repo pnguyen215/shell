@@ -244,7 +244,7 @@ shell::gemini_learn_english() {
         return 1
     fi
 
-    shell::colored_echo "DEBUG: Response from Gemini API: $response" 244
+    # shell::colored_echo "DEBUG: Response from Gemini API: $response" 244
 
     # Sanitize the JSON string by removing problematic characters and re-formatting
     local sanitized_json
@@ -256,7 +256,7 @@ shell::gemini_learn_english() {
     local parsed_json
     parsed_json=$(echo "$sanitized_json" | jq '.' 2>/dev/null)
 
-    shell::colored_echo "DEBUG: Parsed JSON: $parsed_json" 244
+    # shell::colored_echo "DEBUG: Parsed JSON: $parsed_json" 244
 
     # Check if the parsed JSON is valid
     if [ $? -ne 0 ]; then
