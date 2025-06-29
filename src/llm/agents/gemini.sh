@@ -293,7 +293,8 @@ shell::gemini_learn_english() {
     fi
 
     # Use the new dump function for clean visualization
-    shell::dump_gemini_conf_json "$parsed_embedded_json"
+    # shell::dump_gemini_conf_json "$parsed_embedded_json"
+    shell::dump_gemini_compact "$parsed_embedded_json"
 }
 
 # New function for clean JSON visualization with real-time view board
