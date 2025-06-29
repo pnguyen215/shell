@@ -291,4 +291,140 @@ shell::gemini_learn_english() {
         echo "$text_json_clean"
         return 1
     fi
+
+    shell::_show_gemini_fzf_menu "$response"
+}
+
+# Interactive fzf menu for Gemini response
+shell::_show_gemini_fzf_menu() {
+    local data="$1"
+
+    # Check if data is an array or single object
+    local is_array
+    is_array=$(echo "$data" | jq -r 'type == "array"')
+
+    if [ "$is_array" = "true" ]; then
+        data=$(echo "$data" | jq '.[0]') # Take first element if array
+    fi
+
+    # Create menu options with beautiful formatting
+    local menu_options
+    menu_options=$(
+        cat <<EOF
+📊 Grammar Check: $(echo "$data" | jq -r '.is_grammatically_correct // "N/A"')
+✨ Suggested Correction
+🇻🇳 Vietnamese Translation
+📈 Native Usage: $(echo "$data" | jq -r '.native_usage_probability // "N/A"')%
+🎯 Formality Level: $(echo "$data" | jq -r '.formality_level // "N/A"')
+🌍 US/UK Difference
+💡 Natural Alternatives
+📚 Example Sentences
+❌ Common Mistakes
+📖 Grammar Explanation
+EOF
+    )
+
+    # Interactive selection with fzf
+    local selected
+    selected=$(echo "$menu_options" | fzf \
+        --height=60% \
+        --layout=reverse \
+        --border=rounded \
+        --prompt="📝 Select to view details ❯ " \
+        --header="English Learning Assistant - Use ↑↓ to navigate, Enter to select" \
+        --preview-window=right:60%:wrap \
+        --preview="shell::_preview_gemini_content '$data' {}" \
+        --color=fg:#f8f8f2,bg:#282a36,hl:#bd93f9 \
+        --color=fg+:#f8f8f2,bg+:#44475a,hl+:#bd93f9 \
+        --color=info:#ffb86c,prompt:#50fa7b,pointer:#ff79c6 \
+        --color=marker:#ff79c6,spinner:#ffb86c,header:#6272a4)
+
+    if [ -n "$selected" ]; then
+        echo
+        shell::_display_selected_content "$data" "$selected"
+    fi
+}
+
+# Preview function for fzf
+shell::_preview_gemini_content() {
+    local data="$1"
+    local selection="$2"
+
+    case "$selection" in
+    *"Suggested Correction"*)
+        echo "$data" | jq -r '.suggested_correction // "Not available"' | fold -w 50
+        ;;
+    *"Vietnamese Translation"*)
+        echo "$data" | jq -r '.vietnamese_translation // "Not available"' | fold -w 50
+        ;;
+    *"US/UK Difference"*)
+        echo "$data" | jq -r '.us_uk_difference // "Not available"' | fold -w 50
+        ;;
+    *"Natural Alternatives"*)
+        echo "$data" | jq -r '.natural_alternatives[]? // "Not available"' | nl -w2 -s'. '
+        ;;
+    *"Example Sentences"*)
+        echo "$data" | jq -r '.example_sentences[]? | "🇺🇸 " + .en + "\n🇻🇳 " + .vi + "\n"'
+        ;;
+    *"Common Mistakes"*)
+        echo "$data" | jq -r '.common_mistakes // "Not available"' | fold -w 50
+        ;;
+    *"Grammar Explanation"*)
+        echo "$data" | jq -r '.grammar_explanation // "Not available"' | fold -w 50
+        ;;
+    *)
+        echo "Select an item to view details"
+        ;;
+    esac
+}
+
+# Display selected content in detail
+shell::_display_selected_content() {
+    local data="$1"
+    local selection="$2"
+
+    shell::colored_echo "═══════════════════════════════════════════════════════════════" 33
+
+    case "$selection" in
+    *"Suggested Correction"*)
+        shell::colored_echo "✨ SUGGESTED CORRECTION:" 118
+        echo "$data" | jq -r '.suggested_correction // "Not available"'
+        ;;
+    *"Vietnamese Translation"*)
+        shell::colored_echo "🇻🇳 VIETNAMESE TRANSLATION:" 118
+        echo "$data" | jq -r '.vietnamese_translation // "Not available"'
+        ;;
+    *"US/UK Difference"*)
+        shell::colored_echo "🌍 US/UK DIFFERENCES:" 118
+        echo "$data" | jq -r '.us_uk_difference // "Not available"'
+        ;;
+    *"Natural Alternatives"*)
+        shell::colored_echo "💡 NATURAL ALTERNATIVES:" 118
+        echo "$data" | jq -r '.natural_alternatives[]?' | while IFS= read -r alt; do
+            echo "  • $alt"
+        done
+        ;;
+    *"Example Sentences"*)
+        shell::colored_echo "📚 EXAMPLE SENTENCES:" 118
+        echo "$data" | jq -r '.example_sentences[]?' | while IFS= read -r -d '' example; do
+            local en vi
+            en=$(echo "$example" | jq -r '.en')
+            vi=$(echo "$example" | jq -r '.vi')
+            echo
+            shell::colored_echo "  🇺🇸 $en" 81
+            shell::colored_echo "  🇻🇳 $vi" 222
+        done 2>/dev/null
+        ;;
+    *"Common Mistakes"*)
+        shell::colored_echo "❌ COMMON MISTAKES:" 118
+        echo "$data" | jq -r '.common_mistakes // "Not available"'
+        ;;
+    *"Grammar Explanation"*)
+        shell::colored_echo "📖 GRAMMAR EXPLANATION:" 118
+        echo "$data" | jq -r '.grammar_explanation // "Not available"'
+        ;;
+    esac
+
+    shell::colored_echo "═══════════════════════════════════════════════════════════════" 33
+    echo
 }
