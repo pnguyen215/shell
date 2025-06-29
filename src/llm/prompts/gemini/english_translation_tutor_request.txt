@@ -53,7 +53,7 @@
                     },
                     "native_usage_probability": {
                         "type": "number",
-                        "description": "Estimated likelihood (0–100) that native speakers use this phrase naturally."
+                        "description": "Estimated likelihood (0-100) that native speakers use this phrase naturally."
                     },
                     "formality_level": {
                         "type": "string",
