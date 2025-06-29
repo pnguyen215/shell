@@ -334,8 +334,8 @@ shell::dump_gemini_conf_json() {
             ;;
         *)
             local preview_value
-            preview_value=$(echo "$json_data" | jq -r --arg k "$key" '.[$k]' | head -c 60)
-            if [ ${#preview_value} -eq 60 ]; then
+            preview_value=$(echo "$json_data" | jq -r --arg k "$key" '.[$k]' | head -c 40)
+            if [ ${#preview_value} -gt 40 ]; then
                 preview_value="${preview_value}..."
             fi
             menu_items="${menu_items}${key}: ${preview_value}\n"
@@ -344,22 +344,22 @@ shell::dump_gemini_conf_json() {
     done <<<"$keys"
 
     # Interactive selection with clean fzf layout
-    local selected_key
-    selected_key=$(echo -e "$menu_items" | fzf \
+    local selected_field
+    selected_field=$(printf "%b" "$menu_items" | fzf \
         --height=70% \
         --layout=reverse \
-        --border=none \
+        --border=rounded \
         --prompt="Select field > " \
         --header="English Learning Data Viewer" \
         --preview-window=right:60%:wrap \
         --preview="shell::_preview_json_field '$json_data' {}" \
-        --bind='enter:execute(shell::_display_json_field_detailed "$json_data" {})+abort' \
-        --no-info \
-        --no-separator)
+        --bind='ctrl-c:abort' \
+        --no-info)
 
-    if [ -n "$selected_key" ]; then
-        # Extract just the key name (remove preview text)
-        selected_key=$(echo "$selected_key" | cut -d':' -f1 | sed 's/ \[.*\]$//')
+    if [ -n "$selected_field" ]; then
+        # Extract just the key name (remove preview text and array indicators)
+        local selected_key
+        selected_key=$(echo "$selected_field" | sed 's/:.*$//' | sed 's/ \[.*\]$//')
         shell::_display_json_field_detailed "$json_data" "$selected_key"
     fi
 }
@@ -371,7 +371,13 @@ shell::_preview_json_field() {
 
     # Extract key name from the field line
     local key
-    key=$(echo "$field_line" | cut -d':' -f1 | sed 's/ \[.*\]$//')
+    key=$(echo "$field_line" | sed 's/:.*$//' | sed 's/ \[.*\]$//')
+
+    # Check if key exists
+    if ! echo "$json_data" | jq -e --arg k "$key" 'has($k)' >/dev/null 2>&1; then
+        echo "Field not found: $key"
+        return 1
+    fi
 
     local value_type
     value_type=$(echo "$json_data" | jq -r --arg k "$key" '.[$k] | type')
@@ -380,7 +386,18 @@ shell::_preview_json_field() {
     "array")
         echo "ARRAY CONTENTS:"
         echo "==============="
-        echo "$json_data" | jq -r --arg k "$key" '.[$k][] | . as $item | if type == "object" then ($item | to_entries | map("\(.key): \(.value)") | join("; ")) else . end' | nl -w2 -s'. '
+        local array_items
+        array_items=$(echo "$json_data" | jq -r --arg k "$key" '.[$k][]')
+        if [ -n "$array_items" ]; then
+            echo "$array_items" | nl -w2 -s'. ' | head -10
+            local total_count
+            total_count=$(echo "$json_data" | jq --arg k "$key" '.[$k] | length')
+            if [ "$total_count" -gt 10 ]; then
+                echo "... and $((total_count - 10)) more items"
+            fi
+        else
+            echo "Empty array"
+        fi
         ;;
     "object")
         echo "OBJECT STRUCTURE:"
@@ -390,7 +407,7 @@ shell::_preview_json_field() {
     "string")
         echo "TEXT CONTENT:"
         echo "============="
-        echo "$json_data" | jq -r --arg k "$key" '.[$k]' | fold -w 60
+        echo "$json_data" | jq -r --arg k "$key" '.[$k]' | fold -w 50
         ;;
     *)
         echo "VALUE:"
@@ -408,8 +425,10 @@ shell::_display_json_field_detailed() {
     clear
 
     # Display header
-    printf "%-20s\n" "$(echo "$key" | tr '[:lower:]' '[:upper:]')"
-    printf "%-20s\n" "$(printf '=%.0s' {1..20})"
+    local header_text
+    header_text=$(echo "$key" | tr '_' ' ' | tr '[:lower:]' '[:upper:]')
+    echo "$header_text"
+    printf '%*s\n' "${#header_text}" '' | tr ' ' '='
     echo
 
     local value_type
@@ -418,21 +437,24 @@ shell::_display_json_field_detailed() {
     case "$value_type" in
     "array")
         # Handle arrays with fzf selection
-        local array_items
-        array_items=$(echo "$json_data" | jq -r --arg k "$key" '.[$k][] | . as $item | if type == "object" then ($item | to_entries | map("\(.key): \(.value)") | join(" | ")) else . end')
+        local array_data
+        array_data=$(echo "$json_data" | jq -r --arg k "$key" '.[$k][]')
 
-        if [ -n "$array_items" ]; then
+        if [ -n "$array_data" ]; then
+            echo "Select an item from the array:"
+            echo
             local selected_item
-            selected_item=$(echo "$array_items" | fzf \
+            selected_item=$(echo "$array_data" | fzf \
                 --height=50% \
                 --layout=reverse \
-                --border=none \
+                --border=rounded \
                 --prompt="Select item > " \
                 --header="Array items for: $key" \
-                --preview='echo {} | fold -w 80' \
-                --no-info)
+                --preview='echo {} | fold -w 70' \
+                --bind='ctrl-c:abort')
 
             if [ -n "$selected_item" ]; then
+                echo
                 echo "SELECTED ITEM:"
                 echo "=============="
                 echo "$selected_item" | fold -w 80
@@ -442,7 +464,7 @@ shell::_display_json_field_detailed() {
         fi
         ;;
     "object")
-        echo "$json_data" | jq --arg k "$key" '.[$k]' | jq -r 'to_entries | map("\(.key):\n  \(.value)\n") | .[]'
+        echo "$json_data" | jq --arg k "$key" '.[$k]' | jq -r 'to_entries | map("\(.key): \(.value)") | .[]'
         ;;
     *)
         echo "$json_data" | jq -r --arg k "$key" '.[$k]' | fold -w 80
@@ -478,7 +500,9 @@ shell::dump_gemini_compact() {
         local value_type
         value_type=$(echo "$json_data" | jq -r --arg k "$key" '.[$k] | type')
 
-        printf "%-25s: " "$(echo "$key" | tr '_' ' ' | sed 's/.*/\L&/; s/[a-z]/\u&/')"
+        local formatted_key
+        formatted_key=$(echo "$key" | tr '_' ' ' | sed 's/\b\w/\U&/g')
+        printf "%-25s: " "$formatted_key"
 
         case "$value_type" in
         "array")
@@ -492,7 +516,7 @@ shell::dump_gemini_compact() {
         *)
             local value
             value=$(echo "$json_data" | jq -r --arg k "$key" '.[$k]' | head -c 50)
-            if [ ${#value} -eq 50 ]; then
+            if [ ${#value} -gt 50 ]; then
                 echo "${value}..."
             else
                 echo "$value"
