@@ -239,4 +239,11 @@ shell::gemini_learn_english() {
     fi
 
     shell::colored_echo "DEBUG: Response from Gemini API: $response" 244
+
+    # Step 1: Extract the embedded JSON string
+    local raw_text
+    raw_text=$(echo "$response" | jq -r '.candidates[0].content.parts[0].text')
+
+    shell::colored_echo "DEBUG: Embedded JSON string:" 244
+    echo "$raw_text"
 }
