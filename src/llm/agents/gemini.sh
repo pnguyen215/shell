@@ -269,10 +269,6 @@ shell::gemini_learn_english() {
 
     shell::colored_echo "DEBUG: Text JSON content: $text_json" 244
 
-    sanitized_json=$(echo "$text_json" | sed ':a;N;$!ba;s/\n/\\n/g' | sed 's/\r/\\r/g' | sed 's/\t/\\t/g')
-
-    shell::colored_echo "DEBUG: Sanitized text JSON: $sanitized_json" 244
-
     local correction
     correction=$(echo "$text_json" | jq -r '.[0].suggested_correction')
 
