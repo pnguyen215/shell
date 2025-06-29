@@ -264,13 +264,36 @@ shell::gemini_learn_english() {
         return 1
     fi
 
-    local text_json
-    text_json=$(echo "$parsed_json" | jq -r '.candidates[0].content.parts[0].text')
+    # Extract the text field (this contains the embedded JSON string)
+    local text_json_raw
+    text_json_raw=$(echo "$parsed_json" | jq -r '.candidates[0].content.parts[0].text')
 
-    shell::colored_echo "DEBUG: Text JSON content: $text_json" 244
+    shell::colored_echo "DEBUG: Raw text JSON content: $text_json_raw" 244
 
-    local correction
-    correction=$(echo "$text_json" | jq -r '.[0].suggested_correction')
+    # CRITICAL: Sanitize the embedded JSON text to handle escaped quotes and other characters
+    # Method 1: Use printf to properly handle escaped characters
+    local text_json_clean
+    text_json_clean=$(printf '%b' "$text_json_raw")
 
-    shell::colored_echo "DEBUG: Suggested correction: $correction" 244
+    # Method 2: Alternative approach using sed to clean escaped characters
+    # Uncomment this if Method 1 doesn't work:
+    # text_json_clean=$(echo "$text_json_raw" | sed 's/\\"/"/g' | sed 's/\\n/\n/g' | sed 's/\\t/\t/g' | sed 's/\\r/\r/g')
+
+    shell::colored_echo "DEBUG: Cleaned text JSON content: $text_json_clean" 244
+
+    # Parse the cleaned embedded JSON
+    local parsed_embedded_json
+    parsed_embedded_json=$(echo "$text_json_clean" | jq '.' 2>/dev/null)
+
+    if [ $? -ne 0 ]; then
+        shell::colored_echo "ERR: Failed to parse embedded JSON after sanitization." 196
+        shell::colored_echo "DEBUG: Problematic JSON content:" 244
+        echo "$text_json_clean"
+        return 1
+    fi
+
+    # local correction
+    # correction=$(echo "$text_json" | jq -r '.[0].suggested_correction')
+
+    # shell::colored_echo "DEBUG: Suggested correction: $correction" 244
 }
