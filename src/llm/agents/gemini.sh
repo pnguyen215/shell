@@ -270,7 +270,7 @@ shell::gemini_learn_english() {
 
     shell::colored_echo "DEBUG: Raw text JSON content: $text_json_raw" 244
 
-    # CRITICAL: Sanitize the embedded JSON text to handle escaped quotes and other characters
+    # Sanitize the embedded JSON text to handle escaped quotes and other characters
     # Method 1: Use printf to properly handle escaped characters
     local text_json_clean
     text_json_clean=$(printf '%b' "$text_json_raw")
