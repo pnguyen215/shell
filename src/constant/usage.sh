@@ -4374,3 +4374,20 @@ Parameters:
 Description:
 This function calls shell::dump_ini_json using SHELL_KEY_CONF_AGENT_GEMINI_FILE.
 "
+
+USAGE_SHELL_GEMINI_LEARN_ENGLISH="
+shell::gemini_learn_english function
+Sends an English sentence to Gemini for grammar evaluation and interactively displays corrections and examples.
+
+Usage:
+shell::gemini_learn_english [-n] [-h]
+
+Parameters:
+  - -n : Optional dry-run flag. If provided, the curl command is printed using shell::on_evict instead of executed.
+  - -h : Optional. Displays this help message.
+
+Description:
+This function reads a prompt from ~/.shell-config/agents/gemini/prompts/english_translation_tutor_request.txt,
+sends it to the Gemini API using curl, and uses jq and fzf to interactively select and display
+the suggested correction and example sentences.
+"
