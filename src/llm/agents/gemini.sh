@@ -238,5 +238,5 @@ shell::gemini_learn_english() {
         return 1
     fi
 
-    shell::colored_echo "DEBUG: Response from Gemini API: $response" 46
+    shell::colored_echo "DEBUG: Response from Gemini API: $response" 244
 }
