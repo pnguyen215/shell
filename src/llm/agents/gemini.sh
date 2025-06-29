@@ -291,9 +291,4 @@ shell::gemini_learn_english() {
         echo "$text_json_clean"
         return 1
     fi
-
-    # local correction
-    # correction=$(echo "$text_json" | jq -r '.[0].suggested_correction')
-
-    # shell::colored_echo "DEBUG: Suggested correction: $correction" 244
 }
