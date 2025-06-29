@@ -25,7 +25,6 @@
             "items": {
                 "type": "object",
                 "required": [
-                    "grammar_explanation",
                     "is_grammatically_correct",
                     "suggested_correction",
                     "vietnamese_translation",
@@ -33,7 +32,6 @@
                     "natural_alternatives",
                     "formality_level",
                     "us_uk_difference",
-                    "common_mistakes",
                     "example_sentences"
                 ],
                 "properties": {
@@ -100,14 +98,12 @@
                 },
                 "propertyOrdering": [
                     "is_grammatically_correct",
-                    "grammar_explanation",
                     "suggested_correction",
                     "vietnamese_translation",
                     "native_usage_probability",
                     "natural_alternatives",
                     "formality_level",
                     "us_uk_difference",
-                    "common_mistakes",
                     "example_sentences"
                 ]
             }
