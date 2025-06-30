@@ -422,6 +422,6 @@ shell::make_gemini_request() {
         return 1
     fi
 
-    echo "$text_json_clean"
+    echo "$parsed_embedded_json"
     return 0
 }
