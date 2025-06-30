@@ -200,6 +200,9 @@ shell::ask_gemini_english() {
             response=$(shell::make_gemini_request "$payload")
         fi
 
+        if [ "$debugging" = "true" ]; then
+            shell::colored_echo "DEBUG: response JSON from Gemini response: $response" 244
+        fi
         # Check if the response is empty or if the command failed
         if [ $? -ne 0 ] || [ -z "$response" ]; then
             shell::colored_echo "ERR: Failed to get response from Gemini." 196
