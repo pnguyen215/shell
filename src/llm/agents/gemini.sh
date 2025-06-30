@@ -225,6 +225,15 @@ shell::ask_gemini_english() {
         local suggested_correction=$(echo "$item_json" | jq -r '.suggested_correction // empty')
         local vietnamese_translation=$(echo "$item_json" | jq -r '.vietnamese_translation // empty')
         local native_usage_probability=$(echo "$item_json" | jq -r '.native_usage_probability // empty')
+        local natural_alternatives_count=$(echo "$item_json" | jq '.natural_alternatives | length // 0')
+        for i in $(seq 0 $((natural_alternatives_count - 1))); do
+            local alt=$(echo "$item_json" | jq -r ".natural_alternatives[$i] // empty")
+            if [ -n "$alt" ]; then
+                # Alternatives for suggested correction
+                shell::colored_echo "[alt]::$((i + 1)): $alt" 244
+            fi
+        done
+
         shell::colored_echo "[$native_usage_probability%] $suggested_correction ($vietnamese_translation)" 255
         shell::clip_value "$suggested_correction"
     fi
