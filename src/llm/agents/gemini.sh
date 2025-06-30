@@ -209,7 +209,9 @@ shell::ask_gemini_english() {
         # Extract the first item from the JSON array (assuming the structure from the example)
         # Get the first object as compact JSON
         local item_json=$(echo "$response" | jq -c '.[0]')
-
+        if [ "$debugging" = "true" ]; then
+            shell::colored_echo "DEBUG: Item JSON from Gemini response: $item_json" 244
+        fi
         if [ -z "$item_json" ] || [ "$item_json" = "null" ]; then
             shell::colored_echo "ERR: No valid data found in Gemini response for interactive selection." 196
             return 1
