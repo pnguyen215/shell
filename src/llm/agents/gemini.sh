@@ -243,7 +243,24 @@ shell::ask_gemini_english() {
             fi
         done
 
-        shell::colored_echo "🌍[$native_usage_probability%]$suggested_correction ($vietnamese_translation)" 255
+        # Format the native usage probability
+        # If native_usage_probability is empty or null, it sets the formatted value to "N/A"
+        # If it is a valid number, it formats it as a percentage
+        # If the percentage is greater than 75, it adds an arrow pointing up (↑)
+        # If the percentage is less than 75, it adds an arrow pointing down (↓)
+        local native_usage_probability_formatted
+        if [ -z "$native_usage_probability" ] || [ "$native_usage_probability" = "null" ]; then
+            native_usage_probability_formatted="N/A"
+        else
+            native_usage_probability=$(echo "$native_usage_probability" | awk '{printf "%.0f", $1 * 100}')
+        fi
+        if [ "$native_usage_probability" -gt 75 ]; then
+            native_usage_probability_formatted="↑ $native_usage_probability"
+        fi
+        if [ "$native_usage_probability" -lt 75 ]; then
+            native_usage_probability_formatted="↓ $native_usage_probability"
+        fi
+        shell::colored_echo "🌍[$native_usage_probability_formatted%]$suggested_correction ($vietnamese_translation)" 255
         shell::clip_value "$suggested_correction"
     fi
 }
