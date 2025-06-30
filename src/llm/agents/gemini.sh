@@ -205,6 +205,7 @@ shell::ask_gemini_english() {
             return 1
         fi
 
+        shell::colored_echo "DEBUG: Response from Gemini: $response" 244
     fi
 }
 
