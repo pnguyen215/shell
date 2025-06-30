@@ -243,7 +243,7 @@ shell::ask_gemini_english() {
             fi
         done
 
-        shell::colored_echo "🌍[$native_usage_probability%]$suggested_correction(🇻🇳$vietnamese_translation)" 255
+        shell::colored_echo "🌍[$native_usage_probability%]$suggested_correction (🇻🇳 $vietnamese_translation)" 255
         shell::clip_value "$suggested_correction"
     fi
 }
