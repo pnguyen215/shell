@@ -191,9 +191,7 @@ shell::ask_gemini_english() {
     # If dry_run is true, it will print the curl command instead of executing it
     # This is useful for debugging or testing purposes
     if [ "$dry_run" = "true" ]; then
-        local sanitized_payload
-        sanitized_payload=$(echo "$payload" | tr -d '\n\r\t' | sed 's/  */ /g')
-        shell::make_gemini_request -n "$sanitized_payload"
+        shell::make_gemini_request -n "$payload"
     else
         local response
         if [ "$debugging" = "true" ]; then
@@ -377,7 +375,9 @@ shell::make_gemini_request() {
         # Prepare the curl command to send the request to the Gemini API
         # The curl command is constructed to send a POST request with the payload
         # The payload is a JSON object containing the model, prompt, and other parameters
-        local curl_cmd="curl -s -X POST \"$url\" -H \"Content-Type: application/json\" -d '$payload'"
+        local sanitized_payload
+        sanitized_payload=$(echo "$payload" | tr -d '\n\r\t' | sed 's/  */ /g')
+        local curl_cmd="curl -s -X POST \"$url\" -H \"Content-Type: application/json\" -d '$sanitized_payload'"
         shell::on_evict "$curl_cmd"
         return 0
     fi
