@@ -206,6 +206,76 @@ shell::ask_gemini_english() {
         fi
 
         shell::colored_echo "DEBUG: Response from Gemini: $response" 244
+
+        # Prepare data for fzf
+        local fzf_options=""
+        local fzf_input=""
+
+        # Extract the first item from the JSON array (assuming the structure from the example)
+        local item_json=$(echo "$response" | jq -c '.[0]') # Get the first object as compact JSON
+
+        if [ -z "$item_json" ] || [ "$item_json" = "null" ]; then
+            shell::colored_echo "ERR: No valid data found in Gemini response for interactive selection." 196
+            return 1
+        fi
+
+        # --- Add suggested correction and translation to fzf input ---
+        local suggested_correction=$(echo "$item_json" | jq -r '.suggested_correction // empty')
+        local vietnamese_translation=$(echo "$item_json" | jq -r '.vietnamese_translation // empty')
+        if [ -n "$suggested_correction" ]; then
+            fzf_input+="Correction: $suggested_correction (VN: $vietnamese_translation)\t$suggested_correction\t$item_json\n"
+        fi
+
+        # --- Add natural alternatives to fzf input ---
+        local natural_alternatives_count=$(echo "$item_json" | jq '.natural_alternatives | length // 0')
+        for i in $(seq 0 $((natural_alternatives_count - 1))); do
+            local alt=$(echo "$item_json" | jq -r ".natural_alternatives[$i] // empty")
+            if [ -n "$alt" ]; then
+                fzf_input+="Alternative $((i + 1)): $alt\t$alt\t$item_json\n"
+            fi
+        done
+
+        # --- Add example sentences to fzf input ---
+        local example_sentences_count=$(echo "$item_json" | jq '.example_sentences | length // 0')
+        for i in $(seq 0 $((example_sentences_count - 1))); do
+            local en_sentence=$(echo "$item_json" | jq -r ".example_sentences[$i].en // empty")
+            local vi_sentence=$(echo "$item_json" | jq -r ".example_sentences[$i].vi // empty")
+            if [ -n "$en_sentence" ]; then
+                fzf_input+="Example $((i + 1)): $en_sentence (VN: $vi_sentence)\t$en_sentence\t$item_json\n"
+            fi
+        done
+
+        # Configure fzf options
+        # --delimiter '\t' : Use tab as the field delimiter
+        # --with-nth=1 : Display only the first field (the formatted display text)
+        # --print-slice-field=2 : After selection, print the second field (the value to copy)
+        # --preview='echo {} | cut -f3 | jq .' : Preview command: take the selected line, cut the 3rd field (compact JSON), and pretty-print it with jq.
+        # --height=80% --cycle --reverse --info=default --ansi : Aesthetic fzf options
+        fzf_options+=" --delimiter '\t' --with-nth=1 --print-slice-field=2"
+        fzf_options+=" --preview-window=down:60%"
+        fzf_options+=" --preview='echo {} | cut -f3 | jq .'" # {} is the entire selected line from fzf
+        fzf_options+=" --height=80% --cycle --reverse --info=default --ansi"
+
+        shell::colored_echo "INFO: Select an option to copy the value (Press TAB or Right Arrow for preview):" 46
+        local selected_line
+        # Use 'echo -e' to interpret newline characters in fzf_input
+        selected_line=$(echo -e "$fzf_input" | fzf $fzf_options)
+
+        if [ -z "$selected_line" ]; then
+            shell::colored_echo "INFO: No selection made." 220
+            return 0
+        fi
+
+        # Extract the value to copy (second field after the tab delimiter)
+        local value_to_copy=$(echo "$selected_line" | cut -f2)
+
+        if [ -n "$value_to_copy" ]; then
+            shell::clip_value "$value_to_copy"
+            shell::colored_echo "INFO: Copied to clipboard: '$value_to_copy'" 42
+        else
+            shell::colored_echo "ERR: Could not extract value to copy from selection." 196
+            return 1
+        fi
     fi
 }
 
