@@ -4380,11 +4380,12 @@ shell::ask_gemini_english function
 Sends an English sentence to Gemini for grammar evaluation and interactively displays corrections and examples.
 
 Usage:
-shell::ask_gemini_english [-n] [-h]
+shell::ask_gemini_english [-n] [-d] [-h] <sentence_english>
 
 Parameters:
   - -n : Optional dry-run flag. If provided, the curl command is printed using shell::on_evict instead of executed.
-  - -h : Optional. Displays this help message.
+  - -d : Optional debugging flag. If provided, debug information is printed.
+  - -h : Optional help flag. If provided, displays usage information.
 
 Description:
 This function reads a prompt from ~/.shell-config/agents/gemini/prompts/english_translation_tutor_request.txt,

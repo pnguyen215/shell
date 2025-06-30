@@ -133,10 +133,12 @@ shell::dump_gemini_conf_json() {
 # Sends an English sentence to Gemini for grammar evaluation and interactively displays corrections and examples.
 #
 # Usage:
-# shell::ask_gemini_english [-n]
+# shell::ask_gemini_english [-n] [-d] [-h] <sentence_english>
 #
 # Parameters:
 # - -n : Optional dry-run flag. If provided, the curl command is printed using shell::on_evict instead of executed.
+# - -d : Optional debugging flag. If provided, debug information is printed.
+# - -h : Optional help flag. If provided, displays usage information.
 #
 # Description:
 # This function reads a prompt from ~/.shell-config/agents/gemini/prompts/english_translation_tutor.txt,
@@ -148,9 +150,19 @@ shell::ask_gemini_english() {
         return 0
     fi
 
+    # Check if the -n flag is provided for dry-run
+    # If -n is provided, it sets the dry_run variable to true
     local dry_run="false"
     if [ "$1" = "-n" ]; then
         dry_run="true"
+        shift
+    fi
+
+    # Check if the -d flag is provided for debugging
+    # If -d is provided, it sets the debugging variable to true
+    local debugging="false"
+    if [ "$1" = "-d" ]; then
+        debugging="true"
         shift
     fi
 
@@ -181,7 +193,18 @@ shell::ask_gemini_english() {
     if [ "$dry_run" = "true" ]; then
         shell::make_gemini_request -n "$payload"
     else
-        shell::make_gemini_request -d "$payload"
+        local response
+        if [ "$debugging" = "true" ]; then
+            response=$(shell::make_gemini_request -d "$payload")
+        else
+            response=$(shell::make_gemini_request "$payload")
+        fi
+        # Check if the response is empty or if the command failed
+        if [ $? -ne 0 ]; then
+            shell::colored_echo "ERR: Failed to get response from Gemini." 196
+            return 1
+        fi
+
     fi
 }
 
