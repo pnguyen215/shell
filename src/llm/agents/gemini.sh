@@ -292,8 +292,9 @@ shell::ask_gemini_english() {
 }
 
 sgemcheck-async() {
-    local args="$*"
-    shell::async shell::ask_gemini_english "$args"
+    # local args="$*"
+    # shell::async shell::ask_gemini_english "$args"
+    shell::async shell::ask_gemini_english "$*"
 }
 
 # shell::make_gemini_request function
