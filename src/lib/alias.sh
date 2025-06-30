@@ -19,7 +19,7 @@ alias sgemcheck='shell::ask_gemini_english'          # check grammar english by 
 alias sgrammarai='shell::ask_gemini_english'         # check grammar english by Gemini
 # alias sgemcheck-async='shell::async "sgemcheck \"$*\""' # check grammar english by Gemini async
 sgemcheck-async() {
-    shell::async "sgemcheck \"$*\""
+    shell::async "sgemcheck \"$@\""
 }
 
 # Kernel alias
