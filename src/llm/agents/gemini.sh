@@ -260,11 +260,14 @@ shell::ask_gemini_english() {
             # Convert to percentage (multiply by 100 and round)
             local percentage=$(echo "$native_usage_probability" | awk '{printf "%.0f", $1 * 100}')
             shell::colored_echo "INFO: Native usage probability: $percentage%" 46
-            # Format with appropriate arrow
-            if [ "$percentage" -gt 75 ]; then
+            # Use arithmetic evaluation for comparison (more portable)
+            if [ "$percentage" -gt 75 ] 2>/dev/null; then
                 native_usage_probability_formatted="↑ ${percentage}%"
-            else
+            elif [ "$percentage" -le 75 ] 2>/dev/null; then
                 native_usage_probability_formatted="↓ ${percentage}%"
+            else
+                # Fallback if percentage is not a valid number
+                native_usage_probability_formatted="N/A"
             fi
         fi
         shell::colored_echo "🌍[$native_usage_probability_formatted%]$suggested_correction ($vietnamese_translation)" 255
