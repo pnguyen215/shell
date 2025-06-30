@@ -202,7 +202,7 @@ shell::ask_gemini_english() {
 
         # Check if the response is empty or if the command failed
         if [ $? -ne 0 ] || [ -z "$response" ]; then
-            shell::colored_echo "ERR: Failed to get response from Gemini." 196
+            shell::colored_echo "ERR: Failed to get response from Gemini (sgemcheck)." 196
             return 1
         fi
 
