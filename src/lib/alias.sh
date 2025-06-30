@@ -17,7 +17,7 @@ alias srd="shell::fzf_rename_dir_base_bookmark"      # rename dir base bookmark
 alias srd-n="shell::fzf_rename_dir_base_bookmark -n" # rename dir base bookmark with dry mode
 alias sgemcheck='shell::ask_gemini_english'          # check grammar english by Gemini
 alias sgrammarai='shell::ask_gemini_english'         # check grammar english by Gemini
-alias sgemcheck-async="shell::async sgemcheck $@"    # check grammar english by Gemini async
+alias sgemcheck-async="shell::async 'sgemcheck $@'"  # check grammar english by Gemini async
 
 # Kernel alias
 alias c="clear"
