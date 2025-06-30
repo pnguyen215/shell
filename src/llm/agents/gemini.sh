@@ -218,14 +218,14 @@ shell::ask_gemini_english() {
         # Get the first object as compact JSON
         local item_json=$(echo "$response" | jq -c '.[0]')
         if [ -z "$item_json" ] || [ "$item_json" = "null" ]; then
-            shell::colored_echo "ERR: No valid data found in Gemini response for interactive selection." 196
+            shell::colored_echo "ERR: No valid data found in Gemini response: $response." 196
             return 1
         fi
 
         local suggested_correction=$(echo "$item_json" | jq -r '.suggested_correction // empty')
         local vietnamese_translation=$(echo "$item_json" | jq -r '.vietnamese_translation // empty')
         local native_usage_probability=$(echo "$item_json" | jq -r '.native_usage_probability // empty')
-        shell::colored_echo "[$native_usage_probability%] $suggested_correction ($vietnamese_translation)" 51
+        shell::colored_echo "[$native_usage_probability%] $suggested_correction ($vietnamese_translation)" 255
         shell::clip_value "$suggested_correction"
     fi
 }
