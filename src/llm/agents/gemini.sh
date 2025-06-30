@@ -262,7 +262,7 @@ shell::ask_gemini_english() {
             if [ "$os_type" = "macos" ]; then
                 # Convert to percentage (multiply by 100 and round)
                 local percentage=$(echo "$native_usage_probability" | awk '{printf "%.0f", $1 * 100}')
-                shell::colored_echo "INFO: Native usage probability: $percentage%" 46
+                # shell::colored_echo "INFO: Native usage probability: $percentage%" 46
                 # Use arithmetic evaluation for comparison (more portable)
                 if [ "$percentage" -gt 75 ] 2>/dev/null; then
                     native_usage_probability_formatted="↑ ${percentage}%"
@@ -274,7 +274,7 @@ shell::ask_gemini_english() {
             elif [ "$os_type" = "linux" ]; then
                 local percentage_float=$(echo "$native_usage_probability * 100" | bc -l 2>/dev/null)
                 local percentage=$(printf "%.0f" "$percentage_float" 2>/dev/null)
-                shell::colored_echo "INFO: Native usage probability: $percentage%" 46
+                # shell::colored_echo "INFO: Native usage probability: $percentage%" 46
                 if [[ $percentage =~ ^[0-9]+$ ]] && [ "$percentage" -gt 75 ]; then
                     native_usage_probability_formatted="↑ ${percentage}%"
                 elif [[ $percentage =~ ^[0-9]+$ ]] && [ "$percentage" -le 75 ]; then
@@ -284,7 +284,7 @@ shell::ask_gemini_english() {
                 fi
             fi
         fi
-        shell::colored_echo "🌍[$native_usage_probability_formatted%]$suggested_correction ($vietnamese_translation)" 255
+        shell::colored_echo "🌍[$native_usage_probability_formatted]$suggested_correction ($vietnamese_translation)" 255
         shell::clip_value "$suggested_correction"
     fi
 }
