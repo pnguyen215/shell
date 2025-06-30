@@ -224,8 +224,8 @@ shell::ask_gemini_english() {
 
         local suggested_correction=$(echo "$item_json" | jq -r '.suggested_correction // empty')
         local vietnamese_translation=$(echo "$item_json" | jq -r '.vietnamese_translation // empty')
-
-        shell::colored_echo "$suggested_correction ($vietnamese_translation)" 51
+        local native_usage_probability=$(echo "$item_json" | jq -r '.native_usage_probability // empty')
+        shell::colored_echo "[$native_usage_probability%] $suggested_correction ($vietnamese_translation)" 51
         shell::clip_value "$suggested_correction"
     fi
 }
