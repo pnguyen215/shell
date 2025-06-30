@@ -250,9 +250,9 @@ shell::ask_gemini_english() {
                 # shell::colored_echo "INFO: Native usage probability: $percentage%" 46
                 # Use arithmetic evaluation for comparison (more portable)
                 if [ "$percentage" -gt 75 ] 2>/dev/null; then
-                    native_usage_probability_formatted="↑ ${percentage}%"
+                    native_usage_probability_formatted="↑${percentage}%"
                 elif [ "$percentage" -le 75 ] 2>/dev/null; then
-                    native_usage_probability_formatted="↓ ${percentage}%"
+                    native_usage_probability_formatted="↓${percentage}%"
                 else
                     native_usage_probability_formatted="N/A"
                 fi
@@ -261,9 +261,9 @@ shell::ask_gemini_english() {
                 local percentage=$(printf "%.0f" "$percentage_float" 2>/dev/null)
                 # shell::colored_echo "INFO: Native usage probability: $percentage%" 46
                 if [[ $percentage =~ ^[0-9]+$ ]] && [ "$percentage" -gt 75 ]; then
-                    native_usage_probability_formatted="↑ ${percentage}%"
+                    native_usage_probability_formatted="↑${percentage}%"
                 elif [[ $percentage =~ ^[0-9]+$ ]] && [ "$percentage" -le 75 ]; then
-                    native_usage_probability_formatted="↓ ${percentage}%"
+                    native_usage_probability_formatted="↓${percentage}%"
                 else
                     native_usage_probability_formatted="N/A"
                 fi
