@@ -92,12 +92,13 @@
                     },
                     "natural_alternatives": {
                         "type": "array",
-                        "maxItems": 5,
+                        "minItems": 7,
+                        "maxItems": 10,
                         "items": {
                             "type": "string",
                             "description": "Alternative phrase. Must use single quotes."
                         },
-                        "description": "List of natural phrases native speakers might use instead. Each phrase must use single quotes."
+                        "description": "List of 7 to 10 natural phrases native speakers might use instead. Each phrase must use single quotes."
                     }
                 },
                 "propertyOrdering": [
