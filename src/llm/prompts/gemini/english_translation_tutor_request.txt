@@ -37,7 +37,7 @@
                 "properties": {
                     "grammar_explanation": {
                         "type": "string",
-                        "description": "Explanation of grammatical correctness and sentence type, single quote."
+                        "description": "Explanation of grammatical correctness and sentence type. Must use single quotes."
                     },
                     "is_grammatically_correct": {
                         "type": "boolean",
@@ -45,11 +45,11 @@
                     },
                     "suggested_correction": {
                         "type": "string",
-                        "description": "Corrected version if needed. Same as input if already correct."
+                        "description": "Corrected version if needed. Same as input if already correct. Must use single quotes."
                     },
                     "vietnamese_translation": {
                         "type": "string",
-                        "description": "Natural Vietnamese equivalent of the phrase."
+                        "description": "Natural Vietnamese equivalent of the phrase. Must use single quotes."
                     },
                     "native_usage_probability": {
                         "type": "number",
@@ -57,21 +57,21 @@
                     },
                     "formality_level": {
                         "type": "string",
-                        "description": "Formality level such as casual, neutral, or formal.",
+                        "description": "Formality level such as 'casual', 'neutral', or 'formal'. Must use single quotes.",
                         "enum": ["casual", "neutral", "formal"]
                     },
                     "us_uk_difference": {
                         "type": "string",
-                        "description": "How the phrase is used differently in US vs UK English."
+                        "description": "How the phrase is used differently in US vs UK English. Must use single quotes."
                     },
                     "common_mistakes": {
                         "type": "string",
-                        "description": "Typical learner mistakes related to this phrase, single quote."
+                        "description": "Typical learner mistakes related to this phrase. Must use single quotes."
                     },
                     "example_sentences": {
                         "type": "array",
                         "maxItems": 5,
-                        "description": "Example sentences with both English and Vietnamese translation.",
+                        "description": "Example sentences with both English and Vietnamese translation. All values must use single quotes.",
                         "items": {
                             "type": "object",
                             "required": [
@@ -81,11 +81,11 @@
                             "properties": {
                                 "en": {
                                     "type": "string",
-                                    "description": "English example sentence, single quote."
+                                    "description": "English example sentence. Must use single quotes."
                                 },
                                 "vi": {
                                     "type": "string",
-                                    "description": "Vietnamese translation of the sentence, single quote."
+                                    "description": "Vietnamese translation of the sentence. Must use single quotes."
                                 }
                             }
                         }
@@ -94,9 +94,10 @@
                         "type": "array",
                         "maxItems": 5,
                         "items": {
-                            "type": "string"
+                            "type": "string",
+                            "description": "Alternative phrase. Must use single quotes."
                         },
-                        "description": "List of natural phrases native speakers might use instead."
+                        "description": "List of natural phrases native speakers might use instead. Each phrase must use single quotes."
                     }
                 },
                 "propertyOrdering": [
