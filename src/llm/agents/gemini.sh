@@ -233,6 +233,15 @@ shell::ask_gemini_english() {
                 shell::colored_echo "[alt=$((i + 1))]: $alt" 244
             fi
         done
+        local example_sentences_count=$(echo "$item_json" | jq '.example_sentences | length // 0')
+        for i in $(seq 0 $((example_sentences_count - 1))); do
+            local en_sentence=$(echo "$item_json" | jq -r ".example_sentences[$i].en // empty")
+            local vi_sentence=$(echo "$item_json" | jq -r ".example_sentences[$i].vi // empty")
+            if [ -n "$en_sentence" ]; then
+                # Example sentences in English and Vietnamese
+                shell::colored_echo "[en=$((i + 1))]: $en_sentence (vi: $vi_sentence)" 244
+            fi
+        done
 
         shell::colored_echo "($native_usage_probability%): $suggested_correction ($vietnamese_translation)" 255
         shell::clip_value "$suggested_correction"
