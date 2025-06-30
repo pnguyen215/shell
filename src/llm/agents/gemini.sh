@@ -199,18 +199,16 @@ shell::ask_gemini_english() {
         else
             response=$(shell::make_gemini_request "$payload")
         fi
+
         # Check if the response is empty or if the command failed
-        if [ $? -ne 0 ]; then
+        if [ $? -ne 0 ] || [ -z "$response" ]; then
             shell::colored_echo "ERR: Failed to get response from Gemini." 196
             return 1
         fi
 
-        shell::colored_echo "DEBUG: Response from Gemini: $response" 244
-
-        local fzf_input=""
-
         # Extract the first item from the JSON array (assuming the structure from the example)
-        local item_json=$(echo "$response" | jq -c '.[0]') # Get the first object as compact JSON
+        # Get the first object as compact JSON
+        local item_json=$(echo "$response" | jq -c '.[0]')
 
         if [ -z "$item_json" ] || [ "$item_json" = "null" ]; then
             shell::colored_echo "ERR: No valid data found in Gemini response for interactive selection." 196
@@ -220,11 +218,10 @@ shell::ask_gemini_english() {
         local suggested_correction=$(echo "$item_json" | jq -r '.suggested_correction // empty')
         local vietnamese_translation=$(echo "$item_json" | jq -r '.vietnamese_translation // empty')
 
-        shell::colored_echo "DEBUG: Suggested correction: $suggested_correction ($vietnamese_translation)" 244
-        # shell::colored_echo "DEBUG: Vietnamese translation: $vietnamese_translation" 244
-
+        shell::colored_echo "INFO: $suggested_correction ($vietnamese_translation)" 46
         shell::clip_value "$suggested_correction"
 
+        # local fzf_input=""
         # if [ -n "$suggested_correction" ]; then
         #     fzf_input+="Correction: $suggested_correction (VN: $vietnamese_translation)\t$suggested_correction\t$item_json\n"
         # fi
