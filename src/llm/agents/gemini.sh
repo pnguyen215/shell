@@ -196,7 +196,6 @@ shell::ask_gemini_english() {
         local response
         if [ "$debugging" = "true" ]; then
             response=$(shell::make_gemini_request -d "$payload")
-            return 0
         else
             response=$(shell::make_gemini_request "$payload")
         fi
@@ -205,6 +204,14 @@ shell::ask_gemini_english() {
         if [ $? -ne 0 ] || [ -z "$response" ]; then
             shell::colored_echo "ERR: Failed to get response from Gemini." 196
             return 1
+        fi
+
+        #  Check if the debugging flag is set
+        # If debugging is enabled, it prints the response from Gemini
+        # This is useful for debugging purposes to see the raw response from the API
+        if [ "$debugging" = "true" ]; then
+            shell::colored_echo "DEBUG: Response from Gemini: $response" 244
+            return 0
         fi
 
         # Extract the first item from the JSON array (assuming the structure from the example)
