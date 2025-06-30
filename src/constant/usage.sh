@@ -4391,3 +4391,22 @@ This function reads a prompt from ~/.shell-config/agents/gemini/prompts/english_
 sends it to the Gemini API using curl, and uses jq and fzf to interactively select and display
 the suggested correction and example sentences.
 "
+
+USAGE_SHELL_MAKE_GEMINI_REQUEST="
+shell::make_gemini_request function
+Sends a request to the Gemini API with the provided payload.
+
+Usage:
+shell::make_gemini_request [-n] [-d] [-h] <request_payload>
+
+Parameters:
+  - -n : Optional dry-run flag. If provided, the curl command is printed using shell::on_evict instead of executed.
+  - -d : Optional debugging flag. If provided, debug information is printed.
+  - -h : Optional help flag. If provided, displays usage information.
+  - <request_payload> : The JSON payload to send to the Gemini API.
+
+Description:
+This function reads the Gemini configuration file, constructs a request to the Gemini API,
+and sends the provided payload. It handles errors, sanitizes the response, and returns the parsed JSON.
+It also supports debugging and dry-run modes.
+"

@@ -293,6 +293,177 @@ shell::ask_gemini_english() {
     fi
 }
 
+# shell::make_gemini_request function
+# Sends a request to the Gemini API with the provided payload.
+#
+# Usage:
+# shell::make_gemini_request [-n] [-d] [-h] <request_payload>
+#
+# Parameters:
+# - -n : Optional dry-run flag. If provided, the curl command is printed using shell::on_evict instead of executed.
+# - -d : Optional debugging flag. If provided, debug information is printed.
+# - -h : Optional help flag. If provided, displays usage information.
+# - <request_payload> : The JSON payload to send to the Gemini API.
+#
+# Description:
+# This function reads the Gemini configuration file, constructs a request to the Gemini API,
+# and sends the provided payload. It handles errors, sanitizes the response, and returns the parsed JSON.
+# It also supports debugging and dry-run modes.
 shell::make_gemini_request() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_MAKE_GEMINI_REQUEST"
+        return 0
+    fi
 
+    # Check if the -n flag is provided for dry-run
+    # If -n is provided, it sets the dry_run variable to true
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    # Check if the -d flag is provided for debugging
+    # If -d is provided, it sets the debugging variable to true
+    local debugging="false"
+    if [ "$1" = "-d" ]; then
+        debugging="true"
+        shift
+    fi
+
+    # Check if the required parameters are provided
+    if [ -z "$1" ]; then
+        echo "Usage: shell::make_gemini_request [-n] <request_payload>"
+        return 1
+    fi
+
+    # Check if the Gemini configuration file exists
+    if [ ! -f "$SHELL_KEY_CONF_AGENT_GEMINI_FILE" ]; then
+        shell::colored_echo "ERR: Gemini config file not found at '$SHELL_KEY_CONF_AGENT_GEMINI_FILE'" 196
+        return 1
+    fi
+
+    # Read the API_KEY and MODEL from the Gemini config file
+    local api_key=$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_FILE" "gemini" "API_KEY")
+    local model=$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_FILE" "gemini" "MODEL")
+
+    # Check if API_KEY is set in the Gemini config file
+    # If API_KEY is not set, it defaults to an empty string
+    if [ -z "$api_key" ]; then
+        shell::colored_echo "ERR: API_KEY config not found in Gemini config file ($SHELL_KEY_CONF_AGENT_GEMINI_FILE)." 196
+        return 1
+    fi
+
+    # Check if MODEL is set in the Gemini config file
+    # If MODEL is not set, it defaults to "gemini-2.0-flash"
+    if [ -z "$model" ]; then
+        shell::colored_echo "ERR: MODEL config not found in Gemini config file ($SHELL_KEY_CONF_AGENT_GEMINI_FILE)." 196
+        return 1
+    fi
+
+    local url="https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${api_key}"
+    local payload="$1"
+
+    # Check if the prompt file exists
+    if [ -z "$payload" ]; then
+        shell::colored_echo "ERR: Prompt request is required" 196
+        return 1
+    fi
+
+    # Check if the dry-run is enabled
+    # If dry_run is true, it will print the curl command instead of executing it
+    # This is useful for debugging or testing purposes
+    if [ "$dry_run" = "true" ]; then
+        # Prepare the curl command to send the request to the Gemini API
+        # The curl command is constructed to send a POST request with the payload
+        # The payload is a JSON object containing the model, prompt, and other parameters
+        local curl_cmd="curl -s -X POST \"$url\" -H \"Content-Type: application/json\" -d '$payload'"
+        shell::on_evict "$curl_cmd"
+        return 0
+    fi
+
+    # Send request and capture raw response
+    local response
+    response=$(curl -s -X POST "$url" -H "Content-Type: application/json" -d "$payload")
+
+    # Check if the response is empty
+    # If the response is empty, it indicates that there was no response from the Gemini API
+    if [ $? -ne 0 ]; then
+        shell::colored_echo "ERR: Failed to connect to Gemini API." 196
+        return 1
+    fi
+
+    # Check if the response is empty
+    # If the response is empty, it indicates that there was no response from the Gemini API
+    if [ -z "$response" ]; then
+        shell::colored_echo "ERR: No response from Gemini API." 196
+        return 1
+    fi
+
+    # Check if the response contains an error
+    if echo "$response" | jq -e '.error' >/dev/null 2>&1; then
+        local error_message
+        error_message=$(echo "$response" | jq -r '.error.message')
+        shell::colored_echo "ERR: Gemini API error: $error_message" 196
+        return 1
+    fi
+
+    if [ "$debugging" = "true" ]; then
+        shell::colored_echo "DEBUG: Response from Gemini API: $response" 244
+    fi
+
+    # Sanitize the JSON string by removing problematic characters and re-formatting
+    local sanitized_json
+    sanitized_json=$(echo "$response" | tr -d '\n\r\t' | sed 's/  */ /g')
+
+    if [ "$debugging" = "true" ]; then
+        shell::colored_echo "DEBUG: Sanitized JSON by Gemini response: $sanitized_json" 244
+    fi
+
+    # Try to parse the sanitized JSON
+    local parsed_json
+    parsed_json=$(echo "$sanitized_json" | jq '.' 2>/dev/null)
+
+    # shell::colored_echo "DEBUG: Parsed JSON: $parsed_json" 244
+
+    # Check if the parsed JSON is valid
+    if [ $? -ne 0 ]; then
+        shell::colored_echo "ERR: Failed to parse JSON response." 196
+        return 1
+    fi
+
+    # Extract the text field (this contains the embedded JSON string)
+    local text_json_raw
+    text_json_raw=$(echo "$parsed_json" | jq -r '.candidates[0].content.parts[0].text')
+
+    if [ "$debugging" = "true" ]; then
+        shell::colored_echo "DEBUG: Raw text JSON content by Gemini response: $text_json_raw" 244
+    fi
+
+    # Sanitize the embedded JSON text to handle escaped quotes and other characters
+    # Method 1: Use printf to properly handle escaped characters
+    local text_json_clean
+    text_json_clean=$(printf '%b' "$text_json_raw")
+
+    # Method 2: Alternative approach using sed to clean escaped characters
+    # Uncomment this if Method 1 doesn't work:
+    text_json_clean=$(echo "$text_json_raw" | sed 's/\\"/"/g' | sed 's/\\n/\n/g' | sed 's/\\t/\t/g' | sed 's/\\r/\r/g')
+
+    if [ "$debugging" = "true" ]; then
+        shell::colored_echo "DEBUG: Cleaned text JSON content by Gemini response: $text_json_clean" 244
+    fi
+
+    # Parse the cleaned embedded JSON
+    local parsed_embedded_json
+    parsed_embedded_json=$(echo "$text_json_clean" | jq '.' 2>/dev/null)
+
+    if [ $? -ne 0 ]; then
+        shell::colored_echo "ERR: Failed to parse embedded JSON after sanitization by Gemini response." 196
+        shell::colored_echo "DEBUG: Problematic JSON content by Gemini response:" 244
+        echo "$text_json_clean"
+        return 1
+    fi
+
+    echo "$parsed_embedded_json"
+    return 0
 }
