@@ -210,7 +210,7 @@ shell::ask_gemini_english() {
         # If debugging is enabled, it prints the response from Gemini
         # This is useful for debugging purposes to see the raw response from the API
         if [ "$debugging" = "true" ]; then
-            shell::colored_echo "DEBUG: Response from Gemini: $response" 244
+            shell::colored_echo "$response" 244
             return 0
         fi
 
