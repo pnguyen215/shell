@@ -159,137 +159,29 @@ shell::ask_gemini_english() {
         echo "Usage: shell::ask_gemini_english [-n] <sentence english>"
         return 1
     fi
+
     # Ensure the sentence_english variable is set
     local sentence_english="$1"
-
-    # Check if the Gemini configuration file exists
-    if [ ! -f "$SHELL_KEY_CONF_AGENT_GEMINI_FILE" ]; then
-        shell::colored_echo "ERR: Gemini config file not found at '$SHELL_KEY_CONF_AGENT_GEMINI_FILE'" 196
-        return 1
-    fi
-
-    # Read the API_KEY and MODEL from the Gemini config file
-    local api_key=$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_FILE" "gemini" "API_KEY")
-    local model=$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_FILE" "gemini" "MODEL")
-
-    # Check if API_KEY is set in the Gemini config file
-    # If API_KEY is not set, it defaults to an empty string
-    if [ -z "$api_key" ]; then
-        shell::colored_echo "ERR: API_KEY config not found in Gemini config file ($SHELL_KEY_CONF_AGENT_GEMINI_FILE)." 196
-        return 1
-    fi
-
-    # Check if MODEL is set in the Gemini config file
-    # If MODEL is not set, it defaults to "gemini-2.0-flash"
-    if [ -z "$model" ]; then
-        shell::colored_echo "ERR: MODEL config not found in Gemini config file ($SHELL_KEY_CONF_AGENT_GEMINI_FILE)." 196
-        return 1
-    fi
-
-    local url="https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${api_key}"
-    local prompt_request="$LLM_PROMPTS_DIR/gemini/english_translation_tutor_request.txt"
+    local prompt_file="$LLM_PROMPTS_DIR/gemini/english_translation_tutor_request.txt"
 
     # Check if the prompt file exists
-    if [ ! -f "$prompt_request" ]; then
-        shell::colored_echo "ERR: Prompt file not found at '$prompt_request'" 196
+    if [ ! -f "$prompt_file" ]; then
+        shell::colored_echo "ERR: Prompt file not found at '$prompt_file'" 196
         return 1
     fi
 
     # Replace the placeholder in the prompt file with the provided sentence
     # The sed command replaces {ENTER_SENTENCE_ENGLISH} in the prompt file with the actual sentence_english
     # This allows the prompt to be dynamically generated based on user input
-    local payload=$(sed "s/{ENTER_SENTENCE_ENGLISH}/$sentence_english/" "$prompt_request")
+    local payload=$(sed "s/{ENTER_SENTENCE_ENGLISH}/$sentence_english/" "$prompt_file")
 
     # Check if the dry-run is enabled
     # If dry_run is true, it will print the curl command instead of executing it
     # This is useful for debugging or testing purposes
     if [ "$dry_run" = "true" ]; then
-        # Prepare the curl command to send the request to the Gemini API
-        # The curl command is constructed to send a POST request with the payload
-        # The payload is a JSON object containing the model, prompt, and other parameters
-        local curl_cmd="curl -s -X POST \"$url\" -H \"Content-Type: application/json\" -d '$payload'"
-        shell::on_evict "$curl_cmd"
-        return 0
-    fi
-
-    # local tmp_payload_file
-    # tmp_payload_file=$(mktemp)
-    # echo "$payload" >"$tmp_payload_file"
-
-    # Send request and capture raw response
-    local response
-    response=$(curl -s -X POST "$url" -H "Content-Type: application/json" -d "$payload")
-    # response=$(curl -s -X POST "$url" -H "Content-Type: application/json" --data @"$tmp_payload_file")
-    # rm -f "$tmp_payload_file"
-
-    # Check if the response is empty
-    # If the response is empty, it indicates that there was no response from the Gemini API
-    if [ $? -ne 0 ]; then
-        shell::colored_echo "ERR: Failed to connect to Gemini API." 196
-        return 1
-    fi
-
-    # Check if the response is empty
-    # If the response is empty, it indicates that there was no response from the Gemini API
-    if [ -z "$response" ]; then
-        shell::colored_echo "ERR: No response from Gemini API." 196
-        return 1
-    fi
-
-    # Check if the response contains an error
-    if echo "$response" | jq -e '.error' >/dev/null 2>&1; then
-        local error_message
-        error_message=$(echo "$response" | jq -r '.error.message')
-        shell::colored_echo "ERR: Gemini API error: $error_message" 196
-        return 1
-    fi
-
-    # shell::colored_echo "DEBUG: Response from Gemini API: $response" 244
-
-    # Sanitize the JSON string by removing problematic characters and re-formatting
-    local sanitized_json
-    sanitized_json=$(echo "$response" | tr -d '\n\r\t' | sed 's/  */ /g')
-
-    shell::colored_echo "DEBUG: Sanitized JSON: $sanitized_json" 244
-
-    # Try to parse the sanitized JSON
-    local parsed_json
-    parsed_json=$(echo "$sanitized_json" | jq '.' 2>/dev/null)
-
-    # shell::colored_echo "DEBUG: Parsed JSON: $parsed_json" 244
-
-    # Check if the parsed JSON is valid
-    if [ $? -ne 0 ]; then
-        shell::colored_echo "ERR: Failed to parse JSON response." 196
-        return 1
-    fi
-
-    # Extract the text field (this contains the embedded JSON string)
-    local text_json_raw
-    text_json_raw=$(echo "$parsed_json" | jq -r '.candidates[0].content.parts[0].text')
-
-    shell::colored_echo "DEBUG: Raw text JSON content: $text_json_raw" 244
-
-    # Sanitize the embedded JSON text to handle escaped quotes and other characters
-    # Method 1: Use printf to properly handle escaped characters
-    local text_json_clean
-    text_json_clean=$(printf '%b' "$text_json_raw")
-
-    # Method 2: Alternative approach using sed to clean escaped characters
-    # Uncomment this if Method 1 doesn't work:
-    text_json_clean=$(echo "$text_json_raw" | sed 's/\\"/"/g' | sed 's/\\n/\n/g' | sed 's/\\t/\t/g' | sed 's/\\r/\r/g')
-
-    shell::colored_echo "DEBUG: Cleaned text JSON content: $text_json_clean" 244
-
-    # Parse the cleaned embedded JSON
-    local parsed_embedded_json
-    parsed_embedded_json=$(echo "$text_json_clean" | jq '.' 2>/dev/null)
-
-    if [ $? -ne 0 ]; then
-        shell::colored_echo "ERR: Failed to parse embedded JSON after sanitization." 196
-        shell::colored_echo "DEBUG: Problematic JSON content:" 244
-        echo "$text_json_clean"
-        return 1
+        shell::make_gemini_request -n "$payload"
+    else
+        shell::make_gemini_request -d "$payload"
     fi
 }
 
