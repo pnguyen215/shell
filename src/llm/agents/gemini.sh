@@ -196,7 +196,7 @@ shell::ask_gemini_english() {
         local response
         if [ "$debugging" = "true" ]; then
             response=$(shell::make_gemini_request -d "$payload")
-            return $?
+            return 0
         else
             response=$(shell::make_gemini_request "$payload")
         fi
