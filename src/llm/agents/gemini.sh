@@ -230,11 +230,11 @@ shell::ask_gemini_english() {
             local alt=$(echo "$item_json" | jq -r ".natural_alternatives[$i] // empty")
             if [ -n "$alt" ]; then
                 # Alternatives for suggested correction
-                shell::colored_echo "[alt]::$((i + 1)): $alt" 244
+                shell::colored_echo "[alt=$((i + 1))]: $alt" 244
             fi
         done
 
-        shell::colored_echo "[$native_usage_probability%] $suggested_correction ($vietnamese_translation)" 255
+        shell::colored_echo "($native_usage_probability%): $suggested_correction ($vietnamese_translation)" 255
         shell::clip_value "$suggested_correction"
     fi
 }
