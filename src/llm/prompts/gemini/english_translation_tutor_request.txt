@@ -25,6 +25,7 @@
             "items": {
                 "type": "object",
                 "required": [
+                    "grammar_explanation",
                     "is_grammatically_correct",
                     "suggested_correction",
                     "vietnamese_translation",
@@ -70,7 +71,8 @@
                     },
                     "example_sentences": {
                         "type": "array",
-                        "maxItems": 5,
+                        "minItems": 5,
+                        "maxItems": 10,
                         "description": "Example sentences with both English and Vietnamese translation. All values must use single quotes.",
                         "items": {
                             "type": "object",
@@ -102,6 +104,7 @@
                     }
                 },
                 "propertyOrdering": [
+                    "grammar_explanation",
                     "is_grammatically_correct",
                     "suggested_correction",
                     "vietnamese_translation",
