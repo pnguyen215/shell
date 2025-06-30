@@ -191,7 +191,9 @@ shell::ask_gemini_english() {
     # If dry_run is true, it will print the curl command instead of executing it
     # This is useful for debugging or testing purposes
     if [ "$dry_run" = "true" ]; then
-        shell::make_gemini_request -n "$payload"
+        local sanitized_payload
+        sanitized_payload=$(echo "$payload" | tr -d '\n\r\t' | sed 's/  */ /g')
+        shell::make_gemini_request -n "$sanitized_payload"
     else
         local response
         if [ "$debugging" = "true" ]; then
