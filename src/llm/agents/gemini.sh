@@ -196,13 +196,11 @@ shell::ask_gemini_english() {
         local response
         if [ "$debugging" = "true" ]; then
             response=$(shell::make_gemini_request -d "$payload")
+            return $?
         else
             response=$(shell::make_gemini_request "$payload")
         fi
 
-        if [ "$debugging" = "true" ]; then
-            shell::colored_echo "DEBUG: response JSON from Gemini response: $response" 244
-        fi
         # Check if the response is empty or if the command failed
         if [ $? -ne 0 ] || [ -z "$response" ]; then
             shell::colored_echo "ERR: Failed to get response from Gemini." 196
@@ -212,9 +210,6 @@ shell::ask_gemini_english() {
         # Extract the first item from the JSON array (assuming the structure from the example)
         # Get the first object as compact JSON
         local item_json=$(echo "$response" | jq -c '.[0]')
-        if [ "$debugging" = "true" ]; then
-            shell::colored_echo "DEBUG: Item JSON from Gemini response: $item_json" 244
-        fi
         if [ -z "$item_json" ] || [ "$item_json" = "null" ]; then
             shell::colored_echo "ERR: No valid data found in Gemini response for interactive selection." 196
             return 1
@@ -223,31 +218,8 @@ shell::ask_gemini_english() {
         local suggested_correction=$(echo "$item_json" | jq -r '.suggested_correction // empty')
         local vietnamese_translation=$(echo "$item_json" | jq -r '.vietnamese_translation // empty')
 
-        shell::colored_echo "INFO: $suggested_correction ($vietnamese_translation)" 46
+        shell::colored_echo "$suggested_correction ($vietnamese_translation)" 51
         shell::clip_value "$suggested_correction"
-
-        # local fzf_input=""
-        # if [ -n "$suggested_correction" ]; then
-        #     fzf_input+="Correction: $suggested_correction (VN: $vietnamese_translation)\t$suggested_correction\t$item_json\n"
-        # fi
-
-        # local natural_alternatives_count=$(echo "$item_json" | jq '.natural_alternatives | length // 0')
-        # for i in $(seq 0 $((natural_alternatives_count - 1))); do
-        #     local alt=$(echo "$item_json" | jq -r ".natural_alternatives[$i] // empty")
-        #     if [ -n "$alt" ]; then
-        #         fzf_input+="Alternative $((i + 1)): $alt\t$alt\t$item_json\n"
-        #     fi
-        # done
-
-        # local example_sentences_count=$(echo "$item_json" | jq '.example_sentences | length // 0')
-        # for i in $(seq 0 $((example_sentences_count - 1))); do
-        #     local en_sentence=$(echo "$item_json" | jq -r ".example_sentences[$i].en // empty")
-        #     local vi_sentence=$(echo "$item_json" | jq -r ".example_sentences[$i].vi // empty")
-        #     if [ -n "$en_sentence" ]; then
-        #         fzf_input+="Example $((i + 1)): $en_sentence (VN: $vi_sentence)\t$en_sentence\t$item_json\n"
-        #     fi
-        # done
-
     fi
 }
 
