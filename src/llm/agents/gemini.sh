@@ -291,12 +291,6 @@ shell::ask_gemini_english() {
     fi
 }
 
-sgemcheck-async() {
-    # local args="$*"
-    # shell::async shell::ask_gemini_english "$args"
-    shell::async shell::ask_gemini_english "$*"
-}
-
 # shell::make_gemini_request function
 # Sends a request to the Gemini API with the provided payload.
 #
