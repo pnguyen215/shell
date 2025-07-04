@@ -25,7 +25,6 @@
                     "formality_level",
                     "pronunciation_ipa",
                     "us_uk_difference",
-                    "common_mistakes",
                     "natural_alternatives",
                     "example_sentences"
                 ],
@@ -62,10 +61,6 @@
                     "us_uk_difference": {
                         "type": "string",
                         "description": "Any differences in usage between US and UK English. Must use single quotes."
-                    },
-                    "common_mistakes": {
-                        "type": "string",
-                        "description": "Common translation or usage errors learners might make. Must use single quotes."
                     },
                     "natural_alternatives": {
                         "type": "array",
@@ -108,7 +103,6 @@
                     "formality_level",
                     "pronunciation_ipa",
                     "us_uk_difference",
-                    "common_mistakes",
                     "natural_alternatives",
                     "example_sentences"
                 ]

@@ -60,10 +60,6 @@
                         "type": "string",
                         "description": "How the phrase is used differently in US vs UK English. Must use single quotes."
                     },
-                    "common_mistakes": {
-                        "type": "string",
-                        "description": "Typical learner mistakes related to this phrase. Must use single quotes."
-                    },
                     "example_sentences": {
                         "type": "array",
                         "minItems": 5,
