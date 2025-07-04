@@ -4376,11 +4376,11 @@ This function calls shell::dump_ini_json using SHELL_KEY_CONF_AGENT_GEMINI_FILE.
 "
 
 USAGE_SHELL_ASK_GEMINI_ENGLISH="
-shell::ask_gemini_english function
+shell::evaluate_gemini_english_grammar function
 Sends an English sentence to Gemini for grammar evaluation and interactively displays corrections and examples.
 
 Usage:
-shell::ask_gemini_english [-n] [-d] [-h] <sentence_english>
+shell::evaluate_gemini_english_grammar [-n] [-d] [-h] <sentence_english>
 
 Parameters:
   - -n : Optional dry-run flag. If provided, the curl command is printed using shell::on_evict instead of executed.
