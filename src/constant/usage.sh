@@ -1333,7 +1333,6 @@ Options:
 Description:
 The (shell::colored_echo) function prints a message in bold and a specific color, if a valid color code is provided.
 It uses ANSI escape sequences for 256-color support. If no color code is specified, it defaults to blue (code 4).
-The function supports common escape sequences like "//n", \t, \r, \b, \a, \v, \f, and Unicode sequences.
 
 Supported Escape Sequences:
 newline
@@ -1367,12 +1366,12 @@ Example usage:
 _shell::colored_echo \"Hello, World!\" # Prints in default blue (code 4).
 _shell::colored_echo \"Error occurred\" 196 # Prints in bright red.
 _shell::colored_echo \"Task completed\" 46 # Prints in vibrant green.
-_shell::colored_echo \"Line 1\nLine 2\tTabbed\" 202 # Multi-line with tab
-_shell::colored_echo \"Bell sound\a\" 226 # With bell character
+_shell::colored_echo \"Line 1'\nLine 2'\tTabbed\" 202 # Multi-line with tab
+_shell::colored_echo \"Bell sound'\a\" 226 # With bell character
 _shell::colored_echo \"Unicode: \u2713 \u2717\" 118 # With Unicode check mark and X
 _shell::colored_echo \"Hex: \x48\x65\x6C\x6C\x6F\" 93 # "Hello" in hex
 _shell::colored_echo \"No newline\" 45 -n # Without trailing newline
-_shell::colored_echo \"Raw \t text\" 120 -E # Disable escape interpretation
+_shell::colored_echo \"Raw '\t text\" 120 -E # Disable escape interpretation
 
 Notes:
 - Requires a terminal with 256-color support for full color range.
