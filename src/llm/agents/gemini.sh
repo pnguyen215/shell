@@ -415,6 +415,13 @@ shell::make_gemini_request() {
     # Sanitize the JSON string by removing problematic characters and re-formatting
     local sanitized_json
     sanitized_json=$(echo "$response" | tr -d '\n\r\t' | sed 's/  */ /g')
+
+    # Remove markdown code block markers if present
+    sanitized_json=$(echo "$sanitized_json" | sed -e 's/^```json//' -e 's/```$//' -e 's/^```//' -e 's/```$//')
+    # Remove leading/trailing whitespace
+    sanitized_json=$(echo "$sanitized_json" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+    # Remove excessive whitespace but preserve JSON structure
+    sanitized_json=$(echo "$sanitized_json" | sed -e 's/[[:space:]]\+/ /g')
     # Escape special characters
     # sanitized_json=$(
     #     echo "$sanitized_json" |
@@ -428,14 +435,6 @@ shell::make_gemini_request() {
     #         sed 's/"/\\"/g' |     # Escape single quotes
     #         sed 's/"/\\"/g'       # Escape double quotes again for nested cases
     # )
-    # Escape special characters in a controlled manner
-    sanitized_json=$(echo "$sanitized_json" | sed -e 's/"/\\"/g' \
-        -e 's/\\/\\\\/g' \
-        -e 's/\n/\\n/g' \
-        -e 's/\t/\\t/g' \
-        -e 's/\r/\\r/g' \
-        -e 's/</\\u003c/g' \
-        -e 's/>/\\u003e/g')
 
     if [ "$debugging" = "true" ]; then
         shell::colored_echo "DEBUG: Sanitized JSON by Gemini response: $sanitized_json" 244
