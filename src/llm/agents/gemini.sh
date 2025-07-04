@@ -473,6 +473,7 @@ shell::make_gemini_request() {
         shell::colored_echo "ERR: Failed to parse embedded JSON after sanitization by Gemini response." 196
         shell::colored_echo "DEBUG: Problematic JSON content by Gemini response:" 244
         echo "$text_json_clean"
+        shell::clip_value "$text_json_clean"
         return 1
     fi
 
