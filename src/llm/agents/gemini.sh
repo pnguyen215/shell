@@ -415,6 +415,19 @@ shell::make_gemini_request() {
     # Sanitize the JSON string by removing problematic characters and re-formatting
     local sanitized_json
     sanitized_json=$(echo "$response" | tr -d '\n\r\t' | sed 's/  */ /g')
+    # Escape special characters
+    sanitized_json=$(
+        echo "$sanitized_json" |
+            sed 's/"/\\"/g' |     # Escape double quotes
+            sed 's/\\/\\\\/g' |   # Escape backslashes
+            sed 's/\n/\\n/g' |    # Escape newlines
+            sed 's/\t/\\t/g' |    # Escape tabs
+            sed 's/\r/\\r/g' |    # Escape carriage returns
+            sed 's/</\\u003c/g' | # Escape less than
+            sed 's/>/\\u003e/g' | # Escape greater than
+            sed 's/"/\\"/g' |     # Escape single quotes
+            sed 's/"/\\"/g'       # Escape double quotes again for nested cases
+    )
 
     if [ "$debugging" = "true" ]; then
         shell::colored_echo "DEBUG: Sanitized JSON by Gemini response: $sanitized_json" 244
