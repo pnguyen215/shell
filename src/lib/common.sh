@@ -86,50 +86,50 @@ shell::get_os_type() {
 # Notes:
 #   - Requires a terminal with 256-color support.
 #   - Use ANSI color codes for finer control over colors.
-shell::colored_echo1() {
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_COLORED_ECHO"
-        return 0
-    fi
+# shell::colored_echo() {
+#     if [ "$1" = "-h" ]; then
+#         echo "$USAGE_SHELL_COLORED_ECHO"
+#         return 0
+#     fi
 
-    local message=$1
-    local color_code=${2:-4} # Default to blue (ANSI color code 4)
+#     local message=$1
+#     local color_code=${2:-4} # Default to blue (ANSI color code 4)
 
-    # Validate color code range (0 to 255)
-    if [[ $color_code -lt 0 || $color_code -gt 255 ]]; then
-        echo "ERR: Invalid color code! Please provide a number between 0 and 255."
-        return 1
-    fi
+#     # Validate color code range (0 to 255)
+#     if [[ $color_code -lt 0 || $color_code -gt 255 ]]; then
+#         echo "ERR: Invalid color code! Please provide a number between 0 and 255."
+#         return 1
+#     fi
 
-    # Check terminal capabilities
-    local has_color_support=true
+#     # Check terminal capabilities
+#     local has_color_support=true
 
-    # Check if terminal supports colors
-    if ! command -v tput &>/dev/null || [[ $(tput colors 2>/dev/null || echo 0) -lt 8 ]]; then
-        has_color_support=false
-    fi
+#     # Check if terminal supports colors
+#     if ! command -v tput &>/dev/null || [[ $(tput colors 2>/dev/null || echo 0) -lt 8 ]]; then
+#         has_color_support=false
+#     fi
 
-    if $has_color_support; then
-        # Use 256-color support if available
-        if [[ $(tput colors 2>/dev/null || echo 0) -ge 256 ]]; then
-            local color="\033[38;5;${color_code}m" # Foreground 256-color ANSI code
-            local bold="\033[1m"                   # Bold text attribute
-            local reset="\033[0m"                  # Reset all attributes
-            echo -e "${bold}${color}${message}${reset}"
-        else
-            # Fall back to basic 8 colors for limited terminals
-            # Map 256-color code to basic color (simplified mapping)
-            local basic_color=$((color_code % 8))
-            local bold="\033[1m"
-            local color="\033[3${basic_color}m"
-            local reset="\033[0m"
-            echo -e "${bold}${color}${message}${reset}"
-        fi
-    else
-        # No color support detected, print plain text
-        echo "${message}"
-    fi
-}
+#     if $has_color_support; then
+#         # Use 256-color support if available
+#         if [[ $(tput colors 2>/dev/null || echo 0) -ge 256 ]]; then
+#             local color="\033[38;5;${color_code}m" # Foreground 256-color ANSI code
+#             local bold="\033[1m"                   # Bold text attribute
+#             local reset="\033[0m"                  # Reset all attributes
+#             echo -e "${bold}${color}${message}${reset}"
+#         else
+#             # Fall back to basic 8 colors for limited terminals
+#             # Map 256-color code to basic color (simplified mapping)
+#             local basic_color=$((color_code % 8))
+#             local bold="\033[1m"
+#             local color="\033[3${basic_color}m"
+#             local reset="\033[0m"
+#             echo -e "${bold}${color}${message}${reset}"
+#         fi
+#     else
+#         # No color support detected, print plain text
+#         echo "${message}"
+#     fi
+# }
 
 # shell::colored_echo function
 # Prints text to the terminal with customizable colors using `tput` and ANSI escape sequences.

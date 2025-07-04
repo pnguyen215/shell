@@ -1311,30 +1311,75 @@ Outputs:
 USAGE_SHELL_COLORED_ECHO="
 shell::colored_echo function
 Prints text to the terminal with customizable colors using (tput) and ANSI escape sequences.
+Supports special characters and escape sequences commonly used in terminal environments.
 
 Usage:
-  shell::colored_echo [-h] <message> [color_code]
+shell::colored_echo [-h] <message> [color_code] [options]
 
 Parameters:
-  - -h              : Optional. Displays this help message.
-  - <message>       : The text message to display.
-  - [color_code]    : (Optional) A number from 0 to 255 representing the text color.
-      - 0-15: Standard colors (Black, Red, Green, etc.)
-      - 16-231: Extended 6x6x6 color cube
-      - 232-255: Grayscale shades
-
-Description:
-  The (shell::colored_echo) function prints a message in bold and a specific color, if a valid color code is provided.
-  It uses ANSI escape sequences for 256-color support. If no color code is specified, it defaults to blue (code 4).
+  - -h          : Optional. Displays this help message.
+  - <message>   : The text message to display (supports escape sequences).
+  - [color_code]: (Optional) A number from 0 to 255 representing the text color.
+    - 0-15: Standard colors (Black, Red, Green, etc.)
+    - 16-231: Extended 6x6x6 color cube
+    - 232-255: Grayscale shades
+  - [options]: (Optional) Additional flags for formatting control
 
 Options:
-  None
+-n: Do not output the trailing newline
+-e: Enable interpretation of backslash escapes (default behavior)
+-E: Disable interpretation of backslash escapes
+
+Description:
+The (shell::colored_echo) function prints a message in bold and a specific color, if a valid color code is provided.
+It uses ANSI escape sequences for 256-color support. If no color code is specified, it defaults to blue (code 4).
+The function supports common escape sequences like \n, \t, \r, \b, \a, \v, \f, and Unicode sequences.
+
+Supported Escape Sequences:
+\n - newline
+\t - horizontal tab
+\r - carriage return
+\b - backspace
+\a - alert (bell)
+\v - vertical tab
+\f - form feed
+\\ - literal backslash
+\" - literal double quote
+\' - literal single quote
+\xHH - hexadecimal escape sequence (e.g., \x41 for 'A')
+\uHHHH - Unicode escape sequence (e.g., \u03B1 for 'α')
+\UHHHHHHHH - Unicode escape sequence (8 hex digits, e.g., \U0001F600 for '😀')
+
+Example color codes:
+  - 0: Black
+  - 1: Red
+  - 2: Green
+  - 3: Yellow
+  - 4: Blue (default)
+  - 5: Magenta
+  - 6: Cyan
+  - 7: White
+  - 196: Bright Red
+  - 46: Vibrant Green
+  - 202: Bright Yellow
+  - 118: Bright Cyan
 
 Example usage:
-  shell::colored_echo \"Hello, World!\"          # Prints in default blue (code 4).
-  shell::colored_echo \"Error occurred\" 196     # Prints in bright red.
-  shell::colored_echo \"Task completed\" 46      # Prints in vibrant green.
-  shell::colored_echo \"Shades of gray\" 245     # Prints in a mid-gray shade.
+shell::colored_echo \"Hello, World!\" # Prints in default blue (code 4).
+shell::colored_echo \"Error occurred\" 196 # Prints in bright red.
+shell::colored_echo \"Task completed\" 46 # Prints in vibrant green.
+shell::colored_echo \"Line 1\nLine 2\tTabbed\" 202 # Multi-line with tab
+shell::colored_echo \"Bell sound\a\" 226 # With bell character
+shell::colored_echo \"Unicode: \u2713 \u2717\" 118 # With Unicode check mark and X
+shell::colored_echo \"Hex: \x48\x65\x6C\x6C\x6F\" 93 # "Hello" in hex
+shell::colored_echo \"No newline\" 45 -n # Without trailing newline
+shell::colored_echo \"Raw \t text\" 120 -E # Disable escape interpretation
+
+Notes:
+- Requires a terminal with 256-color support for full color range.
+- Use ANSI color codes for finer control over colors.
+- The function automatically detects terminal capabilities and adjusts output accordingly.
+- Special characters are interpreted by default (equivalent to echo -e).
 "
 
 USAGE_SHELL_RUN_CMD="
