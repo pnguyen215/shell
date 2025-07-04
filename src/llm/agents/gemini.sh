@@ -174,7 +174,7 @@ shell::evaluate_gemini_english_grammar() {
 
     # Ensure the sentence_english variable is set
     local sentence_english="$1"
-    local prompt_file="$LLM_PROMPTS_DIR/gemini/english_translation_tutor_request.txt"
+    local prompt_file="$LLM_PROMPTS_DIR/gemini/en_eval_vi_prompt_request_v1.txt"
 
     # Check if the prompt file exists
     if [ ! -f "$prompt_file" ]; then
