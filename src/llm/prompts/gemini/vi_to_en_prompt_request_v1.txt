@@ -4,7 +4,7 @@
             "role": "user",
             "parts": [
                 {
-                    "text": "Translate the following Vietnamese sentence to natural English: \"{ENTER_SENTENCE_VIETNAMESE}\". Make sure the translation is grammatically correct and sounds natural to native speakers (US/UK). Explain the sentence structure briefly in English. Include formality level, common learner mistakes, pronunciation (IPA), and US/UK usage differences. Provide example sentences with Vietnamese translation to help learners. Keep it simple and easy to understand for Vietnamese learners."
+                    "text": "Translate the following Vietnamese sentence to natural English: \"{ENTER_SENTENCE_VIETNAMESE}\". Make sure the translation is grammatically correct and sounds natural to native speakers (US/UK). Explain the sentence structure briefly in English. Include formality level, common learner mistakes, pronunciation (IPA), and US/UK usage differences. Provide example sentences with Vietnamese translation to help learners. Keep it simple and easy to understand for Vietnamese learners. Define the correct JSON format and valid values for any given field, including data types, constraints, and examples."
                 }
             ]
         }

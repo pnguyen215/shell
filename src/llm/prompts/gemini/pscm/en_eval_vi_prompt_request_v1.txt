@@ -11,7 +11,7 @@
             "role": "user",
             "parts": [
                 {
-                    "text": "Evaluate the grammar of this English sentence: \"{ENTER_SENTENCE_ENGLISH}\". Explain if it is grammatically correct, what type of sentence it is (greeting, question, etc.), and provide one or more corrected versions if needed. Suggest a natural alternative that a native speaker (US/UK) might use in context. Translate to Vietnamese. Include pronunciation, formality level, regional usage notes, common mistakes, and several example sentences. Make the explanation simple enough for an English learner."
+                    "text": "Evaluate the grammar of this English sentence: \"{ENTER_SENTENCE_ENGLISH}\". Explain if it is grammatically correct, what type of sentence it is (greeting, question, etc.), and provide one or more corrected versions if needed. Suggest a natural alternative that a native speaker (US/UK) might use in context. Translate to Vietnamese. Include pronunciation, formality level, regional usage notes, common mistakes, and several example sentences. Make the explanation simple enough for an English learner. Define the correct JSON format and valid values for any given field, including data types, constraints, and examples."
                 }
             ]
         }
