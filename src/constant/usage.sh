@@ -1336,19 +1336,18 @@ It uses ANSI escape sequences for 256-color support. If no color code is specifi
 The function supports common escape sequences like \n, \t, \r, \b, \a, \v, \f, and Unicode sequences.
 
 Supported Escape Sequences:
-\n - newline
-\t - horizontal tab
-\r - carriage return
-\b - backspace
-\a - alert (bell)
-\v - vertical tab
-\f - form feed
-\\ - literal backslash
-\" - literal double quote
-\' - literal single quote
-\xHH - hexadecimal escape sequence (e.g., \x41 for 'A')
-\uHHHH - Unicode escape sequence (e.g., \u03B1 for 'α')
-\UHHHHHHHH - Unicode escape sequence (8 hex digits, e.g., \U0001F600 for '😀')
+newline
+horizontal tab
+carriage return
+backspace
+alert (bell)
+vertical tab
+form feed
+literal backslash
+literal double quote
+literal single quote
+hexadecimal escape sequence
+Unicode escape sequence
 
 Example color codes:
   - 0: Black
@@ -1365,15 +1364,15 @@ Example color codes:
   - 118: Bright Cyan
 
 Example usage:
-shell::colored_echo \"Hello, World!\" # Prints in default blue (code 4).
-shell::colored_echo \"Error occurred\" 196 # Prints in bright red.
-shell::colored_echo \"Task completed\" 46 # Prints in vibrant green.
-shell::colored_echo \"Line 1\nLine 2\tTabbed\" 202 # Multi-line with tab
-shell::colored_echo \"Bell sound\a\" 226 # With bell character
-shell::colored_echo \"Unicode: \u2713 \u2717\" 118 # With Unicode check mark and X
-shell::colored_echo \"Hex: \x48\x65\x6C\x6C\x6F\" 93 # "Hello" in hex
-shell::colored_echo \"No newline\" 45 -n # Without trailing newline
-shell::colored_echo \"Raw \t text\" 120 -E # Disable escape interpretation
+_shell::colored_echo \"Hello, World!\" # Prints in default blue (code 4).
+_shell::colored_echo \"Error occurred\" 196 # Prints in bright red.
+_shell::colored_echo \"Task completed\" 46 # Prints in vibrant green.
+_shell::colored_echo \"Line 1\nLine 2\tTabbed\" 202 # Multi-line with tab
+_shell::colored_echo \"Bell sound\a\" 226 # With bell character
+_shell::colored_echo \"Unicode: \u2713 \u2717\" 118 # With Unicode check mark and X
+_shell::colored_echo \"Hex: \x48\x65\x6C\x6C\x6F\" 93 # "Hello" in hex
+_shell::colored_echo \"No newline\" 45 -n # Without trailing newline
+_shell::colored_echo \"Raw \t text\" 120 -E # Disable escape interpretation
 
 Notes:
 - Requires a terminal with 256-color support for full color range.
