@@ -1,0 +1,124 @@
+{
+    "contents": [
+        {
+            "role": "user",
+            "parts": [
+                {
+                    "text": "Translate the following Vietnamese sentence to natural English: \"{ENTER_SENTENCE_VIETNAMESE}\". Make sure the translation is grammatically correct and sounds natural to native speakers (US/UK). Explain the sentence structure briefly in English. Include formality level, common learner mistakes, pronunciation (IPA), and US/UK usage differences. Provide example sentences with Vietnamese translation to help learners. Keep it simple and easy to understand for Vietnamese learners."
+                }
+            ]
+        }
+    ],
+    "generationConfig": {
+        "responseMimeType": "application/json",
+        "responseSchema": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 1,
+            "items": {
+                "type": "object",
+                "required": [
+                    "original_vietnamese",
+                    "translated_english",
+                    "grammar_explanation",
+                    "sentence_structure",
+                    "native_usage_probability",
+                    "formality_level",
+                    "pronunciation_ipa",
+                    "us_uk_difference",
+                    "common_mistakes",
+                    "natural_alternatives",
+                    "example_sentences"
+                ],
+                "properties": {
+                    "original_vietnamese": {
+                        "type": "string",
+                        "description": "The original Vietnamese sentence. Must use single quotes."
+                    },
+                    "translated_english": {
+                        "type": "string",
+                        "description": "Grammatically correct, natural English translation. Must use single quotes."
+                    },
+                    "grammar_explanation": {
+                        "type": "string",
+                        "description": "Simple explanation of the translation’s grammar. Must use single quotes."
+                    },
+                    "sentence_structure": {
+                        "type": "string",
+                        "description": "Brief breakdown of sentence structure (e.g., Subject + Verb + Object). Must use single quotes."
+                    },
+                    "native_usage_probability": {
+                        "type": "number",
+                        "description": "Estimated likelihood (0-1) that native speakers use this phrase naturally."
+                    },
+                    "formality_level": {
+                        "type": "string",
+                        "description": "Formality level such as 'casual', 'neutral', or 'formal'. Must use single quotes.",
+                        "enum": [
+                            "casual",
+                            "neutral",
+                            "formal"
+                        ]
+                    },
+                    "pronunciation_ipa": {
+                        "type": "string",
+                        "description": "IPA transcription for the translated English sentence. Must use single quotes."
+                    },
+                    "us_uk_difference": {
+                        "type": "string",
+                        "description": "Any differences in usage between US and UK English. Must use single quotes."
+                    },
+                    "common_mistakes": {
+                        "type": "string",
+                        "description": "Common translation or usage errors learners might make. Must use single quotes."
+                    },
+                    "natural_alternatives": {
+                        "type": "array",
+                        "minItems": 7,
+                        "maxItems": 10,
+                        "description": "Other ways native speakers might express the same idea. Must use single quotes.",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "example_sentences": {
+                        "type": "array",
+                        "minItems": 5,
+                        "maxItems": 10,
+                        "description": "Useful example sentences with English and Vietnamese translations. Must use single quotes.",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "en",
+                                "vi"
+                            ],
+                            "properties": {
+                                "en": {
+                                    "type": "string",
+                                    "description": "Example sentence in English. Must use single quotes."
+                                },
+                                "vi": {
+                                    "type": "string",
+                                    "description": "Vietnamese translation of the example sentence. Must use single quotes."
+                                }
+                            }
+                        }
+                    }
+                },
+                "propertyOrdering": [
+                    "original_vietnamese",
+                    "translated_english",
+                    "grammar_explanation",
+                    "sentence_structure",
+                    "native_usage_probability",
+                    "formality_level",
+                    "pronunciation_ipa",
+                    "us_uk_difference",
+                    "common_mistakes",
+                    "natural_alternatives",
+                    "example_sentences"
+                ]
+            }
+        }
+    }
+}
