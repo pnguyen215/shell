@@ -86,7 +86,7 @@ shell::get_os_type() {
 # Notes:
 #   - Requires a terminal with 256-color support.
 #   - Use ANSI color codes for finer control over colors.
-shell::colored_echo() {
+shell::colored_echo1() {
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_COLORED_ECHO"
         return 0
@@ -128,6 +128,153 @@ shell::colored_echo() {
     else
         # No color support detected, print plain text
         echo "${message}"
+    fi
+}
+
+# shell::colored_echo function
+# Prints text to the terminal with customizable colors using `tput` and ANSI escape sequences.
+# Supports special characters and escape sequences commonly used in terminal environments.
+#
+# Usage:
+# shell::colored_echo <message> [color_code] [options]
+#
+# Parameters:
+# - <message>: The text message to display (supports escape sequences).
+# - [color_code]: (Optional) A number from 0 to 255 representing the text color.
+# - 0-15: Standard colors (Black, Red, Green, etc.)
+# - 16-231: Extended 6x6x6 color cube
+# - 232-255: Grayscale shades
+# - [options]: (Optional) Additional flags for formatting control
+#
+# Options:
+# -n: Do not output the trailing newline
+# -e: Enable interpretation of backslash escapes (default behavior)
+# -E: Disable interpretation of backslash escapes
+#
+# Description:
+# The `shell::colored_echo` function prints a message in bold and a specific color, if a valid color code is provided.
+# It uses ANSI escape sequences for 256-color support. If no color code is specified, it defaults to blue (code 4).
+# The function supports common escape sequences like \n, \t, \r, \b, \a, \v, \f, and Unicode sequences.
+#
+# Supported Escape Sequences:
+# \n - newline
+# \t - horizontal tab
+# \r - carriage return
+# \b - backspace
+# \a - alert (bell)
+# \v - vertical tab
+# \f - form feed
+# \\ - literal backslash
+# \" - literal double quote
+# \' - literal single quote
+# \xHH - hexadecimal escape sequence (e.g., \x41 for 'A')
+# \uHHHH - Unicode escape sequence (e.g., \u03B1 for α)
+# \UHHHHHHHH - Unicode escape sequence (32-bit)
+#
+# Example usage:
+# shell::colored_echo "Hello, World!" # Prints in default blue (code 4).
+# shell::colored_echo "Error occurred" 196 # Prints in bright red.
+# shell::colored_echo "Task completed" 46 # Prints in vibrant green.
+# shell::colored_echo "Line 1\nLine 2\tTabbed" 202 # Multi-line with tab
+# shell::colored_echo "Bell sound\a" 226 # With bell character
+# shell::colored_echo "Unicode: \u2713 \u2717" 118 # With Unicode check mark and X
+# shell::colored_echo "Hex: \x48\x65\x6C\x6C\x6F" 93 # "Hello" in hex
+# shell::colored_echo "No newline" 45 -n # Without trailing newline
+# shell::colored_echo "Raw \t text" 120 -E # Disable escape interpretation
+#
+# Notes:
+# - Requires a terminal with 256-color support for full color range.
+# - Use ANSI color codes for finer control over colors.
+# - The function automatically detects terminal capabilities and adjusts output accordingly.
+# - Special characters are interpreted by default (equivalent to echo -e).
+shell::colored_echo() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_COLORED_ECHO"
+        return 0
+    fi
+
+    local message="$1"
+    local color_code="${2:-4}" # Default to blue (ANSI color code 4)
+    local enable_escapes=true
+    local suppress_newline=false
+    local shift_count=2
+
+    # Parse additional options
+    shift 2 2>/dev/null || shift $# # Shift past message and color_code
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+        -n)
+            suppress_newline=true
+            shift
+            ;;
+        -e)
+            enable_escapes=true
+            shift
+            ;;
+        -E)
+            enable_escapes=false
+            shift
+            ;;
+        *)
+            # Unknown option, ignore
+            shift
+            ;;
+        esac
+    done
+
+    # Validate color code range (0 to 255)
+    if [[ ! "$color_code" =~ ^[0-9]+$ ]] || [[ $color_code -lt 0 || $color_code -gt 255 ]]; then
+        echo "ERR: Invalid color code! Please provide a number between 0 and 255."
+        return 1
+    fi
+
+    # Check terminal capabilities
+    local has_color_support=true
+    # Check if terminal supports colors
+    if ! command -v tput &>/dev/null || [[ $(tput colors 2>/dev/null || echo 0) -lt 8 ]]; then
+        has_color_support=false
+    fi
+
+    # Prepare echo options
+    local echo_opts=""
+    if $enable_escapes; then
+        echo_opts="-e"
+    fi
+    if $suppress_newline; then
+        echo_opts="$echo_opts -n"
+    fi
+
+    if $has_color_support; then
+        # Use 256-color support if available
+        if [[ $(tput colors 2>/dev/null || echo 0) -ge 256 ]]; then
+            local color="\033[38;5;${color_code}m" # Foreground 256-color ANSI code
+            local bold="\033[1m"                   # Bold text attribute
+            local reset="\033[0m"                  # Reset all attributes
+            echo $echo_opts "${bold}${color}${message}${reset}"
+        else
+            # Fall back to basic 8 colors for limited terminals
+            # Map 256-color code to basic color (simplified mapping)
+            local basic_color=$((color_code % 8))
+            local bold="\033[1m"
+            local color="\033[3${basic_color}m"
+            local reset="\033[0m"
+            echo $echo_opts "${bold}${color}${message}${reset}"
+        fi
+    else
+        # No color support detected, print plain text
+        if $enable_escapes; then
+            if $suppress_newline; then
+                echo -en "${message}"
+            else
+                echo -e "${message}"
+            fi
+        else
+            if $suppress_newline; then
+                echo -n "${message}"
+            else
+                echo "${message}"
+            fi
+        fi
     fi
 }
 
