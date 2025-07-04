@@ -286,7 +286,7 @@ shell::eval_gemini_en_vi() {
                 # Example sentences in English and Vietnamese
                 shell::colored_echo "[en=$((i + 1))]: $en_sentence" 244
                 # shell::colored_echo "[vi=$((i + 1))]: $vi_sentence" 244
-                shell::colored_echo -e "$vi_sentence" 244
+                shell::colored_echo "$vi_sentence" 244
             fi
         done
         shell::clip_value "$suggested_correction"
