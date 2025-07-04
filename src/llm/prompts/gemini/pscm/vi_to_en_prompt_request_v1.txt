@@ -20,6 +20,7 @@
                 "required": [
                     "original_vietnamese",
                     "translated_english",
+                    "grammar_explanation",
                     "sentence_structure",
                     "native_usage_probability",
                     "formality_level",
@@ -37,6 +38,10 @@
                     "translated_english": {
                         "type": "string",
                         "description": "Grammatically correct, natural English translation. Must use single quotes."
+                    },
+                    "grammar_explanation": {
+                        "type": "string",
+                        "description": "Simple explanation of the translation’s grammar. Must use single quotes."
                     },
                     "sentence_structure": {
                         "type": "string",
@@ -103,6 +108,7 @@
                 "propertyOrdering": [
                     "original_vietnamese",
                     "translated_english",
+                    "grammar_explanation",
                     "sentence_structure",
                     "native_usage_probability",
                     "formality_level",
