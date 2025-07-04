@@ -129,11 +129,11 @@ shell::dump_gemini_conf_json() {
     shell::dump_ini_json "$SHELL_KEY_CONF_AGENT_GEMINI_FILE"
 }
 
-# shell::evaluate_gemini_english_grammar function
+# shell::eval_gemini_en_vi function
 # Sends an English sentence to Gemini for grammar evaluation and interactively displays corrections and examples.
 #
 # Usage:
-# shell::evaluate_gemini_english_grammar [-n] [-d] [-h] <sentence_english>
+# shell::eval_gemini_en_vi [-n] [-d] [-h] <sentence_english>
 #
 # Parameters:
 # - -n : Optional dry-run flag. If provided, the curl command is printed using shell::on_evict instead of executed.
@@ -144,9 +144,9 @@ shell::dump_gemini_conf_json() {
 # This function reads a prompt from ~/.shell-config/agents/gemini/prompts/english_translation_tutor.txt,
 # sends it to the Gemini API using curl, and uses jq and fzf to interactively select and display
 # the suggested correction and example sentences (formatted as "en (vi)").
-shell::evaluate_gemini_english_grammar() {
+shell::eval_gemini_en_vi() {
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_ASK_GEMINI_ENGLISH"
+        echo "$USAGE_SHELL_EVAL_GEMINI_EN_VI"
         return 0
     fi
 
@@ -168,7 +168,7 @@ shell::evaluate_gemini_english_grammar() {
 
     # Check if the required parameters are provided
     if [ -z "$1" ]; then
-        echo "Usage: shell::evaluate_gemini_english_grammar [-n] <sentence english>"
+        echo "Usage: shell::eval_gemini_en_vi [-n] <sentence english>"
         return 1
     fi
 
