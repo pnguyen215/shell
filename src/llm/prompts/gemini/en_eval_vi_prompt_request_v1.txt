@@ -41,11 +41,11 @@
                     },
                     "suggested_correction": {
                         "type": "string",
-                        "description": "Corrected version if needed. Same as input if already correct. Must use single quotes."
+                        "description": "Corrected version if needed. Same as input if already correct. Value must use single quotes."
                     },
                     "vietnamese_translation": {
                         "type": "string",
-                        "description": "Natural Vietnamese equivalent of the phrase. Must use single quotes."
+                        "description": "Natural Vietnamese equivalent of the phrase. Value must use single quotes."
                     },
                     "native_usage_probability": {
                         "type": "number",
@@ -53,12 +53,12 @@
                     },
                     "formality_level": {
                         "type": "string",
-                        "description": "Formality level such as 'casual', 'neutral', or 'formal'. Must use single quotes.",
+                        "description": "Formality level such as 'casual', 'neutral', or 'formal'. Value must use single quotes.",
                         "enum": ["casual", "neutral", "formal"]
                     },
                     "us_uk_difference": {
                         "type": "string",
-                        "description": "How the phrase is used differently in US vs UK English. Must use single quotes."
+                        "description": "How the phrase is used differently in US vs UK English. Value must use single quotes."
                     },
                     "example_sentences": {
                         "type": "array",
@@ -74,11 +74,11 @@
                             "properties": {
                                 "en": {
                                     "type": "string",
-                                    "description": "English example sentence. Must use single quotes."
+                                    "description": "English example sentence. Value must use single quotes."
                                 },
                                 "vi": {
                                     "type": "string",
-                                    "description": "Vietnamese translation of the sentence. Must use single quotes."
+                                    "description": "Vietnamese translation of the sentence. Value must use single quotes."
                                 }
                             }
                         }
@@ -89,7 +89,7 @@
                         "maxItems": 10,
                         "items": {
                             "type": "string",
-                            "description": "Alternative phrase. Must use single quotes."
+                            "description": "Alternative phrase. Value must use single quotes."
                         },
                         "description": "List of 7 to 10 natural phrases native speakers might use instead. Each phrase must use single quotes."
                     }

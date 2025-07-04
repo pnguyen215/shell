@@ -31,15 +31,15 @@
                 "properties": {
                     "original_vietnamese": {
                         "type": "string",
-                        "description": "The original Vietnamese sentence. Must use single quotes."
+                        "description": "The original Vietnamese sentence. Value must use single quotes."
                     },
                     "translated_english": {
                         "type": "string",
-                        "description": "Grammatically correct, natural English translation. Must use single quotes."
+                        "description": "Grammatically correct, natural English translation. Value must use single quotes."
                     },
                     "sentence_structure": {
                         "type": "string",
-                        "description": "Brief breakdown of sentence structure (e.g., Subject + Verb + Object). Must use single quotes."
+                        "description": "Brief breakdown of sentence structure (e.g., Subject + Verb + Object). Value must use single quotes."
                     },
                     "native_usage_probability": {
                         "type": "number",
@@ -56,17 +56,17 @@
                     },
                     "pronunciation_ipa": {
                         "type": "string",
-                        "description": "IPA transcription for the translated English sentence. Must use single quotes."
+                        "description": "IPA transcription for the translated English sentence. Value must use single quotes."
                     },
                     "us_uk_difference": {
                         "type": "string",
-                        "description": "Any differences in usage between US and UK English. Must use single quotes."
+                        "description": "Any differences in usage between US and UK English. Value must use single quotes."
                     },
                     "natural_alternatives": {
                         "type": "array",
                         "minItems": 7,
                         "maxItems": 10,
-                        "description": "Other ways native speakers might express the same idea. Must use single quotes.",
+                        "description": "Other ways native speakers might express the same idea. Value must use single quotes.",
                         "items": {
                             "type": "string"
                         }
@@ -75,7 +75,7 @@
                         "type": "array",
                         "minItems": 5,
                         "maxItems": 10,
-                        "description": "Useful example sentences with English and Vietnamese translations. Must use single quotes.",
+                        "description": "Useful example sentences with English and Vietnamese translations. Value must use single quotes.",
                         "items": {
                             "type": "object",
                             "required": [
@@ -85,11 +85,11 @@
                             "properties": {
                                 "en": {
                                     "type": "string",
-                                    "description": "Example sentence in English. Must use single quotes."
+                                    "description": "Example sentence in English. Value must use single quotes."
                                 },
                                 "vi": {
                                     "type": "string",
-                                    "description": "Vietnamese translation of the example sentence. Must use single quotes."
+                                    "description": "Vietnamese translation of the example sentence. Value must use single quotes."
                                 }
                             }
                         }
