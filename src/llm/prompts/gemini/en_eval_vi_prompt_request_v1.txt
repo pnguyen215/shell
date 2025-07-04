@@ -25,7 +25,7 @@
             "items": {
                 "type": "object",
                 "required": [
-                    "grammar_explanation",
+                    // "grammar_explanation",
                     "is_grammatically_correct",
                     "suggested_correction",
                     "vietnamese_translation",
@@ -36,10 +36,10 @@
                     "example_sentences"
                 ],
                 "properties": {
-                    "grammar_explanation": {
-                        "type": "string",
-                        "description": "Explanation of grammatical correctness and sentence type. Must use single quotes."
-                    },
+                    // "grammar_explanation": {
+                    //    "type": "string",
+                    //    "description": "Explanation of grammatical correctness and sentence type. Must use single quotes."
+                    // },
                     "is_grammatically_correct": {
                         "type": "boolean",
                         "description": "Whether the original sentence is grammatically correct."
@@ -104,7 +104,7 @@
                     }
                 },
                 "propertyOrdering": [
-                    "grammar_explanation",
+                    // "grammar_explanation",
                     "is_grammatically_correct",
                     "suggested_correction",
                     "vietnamese_translation",
