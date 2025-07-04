@@ -129,170 +129,6 @@ shell::dump_gemini_conf_json() {
     shell::dump_ini_json "$SHELL_KEY_CONF_AGENT_GEMINI_FILE"
 }
 
-# shell::eval_gemini_en_vi function
-# Sends an English sentence to Gemini for grammar evaluation and interactively displays corrections and examples.
-#
-# Usage:
-# shell::eval_gemini_en_vi [-n] [-d] [-h] <sentence_english>
-#
-# Parameters:
-# - -n : Optional dry-run flag. If provided, the curl command is printed using shell::on_evict instead of executed.
-# - -d : Optional debugging flag. If provided, debug information is printed.
-# - -h : Optional help flag. If provided, displays usage information.
-#
-# Description:
-# This function reads a prompt from ~/.shell-config/agents/gemini/prompts/english_translation_tutor.txt,
-# sends it to the Gemini API using curl, and uses jq and fzf to interactively select and display
-# the suggested correction and example sentences (formatted as "en (vi)").
-shell::eval_gemini_en_vi() {
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_EVAL_GEMINI_EN_VI"
-        return 0
-    fi
-
-    # Check if the -n flag is provided for dry-run
-    # If -n is provided, it sets the dry_run variable to true
-    local dry_run="false"
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
-
-    # Check if the -d flag is provided for debugging
-    # If -d is provided, it sets the debugging variable to true
-    local debugging="false"
-    if [ "$1" = "-d" ]; then
-        debugging="true"
-        shift
-    fi
-
-    # Check if the required parameters are provided
-    if [ -z "$1" ]; then
-        echo "Usage: shell::eval_gemini_en_vi [-n] <sentence english>"
-        return 1
-    fi
-
-    # Ensure the sentence_english variable is set
-    local sentence_english="$1"
-    local prompt_file="$LLM_PROMPTS_DIR/gemini/en_eval_vi_prompt_request_v1.txt"
-
-    # Check if the prompt file exists
-    if [ ! -f "$prompt_file" ]; then
-        shell::colored_echo "ERR: Prompt file not found at '$prompt_file'" 196
-        return 1
-    fi
-
-    # Replace the placeholder in the prompt file with the provided sentence
-    # The sed command replaces {ENTER_SENTENCE_ENGLISH} in the prompt file with the actual sentence_english
-    # This allows the prompt to be dynamically generated based on user input
-    local payload=$(sed "s/{ENTER_SENTENCE_ENGLISH}/$sentence_english/" "$prompt_file")
-
-    # Check if the dry-run is enabled
-    # If dry_run is true, it will print the curl command instead of executing it
-    # This is useful for debugging or testing purposes
-    if [ "$dry_run" = "true" ]; then
-        shell::make_gemini_request -n "$payload"
-    else
-        local response
-        if [ "$debugging" = "true" ]; then
-            response=$(shell::make_gemini_request -d "$payload")
-        else
-            response=$(shell::make_gemini_request "$payload")
-        fi
-
-        # Check if the response is empty or if the command failed
-        if [ $? -ne 0 ] || [ -z "$response" ]; then
-            shell::colored_echo "ERR: Failed to get response from Gemini (sgemcheck): $response." 196
-            return 1
-        fi
-
-        #  Check if the debugging flag is set
-        # If debugging is enabled, it prints the response from Gemini
-        # This is useful for debugging purposes to see the raw response from the API
-        if [ "$debugging" = "true" ]; then
-            shell::colored_echo "$response" 244
-            return 0
-        fi
-
-        # Extract the first item from the JSON array (assuming the structure from the example)
-        # Get the first object as compact JSON
-        local item_json=$(echo "$response" | jq -c '.[0]')
-        if [ -z "$item_json" ] || [ "$item_json" = "null" ]; then
-            shell::colored_echo "ERR: No valid data found in Gemini response: $response." 196
-            return 1
-        fi
-
-        local suggested_correction=$(echo "$item_json" | jq -r '.suggested_correction // empty')
-        local vietnamese_translation=$(echo "$item_json" | jq -r '.vietnamese_translation // empty')
-        local native_usage_probability=$(echo "$item_json" | jq -r '.native_usage_probability // empty')
-        local natural_alternatives_count=$(echo "$item_json" | jq '.natural_alternatives | length // 0')
-        local example_sentences_count=$(echo "$item_json" | jq '.example_sentences | length // 0')
-
-        local os_type=$(shell::get_os_type)
-
-        # Format the native usage probability
-        # If native_usage_probability is empty or null, it sets the formatted value to "N/A"
-        # If it is a valid number, it formats it as a percentage
-        # If the percentage is greater than 75, it adds an arrow pointing up (↑)
-        # If the percentage is less than 75, it adds an arrow pointing down (↓)
-        # Format the native usage probability
-        # If native_usage_probability is empty or null, it sets the formatted value to "N/A"
-        # If it is a valid number, it formats it as a percentage
-        # If the percentage is greater than 75, it adds an arrow pointing up (↑)
-        # If the percentage is less than or equal to 75, it adds an arrow pointing down (↓)
-        local native_usage_probability_formatted
-        if [ -z "$native_usage_probability" ] || [ "$native_usage_probability" = "null" ]; then
-            native_usage_probability_formatted="N/A"
-        else
-            if [ "$os_type" = "macos" ]; then
-                # Convert to percentage (multiply by 100 and round)
-                local percentage=$(echo "$native_usage_probability" | awk '{printf "%.0f", $1 * 100}')
-                # shell::colored_echo "INFO: Native usage probability: $percentage%" 46
-                # Use arithmetic evaluation for comparison (more portable)
-                if [ "$percentage" -gt 75 ] 2>/dev/null; then
-                    native_usage_probability_formatted="↑${percentage}%"
-                elif [ "$percentage" -le 75 ] 2>/dev/null; then
-                    native_usage_probability_formatted="↓${percentage}%"
-                else
-                    native_usage_probability_formatted="N/A"
-                fi
-            elif [ "$os_type" = "linux" ]; then
-                local percentage_float=$(echo "$native_usage_probability * 100" | bc -l 2>/dev/null)
-                local percentage=$(printf "%.0f" "$percentage_float" 2>/dev/null)
-                # shell::colored_echo "INFO: Native usage probability: $percentage%" 46
-                if [[ $percentage =~ ^[0-9]+$ ]] && [ "$percentage" -gt 75 ]; then
-                    native_usage_probability_formatted="↑${percentage}%"
-                elif [[ $percentage =~ ^[0-9]+$ ]] && [ "$percentage" -le 75 ]; then
-                    native_usage_probability_formatted="↓${percentage}%"
-                else
-                    native_usage_probability_formatted="N/A"
-                fi
-            fi
-        fi
-
-        # Display the suggested correction and its details
-        shell::colored_echo "🌍[$native_usage_probability_formatted]$suggested_correction ($vietnamese_translation)" 255
-        for i in $(seq 0 $((natural_alternatives_count - 1))); do
-            local alt=$(echo "$item_json" | jq -r ".natural_alternatives[$i] // empty")
-            if [ -n "$alt" ]; then
-                # Alternatives for suggested correction
-                shell::colored_echo "[alt=$((i + 1))]: $alt" 244
-            fi
-        done
-        for i in $(seq 0 $((example_sentences_count - 1))); do
-            local en_sentence=$(echo "$item_json" | jq -r ".example_sentences[$i].en // empty")
-            local vi_sentence=$(echo "$item_json" | jq -r ".example_sentences[$i].vi // empty")
-            if [ -n "$en_sentence" ]; then
-                # Example sentences in English and Vietnamese
-                shell::colored_echo "[en=$((i + 1))]: $en_sentence" 244
-                # shell::colored_echo "[vi=$((i + 1))]: $vi_sentence" 244
-                shell::colored_echo "\t$vi_sentence" 244
-            fi
-        done
-        shell::clip_value "$suggested_correction"
-    fi
-}
-
 # shell::make_gemini_request function
 # Sends a request to the Gemini API with the provided payload.
 #
@@ -479,4 +315,168 @@ shell::make_gemini_request() {
 
     echo "$parsed_embedded_json"
     return 0
+}
+
+# shell::eval_gemini_en_vi function
+# Sends an English sentence to Gemini for grammar evaluation and interactively displays corrections and examples.
+#
+# Usage:
+# shell::eval_gemini_en_vi [-n] [-d] [-h] <sentence_english>
+#
+# Parameters:
+# - -n : Optional dry-run flag. If provided, the curl command is printed using shell::on_evict instead of executed.
+# - -d : Optional debugging flag. If provided, debug information is printed.
+# - -h : Optional help flag. If provided, displays usage information.
+#
+# Description:
+# This function reads a prompt from ~/.shell-config/agents/gemini/prompts/english_translation_tutor.txt,
+# sends it to the Gemini API using curl, and uses jq and fzf to interactively select and display
+# the suggested correction and example sentences (formatted as "en (vi)").
+shell::eval_gemini_en_vi() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_EVAL_GEMINI_EN_VI"
+        return 0
+    fi
+
+    # Check if the -n flag is provided for dry-run
+    # If -n is provided, it sets the dry_run variable to true
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    # Check if the -d flag is provided for debugging
+    # If -d is provided, it sets the debugging variable to true
+    local debugging="false"
+    if [ "$1" = "-d" ]; then
+        debugging="true"
+        shift
+    fi
+
+    # Check if the required parameters are provided
+    if [ -z "$1" ]; then
+        echo "Usage: shell::eval_gemini_en_vi [-n] <sentence english>"
+        return 1
+    fi
+
+    # Ensure the sentence_english variable is set
+    local sentence_english="$1"
+    local prompt_file="$LLM_PROMPTS_DIR/gemini/en_eval_vi_prompt_request_v1.txt"
+
+    # Check if the prompt file exists
+    if [ ! -f "$prompt_file" ]; then
+        shell::colored_echo "ERR: Prompt file not found at '$prompt_file'" 196
+        return 1
+    fi
+
+    # Replace the placeholder in the prompt file with the provided sentence
+    # The sed command replaces {ENTER_SENTENCE_ENGLISH} in the prompt file with the actual sentence_english
+    # This allows the prompt to be dynamically generated based on user input
+    local payload=$(sed "s/{ENTER_SENTENCE_ENGLISH}/$sentence_english/" "$prompt_file")
+
+    # Check if the dry-run is enabled
+    # If dry_run is true, it will print the curl command instead of executing it
+    # This is useful for debugging or testing purposes
+    if [ "$dry_run" = "true" ]; then
+        shell::make_gemini_request -n "$payload"
+    else
+        local response
+        if [ "$debugging" = "true" ]; then
+            response=$(shell::make_gemini_request -d "$payload")
+        else
+            response=$(shell::make_gemini_request "$payload")
+        fi
+
+        # Check if the response is empty or if the command failed
+        if [ $? -ne 0 ] || [ -z "$response" ]; then
+            shell::colored_echo "ERR: Failed to get response from Gemini (sgemcheck): $response." 196
+            return 1
+        fi
+
+        #  Check if the debugging flag is set
+        # If debugging is enabled, it prints the response from Gemini
+        # This is useful for debugging purposes to see the raw response from the API
+        if [ "$debugging" = "true" ]; then
+            shell::colored_echo "$response" 244
+            return 0
+        fi
+
+        # Extract the first item from the JSON array (assuming the structure from the example)
+        # Get the first object as compact JSON
+        local item_json=$(echo "$response" | jq -c '.[0]')
+        if [ -z "$item_json" ] || [ "$item_json" = "null" ]; then
+            shell::colored_echo "ERR: No valid data found in Gemini response: $response." 196
+            return 1
+        fi
+
+        local suggested_correction=$(echo "$item_json" | jq -r '.suggested_correction // empty')
+        local vietnamese_translation=$(echo "$item_json" | jq -r '.vietnamese_translation // empty')
+        local native_usage_probability=$(echo "$item_json" | jq -r '.native_usage_probability // empty')
+        local natural_alternatives_count=$(echo "$item_json" | jq '.natural_alternatives | length // 0')
+        local example_sentences_count=$(echo "$item_json" | jq '.example_sentences | length // 0')
+
+        local os_type=$(shell::get_os_type)
+
+        # Format the native usage probability
+        # If native_usage_probability is empty or null, it sets the formatted value to "N/A"
+        # If it is a valid number, it formats it as a percentage
+        # If the percentage is greater than 75, it adds an arrow pointing up (↑)
+        # If the percentage is less than 75, it adds an arrow pointing down (↓)
+        # Format the native usage probability
+        # If native_usage_probability is empty or null, it sets the formatted value to "N/A"
+        # If it is a valid number, it formats it as a percentage
+        # If the percentage is greater than 75, it adds an arrow pointing up (↑)
+        # If the percentage is less than or equal to 75, it adds an arrow pointing down (↓)
+        local native_usage_probability_formatted
+        if [ -z "$native_usage_probability" ] || [ "$native_usage_probability" = "null" ]; then
+            native_usage_probability_formatted="N/A"
+        else
+            if [ "$os_type" = "macos" ]; then
+                # Convert to percentage (multiply by 100 and round)
+                local percentage=$(echo "$native_usage_probability" | awk '{printf "%.0f", $1 * 100}')
+                # shell::colored_echo "INFO: Native usage probability: $percentage%" 46
+                # Use arithmetic evaluation for comparison (more portable)
+                if [ "$percentage" -gt 75 ] 2>/dev/null; then
+                    native_usage_probability_formatted="↑${percentage}%"
+                elif [ "$percentage" -le 75 ] 2>/dev/null; then
+                    native_usage_probability_formatted="↓${percentage}%"
+                else
+                    native_usage_probability_formatted="N/A"
+                fi
+            elif [ "$os_type" = "linux" ]; then
+                local percentage_float=$(echo "$native_usage_probability * 100" | bc -l 2>/dev/null)
+                local percentage=$(printf "%.0f" "$percentage_float" 2>/dev/null)
+                # shell::colored_echo "INFO: Native usage probability: $percentage%" 46
+                if [[ $percentage =~ ^[0-9]+$ ]] && [ "$percentage" -gt 75 ]; then
+                    native_usage_probability_formatted="↑${percentage}%"
+                elif [[ $percentage =~ ^[0-9]+$ ]] && [ "$percentage" -le 75 ]; then
+                    native_usage_probability_formatted="↓${percentage}%"
+                else
+                    native_usage_probability_formatted="N/A"
+                fi
+            fi
+        fi
+
+        # Display the suggested correction and its details
+        shell::colored_echo "🌍[$native_usage_probability_formatted]$suggested_correction ($vietnamese_translation)" 255
+        for i in $(seq 0 $((natural_alternatives_count - 1))); do
+            local alt=$(echo "$item_json" | jq -r ".natural_alternatives[$i] // empty")
+            if [ -n "$alt" ]; then
+                # Alternatives for suggested correction
+                shell::colored_echo "[alt=$((i + 1))]: $alt" 244
+            fi
+        done
+        for i in $(seq 0 $((example_sentences_count - 1))); do
+            local en_sentence=$(echo "$item_json" | jq -r ".example_sentences[$i].en // empty")
+            local vi_sentence=$(echo "$item_json" | jq -r ".example_sentences[$i].vi // empty")
+            if [ -n "$en_sentence" ]; then
+                # Example sentences in English and Vietnamese
+                shell::colored_echo "[en=$((i + 1))]: $en_sentence" 244
+                # shell::colored_echo "[vi=$((i + 1))]: $vi_sentence" 244
+                shell::colored_echo "\t$vi_sentence" 244
+            fi
+        done
+        shell::clip_value "$suggested_correction"
+    fi
 }
