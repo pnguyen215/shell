@@ -1333,7 +1333,7 @@ Options:
 Description:
 The (shell::colored_echo) function prints a message in bold and a specific color, if a valid color code is provided.
 It uses ANSI escape sequences for 256-color support. If no color code is specified, it defaults to blue (code 4).
-The function supports common escape sequences like \n, \t, \r, \b, \a, \v, \f, and Unicode sequences.
+The function supports common escape sequences like "\n", \t, \r, \b, \a, \v, \f, and Unicode sequences.
 
 Supported Escape Sequences:
 newline
