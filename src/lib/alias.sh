@@ -18,6 +18,8 @@ alias srd-n="shell::fzf_rename_dir_base_bookmark -n" # rename dir base bookmark 
 alias sgemcheck='shell::eval_gemini_en_vi'           # check grammar english by Gemini
 alias sgrammarai='shell::eval_gemini_en_vi'          # check grammar english by Gemini
 alias seg='shell::eval_gemini_en_vi'                 # check grammar english by Gemini
+alias sgemviconv='shell::eval_gemini_vi_en'          # convert vietnamese to english by Gemini
+alias segvi='shell::eval_gemini_vi_en'               # convert vietnamese to english by Gemini
 
 # Kernel alias
 alias c="clear"
