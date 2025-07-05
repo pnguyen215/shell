@@ -472,8 +472,7 @@ shell::eval_gemini_en_vi() {
             local vi_sentence=$(echo "$item_json" | jq -r ".example_sentences[$i].vi // empty")
             if [ -n "$en_sentence" ]; then
                 shell::colored_echo "[seg=$((i + 1))]: $en_sentence" 244
-                shell::colored_echo "\t$vi_sentence" 244
-                # shell::colored_echo "[vi=$((i + 1))]: $vi_sentence" 244
+                shell::colored_echo "[svi=$((i + 1))]: $vi_sentence" 244
             fi
         done
         shell::clip_value "$suggested_correction"
