@@ -64,8 +64,8 @@
                     },
                     "natural_alternatives": {
                         "type": "array",
-                        "minItems": 7,
-                        "maxItems": 10,
+                        "minItems": 5,
+                        "maxItems": 7,
                         "description": "Other ways native speakers might express the same idea. Value must use single quotes.",
                         "items": {
                             "type": "string"
@@ -74,7 +74,7 @@
                     "example_sentences": {
                         "type": "array",
                         "minItems": 5,
-                        "maxItems": 10,
+                        "maxItems": 7,
                         "description": "Useful example sentences with English and Vietnamese translations. Value must use single quotes.",
                         "items": {
                             "type": "object",
