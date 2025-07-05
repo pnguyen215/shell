@@ -459,7 +459,7 @@ shell::eval_gemini_en_vi() {
         fi
 
         # Display the suggested correction and its details
-        shell::colored_echo "🌍[$native_usage_probability_formatted]$suggested_correction ($vietnamese_translation)" 255
+        shell::colored_echo "[$native_usage_probability_formatted] $suggested_correction ($vietnamese_translation)" 255
         for i in $(seq 0 $((natural_alternatives_count - 1))); do
             local alt=$(echo "$item_json" | jq -r ".natural_alternatives[$i] // empty")
             if [ -n "$alt" ]; then
