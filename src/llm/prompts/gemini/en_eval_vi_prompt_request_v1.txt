@@ -63,7 +63,7 @@
                     "example_sentences": {
                         "type": "array",
                         "minItems": 5,
-                        "maxItems": 10,
+                        "maxItems": 7,
                         "description": "Example sentences with both English and Vietnamese translation. All values must use single quotes.",
                         "items": {
                             "type": "object",
@@ -85,8 +85,8 @@
                     },
                     "natural_alternatives": {
                         "type": "array",
-                        "minItems": 7,
-                        "maxItems": 10,
+                        "minItems": 5,
+                        "maxItems": 7,
                         "items": {
                             "type": "string",
                             "description": "Alternative phrase. Value must use single quotes."
