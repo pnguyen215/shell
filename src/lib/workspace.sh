@@ -457,7 +457,7 @@ shell::fzf_add_workspace_ssh_conf() {
 
     # List all possible SSH config files and check which ones are missing
     # We define an array of all possible SSH config files
-    local all_files=("server.conf" "db.conf" "redis.conf" "rmq.conf" "ast.conf" "kafka.conf" "zookeeper.conf" "nginx.conf" "web.conf" "app.conf" "api.conf" "cache.conf" "search.conf")
+    local all_files=("server.conf" "db.conf" "redis.conf" "rmq.conf" "ast.conf" "kafka.conf" "zookeeper.conf" "nginx.conf" "web.conf" "app.conf" "api.conf" "cache.conf" "search.conf" "mysql.conf")
     local missing_files=()
     for f in "${all_files[@]}"; do
         [ ! -f "$ssh_dir/$f" ] && missing_files+=("$f")
