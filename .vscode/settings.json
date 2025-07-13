@@ -39,6 +39,7 @@
     "sgemviconv",
     "sgrammarai",
     "shell::opent",
+    "snapcraft",
     "softprops",
     "sprintf",
     "srand",

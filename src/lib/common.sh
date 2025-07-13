@@ -445,7 +445,6 @@ shell::run_cmd_outlet() {
 #     echo "Git is not installed"
 #   fi
 shell::is_command_available() {
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_IS_COMMAND_AVAILABLE"
         return 0
@@ -467,13 +466,16 @@ shell::is_command_available() {
 # Example usage:
 #   shell::install_package git
 shell::install_package() {
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_INSTALL_PACKAGE"
         return 0
     fi
 
     local package="$1"
+    if [ -z "$package" ]; then
+        shell::colored_echo "ERR: No package name provided." 196
+        return 1
+    fi
 
     local os_type
     os_type=$(shell::get_os_type)
@@ -485,6 +487,18 @@ shell::install_package() {
             return 0
         fi
 
+        # Check for snapcraft and try to install via snap first
+        if shell::is_command_available snap; then
+            shell::colored_echo "Attempting to install $package via snap..." 33
+            if shell::run_cmd_eval "sudo snap install $package" 2>/dev/null; then
+                shell::colored_echo "[v] Successfully installed $package via snap." 46
+                return 0
+            else
+                shell::colored_echo "WARN: Snap installation failed or package not available in snap store. Trying traditional package managers..." 33
+            fi
+        fi
+
+        # Fallback to traditional package managers
         if shell::is_command_available apt-get; then
             shell::run_cmd_eval "sudo apt-get update && sudo apt-get install -y $package"
         elif shell::is_command_available yum; then
@@ -634,14 +648,25 @@ shell::list_packages_installed() {
 # Returns:
 #   0 if the package is installed, 1 otherwise.
 shell::is_package_installed_linux() {
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_IS_PACKAGE_INSTALLED_LINUX"
         return 0
     fi
 
     local package="$1"
+    if [ -z "$package" ]; then
+        shell::colored_echo "ERR: No package name provided." 196
+        return 1
+    fi
 
+    # Check if package is installed via snap
+    if shell::is_command_available snap; then
+        if snap list "$package" >/dev/null 2>&1; then
+            return 0
+        fi
+    fi
+
+    # Check traditional package managers
     if shell::is_command_available apt-get; then
         # Debian-based: Check using dpkg.
         dpkg -s "$package" >/dev/null 2>&1
