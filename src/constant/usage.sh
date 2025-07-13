@@ -4454,3 +4454,87 @@ This function reads the Gemini configuration file, constructs a request to the G
 and sends the provided payload. It handles errors, sanitizes the response, and returns the parsed JSON.
 It also supports debugging and dry-run modes.
 "
+
+USAGE_SHELL_SHOW_GEMINI_HELP="
+shell::show_gemini_help function
+Displays help information for Gemini streaming functionality.
+
+Usage:
+  shell::show_gemini_help [-h]
+
+Parameters:
+  - -h : Optional help flag. If provided, displays usage information.
+
+Description:
+  This function displays comprehensive help information for Gemini streaming functionality,
+  including available commands, configuration options, and usage examples.
+  It provides users with guidance on how to use the streaming features.
+
+Example:
+  shell::show_gemini_help
+"
+
+USAGE_SHELL_LIST_GEMINI_MODELS="
+shell::list_gemini_models function
+Lists available Gemini models for streaming and non-streaming requests.
+
+Usage:
+  shell::list_gemini_models [-n] [-h]
+
+Parameters:
+  - -n : Optional dry-run flag. If provided, the API request is printed using shell::on_evict instead of executed.
+  - -h : Optional help flag. If provided, displays usage information.
+
+Description:
+  This function retrieves and displays a list of available Gemini models by making an API request
+  to the Gemini service. It shows model names, descriptions, and capabilities.
+  In dry-run mode, it shows what API call would be made without actually executing it.
+
+Example:
+  shell::list_gemini_models
+  shell::list_gemini_models -n
+"
+
+USAGE_SHELL_GET_GEMINI_MIME_TYPE="
+shell::get_gemini_mime_type function
+Determines the MIME type of a file for Gemini API requests.
+
+Usage:
+  shell::get_gemini_mime_type [-n] [-h] <file_path>
+
+Parameters:
+  - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - -h : Optional help flag. If provided, displays usage information.
+  - <file_path> : Required. The path to the file to analyze.
+
+Description:
+  This function determines the MIME type of a file using the file command.
+  It returns the MIME type in a format suitable for Gemini API requests.
+  Supports common file types like images, text, audio, and video.
+
+Example:
+  shell::get_gemini_mime_type \"image.jpg\"
+  shell::get_gemini_mime_type -n \"document.pdf\"
+"
+
+USAGE_SHELL_ENCODE_GEMINI_FILE="
+shell::encode_gemini_file function
+Encodes a file to Base64 format for inclusion in Gemini API requests.
+
+Usage:
+  shell::encode_gemini_file [-n] [-h] <file_path>
+
+Parameters:
+  - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - -h : Optional help flag. If provided, displays usage information.
+  - <file_path> : Required. The path to the file to encode.
+
+Description:
+  This function encodes a file to Base64 format suitable for Gemini API requests.
+  It validates the file exists and is readable before encoding.
+  The output is the Base64-encoded content without line breaks.
+
+Example:
+  shell::encode_gemini_file \"image.jpg\"
+  shell::encode_gemini_file -n \"document.pdf\"
+"
