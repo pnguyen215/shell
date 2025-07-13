@@ -489,7 +489,6 @@ shell::install_package() {
 
         # Check for snapcraft and try to install via snap first
         if shell::is_command_available snap; then
-            shell::colored_echo "Attempting to install $package via snap..." 33
             if shell::run_cmd_eval "sudo snap install $package" 2>/dev/null; then
                 shell::colored_echo "[v] Successfully installed $package via snap." 46
                 return 0
