@@ -27,7 +27,6 @@
 #     ;;
 # esac
 shell::get_os_type() {
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_GET_OS_TYPE"
         return 0
