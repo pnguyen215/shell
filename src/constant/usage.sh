@@ -4679,3 +4679,79 @@ Example:
   shell::load_gemini_conversation -n
   shell::load_gemini_conversation \"/path/to/conversation.json\" \"json\"
 "
+
+USAGE_SHELL_BUILD_GEMINI_REQUEST="
+shell::build_gemini_request function
+Builds a JSON request payload for the Gemini API.
+
+Usage:
+  shell::build_gemini_request [-n] [-h] <message> [files...] [config_file]
+
+Parameters:
+  - -n : Optional dry-run flag. If provided, the JSON payload is printed using shell::on_evict instead of returned.
+  - -h : Optional help flag. If provided, displays usage information.
+  - <message> : Required. The user message to send to Gemini.
+  - [files...] : Optional. Paths to files to include in the request (images, documents, etc.).
+  - [config_file] : Optional. Path to configuration file. Defaults to SHELL_KEY_CONF_AGENT_GEMINI_FILE.
+
+Description:
+  This function builds a properly formatted JSON request payload for the Gemini API.
+  It reads configuration settings for model parameters, encodes any attached files,
+  and constructs the request according to Gemini API specifications.
+  Supports text messages and file attachments.
+
+Example:
+  shell::build_gemini_request \"Hello, how are you?\"
+  shell::build_gemini_request -n \"Describe this image\" \"/path/to/image.jpg\"
+"
+
+USAGE_SHELL_REQUEST_GEMINI_RESPONSE="
+shell::request_gemini_response function
+Makes a non-streaming request to the Gemini API and returns the response.
+
+Usage:
+  shell::request_gemini_response [-n] [-d] [-h] <message> [files...] [config_file]
+
+Parameters:
+  - -n : Optional dry-run flag. If provided, the curl command is printed using shell::on_evict instead of executed.
+  - -d : Optional debugging flag. If provided, debug information is printed.
+  - -h : Optional help flag. If provided, displays usage information.
+  - <message> : Required. The user message to send to Gemini.
+  - [files...] : Optional. Paths to files to include in the request.
+  - [config_file] : Optional. Path to configuration file. Defaults to SHELL_KEY_CONF_AGENT_GEMINI_FILE.
+
+Description:
+  This function makes a complete non-streaming request to the Gemini API.
+  It builds the request payload, sends it via HTTP POST, handles the response,
+  and extracts the generated text. Supports file attachments and conversation context.
+
+Example:
+  shell::request_gemini_response \"What is machine learning?\"
+  shell::request_gemini_response -n \"Describe this image\" \"/path/to/image.jpg\"
+"
+
+USAGE_SHELL_STREAM_GEMINI_RESPONSE="
+shell::stream_gemini_response function
+Makes a streaming request to the Gemini API and displays the response in real-time.
+
+Usage:
+  shell::stream_gemini_response [-n] [-d] [-h] <message> [files...] [config_file]
+
+Parameters:
+  - -n : Optional dry-run flag. If provided, the curl command is printed using shell::on_evict instead of executed.
+  - -d : Optional debugging flag. If provided, debug information is printed.
+  - -h : Optional help flag. If provided, displays usage information.
+  - <message> : Required. The user message to send to Gemini.
+  - [files...] : Optional. Paths to files to include in the request.
+  - [config_file] : Optional. Path to configuration file. Defaults to SHELL_KEY_CONF_AGENT_GEMINI_FILE.
+
+Description:
+  This function makes a streaming request to the Gemini API and displays the response
+  in real-time as it's generated. It handles the streaming protocol, buffers partial
+  responses, and provides a live streaming experience. Optionally saves the conversation
+  to history and can format output with glow.
+
+Example:
+  shell::stream_gemini_response \"Tell me a story\"
+  shell::stream_gemini_response -n \"Analyze this code\" \"/path/to/code.py\"
+"

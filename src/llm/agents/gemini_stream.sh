@@ -848,3 +848,535 @@ shell::load_gemini_conversation() {
 
     return 0
 }
+
+# shell::build_gemini_request function
+# Builds a JSON request payload for the Gemini API.
+#
+# Usage:
+#   shell::build_gemini_request [-n] [-h] <message> [files...] [config_file]
+#
+# Parameters:
+#   - -n : Optional dry-run flag. If provided, the JSON payload is printed using shell::on_evict instead of returned.
+#   - -h : Optional help flag. If provided, displays usage information.
+#   - <message> : Required. The user message to send to Gemini.
+#   - [files...] : Optional. Paths to files to include in the request (images, documents, etc.).
+#   - [config_file] : Optional. Path to configuration file. Defaults to SHELL_KEY_CONF_AGENT_GEMINI_FILE.
+#
+# Description:
+#   This function builds a properly formatted JSON request payload for the Gemini API.
+#   It reads configuration settings for model parameters, encodes any attached files,
+#   and constructs the request according to Gemini API specifications.
+#   Supports text messages and file attachments.
+#
+# Example:
+#   shell::build_gemini_request "Hello, how are you?"
+#   shell::build_gemini_request -n "Describe this image" "/path/to/image.jpg"
+shell::build_gemini_request() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_BUILD_GEMINI_REQUEST"
+        return 0
+    fi
+
+    # Check if the -n flag is provided for dry-run
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    # Check required parameters
+    if [ $# -lt 1 ]; then
+        shell::colored_echo "ERR: Message is required" 196
+        echo "Usage: shell::build_gemini_request [-n] <message> [files...] [config_file]"
+        return 1
+    fi
+
+    local message="$1"
+    shift
+
+    # Separate files from config_file (last argument if it's a config file)
+    local files=()
+    local config_file=""
+    
+    # Process remaining arguments
+    while [ $# -gt 0 ]; do
+        local arg="$1"
+        # If it's the last argument and looks like a config file, treat it as such
+        if [ $# -eq 1 ] && [[ "$arg" == *.conf ]]; then
+            config_file="$arg"
+        else
+            files+=("$arg")
+        fi
+        shift
+    done
+
+    # Default config file if not specified
+    config_file="${config_file:-$SHELL_KEY_CONF_AGENT_GEMINI_FILE}"
+
+    # Check if configuration file exists
+    if [ ! -f "$config_file" ]; then
+        shell::colored_echo "ERR: Gemini config file not found at '$config_file'" 196
+        return 1
+    fi
+
+    # Read configuration
+    local model=$(shell::read_ini "$config_file" "gemini" "MODEL" 2>/dev/null)
+    local max_tokens=$(shell::read_ini "$config_file" "gemini" "MAX_TOKENS" 2>/dev/null)
+    local temperature=$(shell::read_ini "$config_file" "gemini" "TEMPERATURE" 2>/dev/null)
+    local top_p=$(shell::read_ini "$config_file" "gemini" "TOP_P" 2>/dev/null)
+    local top_k=$(shell::read_ini "$config_file" "gemini" "TOP_K" 2>/dev/null)
+
+    # Set defaults if not found in config
+    model="${model:-gemini-2.0-flash}"
+    max_tokens="${max_tokens:-4096}"
+    temperature="${temperature:-0.7}"
+    top_p="${top_p:-0.9}"
+    top_k="${top_k:-40}"
+
+    # Build content parts
+    local content_parts="[]"
+    
+    # Add text part
+    local text_part
+    text_part=$(jq -n --arg text "$message" '{text: $text}')
+    content_parts=$(echo "$content_parts" | jq --argjson part "$text_part" '. + [$part]')
+
+    # Process file attachments
+    for file in "${files[@]}"; do
+        if [ ! -f "$file" ]; then
+            shell::colored_echo "WARN: File not found, skipping: $file" 11
+            continue
+        fi
+
+        # Get MIME type
+        local mime_type
+        if [ "$dry_run" = "true" ]; then
+            mime_type="application/octet-stream"  # Placeholder for dry-run
+        else
+            mime_type=$(shell::get_gemini_mime_type "$file")
+            if [ $? -ne 0 ]; then
+                shell::colored_echo "WARN: Could not determine MIME type for $file, skipping" 11
+                continue
+            fi
+        fi
+
+        # Encode file
+        local encoded_data
+        if [ "$dry_run" = "true" ]; then
+            encoded_data="<base64-encoded-content>"  # Placeholder for dry-run
+        else
+            encoded_data=$(shell::encode_gemini_file "$file")
+            if [ $? -ne 0 ]; then
+                shell::colored_echo "WARN: Could not encode $file, skipping" 11
+                continue
+            fi
+        fi
+
+        # Create inline data part
+        local file_part
+        file_part=$(jq -n \
+            --arg mime "$mime_type" \
+            --arg data "$encoded_data" \
+            '{
+                inline_data: {
+                    mime_type: $mime,
+                    data: $data
+                }
+            }')
+        
+        content_parts=$(echo "$content_parts" | jq --argjson part "$file_part" '. + [$part]')
+        
+        if [ "$dry_run" = "false" ]; then
+            shell::colored_echo "INFO: Added file attachment: $file ($mime_type)" 244
+        fi
+    done
+
+    # Build the complete request
+    local request_payload
+    request_payload=$(jq -n \
+        --argjson contents "[{\"role\": \"user\", \"parts\": $content_parts}]" \
+        --arg max_tokens "$max_tokens" \
+        --arg temperature "$temperature" \
+        --arg top_p "$top_p" \
+        --arg top_k "$top_k" \
+        '{
+            contents: $contents,
+            generationConfig: {
+                maxOutputTokens: ($max_tokens | tonumber),
+                temperature: ($temperature | tonumber),
+                topP: ($top_p | tonumber),
+                topK: ($top_k | tonumber)
+            }
+        }')
+
+    # Check if dry-run is enabled
+    if [ "$dry_run" = "true" ]; then
+        shell::colored_echo "Request payload that would be built:" 33
+        shell::on_evict "jq . <<< '$request_payload'"
+        return 0
+    fi
+
+    echo "$request_payload"
+    return 0
+}
+
+# shell::request_gemini_response function
+# Makes a non-streaming request to the Gemini API and returns the response.
+#
+# Usage:
+#   shell::request_gemini_response [-n] [-d] [-h] <message> [files...] [config_file]
+#
+# Parameters:
+#   - -n : Optional dry-run flag. If provided, the curl command is printed using shell::on_evict instead of executed.
+#   - -d : Optional debugging flag. If provided, debug information is printed.
+#   - -h : Optional help flag. If provided, displays usage information.
+#   - <message> : Required. The user message to send to Gemini.
+#   - [files...] : Optional. Paths to files to include in the request.
+#   - [config_file] : Optional. Path to configuration file. Defaults to SHELL_KEY_CONF_AGENT_GEMINI_FILE.
+#
+# Description:
+#   This function makes a complete non-streaming request to the Gemini API.
+#   It builds the request payload, sends it via HTTP POST, handles the response,
+#   and extracts the generated text. Supports file attachments and conversation context.
+#
+# Example:
+#   shell::request_gemini_response "What is machine learning?"
+#   shell::request_gemini_response -n "Describe this image" "/path/to/image.jpg"
+shell::request_gemini_response() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_REQUEST_GEMINI_RESPONSE"
+        return 0
+    fi
+
+    # Check if the -n flag is provided for dry-run
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    # Check if the -d flag is provided for debugging
+    local debugging="false"
+    if [ "$1" = "-d" ]; then
+        debugging="true"
+        shift
+    fi
+
+    # Check required parameters
+    if [ $# -lt 1 ]; then
+        shell::colored_echo "ERR: Message is required" 196
+        echo "Usage: shell::request_gemini_response [-n] [-d] <message> [files...] [config_file]"
+        return 1
+    fi
+
+    local message="$1"
+    shift
+
+    # Separate files from config_file
+    local files=()
+    local config_file=""
+    
+    while [ $# -gt 0 ]; do
+        local arg="$1"
+        if [ $# -eq 1 ] && [[ "$arg" == *.conf ]]; then
+            config_file="$arg"
+        else
+            files+=("$arg")
+        fi
+        shift
+    done
+
+    config_file="${config_file:-$SHELL_KEY_CONF_AGENT_GEMINI_FILE}"
+
+    # Check if configuration file exists
+    if [ ! -f "$config_file" ]; then
+        shell::colored_echo "ERR: Gemini config file not found at '$config_file'" 196
+        return 1
+    fi
+
+    # Read API key from config
+    local api_key
+    api_key=$(shell::read_ini "$config_file" "gemini" "API_KEY" 2>/dev/null)
+    if [ -z "$api_key" ]; then
+        shell::colored_echo "ERR: API_KEY not found in config file" 196
+        return 1
+    fi
+
+    # Read model from config
+    local model
+    model=$(shell::read_ini "$config_file" "gemini" "MODEL" 2>/dev/null)
+    model="${model:-gemini-2.0-flash}"
+
+    # Build request payload
+    local request_payload
+    if [ "$dry_run" = "true" ]; then
+        request_payload=$(shell::build_gemini_request -n "$message" "${files[@]}" "$config_file")
+        local url="https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${api_key}"
+        shell::on_evict "curl -s -X POST \"$url\" -H \"Content-Type: application/json\" -d '$request_payload'"
+        return 0
+    else
+        request_payload=$(shell::build_gemini_request "$message" "${files[@]}" "$config_file")
+        if [ $? -ne 0 ]; then
+            shell::colored_echo "ERR: Failed to build request payload" 196
+            return 1
+        fi
+    fi
+
+    # Make API request
+    local url="https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${api_key}"
+    
+    if [ "$debugging" = "true" ]; then
+        shell::colored_echo "DEBUG: Request URL: $url" 244
+        shell::colored_echo "DEBUG: Request payload: $request_payload" 244
+    fi
+
+    local response
+    response=$(curl -s -X POST "$url" \
+        -H "Content-Type: application/json" \
+        -d "$request_payload")
+
+    if [ $? -ne 0 ]; then
+        shell::colored_echo "ERR: Failed to connect to Gemini API" 196
+        return 1
+    fi
+
+    if [ -z "$response" ]; then
+        shell::colored_echo "ERR: No response from Gemini API" 196
+        return 1
+    fi
+
+    # Check for API errors
+    if echo "$response" | jq -e '.error' >/dev/null 2>&1; then
+        local error_message
+        error_message=$(echo "$response" | jq -r '.error.message')
+        shell::colored_echo "ERR: Gemini API error: $error_message" 196
+        return 1
+    fi
+
+    if [ "$debugging" = "true" ]; then
+        shell::colored_echo "DEBUG: Raw response: $response" 244
+    fi
+
+    # Extract generated text
+    local generated_text
+    generated_text=$(echo "$response" | jq -r '.candidates[0].content.parts[0].text // empty')
+
+    if [ -z "$generated_text" ]; then
+        shell::colored_echo "ERR: No generated text found in response" 196
+        return 1
+    fi
+
+    echo "$generated_text"
+    return 0
+}
+
+# shell::stream_gemini_response function
+# Makes a streaming request to the Gemini API and displays the response in real-time.
+#
+# Usage:
+#   shell::stream_gemini_response [-n] [-d] [-h] <message> [files...] [config_file]
+#
+# Parameters:
+#   - -n : Optional dry-run flag. If provided, the curl command is printed using shell::on_evict instead of executed.
+#   - -d : Optional debugging flag. If provided, debug information is printed.
+#   - -h : Optional help flag. If provided, displays usage information.
+#   - <message> : Required. The user message to send to Gemini.
+#   - [files...] : Optional. Paths to files to include in the request.
+#   - [config_file] : Optional. Path to configuration file. Defaults to SHELL_KEY_CONF_AGENT_GEMINI_FILE.
+#
+# Description:
+#   This function makes a streaming request to the Gemini API and displays the response
+#   in real-time as it's generated. It handles the streaming protocol, buffers partial
+#   responses, and provides a live streaming experience. Optionally saves the conversation
+#   to history and can format output with glow.
+#
+# Example:
+#   shell::stream_gemini_response "Tell me a story"
+#   shell::stream_gemini_response -n "Analyze this code" "/path/to/code.py"
+shell::stream_gemini_response() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_STREAM_GEMINI_RESPONSE"
+        return 0
+    fi
+
+    # Check if the -n flag is provided for dry-run
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    # Check if the -d flag is provided for debugging
+    local debugging="false"
+    if [ "$1" = "-d" ]; then
+        debugging="true"
+        shift
+    fi
+
+    # Check required parameters
+    if [ $# -lt 1 ]; then
+        shell::colored_echo "ERR: Message is required" 196
+        echo "Usage: shell::stream_gemini_response [-n] [-d] <message> [files...] [config_file]"
+        return 1
+    fi
+
+    local message="$1"
+    shift
+
+    # Separate files from config_file
+    local files=()
+    local config_file=""
+    
+    while [ $# -gt 0 ]; do
+        local arg="$1"
+        if [ $# -eq 1 ] && [[ "$arg" == *.conf ]]; then
+            config_file="$arg"
+        else
+            files+=("$arg")
+        fi
+        shift
+    done
+
+    config_file="${config_file:-$SHELL_KEY_CONF_AGENT_GEMINI_FILE}"
+
+    # Check if configuration file exists
+    if [ ! -f "$config_file" ]; then
+        shell::colored_echo "ERR: Gemini config file not found at '$config_file'" 196
+        return 1
+    fi
+
+    # Read configuration
+    local api_key
+    api_key=$(shell::read_ini "$config_file" "gemini" "API_KEY" 2>/dev/null)
+    if [ -z "$api_key" ]; then
+        shell::colored_echo "ERR: API_KEY not found in config file" 196
+        return 1
+    fi
+
+    local model
+    model=$(shell::read_ini "$config_file" "gemini" "MODEL" 2>/dev/null)
+    model="${model:-gemini-2.0-flash}"
+
+    local stream_enabled
+    stream_enabled=$(shell::read_ini "$config_file" "gemini" "STREAM_ENABLED" 2>/dev/null)
+    stream_enabled="${stream_enabled:-true}"
+
+    # Build request payload
+    local request_payload
+    if [ "$dry_run" = "true" ]; then
+        request_payload=$(shell::build_gemini_request -n "$message" "${files[@]}" "$config_file")
+        local url="https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?key=${api_key}&alt=sse"
+        shell::on_evict "curl -s -N -X POST \"$url\" -H \"Content-Type: application/json\" -d '$request_payload'"
+        return 0
+    else
+        request_payload=$(shell::build_gemini_request "$message" "${files[@]}" "$config_file")
+        if [ $? -ne 0 ]; then
+            shell::colored_echo "ERR: Failed to build request payload" 196
+            return 1
+        fi
+    fi
+
+    # Add conversation to history
+    shell::add_to_gemini_conversation "user" "$message" >/dev/null 2>&1
+
+    # Make streaming API request
+    local url
+    if [ "$stream_enabled" = "true" ]; then
+        url="https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?key=${api_key}&alt=sse"
+    else
+        url="https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${api_key}"
+    fi
+
+    if [ "$debugging" = "true" ]; then
+        shell::colored_echo "DEBUG: Stream URL: $url" 244
+        shell::colored_echo "DEBUG: Request payload: $request_payload" 244
+    fi
+
+    # Display streaming indicator
+    shell::colored_echo "🤖 Gemini is thinking..." 33
+    echo ""
+
+    local full_response=""
+    local temp_file
+    temp_file=$(mktemp)
+
+    # Make the streaming request
+    if [ "$stream_enabled" = "true" ]; then
+        # For streaming, we need to process Server-Sent Events
+        curl -s -N -X POST "$url" \
+            -H "Content-Type: application/json" \
+            -d "$request_payload" | while IFS= read -r line; do
+            
+            # Skip empty lines and event markers
+            if [[ -z "$line" || "$line" == "event:"* ]]; then
+                continue
+            fi
+            
+            # Extract data from SSE format
+            if [[ "$line" == "data: "* ]]; then
+                local json_data="${line#data: }"
+                
+                # Skip [DONE] marker
+                if [ "$json_data" = "[DONE]" ]; then
+                    break
+                fi
+                
+                # Extract text from the streaming response
+                local text_chunk
+                text_chunk=$(echo "$json_data" | jq -r '.candidates[0].content.parts[0].text // empty' 2>/dev/null)
+                
+                if [ -n "$text_chunk" ] && [ "$text_chunk" != "null" ]; then
+                    printf "%s" "$text_chunk"
+                    echo "$text_chunk" >> "$temp_file"
+                fi
+            fi
+        done
+    else
+        # For non-streaming, make a regular request
+        local response
+        response=$(curl -s -X POST "$url" \
+            -H "Content-Type: application/json" \
+            -d "$request_payload")
+        
+        if [ $? -ne 0 ]; then
+            shell::colored_echo "ERR: Failed to connect to Gemini API" 196
+            rm -f "$temp_file"
+            return 1
+        fi
+
+        # Check for API errors
+        if echo "$response" | jq -e '.error' >/dev/null 2>&1; then
+            local error_message
+            error_message=$(echo "$response" | jq -r '.error.message')
+            shell::colored_echo "ERR: Gemini API error: $error_message" 196
+            rm -f "$temp_file"
+            return 1
+        fi
+
+        # Extract and display text
+        local generated_text
+        generated_text=$(echo "$response" | jq -r '.candidates[0].content.parts[0].text // empty')
+        
+        if [ -n "$generated_text" ]; then
+            printf "%s" "$generated_text"
+            echo "$generated_text" > "$temp_file"
+        fi
+    fi
+
+    echo ""
+    echo ""
+
+    # Read the complete response from temp file
+    if [ -f "$temp_file" ]; then
+        full_response=$(cat "$temp_file")
+        rm -f "$temp_file"
+        
+        # Add model response to conversation history
+        if [ -n "$full_response" ]; then
+            shell::add_to_gemini_conversation "model" "$full_response" >/dev/null 2>&1
+            shell::colored_echo "✅ Response added to conversation history" 46
+        fi
+    fi
+
+    return 0
+}
