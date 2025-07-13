@@ -548,6 +548,15 @@ shell::remove_package() {
     os_type=$(shell::get_os_type)
 
     if [ "$os_type" = "linux" ]; then
+        # Check if package is installed via snap and remove it
+        if shell::is_command_available snap; then
+            if snap list "$package" >/dev/null 2>&1; then
+                shell::run_cmd_eval "sudo snap remove $package"
+                return $?
+            fi
+        fi
+
+        # Check if the package is installed via traditional package managers
         if shell::is_command_available apt-get; then
             if shell::is_package_installed_linux "$package"; then
                 shell::run_cmd_eval "sudo apt-get remove -y $package"
