@@ -1382,7 +1382,7 @@ shell::gemini_build_request() {
         if [[ -n "$attachments" ]]; then
             parts='[{"text": '"$escaped_prompt"'}, '"$attachments"']'
         fi
-        jq_build_cmd="jq -n --argjson parts '$parts' --arg temp '$temperature' --arg topK '$top_k' --arg topP '$top_p' --arg maxTokens '$max_tokens' '{contents: [{role: \"user\", parts: \$parts}], generationConfig: {temperature: (\$temp | tonumber), topK: (\$topK | tonumber), topP: (\$topP | tonumber), maxOutputTokens: (\$maxTokens | tonumber)}}'"
+        # jq_build_cmd="jq -n --argjson parts '$parts' --arg temp '$temperature' --arg topK '$top_k' --arg topP '$top_p' --arg maxTokens '$max_tokens' '{contents: [{role: \"user\", parts: \$parts}], generationConfig: {temperature: (\$temp | tonumber), topK: (\$topK | tonumber), topP: (\$topP | tonumber), maxOutputTokens: (\$maxTokens | tonumber)}}'"
     fi
 
     # Add JSON schema if provided
@@ -1586,7 +1586,8 @@ shell::gemini_request() {
         echo "$request_payload" | jq .
     fi
 
-    local curl_cmd="curl -s --location \"https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$api_key\" --header 'Content-Type: application/json' --data '$request_payload'"
+    # local curl_cmd="curl -s --location \"https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$api_key\" --header 'Content-Type: application/json' --data '$request_payload'"
+    local curl_cmd="curl -s --location https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIzaSyCV3Fx-hOK3Ip5WTMO7a-TNydXr0eCfXnE\" --header 'Content-Type: application/json' --data '$request_payload'"
 
     if [ "$dry_run" = "true" ]; then
         shell::on_evict "$curl_cmd"
