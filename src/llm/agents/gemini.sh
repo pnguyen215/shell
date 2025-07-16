@@ -1397,3 +1397,133 @@ shell::gemini_build_request() {
         shell::run_cmd_eval "$jq_build_cmd"
     fi
 }
+
+# shell::gemini_stream_response function
+# Streams response from the Gemini API.
+#
+# Usage:
+#   shell::gemini_stream_response [-n] [-d] [-h] <request_payload>
+#
+# Parameters:
+#   - -n               : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+#   - -d               : Optional debugging flag.
+#   - -h               : Optional. Displays this help message.
+#   - <request_payload>: The JSON request payload.
+#
+# Description:
+#   Sends a streaming request to the Gemini API and processes the real-time response.
+#
+# Example:
+#   shell::gemini_stream_response "$payload"
+shell::gemini_stream_response() {
+    local dry_run="false"
+    local debugging="false"
+
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if [ "$1" = "-d" ]; then
+        debugging="true"
+        shift
+    fi
+
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_GEMINI_STREAM_RESPONSE"
+        return 0
+    fi
+
+    if [ -z "$1" ]; then
+        shell::colored_echo "ERR: Request payload is required" 196
+        return 1
+    fi
+
+    local request_payload="$1"
+    local api_key="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_FILE" "gemini" "API_KEY")"
+    local model="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_FILE" "gemini" "MODEL")"
+    # local workspace_dir="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_STREAM_FILE" "gemini" "WORKSPACE_DIR")"
+    local workspace_dir="$HOME/.shell-config/agents/gemini/workspace"
+    local response_file="$workspace_dir/response.md"
+
+    if [ -z "$api_key" ] || [ "$api_key" = "your-api-key-here" ]; then
+        shell::colored_echo "ERR: Valid API key is required" 196
+        return 1
+    fi
+
+    if [ "$debugging" = "true" ]; then
+        shell::colored_echo "DEBUG: Request payload:" 244
+        echo "$request_payload" | jq .
+    fi
+
+    local curl_cmd="curl -s -N --location \"https://generativelanguage.googleapis.com/v1beta/models/$model:streamGenerateContent?key=$api_key\" --header 'Content-Type: application/json' --data '$request_payload'"
+
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "$curl_cmd"
+        shell::on_evict "# Process streaming response and save to $response_file"
+        shell::on_evict "# Add response to conversation history"
+        return 0
+    fi
+
+    shell::colored_echo "INFO: Streaming response from $model..." 46
+
+    # Execute streaming and process response
+    shell::run_cmd_eval "echo -n '' > \"$response_file\""
+
+    local temp_script=$(mktemp)
+    cat >"$temp_script" <<'EOF'
+#!/bin/bash
+response_file="$1"
+debugging="$2"
+full_response=""
+
+while IFS= read -r line; do
+    [[ "$debugging" == "true" ]] && echo "DEBUG: Processing line: $line" >&2
+    [[ -z "$line" ]] && continue
+    
+    json_line="$line"
+    if [[ "$line" =~ ^data:\ (.*)$ ]]; then
+        json_line="${BASH_REMATCH[1]}"
+    fi
+    
+    [[ -z "$json_line" || "$json_line" == "data: " ]] && continue
+    
+    if echo "$json_line" | jq empty 2>/dev/null; then
+        text=$(echo "$json_line" | jq -r '.candidates[0].content.parts[0].text // empty' 2>/dev/null)
+        
+        if [[ -n "$text" && "$text" != "null" && "$text" != "empty" ]]; then
+            printf "%s" "$text"
+            printf "%s" "$text" >> "$response_file"
+            full_response+="$text"
+        fi
+        
+        finish_reason=$(echo "$json_line" | jq -r '.candidates[0].finishReason // empty' 2>/dev/null)
+        if [[ -n "$finish_reason" && "$finish_reason" != "empty" ]]; then
+            [[ "$debugging" == "true" ]] && echo "DEBUG: Finish reason: $finish_reason" >&2
+            break
+        fi
+    else
+        [[ "$debugging" == "true" ]] && echo "WARN: Non-JSON line: $json_line" >&2
+    fi
+done
+echo ""
+EOF
+
+    chmod +x "$temp_script"
+
+    local stream_cmd="$curl_cmd | \"$temp_script\" \"$response_file\" \"$debugging\""
+    shell::run_cmd_eval "$stream_cmd"
+    shell::run_cmd_eval "rm -f \"$temp_script\""
+
+    # Add response to conversation
+    if [[ -f "$response_file" && -s "$response_file" ]]; then
+        local response_content=$(cat "$response_file")
+        shell::colored_echo "INFO: Response saved ($(wc -c <"$response_file") bytes)" 46
+        if [[ -n "$response_content" ]]; then
+            shell::gemini_add_message "model" "$response_content" ""
+        fi
+    else
+        shell::colored_echo "ERR: No response content received" 196
+        return 1
+    fi
+}
