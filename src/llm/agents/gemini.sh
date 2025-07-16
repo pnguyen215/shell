@@ -1989,20 +1989,27 @@ gemini_stream() {
     fi
 
     # Initialize temp file with header
-    cat >"$temp_file" <<EOF
+    cat >"$temp_file" <<'EOF'
 # Gemini Response
 
-**Question:** $question
+**Question:** QUESTION_PLACEHOLDER
 
 **Response:**
 
 EOF
 
+    # Replace placeholder with actual question
+    sed -i.bak "s/QUESTION_PLACEHOLDER/$question/" "$temp_file" 2>/dev/null ||
+        sed -i "s/QUESTION_PLACEHOLDER/$question/" "$temp_file" 2>/dev/null
+    rm -f "$temp_file.bak" 2>/dev/null
+
     # Function to update display
     update_display() {
         if [[ -n "$display_pid" ]]; then
             kill "$display_pid" 2>/dev/null
+            wait "$display_pid" 2>/dev/null
         fi
+        clear
         glow "$temp_file" &
         display_pid=$!
     }
@@ -2014,6 +2021,7 @@ EOF
     cleanup() {
         if [[ -n "$display_pid" ]]; then
             kill "$display_pid" 2>/dev/null
+            wait "$display_pid" 2>/dev/null
         fi
         rm -f "$temp_file"
     }
@@ -2022,7 +2030,8 @@ EOF
     trap cleanup EXIT INT TERM
 
     # Prepare JSON payload
-    local json_payload=$(jq -n \
+    local json_payload
+    json_payload=$(jq -n \
         --arg text "$question" \
         '{
             contents: [{
@@ -2037,62 +2046,68 @@ EOF
             }
         }')
 
-    echo "Connecting to Gemini API..."
-    echo "Model: $model"
-    echo "Question: $question"
+    echo "🚀 Connecting to Gemini API..."
+    echo "📱 Model: $model"
+    echo "❓ Question: $question"
     echo ""
-    echo "Streaming response (Press Ctrl+C to stop)..."
+    echo "⏳ Streaming response (Press Ctrl+C to stop)..."
     echo ""
 
-    # Stream the response
-    curl -s -N \
-        -H "Content-Type: application/json" \
-        -H "x-goog-api-key: $api_key" \
-        -d "$json_payload" \
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse" |
-        while IFS= read -r line; do
-            # Skip empty lines and non-data lines
-            if [[ "$line" =~ ^data:\ (.*)$ ]]; then
-                local json_data="${BASH_REMATCH[1]}"
+    # Stream the response with better error handling
+    {
+        curl -s -N --fail \
+            -H "Content-Type: application/json" \
+            -H "x-goog-api-key: $api_key" \
+            -d "$json_payload" \
+            "https://generativelanguage.googleapis.com/v1beta/models/$model:streamGenerateContent?alt=sse"
+    } | while IFS= read -r line; do
+        # Skip empty lines and non-data lines
+        if [[ "$line" =~ ^data:\ (.*)$ ]]; then
+            local json_data="${BASH_REMATCH[1]}"
 
-                # Skip if it's just whitespace or [DONE]
-                if [[ "$json_data" =~ ^\s*$ ]] || [[ "$json_data" == "[DONE]" ]]; then
-                    continue
-                fi
-
-                # Parse the JSON and extract text
-                local text_chunk=$(echo "$json_data" | jq -r '.candidates[]?.content?.parts[]?.text // empty' 2>/dev/null)
-
-                if [[ -n "$text_chunk" && "$text_chunk" != "null" ]]; then
-                    # Append to buffer and file
-                    response_buffer+="$text_chunk"
-
-                    # Update the markdown file
-                    cat >"$temp_file" <<EOF
-# Gemini Response
-
-**Question:** $question
-
-**Response:**
-
-$response_buffer
-EOF
-
-                    # Update display every few chunks for better performance
-                    if [[ $(echo -n "$text_chunk" | wc -c) -gt 0 ]]; then
-                        update_display
-                        sleep 0.1 # Small delay to prevent too frequent updates
-                    fi
-                fi
+            # Skip if it's just whitespace or [DONE]
+            if [[ "$json_data" =~ ^\s*$ ]] || [[ "$json_data" == "[DONE]" ]]; then
+                continue
             fi
-        done
+
+            # Parse the JSON and extract text
+            local text_chunk
+            text_chunk=$(echo "$json_data" | jq -r '.candidates[]?.content?.parts[]?.text // empty' 2>/dev/null)
+
+            if [[ -n "$text_chunk" && "$text_chunk" != "null" ]]; then
+                # Append to buffer
+                response_buffer+="$text_chunk"
+
+                # Update the markdown file with proper escaping
+                {
+                    echo "# Gemini Response"
+                    echo ""
+                    echo "**Question:** $question"
+                    echo ""
+                    echo "**Response:**"
+                    echo ""
+                    echo "$response_buffer"
+                } >"$temp_file"
+
+                # Update display
+                update_display
+                sleep 0.1
+            fi
+        fi
+    done
 
     # Final display update
     update_display
 
     echo ""
-    echo "Response complete. Press any key to exit..."
-    read -n 1 -s
+    echo "✅ Response complete. Press any key to exit..."
+
+    # Fixed read command for cross-shell compatibility
+    if [[ -n "$ZSH_VERSION" ]]; then
+        read -k1
+    else
+        read -n1
+    fi
 
     cleanup
 }
