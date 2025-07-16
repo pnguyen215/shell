@@ -875,3 +875,95 @@ shell::gemini_load_daily_conversation() {
         shell::colored_echo "INFO: Loaded conversation from $date ($message_count messages)" 46
     fi
 }
+
+# shell::gemini_list_conversation_history function
+# Lists available conversation history by date.
+#
+# Usage:
+#   shell::gemini_list_conversation_history [-h] [-l] [days]
+#
+# Parameters:
+#   - -h     : Optional. Displays this help message.
+#   - -l     : Optional. Long format with message counts and timestamps.
+#   - [days] : Optional. Number of recent days to show. Defaults to 7.
+#
+# Description:
+#   Lists available conversation history files with optional details.
+#   Shows dates, message counts, and timestamps when available.
+#
+# Example:
+#   shell::gemini_list_conversation_history
+#   shell::gemini_list_conversation_history -l 30
+shell::gemini_list_conversation_history() {
+    local long_format="false"
+    local days="7"
+
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+        -h)
+            echo "$USAGE_SHELL_GEMINI_LIST_CONVERSATION_HISTORY"
+            return 0
+            ;;
+        -l)
+            long_format="true"
+            shift
+            ;;
+        *)
+            if [[ "$1" =~ ^[0-9]+$ ]]; then
+                days="$1"
+            fi
+            shift
+            ;;
+        esac
+    done
+
+    # local workspace_dir="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_STREAM_FILE" "gemini" "WORKSPACE_DIR")"
+    local workspace_dir="$HOME/.shell-config/agents/gemini/workspace"
+    local history_dir="$workspace_dir/history"
+
+    if [ ! -d "$history_dir" ]; then
+        shell::colored_echo "INFO: No conversation history found" 46
+        return 0
+    fi
+
+    shell::colored_echo "INFO: Conversation History" 46
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+    # Get recent history files
+    local files=$(find "$history_dir" -name "*.json" -type f | sort -r | head -n "$days")
+
+    if [ -z "$files" ]; then
+        shell::colored_echo "INFO: No conversation files found in last $days days" 244
+        return 0
+    fi
+
+    if [ "$long_format" = "true" ]; then
+        printf "%-12s %-8s %-20s %-20s\n" "Date" "Messages" "Created" "Last Modified"
+        echo "────────────────────────────────────────────────────────────────────────────"
+
+        for file in $files; do
+            local basename=$(basename "$file" .json)
+            local message_count=$(jq '.contents | length' "$file" 2>/dev/null || echo "0")
+            local created=$(jq -r '.created_at // "Unknown"' "$file" 2>/dev/null)
+            local modified=$(stat -c "%y" "$file" 2>/dev/null | cut -d' ' -f1,2 | cut -d'.' -f1 || echo "Unknown")
+
+            # Format created timestamp
+            if [ "$created" != "Unknown" ] && [ "$created" != "null" ]; then
+                created=$(echo "$created" | cut -d'T' -f1,2 | tr 'T' ' ' | cut -d'+' -f1)
+            fi
+
+            printf "%-12s %-8s %-20s %-20s\n" "$basename" "$message_count" "$created" "$modified"
+        done
+    else
+        echo "Available dates:"
+        for file in $files; do
+            local basename=$(basename "$file" .json)
+            local message_count=$(jq '.contents | length' "$file" 2>/dev/null || echo "0")
+            printf "  %s (%s messages)\n" "$basename" "$message_count"
+        done
+    fi
+
+    echo ""
+    shell::colored_echo "INFO: Use 'shell::gemini_load_daily_conversation <date>' to load a specific day" 244
+}
