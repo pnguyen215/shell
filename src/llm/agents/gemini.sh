@@ -967,3 +967,92 @@ shell::gemini_list_conversation_history() {
     echo ""
     shell::colored_echo "INFO: Use 'shell::gemini_load_daily_conversation <date>' to load a specific day" 244
 }
+
+# shell::gemini_cleanup_old_history function
+# Cleans up old conversation history based on retention policy.
+#
+# Usage:
+#   shell::gemini_cleanup_old_history [-n] [-h] [retention_days]
+#
+# Parameters:
+#   - -n              : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+#   - -h              : Optional. Displays this help message.
+#   - [retention_days]: Optional. Number of days to retain. Defaults to config value.
+#
+# Description:
+#   Removes conversation history files older than the specified retention period.
+#   Helps manage disk space by cleaning up old conversations.
+#
+# Example:
+#   shell::gemini_cleanup_old_history
+#   shell::gemini_cleanup_old_history -n 60
+shell::gemini_cleanup_old_history() {
+    local dry_run="false"
+
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_GEMINI_CLEANUP_OLD_HISTORY"
+        return 0
+    fi
+
+    # local retention_days="${1:-$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_STREAM_FILE" "gemini" "HISTORY_RETENTION_DAYS")}"
+    local retention_days="30"
+    # local workspace_dir="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_STREAM_FILE" "gemini" "WORKSPACE_DIR")"
+    local workspace_dir="$HOME/.shell-config/agents/gemini/workspace"
+    local history_dir="$workspace_dir/history"
+
+    if [ ! -d "$history_dir" ]; then
+        if [ "$dry_run" = "false" ]; then
+            shell::colored_echo "INFO: No history directory found" 46
+        fi
+        return 0
+    fi
+
+    # Calculate cutoff date
+    local cutoff_date=""
+    if shell::is_command_available date; then
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            cutoff_date=$(date -v-"${retention_days}"d +%Y-%m-%d)
+        else
+            cutoff_date=$(date -d "-${retention_days} days" +%Y-%m-%d)
+        fi
+    else
+        shell::colored_echo "ERR: date command not available" 196
+        return 1
+    fi
+
+    # Find old files
+    local old_files=$(find "$history_dir" -name "*.json" -type f | while read -r file; do
+        local basename=$(basename "$file" .json)
+        if [[ "$basename" < "$cutoff_date" ]]; then
+            echo "$file"
+        fi
+    done)
+
+    if [ -z "$old_files" ]; then
+        if [ "$dry_run" = "false" ]; then
+            shell::colored_echo "INFO: No old conversation files to clean up" 46
+        fi
+        return 0
+    fi
+
+    local file_count=$(echo "$old_files" | wc -l)
+
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "# Would remove $file_count conversation files older than $retention_days days"
+        echo "$old_files" | while read -r file; do
+            shell::on_evict "rm \"$file\""
+        done
+    else
+        shell::colored_echo "INFO: Removing $file_count conversation files older than $retention_days days" 46
+        echo "$old_files" | while read -r file; do
+            shell::run_cmd_eval "rm \"$file\""
+            shell::colored_echo "INFO: Removed $(basename "$file")" 244
+        done
+        shell::colored_echo "INFO: Cleanup completed" 46
+    fi
+}
