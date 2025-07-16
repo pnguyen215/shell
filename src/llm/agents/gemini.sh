@@ -1056,3 +1056,70 @@ shell::gemini_cleanup_old_history() {
         shell::colored_echo "INFO: Cleanup completed" 46
     fi
 }
+
+# shell::gemini_clear_conversation function
+# Clears the current conversation history.
+#
+# Usage:
+#   shell::gemini_clear_conversation [-n] [-h] [--archive] [conversation_file]
+#
+# Parameters:
+#   - -n                  : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+#   - -h                  : Optional. Displays this help message.
+#   - --archive           : Optional. Archive current conversation before clearing.
+#   - [conversation_file] : Optional. Path to conversation file. Defaults to workspace/conversation.json.
+#
+# Description:
+#   Resets the current conversation history to an empty state.
+#   Optionally archives the current conversation before clearing.
+#
+# Example:
+#   shell::gemini_clear_conversation
+#   shell::gemini_clear_conversation --archive
+#   shell::gemini_clear_conversation -n "$HOME/.gemini/conversation.json"
+shell::gemini_clear_conversation() {
+    local dry_run="false"
+    local archive_first="false"
+
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+        -n)
+            dry_run="true"
+            shift
+            ;;
+        -h)
+            echo "$USAGE_SHELL_GEMINI_CLEAR_CONVERSATION"
+            return 0
+            ;;
+        --archive)
+            archive_first="true"
+            shift
+            ;;
+        *)
+            conversation_file="$1"
+            shift
+            ;;
+        esac
+    done
+
+    # local workspace_dir="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_STREAM_FILE" "gemini" "WORKSPACE_DIR")"
+    local workspace_dir="$HOME/.shell-config/agents/gemini/workspace"
+    local conversation_file="${conversation_file:-$workspace_dir/conversation.json}"
+    local today=$(date +%Y-%m-%d)
+
+    if [ "$archive_first" = "true" ]; then
+        if [ "$dry_run" = "true" ]; then
+            shell::gemini_archive_current_conversation -n
+        else
+            shell::gemini_archive_current_conversation
+        fi
+    fi
+
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "echo '{\"contents\": [], \"date\": \"$today\", \"created_at\": \"$(date -Iseconds)\"}' > \"$conversation_file\""
+    else
+        shell::run_cmd_eval "echo '{\"contents\": [], \"date\": \"$today\", \"created_at\": \"$(date -Iseconds)\"}' > \"$conversation_file\""
+        shell::colored_echo "INFO: Conversation history cleared" 46
+    fi
+}
