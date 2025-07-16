@@ -1291,3 +1291,109 @@ shell::gemini_get_mime_type() {
     *) echo "text/plain" ;;
     esac
 }
+
+# shell::gemini_build_request function
+# Builds the API request payload.
+#
+# Usage:
+#   shell::gemini_build_request [-n] [-h] <prompt> [file_path] [temperature] [schema_file] [continue_chat]
+#
+# Parameters:
+#   - -n            : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+#   - -h            : Optional. Displays this help message.
+#   - <prompt>      : The user prompt.
+#   - [file_path]   : Optional. Path to file attachment.
+#   - [temperature] : Optional. Temperature setting (0.0-2.0).
+#   - [schema_file] : Optional. Path to JSON schema file.
+#   - [continue_chat]: Optional. Continue existing conversation (true/false).
+#
+# Description:
+#   Constructs the JSON request payload for the Gemini API.
+#
+# Example:
+#   payload=$(shell::gemini_build_request "Explain quantum computing")
+shell::gemini_build_request() {
+    local dry_run="false"
+
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_GEMINI_BUILD_REQUEST"
+        return 0
+    fi
+
+    if [ -z "$1" ]; then
+        shell::colored_echo "ERR: Prompt is required" 196
+        return 1
+    fi
+
+    local prompt="$1"
+    local file_path="$2"
+    local temperature="${3:-0.7}"
+    local schema_file="$4"
+    local continue_chat="${5:-false}"
+    # local workspace_dir="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_STREAM_FILE" "gemini" "WORKSPACE_DIR")"
+    local workspace_dir="$HOME/.shell-config/agents/gemini/workspace"
+    local conversation_file="$workspace_dir/conversation.json"
+
+    local attachments=""
+    if [[ -n "$file_path" && -f "$file_path" ]]; then
+        if [ "$dry_run" = "false" ]; then
+            shell::colored_echo "INFO: Processing file: $file_path" 46
+        fi
+        local mime_type=$(shell::gemini_get_mime_type "$file_path")
+        local base64_data=""
+
+        if [ "$dry_run" = "true" ]; then
+            shell::on_evict "shell::gemini_encode_file \"$file_path\""
+            base64_data="<encoded_data>"
+        else
+            base64_data=$(shell::gemini_encode_file "$file_path")
+        fi
+
+        attachments='{"inlineData": {"mimeType": "'"$mime_type"'", "data": "'"$base64_data"'"}}'
+    fi
+
+    # Get configuration values
+    # local max_tokens="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_STREAM_FILE" "gemini" "MAX_TOKENS")"
+    local max_tokens="8192"
+    # local top_k="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_STREAM_FILE" "gemini" "TOP_K")"
+    local top_k="40"
+    # local top_p="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_STREAM_FILE" "gemini" "TOP_P")"
+    local top_p="0.95"
+
+    local jq_build_cmd=""
+    if [[ "$continue_chat" == "true" ]]; then
+        # Add to existing conversation
+        if [ "$dry_run" = "true" ]; then
+            shell::on_evict "shell::gemini_add_message -n \"user\" \"$prompt\" \"$attachments\" \"$conversation_file\""
+            jq_build_cmd="jq -n --argjson contents '[]' --arg temp '$temperature' --arg topK '$top_k' --arg topP '$top_p' --arg maxTokens '$max_tokens' '{contents: \$contents, generationConfig: {temperature: (\$temp | tonumber), topK: (\$topK | tonumber), topP: (\$topP | tonumber), maxOutputTokens: (\$maxTokens | tonumber)}}'"
+        else
+            shell::gemini_add_message "user" "$prompt" "$attachments" "$conversation_file"
+            jq_build_cmd="jq --arg temp '$temperature' --arg topK '$top_k' --arg topP '$top_p' --arg maxTokens '$max_tokens' '{contents: .contents, generationConfig: {temperature: (\$temp | tonumber), topK: (\$topK | tonumber), topP: (\$topP | tonumber), maxOutputTokens: (\$maxTokens | tonumber)}}' \"$conversation_file\""
+        fi
+    else
+        # Build new conversation
+        local escaped_prompt=$(echo "$prompt" | jq -R -s '.')
+        local parts='[{"text": '"$escaped_prompt"'}]'
+        if [[ -n "$attachments" ]]; then
+            parts='[{"text": '"$escaped_prompt"'}, '"$attachments"']'
+        fi
+        jq_build_cmd="jq -n --argjson parts '$parts' --arg temp '$temperature' --arg topK '$top_k' --arg topP '$top_p' --arg maxTokens '$max_tokens' '{contents: [{role: \"user\", parts: \$parts}], generationConfig: {temperature: (\$temp | tonumber), topK: (\$topK | tonumber), topP: (\$topP | tonumber), maxOutputTokens: (\$maxTokens | tonumber)}}'"
+    fi
+
+    # Add JSON schema if provided
+    if [[ -n "$schema_file" && -f "$schema_file" ]]; then
+        local schema_cmd="$jq_build_cmd | jq '. + {generationConfig: (.generationConfig + {responseMimeType: \"application/json\", responseSchema: (\"$schema_file\" | fromjson)})}'"
+        jq_build_cmd="$schema_cmd"
+    fi
+
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "$jq_build_cmd"
+    else
+        shell::run_cmd_eval "$jq_build_cmd"
+    fi
+}
