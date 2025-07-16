@@ -1952,3 +1952,147 @@ shell::gemini_chat() {
         [[ "$continue_chat" == "true" ]] && shell::colored_echo "INFO: Conversation saved to: $conversation_file" 46
     fi
 }
+
+gemini_stream() {
+    local question="$1"
+    local api_key="AIzaSyCV3Fx-hOK3Ip5WTMO7a-TNydXr0eCfXnE"
+    local model="gemini-2.0-flash"
+    local temp_file="/tmp/gemini_response.md"
+    local response_buffer=""
+    local display_pid=""
+
+    # Check dependencies
+    command -v curl >/dev/null 2>&1 || {
+        echo "Error: curl is required but not installed." >&2
+        return 1
+    }
+    command -v jq >/dev/null 2>&1 || {
+        echo "Error: jq is required but not installed." >&2
+        return 1
+    }
+    command -v glow >/dev/null 2>&1 || {
+        echo "Error: glow is required but not installed." >&2
+        return 1
+    }
+
+    # Check API key
+    if [[ -z "$api_key" ]]; then
+        echo "Error: GEMINI_API_KEY environment variable is not set." >&2
+        echo "Please set it with: export GEMINI_API_KEY='your-api-key-here'" >&2
+        return 1
+    fi
+
+    # Check if question is provided
+    if [[ -z "$question" ]]; then
+        echo "Usage: gemini_stream \"Your question here\"" >&2
+        return 1
+    fi
+
+    # Initialize temp file with header
+    cat >"$temp_file" <<EOF
+# Gemini Response
+
+**Question:** $question
+
+**Response:**
+
+EOF
+
+    # Function to update display
+    update_display() {
+        if [[ -n "$display_pid" ]]; then
+            kill "$display_pid" 2>/dev/null
+        fi
+        glow "$temp_file" &
+        display_pid=$!
+    }
+
+    # Initial display
+    update_display
+
+    # Cleanup function
+    cleanup() {
+        if [[ -n "$display_pid" ]]; then
+            kill "$display_pid" 2>/dev/null
+        fi
+        rm -f "$temp_file"
+    }
+
+    # Set trap for cleanup
+    trap cleanup EXIT INT TERM
+
+    # Prepare JSON payload
+    local json_payload=$(jq -n \
+        --arg text "$question" \
+        '{
+            contents: [{
+                parts: [{
+                    text: $text
+                }]
+            }],
+            generationConfig: {
+                temperature: 0.7,
+                candidateCount: 1,
+                maxOutputTokens: 8192
+            }
+        }')
+
+    echo "Connecting to Gemini API..."
+    echo "Model: $model"
+    echo "Question: $question"
+    echo ""
+    echo "Streaming response (Press Ctrl+C to stop)..."
+    echo ""
+
+    # Stream the response
+    curl -s -N \
+        -H "Content-Type: application/json" \
+        -H "x-goog-api-key: $api_key" \
+        -d "$json_payload" \
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse" |
+        while IFS= read -r line; do
+            # Skip empty lines and non-data lines
+            if [[ "$line" =~ ^data:\ (.*)$ ]]; then
+                local json_data="${BASH_REMATCH[1]}"
+
+                # Skip if it's just whitespace or [DONE]
+                if [[ "$json_data" =~ ^\s*$ ]] || [[ "$json_data" == "[DONE]" ]]; then
+                    continue
+                fi
+
+                # Parse the JSON and extract text
+                local text_chunk=$(echo "$json_data" | jq -r '.candidates[]?.content?.parts[]?.text // empty' 2>/dev/null)
+
+                if [[ -n "$text_chunk" && "$text_chunk" != "null" ]]; then
+                    # Append to buffer and file
+                    response_buffer+="$text_chunk"
+
+                    # Update the markdown file
+                    cat >"$temp_file" <<EOF
+# Gemini Response
+
+**Question:** $question
+
+**Response:**
+
+$response_buffer
+EOF
+
+                    # Update display every few chunks for better performance
+                    if [[ $(echo -n "$text_chunk" | wc -c) -gt 0 ]]; then
+                        update_display
+                        sleep 0.1 # Small delay to prevent too frequent updates
+                    fi
+                fi
+            fi
+        done
+
+    # Final display update
+    update_display
+
+    echo ""
+    echo "Response complete. Press any key to exit..."
+    read -n 1 -s
+
+    cleanup
+}
