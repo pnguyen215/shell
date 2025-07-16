@@ -4454,3 +4454,304 @@ This function reads the Gemini configuration file, constructs a request to the G
 and sends the provided payload. It handles errors, sanitizes the response, and returns the parsed JSON.
 It also supports debugging and dry-run modes.
 "
+
+USAGE_SHELL_SHOW_GEMINI_HELP="
+shell::show_gemini_help function
+Displays help information for Gemini streaming functionality.
+
+Usage:
+  shell::show_gemini_help [-h]
+
+Parameters:
+  - -h : Optional help flag. If provided, displays usage information.
+
+Description:
+  This function displays comprehensive help information for Gemini streaming functionality,
+  including available commands, configuration options, and usage examples.
+  It provides users with guidance on how to use the streaming features.
+
+Example:
+  shell::show_gemini_help
+"
+
+USAGE_SHELL_LIST_GEMINI_MODELS="
+shell::list_gemini_models function
+Lists available Gemini models for streaming and non-streaming requests.
+
+Usage:
+  shell::list_gemini_models [-n] [-h]
+
+Parameters:
+  - -n : Optional dry-run flag. If provided, the API request is printed using shell::on_evict instead of executed.
+  - -h : Optional help flag. If provided, displays usage information.
+
+Description:
+  This function retrieves and displays a list of available Gemini models by making an API request
+  to the Gemini service. It shows model names, descriptions, and capabilities.
+  In dry-run mode, it shows what API call would be made without actually executing it.
+
+Example:
+  shell::list_gemini_models
+  shell::list_gemini_models -n
+"
+
+USAGE_SHELL_GET_GEMINI_MIME_TYPE="
+shell::get_gemini_mime_type function
+Determines the MIME type of a file for Gemini API requests.
+
+Usage:
+  shell::get_gemini_mime_type [-n] [-h] <file_path>
+
+Parameters:
+  - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - -h : Optional help flag. If provided, displays usage information.
+  - <file_path> : Required. The path to the file to analyze.
+
+Description:
+  This function determines the MIME type of a file using the file command.
+  It returns the MIME type in a format suitable for Gemini API requests.
+  Supports common file types like images, text, audio, and video.
+
+Example:
+  shell::get_gemini_mime_type \"image.jpg\"
+  shell::get_gemini_mime_type -n \"document.pdf\"
+"
+
+USAGE_SHELL_ENCODE_GEMINI_FILE="
+shell::encode_gemini_file function
+Encodes a file to Base64 format for inclusion in Gemini API requests.
+
+Usage:
+  shell::encode_gemini_file [-n] [-h] <file_path>
+
+Parameters:
+  - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - -h : Optional help flag. If provided, displays usage information.
+  - <file_path> : Required. The path to the file to encode.
+
+Description:
+  This function encodes a file to Base64 format suitable for Gemini API requests.
+  It validates the file exists and is readable before encoding.
+  The output is the Base64-encoded content without line breaks.
+
+Example:
+  shell::encode_gemini_file \"image.jpg\"
+  shell::encode_gemini_file -n \"document.pdf\"
+"
+
+USAGE_SHELL_LOAD_GEMINI_CONFIG="
+shell::load_gemini_config function
+Loads Gemini configuration from the configuration file and exports to environment variables.
+
+Usage:
+  shell::load_gemini_config [-n] [-h] [config_file]
+
+Parameters:
+  - -n : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+  - -h : Optional help flag. If provided, displays usage information.
+  - [config_file] : Optional. Path to the configuration file. Defaults to SHELL_KEY_CONF_AGENT_GEMINI_FILE.
+
+Description:
+  This function loads Gemini configuration from the specified file and exports
+  key-value pairs as environment variables prefixed with GEMINI_.
+  It validates the configuration file exists and reads all keys from the [gemini] section.
+
+Example:
+  shell::load_gemini_config
+  shell::load_gemini_config -n
+  shell::load_gemini_config \"/path/to/custom/config.conf\"
+"
+
+USAGE_SHELL_SAVE_GEMINI_CONFIG="
+shell::save_gemini_config function
+Saves current environment variables to Gemini configuration file.
+
+Usage:
+  shell::save_gemini_config [-n] [-h] [config_file]
+
+Parameters:
+  - -n : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+  - -h : Optional help flag. If provided, displays usage information.
+  - [config_file] : Optional. Path to the configuration file. Defaults to SHELL_KEY_CONF_AGENT_GEMINI_FILE.
+
+Description:
+  This function saves Gemini configuration by reading GEMINI_* environment variables
+  and writing them to the configuration file under the [gemini] section.
+  It strips the GEMINI_ prefix when writing to the file.
+
+Example:
+  export GEMINI_API_KEY=\"your-api-key\"
+  export GEMINI_MODEL=\"gemini-2.0-flash\"
+  shell::save_gemini_config
+  shell::save_gemini_config -n
+"
+
+USAGE_SHELL_POPULATE_GEMINI_STREAM_CONF="
+shell::populate_gemini_stream_conf function
+Populates the Gemini streaming configuration file with additional streaming-specific keys.
+
+Usage:
+  shell::populate_gemini_stream_conf [-n] [-h] [config_file]
+
+Parameters:
+  - -n : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+  - -h : Optional help flag. If provided, displays usage information.
+  - [config_file] : Optional. Path to the configuration file. Defaults to SHELL_KEY_CONF_AGENT_GEMINI_FILE.
+
+Description:
+  This function extends the basic Gemini configuration with streaming-specific settings.
+  It adds conversation history settings, file upload limits, and streaming preferences
+  while preserving existing configuration values.
+
+Example:
+  shell::populate_gemini_stream_conf
+  shell::populate_gemini_stream_conf -n
+"
+
+USAGE_SHELL_CLEAR_GEMINI_CONVERSATION="
+shell::clear_gemini_conversation function
+Clears the conversation history by removing the conversation file.
+
+Usage:
+  shell::clear_gemini_conversation [-n] [-h] [conversation_file]
+
+Parameters:
+  - -n : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+  - -h : Optional help flag. If provided, displays usage information.
+  - [conversation_file] : Optional. Path to the conversation file. Defaults to reading from config.
+
+Description:
+  This function clears the conversation history by removing the conversation file.
+  If no file is specified, it reads the CONVERSATION_FILE setting from the configuration.
+  In dry-run mode, it shows what file would be removed without actually doing it.
+
+Example:
+  shell::clear_gemini_conversation
+  shell::clear_gemini_conversation -n
+  shell::clear_gemini_conversation \"/path/to/conversation.json\"
+"
+
+USAGE_SHELL_ADD_TO_GEMINI_CONVERSATION="
+shell::add_to_gemini_conversation function
+Adds a message to the conversation history.
+
+Usage:
+  shell::add_to_gemini_conversation [-n] [-h] <role> <content> [conversation_file]
+
+Parameters:
+  - -n : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+  - -h : Optional help flag. If provided, displays usage information.
+  - <role> : Required. The role of the message sender (user, model, system).
+  - <content> : Required. The content of the message.
+  - [conversation_file] : Optional. Path to the conversation file. Defaults to reading from config.
+
+Description:
+  This function adds a message to the conversation history stored in JSON format.
+  The conversation file is created if it doesn't exist. Each message includes
+  a timestamp, role, and content. The function respects the maximum conversation
+  history limit from the configuration.
+
+Example:
+  shell::add_to_gemini_conversation \"user\" \"Hello, how are you?\"
+  shell::add_to_gemini_conversation -n \"model\" \"I'm doing well, thank you!\"
+"
+
+USAGE_SHELL_LOAD_GEMINI_CONVERSATION="
+shell::load_gemini_conversation function
+Loads and displays the conversation history.
+
+Usage:
+  shell::load_gemini_conversation [-n] [-h] [conversation_file] [format]
+
+Parameters:
+  - -n : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+  - -h : Optional help flag. If provided, displays usage information.
+  - [conversation_file] : Optional. Path to the conversation file. Defaults to reading from config.
+  - [format] : Optional. Output format: 'json', 'pretty', or 'summary'. Defaults to 'pretty'.
+
+Description:
+  This function loads the conversation history from the specified file and displays it
+  in the requested format. The 'pretty' format shows a human-readable conversation,
+  'json' shows the raw JSON, and 'summary' shows basic statistics.
+
+Example:
+  shell::load_gemini_conversation
+  shell::load_gemini_conversation -n
+  shell::load_gemini_conversation \"/path/to/conversation.json\" \"json\"
+"
+
+USAGE_SHELL_BUILD_GEMINI_REQUEST="
+shell::build_gemini_request function
+Builds a JSON request payload for the Gemini API.
+
+Usage:
+  shell::build_gemini_request [-n] [-h] <message> [files...] [config_file]
+
+Parameters:
+  - -n : Optional dry-run flag. If provided, the JSON payload is printed using shell::on_evict instead of returned.
+  - -h : Optional help flag. If provided, displays usage information.
+  - <message> : Required. The user message to send to Gemini.
+  - [files...] : Optional. Paths to files to include in the request (images, documents, etc.).
+  - [config_file] : Optional. Path to configuration file. Defaults to SHELL_KEY_CONF_AGENT_GEMINI_FILE.
+
+Description:
+  This function builds a properly formatted JSON request payload for the Gemini API.
+  It reads configuration settings for model parameters, encodes any attached files,
+  and constructs the request according to Gemini API specifications.
+  Supports text messages and file attachments.
+
+Example:
+  shell::build_gemini_request \"Hello, how are you?\"
+  shell::build_gemini_request -n \"Describe this image\" \"/path/to/image.jpg\"
+"
+
+USAGE_SHELL_REQUEST_GEMINI_RESPONSE="
+shell::request_gemini_response function
+Makes a non-streaming request to the Gemini API and returns the response.
+
+Usage:
+  shell::request_gemini_response [-n] [-d] [-h] <message> [files...] [config_file]
+
+Parameters:
+  - -n : Optional dry-run flag. If provided, the curl command is printed using shell::on_evict instead of executed.
+  - -d : Optional debugging flag. If provided, debug information is printed.
+  - -h : Optional help flag. If provided, displays usage information.
+  - <message> : Required. The user message to send to Gemini.
+  - [files...] : Optional. Paths to files to include in the request.
+  - [config_file] : Optional. Path to configuration file. Defaults to SHELL_KEY_CONF_AGENT_GEMINI_FILE.
+
+Description:
+  This function makes a complete non-streaming request to the Gemini API.
+  It builds the request payload, sends it via HTTP POST, handles the response,
+  and extracts the generated text. Supports file attachments and conversation context.
+
+Example:
+  shell::request_gemini_response \"What is machine learning?\"
+  shell::request_gemini_response -n \"Describe this image\" \"/path/to/image.jpg\"
+"
+
+USAGE_SHELL_STREAM_GEMINI_RESPONSE="
+shell::stream_gemini_response function
+Makes a streaming request to the Gemini API and displays the response in real-time.
+
+Usage:
+  shell::stream_gemini_response [-n] [-d] [-h] <message> [files...] [config_file]
+
+Parameters:
+  - -n : Optional dry-run flag. If provided, the curl command is printed using shell::on_evict instead of executed.
+  - -d : Optional debugging flag. If provided, debug information is printed.
+  - -h : Optional help flag. If provided, displays usage information.
+  - <message> : Required. The user message to send to Gemini.
+  - [files...] : Optional. Paths to files to include in the request.
+  - [config_file] : Optional. Path to configuration file. Defaults to SHELL_KEY_CONF_AGENT_GEMINI_FILE.
+
+Description:
+  This function makes a streaming request to the Gemini API and displays the response
+  in real-time as it's generated. It handles the streaming protocol, buffers partial
+  responses, and provides a live streaming experience. Optionally saves the conversation
+  to history and can format output with glow.
+
+Example:
+  shell::stream_gemini_response \"Tell me a story\"
+  shell::stream_gemini_response -n \"Analyze this code\" \"/path/to/code.py\"
+"
