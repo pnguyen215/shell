@@ -1123,3 +1123,65 @@ shell::gemini_clear_conversation() {
         shell::colored_echo "INFO: Conversation history cleared" 46
     fi
 }
+
+# shell::gemini_add_message function
+# Adds a message to the conversation history.
+#
+# Usage:
+#   shell::gemini_add_message [-n] [-h] <role> <content> [attachments] [conversation_file]
+#
+# Parameters:
+#   - -n                  : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+#   - -h                  : Optional. Displays this help message.
+#   - <role>              : The message role (user, model).
+#   - <content>           : The message content.
+#   - [attachments]       : Optional. JSON array of file attachments.
+#   - [conversation_file] : Optional. Path to conversation file. Defaults to workspace/conversation.json.
+#
+# Description:
+#   Adds a new message to the conversation history with proper JSON formatting.
+#
+# Example:
+#   shell::gemini_add_message "user" "Hello, how are you?"
+#   shell::gemini_add_message -n "model" "I'm doing well, thank you!"
+shell::gemini_add_message() {
+    local dry_run="false"
+
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_GEMINI_ADD_MESSAGE"
+        return 0
+    fi
+
+    if [ $# -lt 2 ]; then
+        shell::colored_echo "ERR: Role and content are required" 196
+        return 1
+    fi
+
+    local role="$1"
+    local content="$2"
+    local attachments="$3"
+    # local workspace_dir="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_STREAM_FILE" "gemini" "WORKSPACE_DIR")"
+    local workspace_dir="$HOME/.shell-config/agents/gemini/workspace"
+    local conversation_file="${4:-$workspace_dir/conversation.json}"
+
+    # Build message parts
+    local escaped_content=$(echo "$content" | jq -R -s '.')
+    local parts='[{"text": '"$escaped_content"'}]'
+
+    if [[ -n "$attachments" ]]; then
+        parts='[{"text": '"$escaped_content"'}, '"$attachments"']'
+    fi
+
+    local jq_cmd="jq '.contents += [{\"role\": \"$role\", \"parts\": $parts}]' \"$conversation_file\" > \"$conversation_file.tmp\" && mv \"$conversation_file.tmp\" \"$conversation_file\""
+
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "$jq_cmd"
+    else
+        shell::run_cmd_eval "$jq_cmd"
+    fi
+}
