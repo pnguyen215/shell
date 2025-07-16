@@ -712,7 +712,7 @@ shell::gemini_get_daily_conversation_file() {
     fi
 
     local date="${1:-$(date +%Y-%m-%d)}"
-    # local workspace_dir="${2:-$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_STREAM_FILE" "gemini" "WORKSPACE_DIR")}"
+    # local workspace_dir="${2:-$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_FILE" "gemini" "WORKSPACE_DIR")}"
     local workspace_dir="$HOME/.shell-config/agents/gemini/workspace"
     local daily_file="$workspace_dir/history/$date.json"
 
@@ -755,7 +755,7 @@ shell::gemini_archive_current_conversation() {
         return 0
     fi
 
-    # local workspace_dir="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_STREAM_FILE" "gemini" "WORKSPACE_DIR")"
+    # local workspace_dir="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_FILE" "gemini" "WORKSPACE_DIR")"
     local workspace_dir="$HOME/.shell-config/agents/gemini/workspace"
     local conversation_file="${1:-$workspace_dir/conversation.json}"
     local today=$(date +%Y-%m-%d)
@@ -837,7 +837,7 @@ shell::gemini_load_daily_conversation() {
     fi
 
     local date="$1"
-    # local workspace_dir="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_STREAM_FILE" "gemini" "WORKSPACE_DIR")"
+    # local workspace_dir="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_FILE" "gemini" "WORKSPACE_DIR")"
     local workspace_dir="$HOME/.shell-config/agents/gemini/workspace"
     local conversation_file="${2:-$workspace_dir/conversation.json}"
     local daily_file="$workspace_dir/history/$date.json"
@@ -918,7 +918,7 @@ shell::gemini_list_conversation_history() {
         esac
     done
 
-    # local workspace_dir="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_STREAM_FILE" "gemini" "WORKSPACE_DIR")"
+    # local workspace_dir="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_FILE" "gemini" "WORKSPACE_DIR")"
     local workspace_dir="$HOME/.shell-config/agents/gemini/workspace"
     local history_dir="$workspace_dir/history"
 
@@ -999,9 +999,9 @@ shell::gemini_cleanup_old_history() {
         return 0
     fi
 
-    # local retention_days="${1:-$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_STREAM_FILE" "gemini" "HISTORY_RETENTION_DAYS")}"
+    # local retention_days="${1:-$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_FILE" "gemini" "HISTORY_RETENTION_DAYS")}"
     local retention_days="30"
-    # local workspace_dir="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_STREAM_FILE" "gemini" "WORKSPACE_DIR")"
+    # local workspace_dir="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_FILE" "gemini" "WORKSPACE_DIR")"
     local workspace_dir="$HOME/.shell-config/agents/gemini/workspace"
     local history_dir="$workspace_dir/history"
 
@@ -1103,7 +1103,7 @@ shell::gemini_clear_conversation() {
         esac
     done
 
-    # local workspace_dir="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_STREAM_FILE" "gemini" "WORKSPACE_DIR")"
+    # local workspace_dir="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_FILE" "gemini" "WORKSPACE_DIR")"
     local workspace_dir="$HOME/.shell-config/agents/gemini/workspace"
     local conversation_file="${conversation_file:-$workspace_dir/conversation.json}"
     local today=$(date +%Y-%m-%d)
@@ -1165,7 +1165,7 @@ shell::gemini_add_message() {
     local role="$1"
     local content="$2"
     local attachments="$3"
-    # local workspace_dir="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_STREAM_FILE" "gemini" "WORKSPACE_DIR")"
+    # local workspace_dir="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_FILE" "gemini" "WORKSPACE_DIR")"
     local workspace_dir="$HOME/.shell-config/agents/gemini/workspace"
     local conversation_file="${4:-$workspace_dir/conversation.json}"
 
@@ -1335,7 +1335,7 @@ shell::gemini_build_request() {
     local temperature="${3:-0.7}"
     local schema_file="$4"
     local continue_chat="${5:-false}"
-    # local workspace_dir="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_STREAM_FILE" "gemini" "WORKSPACE_DIR")"
+    # local workspace_dir="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_FILE" "gemini" "WORKSPACE_DIR")"
     local workspace_dir="$HOME/.shell-config/agents/gemini/workspace"
     local conversation_file="$workspace_dir/conversation.json"
 
@@ -1358,11 +1358,11 @@ shell::gemini_build_request() {
     fi
 
     # Get configuration values
-    # local max_tokens="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_STREAM_FILE" "gemini" "MAX_TOKENS")"
+    # local max_tokens="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_FILE" "gemini" "MAX_TOKENS")"
     local max_tokens="8192"
-    # local top_k="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_STREAM_FILE" "gemini" "TOP_K")"
+    # local top_k="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_FILE" "gemini" "TOP_K")"
     local top_k="40"
-    # local top_p="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_STREAM_FILE" "gemini" "TOP_P")"
+    # local top_p="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_FILE" "gemini" "TOP_P")"
     local top_p="0.95"
 
     local jq_build_cmd=""
@@ -1442,7 +1442,7 @@ shell::gemini_stream_response() {
     local request_payload="$1"
     local api_key="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_FILE" "gemini" "API_KEY")"
     local model="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_FILE" "gemini" "MODEL")"
-    # local workspace_dir="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_STREAM_FILE" "gemini" "WORKSPACE_DIR")"
+    # local workspace_dir="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_FILE" "gemini" "WORKSPACE_DIR")"
     local workspace_dir="$HOME/.shell-config/agents/gemini/workspace"
     local response_file="$workspace_dir/response.md"
 
@@ -1525,5 +1525,429 @@ EOF
     else
         shell::colored_echo "ERR: No response content received" 196
         return 1
+    fi
+}
+
+# shell::gemini_request function
+# Makes a non-streaming request to the Gemini API.
+#
+# Usage:
+#   shell::gemini_request [-n] [-d] [-h] <request_payload>
+#
+# Parameters:
+#   - -n               : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+#   - -d               : Optional debugging flag.
+#   - -h               : Optional. Displays this help message.
+#   - <request_payload>: The JSON request payload.
+#
+# Description:
+#   Sends a non-streaming request to the Gemini API.
+#
+# Example:
+#   shell::gemini_request "$payload"
+shell::gemini_request() {
+    local dry_run="false"
+    local debugging="false"
+
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if [ "$1" = "-d" ]; then
+        debugging="true"
+        shift
+    fi
+
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_GEMINI_REQUEST"
+        return 0
+    fi
+
+    if [ -z "$1" ]; then
+        shell::colored_echo "ERR: Request payload is required" 196
+        return 1
+    fi
+
+    local request_payload="$1"
+    local api_key="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_FILE" "gemini" "API_KEY")"
+    local model="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_FILE" "gemini" "MODEL")"
+    # local workspace_dir="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_FILE" "gemini" "WORKSPACE_DIR")"
+    local workspace_dir="$HOME/.shell-config/agents/gemini/workspace"
+    local response_file="$workspace_dir/response.md"
+
+    if [ -z "$api_key" ] || [ "$api_key" = "your-api-key-here" ]; then
+        shell::colored_echo "ERR: Valid API key is required" 196
+        return 1
+    fi
+
+    if [ "$debugging" = "true" ]; then
+        shell::colored_echo "DEBUG: Request payload:" 244
+        echo "$request_payload" | jq .
+    fi
+
+    local curl_cmd="curl -s --location \"https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$api_key\" --header 'Content-Type: application/json' --data '$request_payload'"
+
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "$curl_cmd"
+        shell::on_evict "# Extract response text and save to $response_file"
+        shell::on_evict "# Add response to conversation history"
+        return 0
+    fi
+
+    shell::colored_echo "INFO: Getting response from $model..." 46
+
+    local process_cmd="$curl_cmd | jq -r '.candidates[0].content.parts[0].text // empty' > \"$response_file\""
+    shell::run_cmd_eval "$process_cmd"
+
+    if [[ -f "$response_file" && -s "$response_file" ]]; then
+        local response_content=$(cat "$response_file")
+        echo "$response_content"
+        shell::gemini_add_message "model" "$response_content" ""
+        shell::colored_echo "INFO: Response saved to $response_file" 46
+    else
+        shell::colored_echo "ERR: No response received" 196
+        return 1
+    fi
+}
+
+# shell::gemini_display_response function
+# Displays the Gemini response with proper formatting.
+#
+# Usage:
+#   shell::gemini_display_response [-h] [schema_file] [response_file]
+#
+# Parameters:
+#   - -h             : Optional. Displays this help message.
+#   - [schema_file]  : Optional. JSON schema file for JSON response formatting.
+#   - [response_file]: Optional. Path to response file. Defaults to workspace/response.md.
+#
+# Description:
+#   Displays the response using glow for markdown or jq for JSON formatting.
+#
+# Example:
+#   shell::gemini_display_response
+#   shell::gemini_display_response "schema.json"
+shell::gemini_display_response() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_GEMINI_DISPLAY_RESPONSE"
+        return 0
+    fi
+
+    local schema_file="$1"
+    local workspace_dir="$HOME/.shell-config/agents/gemini/workspace"
+    # local workspace_dir="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_FILE" "gemini" "WORKSPACE_DIR")"
+    local response_file="${2:-$workspace_dir/response.md}"
+
+    shell::colored_echo "INFO: Formatted Response:" 46
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+    if [[ ! -f "$response_file" ]]; then
+        shell::colored_echo "ERR: Response file not found: $response_file" 196
+        return 1
+    elif [[ ! -s "$response_file" ]]; then
+        shell::colored_echo "ERR: Response file is empty: $response_file" 196
+        return 1
+    fi
+
+    if [[ -n "$schema_file" ]]; then
+        shell::colored_echo "INFO: JSON Response:" 255
+        local format_cmd="cat \"$response_file\" | jq . 2>/dev/null || cat \"$response_file\""
+        shell::run_cmd_eval "$format_cmd"
+    elif shell::is_command_available glow; then
+        local glow_cmd="glow \"$response_file\" -p"
+        shell::run_cmd_eval "$glow_cmd"
+    else
+        shell::colored_echo "WARN: Glow not installed. Install with: brew install glow" 244
+        shell::colored_echo "INFO: Raw response:" 255
+        shell::run_cmd_eval "cat \"$response_file\""
+    fi
+}
+
+# shell::gemini_chat function
+# Main function for Gemini chat functionality with daily conversation management.
+#
+# Usage:
+#   shell::gemini_chat [-n] [-d] [-h] [-m model] [-t temperature] [-s] [--no-stream] [-j schema_file] [-c] [--clear] [--archive] [--load date] [--history] <prompt> [file_path]
+#
+# Parameters:
+#   - -n           : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+#   - -d           : Optional debugging flag.
+#   - -h           : Optional. Displays this help message.
+#   - -m model     : Optional. Gemini model to use.
+#   - -t temperature: Optional. Temperature setting (0.0-2.0).
+#   - -s           : Optional. Enable streaming (default).
+#   - --no-stream  : Optional. Disable streaming.
+#   - -j schema_file: Optional. Path to JSON schema file.
+#   - -c           : Optional. Continue previous conversation.
+#   - --clear      : Optional. Clear conversation history.
+#   - --archive    : Optional. Archive current conversation before clearing.
+#   - --load date  : Optional. Load conversation from specific date (YYYY-MM-DD).
+#   - --history    : Optional. Show conversation history list.
+#   - <prompt>     : The user prompt.
+#   - [file_path]  : Optional. Path to file attachment.
+#
+# Description:
+#   Main entry point for Gemini chat functionality with full feature support including daily conversation management.
+#
+# Example:
+#   shell::gemini_chat "Explain quantum computing"
+#   shell::gemini_chat -c -m "gemini-1.5-pro" "Continue our discussion"
+#   shell::gemini_chat --load "2024-01-15" -c "Continue yesterday's conversation"
+#   shell::gemini_chat --history
+shell::gemini_chat() {
+    local dry_run="false"
+    local debugging="false"
+    local model=""
+    local temperature="0.7"
+    local enable_streaming="true"
+    local schema_file=""
+    local continue_chat="false"
+    local clear_chat="false"
+    local archive_first="false"
+    local load_date=""
+    local show_history="false"
+    local prompt=""
+    local file_path=""
+
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+        -n)
+            dry_run="true"
+            shift
+            ;;
+        -d)
+            debugging="true"
+            shift
+            ;;
+        -h)
+            echo "$USAGE_SHELL_GEMINI_CHAT"
+            return 0
+            ;;
+        -m)
+            model="$2"
+            shift 2
+            ;;
+        -t)
+            temperature="$2"
+            shift 2
+            ;;
+        -s)
+            enable_streaming="true"
+            shift
+            ;;
+        --no-stream)
+            enable_streaming="false"
+            shift
+            ;;
+        -j)
+            schema_file="$2"
+            shift 2
+            ;;
+        -c)
+            continue_chat="true"
+            shift
+            ;;
+        --clear)
+            clear_chat="true"
+            shift
+            ;;
+        --archive)
+            archive_first="true"
+            shift
+            ;;
+        --load)
+            load_date="$2"
+            shift 2
+            ;;
+        --history)
+            show_history="true"
+            shift
+            ;;
+        *)
+            if [[ -z "$prompt" ]]; then
+                prompt="$1"
+            elif [[ -z "$file_path" ]]; then
+                file_path="$1"
+            fi
+            shift
+            ;;
+        esac
+    done
+
+    # Initialize if needed
+    if [[ ! -f "$SHELL_KEY_CONF_AGENT_GEMINI_FILE" ]]; then
+        if [ "$dry_run" = "true" ]; then
+            shell::gemini_init_config -n
+        else
+            shell::gemini_init_config
+        fi
+    fi
+
+    # Initialize workspace
+    if [ "$dry_run" = "true" ]; then
+        shell::gemini_init_workspace -n
+    else
+        shell::gemini_init_workspace
+    fi
+
+    # Handle history listing
+    if [[ "$show_history" == "true" ]]; then
+        shell::gemini_list_conversation_history -l
+        return 0
+    fi
+
+    # Handle conversation loading
+    if [[ -n "$load_date" ]]; then
+        if [ "$dry_run" = "true" ]; then
+            shell::gemini_load_daily_conversation -n "$load_date"
+        else
+            shell::gemini_load_daily_conversation "$load_date"
+        fi
+        if [[ -z "$prompt" ]]; then
+            return 0 # Just load, don't continue
+        fi
+        continue_chat="true" # Auto-enable continue mode when loading
+    fi
+
+    # Handle conversation clearing
+    if [[ "$clear_chat" == "true" ]]; then
+        if [ "$archive_first" = "true" ]; then
+            if [ "$dry_run" = "true" ]; then
+                shell::gemini_clear_conversation -n --archive
+            else
+                shell::gemini_clear_conversation --archive
+            fi
+        else
+            if [ "$dry_run" = "true" ]; then
+                shell::gemini_clear_conversation -n
+            else
+                shell::gemini_clear_conversation
+            fi
+        fi
+        if [[ -z "$prompt" ]]; then
+            return 0 # Just clear, don't continue
+        fi
+    fi
+
+    # Validate prompt is provided for chat
+    if [[ -z "$prompt" ]]; then
+        shell::colored_echo "ERR: No prompt provided" 196
+        shell::colored_echo "INFO: Use --history to view conversation history" 244
+        shell::colored_echo "INFO: Use --load YYYY-MM-DD to load a specific conversation" 244
+        return 1
+    fi
+
+    # Auto-archive daily conversations
+    # local daily_history="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_FILE" "gemini" "DAILY_HISTORY")"
+    local daily_history="true" # Default to true for this example
+    if [[ "$daily_history" == "true" && "$continue_chat" == "false" && "$clear_chat" == "false" ]]; then
+        # Check if current conversation is from a different day
+        # local workspace_dir="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_FILE" "gemini" "WORKSPACE_DIR")"
+        local workspace_dir="$HOME/.shell-config/agents/gemini/workspace"
+        local conversation_file="$workspace_dir/conversation.json"
+        local today=$(date +%Y-%m-%d)
+
+        if [[ -f "$conversation_file" ]]; then
+            local conv_date=$(jq -r '.date // "unknown"' "$conversation_file" 2>/dev/null)
+            if [[ "$conv_date" != "$today" && "$conv_date" != "unknown" ]]; then
+                if [ "$dry_run" = "false" ]; then
+                    shell::colored_echo "INFO: Auto-archiving conversation from $conv_date" 244
+                    shell::gemini_archive_current_conversation
+                fi
+            fi
+        fi
+    fi
+
+    # Update model if provided
+    if [[ -n "$model" ]]; then
+        if [ "$dry_run" = "true" ]; then
+            shell::on_evict "shell::write_ini \"$SHELL_KEY_CONF_AGENT_GEMINI_FILE\" \"gemini\" \"MODEL\" \"$model\""
+        else
+            shell::write_ini "$SHELL_KEY_CONF_AGENT_GEMINI_FILE" "gemini" "MODEL" "$model"
+        fi
+    fi
+
+    # Validate file exists
+    if [[ -n "$file_path" && ! -f "$file_path" ]]; then
+        shell::colored_echo "ERR: File not found: $file_path" 196
+        return 1
+    fi
+
+    # Validate JSON schema exists
+    if [[ -n "$schema_file" && ! -f "$schema_file" ]]; then
+        shell::colored_echo "ERR: JSON schema file not found: $schema_file" 196
+        return 1
+    fi
+
+    # Check dependencies
+    for cmd in curl jq; do
+        if ! shell::is_command_available "$cmd"; then
+            shell::colored_echo "ERR: $cmd is required but not installed" 196
+            return 1
+        fi
+    done
+
+    # Get current model
+    local current_model="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_FILE" "gemini" "MODEL")"
+
+    # Display session info
+    shell::colored_echo "INFO: Model: $current_model" 46
+    shell::colored_echo "INFO: Temperature: $temperature" 46
+    shell::colored_echo "INFO: Prompt: $prompt" 46
+    [[ -n "$file_path" ]] && shell::colored_echo "INFO: File: $file_path" 46
+    [[ -n "$schema_file" ]] && shell::colored_echo "INFO: JSON Schema: $schema_file" 46
+    [[ "$continue_chat" == "true" ]] && shell::colored_echo "INFO: Continue conversation: Yes" 46
+    [[ -n "$load_date" ]] && shell::colored_echo "INFO: Loaded from: $load_date" 46
+    echo ""
+
+    # Build request
+    local request_payload
+    if [ "$dry_run" = "true" ]; then
+        request_payload=$(shell::gemini_build_request -n "$prompt" "$file_path" "$temperature" "$schema_file" "$continue_chat")
+    else
+        request_payload=$(shell::gemini_build_request "$prompt" "$file_path" "$temperature" "$schema_file" "$continue_chat")
+    fi
+
+    # Make request
+    if [[ "$enable_streaming" == "true" ]]; then
+        if [ "$dry_run" = "true" ]; then
+            shell::gemini_stream_response -n ${debugging:+-d} "$request_payload"
+        else
+            shell::gemini_stream_response ${debugging:+-d} "$request_payload"
+        fi
+    else
+        if [ "$dry_run" = "true" ]; then
+            shell::gemini_request -n ${debugging:+-d} "$request_payload"
+        else
+            shell::gemini_request ${debugging:+-d} "$request_payload"
+        fi
+    fi
+
+    # Display response
+    # if [ "$dry_run" = "false" ]; then
+    #     shell::gemini_display_response "$schema_file"
+
+    #     local workspace_dir="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_FILE" "gemini" "WORKSPACE_DIR")"
+    #     local response_file="$workspace_dir/response.md"
+    #     local conversation_file="$workspace_dir/conversation.json"
+
+    #     shell::colored_echo "INFO: Response saved to: $response_file" 46
+    #     shell::colored_echo "INFO: Conversation: $conversation_file" 46
+    #     shell::colored_echo "INFO: Daily history: $workspace_dir/history/" 244
+    #     echo ""
+    #     shell::colored_echo "INFO: Use 'shell::gemini_chat --history' to view conversation history" 244
+
+    if [ "$dry_run" = "false" ]; then
+        shell::gemini_display_response "$schema_file"
+
+        local workspace_dir="$HOME/.shell-config/agents/gemini/workspace"
+        # local workspace_dir="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_FILE" "gemini" "WORKSPACE_DIR")"
+        local response_file="$workspace_dir/response.md"
+        local conversation_file="$workspace_dir/conversation.json"
+
+        shell::colored_echo "INFO: Response saved to: $response_file" 46
+        [[ "$continue_chat" == "true" ]] && shell::colored_echo "INFO: Conversation saved to: $conversation_file" 46
     fi
 }
