@@ -798,3 +798,80 @@ shell::gemini_archive_current_conversation() {
         shell::colored_echo "INFO: Conversation archived to daily history: $daily_file" 46
     fi
 }
+
+# shell::gemini_load_daily_conversation function
+# Loads a specific day's conversation as the current conversation.
+#
+# Usage:
+#   shell::gemini_load_daily_conversation [-n] [-h] <date> [conversation_file]
+#
+# Parameters:
+#   - -n                  : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+#   - -h                  : Optional. Displays this help message.
+#   - <date>              : Date in YYYY-MM-DD format to load.
+#   - [conversation_file] : Optional. Path to current conversation file. Defaults to workspace/conversation.json.
+#
+# Description:
+#   Loads a specific day's conversation history as the current active conversation.
+#   Useful for continuing conversations from previous days.
+#
+# Example:
+#   shell::gemini_load_daily_conversation "2024-01-15"
+#   shell::gemini_load_daily_conversation -n "2024-01-15"
+shell::gemini_load_daily_conversation() {
+    local dry_run="false"
+
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_GEMINI_LOAD_DAILY_CONVERSATION"
+        return 0
+    fi
+
+    if [ -z "$1" ]; then
+        shell::colored_echo "ERR: Date is required (YYYY-MM-DD format)" 196
+        return 1
+    fi
+
+    local date="$1"
+    # local workspace_dir="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_STREAM_FILE" "gemini" "WORKSPACE_DIR")"
+    local workspace_dir="$HOME/.shell-config/agents/gemini/workspace"
+    local conversation_file="${2:-$workspace_dir/conversation.json}"
+    local daily_file="$workspace_dir/history/$date.json"
+
+    # Validate date format
+    if ! echo "$date" | grep -qE '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'; then
+        shell::colored_echo "ERR: Invalid date format. Use YYYY-MM-DD" 196
+        return 1
+    fi
+
+    if [ ! -f "$daily_file" ]; then
+        shell::colored_echo "ERR: No conversation found for date: $date" 196
+        return 1
+    fi
+
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "# Archive current conversation first"
+        shell::on_evict "shell::gemini_archive_current_conversation -n"
+        shell::on_evict "# Load conversation from $daily_file"
+        shell::on_evict "cp \"$daily_file\" \"$conversation_file\""
+        shell::on_evict "# Update loaded conversation date"
+        shell::on_evict "jq '.loaded_from = \"$date\", .loaded_at = \"$(date -Iseconds)\"' \"$conversation_file\" > \"$conversation_file.tmp\" && mv \"$conversation_file.tmp\" \"$conversation_file\""
+    else
+        # Archive current conversation first
+        shell::gemini_archive_current_conversation
+
+        # Load the daily conversation
+        shell::run_cmd_eval "cp \"$daily_file\" \"$conversation_file\""
+
+        # Update metadata
+        local update_cmd="jq '. + {loaded_from: \"$date\", loaded_at: \"$(date -Iseconds)\"}' \"$conversation_file\" > \"$conversation_file.tmp\" && mv \"$conversation_file.tmp\" \"$conversation_file\""
+        shell::run_cmd_eval "$update_cmd"
+
+        local message_count=$(jq '.contents | length' "$conversation_file" 2>/dev/null || echo "0")
+        shell::colored_echo "INFO: Loaded conversation from $date ($message_count messages)" 46
+    fi
+}
