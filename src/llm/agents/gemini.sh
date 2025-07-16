@@ -632,3 +632,57 @@ shell::eval_gemini_vi_en() {
         shell::clip_value "$translated_english"
     fi
 }
+
+# shell::gemini_init_workspace function
+# Creates and initializes the Gemini workspace directory with daily history structure.
+#
+# Usage:
+#   shell::gemini_init_workspace [-n] [-h] [workspace_dir]
+#
+# Parameters:
+#   - -n             : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+#   - -h             : Optional. Displays this help message.
+#   - [workspace_dir]: Optional. The workspace directory path. Defaults to config value.
+#
+# Description:
+#   Creates the workspace directory and initializes daily conversation structure.
+#   Creates history subdirectory for daily conversation backlogs.
+#
+# Example:
+#   shell::gemini_init_workspace
+#   shell::gemini_init_workspace -n "$HOME/.custom_gemini"
+shell::gemini_init_workspace() {
+    local dry_run="false"
+
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_GEMINI_INIT_WORKSPACE"
+        return 0
+    fi
+
+    local workspace_dir="$HOME/.shell-config/agents/gemini/workspace"
+    local history_dir="$workspace_dir/history"
+    local conversation_file="$workspace_dir/conversation.json"
+    local session_file="$workspace_dir/session.json"
+
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "mkdir -p \"$workspace_dir\""
+        shell::on_evict "mkdir -p \"$history_dir\""
+        shell::on_evict "[ ! -f \"$conversation_file\" ] && echo '{\"contents\": [], \"date\": \"$(date +%Y-%m-%d)\", \"created_at\": \"$(date -Iseconds)\"}' > \"$conversation_file\""
+        shell::on_evict "[ ! -f \"$session_file\" ] && echo '{\"model\": \"gemini-2.0-flash\", \"temperature\": 0.7, \"last_used\": \"$(date -Iseconds)\"}' > \"$session_file\""
+    else
+        shell::run_cmd_eval "mkdir -p \"$workspace_dir\""
+        shell::run_cmd_eval "mkdir -p \"$history_dir\""
+        if [ ! -f "$conversation_file" ]; then
+            shell::run_cmd_eval "echo '{\"contents\": [], \"date\": \"$(date +%Y-%m-%d)\", \"created_at\": \"$(date -Iseconds)\"}' > \"$conversation_file\""
+        fi
+        if [ ! -f "$session_file" ]; then
+            shell::run_cmd_eval "echo '{\"model\": \"gemini-2.0-flash\", \"temperature\": 0.7, \"last_used\": \"$(date -Iseconds)\"}' > \"$session_file\""
+        fi
+        shell::colored_echo "INFO: Gemini workspace initialized at '$workspace_dir'" 46
+    fi
+}
