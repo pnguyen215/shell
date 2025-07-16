@@ -723,3 +723,78 @@ shell::gemini_get_daily_conversation_file() {
 
     echo "$daily_file"
 }
+
+# shell::gemini_archive_current_conversation function
+# Archives the current conversation to daily history.
+#
+# Usage:
+#   shell::gemini_archive_current_conversation [-n] [-h] [conversation_file]
+#
+# Parameters:
+#   - -n                  : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+#   - -h                  : Optional. Displays this help message.
+#   - [conversation_file] : Optional. Path to current conversation file. Defaults to workspace/conversation.json.
+#
+# Description:
+#   Saves the current conversation to the daily history backlog and clears the current conversation.
+#   Archives conversations by date in YYYY-MM-DD format.
+#
+# Example:
+#   shell::gemini_archive_current_conversation
+#   shell::gemini_archive_current_conversation -n
+shell::gemini_archive_current_conversation() {
+    local dry_run="false"
+
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_GEMINI_ARCHIVE_CURRENT_CONVERSATION"
+        return 0
+    fi
+
+    # local workspace_dir="$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_STREAM_FILE" "gemini" "WORKSPACE_DIR")"
+    local workspace_dir="$HOME/.shell-config/agents/gemini/workspace"
+    local conversation_file="${1:-$workspace_dir/conversation.json}"
+    local today=$(date +%Y-%m-%d)
+    local daily_file="$workspace_dir/history/$today.json"
+
+    # Check if current conversation has content
+    if [ ! -f "$conversation_file" ]; then
+        if [ "$dry_run" = "false" ]; then
+            shell::colored_echo "WARN: No current conversation to archive" 244
+        fi
+        return 0
+    fi
+
+    local content_count=$(jq '.contents | length' "$conversation_file" 2>/dev/null || echo "0")
+    if [ "$content_count" = "0" ]; then
+        if [ "$dry_run" = "false" ]; then
+            shell::colored_echo "INFO: No conversation content to archive" 46
+        fi
+        return 0
+    fi
+
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "# Archive current conversation to $daily_file"
+        shell::on_evict "jq '.contents += (.contents // [])' \"$daily_file\" \"$conversation_file\" > \"$daily_file.tmp\" && mv \"$daily_file.tmp\" \"$daily_file\""
+        shell::on_evict "echo '{\"contents\": [], \"date\": \"$today\", \"created_at\": \"$(date -Iseconds)\"}' > \"$conversation_file\""
+    else
+        # Ensure daily file exists
+        if [ ! -f "$daily_file" ]; then
+            shell::run_cmd_eval "mkdir -p \"$(dirname "$daily_file")\""
+            shell::run_cmd_eval "echo '{\"contents\": [], \"date\": \"$today\", \"created_at\": \"$(date -Iseconds)\"}' > \"$daily_file\""
+        fi
+
+        # Merge current conversation into daily file
+        local merge_cmd="jq -s '.[0] + {contents: (.[0].contents + .[1].contents), archived_at: \"$(date -Iseconds)\"}' \"$daily_file\" \"$conversation_file\" > \"$daily_file.tmp\" && mv \"$daily_file.tmp\" \"$daily_file\""
+        shell::run_cmd_eval "$merge_cmd"
+
+        # Clear current conversation
+        shell::run_cmd_eval "echo '{\"contents\": [], \"date\": \"$today\", \"created_at\": \"$(date -Iseconds)\"}' > \"$conversation_file\""
+
+        shell::colored_echo "INFO: Conversation archived to daily history: $daily_file" 46
+    fi
+}
