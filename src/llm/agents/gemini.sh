@@ -1244,3 +1244,50 @@ shell::gemini_encode_file() {
         shell::run_cmd_eval "$base64_cmd"
     fi
 }
+
+# shell::gemini_get_mime_type function
+# Determines the MIME type of a file.
+#
+# Usage:
+#   shell::gemini_get_mime_type [-h] <file_path>
+#
+# Parameters:
+#   - -h         : Optional. Displays this help message.
+#   - <file_path>: The path to the file.
+#
+# Description:
+#   Returns the appropriate MIME type based on file extension.
+#
+# Example:
+#   mime_type=$(shell::gemini_get_mime_type "document.pdf")
+shell::gemini_get_mime_type() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_GEMINI_GET_MIME_TYPE"
+        return 0
+    fi
+
+    if [ -z "$1" ]; then
+        shell::colored_echo "ERR: File path is required" 196
+        return 1
+    fi
+
+    local file_path="$1"
+    local extension="${file_path##*.}"
+
+    case "$extension" in
+    txt | log) echo "text/plain" ;;
+    json) echo "application/json" ;;
+    csv) echo "text/csv" ;;
+    md) echo "text/markdown" ;;
+    html) echo "text/html" ;;
+    xml) echo "application/xml" ;;
+    jpg | jpeg) echo "image/jpeg" ;;
+    png) echo "image/png" ;;
+    webp) echo "image/webp" ;;
+    gif) echo "image/gif" ;;
+    pdf) echo "application/pdf" ;;
+    docx) echo "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ;;
+    xlsx) echo "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ;;
+    *) echo "text/plain" ;;
+    esac
+}
