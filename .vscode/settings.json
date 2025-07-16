@@ -20,6 +20,7 @@
     "Grayscale",
     "gsub",
     "HEALTHCHECK",
+    "Iseconds",
     "keygen",
     "MSYS",
     "nslookup",

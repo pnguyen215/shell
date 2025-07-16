@@ -686,3 +686,40 @@ shell::gemini_init_workspace() {
         shell::colored_echo "INFO: Gemini workspace initialized at '$workspace_dir'" 46
     fi
 }
+
+# shell::gemini_get_daily_conversation_file function
+# Gets the conversation file path for a specific date.
+#
+# Usage:
+#   shell::gemini_get_daily_conversation_file [-h] [date] [workspace_dir]
+#
+# Parameters:
+#   - -h             : Optional. Displays this help message.
+#   - [date]         : Optional. Date in YYYY-MM-DD format. Defaults to today.
+#   - [workspace_dir]: Optional. The workspace directory path. Defaults to config value.
+#
+# Description:
+#   Returns the path to the conversation file for the specified date.
+#   Creates the daily conversation file if it doesn't exist.
+#
+# Example:
+#   file_path=$(shell::gemini_get_daily_conversation_file)
+#   file_path=$(shell::gemini_get_daily_conversation_file "2024-01-15")
+shell::gemini_get_daily_conversation_file() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_GEMINI_GET_DAILY_CONVERSATION_FILE"
+        return 0
+    fi
+
+    local date="${1:-$(date +%Y-%m-%d)}"
+    # local workspace_dir="${2:-$(shell::read_ini "$SHELL_KEY_CONF_AGENT_GEMINI_STREAM_FILE" "gemini" "WORKSPACE_DIR")}"
+    local workspace_dir="$HOME/.shell-config/agents/gemini/workspace"
+    local daily_file="$workspace_dir/history/$date.json"
+
+    # Create daily conversation file if it doesn't exist
+    if [ ! -f "$daily_file" ]; then
+        shell::run_cmd_eval "echo '{\"contents\": [], \"date\": \"$date\", \"created_at\": \"$(date -Iseconds)\"}' > \"$daily_file\""
+    fi
+
+    echo "$daily_file"
+}
