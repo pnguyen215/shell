@@ -1185,3 +1185,62 @@ shell::gemini_add_message() {
         shell::run_cmd_eval "$jq_cmd"
     fi
 }
+
+# shell::gemini_encode_file function
+# Encodes a file to base64 for API submission.
+#
+# Usage:
+#   shell::gemini_encode_file [-n] [-h] <file_path>
+#
+# Parameters:
+#   - -n         : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+#   - -h         : Optional. Displays this help message.
+#   - <file_path>: The path to the file to encode.
+#
+# Description:
+#   Encodes the specified file to base64 format for API consumption.
+#   Handles platform differences between macOS and Linux.
+#
+# Example:
+#   shell::gemini_encode_file "document.pdf"
+#   shell::gemini_encode_file -n "image.jpg"
+shell::gemini_encode_file() {
+    local dry_run="false"
+
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_GEMINI_ENCODE_FILE"
+        return 0
+    fi
+
+    if [ -z "$1" ]; then
+        shell::colored_echo "ERR: File path is required" 196
+        return 1
+    fi
+
+    local file_path="$1"
+
+    if [ ! -f "$file_path" ]; then
+        shell::colored_echo "ERR: File not found: $file_path" 196
+        return 1
+    fi
+
+    local os_type=$(shell::get_os_type)
+    local base64_cmd=""
+
+    if [ "$os_type" = "macos" ]; then
+        base64_cmd="base64 -i \"$file_path\""
+    else
+        base64_cmd="base64 -w 0 \"$file_path\""
+    fi
+
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "$base64_cmd"
+    else
+        shell::run_cmd_eval "$base64_cmd"
+    fi
+}
