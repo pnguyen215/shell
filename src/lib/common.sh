@@ -1373,7 +1373,7 @@ shell::editor() {
 
     # Use fzf to select the text editor command.
     local selected_command
-    selected_command=$(echo "cat;less;more;vim;nano;remove;base64;path;clip" | tr ';' '\n' | fzf --prompt="Select an action: ")
+    selected_command=$(echo "cat;less;more;vim;nano;remove;base64;path;clip;unlock;permissions" | tr ';' '\n' | fzf --prompt="Select an action: ")
     if [ -z "$selected_command" ]; then
         shell::colored_echo "ERR: No action selected." 196
         return 1
@@ -1423,6 +1423,38 @@ shell::editor() {
         clip_value=$(cat "$selected_file")
         shell::clip_value "$clip_value"
         return 0
+    fi
+
+    # Check if the selected command is 'unlock'.
+    if [ "$selected_command" = "unlock" ]; then
+    if [ "$dry_run" = "true" ]; then
+            shell::unlock_permissions -n "$selected_file"
+        else
+            shell::unlock_permissions "$selected_file"
+        fi
+        if [ $? -eq 0 ]; then
+            shell::colored_echo "INFO: Permissions for '$selected_file' unlocked successfully." 46
+            return 0
+        else
+            shell::colored_echo "ERR: Failed to unlock permissions for '$selected_file'." 196
+            return 1
+        fi
+    fi
+
+    # Check if the selected command is 'permissions'.
+    if [ "$selected_command" = "permissions" ]; then
+        if [ "$dry_run" = "true" ]; then
+            shell::fzf_set_permissions -n "$selected_file"
+        else
+            shell::fzf_set_permissions "$selected_file"
+        fi
+        if [ $? -eq 0 ]; then
+            shell::colored_echo "INFO: Permissions for '$selected_file' upgraded successfully." 46
+            return 0
+        else
+            shell::colored_echo "ERR: Failed to upgrade permissions for '$selected_file'." 196
+            return 1
+        fi
     fi
 
     # Build the command string.

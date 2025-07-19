@@ -20,6 +20,8 @@ alias sgrammarai='shell::eval_gemini_en_vi'          # check grammar english by 
 alias seg='shell::eval_gemini_en_vi'                 # check grammar english by Gemini
 alias sgemviconv='shell::eval_gemini_vi_en'          # convert vietnamese to english by Gemini
 alias segvi='shell::eval_gemini_vi_en'               # convert vietnamese to english by Gemini
+alias ser="shell::editor"                            # edit file with default editor
+alias ser-n="shell::editor -n"                       # edit file with default editor in dry mode
 
 # Kernel alias
 alias c="clear"
