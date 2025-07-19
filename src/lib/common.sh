@@ -1373,7 +1373,7 @@ shell::editor() {
 
     # Use fzf to select the text editor command.
     local selected_command
-    selected_command=$(echo "cat;less;more;vim;nano;remove" | tr ';' '\n' | fzf --prompt="Select an action: ")
+    selected_command=$(echo "cat;less;more;vim;nano;remove;base64" | tr ';' '\n' | fzf --prompt="Select an action: ")
     if [ -z "$selected_command" ]; then
         shell::colored_echo "ERR: No action selected." 196
         return 1
@@ -1391,6 +1391,22 @@ shell::editor() {
             return 0
         else
             shell::colored_echo "ERR: Failed to remove file '$selected_file'." 196
+            return 1
+        fi
+    fi
+
+    # Check if the selected command is 'base64'.
+    if [ "$selected_command" = "base64" ]; then
+        if [ "$dry_run" = "true" ]; then
+            shell::encode_base64_file -n "$selected_file"
+        else
+            shell::encode_base64_file "$selected_file"
+        fi
+        if [ $? -eq 0 ]; then
+            shell::colored_echo "INFO: File '$selected_file' encoded base64 successfully." 46
+            return 0
+        else
+            shell::colored_echo "ERR: Failed to encode file '$selected_file'." 196
             return 1
         fi
     fi
