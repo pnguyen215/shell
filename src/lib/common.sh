@@ -1373,7 +1373,7 @@ shell::editor() {
 
     # Use fzf to select the text editor command.
     local selected_command
-    selected_command=$(echo "cat;less;more;vim;nano;remove;base64;path;clip;unlock;permissions" | tr ';' '\n' | fzf --prompt="Select an action: ")
+    selected_command=$(echo "cat;less;more;vim;nano;remove;base64;path;clip;unlock;permissions;ex-permissions" | tr ';' '\n' | fzf --prompt="Select an action: ")
     if [ -z "$selected_command" ]; then
         shell::colored_echo "ERR: No action selected." 196
         return 1
@@ -1453,6 +1453,22 @@ shell::editor() {
             return 0
         else
             shell::colored_echo "ERR: Failed to upgrade permissions for '$selected_file'." 196
+            return 1
+        fi
+    fi
+
+    # Check if the selected command is 'ex-permissions'.
+    if [ "$selected_command" = "ex-permissions" ]; then
+        if [ "$dry_run" = "true" ]; then
+            shell::analyze_permissions --file "$selected_file" --debug
+        else
+            shell::analyze_permissions --file "$selected_file"
+        fi
+        if [ $? -eq 0 ]; then
+            shell::colored_echo "INFO: Permissions for '$selected_file' analyzed successfully." 46
+            return 0
+        else
+            shell::colored_echo "ERR: Failed to analyze permissions for '$selected_file'." 196
             return 1
         fi
     fi
