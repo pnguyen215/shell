@@ -381,7 +381,7 @@ shell::eval_gemini_en_vi() {
     # local payload=$(sed "s/{ENTER_SENTENCE_ENGLISH}/$sentence_english/" "$prompt_file")
     local payload
     if jq . "$prompt_file" >/dev/null 2>&1; then
-        payload=$(shell::replace_json_placeholder "$prompt_file" "{ENTER_SENTENCE_ENGLISH}" "$sentence_english_raw")
+        payload=$(shell::replace_json_placeholder "$prompt_file" "{ENTER_SENTENCE_ENGLISH}" "$sentence_english")
     else
         payload=$(sed "s/{ENTER_SENTENCE_ENGLISH}/$sentence_english/g" "$prompt_file")
     fi
