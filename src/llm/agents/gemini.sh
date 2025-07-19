@@ -362,6 +362,11 @@ shell::eval_gemini_en_vi() {
 
     # Ensure the sentence_english variable is set
     local sentence_english="$1"
+    sentence_english=$(shell::sanitize_text "$sentence_english")
+    if [ -z "$sentence_english" ]; then
+        shell::colored_echo "ERR: Sentence cannot be empty." 196
+        return 1
+    fi
     local prompt_file="$LLM_PROMPTS_DIR/gemini/en_eval_vi_prompt_request_v1.txt"
 
     # Check if the prompt file exists
@@ -523,6 +528,11 @@ shell::eval_gemini_vi_en() {
 
     # Ensure the sentence_vietnamese variable is set
     local sentence_vietnamese="$1"
+    sentence_vietnamese=$(shell::sanitize_text "$sentence_vietnamese")
+    if [ -z "$sentence_vietnamese" ]; then
+        shell::colored_echo "ERR: Sentence cannot be empty." 196
+        return 1
+    fi
     local prompt_file="$LLM_PROMPTS_DIR/gemini/vi_to_en_prompt_request_v1.txt"
 
     # Check if the prompt file exists
