@@ -1414,7 +1414,13 @@ shell::editor() {
     # Check if the selected command is 'clip-base64'.
     if [ "$selected_command" = "clip-base64" ]; then
         local base64_value
-        base64_value=$(shell::encode_base64_file "$selected_file")
+        local base64_cmd
+        if [ "$os_type" = "macos" ]; then
+            base64_cmd="base64 -i \"$selected_file\""
+        else
+            base64_cmd="base64 -w 0 \"$selected_file\""
+        fi
+        base64_value=$(base64_cmd)
         shell::clip_value "$base64_value"
         if [ $? -eq 0 ]; then
             shell::colored_echo "INFO: Base64 value of '$selected_file' copied to clipboard." 46
