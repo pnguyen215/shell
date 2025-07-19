@@ -1420,13 +1420,17 @@ shell::editor() {
         else
             base64_cmd="base64 -w 0 \"$selected_file\""
         fi
-        base64_value=$(base64_cmd)
+        base64_value=$(eval "$base64_cmd")
+        if [ -z "$base64_value" ]; then
+            shell::colored_echo "ERR: Failed to encode file '$selected_file' to base64." 196
+            return 1
+        fi
         shell::clip_value "$base64_value"
         if [ $? -eq 0 ]; then
             shell::colored_echo "INFO: Base64 value of '$selected_file' copied to clipboard." 46
             return 0
         else
-            shell::colored_echo "ERR: Failed to copy base64 value of '$selected_file' to clipboard." 196
+            shell::colored_echo "ERR: Failed to copy base64 value to clipboard." 196
             return 1
         fi
     fi
