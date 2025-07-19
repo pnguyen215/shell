@@ -361,8 +361,8 @@ shell::eval_gemini_en_vi() {
     fi
 
     # Ensure the sentence_english variable is set
-    local sentence_english="$1"
-    sentence_english=$(shell::sanitize_text "$sentence_english")
+    local sentence_english_raw="$1"
+    local sentence_english=$(shell::sanitize_text "$sentence_english_raw")
     if [ -z "$sentence_english" ]; then
         shell::colored_echo "ERR: Sentence cannot be empty." 196
         return 1
@@ -378,7 +378,19 @@ shell::eval_gemini_en_vi() {
     # Replace the placeholder in the prompt file with the provided sentence
     # The sed command replaces {ENTER_SENTENCE_ENGLISH} in the prompt file with the actual sentence_english
     # This allows the prompt to be dynamically generated based on user input
-    local payload=$(sed "s/{ENTER_SENTENCE_ENGLISH}/$sentence_english/" "$prompt_file")
+    # local payload=$(sed "s/{ENTER_SENTENCE_ENGLISH}/$sentence_english/" "$prompt_file")
+    local payload
+    if jq . "$prompt_file" >/dev/null 2>&1; then
+        payload=$(shell::replace_json_placeholder "$prompt_file" "{ENTER_SENTENCE_ENGLISH}" "$sentence_english_raw")
+    else
+        payload=$(sed "s/{ENTER_SENTENCE_ENGLISH}/$sentence_english/g" "$prompt_file")
+    fi
+
+    # Check if payload is empty or invalid
+    if [ -z "$payload" ]; then
+        shell::colored_echo "ERR: Failed to generate payload from prompt template" 196
+        return 1
+    fi
 
     # Check if the dry-run is enabled
     # If dry_run is true, it will print the curl command instead of executing it
@@ -641,4 +653,37 @@ shell::eval_gemini_vi_en() {
         done
         shell::clip_value "$translated_english"
     fi
+}
+
+# shell::replace_json_placeholder function
+# Replaces a placeholder in a JSON file with a specified value.
+#
+# Usage:
+# shell::replace_json_placeholder <json_file> <placeholder> <replacement>
+#
+# Parameters:
+# - <json_file> : The path to the JSON file where the placeholder will be replaced.
+# - <placeholder> : The placeholder string to be replaced in the JSON file.
+# - <replacement> : The value to replace the placeholder with.
+#
+# Description:
+# This function reads a JSON file, replaces a specified placeholder with a given value,
+# and returns the modified JSON. It uses jq to ensure the JSON structure remains valid. 
+shell::replace_json_placeholder() {
+    local json_file="$1"
+    local placeholder="$2"
+    local replacement="$3"
+    
+    # Read the JSON template and replace placeholder using jq
+    # This ensures the JSON structure remains valid
+    local escaped_replacement
+    escaped_replacement=$(printf '%s' "$replacement" | jq -R -s '.')
+    
+    # Remove the outer quotes from jq output since we'll be inserting into existing JSON
+    escaped_replacement=$(printf '%s' "$escaped_replacement" | sed 's/^"//; s/"$//')
+    
+    # Use jq to safely replace the placeholder in the JSON structure
+    jq --arg replacement "$replacement" \
+       'walk(if type == "string" then gsub("'$placeholder'"; $replacement) else . end)' \
+       "$json_file"
 }
