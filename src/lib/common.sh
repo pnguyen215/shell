@@ -1381,11 +1381,17 @@ shell::editor() {
 
     # Check if the selected command is 'remove'.
     if [ "$selected_command" = "remove" ]; then
-        shell::remove_files ${dry_run:+-n} "$selected_file"
+        if [ "$dry_run" = "true" ]; then
+            shell::remove_files -n "$selected_file"
+        else
+            shell::remove_files "$selected_file"
+        fi
         if [ $? -eq 0 ]; then
             shell::colored_echo "INFO: File '$selected_file' removed successfully." 46
+            return 0
         else
             shell::colored_echo "ERR: Failed to remove file '$selected_file'." 196
+            return 1
         fi
     fi
 
