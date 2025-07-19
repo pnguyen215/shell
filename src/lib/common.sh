@@ -1373,7 +1373,7 @@ shell::editor() {
 
     # Use fzf to select the text editor command.
     local selected_command
-    selected_command=$(echo "cat;less;more;vim;nano;remove;base64;clip-base64;path;clip;unlock;permissions;ex-permissions" | tr ';' '\n' | fzf --prompt="Select an action: ")
+    selected_command=$(echo "cat;less;more;vim;nano;remove;base64;clip-base64;path;clip;unlock;permissions;ex-permissions;mime-type" | tr ';' '\n' | fzf --prompt="Select an action: ")
     if [ -z "$selected_command" ]; then
         shell::colored_echo "ERR: No action selected." 196
         return 1
@@ -1495,6 +1495,18 @@ shell::editor() {
             shell::colored_echo "ERR: Failed to analyze permissions for '$selected_file'." 196
             return 1
         fi
+    fi
+
+    # Check if the selected command is 'mine-type'.
+    if [ "$selected_command" = "mime-type" ]; then
+        local mime_type
+        mime_type=$(shell::get_mime_type "$selected_file")
+        if [ -z "$mime_type" ]; then
+            shell::colored_echo "ERR: Failed to determine MIME type for '$selected_file'." 196
+            return 1
+        fi
+        shell::colored_echo "INFO: MIME type of '$selected_file': $mime_type" 46
+        return 0
     fi
 
     # Build the command string.
