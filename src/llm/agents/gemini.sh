@@ -361,8 +361,8 @@ shell::eval_gemini_en_vi() {
     fi
 
     # Ensure the sentence_english variable is set
-    local sentence_english_raw="$1"
-    local sentence_english=$(shell::sanitize_text "$sentence_english_raw")
+    local sentence_english="$1"
+    sentence_english=$(shell::sanitize_text "$sentence_english")
     if [ -z "$sentence_english" ]; then
         shell::colored_echo "ERR: Sentence cannot be empty." 196
         return 1
