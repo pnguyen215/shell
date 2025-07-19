@@ -4469,3 +4469,20 @@ Parameters:
 Description:
   Returns the appropriate MIME type based on file extension.
 "
+
+USAGE_SHELL_ENCODE_BASE64_FILE="
+shell::encode_base64_file function
+Encodes a file to base64 for API submission.
+
+Usage:
+  shell::encode_base64_file [-n] [-h] <file_path>
+
+Parameters:
+  - -n         : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+  - -h         : Optional. Displays this help message.
+  - <file_path>: The path to the file to encode.
+
+Description:
+  Encodes the specified file to base64 format for API consumption.
+  Handles platform differences between macOS and Linux.
+"

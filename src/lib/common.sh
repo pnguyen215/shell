@@ -2842,3 +2842,62 @@ shell::get_mime_type() {
         *) echo "text/plain" ;;
     esac
 }
+
+# shell::encode_base64_file function
+# Encodes a file to base64 for API submission.
+#
+# Usage:
+#   shell::encode_base64_file [-n] [-h] <file_path>
+#
+# Parameters:
+#   - -n         : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+#   - -h         : Optional. Displays this help message.
+#   - <file_path>: The path to the file to encode.
+#
+# Description:
+#   Encodes the specified file to base64 format for API consumption.
+#   Handles platform differences between macOS and Linux.
+#
+# Example:
+#   shell::encode_base64_file "document.pdf"
+#   shell::encode_base64_file -n "image.jpg"
+shell::encode_base64_file() {
+     if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_ENCODE_BASE64_FILE"
+        return 0
+    fi
+
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
+    if [ $# -ne 1 ]; then
+        echo "Usage: shell::encode_base64_file [-n] [-h] <file_path>"
+        return 1
+    fi
+
+    # Check if the file exists
+    # If the file does not exist, print an error message and exit.
+    local file_path="$1"
+    if [ ! -f "$file_path" ]; then
+        shell::colored_echo "ERR: File not found: $file_path" 196
+        return 1
+    fi
+
+    local os_type=$(shell::get_os_type)
+    local base64_cmd=""
+
+    if [ "$os_type" = "macos" ]; then
+        base64_cmd="base64 -i \"$file_path\""
+    else
+        base64_cmd="base64 -w 0 \"$file_path\""
+    fi
+
+    if [ "$dry_run" = "true" ]; then
+        shell::on_evict "$base64_cmd"
+    else
+        shell::run_cmd_eval "$base64_cmd"
+    fi
+}
