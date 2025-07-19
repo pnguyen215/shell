@@ -2747,6 +2747,11 @@ shell::get_mime_type() {
         return 0
     fi
 
+    if [ $# -ne 1 ]; then
+        echo "Usage: shell::get_mime_type <file_path>"
+        return 1
+    fi
+
     if [ -z "$1" ]; then
         shell::colored_echo "ERR: File path is required" 196
         return 1
