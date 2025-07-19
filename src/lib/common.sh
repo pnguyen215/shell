@@ -2725,3 +2725,115 @@ shell::validate_hostname() {
         return 0
     fi
 }
+
+# shell::get_mime_type function
+# Determines the MIME type of a file.
+#
+# Usage:
+#   shell::get_mime_type [-h] <file_path>
+#
+# Parameters:
+#   - -h         : Optional. Displays this help message.
+#   - <file_path>: The path to the file.
+#
+# Description:
+#   Returns the appropriate MIME type based on file extension.
+#
+# Example:
+#   mime_type=$(shell::get_mime_type "document.pdf")
+shell::get_mime_type() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_GET_MIME_TYPE"
+        return 0
+    fi
+
+    if [ -z "$1" ]; then
+        shell::colored_echo "ERR: File path is required" 196
+        return 1
+    fi
+
+    # Check if the file exists
+    if [ ! -f "$1" ]; then
+        shell::colored_echo "ERR: File '$1' does not exist." 196
+        return 1
+    fi
+
+    local file_path="$1"
+    local extension="${file_path##*.}"
+
+    case "$extension" in
+        txt|log) echo "text/plain" ;;
+        json) echo "application/json" ;;
+        csv) echo "text/csv" ;;
+        md) echo "text/markdown" ;;
+        html) echo "text/html" ;;
+        xml) echo "application/xml" ;;
+        jpg|jpeg) echo "image/jpeg" ;;
+        png) echo "image/png" ;;
+        webp) echo "image/webp" ;;
+        gif) echo "image/gif" ;;
+        pdf) echo "application/pdf" ;;
+        docx) echo "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ;;
+        xlsx) echo "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ;;
+        pptx) echo "application/vnd.openxmlformats-officedocument.presentationml.presentation" ;;
+        zip) echo "application/zip" ;;
+        tar) echo "application/x-tar" ;;
+        gz) echo "application/gzip" ;;
+        bz2) echo "application/x-bzip2" ;;
+        xz) echo "application/x-xz" ;;
+        mp3) echo "audio/mpeg" ;;
+        wav) echo "audio/wav" ;;
+        ogg) echo "audio/ogg" ;;
+        mp4) echo "video/mp4" ;;
+        avi) echo "video/x-msvideo" ;;
+        mkv) echo "video/x-matroska" ;;
+        flv) echo "video/x-flv" ;;
+        webm) echo "video/webm" ;;
+        svg) echo "image/svg+xml" ;;
+        ico) echo "image/x-icon" ;;
+        json5) echo "application/json5" ;;
+        yaml|yml) echo "application/x-yaml" ;;
+        sh) echo "application/x-sh" ;;
+        py) echo "text/x-python" ;;
+        js) echo "application/javascript" ;;
+        css) echo "text/css" ;;
+        sql) echo "application/sql" ;;
+        mdx) echo "text/markdown" ;;
+        rs) echo "text/x-rust" ;;
+        go) echo "text/x-go" ;;
+        ts) echo "application/typescript" ;;
+        cpp|cxx|cc) echo "text/x-c++src" ;;
+        c) echo "text/x-csrc" ;;
+        h) echo "text/x-chdr" ;;
+        rb) echo "text/x-ruby" ;;
+        pl) echo "text/x-perl" ;;
+        java) echo "text/x-java-source" ;;
+        kotlin) echo "text/x-kotlin" ;;
+        dart) echo "application/dart" ;;
+        scala) echo "text/x-scala" ;;
+        swift) echo "text/x-swift" ;;
+        lua) echo "text/x-lua" ;;
+        rust) echo "text/x-rust" ;;
+        asm|s) echo "text/x-asm" ;;
+        v|vlang) echo "text/x-vlang" ;;
+        nim) echo "text/x-nim" ;;
+        clj|cljs) echo "text/x-clojure" ;;
+        el|elisp) echo "text/x-emacs-lisp" ;;
+        haskell|hs) echo "text/x-haskell" ;;
+        erlang|erl) echo "text/x-erlang" ;;
+        crystal) echo "text/x-crystal" ;;
+        php) echo "application/x-php" ;;
+        asp|aspx) echo "application/x-aspx" ;;
+        jsp) echo "application/x-jsp" ;;
+        cs|cshtml) echo "text/x-csharp" ;;
+        vb|vbs) echo "text/vbscript" ;;
+        tsx) echo "application/typescript" ;;
+        vue) echo "text/x-vue" ;;
+        svelte) echo "text/x-svelte" ;;
+        rsx) echo "text/x-rsx" ;;
+        dart) echo "application/dart" ;;
+        nim) echo "text/x-nim" ;;
+        clojure|clj) echo "text/x-clojure" ;;
+        *) echo "text/plain" ;;
+    esac
+}

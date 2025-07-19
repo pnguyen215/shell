@@ -4454,3 +4454,18 @@ This function reads the Gemini configuration file, constructs a request to the G
 and sends the provided payload. It handles errors, sanitizes the response, and returns the parsed JSON.
 It also supports debugging and dry-run modes.
 "
+
+USAGE_SHELL_GET_MIME_TYPE="
+shell::get_mime_type function
+Determines the MIME type of a file.
+
+Usage:
+  shell::get_mime_type [-h] <file_path>
+
+Parameters:
+  - -h         : Optional. Displays this help message.
+  - <file_path>: The path to the file.
+
+Description:
+  Returns the appropriate MIME type based on file extension.
+"
