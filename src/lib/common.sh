@@ -1373,7 +1373,7 @@ shell::editor() {
 
     # Use fzf to select the text editor command.
     local selected_command
-    selected_command=$(echo "cat;less;more;vim;nano;remove;base64" | tr ';' '\n' | fzf --prompt="Select an action: ")
+    selected_command=$(echo "cat;less;more;vim;nano;remove;base64;path;clip" | tr ';' '\n' | fzf --prompt="Select an action: ")
     if [ -z "$selected_command" ]; then
         shell::colored_echo "ERR: No action selected." 196
         return 1
@@ -1409,6 +1409,20 @@ shell::editor() {
             shell::colored_echo "ERR: Failed to encode file '$selected_file'." 196
             return 1
         fi
+    fi
+
+    # Check if the selected command is 'path'.
+    if [ "$selected_command" = "path" ]; then
+        shell::clip_value "$selected_file"
+        return 0
+    fi
+
+    # Check if the selected command is 'clip'.
+    if [ "$selected_command" = "clip" ]; then
+        local clip_value
+        clip_value=$(cat "$selected_file")
+        shell::clip_value "$clip_value"
+        return 0
     fi
 
     # Build the command string.
