@@ -1190,7 +1190,6 @@ shell::copy_files() {
 #   shell::move_files /path/to/dest file1.txt file2.txt              # Moves file1.txt and file2.txt to /path/to/dest.
 #   shell::move_files -n /path/to/dest file1.txt file2.txt             # Prints the move commands without executing them.
 shell::move_files() {
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_MOVE_FILES"
         return 0
@@ -1320,15 +1319,12 @@ shell::remove_files() {
 #   - fzf must be installed.
 #   - Helper functions: shell::run_cmd, shell::on_evict, shell::colored_echo, and shell::get_os_type.
 shell::editor() {
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_EDITOR"
         return 0
     fi
 
     local dry_run="false"
-
-    # Check for the optional dry-run flag (-n).
     if [ "$1" = "-n" ]; then
         dry_run="true"
         shift
@@ -1377,10 +1373,20 @@ shell::editor() {
 
     # Use fzf to select the text editor command.
     local selected_command
-    selected_command=$(echo "cat;less;more;vim;nano" | tr ';' '\n' | fzf --prompt="Select an action: ")
+    selected_command=$(echo "cat;less;more;vim;nano;remove" | tr ';' '\n' | fzf --prompt="Select an action: ")
     if [ -z "$selected_command" ]; then
         shell::colored_echo "ERR: No action selected." 196
         return 1
+    fi
+
+    # Check if the selected command is 'remove'.
+    if [ "$selected_command" = "remove" ]; then
+        shell::remove_files ${dry_run:+-n} "$selected_file"
+        if [ $? -eq 0 ]; then
+            shell::colored_echo "INFO: File '$selected_file' removed successfully." 46
+        else
+            shell::colored_echo "ERR: Failed to remove file '$selected_file'." 196
+        fi
     fi
 
     # Build the command string.
