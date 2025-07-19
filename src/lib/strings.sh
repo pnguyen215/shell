@@ -196,3 +196,57 @@ shell::capitalize_each_word() {
     # Trim trailing space
     echo "${output_string%" "}"
 }
+
+# shell::sanitize_text function
+# Sanitizes a text string for safe use in shell scripts and JSON.
+# It escapes special characters, removes newlines and tabs, and trims whitespace.
+# Usage:
+#   shell::sanitize_text <text>
+#
+# Parameters:
+#   - <text> : The input text to sanitize.
+# Description:
+#   This function performs the following sanitization steps:
+#   1. Escapes backslashes, forward slashes, double quotes, and single quotes.
+#   2. Replaces newlines with a space and removes extra spaces.
+#   3. Replaces tabs with spaces.
+#   4. Trims leading and trailing whitespace.
+#   5. Returns the sanitized text.
+#
+# Returns:
+#   The sanitized text string.
+shell::sanitize_text() {
+    local input_text="$1"
+    # Escape special characters for sed and JSON safety
+    # 1. Escape backslashes first (must be done before other escapes)
+    # 2. Escape forward slashes for sed
+    # 3. Escape double quotes for JSON
+    # 4. Escape single quotes for shell safety
+    # 5. Remove or escape newlines and tabs
+    # 6. Handle other problematic characters
+    
+    local sanitized_text="$input_text"
+    
+    # Escape backslashes first
+    sanitized_text=$(printf '%s\n' "$sanitized_text" | sed 's/\\/\\\\/g')
+    
+    # Escape forward slashes for sed
+    sanitized_text=$(printf '%s\n' "$sanitized_text" | sed 's/\//\\\//g')
+    
+    # Escape double quotes
+    sanitized_text=$(printf '%s\n' "$sanitized_text" | sed 's/"/\\"/g')
+    
+    # Escape single quotes by replacing with '\''
+    sanitized_text=$(printf '%s\n' "$sanitized_text" | sed "s/'/'\\\\''/g")
+    
+    # Replace newlines with literal \n
+    sanitized_text=$(printf '%s\n' "$sanitized_text" | tr '\n' ' ' | sed 's/  */ /g')
+    
+    # Replace tabs with spaces
+    sanitized_text=$(printf '%s\n' "$sanitized_text" | tr '\t' ' ')
+    
+    # Trim leading and trailing whitespace
+    sanitized_text=$(printf '%s\n' "$sanitized_text" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+    
+    printf '%s' "$sanitized_text"
+}
