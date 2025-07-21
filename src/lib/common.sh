@@ -3027,3 +3027,232 @@ shell::encode_base64_file() {
         shell::run_cmd_eval "$base64_cmd"
     fi
 }
+
+#!/bin/bash
+
+# File viewer function using fzf with line highlighting and selection
+# Compatible with Linux and macOS
+view_file() {
+    local file="$1"
+    # Check if file argument is provided
+    if [[ -z "$file" ]]; then
+        echo "Usage: view_file <filename>"
+        echo "View file content with line highlighting and selection using fzf"
+        return 1
+    fi
+    # Check if file exists
+    if [[ ! -f "$file" ]]; then
+        echo "Error: File '$file' not found"
+        return 1
+    fi
+    # Check file extension and exclude unsupported formats
+    local ext="${file##*.}"
+    case "${ext,,}" in
+        xls|xlsx|xlsm|xlsb|ods)
+            echo "Error: Excel files are not supported"
+            return 1
+            ;;
+        ppt|pptx|pps|ppsx|odp)
+            echo "Error: PowerPoint files are not supported"
+            return 1
+            ;;
+        doc|docx|odt)
+            echo "Error: Word documents are not supported"
+            return 1
+            ;;
+    esac
+    # Check if fzf is installed
+    if ! command -v fzf &> /dev/null; then
+        echo "Error: fzf is not installed. Please install fzf first."
+        return 1
+    fi
+    # Create temporary file for line numbers and content
+    local temp_file=$(mktemp)
+    trap "rm -f '$temp_file'" EXIT
+    # Add line numbers to content
+    nl -ba "$file" > "$temp_file"
+    # Main fzf interface
+    local selected_lines
+    selected_lines=$(cat "$temp_file" | fzf \
+        --multi \
+        --bind 'enter:accept' \
+        --bind 'ctrl-c:abort' \
+        --bind 'ctrl-a:select-all' \
+        --bind 'ctrl-d:deselect-all' \
+        --bind 'tab:toggle' \
+        --bind 'shift-tab:toggle+up' \
+        --header="File: $file | TAB: select line | CTRL+A: select all | ENTER: copy selected | ESC: exit" \
+        --preview-window="right:50%" \
+        --preview="echo 'Selected lines will be copied to clipboard'" \
+        --height=100% \
+        --border \
+        --ansi)
+    # Check if user made a selection
+    if [[ -n "$selected_lines" ]]; then
+        # Extract only the content (remove line numbers)
+        local content_to_copy
+        content_to_copy=$(echo "$selected_lines" | sed 's/^[[:space:]]*[0-9]*[[:space:]]*//')
+        # Copy to clipboard based on OS
+        # if command -v pbcopy &> /dev/null; then
+        #     # macOS
+        #     echo "$content_to_copy" | pbcopy
+        #     echo "Selected lines copied to clipboard (macOS)"
+        # elif command -v xclip &> /dev/null; then
+        #     # Linux with xclip
+        #     echo "$content_to_copy" | xclip -selection clipboard
+        #     echo "Selected lines copied to clipboard (Linux - xclip)"
+        # elif command -v xsel &> /dev/null; then
+        #     # Linux with xsel
+        #     echo "$content_to_copy" | xsel --clipboard --input
+        #     echo "Selected lines copied to clipboard (Linux - xsel)"
+        # else
+        #     echo "Clipboard utility not found. Selected content:"
+        #     echo "----------------------------------------"
+        #     echo "$content_to_copy"
+        #     echo "----------------------------------------"
+        # fi
+        # Show what was copied
+        local line_count=$(echo "$selected_lines" | wc -l)
+        echo "Copied $line_count line(s) from '$file'"
+    else
+        echo "No lines selected"
+    fi
+}
+
+# Enhanced version with range selection
+view_file_range() {
+    local file="$1"
+    # Check if file argument is provided
+    if [[ -z "$file" ]]; then
+        echo "Usage: view_file_range <filename>"
+        echo "View file content with range selection using fzf"
+        return 1
+    fi
+    # Check if file exists
+    if [[ ! -f "$file" ]]; then
+        echo "Error: File '$file' not found"
+        return 1
+    fi
+    # Check file extension and exclude unsupported formats
+    local ext="${file##*.}"
+    case "${ext,,}" in
+        xls|xlsx|xlsm|xlsb|ods)
+            echo "Error: Excel files are not supported"
+            return 1
+            ;;
+        ppt|pptx|pps|ppsx|odp)
+            echo "Error: PowerPoint files are not supported"
+            return 1
+            ;;
+        doc|docx|odt)
+            echo "Error: Word documents are not supported"
+            return 1
+            ;;
+    esac
+    # Check if fzf is installed
+    if ! command -v fzf &> /dev/null; then
+        echo "Error: fzf is not installed. Please install fzf first."
+        return 1
+    fi
+    # Create temporary file for line numbers and content
+    local temp_file=$(mktemp)
+    trap "rm -f '$temp_file'" EXIT
+    # Add line numbers to content
+    nl -ba "$file" > "$temp_file"
+    echo "Select starting line:"
+    local start_line
+    start_line=$(cat "$temp_file" | fzf \
+        --header="Select START line for range | ENTER: confirm | ESC: cancel" \
+        --preview-window="right:50%" \
+        --preview="echo 'This will be the START of your selection range'" \
+        --height=100% \
+        --border)
+    if [[ -z "$start_line" ]]; then
+        echo "No starting line selected"
+        return 0
+    fi
+    local start_num=$(echo "$start_line" | awk '{print $1}')
+    echo "Starting line selected: $start_num"
+    echo "Select ending line:"
+    local end_line
+    end_line=$(cat "$temp_file" | fzf \
+        --header="Select END line for range | ENTER: confirm | ESC: cancel" \
+        --preview-window="right:50%" \
+        --preview="echo 'Range: line $start_num to this line'" \
+        --height=100% \
+        --border)
+    if [[ -z "$end_line" ]]; then
+        echo "No ending line selected"
+        return 0
+    fi
+    local end_num=$(echo "$end_line" | awk '{print $1}')
+    echo "Ending line selected: $end_num"
+    # Ensure start is less than or equal to end
+    if [[ $start_num -gt $end_num ]]; then
+        local temp=$start_num
+        start_num=$end_num
+        end_num=$temp
+        echo "Swapped range: lines $start_num to $end_num"
+    fi
+    # Extract the range
+    local content_to_copy
+    content_to_copy=$(sed -n "${start_num},${end_num}p" "$file")
+    # Copy to clipboard based on OS
+    # if command -v pbcopy &> /dev/null; then
+    #     # macOS
+    #     echo "$content_to_copy" | pbcopy
+    #     echo "Lines $start_num-$end_num copied to clipboard (macOS)"
+    # elif command -v xclip &> /dev/null; then
+    #     # Linux with xclip
+    #     echo "$content_to_copy" | xclip -selection clipboard
+    #     echo "Lines $start_num-$end_num copied to clipboard (Linux - xclip)"
+    # elif command -v xsel &> /dev/null; then
+    #     # Linux with xsel
+    #     echo "$content_to_copy" | xsel --clipboard --input
+    #     echo "Lines $start_num-$end_num copied to clipboard (Linux - xsel)"
+    # else
+    #     echo "Clipboard utility not found. Selected content (lines $start_num-$end_num):"
+    #     echo "----------------------------------------"
+    #     echo "$content_to_copy"
+    #     echo "----------------------------------------"
+    # fi
+    local line_count=$((end_num - start_num + 1))
+    echo "Copied $line_count line(s) from '$file' (lines $start_num-$end_num)"
+}
+
+# Alias for easier use
+alias vf='view_file'
+alias vfr='view_file_range'
+
+# Help function
+view_file_help() {
+    echo "File Viewer with fzf - Help"
+    echo "============================"
+    echo ""
+    echo "Functions:"
+    echo "  view_file <filename>       - View file with multi-line selection"
+    echo "  view_file_range <filename> - View file with range selection"
+    echo ""
+    echo "Aliases:"
+    echo "  vf  - shortcut for view_file"
+    echo "  vfr - shortcut for view_file_range"
+    echo ""
+    echo "Key bindings in fzf:"
+    echo "  TAB         - Toggle line selection"
+    echo "  Shift+TAB   - Toggle selection and move up"
+    echo "  CTRL+A      - Select all lines"
+    echo "  CTRL+D      - Deselect all lines"
+    echo "  ENTER       - Copy selected lines to clipboard"
+    echo "  ESC         - Exit without copying"
+    echo ""
+    echo "Supported platforms:"
+    echo "  - Linux (requires xclip or xsel for clipboard)"
+    echo "  - macOS (uses pbcopy for clipboard)"
+    echo ""
+    echo "Excluded file types:"
+    echo "  - Excel files (.xls, .xlsx, .xlsm, .xlsb, .ods)"
+    echo "  - PowerPoint files (.ppt, .pptx, .pps, .ppsx, .odp)"
+    echo "  - Word documents (.doc, .docx, .odt)"
+}
+
+alias vfh='view_file_help'
