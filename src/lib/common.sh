@@ -3157,7 +3157,6 @@ view_file() {
         --preview="echo 'Selected lines will be copied to clipboard. Date: $current_datetime UTC'" \
         --preview-window="top:3:wrap" \
         --height=100% \
-        --width=100% \
         --border=rounded \
         --border-label="File Viewer - $current_datetime UTC" \
         --border-label-pos=top \
