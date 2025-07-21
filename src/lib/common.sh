@@ -3101,92 +3101,8 @@ view_file() {
     fi
 }
 
-# Enhanced version with range selection
-view_file_range() {
-    local file="$1"
-    # Check if file argument is provided
-    if [[ -z "$file" ]]; then
-        echo "Usage: view_file_range <filename>"
-        echo "View file content with range selection using fzf"
-        return 1
-    fi
-    # Check if file exists
-    if [[ ! -f "$file" ]]; then
-        echo "Error: File '$file' not found"
-        return 1
-    fi
-    # Check file extension and exclude unsupported formats
-    # local ext="${file##*.}"
-    # case "${ext,,}" in
-    #     xls|xlsx|xlsm|xlsb|ods)
-    #         echo "Error: Excel files are not supported"
-    #         return 1
-    #         ;;
-    #     ppt|pptx|pps|ppsx|odp)
-    #         echo "Error: PowerPoint files are not supported"
-    #         return 1
-    #         ;;
-    #     doc|docx|odt)
-    #         echo "Error: Word documents are not supported"
-    #         return 1
-    #         ;;
-    # esac
-    # Check if fzf is installed
-    if ! command -v fzf &> /dev/null; then
-        echo "Error: fzf is not installed. Please install fzf first."
-        return 1
-    fi
-    # Create temporary file for line numbers and content
-    local temp_file=$(mktemp)
-    trap "rm -f '$temp_file'" EXIT
-    # Add line numbers to content
-    nl -ba "$file" > "$temp_file"
-    echo "Select starting line:"
-    local start_line
-    start_line=$(cat "$temp_file" | fzf \
-        --header="Select START line for range | ENTER: confirm | ESC: cancel" \
-        --preview-window="right:50%" \
-        --preview="echo 'This will be the START of your selection range'" \
-        --height=100% \
-        --border)
-    if [[ -z "$start_line" ]]; then
-        echo "No starting line selected"
-        return 0
-    fi
-    local start_num=$(echo "$start_line" | awk '{print $1}')
-    echo "Starting line selected: $start_num"
-    echo "Select ending line:"
-    local end_line
-    end_line=$(cat "$temp_file" | fzf \
-        --header="Select END line for range | ENTER: confirm | ESC: cancel" \
-        --preview-window="right:50%" \
-        --preview="echo 'Range: line $start_num to this line'" \
-        --height=100% \
-        --border)
-    if [[ -z "$end_line" ]]; then
-        echo "No ending line selected"
-        return 0
-    fi
-    local end_num=$(echo "$end_line" | awk '{print $1}')
-    echo "Ending line selected: $end_num"
-    # Ensure start is less than or equal to end
-    if [[ $start_num -gt $end_num ]]; then
-        local temp=$start_num
-        start_num=$end_num
-        end_num=$temp
-        echo "Swapped range: lines $start_num to $end_num"
-    fi
-    # Extract the range
-    local content_to_copy
-    content_to_copy=$(sed -n "${start_num},${end_num}p" "$file")
-     shell::clip_value "$content_to_copy"
-    local line_count=$((end_num - start_num + 1))
-    echo "Copied $line_count line(s) from '$file' (lines $start_num-$end_num)"
-}
-
 # Alias for easier use
 alias vf='view_file'
-alias vfr='view_file_range'
 
 # Help function
 view_file_help() {
@@ -3195,11 +3111,9 @@ view_file_help() {
     echo ""
     echo "Functions:"
     echo "  view_file <filename>       - View file with multi-line selection"
-    echo "  view_file_range <filename> - View file with range selection"
     echo ""
     echo "Aliases:"
     echo "  vf  - shortcut for view_file"
-    echo "  vfr - shortcut for view_file_range"
     echo ""
     echo "Key bindings in fzf:"
     echo "  TAB         - Toggle line selection"
