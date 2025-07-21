@@ -3281,6 +3281,16 @@ apply_basic_syntax_highlighting() {
                 -e "s/(\{|\}|\[|\])/${YELLOW}\1${NC}/g" \
                 "$file"
             ;;
+        go)
+            # Go highlighting
+            sed -E \
+                -e "s/(\/\/.*$)/${GRAY}\1${NC}/g" \
+                -e "s/(^|[[:space:]])(func|package|import|var|const|type|struct|interface|map|chan|go|defer|select|case|default)([[:space:]]|$)/\1${BLUE}\2${NC}\3/g" \
+                -e "s/(^|[[:space:]])(if|else|for|switch|break|continue)([[:space:]]|$)/\1${GREEN}\2${NC}\3/g" \
+                -e "s/(\"[^\"]*\")/${CYAN}\1${NC}/g" \
+                -e "s/('[^']*')/${CYAN}\1${NC}/g" \
+                "$file"
+            ;;
         *)
             # Default: no syntax highlighting, just output the file
             cat "$file"
