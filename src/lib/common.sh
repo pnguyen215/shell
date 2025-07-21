@@ -3030,378 +3030,294 @@ shell::encode_base64_file() {
 
 #!/bin/bash
 
-# File viewer function using fzf with line highlighting and selection
-# Compatible with Linux and macOS with ANSI color support
+# Interactive file viewer with line selection using fzf
+# Usage: view_file [filename] or view_file (to select file interactively)
 view_file() {
     local file="$1"
-    # Check if file argument is provided
+    local temp_dir="/tmp/fzf_viewer_$$"
+    local selected_file="$temp_dir/selected_lines"
+    
+    # Function to detect if file is binary or excluded type
+    is_excluded_file() {
+        local filepath="$1"
+        local filename=$(basename "$filepath")
+        local extension="${filename##*.}"
+        
+        # Check for excluded extensions
+        case "${extension,,}" in
+            xlsx|xls|xlsm|xlsb|ods) return 0 ;;  # Excel files
+            ppt|pptx|pps|ppsx|odp) return 0 ;;   # PowerPoint files
+            doc|docx|odt) return 0 ;;            # Word documents
+        esac
+        
+        # Check if file is binary using file command
+        if command -v file >/dev/null 2>&1; then
+            file_type=$(file -b --mime-type "$filepath" 2>/dev/null)
+            case "$file_type" in
+                text/*|application/json|application/xml|application/javascript) return 1 ;;
+                application/x-empty) return 1 ;;  # Empty files
+                inode/x-empty) return 1 ;;        # Empty files
+                *) 
+                    # Additional check for common text files without proper MIME type
+                    case "${extension,,}" in
+                        txt|md|json|xml|yaml|yml|conf|cfg|ini|log|sh|bash|py|js|html|css|sql) return 1 ;;
+                        *) return 0 ;;
+                    esac
+                ;;
+            esac
+        fi
+        
+        return 1
+    }
+    
+    # Function to select a file interactively
+    select_file_interactive() {
+        local selected
+        selected=$(find . -type f -not -path '*/\.*' 2>/dev/null | \
+                  while IFS= read -r filepath; do
+                      if ! is_excluded_file "$filepath"; then
+                          echo "$filepath"
+                      fi
+                  done | \
+                  fzf --height=50% \
+                      --border \
+                      --preview 'head -50 {} 2>/dev/null || echo "Cannot preview this file"' \
+                      --preview-window=right:50% \
+                      --prompt="Select file to view: " \
+                      --header="Navigate: ↑↓ | Select: Enter | Exit: Esc")
+        echo "$selected"
+    }
+    
+    # Function to copy text to clipboard (cross-platform)
+    copy_to_clipboard() {
+        local text="$1"
+        if command -v pbcopy >/dev/null 2>&1; then
+            # macOS
+            echo "$text" | pbcopy
+            echo "Copied to clipboard (macOS)"
+        elif command -v xclip >/dev/null 2>&1; then
+            # Linux with xclip
+            echo "$text" | xclip -selection clipboard
+            echo "Copied to clipboard (Linux/xclip)"
+        elif command -v xsel >/dev/null 2>&1; then
+            # Linux with xsel
+            echo "$text" | xsel --clipboard --input
+            echo "Copied to clipboard (Linux/xsel)"
+        else
+            echo "Clipboard utility not found. Install pbcopy (macOS), xclip, or xsel (Linux)"
+            echo "Content saved to: $selected_file"
+            echo "$text" > "$selected_file"
+        fi
+    }
+    
+    # Function to handle range selection
+    handle_range_selection() {
+        local file="$1"
+        local total_lines=$(wc -l < "$file")
+        
+        echo "Range selection mode activated"
+        echo "Total lines in file: $total_lines"
+        echo
+        
+        # Select start line
+        local start_line
+        start_line=$(nl -ba "$file" | \
+                    fzf --height=80% \
+                        --border \
+                        --prompt="Select START line (press Enter): " \
+                        --header="Select the starting line of your range" \
+                        --preview='echo {}' \
+                        --preview-window=up:3 | \
+                    awk '{print $1}')
+        
+        if [[ -z "$start_line" ]]; then
+            echo "Range selection cancelled"
+            return 1
+        fi
+        
+        echo "Start line selected: $start_line"
+        echo
+        
+        # Select end line
+        local end_line
+        end_line=$(nl -ba "$file" | \
+                  awk -v start="$start_line" 'NR >= start' | \
+                  fzf --height=80% \
+                      --border \
+                      --prompt="Select END line (press Enter): " \
+                      --header="Select the ending line of your range (from line $start_line onwards)" \
+                      --preview='echo {}' \
+                      --preview-window=up:3 | \
+                  awk '{print $1}')
+        
+        if [[ -z "$end_line" ]]; then
+            echo "Range selection cancelled"
+            return 1
+        fi
+        
+        echo "End line selected: $end_line"
+        echo "Extracting lines $start_line to $end_line..."
+        echo
+        
+        # Extract and copy the range
+        local selected_text
+        selected_text=$(sed -n "${start_line},${end_line}p" "$file")
+        
+        echo "Selected content:"
+        echo "===================="
+        echo "$selected_text"
+        echo "===================="
+        echo
+        
+        copy_to_clipboard "$selected_text"
+        
+        return 0
+    }
+    
+    # Main function logic
+    mkdir -p "$temp_dir"
+    trap "rm -rf '$temp_dir'" EXIT
+    
+    # If no file specified, select interactively
     if [[ -z "$file" ]]; then
-        echo "Usage: view_file <filename>"
-        echo "View file content with line highlighting and selection using fzf"
-        return 1
+        echo "No file specified. Opening file selector..."
+        file=$(select_file_interactive)
+        if [[ -z "$file" ]]; then
+            echo "No file selected. Exiting."
+            return 1
+        fi
     fi
-    # Check if file exists
+    
+    # Check if file exists and is readable
     if [[ ! -f "$file" ]]; then
-        echo "Error: File '$file' not found"
+        echo "Error: File '$file' does not exist or is not a regular file"
         return 1
     fi
-    # Check if file is readable
+    
     if [[ ! -r "$file" ]]; then
         echo "Error: File '$file' is not readable"
         return 1
     fi
-    # Check file extension and exclude unsupported formats
-    local ext="${file##*.}"
-    # Convert to lowercase using tr instead of ${ext,,}
-    ext=$(echo "$ext" | tr '[:upper:]' '[:lower:]')
-    case "$ext" in
-        xls|xlsx|xlsm|xlsb|ods)
-            echo "Error: Excel files are not supported"
-            return 1
-            ;;
-        ppt|pptx|pps|ppsx|odp)
-            echo "Error: PowerPoint files are not supported"
-            return 1
-            ;;
-        doc|docx|odt)
-            echo "Error: Word documents are not supported"
-            return 1
-            ;;
-    esac
-    # Check if fzf is installed
-    if ! command -v fzf &> /dev/null; then
-        echo "Error: fzf is not installed. Please install fzf first."
+    
+    # Check if file should be excluded
+    if is_excluded_file "$file"; then
+        echo "Error: File '$file' is excluded (binary or unsupported format)"
+        echo "Excluded types: Excel (.xlsx, .xls, etc.), PowerPoint (.ppt, .pptx, etc.), Word (.doc, .docx, etc.)"
         return 1
     fi
-    # Optional: Install packages if shell::install_package function exists
-    if declare -f shell::install_package > /dev/null 2>&1; then
-        shell::install_package bat
-        shell::install_package highlight
-    fi
-    # Create temporary files
-    local temp_file=$(mktemp)
-    local colored_file=$(mktemp)
-    local original_lines=$(mktemp)
-    trap "rm -f '$temp_file' '$colored_file' '$original_lines'" EXIT
-    # Store original file content with line numbers for mapping back
-    nl -ba "$file" > "$original_lines"
-    # Debug: Check if file has content
-    local file_size=$(wc -l < "$file" 2>/dev/null || echo "0")
-    if [[ $file_size -eq 0 ]]; then
-        echo "Warning: File appears to be empty or has no newlines"
-        echo "File size: $(stat -f%z "$file" 2>/dev/null || stat -c%s "$file" 2>/dev/null || echo "unknown") bytes"
-    fi
-    # Apply syntax highlighting based on file extension and tools available
-    local highlighting_method=""
-    if command -v bat &> /dev/null; then
-        # Use bat for syntax highlighting (preferred)
-        highlighting_method="bat"
-        bat --color=always --style=plain --paging=never "$file" | nl -ba > "$temp_file"
-    elif command -v highlight &> /dev/null; then
-        # Use highlight tool as fallback
-        highlighting_method="highlight"
-        highlight --out-format=ansi --force --no-doc "$file" 2>/dev/null | nl -ba > "$temp_file"
-    elif command -v pygmentize &> /dev/null; then
-        # Use pygments as another fallback
-        highlighting_method="pygmentize"
-        pygmentize -f terminal -g "$file" 2>/dev/null | nl -ba > "$temp_file"
-    else
-        # Fallback to basic syntax highlighting using sed/awk for common languages
-        highlighting_method="basic"
-        apply_basic_syntax_highlighting "$file" "$ext" > "$colored_file"
-        nl -ba "$colored_file" > "$temp_file"
-    fi
-    # Debug: Check if temp file has content
-    local temp_size=$(wc -l < "$temp_file" 2>/dev/null || echo "0")
-    if [[ $temp_size -eq 0 ]]; then
-        echo "Warning: Syntax highlighting failed with method: $highlighting_method"
-        echo "Falling back to plain text with line numbers..."
-        nl -ba "$file" > "$temp_file"
-        highlighting_method="plain"
-    fi
-    # Final check: if still no content, use cat with line numbers
-    if [[ ! -s "$temp_file" ]]; then
-        echo "Error: Failed to process file content. Using direct file access..."
-        cat -n "$file" > "$temp_file"
-        highlighting_method="cat"
-    fi
-    # Show debug info if temp file is still empty
-    if [[ ! -s "$temp_file" ]]; then
-        echo "Debug: Original file line count: $(wc -l < "$file")"
-        echo "Debug: Temp file size: $(ls -la "$temp_file")"
-        echo "Error: Unable to create processed file for fzf"
-        return 1
-    fi
-    # Main fzf interface
-    local selected_lines
-    selected_lines=$(cat "$temp_file" | fzf \
-        --multi \
-        --bind 'enter:accept' \
-        --bind 'ctrl-c:abort' \
-        --bind 'ctrl-a:select-all' \
-        --bind 'ctrl-d:deselect-all' \
-        --bind 'tab:toggle' \
-        --bind 'shift-tab:toggle+up' \
-        --header="File: $file | Method: $highlighting_method | TAB: select | CTRL+A: select all | ENTER: copy | ESC: exit" \
-        --preview="echo 'Selected lines will be copied to clipboard'" \
-        --height=100% \
-        --border=rounded \
-        --ansi)
-    # Check if user made a selection
-    if [[ -n "$selected_lines" ]]; then
-        # Extract line numbers from selected lines
-        local line_numbers
-        line_numbers=$(echo "$selected_lines" | sed -n 's/^[[:space:]]*\([0-9]*\)[[:space:]].*/\1/p')
-        # Get original content for these line numbers (preserve exact original formatting)
-        local content_to_copy=""
-        while IFS= read -r line_num; do
-            if [[ -n "$line_num" ]]; then
-                # Get the original line content without modification
-                local original_line
-                original_line=$(sed -n "${line_num}p" "$file")
-                if [[ -n "$content_to_copy" ]]; then
-                    content_to_copy="${content_to_copy}\n${original_line}"
-                else
-                    content_to_copy="$original_line"
-                fi
-            fi
-        done <<< "$line_numbers"
-        # Convert \n back to actual newlines
-        content_to_copy=$(echo -e "$content_to_copy")
-        # Use clipboard function if available
-        if declare -f shell::clip_value > /dev/null 2>&1; then
-            shell::clip_value "$content_to_copy"
-        else
-            # Fallback clipboard methods
-            if command -v pbcopy &> /dev/null; then
-                echo "$content_to_copy" | pbcopy
-                echo "Copied to clipboard (macOS)"
-            elif command -v xclip &> /dev/null; then
-                echo "$content_to_copy" | xclip -selection clipboard
-                echo "Copied to clipboard (Linux - xclip)"
-            elif command -v xsel &> /dev/null; then
-                echo "$content_to_copy" | xsel --clipboard --input
-                echo "Copied to clipboard (Linux - xsel)"
+    
+    echo "Opening file: $file"
+    echo "Commands:"
+    echo "  Enter: Copy selected line"
+    echo "  Ctrl-R: Range selection mode"
+    echo "  Esc/Ctrl-C: Exit"
+    echo
+    
+    while true; do
+        # Use fzf to display file content with line numbers
+        local selected_line
+        selected_line=$(nl -ba "$file" | \
+                       fzf --height=90% \
+                           --border \
+                           --bind 'ctrl-r:execute-silent(echo "RANGE_MODE" > '"$temp_dir"'/action)' \
+                           --bind 'ctrl-r:+abort' \
+                           --prompt="Select line to copy (Ctrl-R for range): " \
+                           --header="File: $file | Lines: $(wc -l < "$file") | Enter=Copy line, Ctrl-R=Range mode, Esc=Exit" \
+                           --preview='echo "Line content: {}"' \
+                           --preview-window=up:3)
+        
+        # Check if range mode was triggered
+        if [[ -f "$temp_dir/action" ]] && grep -q "RANGE_MODE" "$temp_dir/action" 2>/dev/null; then
+            rm -f "$temp_dir/action"
+            if handle_range_selection "$file"; then
+                echo
+                read -p "Press Enter to continue viewing, or Ctrl-C to exit..."
+                continue
             else
-                echo "Clipboard utility not found. Selected content:"
-                echo "----------------------------------------"
-                echo "$content_to_copy"
-                echo "----------------------------------------"
+                continue
             fi
         fi
-        # Show what was copied
-        local line_count=$(echo "$line_numbers" | wc -l)
-        echo "Copied $line_count line(s) from '$file'"
-        # Debug: Show which lines were selected
-        echo "Selected line numbers: $(echo "$line_numbers" | tr '\n' ',' | sed 's/,$//')"
-    else
-        echo "No lines selected"
-    fi
+        
+        # If no line selected (user pressed Esc), exit
+        if [[ -z "$selected_line" ]]; then
+            echo "Exiting file viewer."
+            break
+        fi
+        
+        # Extract the actual line content (remove line number)
+        local line_content
+        line_content=$(echo "$selected_line" | cut -f2-)
+        local line_number
+        line_number=$(echo "$selected_line" | awk '{print $1}')
+        
+        echo "Selected line $line_number:"
+        echo "===================="
+        echo "$line_content"
+        echo "===================="
+        echo
+        
+        copy_to_clipboard "$line_content"
+        
+        echo
+        read -p "Press Enter to continue viewing, or Ctrl-C to exit..."
+    done
 }
 
-# Simple version without syntax highlighting for debugging
-view_file_simple() {
-    local file="$1"
-    if [[ -z "$file" ]]; then
-        echo "Usage: view_file_simple <filename>"
-        return 1
+# Auto-completion function for the view_file function
+_view_file_completion() {
+    local cur prev opts
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+    
+    # Complete with readable files, excluding binary/excluded types
+    if [[ ${cur} == * ]]; then
+        COMPREPLY=( $(compgen -f -- ${cur}) )
     fi
-    if [[ ! -f "$file" ]]; then
-        echo "Error: File '$file' not found"
-        return 1
-    fi
-    local temp_file=$(mktemp)
-    trap "rm -f '$temp_file'" EXIT
-    # Simple line numbering without syntax highlighting
-    nl -ba "$file" > "$temp_file"
-    local selected_lines
-    selected_lines=$(cat "$temp_file" | fzf \
-        --multi \
-        --bind 'enter:accept' \
-        --bind 'ctrl-c:abort' \
-        --bind 'ctrl-a:select-all' \
-        --bind 'ctrl-d:deselect-all' \
-        --bind 'tab:toggle' \
-        --bind 'shift-tab:toggle+up' \
-        --header="File: $file (Simple mode) | TAB: select | ENTER: copy | ESC: exit" \
-        --height=100% \
-        --border)
-    if [[ -n "$selected_lines" ]]; then
-        # Extract line numbers and get original content
-        local line_numbers
-        line_numbers=$(echo "$selected_lines" | sed -n 's/^[[:space:]]*\([0-9]*\)[[:space:]].*/\1/p')
-        # Get original content for these line numbers
-        local content_to_copy=""
-        while IFS= read -r line_num; do
-            if [[ -n "$line_num" ]]; then
-                local original_line
-                original_line=$(sed -n "${line_num}p" "$file")
-                if [[ -n "$content_to_copy" ]]; then
-                    content_to_copy="${content_to_copy}\n${original_line}"
-                else
-                    content_to_copy="$original_line"
-                fi
-            fi
-        done <<< "$line_numbers"
-        content_to_copy=$(echo -e "$content_to_copy")
-        echo "Selected content:"
-        echo "----------------------------------------"
-        echo "$content_to_copy"
-        echo "----------------------------------------"
-        local line_count=$(echo "$line_numbers" | wc -l)
-        echo "Selected $line_count line(s) from '$file'"
-    else
-        echo "No lines selected"
-    fi
+    
+    return 0
 }
 
-# Basic syntax highlighting function for common languages
-apply_basic_syntax_highlighting() {
-    local file="$1"
-    local ext="$2"
-    # Check if file exists and is readable
-    if [[ ! -f "$file" ]] || [[ ! -r "$file" ]]; then
-        echo "Error: Cannot read file $file" >&2
-        return 1
-    fi
-    # ANSI color codes
-    local RED='\033[0;31m'
-    local GREEN='\033[0;32m'
-    local YELLOW='\033[1;33m'
-    local BLUE='\033[0;34m'
-    local PURPLE='\033[0;35m'
-    local CYAN='\033[0;36m'
-    local WHITE='\033[1;37m'
-    local GRAY='\033[0;90m'
-    local NC='\033[0m' # No Color
-    case "$ext" in
-        sh|bash|zsh)
-            # Shell script highlighting
-            sed -E \
-                -e "s/(#.*$)/${GRAY}\1${NC}/g" \
-                -e "s/(^|[[:space:]])(if|then|else|elif|fi|for|while|do|done|case|esac|function)([[:space:]]|$)/\1${BLUE}\2${NC}\3/g" \
-                -e "s/(^|[[:space:]])(echo|printf|read|export|source)([[:space:]]|$)/\1${GREEN}\2${NC}\3/g" \
-                -e "s/(\\\$[a-zA-Z_][a-zA-Z0-9_]*|\\\$\{[^}]*\})/${YELLOW}\1${NC}/g" \
-                -e "s/(\"[^\"]*\")/${CYAN}\1${NC}/g" \
-                -e "s/('[^']*')/${CYAN}\1${NC}/g" \
-                "$file"
-            ;;
-        py|python)
-            # Python highlighting
-            sed -E \
-                -e "s/(#.*$)/${GRAY}\1${NC}/g" \
-                -e "s/(^|[[:space:]])(def|class|if|elif|else|for|while|try|except|finally|with|import|from|as|return|yield|break|continue|pass|lambda|and|or|not|in|is)([[:space:]]|$)/\1${BLUE}\2${NC}\3/g" \
-                -e "s/(^|[[:space:]])(print|len|str|int|float|list|dict|tuple|set|range|enumerate|zip)([[:space:]]|\()/\1${GREEN}\2${NC}\3/g" \
-                -e "s/(\"[^\"]*\")/${CYAN}\1${NC}/g" \
-                -e "s/('[^']*')/${CYAN}\1${NC}/g" \
-                -e "s/(^|[[:space:]])([0-9]+)([[:space:]]|$)/\1${YELLOW}\2${NC}\3/g" \
-                "$file"
-            ;;
-        ini|conf|config)
-            # INI/Config file highlighting
-            sed -E \
-                -e "s/(#.*$|;.*$)/${GRAY}\1${NC}/g" \
-                -e "s/^\s*\[([^\]]*)\]/${BLUE}[\1]${NC}/g" \
-                -e "s/^(\s*)([a-zA-Z_][a-zA-Z0-9_.-]*)\s*=/${GREEN}\1\2${NC}=/g" \
-                -e "s/(=\s*)(\"[^\"]*\")(\s*$)/\1${CYAN}\2${NC}\3/g" \
-                -e "s/(=\s*)([^#;]*[^#;\s])(\s*$)/\1${YELLOW}\2${NC}\3/g" \
-                "$file"
-            ;;
-        json)
-            # JSON highlighting
-            sed -E \
-                -e "s/(\"[^\"]*\")(\s*:)/${BLUE}\1${NC}\2/g" \
-                -e "s/(:)(\s*\"[^\"]*\")(\s*[,}])/\1${CYAN}\2${NC}\3/g" \
-                -e "s/(:)(\s*[0-9]+)(\s*[,}])/\1${YELLOW}\2${NC}\3/g" \
-                -e "s/(:)(\s*(true|false|null))(\s*[,}])/\1${GREEN}\2${NC}\4/g" \
-                -e "s/(\{|\}|\[|\])/${YELLOW}\1${NC}/g" \
-                "$file"
-            ;;
-        xml|html|htm)
-            # XML/HTML highlighting
-            sed -E \
-                -e "s/(<!--.*-->)/${GRAY}\1${NC}/g" \
-                -e "s/(<\/?)([a-zA-Z][a-zA-Z0-9]*)/\1${BLUE}\2${NC}/g" \
-                -e "s/([a-zA-Z-]+)(=)/${GREEN}\1${NC}\2/g" \
-                -e "s/(\"[^\"]*\")/${CYAN}\1${NC}/g" \
-                -e "s/('[^']*')/${CYAN}\1${NC}/g" \
-                -e "s/(>|<)/${YELLOW}\1${NC}/g" \
-                "$file"
-            ;;
-        css)
-            # CSS highlighting
-            sed -E \
-                -e "s:(/\*.*\*/):${GRAY}\1${NC}:g" \
-                -e "s/([a-zA-Z-]+)(\s*:)/${BLUE}\1${NC}\2/g" \
-                -e "s/(\{|\})/${YELLOW}\1${NC}/g" \
-                -e "s/([.#][a-zA-Z-_][a-zA-Z0-9-_]*)/${GREEN}\1${NC}/g" \
-                -e "s/(\"[^\"]*\")/${CYAN}\1${NC}/g" \
-                -e "s/('[^']*')/${CYAN}\1${NC}/g" \
-                "$file"
-            ;;
-        yaml|yml)
-            # YAML highlighting
-            sed -E \
-                -e "s/(#.*$)/${GRAY}\1${NC}/g" \
-                -e "s/^(\s*)([a-zA-Z_][a-zA-Z0-9_-]*):/${BLUE}\1\2${NC}:/g" \
-                -e "s/(:\s*)(\"[^\"]*\")(\s*$)/\1${CYAN}\2${NC}\3/g" \
-                -e "s/(:\s*)([0-9]+)(\s*$)/\1${YELLOW}\2${NC}\3/g" \
-                -e "s/(:\s*)(true|false|null)(\s*$)/\1${GREEN}\2${NC}\3/g" \
-                "$file"
-            ;;
-        *)
-            # Default: no syntax highlighting, just output the file
-            cat "$file"
-            ;;
-    esac
+# Enable tab completion for the function
+complete -F _view_file_completion view_file
+
+# Example usage function
+show_view_file_help() {
+    cat << 'EOF'
+Interactive File Viewer with fzf - Usage Examples:
+
+1. Basic usage with file selection:
+   view_file                    # Opens file selector
+   view_file myfile.txt        # Opens specific file
+
+2. Interactive features:
+   - Use arrow keys to navigate lines
+   - Press Enter to copy highlighted line
+   - Press Ctrl-R to enter range selection mode
+   - Press Esc to exit
+
+3. Range selection mode:
+   - First, select the starting line
+   - Then, select the ending line
+   - Both lines and everything between will be copied
+
+4. Supported file types:
+   - Text files (.txt, .md, .log, etc.)
+   - Code files (.py, .js, .sh, .html, etc.)
+   - Configuration files (.conf, .cfg, .ini, etc.)
+   - JSON, XML, YAML files
+
+5. Excluded file types:
+   - Excel files (.xlsx, .xls, .xlsm, .xlsb, .ods)
+   - PowerPoint files (.ppt, .pptx, .pps, .ppsx, .odp)
+   - Word documents (.doc, .docx, .odt)
+   - Other binary files
+
+Requirements:
+- fzf (install with: brew install fzf or apt-get install fzf)
+- For clipboard support:
+  * macOS: pbcopy (built-in)
+  * Linux: xclip or xsel (install with package manager)
+
+EOF
 }
-
-# Test function to debug file reading
-test_file_content() {
-    local file="$1"
-    echo "=== File Content Test ==="
-    echo "File: $file"
-    echo "Exists: $(test -f "$file" && echo "yes" || echo "no")"
-    echo "Readable: $(test -r "$file" && echo "yes" || echo "no")"
-    echo "Size: $(stat -f%z "$file" 2>/dev/null || stat -c%s "$file" 2>/dev/null || echo "unknown") bytes"
-    echo "Lines: $(wc -l < "$file" 2>/dev/null || echo "unknown")"
-    echo "First 5 lines:"
-    head -n 5 "$file" 2>/dev/null || echo "Cannot read file"
-    echo "Last 5 lines:"
-    tail -n 5 "$file" 2>/dev/null || echo "Cannot read file"
-    echo "========================"
-}
-
-# Alias for easier use
-alias vf='view_file'
-alias vfs='view_file_simple'
-alias vft='test_file_content'
-
-# Help function (simplified)
-view_file_help() {
-    echo "File Viewer with fzf - Help"
-    echo "============================"
-    echo ""
-    echo "Functions:"
-    echo "  view_file <filename>        - View file with syntax highlighting"
-    echo "  view_file_simple <filename> - View file without syntax highlighting"
-    echo "  test_file_content <filename> - Debug file reading issues"
-    echo ""
-    echo "Aliases:"
-    echo "  vf  - shortcut for view_file"
-    echo "  vfs - shortcut for view_file_simple"
-    echo "  vft - shortcut for test_file_content"
-    echo ""
-    echo "Key Features:"
-    echo "  - Preserves original file content exactly as written"
-    echo "  - Line numbers are only for display, not copied"
-    echo "  - ANSI colors for syntax highlighting in display only"
-    echo "  - Original formatting and spacing preserved when copying"
-    echo ""
-    echo "Troubleshooting:"
-    echo "  1. If no content shows, try: vfs filename"
-    echo "  2. To debug file issues, try: vft filename"
-    echo "  3. Check file permissions and encoding"
-}
-
-alias vfh='view_file_help'
