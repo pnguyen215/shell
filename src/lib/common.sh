@@ -3028,296 +3028,109 @@ shell::encode_base64_file() {
     fi
 }
 
-#!/bin/bash
-
-# Interactive file viewer with line selection using fzf
-# Usage: view_file [filename] or view_file (to select file interactively)
+# File viewer function using fzf with line highlighting and selection
+# Compatible with Linux and macOS
 view_file() {
     local file="$1"
-    local temp_dir="/tmp/fzf_viewer_$$"
-    local selected_file="$temp_dir/selected_lines"
-    
-    # Function to detect if file is binary or excluded type
-    is_excluded_file() {
-        local filepath="$1"
-        local filename=$(basename "$filepath")
-        local extension="${filename##*.}"
-        
-        # Check for excluded extensions
-        case "${extension,,}" in
-            xlsx|xls|xlsm|xlsb|ods) return 0 ;;  # Excel files
-            ppt|pptx|pps|ppsx|odp) return 0 ;;   # PowerPoint files
-            doc|docx|odt) return 0 ;;            # Word documents
-        esac
-        
-        # Check if file is binary using file command
-        if command -v file >/dev/null 2>&1; then
-            file_type=$(file -b --mime-type "$filepath" 2>/dev/null)
-            case "$file_type" in
-                text/*|application/json|application/xml|application/javascript) return 1 ;;
-                application/x-empty) return 1 ;;  # Empty files
-                inode/x-empty) return 1 ;;        # Empty files
-                *) 
-                    # Additional check for common text files without proper MIME type
-                    case "${extension,,}" in
-                        txt|md|json|xml|yaml|yml|conf|cfg|ini|log|sh|bash|py|js|html|css|sql) return 1 ;;
-                        *) return 0 ;;
-                    esac
-                ;;
-            esac
-        fi
-        
-        return 1
-    }
-    
-    # Function to select a file interactively
-    select_file_interactive() {
-        local selected
-        selected=$(find . -type f -not -path '*/\.*' 2>/dev/null | \
-                  while IFS= read -r filepath; do
-                      if ! is_excluded_file "$filepath"; then
-                          echo "$filepath"
-                      fi
-                  done | \
-                  fzf --height=50% \
-                      --border \
-                      --preview 'head -50 {} 2>/dev/null || echo "Cannot preview this file"' \
-                      --preview-window=right:50% \
-                      --prompt="Select file to view: " \
-                      --header="Navigate: ↑↓ | Select: Enter | Exit: Esc")
-        echo "$selected"
-    }
-    
-    # Function to copy text to clipboard (cross-platform)
-    copy_to_clipboard() {
-        local text="$1"
-        if command -v pbcopy >/dev/null 2>&1; then
-            # macOS
-            echo "$text" | pbcopy
-            echo "Copied to clipboard (macOS)"
-        elif command -v xclip >/dev/null 2>&1; then
-            # Linux with xclip
-            echo "$text" | xclip -selection clipboard
-            echo "Copied to clipboard (Linux/xclip)"
-        elif command -v xsel >/dev/null 2>&1; then
-            # Linux with xsel
-            echo "$text" | xsel --clipboard --input
-            echo "Copied to clipboard (Linux/xsel)"
-        else
-            echo "Clipboard utility not found. Install pbcopy (macOS), xclip, or xsel (Linux)"
-            echo "Content saved to: $selected_file"
-            echo "$text" > "$selected_file"
-        fi
-    }
-    
-    # Function to handle range selection
-    handle_range_selection() {
-        local file="$1"
-        local total_lines=$(wc -l < "$file")
-        
-        echo "Range selection mode activated"
-        echo "Total lines in file: $total_lines"
-        echo
-        
-        # Select start line
-        local start_line
-        start_line=$(nl -ba "$file" | \
-                    fzf --height=80% \
-                        --border \
-                        --prompt="Select START line (press Enter): " \
-                        --header="Select the starting line of your range" \
-                        --preview='echo {}' \
-                        --preview-window=up:3 | \
-                    awk '{print $1}')
-        
-        if [[ -z "$start_line" ]]; then
-            echo "Range selection cancelled"
-            return 1
-        fi
-        
-        echo "Start line selected: $start_line"
-        echo
-        
-        # Select end line
-        local end_line
-        end_line=$(nl -ba "$file" | \
-                  awk -v start="$start_line" 'NR >= start' | \
-                  fzf --height=80% \
-                      --border \
-                      --prompt="Select END line (press Enter): " \
-                      --header="Select the ending line of your range (from line $start_line onwards)" \
-                      --preview='echo {}' \
-                      --preview-window=up:3 | \
-                  awk '{print $1}')
-        
-        if [[ -z "$end_line" ]]; then
-            echo "Range selection cancelled"
-            return 1
-        fi
-        
-        echo "End line selected: $end_line"
-        echo "Extracting lines $start_line to $end_line..."
-        echo
-        
-        # Extract and copy the range
-        local selected_text
-        selected_text=$(sed -n "${start_line},${end_line}p" "$file")
-        
-        echo "Selected content:"
-        echo "===================="
-        echo "$selected_text"
-        echo "===================="
-        echo
-        
-        copy_to_clipboard "$selected_text"
-        
-        return 0
-    }
-    
-    # Main function logic
-    mkdir -p "$temp_dir"
-    trap "rm -rf '$temp_dir'" EXIT
-    
-    # If no file specified, select interactively
+    # Check if file argument is provided
     if [[ -z "$file" ]]; then
-        echo "No file specified. Opening file selector..."
-        file=$(select_file_interactive)
-        if [[ -z "$file" ]]; then
-            echo "No file selected. Exiting."
-            return 1
-        fi
+        echo "Usage: view_file <filename>"
+        echo "View file content with line highlighting and selection using fzf"
+        return 1
     fi
-    
-    # Check if file exists and is readable
+    # Check if file exists
     if [[ ! -f "$file" ]]; then
-        echo "Error: File '$file' does not exist or is not a regular file"
+        echo "Error: File '$file' not found"
         return 1
     fi
-    
-    if [[ ! -r "$file" ]]; then
-        echo "Error: File '$file' is not readable"
+    # Check file extension and exclude unsupported formats
+    local ext="${file##*.}"
+    # Convert to lowercase using tr instead of ${ext,,}
+    ext=$(echo "$ext" | tr '[:upper:]' '[:lower:]')
+    case "$ext" in
+        xls|xlsx|xlsm|xlsb|ods)
+            echo "Error: Excel files are not supported"
+            return 1
+            ;;
+        ppt|pptx|pps|ppsx|odp)
+            echo "Error: PowerPoint files are not supported"
+            return 1
+            ;;
+        doc|docx|odt)
+            echo "Error: Word documents are not supported"
+            return 1
+            ;;
+    esac
+    # Check if fzf is installed
+    if ! command -v fzf &> /dev/null; then
+        echo "Error: fzf is not installed. Please install fzf first."
         return 1
     fi
-    
-    # Check if file should be excluded
-    if is_excluded_file "$file"; then
-        echo "Error: File '$file' is excluded (binary or unsupported format)"
-        echo "Excluded types: Excel (.xlsx, .xls, etc.), PowerPoint (.ppt, .pptx, etc.), Word (.doc, .docx, etc.)"
-        return 1
+    # Create temporary file for line numbers and content
+    local temp_file=$(mktemp)
+    trap "rm -f '$temp_file'" EXIT
+    # Add line numbers to content
+    nl -ba "$file" > "$temp_file"
+    # Main fzf interface
+    local selected_lines
+    selected_lines=$(cat "$temp_file" | fzf \
+        --multi \
+        --bind 'enter:accept' \
+        --bind 'ctrl-c:abort' \
+        --bind 'ctrl-a:select-all' \
+        --bind 'ctrl-d:deselect-all' \
+        --bind 'tab:toggle' \
+        --bind 'shift-tab:toggle+up' \
+        --header="File: $file | TAB: select line | CTRL+A: select all | ENTER: copy selected | ESC: exit" \
+        # --preview-window="right:50%" \
+        --preview="echo 'Selected lines will be copied to clipboard'" \
+        --height=100% \
+        --border \
+        --ansi)
+    # Check if user made a selection
+    if [[ -n "$selected_lines" ]]; then
+        # Extract only the content (remove line numbers)
+        local content_to_copy
+        content_to_copy=$(echo "$selected_lines" | sed 's/^[[:space:]]*[0-9]*[[:space:]]*//')
+        shell::clip_value "$content_to_copy"
+        # Show what was copied
+        local line_count=$(echo "$selected_lines" | wc -l)
+        echo "Copied $line_count line(s) from '$file'"
+    else
+        echo "No lines selected"
     fi
-    
-    echo "Opening file: $file"
-    echo "Commands:"
-    echo "  Enter: Copy selected line"
-    echo "  Ctrl-R: Range selection mode"
-    echo "  Esc/Ctrl-C: Exit"
-    echo
-    
-    while true; do
-        # Use fzf to display file content with line numbers
-        local selected_line
-        selected_line=$(nl -ba "$file" | \
-                       fzf --height=90% \
-                           --border \
-                           --bind 'ctrl-r:execute-silent(echo "RANGE_MODE" > '"$temp_dir"'/action)' \
-                           --bind 'ctrl-r:+abort' \
-                           --prompt="Select line to copy (Ctrl-R for range): " \
-                           --header="File: $file | Lines: $(wc -l < "$file") | Enter=Copy line, Ctrl-R=Range mode, Esc=Exit" \
-                           --preview='echo "Line content: {}"' \
-                           --preview-window=up:3)
-        
-        # Check if range mode was triggered
-        if [[ -f "$temp_dir/action" ]] && grep -q "RANGE_MODE" "$temp_dir/action" 2>/dev/null; then
-            rm -f "$temp_dir/action"
-            if handle_range_selection "$file"; then
-                echo
-                read -p "Press Enter to continue viewing, or Ctrl-C to exit..."
-                continue
-            else
-                continue
-            fi
-        fi
-        
-        # If no line selected (user pressed Esc), exit
-        if [[ -z "$selected_line" ]]; then
-            echo "Exiting file viewer."
-            break
-        fi
-        
-        # Extract the actual line content (remove line number)
-        local line_content
-        line_content=$(echo "$selected_line" | cut -f2-)
-        local line_number
-        line_number=$(echo "$selected_line" | awk '{print $1}')
-        
-        echo "Selected line $line_number:"
-        echo "===================="
-        echo "$line_content"
-        echo "===================="
-        echo
-        
-        copy_to_clipboard "$line_content"
-        
-        echo
-        read -p "Press Enter to continue viewing, or Ctrl-C to exit..."
-    done
 }
 
-# Auto-completion function for the view_file function
-_view_file_completion() {
-    local cur prev opts
-    COMPREPLY=()
-    cur="${COMP_WORDS[COMP_CWORD]}"
-    prev="${COMP_WORDS[COMP_CWORD-1]}"
-    
-    # Complete with readable files, excluding binary/excluded types
-    if [[ ${cur} == * ]]; then
-        COMPREPLY=( $(compgen -f -- ${cur}) )
-    fi
-    
-    return 0
+# Alias for easier use
+alias vf='view_file'
+
+# Help function
+view_file_help() {
+    echo "File Viewer with fzf - Help"
+    echo "============================"
+    echo ""
+    echo "Functions:"
+    echo "  view_file <filename>       - View file with multi-line selection"
+    echo ""
+    echo "Aliases:"
+    echo "  vf  - shortcut for view_file"
+    echo ""
+    echo "Key bindings in fzf:"
+    echo "  TAB         - Toggle line selection"
+    echo "  Shift+TAB   - Toggle selection and move up"
+    echo "  CTRL+A      - Select all lines"
+    echo "  CTRL+D      - Deselect all lines"
+    echo "  ENTER       - Copy selected lines to clipboard"
+    echo "  ESC         - Exit without copying"
+    echo ""
+    echo "Supported platforms:"
+    echo "  - Linux (requires xclip or xsel for clipboard)"
+    echo "  - macOS (uses pbcopy for clipboard)"
+    echo ""
+    echo "Excluded file types:"
+    echo "  - Excel files (.xls, .xlsx, .xlsm, .xlsb, .ods)"
+    echo "  - PowerPoint files (.ppt, .pptx, .pps, .ppsx, .odp)"
+    echo "  - Word documents (.doc, .docx, .odt)"
 }
 
-# Enable tab completion for the function
-complete -F _view_file_completion view_file
-
-# Example usage function
-show_view_file_help() {
-    cat << 'EOF'
-Interactive File Viewer with fzf - Usage Examples:
-
-1. Basic usage with file selection:
-   view_file                    # Opens file selector
-   view_file myfile.txt        # Opens specific file
-
-2. Interactive features:
-   - Use arrow keys to navigate lines
-   - Press Enter to copy highlighted line
-   - Press Ctrl-R to enter range selection mode
-   - Press Esc to exit
-
-3. Range selection mode:
-   - First, select the starting line
-   - Then, select the ending line
-   - Both lines and everything between will be copied
-
-4. Supported file types:
-   - Text files (.txt, .md, .log, etc.)
-   - Code files (.py, .js, .sh, .html, etc.)
-   - Configuration files (.conf, .cfg, .ini, etc.)
-   - JSON, XML, YAML files
-
-5. Excluded file types:
-   - Excel files (.xlsx, .xls, .xlsm, .xlsb, .ods)
-   - PowerPoint files (.ppt, .pptx, .pps, .ppsx, .odp)
-   - Word documents (.doc, .docx, .odt)
-   - Other binary files
-
-Requirements:
-- fzf (install with: brew install fzf or apt-get install fzf)
-- For clipboard support:
-  * macOS: pbcopy (built-in)
-  * Linux: xclip or xsel (install with package manager)
-
-EOF
-}
+alias vfh='view_file_help'
