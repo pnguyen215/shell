@@ -3173,101 +3173,17 @@ view_file() {
         --tabstop=4)
     
 
-    if [[ -n "$selected_lines" ]]; then
-        # Extract only the content (remove line numbers and ANSI codes)
-        local content_to_copy
-        content_to_copy=$(echo "$selected_lines" | sed 's/^[[:space:]]*[0-9]*[[:space:]]*//' | sed 's/\x1b\[[0-9;]*m//g')
-        # Use clipboard function if available
-        if declare -f shell::clip_value > /dev/null 2>&1; then
-            shell::clip_value "$content_to_copy"
-        else
-            # Fallback clipboard methods
-            if command -v pbcopy &> /dev/null; then
-                echo "$content_to_copy" | pbcopy
-                echo "Copied to clipboard (macOS)"
-            elif command -v xclip &> /dev/null; then
-                echo "$content_to_copy" | xclip -selection clipboard
-                echo "Copied to clipboard (Linux - xclip)"
-            elif command -v xsel &> /dev/null; then
-                echo "$content_to_copy" | xsel --clipboard --input
-                echo "Copied to clipboard (Linux - xsel)"
-            else
-                echo "Clipboard utility not found. Selected content:"
-                echo "----------------------------------------"
-                echo "$content_to_copy"
-                echo "----------------------------------------"
-            fi
-        fi
-        # Show what was copied
-        local line_count=$(echo "$selected_lines" | wc -l)
-        echo "Copied $line_count line(s) from '$file'"
-    else
-        echo "No lines selected"
-    fi
-}
-
-# Simple version without syntax highlighting for debugging
-view_file_simple() {
-    local file="$1"
-    if [[ -z "$file" ]]; then
-        echo "Usage: view_file_simple <filename>"
-        return 1
-    fi
-    if [[ ! -f "$file" ]]; then
-        echo "Error: File '$file' not found"
-        return 1
-    fi
-    
-    local temp_file=$(mktemp)
-    trap "rm -f '$temp_file'" EXIT
-    
-    # Simple line numbering without syntax highlighting
-    nl -ba "$file" > "$temp_file"
-    
-    local selected_lines
-    selected_lines=$(cat "$temp_file" | fzf \
-        --multi \
-        --bind 'enter:accept' \
-        --bind 'ctrl-c:abort' \
-        --bind 'ctrl-a:select-all' \
-        --bind 'ctrl-d:deselect-all' \
-        --bind 'tab:toggle' \
-        --bind 'shift-tab:toggle+up' \
-        --header="File: $file (Simple mode) | TAB: select | ENTER: copy | ESC: exit" \
-        --height=100% \
-        --width=100% \
-        --border)
-    
-    if [[ -n "$selected_lines" ]]; then
-        # Extract line numbers and get original content (FIXED METHOD)
-        local line_numbers
-        line_numbers=$(echo "$selected_lines" | sed -n 's/^[[:space:]]*\([0-9]*\)[[:space:]].*/\1/p')
-        
-        # Get original content for these line numbers
-        local content_to_copy=""
-        while IFS= read -r line_num; do
-            if [[ -n "$line_num" ]]; then
-                local original_line
-                original_line=$(sed -n "${line_num}p" "$file")
-                if [[ -n "$content_to_copy" ]]; then
-                    content_to_copy="${content_to_copy}\n${original_line}"
-                else
-                    content_to_copy="$original_line"
-                fi
-            fi
-        done <<< "$line_numbers"
-        
-        content_to_copy=$(echo -e "$content_to_copy")
-        
-        echo "Selected content:"
-        echo "----------------------------------------"
-        echo "$content_to_copy"
-        echo "----------------------------------------"
-        local line_count=$(echo "$line_numbers" | wc -l)
-        echo "Selected $line_count line(s) from '$file'"
-    else
-        echo "No lines selected"
-    fi
+    # if [[ -n "$selected_lines" ]]; then
+    #     local content_to_copy
+    #     content_to_copy=$(echo "$selected_lines" | sed 's/^[[:space:]]*[0-9]*[[:space:]]*//' | sed 's/\x1b\[[0-9;]*m//g')
+    #     if declare -f shell::clip_value > /dev/null 2>&1; then
+    #         shell::clip_value "$content_to_copy"
+    #     fi
+    #     local line_count=$(echo "$selected_lines" | wc -l)
+    #     echo "Copied $line_count line(s) from '$file'"
+    # else
+    #     echo "No lines selected"
+    # fi
 }
 
 # Basic syntax highlighting function for common languages
@@ -3342,26 +3258,8 @@ apply_basic_syntax_highlighting() {
     esac
 }
 
-# Test function to debug file reading
-test_file_content() {
-    local file="$1"
-    echo "=== File Content Test ==="
-    echo "File: $file"
-    echo "Exists: $(test -f "$file" && echo "yes" || echo "no")"
-    echo "Readable: $(test -r "$file" && echo "yes" || echo "no")"
-    echo "Size: $(stat -f%z "$file" 2>/dev/null || stat -c%s "$file" 2>/dev/null || echo "unknown") bytes"
-    echo "Lines: $(wc -l < "$file" 2>/dev/null || echo "unknown")"
-    echo "First 5 lines:"
-    head -n 5 "$file" 2>/dev/null || echo "Cannot read file"
-    echo "Last 5 lines:"
-    tail -n 5 "$file" 2>/dev/null || echo "Cannot read file"
-    echo "========================"
-}
-
 # Alias for easier use
 alias vf='view_file'
-alias vfs='view_file_simple'
-alias vft='test_file_content'
 
 # Help function (simplified)
 view_file_help() {
