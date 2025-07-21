@@ -3074,11 +3074,8 @@ view_file() {
         return 1
     fi
     
-    # Optional: Install packages if shell::install_package function exists
-    if declare -f shell::install_package > /dev/null 2>&1; then
-        shell::install_package bat
-        shell::install_package highlight
-    fi
+    shell::install_package bat
+    shell::install_package highlight
     
     # Create temporary files
     local temp_file=$(mktemp)
@@ -3093,30 +3090,24 @@ view_file() {
     fi
     
     local highlighting_method=""
-    # if command -v bat &> /dev/null; then
-    #     highlighting_method="bat"
-    #     bat --color=always --style=plain --paging=never "$file" | nl -ba > "$temp_file"
-    # elif command -v highlight &> /dev/null; then
-    #     highlighting_method="highlight"
-    #     highlight --out-format=ansi --force --no-doc "$file" 2>/dev/null | nl -ba > "$temp_file"
-    # elif command -v pygmentize &> /dev/null; then
-    #     highlighting_method="pygmentize"
-    #     pygmentize -f terminal -g "$file" 2>/dev/null | nl -ba > "$temp_file"
-    # else
-    #     highlighting_method="basic"
-    #     apply_basic_syntax_highlighting "$file" "$ext" > "$colored_file"
-    #     nl -ba "$colored_file" > "$temp_file"
-    # fi
-
-    highlighting_method="basic"
-    apply_basic_syntax_highlighting "$file" "$ext" > "$colored_file"
-    nl -ba "$colored_file" > "$temp_file"
+    if command -v bat &> /dev/null; then
+        highlighting_method="bat"
+        bat --color=always --style=plain --paging=never "$file" | nl -ba > "$temp_file"
+    elif command -v highlight &> /dev/null; then
+        highlighting_method="highlight"
+        highlight --out-format=ansi --force --no-doc "$file" 2>/dev/null | nl -ba > "$temp_file"
+    elif command -v pygmentize &> /dev/null; then
+        highlighting_method="pygmentize"
+        pygmentize -f terminal -g "$file" 2>/dev/null | nl -ba > "$temp_file"
+    else
+        highlighting_method="basic"
+        apply_basic_syntax_highlighting "$file" "$ext" > "$colored_file"
+        nl -ba "$colored_file" > "$temp_file"
+    fi
     
-    # Debug: Check if temp file has content
     local temp_size=$(wc -l < "$temp_file" 2>/dev/null || echo "0")
     if [[ $temp_size -eq 0 ]]; then
-        echo "Warning: Syntax highlighting failed with method: $highlighting_method"
-        echo "Falling back to plain text with line numbers..."
+        shell::colored_echo "WARN: Syntax highlighting failed with method: $highlighting_method" 11
         nl -ba "$file" > "$temp_file"
         highlighting_method="plain"
     fi
@@ -3139,7 +3130,6 @@ view_file() {
     # Get current date/time and user info
     local current_datetime
     current_datetime=$(date +"%Y-%m-%d %H:%M:%S")
-    local current_user="pnguyen215"
     
     # Main fzf interface with 100% width
     local selected_lines
@@ -3153,19 +3143,19 @@ view_file() {
         --bind 'shift-tab:toggle+up' \
         --bind 'ctrl-r:toggle-all' \
         --bind 'ctrl-/:toggle-preview' \
-        --header="File: $file | User: $current_user | Method: $highlighting_method | Lines: $file_size | TAB: select | CTRL+A: all | ENTER: copy | ESC: exit" \
+        --header="File: $file | MH: $highlighting_method | Lines: $file_size | TAB: select | CTRL+A: all | ENTER: copy | ESC: exit" \
         --preview="echo 'Selected lines will be copied to clipboard. $current_datetime'" \
         --preview-window="top:1:wrap" \
         --height=100% \
         --border=rounded \
-        --border-label="Shell Viewer - $current_datetime UTC" \
+        --border-label="Shell Viewer - $current_datetime" \
         --border-label-pos=top \
         --margin=0 \
         --padding=0 \
         --ansi \
         --layout=reverse \
         --info=inline \
-        --prompt="Select lines > " \
+        --prompt="Search > " \
         --pointer="▶" \
         --marker="✓" \
         --color="header:italic:underline,label:blue,border:dim" \
