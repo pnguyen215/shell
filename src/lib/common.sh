@@ -3043,6 +3043,11 @@ view_file() {
         echo "Error: File '$file' not found"
         return 1
     fi
+    # Check if file is readable
+    if [[ ! -r "$file" ]]; then
+        echo "Error: File '$file' is not readable"
+        return 1
+    fi
     # Check file extension and exclude unsupported formats
     local ext="${file##*.}"
     # Convert to lowercase using tr instead of ${ext,,}
@@ -3066,27 +3071,59 @@ view_file() {
         echo "Error: fzf is not installed. Please install fzf first."
         return 1
     fi
-    shell::install_package bat
-    shell::install_package highlight
+    # Optional: Install packages if shell::install_package function exists
+    if declare -f shell::install_package > /dev/null 2>&1; then
+        shell::install_package bat
+        shell::install_package highlight
+    fi
     # Create temporary file for line numbers and content with syntax highlighting
     local temp_file=$(mktemp)
     local colored_file=$(mktemp)
     trap "rm -f '$temp_file' '$colored_file'" EXIT
-
+    # Debug: Check if file has content
+    local file_size=$(wc -l < "$file" 2>/dev/null || echo "0")
+    if [[ $file_size -eq 0 ]]; then
+        echo "Warning: File appears to be empty or has no newlines"
+        echo "File size: $(stat -f%z "$file" 2>/dev/null || stat -c%s "$file" 2>/dev/null || echo "unknown") bytes"
+    fi
     # Apply syntax highlighting based on file extension and tools available
+    local highlighting_method=""
     if command -v bat &> /dev/null; then
         # Use bat for syntax highlighting (preferred)
-        bat --color=always --style=plain --line-range=: "$file" | nl -ba > "$temp_file"
+        highlighting_method="bat"
+        bat --color=always --style=plain --paging=never "$file" | nl -ba > "$temp_file"
     elif command -v highlight &> /dev/null; then
         # Use highlight tool as fallback
-        highlight --out-format=ansi --force "$file" | nl -ba > "$temp_file"
+        highlighting_method="highlight"
+        highlight --out-format=ansi --force --no-doc "$file" 2>/dev/null | nl -ba > "$temp_file"
     elif command -v pygmentize &> /dev/null; then
         # Use pygments as another fallback
-        pygmentize -f terminal -g "$file" | nl -ba > "$temp_file"
+        highlighting_method="pygmentize"
+        pygmentize -f terminal -g "$file" 2>/dev/null | nl -ba > "$temp_file"
     else
         # Fallback to basic syntax highlighting using sed/awk for common languages
+        highlighting_method="basic"
         apply_basic_syntax_highlighting "$file" "$ext" > "$colored_file"
         nl -ba "$colored_file" > "$temp_file"
+    fi
+    # Debug: Check if temp file has content
+    local temp_size=$(wc -l < "$temp_file" 2>/dev/null || echo "0")
+    if [[ $temp_size -eq 0 ]]; then
+        echo "Warning: Syntax highlighting failed with method: $highlighting_method"
+        echo "Falling back to plain text with line numbers..."
+        nl -ba "$file" > "$temp_file"
+    fi
+    # Final check: if still no content, use cat with line numbers
+    if [[ ! -s "$temp_file" ]]; then
+        echo "Error: Failed to process file content. Using direct file access..."
+        cat -n "$file" > "$temp_file"
+    fi
+    # Show debug info if temp file is still empty
+    if [[ ! -s "$temp_file" ]]; then
+        echo "Debug: Original file line count: $(wc -l < "$file")"
+        echo "Debug: Temp file size: $(ls -la "$temp_file")"
+        echo "Error: Unable to create processed file for fzf"
+        return 1
     fi
     # Main fzf interface
     local selected_lines
@@ -3098,7 +3135,7 @@ view_file() {
         --bind 'ctrl-d:deselect-all' \
         --bind 'tab:toggle' \
         --bind 'shift-tab:toggle+up' \
-        --header="File: $file | TAB: select line | CTRL+A: select all | ENTER: copy selected | ESC: exit" \
+        --header="File: $file | Method: $highlighting_method | TAB: select | CTRL+A: select all | ENTER: copy | ESC: exit" \
         --preview="echo 'Selected lines will be copied to clipboard'" \
         --height=100% \
         --border \
@@ -3108,10 +3145,71 @@ view_file() {
         # Extract only the content (remove line numbers and ANSI codes)
         local content_to_copy
         content_to_copy=$(echo "$selected_lines" | sed 's/^[[:space:]]*[0-9]*[[:space:]]*//' | sed 's/\x1b\[[0-9;]*m//g')
-        shell::clip_value "$content_to_copy"
+        # Use clipboard function if available
+        if declare -f shell::clip_value > /dev/null 2>&1; then
+            shell::clip_value "$content_to_copy"
+        else
+            # Fallback clipboard methods
+            if command -v pbcopy &> /dev/null; then
+                echo "$content_to_copy" | pbcopy
+                echo "Copied to clipboard (macOS)"
+            elif command -v xclip &> /dev/null; then
+                echo "$content_to_copy" | xclip -selection clipboard
+                echo "Copied to clipboard (Linux - xclip)"
+            elif command -v xsel &> /dev/null; then
+                echo "$content_to_copy" | xsel --clipboard --input
+                echo "Copied to clipboard (Linux - xsel)"
+            else
+                echo "Clipboard utility not found. Selected content:"
+                echo "----------------------------------------"
+                echo "$content_to_copy"
+                echo "----------------------------------------"
+            fi
+        fi
         # Show what was copied
         local line_count=$(echo "$selected_lines" | wc -l)
         echo "Copied $line_count line(s) from '$file'"
+    else
+        echo "No lines selected"
+    fi
+}
+
+# Simple version without syntax highlighting for debugging
+view_file_simple() {
+    local file="$1"
+    if [[ -z "$file" ]]; then
+        echo "Usage: view_file_simple <filename>"
+        return 1
+    fi
+    if [[ ! -f "$file" ]]; then
+        echo "Error: File '$file' not found"
+        return 1
+    fi
+    local temp_file=$(mktemp)
+    trap "rm -f '$temp_file'" EXIT
+    # Simple line numbering without syntax highlighting
+    nl -ba "$file" > "$temp_file"
+    local selected_lines
+    selected_lines=$(cat "$temp_file" | fzf \
+        --multi \
+        --bind 'enter:accept' \
+        --bind 'ctrl-c:abort' \
+        --bind 'ctrl-a:select-all' \
+        --bind 'ctrl-d:deselect-all' \
+        --bind 'tab:toggle' \
+        --bind 'shift-tab:toggle+up' \
+        --header="File: $file (Simple mode) | TAB: select | ENTER: copy | ESC: exit" \
+        --height=100% \
+        --border)
+    if [[ -n "$selected_lines" ]]; then
+        local content_to_copy
+        content_to_copy=$(echo "$selected_lines" | sed 's/^[[:space:]]*[0-9]*[[:space:]]*//')
+        echo "Selected content:"
+        echo "----------------------------------------"
+        echo "$content_to_copy"
+        echo "----------------------------------------"
+        local line_count=$(echo "$selected_lines" | wc -l)
+        echo "Selected $line_count line(s) from '$file'"
     else
         echo "No lines selected"
     fi
@@ -3121,6 +3219,11 @@ view_file() {
 apply_basic_syntax_highlighting() {
     local file="$1"
     local ext="$2"
+    # Check if file exists and is readable
+    if [[ ! -f "$file" ]] || [[ ! -r "$file" ]]; then
+        echo "Error: Cannot read file $file" >&2
+        return 1
+    fi
     # ANSI color codes
     local RED='\033[0;31m'
     local GREEN='\033[0;32m'
@@ -3154,101 +3257,14 @@ apply_basic_syntax_highlighting() {
                 -e "s/(^|[[:space:]])([0-9]+)([[:space:]]|$)/\1${YELLOW}\2${NC}\3/g" \
                 "$file"
             ;;
-        js|javascript|ts|typescript)
-            # JavaScript/TypeScript highlighting
+        ini|conf|config)
+            # INI/Config file highlighting
             sed -E \
-                -e "s:(//.*$):${GRAY}\1${NC}:g" \
-                -e "s:(/\*.*\*/):${GRAY}\1${NC}:g" \
-                -e "s/(^|[[:space:]])(function|var|let|const|if|else|for|while|do|switch|case|default|try|catch|finally|return|break|continue|class|extends|import|export|from|as|async|await)([[:space:]]|$)/\1${BLUE}\2${NC}\3/g" \
-                -e "s/(^|[[:space:]])(console\.log|console\.error|console\.warn|parseInt|parseFloat|typeof|instanceof)([[:space:]]|\()/\1${GREEN}\2${NC}\3/g" \
-                -e "s/(\"[^\"]*\")/${CYAN}\1${NC}/g" \
-                -e "s/('[^']*')/${CYAN}\1${NC}/g" \
-                -e "s/(\`[^\`]*\`)/${CYAN}\1${NC}/g" \
-                "$file"
-            ;;
-        java)
-            # Java highlighting
-            sed -E \
-                -e "s:(//.*$):${GRAY}\1${NC}:g" \
-                -e "s:(/\*.*\*/):${GRAY}\1${NC}:g" \
-                -e "s/(^|[[:space:]])(public|private|protected|static|final|abstract|class|interface|extends|implements|import|package|if|else|for|while|do|switch|case|default|try|catch|finally|return|break|continue|new|this|super)([[:space:]]|$)/\1${BLUE}\2${NC}\3/g" \
-                -e "s/(^|[[:space:]])(System\.out\.println|System\.out\.print|String|int|double|float|boolean|char|void)([[:space:]]|\()/\1${GREEN}\2${NC}\3/g" \
-                -e "s/(\"[^\"]*\")/${CYAN}\1${NC}/g" \
-                "$file"
-            ;;
-        c|cpp|cc|cxx|h|hpp)
-            # C/C++ highlighting
-            sed -E \
-                -e "s:(//.*$):${GRAY}\1${NC}:g" \
-                -e "s:(/\*.*\*/):${GRAY}\1${NC}:g" \
-                -e "s/(^|[[:space:]])(#include|#define|#ifdef|#ifndef|#endif|#if|#else)([[:space:]]|$)/\1${PURPLE}\2${NC}\3/g" \
-                -e "s/(^|[[:space:]])(int|char|float|double|void|struct|class|public|private|protected|static|const|if|else|for|while|do|switch|case|default|return|break|continue)([[:space:]]|$)/\1${BLUE}\2${NC}\3/g" \
-                -e "s/(^|[[:space:]])(printf|scanf|malloc|free|sizeof|strlen|strcpy|strcmp)([[:space:]]|\()/\1${GREEN}\2${NC}\3/g" \
-                -e "s/(\"[^\"]*\")/${CYAN}\1${NC}/g" \
-                "$file"
-            ;;
-        go)
-            # Go highlighting
-            sed -E \
-                -e "s:(//.*$):${GRAY}\1${NC}:g" \
-                -e "s:(/\*.*\*/):${GRAY}\1${NC}:g" \
-                -e "s/(^|[[:space:]])(package|import|func|var|const|type|struct|interface|if|else|for|range|switch|case|default|select|go|defer|return|break|continue|fallthrough)([[:space:]]|$)/\1${BLUE}\2${NC}\3/g" \
-                -e "s/(^|[[:space:]])(fmt\.Println|fmt\.Printf|len|make|append|copy|delete|panic|recover)([[:space:]]|\()/\1${GREEN}\2${NC}\3/g" \
-                -e "s/(\"[^\"]*\")/${CYAN}\1${NC}/g" \
-                -e "s/(\`[^\`]*\`)/${CYAN}\1${NC}/g" \
-                "$file"
-            ;;
-        rs|rust)
-            # Rust highlighting
-            sed -E \
-                -e "s:(//.*$):${GRAY}\1${NC}:g" \
-                -e "s:(/\*.*\*/):${GRAY}\1${NC}:g" \
-                -e "s/(^|[[:space:]])(fn|let|mut|const|static|struct|enum|impl|trait|use|mod|pub|if|else|match|for|while|loop|break|continue|return|move|async|await)([[:space:]]|$)/\1${BLUE}\2${NC}\3/g" \
-                -e "s/(^|[[:space:]])(println!|print!|vec!|format!|panic!|assert!|dbg!)([[:space:]]|\()/\1${GREEN}\2${NC}\3/g" \
-                -e "s/(\"[^\"]*\")/${CYAN}\1${NC}/g" \
-                "$file"
-            ;;
-        rb|ruby)
-            # Ruby highlighting
-            sed -E \
-                -e "s/(#.*$)/${GRAY}\1${NC}/g" \
-                -e "s/(^|[[:space:]])(def|class|module|if|elsif|else|unless|case|when|for|while|until|begin|rescue|ensure|end|do|break|next|return|yield|self|super)([[:space:]]|$)/\1${BLUE}\2${NC}\3/g" \
-                -e "s/(^|[[:space:]])(puts|print|p|require|include|attr_reader|attr_writer|attr_accessor)([[:space:]]|\()/\1${GREEN}\2${NC}\3/g" \
-                -e "s/(\"[^\"]*\")/${CYAN}\1${NC}/g" \
-                -e "s/('[^']*')/${CYAN}\1${NC}/g" \
-                "$file"
-            ;;
-        php)
-            # PHP highlighting
-            sed -E \
-                -e "s:(//.*$):${GRAY}\1${NC}:g" \
-                -e "s:(/\*.*\*/):${GRAY}\1${NC}:g" \
-                -e "s/(#.*$)/${GRAY}\1${NC}/g" \
-                -e "s/(^|[[:space:]])(<?php|function|class|interface|trait|if|elseif|else|foreach|for|while|do|switch|case|default|try|catch|finally|return|break|continue|public|private|protected|static|abstract|final)([[:space:]]|$)/\1${BLUE}\2${NC}\3/g" \
-                -e "s/(^|[[:space:]])(echo|print|var_dump|print_r|strlen|substr|array|isset|empty)([[:space:]]|\()/\1${GREEN}\2${NC}\3/g" \
-                -e "s/(\"[^\"]*\")/${CYAN}\1${NC}/g" \
-                -e "s/('[^']*')/${CYAN}\1${NC}/g" \
-                -e "s/(\\\$[a-zA-Z_][a-zA-Z0-9_]*)/${YELLOW}\1${NC}/g" \
-                "$file"
-            ;;
-        html|htm|xml)
-            # HTML/XML highlighting
-            sed -E \
-                -e "s/(<!--.*-->)/${GRAY}\1${NC}/g" \
-                -e "s/(<[^>]*>)/${BLUE}\1${NC}/g" \
-                -e "s/(\"[^\"]*\")/${CYAN}\1${NC}/g" \
-                -e "s/('[^']*')/${CYAN}\1${NC}/g" \
-                "$file"
-            ;;
-        css)
-            # CSS highlighting
-            sed -E \
-                -e "s:(/\*.*\*/):${GRAY}\1${NC}:g" \
-                -e "s/([a-zA-Z-]+)(\s*:)/${BLUE}\1${NC}\2/g" \
-                -e "s/(\{|\})/${YELLOW}\1${NC}/g" \
-                -e "s/([.#][a-zA-Z-_][a-zA-Z0-9-_]*)/${GREEN}\1${NC}/g" \
-                -e "s/(\"[^\"]*\")/${CYAN}\1${NC}/g" \
-                -e "s/('[^']*')/${CYAN}\1${NC}/g" \
+                -e "s/(#.*$|;.*$)/${GRAY}\1${NC}/g" \
+                -e "s/^\s*\[([^\]]*)\]/${BLUE}[\1]${NC}/g" \
+                -e "s/^(\s*)([a-zA-Z_][a-zA-Z0-9_.-]*)\s*=/${GREEN}\1\2${NC}=/g" \
+                -e "s/(=\s*)(\"[^\"]*\")(\s*$)/\1${CYAN}\2${NC}\3/g" \
+                -e "s/(=\s*)([^#;]*[^#;\s])(\s*$)/\1${YELLOW}\2${NC}\3/g" \
                 "$file"
             ;;
         json)
@@ -3261,48 +3277,6 @@ apply_basic_syntax_highlighting() {
                 -e "s/(\{|\}|\[|\])/${YELLOW}\1${NC}/g" \
                 "$file"
             ;;
-        yaml|yml)
-            # YAML highlighting
-            sed -E \
-                -e "s/(#.*$)/${GRAY}\1${NC}/g" \
-                -e "s/^(\s*)([a-zA-Z_][a-zA-Z0-9_-]*):/${BLUE}\1\2${NC}:/g" \
-                -e "s/(:\s*)(\"[^\"]*\")(\s*$)/\1${CYAN}\2${NC}\3/g" \
-                -e "s/(:\s*)([0-9]+)(\s*$)/\1${YELLOW}\2${NC}\3/g" \
-                -e "s/(:\s*)(true|false|null)(\s*$)/\1${GREEN}\2${NC}\3/g" \
-                "$file"
-            ;;
-        ini|conf|config)
-            # INI/Config file highlighting
-            sed -E \
-                -e "s/(#.*$|;.*$)/${GRAY}\1${NC}/g" \
-                -e "s/^\s*\[([^\]]*)\]/${BLUE}[\1]${NC}/g" \
-                -e "s/^(\s*)([a-zA-Z_][a-zA-Z0-9_.-]*)\s*=/${GREEN}\1\2${NC}=/g" \
-                -e "s/(=\s*)(\"[^\"]*\")(\s*$)/\1${CYAN}\2${NC}\3/g" \
-                -e "s/(=\s*)([^#;]*[^#;\s])(\s*$)/\1${YELLOW}\2${NC}\3/g" \
-                "$file"
-            ;;
-        sql)
-            # SQL highlighting
-            sed -E \
-                -e "s:(--.*$):${GRAY}\1${NC}:g" \
-                -e "s:(/\*.*\*/):${GRAY}\1${NC}:g" \
-                -e "s/(^|[[:space:]])(SELECT|FROM|WHERE|JOIN|INNER|LEFT|RIGHT|OUTER|ON|GROUP|ORDER|BY|HAVING|INSERT|INTO|VALUES|UPDATE|SET|DELETE|CREATE|TABLE|DATABASE|INDEX|VIEW|ALTER|DROP|TRUNCATE|UNION|ALL|DISTINCT)([[:space:]]|$)/\1${BLUE}\2${NC}\3/gi" \
-                -e "s/(^|[[:space:]])(VARCHAR|INT|INTEGER|CHAR|TEXT|DATE|DATETIME|TIMESTAMP|BOOLEAN|DECIMAL|FLOAT|DOUBLE|PRIMARY|KEY|FOREIGN|NOT|NULL|AUTO_INCREMENT)([[:space:]]|$)/\1${GREEN}\2${NC}\3/gi" \
-                -e "s/(\"[^\"]*\")/${CYAN}\1${NC}/g" \
-                -e "s/('[^']*')/${CYAN}\1${NC}/g" \
-                "$file"
-            ;;
-        md|markdown)
-            # Markdown highlighting
-            sed -E \
-                -e "s/^(#{1,6}\s+.*)$/${BLUE}\1${NC}/g" \
-                -e "s/(\*\*[^*]*\*\*)/${WHITE}\1${NC}/g" \
-                -e "s/(\*[^*]*\*)/${YELLOW}\1${NC}/g" \
-                -e "s/(~~[^~]*~~)/${GRAY}\1${NC}/g" \
-                -e "s/(\`[^\`]*\`)/${CYAN}\1${NC}/g" \
-                -e "s/(\[[^\]]*\]\([^)]*\))/${PURPLE}\1${NC}/g" \
-                "$file"
-            ;;
         *)
             # Default: no syntax highlighting, just output the file
             cat "$file"
@@ -3310,84 +3284,44 @@ apply_basic_syntax_highlighting() {
     esac
 }
 
-# Enhanced view with better color detection
-view_file_enhanced() {
+# Test function to debug file reading
+test_file_content() {
     local file="$1"
-    # Check if terminal supports colors
-    if [[ ! -t 1 ]] || [[ -z "${TERM:-}" ]] || [[ "${TERM}" == "dumb" ]]; then
-        echo "Terminal does not support colors, falling back to basic view"
-        view_file "$file"
-        return
-    fi
-    # Check number of colors supported
-    local colors=$(tput colors 2>/dev/null || echo "0")
-    if [[ $colors -lt 8 ]]; then
-        echo "Terminal supports less than 8 colors, falling back to basic view"
-        view_file "$file"
-        return
-    fi
-    # Use the enhanced view_file function
-    view_file "$file"
+    echo "=== File Content Test ==="
+    echo "File: $file"
+    echo "Exists: $(test -f "$file" && echo "yes" || echo "no")"
+    echo "Readable: $(test -r "$file" && echo "yes" || echo "no")"
+    echo "Size: $(stat -f%z "$file" 2>/dev/null || stat -c%s "$file" 2>/dev/null || echo "unknown") bytes"
+    echo "Lines: $(wc -l < "$file" 2>/dev/null || echo "unknown")"
+    echo "First 5 lines:"
+    head -n 5 "$file" 2>/dev/null || echo "Cannot read file"
+    echo "========================"
 }
 
 # Alias for easier use
 alias vf='view_file'
-alias vfe='view_file_enhanced'
+alias vfs='view_file_simple'
+alias vft='test_file_content'
 
-# Help function
+# Help function (simplified)
 view_file_help() {
     echo "File Viewer with fzf - Help"
     echo "============================"
     echo ""
     echo "Functions:"
-    echo "  view_file <filename>          - View file with multi-line selection and syntax highlighting"
-    echo "  view_file_enhanced <filename> - Enhanced view with color detection"
+    echo "  view_file <filename>        - View file with syntax highlighting"
+    echo "  view_file_simple <filename> - View file without syntax highlighting"
+    echo "  test_file_content <filename> - Debug file reading issues"
     echo ""
     echo "Aliases:"
     echo "  vf  - shortcut for view_file"
-    echo "  vfe - shortcut for view_file_enhanced"
+    echo "  vfs - shortcut for view_file_simple"
+    echo "  vft - shortcut for test_file_content"
     echo ""
-    echo "Syntax Highlighting Support:"
-    echo "  Preferred tools (auto-detected):"
-    echo "    - bat (recommended)"
-    echo "    - highlight"
-    echo "    - pygmentize"
-    echo ""
-    echo "  Built-in support for:"
-    echo "    - Shell scripts (.sh, .bash, .zsh)"
-    echo "    - Python (.py)"
-    echo "    - JavaScript/TypeScript (.js, .ts)"
-    echo "    - Java (.java)"
-    echo "    - C/C++ (.c, .cpp, .h, .hpp)"
-    echo "    - Go (.go)"
-    echo "    - Rust (.rs)"
-    echo "    - Ruby (.rb)"
-    echo "    - PHP (.php)"
-    echo "    - HTML/XML (.html, .xml)"
-    echo "    - CSS (.css)"
-    echo "    - JSON (.json)"
-    echo "    - YAML (.yaml, .yml)"
-    echo "    - INI/Config files (.ini, .conf)"
-    echo "    - SQL (.sql)"
-    echo "    - Markdown (.md, .markdown)"
-    echo ""
-    echo "Key bindings in fzf:"
-    echo "  TAB         - Toggle line selection"
-    echo "  Shift+TAB   - Toggle selection and move up"
-    echo "  CTRL+A      - Select all lines"
-    echo "  CTRL+D      - Deselect all lines"
-    echo "  ENTER       - Copy selected lines to clipboard"
-    echo "  ESC         - Exit without copying"
-    echo ""
-    echo "Installation recommendations for better syntax highlighting:"
-    echo "  macOS:   brew install bat highlight"
-    echo "  Ubuntu:  apt install bat highlight"
-    echo "  CentOS:  yum install bat highlight"
-    echo ""
-    echo "Excluded file types:"
-    echo "  - Excel files (.xls, .xlsx, .xlsm, .xlsb, .ods)"
-    echo "  - PowerPoint files (.ppt, .pptx, .pps, .ppsx, .odp)"
-    echo "  - Word documents (.doc, .docx, .odt)"
+    echo "Troubleshooting:"
+    echo "  1. If no content shows, try: vfs filename"
+    echo "  2. To debug file issues, try: vft filename"
+    echo "  3. Check file permissions and encoding"
 }
 
 alias vfh='view_file_help'
