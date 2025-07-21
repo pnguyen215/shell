@@ -3111,6 +3111,7 @@ view_file() {
         #     echo "$content_to_copy"
         #     echo "----------------------------------------"
         # fi
+        shell::clip_value "$content_to_copy"
         # Show what was copied
         local line_count=$(echo "$selected_lines" | wc -l)
         echo "Copied $line_count line(s) from '$file'"
