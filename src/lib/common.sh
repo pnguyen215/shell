@@ -3028,8 +3028,6 @@ shell::encode_base64_file() {
     fi
 }
 
-#!/bin/bash
-
 # File viewer function using fzf with line highlighting and selection
 # Compatible with Linux and macOS
 view_file() {
@@ -3084,7 +3082,7 @@ view_file() {
         --bind 'tab:toggle' \
         --bind 'shift-tab:toggle+up' \
         --header="File: $file | TAB: select line | CTRL+A: select all | ENTER: copy selected | ESC: exit" \
-        --preview-window="right:50%" \
+        # --preview-window="right:50%" \
         --preview="echo 'Selected lines will be copied to clipboard'" \
         --height=100% \
         --border \
