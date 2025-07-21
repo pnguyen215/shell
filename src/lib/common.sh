@@ -3078,10 +3078,13 @@ view_file() {
         shell::install_package bat
         shell::install_package highlight
     fi
-    # Create temporary file for line numbers and content with syntax highlighting
+    # Create temporary files
     local temp_file=$(mktemp)
     local colored_file=$(mktemp)
-    trap "rm -f '$temp_file' '$colored_file'" EXIT
+    local original_lines=$(mktemp)
+    trap "rm -f '$temp_file' '$colored_file' '$original_lines'" EXIT
+    # Store original file content with line numbers for mapping back
+    nl -ba "$file" > "$original_lines"
     # Debug: Check if file has content
     local file_size=$(wc -l < "$file" 2>/dev/null || echo "0")
     if [[ $file_size -eq 0 ]]; then
@@ -3114,11 +3117,13 @@ view_file() {
         echo "Warning: Syntax highlighting failed with method: $highlighting_method"
         echo "Falling back to plain text with line numbers..."
         nl -ba "$file" > "$temp_file"
+        highlighting_method="plain"
     fi
     # Final check: if still no content, use cat with line numbers
     if [[ ! -s "$temp_file" ]]; then
         echo "Error: Failed to process file content. Using direct file access..."
         cat -n "$file" > "$temp_file"
+        highlighting_method="cat"
     fi
     # Show debug info if temp file is still empty
     if [[ ! -s "$temp_file" ]]; then
@@ -3140,13 +3145,30 @@ view_file() {
         --header="File: $file | Method: $highlighting_method | TAB: select | CTRL+A: select all | ENTER: copy | ESC: exit" \
         --preview="echo 'Selected lines will be copied to clipboard'" \
         --height=100% \
-        --border \
+        --width=100% \
+        --border=rounded \
         --ansi)
     # Check if user made a selection
     if [[ -n "$selected_lines" ]]; then
-        # Extract only the content (remove line numbers and ANSI codes)
-        local content_to_copy
-        content_to_copy=$(echo "$selected_lines" | sed 's/^[[:space:]]*[0-9]*[[:space:]]*//' | sed 's/\x1b\[[0-9;]*m//g')
+        # Extract line numbers from selected lines
+        local line_numbers
+        line_numbers=$(echo "$selected_lines" | sed -n 's/^[[:space:]]*\([0-9]*\)[[:space:]].*/\1/p')
+        # Get original content for these line numbers (preserve exact original formatting)
+        local content_to_copy=""
+        while IFS= read -r line_num; do
+            if [[ -n "$line_num" ]]; then
+                # Get the original line content without modification
+                local original_line
+                original_line=$(sed -n "${line_num}p" "$file")
+                if [[ -n "$content_to_copy" ]]; then
+                    content_to_copy="${content_to_copy}\n${original_line}"
+                else
+                    content_to_copy="$original_line"
+                fi
+            fi
+        done <<< "$line_numbers"
+        # Convert \n back to actual newlines
+        content_to_copy=$(echo -e "$content_to_copy")
         # Use clipboard function if available
         if declare -f shell::clip_value > /dev/null 2>&1; then
             shell::clip_value "$content_to_copy"
@@ -3169,8 +3191,10 @@ view_file() {
             fi
         fi
         # Show what was copied
-        local line_count=$(echo "$selected_lines" | wc -l)
+        local line_count=$(echo "$line_numbers" | wc -l)
         echo "Copied $line_count line(s) from '$file'"
+        # Debug: Show which lines were selected
+        echo "Selected line numbers: $(echo "$line_numbers" | tr '\n' ',' | sed 's/,$//')"
     else
         echo "No lines selected"
     fi
@@ -3204,13 +3228,28 @@ view_file_simple() {
         --height=100% \
         --border)
     if [[ -n "$selected_lines" ]]; then
-        local content_to_copy
-        content_to_copy=$(echo "$selected_lines" | sed 's/^[[:space:]]*[0-9]*[[:space:]]*//')
+        # Extract line numbers and get original content
+        local line_numbers
+        line_numbers=$(echo "$selected_lines" | sed -n 's/^[[:space:]]*\([0-9]*\)[[:space:]].*/\1/p')
+        # Get original content for these line numbers
+        local content_to_copy=""
+        while IFS= read -r line_num; do
+            if [[ -n "$line_num" ]]; then
+                local original_line
+                original_line=$(sed -n "${line_num}p" "$file")
+                if [[ -n "$content_to_copy" ]]; then
+                    content_to_copy="${content_to_copy}\n${original_line}"
+                else
+                    content_to_copy="$original_line"
+                fi
+            fi
+        done <<< "$line_numbers"
+        content_to_copy=$(echo -e "$content_to_copy")
         echo "Selected content:"
         echo "----------------------------------------"
         echo "$content_to_copy"
         echo "----------------------------------------"
-        local line_count=$(echo "$selected_lines" | wc -l)
+        local line_count=$(echo "$line_numbers" | wc -l)
         echo "Selected $line_count line(s) from '$file'"
     else
         echo "No lines selected"
@@ -3279,6 +3318,38 @@ apply_basic_syntax_highlighting() {
                 -e "s/(\{|\}|\[|\])/${YELLOW}\1${NC}/g" \
                 "$file"
             ;;
+        xml|html|htm)
+            # XML/HTML highlighting
+            sed -E \
+                -e "s/(<!--.*-->)/${GRAY}\1${NC}/g" \
+                -e "s/(<\/?)([a-zA-Z][a-zA-Z0-9]*)/\1${BLUE}\2${NC}/g" \
+                -e "s/([a-zA-Z-]+)(=)/${GREEN}\1${NC}\2/g" \
+                -e "s/(\"[^\"]*\")/${CYAN}\1${NC}/g" \
+                -e "s/('[^']*')/${CYAN}\1${NC}/g" \
+                -e "s/(>|<)/${YELLOW}\1${NC}/g" \
+                "$file"
+            ;;
+        css)
+            # CSS highlighting
+            sed -E \
+                -e "s:(/\*.*\*/):${GRAY}\1${NC}:g" \
+                -e "s/([a-zA-Z-]+)(\s*:)/${BLUE}\1${NC}\2/g" \
+                -e "s/(\{|\})/${YELLOW}\1${NC}/g" \
+                -e "s/([.#][a-zA-Z-_][a-zA-Z0-9-_]*)/${GREEN}\1${NC}/g" \
+                -e "s/(\"[^\"]*\")/${CYAN}\1${NC}/g" \
+                -e "s/('[^']*')/${CYAN}\1${NC}/g" \
+                "$file"
+            ;;
+        yaml|yml)
+            # YAML highlighting
+            sed -E \
+                -e "s/(#.*$)/${GRAY}\1${NC}/g" \
+                -e "s/^(\s*)([a-zA-Z_][a-zA-Z0-9_-]*):/${BLUE}\1\2${NC}:/g" \
+                -e "s/(:\s*)(\"[^\"]*\")(\s*$)/\1${CYAN}\2${NC}\3/g" \
+                -e "s/(:\s*)([0-9]+)(\s*$)/\1${YELLOW}\2${NC}\3/g" \
+                -e "s/(:\s*)(true|false|null)(\s*$)/\1${GREEN}\2${NC}\3/g" \
+                "$file"
+            ;;
         *)
             # Default: no syntax highlighting, just output the file
             cat "$file"
@@ -3297,6 +3368,8 @@ test_file_content() {
     echo "Lines: $(wc -l < "$file" 2>/dev/null || echo "unknown")"
     echo "First 5 lines:"
     head -n 5 "$file" 2>/dev/null || echo "Cannot read file"
+    echo "Last 5 lines:"
+    tail -n 5 "$file" 2>/dev/null || echo "Cannot read file"
     echo "========================"
 }
 
@@ -3319,6 +3392,12 @@ view_file_help() {
     echo "  vf  - shortcut for view_file"
     echo "  vfs - shortcut for view_file_simple"
     echo "  vft - shortcut for test_file_content"
+    echo ""
+    echo "Key Features:"
+    echo "  - Preserves original file content exactly as written"
+    echo "  - Line numbers are only for display, not copied"
+    echo "  - ANSI colors for syntax highlighting in display only"
+    echo "  - Original formatting and spacing preserved when copying"
     echo ""
     echo "Troubleshooting:"
     echo "  1. If no content shows, try: vfs filename"
