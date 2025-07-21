@@ -3184,6 +3184,37 @@ view_file() {
     # else
     #     echo "No lines selected"
     # fi
+
+    if [[ -n "$selected_lines" ]]; then
+        local line_numbers
+        line_numbers=$(echo "$selected_lines" | sed -n 's/^[[:space:]]*\([0-9]*\)[[:space:]].*/\1/p')
+        # Get original content for these line numbers (preserve exact original formatting)
+        local content_to_copy=""
+        while IFS= read -r line_num; do
+            if [[ -n "$line_num" ]]; then
+                # Get the original line content without modification from the original file
+                local original_line
+                original_line=$(sed -n "${line_num}p" "$file")
+                if [[ -n "$content_to_copy" ]]; then
+                    content_to_copy="${content_to_copy}\n${original_line}"
+                else
+                    content_to_copy="$original_line"
+                fi
+            fi
+        done <<< "$line_numbers"
+        # Convert \n back to actual newlines
+        content_to_copy=$(echo -e "$content_to_copy")
+        # Use clipboard function if available
+        if declare -f shell::clip_value > /dev/null 2>&1; then
+            shell::clip_value "$content_to_copy"
+        fi
+        # Show what was copied with enhanced formatting
+        local line_count=$(echo "$line_numbers" | wc -l)
+        echo "Copied $line_count line(s) from '$file'"
+        echo "Selected line numbers: $(echo "$line_numbers" | tr '\n' ',' | sed 's/,$//')"
+    else
+        echo "No lines selected"
+    fi
 }
 
 # Basic syntax highlighting function for common languages
