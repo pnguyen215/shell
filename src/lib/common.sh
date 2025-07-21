@@ -3092,26 +3092,25 @@ view_file() {
         echo "File size: $(stat -f%z "$file" 2>/dev/null || stat -c%s "$file" 2>/dev/null || echo "unknown") bytes"
     fi
     
-    # Apply syntax highlighting based on file extension and tools available
     local highlighting_method=""
-    if command -v bat &> /dev/null; then
-        # Use bat for syntax highlighting (preferred)
-        highlighting_method="bat"
-        bat --color=always --style=plain --paging=never "$file" | nl -ba > "$temp_file"
-    elif command -v highlight &> /dev/null; then
-        # Use highlight tool as fallback
-        highlighting_method="highlight"
-        highlight --out-format=ansi --force --no-doc "$file" 2>/dev/null | nl -ba > "$temp_file"
-    elif command -v pygmentize &> /dev/null; then
-        # Use pygments as another fallback
-        highlighting_method="pygmentize"
-        pygmentize -f terminal -g "$file" 2>/dev/null | nl -ba > "$temp_file"
-    else
-        # Fallback to basic syntax highlighting using sed/awk for common languages
-        highlighting_method="basic"
-        apply_basic_syntax_highlighting "$file" "$ext" > "$colored_file"
-        nl -ba "$colored_file" > "$temp_file"
-    fi
+    # if command -v bat &> /dev/null; then
+    #     highlighting_method="bat"
+    #     bat --color=always --style=plain --paging=never "$file" | nl -ba > "$temp_file"
+    # elif command -v highlight &> /dev/null; then
+    #     highlighting_method="highlight"
+    #     highlight --out-format=ansi --force --no-doc "$file" 2>/dev/null | nl -ba > "$temp_file"
+    # elif command -v pygmentize &> /dev/null; then
+    #     highlighting_method="pygmentize"
+    #     pygmentize -f terminal -g "$file" 2>/dev/null | nl -ba > "$temp_file"
+    # else
+    #     highlighting_method="basic"
+    #     apply_basic_syntax_highlighting "$file" "$ext" > "$colored_file"
+    #     nl -ba "$colored_file" > "$temp_file"
+    # fi
+
+    highlighting_method="basic"
+    apply_basic_syntax_highlighting "$file" "$ext" > "$colored_file"
+    nl -ba "$colored_file" > "$temp_file"
     
     # Debug: Check if temp file has content
     local temp_size=$(wc -l < "$temp_file" 2>/dev/null || echo "0")
