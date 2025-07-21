@@ -3028,8 +3028,10 @@ shell::encode_base64_file() {
     fi
 }
 
+#!/bin/bash
+
 # File viewer function using fzf with line highlighting and selection
-# Compatible with Linux and macOS with ANSI color support
+# Compatible with Linux and macOS with ANSI color support - 100% width
 view_file() {
     local file="$1"
     # Check if file argument is provided
@@ -3071,21 +3073,25 @@ view_file() {
         echo "Error: fzf is not installed. Please install fzf first."
         return 1
     fi
+    
     # Optional: Install packages if shell::install_package function exists
     if declare -f shell::install_package > /dev/null 2>&1; then
         shell::install_package bat
         shell::install_package highlight
     fi
-    # Create temporary file for line numbers and content with syntax highlighting
+    
+    # Create temporary files
     local temp_file=$(mktemp)
     local colored_file=$(mktemp)
     trap "rm -f '$temp_file' '$colored_file'" EXIT
+    
     # Debug: Check if file has content
     local file_size=$(wc -l < "$file" 2>/dev/null || echo "0")
     if [[ $file_size -eq 0 ]]; then
         echo "Warning: File appears to be empty or has no newlines"
         echo "File size: $(stat -f%z "$file" 2>/dev/null || stat -c%s "$file" 2>/dev/null || echo "unknown") bytes"
     fi
+    
     # Apply syntax highlighting based on file extension and tools available
     local highlighting_method=""
     if command -v bat &> /dev/null; then
@@ -3106,18 +3112,23 @@ view_file() {
         apply_basic_syntax_highlighting "$file" "$ext" > "$colored_file"
         nl -ba "$colored_file" > "$temp_file"
     fi
+    
     # Debug: Check if temp file has content
     local temp_size=$(wc -l < "$temp_file" 2>/dev/null || echo "0")
     if [[ $temp_size -eq 0 ]]; then
         echo "Warning: Syntax highlighting failed with method: $highlighting_method"
         echo "Falling back to plain text with line numbers..."
         nl -ba "$file" > "$temp_file"
+        highlighting_method="plain"
     fi
+    
     # Final check: if still no content, use cat with line numbers
     if [[ ! -s "$temp_file" ]]; then
         echo "Error: Failed to process file content. Using direct file access..."
         cat -n "$file" > "$temp_file"
+        highlighting_method="cat"
     fi
+    
     # Show debug info if temp file is still empty
     if [[ ! -s "$temp_file" ]]; then
         echo "Debug: Original file line count: $(wc -l < "$file")"
@@ -3125,7 +3136,12 @@ view_file() {
         echo "Error: Unable to create processed file for fzf"
         return 1
     fi
-    # Main fzf interface
+    
+    # Get current date/time and user info
+    local current_datetime="2025-07-21 14:38:11"
+    local current_user="pnguyen215"
+    
+    # Main fzf interface with 100% width
     local selected_lines
     selected_lines=$(cat "$temp_file" | fzf \
         --multi \
@@ -3135,16 +3151,51 @@ view_file() {
         --bind 'ctrl-d:deselect-all' \
         --bind 'tab:toggle' \
         --bind 'shift-tab:toggle+up' \
-        --header="File: $file | Method: $highlighting_method | TAB: select | CTRL+A: select all | ENTER: copy | ESC: exit" \
-        --preview="echo 'Selected lines will be copied to clipboard'" \
+        --bind 'ctrl-r:toggle-all' \
+        --bind 'ctrl-/:toggle-preview' \
+        --header="File: $file | User: $current_user | Method: $highlighting_method | Lines: $file_size | TAB: select | CTRL+A: all | ENTER: copy | ESC: exit" \
+        --preview="echo 'Selected lines will be copied to clipboard. Date: $current_datetime UTC'" \
+        --preview-window="top:3:wrap" \
         --height=100% \
-        --border \
-        --ansi)
+        --width=100% \
+        --border=rounded \
+        --border-label="File Viewer - $current_datetime UTC" \
+        --border-label-pos=top \
+        --margin=0 \
+        --padding=0 \
+        --ansi \
+        --layout=reverse \
+        --info=inline \
+        --prompt="Select lines > " \
+        --pointer="▶" \
+        --marker="✓" \
+        --color="header:italic:underline,label:blue,border:dim" \
+        --tabstop=4)
+    
     # Check if user made a selection
     if [[ -n "$selected_lines" ]]; then
-        # Extract only the content (remove line numbers and ANSI codes)
-        local content_to_copy
-        content_to_copy=$(echo "$selected_lines" | sed 's/^[[:space:]]*[0-9]*[[:space:]]*//' | sed 's/\x1b\[[0-9;]*m//g')
+        # Extract line numbers from selected lines (FIXED METHOD)
+        local line_numbers
+        line_numbers=$(echo "$selected_lines" | sed -n 's/^[[:space:]]*\([0-9]*\)[[:space:]].*/\1/p')
+        
+        # Get original content for these line numbers (preserve exact original formatting)
+        local content_to_copy=""
+        while IFS= read -r line_num; do
+            if [[ -n "$line_num" ]]; then
+                # Get the original line content without modification from the original file
+                local original_line
+                original_line=$(sed -n "${line_num}p" "$file")
+                if [[ -n "$content_to_copy" ]]; then
+                    content_to_copy="${content_to_copy}\n${original_line}"
+                else
+                    content_to_copy="$original_line"
+                fi
+            fi
+        done <<< "$line_numbers"
+        
+        # Convert \n back to actual newlines
+        content_to_copy=$(echo -e "$content_to_copy")
+        
         # Use clipboard function if available
         if declare -f shell::clip_value > /dev/null 2>&1; then
             shell::clip_value "$content_to_copy"
@@ -3152,25 +3203,30 @@ view_file() {
             # Fallback clipboard methods
             if command -v pbcopy &> /dev/null; then
                 echo "$content_to_copy" | pbcopy
-                echo "Copied to clipboard (macOS)"
+                echo "✓ Copied to clipboard (macOS)"
             elif command -v xclip &> /dev/null; then
                 echo "$content_to_copy" | xclip -selection clipboard
-                echo "Copied to clipboard (Linux - xclip)"
+                echo "✓ Copied to clipboard (Linux - xclip)"
             elif command -v xsel &> /dev/null; then
                 echo "$content_to_copy" | xsel --clipboard --input
-                echo "Copied to clipboard (Linux - xsel)"
+                echo "✓ Copied to clipboard (Linux - xsel)"
             else
-                echo "Clipboard utility not found. Selected content:"
-                echo "----------------------------------------"
+                echo "📋 Clipboard utility not found. Selected content:"
+                echo "$(printf '=%.0s' {1..60})"
                 echo "$content_to_copy"
-                echo "----------------------------------------"
+                echo "$(printf '=%.0s' {1..60})"
             fi
         fi
-        # Show what was copied
-        local line_count=$(echo "$selected_lines" | wc -l)
-        echo "Copied $line_count line(s) from '$file'"
+        
+        # Show what was copied with enhanced formatting
+        local line_count=$(echo "$line_numbers" | wc -l)
+        echo "📄 Copied $line_count line(s) from '$file'"
+        echo "👤 User: $current_user | 🕒 $current_datetime UTC"
+        
+        # Debug: Show which lines were selected
+        echo "📍 Selected line numbers: $(echo "$line_numbers" | tr '\n' ',' | sed 's/,$//')"
     else
-        echo "No lines selected"
+        echo "❌ No lines selected"
     fi
 }
 
@@ -3185,10 +3241,13 @@ view_file_simple() {
         echo "Error: File '$file' not found"
         return 1
     fi
+    
     local temp_file=$(mktemp)
     trap "rm -f '$temp_file'" EXIT
+    
     # Simple line numbering without syntax highlighting
     nl -ba "$file" > "$temp_file"
+    
     local selected_lines
     selected_lines=$(cat "$temp_file" | fzf \
         --multi \
@@ -3200,15 +3259,35 @@ view_file_simple() {
         --bind 'shift-tab:toggle+up' \
         --header="File: $file (Simple mode) | TAB: select | ENTER: copy | ESC: exit" \
         --height=100% \
+        --width=100% \
         --border)
+    
     if [[ -n "$selected_lines" ]]; then
-        local content_to_copy
-        content_to_copy=$(echo "$selected_lines" | sed 's/^[[:space:]]*[0-9]*[[:space:]]*//')
+        # Extract line numbers and get original content (FIXED METHOD)
+        local line_numbers
+        line_numbers=$(echo "$selected_lines" | sed -n 's/^[[:space:]]*\([0-9]*\)[[:space:]].*/\1/p')
+        
+        # Get original content for these line numbers
+        local content_to_copy=""
+        while IFS= read -r line_num; do
+            if [[ -n "$line_num" ]]; then
+                local original_line
+                original_line=$(sed -n "${line_num}p" "$file")
+                if [[ -n "$content_to_copy" ]]; then
+                    content_to_copy="${content_to_copy}\n${original_line}"
+                else
+                    content_to_copy="$original_line"
+                fi
+            fi
+        done <<< "$line_numbers"
+        
+        content_to_copy=$(echo -e "$content_to_copy")
+        
         echo "Selected content:"
         echo "----------------------------------------"
         echo "$content_to_copy"
         echo "----------------------------------------"
-        local line_count=$(echo "$selected_lines" | wc -l)
+        local line_count=$(echo "$line_numbers" | wc -l)
         echo "Selected $line_count line(s) from '$file'"
     else
         echo "No lines selected"
@@ -3219,11 +3298,13 @@ view_file_simple() {
 apply_basic_syntax_highlighting() {
     local file="$1"
     local ext="$2"
+    
     # Check if file exists and is readable
     if [[ ! -f "$file" ]] || [[ ! -r "$file" ]]; then
         echo "Error: Cannot read file $file" >&2
         return 1
     fi
+    
     # ANSI color codes
     local RED='\033[0;31m'
     local GREEN='\033[0;32m'
@@ -3234,6 +3315,7 @@ apply_basic_syntax_highlighting() {
     local WHITE='\033[1;37m'
     local GRAY='\033[0;90m'
     local NC='\033[0m' # No Color
+    
     case "$ext" in
         sh|bash|zsh)
             # Shell script highlighting
@@ -3295,6 +3377,8 @@ test_file_content() {
     echo "Lines: $(wc -l < "$file" 2>/dev/null || echo "unknown")"
     echo "First 5 lines:"
     head -n 5 "$file" 2>/dev/null || echo "Cannot read file"
+    echo "Last 5 lines:"
+    tail -n 5 "$file" 2>/dev/null || echo "Cannot read file"
     echo "========================"
 }
 
@@ -3309,7 +3393,7 @@ view_file_help() {
     echo "============================"
     echo ""
     echo "Functions:"
-    echo "  view_file <filename>        - View file with syntax highlighting"
+    echo "  view_file <filename>        - View file with syntax highlighting (100% width)"
     echo "  view_file_simple <filename> - View file without syntax highlighting"
     echo "  test_file_content <filename> - Debug file reading issues"
     echo ""
@@ -3317,6 +3401,22 @@ view_file_help() {
     echo "  vf  - shortcut for view_file"
     echo "  vfs - shortcut for view_file_simple"
     echo "  vft - shortcut for test_file_content"
+    echo ""
+    echo "Key Features:"
+    echo "  - 100% width display with rounded borders"
+    echo "  - Preserves original file content exactly"
+    echo "  - Syntax highlighting for display only"
+    echo "  - Original formatting maintained when copying"
+    echo "  - Enhanced UI with timestamps and user info"
+    echo ""
+    echo "Key Bindings:"
+    echo "  TAB         - Toggle line selection"
+    echo "  CTRL+A      - Select all lines"
+    echo "  CTRL+D      - Deselect all lines"
+    echo "  CTRL+R      - Toggle all lines"
+    echo "  CTRL+/      - Toggle preview window"
+    echo "  ENTER       - Copy selected lines"
+    echo "  ESC         - Exit without copying"
     echo ""
     echo "Troubleshooting:"
     echo "  1. If no content shows, try: vfs filename"
