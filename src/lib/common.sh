@@ -3220,14 +3220,10 @@ view_file() {
 apply_basic_syntax_highlighting() {
     local file="$1"
     local ext="$2"
-    
-    # Check if file exists and is readable
     if [[ ! -f "$file" ]] || [[ ! -r "$file" ]]; then
         echo "Error: Cannot read file $file" >&2
         return 1
     fi
-    
-    # ANSI color codes
     local RED='\033[0;31m'
     local GREEN='\033[0;32m'
     local YELLOW='\033[1;33m'
@@ -3240,7 +3236,6 @@ apply_basic_syntax_highlighting() {
     
     case "$ext" in
         sh|bash|zsh)
-            # Shell script highlighting
             sed -E \
                 -e "s/(#.*$)/${GRAY}\1${NC}/g" \
                 -e "s/(^|[[:space:]])(if|then|else|elif|fi|for|while|do|done|case|esac|function)([[:space:]]|$)/\1${BLUE}\2${NC}\3/g" \
@@ -3251,7 +3246,6 @@ apply_basic_syntax_highlighting() {
                 "$file"
             ;;
         py|python)
-            # Python highlighting
             sed -E \
                 -e "s/(#.*$)/${GRAY}\1${NC}/g" \
                 -e "s/(^|[[:space:]])(def|class|if|elif|else|for|while|try|except|finally|with|import|from|as|return|yield|break|continue|pass|lambda|and|or|not|in|is)([[:space:]]|$)/\1${BLUE}\2${NC}\3/g" \
@@ -3262,7 +3256,6 @@ apply_basic_syntax_highlighting() {
                 "$file"
             ;;
         ini|conf|config)
-            # INI/Config file highlighting
             sed -E \
                 -e "s/(#.*$|;.*$)/${GRAY}\1${NC}/g" \
                 -e "s/^\s*\[([^\]]*)\]/${BLUE}[\1]${NC}/g" \
@@ -3272,7 +3265,6 @@ apply_basic_syntax_highlighting() {
                 "$file"
             ;;
         json)
-            # JSON highlighting
             sed -E \
                 -e "s/(\"[^\"]*\")(\s*:)/${BLUE}\1${NC}\2/g" \
                 -e "s/(:)(\s*\"[^\"]*\")(\s*[,}])/\1${CYAN}\2${NC}\3/g" \
@@ -3282,7 +3274,6 @@ apply_basic_syntax_highlighting() {
                 "$file"
             ;;
         go)
-            # Go highlighting
             sed -E \
                 -e "s/(\/\/.*$)/${GRAY}\1${NC}/g" \
                 -e "s/(^|[[:space:]])(func|package|import|var|const|type|struct|interface|map|chan|go|defer|select|case|default)([[:space:]]|$)/\1${BLUE}\2${NC}\3/g" \
@@ -3292,7 +3283,6 @@ apply_basic_syntax_highlighting() {
                 "$file"
             ;;
         *)
-            # Default: no syntax highlighting, just output the file
             cat "$file"
             ;;
     esac
