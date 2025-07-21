@@ -3172,30 +3172,11 @@ view_file() {
         --color="header:italic:underline,label:blue,border:dim" \
         --tabstop=4)
     
-    # Check if user made a selection
+
     if [[ -n "$selected_lines" ]]; then
-        # Extract line numbers from selected lines (FIXED METHOD)
-        local line_numbers
-        line_numbers=$(echo "$selected_lines" | sed -n 's/^[[:space:]]*\([0-9]*\)[[:space:]].*/\1/p')
-        
-        # Get original content for these line numbers (preserve exact original formatting)
-        local content_to_copy=""
-        while IFS= read -r line_num; do
-            if [[ -n "$line_num" ]]; then
-                # Get the original line content without modification from the original file
-                local original_line
-                original_line=$(sed -n "${line_num}p" "$file")
-                if [[ -n "$content_to_copy" ]]; then
-                    content_to_copy="${content_to_copy}\n${original_line}"
-                else
-                    content_to_copy="$original_line"
-                fi
-            fi
-        done <<< "$line_numbers"
-        
-        # Convert \n back to actual newlines
-        content_to_copy=$(echo -e "$content_to_copy")
-        
+        # Extract only the content (remove line numbers and ANSI codes)
+        local content_to_copy
+        content_to_copy=$(echo "$selected_lines" | sed 's/^[[:space:]]*[0-9]*[[:space:]]*//' | sed 's/\x1b\[[0-9;]*m//g')
         # Use clipboard function if available
         if declare -f shell::clip_value > /dev/null 2>&1; then
             shell::clip_value "$content_to_copy"
@@ -3203,30 +3184,25 @@ view_file() {
             # Fallback clipboard methods
             if command -v pbcopy &> /dev/null; then
                 echo "$content_to_copy" | pbcopy
-                echo "✓ Copied to clipboard (macOS)"
+                echo "Copied to clipboard (macOS)"
             elif command -v xclip &> /dev/null; then
                 echo "$content_to_copy" | xclip -selection clipboard
-                echo "✓ Copied to clipboard (Linux - xclip)"
+                echo "Copied to clipboard (Linux - xclip)"
             elif command -v xsel &> /dev/null; then
                 echo "$content_to_copy" | xsel --clipboard --input
-                echo "✓ Copied to clipboard (Linux - xsel)"
+                echo "Copied to clipboard (Linux - xsel)"
             else
-                echo "📋 Clipboard utility not found. Selected content:"
-                echo "$(printf '=%.0s' {1..60})"
+                echo "Clipboard utility not found. Selected content:"
+                echo "----------------------------------------"
                 echo "$content_to_copy"
-                echo "$(printf '=%.0s' {1..60})"
+                echo "----------------------------------------"
             fi
         fi
-        
-        # Show what was copied with enhanced formatting
-        local line_count=$(echo "$line_numbers" | wc -l)
-        echo "📄 Copied $line_count line(s) from '$file'"
-        echo "👤 User: $current_user | 🕒 $current_datetime UTC"
-        
-        # Debug: Show which lines were selected
-        echo "📍 Selected line numbers: $(echo "$line_numbers" | tr '\n' ',' | sed 's/,$//')"
+        # Show what was copied
+        local line_count=$(echo "$selected_lines" | wc -l)
+        echo "Copied $line_count line(s) from '$file'"
     else
-        echo "❌ No lines selected"
+        echo "No lines selected"
     fi
 }
 
