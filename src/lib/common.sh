@@ -3046,21 +3046,21 @@ view_file() {
         return 1
     fi
     # Check file extension and exclude unsupported formats
-    local ext="${file##*.}"
-    case "${ext,,}" in
-        xls|xlsx|xlsm|xlsb|ods)
-            echo "Error: Excel files are not supported"
-            return 1
-            ;;
-        ppt|pptx|pps|ppsx|odp)
-            echo "Error: PowerPoint files are not supported"
-            return 1
-            ;;
-        doc|docx|odt)
-            echo "Error: Word documents are not supported"
-            return 1
-            ;;
-    esac
+    # local ext="${file##*.}"
+    # case "${ext,,}" in
+    #     xls|xlsx|xlsm|xlsb|ods)
+    #         echo "Error: Excel files are not supported"
+    #         return 1
+    #         ;;
+    #     ppt|pptx|pps|ppsx|odp)
+    #         echo "Error: PowerPoint files are not supported"
+    #         return 1
+    #         ;;
+    #     doc|docx|odt)
+    #         echo "Error: Word documents are not supported"
+    #         return 1
+    #         ;;
+    # esac
     # Check if fzf is installed
     if ! command -v fzf &> /dev/null; then
         echo "Error: fzf is not installed. Please install fzf first."
@@ -3134,21 +3134,21 @@ view_file_range() {
         return 1
     fi
     # Check file extension and exclude unsupported formats
-    local ext="${file##*.}"
-    case "${ext,,}" in
-        xls|xlsx|xlsm|xlsb|ods)
-            echo "Error: Excel files are not supported"
-            return 1
-            ;;
-        ppt|pptx|pps|ppsx|odp)
-            echo "Error: PowerPoint files are not supported"
-            return 1
-            ;;
-        doc|docx|odt)
-            echo "Error: Word documents are not supported"
-            return 1
-            ;;
-    esac
+    # local ext="${file##*.}"
+    # case "${ext,,}" in
+    #     xls|xlsx|xlsm|xlsb|ods)
+    #         echo "Error: Excel files are not supported"
+    #         return 1
+    #         ;;
+    #     ppt|pptx|pps|ppsx|odp)
+    #         echo "Error: PowerPoint files are not supported"
+    #         return 1
+    #         ;;
+    #     doc|docx|odt)
+    #         echo "Error: Word documents are not supported"
+    #         return 1
+    #         ;;
+    # esac
     # Check if fzf is installed
     if ! command -v fzf &> /dev/null; then
         echo "Error: fzf is not installed. Please install fzf first."
