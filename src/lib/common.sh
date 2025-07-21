@@ -3046,21 +3046,23 @@ view_file() {
         return 1
     fi
     # Check file extension and exclude unsupported formats
-    # local ext="${file##*.}"
-    # case "${ext,,}" in
-    #     xls|xlsx|xlsm|xlsb|ods)
-    #         echo "Error: Excel files are not supported"
-    #         return 1
-    #         ;;
-    #     ppt|pptx|pps|ppsx|odp)
-    #         echo "Error: PowerPoint files are not supported"
-    #         return 1
-    #         ;;
-    #     doc|docx|odt)
-    #         echo "Error: Word documents are not supported"
-    #         return 1
-    #         ;;
-    # esac
+    local ext="${file##*.}"
+    # Convert to lowercase using tr instead of ${ext,,}
+    ext=$(echo "$ext" | tr '[:upper:]' '[:lower:]')
+    case "$ext" in
+        xls|xlsx|xlsm|xlsb|ods)
+            echo "Error: Excel files are not supported"
+            return 1
+            ;;
+        ppt|pptx|pps|ppsx|odp)
+            echo "Error: PowerPoint files are not supported"
+            return 1
+            ;;
+        doc|docx|odt)
+            echo "Error: Word documents are not supported"
+            return 1
+            ;;
+    esac
     # Check if fzf is installed
     if ! command -v fzf &> /dev/null; then
         echo "Error: fzf is not installed. Please install fzf first."
@@ -3092,25 +3094,6 @@ view_file() {
         # Extract only the content (remove line numbers)
         local content_to_copy
         content_to_copy=$(echo "$selected_lines" | sed 's/^[[:space:]]*[0-9]*[[:space:]]*//')
-        # Copy to clipboard based on OS
-        # if command -v pbcopy &> /dev/null; then
-        #     # macOS
-        #     echo "$content_to_copy" | pbcopy
-        #     echo "Selected lines copied to clipboard (macOS)"
-        # elif command -v xclip &> /dev/null; then
-        #     # Linux with xclip
-        #     echo "$content_to_copy" | xclip -selection clipboard
-        #     echo "Selected lines copied to clipboard (Linux - xclip)"
-        # elif command -v xsel &> /dev/null; then
-        #     # Linux with xsel
-        #     echo "$content_to_copy" | xsel --clipboard --input
-        #     echo "Selected lines copied to clipboard (Linux - xsel)"
-        # else
-        #     echo "Clipboard utility not found. Selected content:"
-        #     echo "----------------------------------------"
-        #     echo "$content_to_copy"
-        #     echo "----------------------------------------"
-        # fi
         shell::clip_value "$content_to_copy"
         # Show what was copied
         local line_count=$(echo "$selected_lines" | wc -l)
@@ -3198,25 +3181,7 @@ view_file_range() {
     # Extract the range
     local content_to_copy
     content_to_copy=$(sed -n "${start_num},${end_num}p" "$file")
-    # Copy to clipboard based on OS
-    # if command -v pbcopy &> /dev/null; then
-    #     # macOS
-    #     echo "$content_to_copy" | pbcopy
-    #     echo "Lines $start_num-$end_num copied to clipboard (macOS)"
-    # elif command -v xclip &> /dev/null; then
-    #     # Linux with xclip
-    #     echo "$content_to_copy" | xclip -selection clipboard
-    #     echo "Lines $start_num-$end_num copied to clipboard (Linux - xclip)"
-    # elif command -v xsel &> /dev/null; then
-    #     # Linux with xsel
-    #     echo "$content_to_copy" | xsel --clipboard --input
-    #     echo "Lines $start_num-$end_num copied to clipboard (Linux - xsel)"
-    # else
-    #     echo "Clipboard utility not found. Selected content (lines $start_num-$end_num):"
-    #     echo "----------------------------------------"
-    #     echo "$content_to_copy"
-    #     echo "----------------------------------------"
-    # fi
+     shell::clip_value "$content_to_copy"
     local line_count=$((end_num - start_num + 1))
     echo "Copied $line_count line(s) from '$file' (lines $start_num-$end_num)"
 }
