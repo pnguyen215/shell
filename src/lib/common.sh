@@ -3138,7 +3138,8 @@ view_file() {
     fi
     
     # Get current date/time and user info
-    local current_datetime="2025-07-21 14:38:11"
+    local current_datetime
+    current_datetime=$(date -u +"%Y-%m-%d %H:%M:%S")
     local current_user="pnguyen215"
     
     # Main fzf interface with 100% width
@@ -3154,11 +3155,11 @@ view_file() {
         --bind 'ctrl-r:toggle-all' \
         --bind 'ctrl-/:toggle-preview' \
         --header="File: $file | User: $current_user | Method: $highlighting_method | Lines: $file_size | TAB: select | CTRL+A: all | ENTER: copy | ESC: exit" \
-        --preview="echo 'Selected lines will be copied to clipboard. Date: $current_datetime UTC'" \
-        --preview-window="top:1:wrap" \
+        # --preview="echo 'Selected lines will be copied to clipboard. Date: $current_datetime UTC'" \
+        # --preview-window="top:1:wrap" \
         --height=100% \
         --border=rounded \
-        --border-label="File Viewer - $current_datetime UTC" \
+        --border-label="Shell Viewer - $current_datetime UTC" \
         --border-label-pos=top \
         --margin=0 \
         --padding=0 \
