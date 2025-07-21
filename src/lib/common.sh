@@ -3138,7 +3138,7 @@ view_file() {
         --bind 'tab:toggle' \
         --bind 'shift-tab:toggle+up' \
         --header="File: $file | Method: $highlighting_method | TAB: select | CTRL+A: select all | ENTER: copy | ESC: exit" \
-        # --preview="echo 'Selected lines will be copied to clipboard'" \
+        --preview="echo 'Selected lines will be copied to clipboard'" \
         --height=100% \
         --border \
         --ansi)
