@@ -3117,8 +3117,15 @@ view_file() {
         return 1
     fi
     
-    shell::install_package bat
-    shell::install_package highlight
+    shell::ask "Do you want to install bat, highlight, and pygmentize for syntax highlighting? [y/n]"
+    if [[ $? -eq 1 ]]; then
+        echo "Installing required packages..."
+        shell::install_package bat
+        shell::install_package highlight
+    else
+        echo "Skipping package installation."
+        return 0
+    fi
     
     # Create temporary files
     local temp_file=$(mktemp)
