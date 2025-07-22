@@ -1558,8 +1558,6 @@ shell::download_dataset() {
     local filename="$1"
     local link="$2"
     local base="$filename"
-    # shell::create_file_if_not_exists "$filename"
-    # Check if the file already exists
     if [ -e "$base" ]; then
         shell::ask "[q] Do you want to overwrite the existing file? $base"
         if [[ $? -eq 1 ]]; then
