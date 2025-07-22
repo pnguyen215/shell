@@ -1539,15 +1539,12 @@ shell::editor() {
 #   shell::download_dataset mydata.zip https://example.com/mydata.zip
 #   shell::download_dataset -n mydata.zip https://example.com/mydata.zip  # Displays the commands without executing them.
 shell::download_dataset() {
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_DOWNLOAD_DATASET"
         return 0
     fi
 
     local dry_run="false"
-
-    # Check for the optional dry-run flag (-n)
     if [ "$1" = "-n" ]; then
         dry_run="true"
         shift
@@ -1560,50 +1557,32 @@ shell::download_dataset() {
 
     local filename="$1"
     local link="$2"
-
-    # Ensure the directory exists; create it if it doesn't
-    shell::create_file_if_not_exists "$filename"
-
     local base="$filename"
+    # shell::create_file_if_not_exists "$filename"
     # Check if the file already exists
     if [ -e "$base" ]; then
-        local confirm=""
-        while [ -z "$confirm" ]; do
-            echo -n "[q] Do you want to overwrite the existing file? (y/n): "
-            read confirm
-            if [ -z "$confirm" ]; then
-                shell::colored_echo "ERR: Invalid input. Please enter y or n." 196
+        shell::ask "[q] Do you want to overwrite the existing file? $base"
+        if [[ $? -eq 1 ]]; then
+            if [ "$dry_run" = "true" ]; then
+                shell::on_evict "sudo rm \"$base\""
+            else
+                shell::run_cmd sudo rm "$base"
             fi
-        done
-
-        if [ "$confirm" != "y" ]; then
-            shell::colored_echo "WARN: Download canceled. The file already exists." 11
-            return 1
-        fi
-
-        # Remove the existing file before downloading (using shell::on_evict in dry-run mode)
-        if [ "$dry_run" = "true" ]; then
-            shell::on_evict "sudo rm \"$base\""
-        else
-            shell::run_cmd sudo rm "$base"
         fi
     fi
 
-    # Return to the original directory
-    cd - >/dev/null || return 1
-
-    # Build the download command
-    local download_cmd="curl -LJ \"$link\" -o \"$filename\""
+    local download_cmd="curl -s -LJ \"$link\" -o \"$filename\""
     if [ "$dry_run" = "true" ]; then
         shell::on_evict "$download_cmd"
-        shell::colored_echo "WARN: Dry-run mode: Displayed download command for $filename" 11
         return 0
     else
         shell::run_cmd curl -s -LJ "$link" -o "$filename"
         if [ $? -eq 0 ]; then
             shell::colored_echo "INFO: Successfully downloaded: $filename" 46
+            return 0
         else
             shell::colored_echo "ERR: Download failed for $link" 196
+            return 1
         fi
     fi
 }
@@ -3043,6 +3022,13 @@ shell::encode_base64_file() {
 #   The function loops until a valid response is received.
 #   If the user provides an invalid response, it will continue to prompt.
 #   The function supports a help flag (-h) to display usage information.
+#
+# Example:
+#   shell::ask "Do you want to continue?"
+#   if shell::ask "Do you want to proceed?"; then
+#       echo "User answered yes."
+#   else
+#       echo "User answered no."
 shell::ask() {
     if [ "$1" = "-h" ]; then
         echo "Usage: shell::ask <question>"
