@@ -1,5 +1,9 @@
 name: Format Shell Scripts
 
+permissions:
+  contents: write # allows modifying files
+  pull-requests: write # allows creating/updating PRs
+
 on:
   push:
     branches: ["shellcheck"]
