@@ -3202,7 +3202,6 @@ view_file() {
         --prompt="Search > " \
         --pointer="▶" \
         --marker="✓" \
-        # --color="header:italic:underline,label:blue,border:dim" \
         --color="header:italic,label:blue,border:dim" \
         --tabstop=4)
 
