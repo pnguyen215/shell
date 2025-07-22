@@ -218,10 +218,10 @@ SHELL_PROJECT_GITIGNORE_NODEJS="https://raw.githubusercontent.com/pnguyen215/she
 # This variable holds the URL to the Python .gitignore template. It is used to provide a standard .gitignore file for Python projects.
 SHELL_PROJECT_GITIGNORE_PYTHON="https://raw.githubusercontent.com/pnguyen215/shell-devops-stores/refs/heads/master/gitignores/.pythonignore"
 
-# SHELL_PROJECT_GITHUB_WORKFLOW_CI_RELEASE constant
+# SHELL_PROJECT_GITHUB_WORKFLOW_BASE constant
 # This variable holds the URL to the GitHub Actions CI workflow configuration file.
 # It is used to define the continuous integration process for projects using GitHub.
-SHELL_PROJECT_GITHUB_WORKFLOW_CI_RELEASE="https://raw.githubusercontent.com/pnguyen215/shell-devops-stores/refs/heads/master/ci-cd/github-actions/ci-release.yml"
+SHELL_PROJECT_GITHUB_WORKFLOW_BASE="https://raw.githubusercontent.com/pnguyen215/shell-devops-stores/refs/heads/master/ci-cd/github-actions/ci-release.yml"
 
 # SHELL_PROJECT_GITHUB_WORKFLOW_CI_NOTIFICATION_RELEASE constant
 # This variable holds the URL to the GitHub Actions CI notification workflow configuration file.

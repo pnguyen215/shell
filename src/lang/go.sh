@@ -366,7 +366,7 @@ shell::add_go_app_settings() {
     shell::download_dataset "docs/VERSION_RELEASE.md" $SHELL_PROJECT_DOC_VERSION_RELEASE
     shell::download_dataset "Makefile" $SHELL_PROJECT_GO_MAKEFILE
     shell::download_dataset ".gitignore" $SHELL_PROJECT_GITIGNORE_GO
-    shell::download_dataset ".github/workflows/gh_wrk_base.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_CI_RELEASE
+    shell::download_dataset ".github/workflows/gh_wrk_base.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_BASE
     shell::download_dataset ".github/workflows/gh_wrk_news.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_CI_NOTIFICATION_RELEASE
 }
 
