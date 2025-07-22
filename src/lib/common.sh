@@ -3143,8 +3143,8 @@ view_file() {
         --bind 'shift-tab:toggle+up' \
         --bind 'ctrl-r:toggle-all' \
         --bind 'ctrl-/:toggle-preview' \
-        --header="File: $file | MH: $highlighting_method | Lines: $file_size | TAB: select | CTRL+A: all | ENTER: copy | ESC: exit" \
-        --preview="echo 'Selected lines will be copied to clipboard. $current_datetime'" \
+        --header="File: $file | MH: $highlighting_method | Lines: $file_size | TAB: select | CTRL+A: all | CTRL+D: deselect | ENTER: copy | ESC: exit" \
+        --preview="echo 'Selected lines will be copied to clipboard'" \
         --preview-window="top:1:wrap" \
         --height=100% \
         --border=rounded \
@@ -3283,10 +3283,6 @@ alias vf='view_file'
 
 # Help function (simplified)
 view_file_help() {
-    echo "File Viewer with fzf - Help"
-    echo "============================"
-    echo ""
-    echo "Functions:"
     echo "  view_file <filename>        - View file with syntax highlighting (100% width)"
     echo "  view_file_simple <filename> - View file without syntax highlighting"
     echo "  test_file_content <filename> - Debug file reading issues"
