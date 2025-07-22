@@ -29,18 +29,15 @@
 #   -   This function is compatible with both Linux and macOS.
 #   -   It uses `go env GOPRIVATE` to reliably fetch the GOPRIVATE setting.
 shell::get_go_privates() {
-    local dry_run="false"
-
-    # Check for dry-run option
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
-
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_GET_GO_PRIVATES"
         return 0
+    fi
+
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
     fi
 
     local cmd="go env GOPRIVATE"
@@ -95,23 +92,18 @@ shell::get_go_privates() {
 #   -   It uses `go env -w GOPRIVATE=<value>` to set the GOPRIVATE setting.
 #   -   It supports dry-run and asynchronous execution.
 shell::set_go_privates() {
-    local dry_run="false"
-
-    # Check for dry-run option
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
-
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_SET_GO_PRIVATES"
         return 0
     fi
 
-    # Handle no arguments provided
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
+        shift
+    fi
+
     if [ $# -eq 0 ]; then
-        shell::colored_echo "ERR: No repositories provided." 196
         echo "Usage: shell::set_go_privates [-n] <repository1> [repository2] ..."
         return 1
     fi
@@ -179,16 +171,15 @@ shell::set_go_privates() {
 #   - Supports dry-run and asynchronous execution via shell::on_evict and shell::async.
 #   - Compatible with both Linux (Ubuntu 22.04 LTS) and macOS.
 shell::fzf_remove_go_privates() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_FZF_REMOVE_GO_PRIVATES"
+        return 0
+    fi
+
     local dry_run="false"
     if [ "$1" = "-n" ]; then
         dry_run="true"
         shift
-    fi
-
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_REMOVE_GO_PRIVATES"
-        return 0
     fi
 
     # Ensure fzf is installed
@@ -274,43 +265,25 @@ shell::fzf_remove_go_privates() {
 #   shell::create_go_app -n my_app /tmp/go_projects  # Previews initialization in a target folder.
 #   shell::create_go_app https://github.com/user/repo /home/user/src # Initializes from a GitHub URL in a target folder.
 shell::create_go_app() {
-    local app_name=""
-    local target_folder=""
-    local dry_run="false"
-    local original_dir="$PWD" # Save the original directory
-
-    # Parse arguments
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
-
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_CREATE_GO_APP"
         return 0
     fi
 
-    # Check for required app name
-    if [ -z "$1" ]; then
-        shell::colored_echo "ERR: Application name is required." 196
-        echo "Usage: shell::create_go_app [-n] [-h] <app_name|github_url> [target_folder]"
-        return 1
-    fi
-    app_name="$1"
-    shift
-
-    # Check for optional target folder
-    if [ -n "$1" ]; then
-        target_folder="$1"
+    local dry_run="false"
+    if [ "$1" = "-n" ]; then
+        dry_run="true"
         shift
     fi
 
-    # Check if there are any remaining unexpected arguments
-    if [ -n "$1" ]; then
-        shell::colored_echo "WARN: Warning: Unexpected arguments ignored: $*" 11
+    if [ -z "$1" ]; then
+        echo "Usage: shell::create_go_app [-n] [-h] <app_name|github_url> [target_folder]"
+        return 1
     fi
 
+    local app_name="$1"
+    local target_folder="$2"
+    local original_dir="$PWD" # Save the original directory
     local module_name="$app_name"
     local is_url="false"
 
@@ -325,7 +298,7 @@ shell::create_go_app() {
 
     # If a target folder is specified, create it and change directory
     if [ -n "$target_folder" ]; then
-        shell::colored_echo "📁 Ensuring target directory exists: $target_folder" 36
+        shell::colored_echo "WARN: Ensuring target directory exists: $target_folder" 33
         if [ "$dry_run" = "true" ]; then
             shell::on_evict "shell::create_directory_if_not_exists \"$target_folder\""
             shell::on_evict "cd \"$target_folder\""
@@ -346,7 +319,7 @@ shell::create_go_app() {
     local tidy_cmd="go mod tidy"
 
     # Execute go mod init
-    shell::colored_echo "🔍 Initializing Go module: $module_name" 36
+    shell::colored_echo "DEBUG: Initializing Go module: $module_name" 244
     if [ "$dry_run" = "true" ]; then
         shell::on_evict "$init_cmd"
     else
@@ -354,7 +327,7 @@ shell::create_go_app() {
     fi
 
     # Execute go mod tidy
-    shell::colored_echo "🔍 Tidying Go dependencies" 36
+    shell::colored_echo "DEBUG: Tidying Go dependencies" 244
     if [ "$dry_run" = "true" ]; then
         shell::on_evict "$tidy_cmd"
     else
@@ -386,7 +359,6 @@ shell::create_go_app() {
 # Each file is downloaded using the shell::download_dataset function, which ensures that the files are
 # fetched from the specified URLs and saved in the appropriate locations.
 shell::add_go_app_settings() {
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_ADD_GO_APP_SETTINGS"
         return 0
@@ -394,8 +366,8 @@ shell::add_go_app_settings() {
     shell::download_dataset "docs/VERSION_RELEASE.md" $SHELL_PROJECT_DOC_VERSION_RELEASE
     shell::download_dataset "Makefile" $SHELL_PROJECT_GO_MAKEFILE
     shell::download_dataset ".gitignore" $SHELL_PROJECT_GITIGNORE_GO
-    shell::download_dataset ".github/workflows/ci.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_CI_RELEASE
-    shell::download_dataset ".github/workflows/ci_notify.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_CI_NOTIFICATION_RELEASE
+    shell::download_dataset ".github/workflows/gh_wrk_base.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_CI_RELEASE
+    shell::download_dataset ".github/workflows/gh_wrk_news.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_CI_NOTIFICATION_RELEASE
 }
 
 # shell::add_go_gitignore function
@@ -407,7 +379,6 @@ shell::add_go_app_settings() {
 # The .gitignore file is essential for specifying which files and directories
 # should be ignored by Git, helping to keep the repository clean and free of unnecessary files.
 shell::add_go_gitignore() {
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_ADD_GO_GITIGNORE"
         return 0
