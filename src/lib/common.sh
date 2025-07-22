@@ -3152,7 +3152,7 @@ view_file() {
         --bind 'ctrl-/:toggle-preview' \
         --header="File: $file | Lines: $file_size | MH: $highlighting_method | TAB: select | CTRL+A: all | CTRL+D: deselect | ENTER: copy | ESC: exit" \
         --preview="echo 'Selected lines will be copied to clipboard'" \
-        --preview-window="top:1:wrap" \
+        # --preview-window="top:1:wrap" \
         --height=100% \
         --border=rounded \
         --border-label="Shell $current_datetime" \
