@@ -200,23 +200,23 @@ SHELL_INI_ALLOW_SPACES_IN_NAMES=${SHELL_INI_ALLOW_SPACES_IN_NAMES:-1} # Default 
 
 # SHELL_PROJECT_GITIGNORE_GO constant
 # This variable holds the URL to the Go .gitignore template. It is used to provide a standard .gitignore file for Go projects.
-SHELL_PROJECT_GITIGNORE_GO="https://raw.githubusercontent.com/pnguyen215/wsdkit.keys/master/gitignores/go_gitignore.txt"
+SHELL_PROJECT_GITIGNORE_GO="https://raw.githubusercontent.com/pnguyen215/shell-devops-stores/refs/heads/master/gitignores/.golangignore"
 
 # SHELL_PROJECT_GITIGNORE_JAVA constant
 # This variable holds the URL to the Java .gitignore template. It is used to provide a standard .gitignore file for Java projects.
-SHELL_PROJECT_GITIGNORE_JAVA="https://raw.githubusercontent.com/pnguyen215/wsdkit.keys/master/gitignores/java_gitignore.txt"
+SHELL_PROJECT_GITIGNORE_JAVA="https://raw.githubusercontent.com/pnguyen215/shell-devops-stores/refs/heads/master/gitignores/.javaignore"
 
 # SHELL_PROJECT_GITIGNORE_ANGULAR constant
 # This variable holds the URL to the Angular .gitignore template. It is used to provide a standard .gitignore file for Angular projects.
-SHELL_PROJECT_GITIGNORE_ANGULAR="https://raw.githubusercontent.com/pnguyen215/wsdkit.keys/master/gitignores/angular_gitignore.txt"
+SHELL_PROJECT_GITIGNORE_ANGULAR="https://raw.githubusercontent.com/pnguyen215/shell-devops-stores/refs/heads/master/gitignores/.angularignore"
 
 # SHELL_PROJECT_GITIGNORE_NODEJS constant
 # This variable holds the URL to the Node.js .gitignore template. It is used to provide a standard .gitignore file for Node.js projects.
-SHELL_PROJECT_GITIGNORE_NODEJS="https://raw.githubusercontent.com/pnguyen215/wsdkit.keys/master/gitignores/node.js_gitignore.txt"
+SHELL_PROJECT_GITIGNORE_NODEJS="https://raw.githubusercontent.com/pnguyen215/shell-devops-stores/refs/heads/master/gitignores/.nodeignore"
 
 # SHELL_PROJECT_GITIGNORE_PYTHON constant
 # This variable holds the URL to the Python .gitignore template. It is used to provide a standard .gitignore file for Python projects.
-SHELL_PROJECT_GITIGNORE_PYTHON="https://raw.githubusercontent.com/pnguyen215/wsdkit.keys/master/gitignores/python3_gitignore.txt"
+SHELL_PROJECT_GITIGNORE_PYTHON="https://raw.githubusercontent.com/pnguyen215/shell-devops-stores/refs/heads/master/gitignores/.pythonignore"
 
 # SHELL_PROJECT_GITHUB_WORKFLOW_CI constant
 # This variable holds the URL to the GitHub Actions CI workflow configuration file.
