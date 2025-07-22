@@ -31,5 +31,5 @@ shell::add_gh_wrk_news() {
         echo "$USAGE_SHELL_ADD_GH_WRK_NEWS"
         return 0
     fi
-    shell::download_dataset ".github/workflows/gh_wrk_news.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_CI_NOTIFICATION_RELEASE
+    shell::download_dataset ".github/workflows/gh_wrk_news.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_NEWS
 }

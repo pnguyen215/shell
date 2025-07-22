@@ -223,11 +223,11 @@ SHELL_PROJECT_GITIGNORE_PYTHON="https://raw.githubusercontent.com/pnguyen215/she
 # It is used to define the continuous integration process for projects using GitHub.
 SHELL_PROJECT_GITHUB_WORKFLOW_BASE="https://raw.githubusercontent.com/pnguyen215/shell-devops-stores/refs/heads/master/ci-cd/github-actions/ci-release.yml"
 
-# SHELL_PROJECT_GITHUB_WORKFLOW_CI_NOTIFICATION_RELEASE constant
+# SHELL_PROJECT_GITHUB_WORKFLOW_NEWS constant
 # This variable holds the URL to the GitHub Actions CI notification workflow configuration file.
 # It is used to define the notification process for projects using GitHub Actions,
 # allowing for automated notifications based on CI events.
-SHELL_PROJECT_GITHUB_WORKFLOW_CI_NOTIFICATION_RELEASE="https://raw.githubusercontent.com/pnguyen215/shell-devops-stores/refs/heads/master/ci-cd/github-actions/ci-notify-release.yml"
+SHELL_PROJECT_GITHUB_WORKFLOW_NEWS="https://raw.githubusercontent.com/pnguyen215/shell-devops-stores/refs/heads/master/ci-cd/github-actions/ci-notify-release.yml"
 
 # SHELL_PROJECT_DOC_VERSION_RELEASE constant
 # This variable holds the URL to the documentation release notes.
