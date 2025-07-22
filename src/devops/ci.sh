@@ -12,7 +12,7 @@
 # processes in a continuous integration environment.
 shell::add_gh_wrk_base() {
     if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_ADD_GITHUB_WORKFLOW_CI"
+        echo "$USAGE_SHELL_ADD_GH_WRK_BASE"
         return 0
     fi
     shell::download_dataset ".github/workflows/gh_wrk_base.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_CI_RELEASE
