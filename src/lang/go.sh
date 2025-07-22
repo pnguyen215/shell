@@ -395,7 +395,7 @@ shell::add_go_app_settings() {
     shell::download_dataset "Makefile" $SHELL_PROJECT_GO_MAKEFILE
     shell::download_dataset ".gitignore" $SHELL_PROJECT_GITIGNORE_GO
     shell::download_dataset ".github/workflows/ci.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_CI_RELEASE
-    shell::download_dataset ".github/workflows/ci_notify.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_CI_RELEASE_NOTIFICATION
+    shell::download_dataset ".github/workflows/ci_notify.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_CI_NOTIFICATION_RELEASE
 }
 
 # shell::add_go_gitignore function
