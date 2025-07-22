@@ -3162,7 +3162,7 @@ view_file() {
         --ansi \
         --layout=reverse \
         # --info=inline \
-        --prompt="Search > " \
+        # --prompt="Search > " \
         --pointer="▶" \
         --marker="✓" \
         --color="header:italic:underline,label:blue,border:dim" \
