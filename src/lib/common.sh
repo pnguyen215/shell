@@ -3161,7 +3161,7 @@ view_file() {
         --padding=0 \
         --ansi \
         --layout=reverse \
-        --info=inline \
+        # --info=inline \
         --prompt="Search > " \
         --pointer="▶" \
         --marker="✓" \
