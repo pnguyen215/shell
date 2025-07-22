@@ -3150,6 +3150,8 @@ view_file() {
         --bind 'shift-tab:toggle+up' \
         --bind 'ctrl-r:toggle-all' \
         --bind 'ctrl-/:toggle-preview' \
+        --bind 'ctrl-g:execute(read -p "Enter line number to jump to: " line_num < /dev/tty && if [[ "$line_num" =~ ^[0-9]+$ ]] && [[ $line_num -ge 1 ]] && [[ $line_num -le '$file_size' ]]; then echo "Jumping to line $line_num..."; else echo "Invalid line number: $line_num (valid range: 1-'$file_size')"; fi; read -p "Press any key to continue..." < /dev/tty)+reload(cat "'$temp_file'")' \
+        --bind 'ctrl-l:execute(read -p "Enter line number to jump to: " line_num < /dev/tty && if [[ "$line_num" =~ ^[0-9]+$ ]] && [[ $line_num -ge 1 ]] && [[ $line_num -le '$file_size' ]]; then sed -n "${line_num}p" "'$temp_file'" | head -1; else echo "Invalid line: $line_num"; fi; read -p "Press any key..." < /dev/tty)+reload(cat "'$temp_file'")' \
         --header="File: $file | Lines: $file_size | MH: $highlighting_method | TAB: select | CTRL+A: all | CTRL+D: deselect | CTRL+G: goto line | CTRL+R: toggle all | ENTER: copy | ESC: exit" \
         --preview="echo 'Selected lines will be copied to clipboard'" \
         --preview-window="top:1:wrap" \
