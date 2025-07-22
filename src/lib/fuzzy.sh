@@ -21,49 +21,49 @@
 #   - fzf must be installed.
 #   - Helper functions: shell::run_cmd_eval, shell::colored_echo, and shell::get_os_type.
 shell::fzf_copy() {
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_COPY"
-        return 0
-    fi
+	# Check for the help flag (-h)
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_FZF_COPY"
+		return 0
+	fi
 
-    # Check if fzf is installed.
-    shell::install_package fzf
+	# Check if fzf is installed.
+	shell::install_package fzf
 
-    # Use find and fzf to select the source file.
-    local source_file
-    source_file=$(find . -type f | fzf --prompt="Select source file: ")
-    if [ -z "$source_file" ]; then
-        shell::colored_echo "ERR: No source file selected." 196
-        return 1
-    fi
+	# Use find and fzf to select the source file.
+	local source_file
+	source_file=$(find . -type f | fzf --prompt="Select source file: ")
+	if [ -z "$source_file" ]; then
+		shell::colored_echo "ERR: No source file selected." 196
+		return 1
+	fi
 
-    # Use find and fzf to select the destination directory.
-    local dest_dir
-    dest_dir=$(find . -type d | fzf --prompt="Select destination directory: ")
-    if [ -z "$dest_dir" ]; then
-        shell::colored_echo "ERR: No destination directory selected." 196
-        return 1
-    fi
+	# Use find and fzf to select the destination directory.
+	local dest_dir
+	dest_dir=$(find . -type d | fzf --prompt="Select destination directory: ")
+	if [ -z "$dest_dir" ]; then
+		shell::colored_echo "ERR: No destination directory selected." 196
+		return 1
+	fi
 
-    # Derive the new filename (using the same basename as the source).
-    local new_filename
-    new_filename=$(basename "$source_file")
-    local destination_file="$dest_dir/$new_filename"
+	# Derive the new filename (using the same basename as the source).
+	local new_filename
+	new_filename=$(basename "$source_file")
+	local destination_file="$dest_dir/$new_filename"
 
-    # Check if the destination file already exists.
-    if [ -e "$destination_file" ]; then
-        shell::colored_echo "ERR: Destination file '$destination_file' already exists." 196
-        return 1
-    fi
+	# Check if the destination file already exists.
+	if [ -e "$destination_file" ]; then
+		shell::colored_echo "ERR: Destination file '$destination_file' already exists." 196
+		return 1
+	fi
 
-    # Build the copy command.
-    local cmd="sudo cp \"$source_file\" \"$destination_file\""
+	# Build the copy command.
+	local cmd="sudo cp \"$source_file\" \"$destination_file\""
 
-    # Execute the command (using shell::run_cmd_eval to log and run it).
-    shell::run_cmd_eval "$cmd"
-    shell::clip_value "$cmd"
-    shell::colored_echo "INFO: File copied successfully to $destination_file" 46
+	# Execute the command (using shell::run_cmd_eval to log and run it).
+	shell::run_cmd_eval "$cmd"
+	shell::clip_value "$cmd"
+	shell::colored_echo "INFO: File copied successfully to $destination_file" 46
 }
 
 # shell::fzf_move function
@@ -86,49 +86,49 @@ shell::fzf_copy() {
 #   - fzf must be installed.
 #   - Helper functions: shell::run_cmd_eval, shell::colored_echo, shell::get_os_type, shell::install_package, and shell::clip_value.
 shell::fzf_move() {
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_MOVE"
-        return 0
-    fi
+	# Check for the help flag (-h)
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_FZF_MOVE"
+		return 0
+	fi
 
-    # Check if fzf is installed.
-    shell::install_package fzf
+	# Check if fzf is installed.
+	shell::install_package fzf
 
-    # Use find and fzf to select the source file.
-    local source_file
-    source_file=$(find . -type f | fzf --prompt="Select source file: ")
-    if [ -z "$source_file" ]; then
-        shell::colored_echo "ERR: No source file selected." 196
-        return 1
-    fi
+	# Use find and fzf to select the source file.
+	local source_file
+	source_file=$(find . -type f | fzf --prompt="Select source file: ")
+	if [ -z "$source_file" ]; then
+		shell::colored_echo "ERR: No source file selected." 196
+		return 1
+	fi
 
-    # Use find and fzf to select the destination directory.
-    local dest_dir
-    dest_dir=$(find . -type d | fzf --prompt="Select destination directory: ")
-    if [ -z "$dest_dir" ]; then
-        shell::colored_echo "ERR: No destination directory selected." 196
-        return 1
-    fi
+	# Use find and fzf to select the destination directory.
+	local dest_dir
+	dest_dir=$(find . -type d | fzf --prompt="Select destination directory: ")
+	if [ -z "$dest_dir" ]; then
+		shell::colored_echo "ERR: No destination directory selected." 196
+		return 1
+	fi
 
-    # Derive the new filename (using the same basename as the source).
-    local new_filename
-    new_filename=$(basename "$source_file")
-    local destination_file="$dest_dir/$new_filename"
+	# Derive the new filename (using the same basename as the source).
+	local new_filename
+	new_filename=$(basename "$source_file")
+	local destination_file="$dest_dir/$new_filename"
 
-    # Check if the destination file already exists.
-    if [ -e "$destination_file" ]; then
-        shell::colored_echo "ERR: Destination file '$destination_file' already exists." 196
-        return 1
-    fi
+	# Check if the destination file already exists.
+	if [ -e "$destination_file" ]; then
+		shell::colored_echo "ERR: Destination file '$destination_file' already exists." 196
+		return 1
+	fi
 
-    # Build the move command.
-    local cmd="sudo mv \"$source_file\" \"$destination_file\""
+	# Build the move command.
+	local cmd="sudo mv \"$source_file\" \"$destination_file\""
 
-    # Execute the command (using shell::run_cmd_eval to log and run it).
-    shell::run_cmd_eval "$cmd"
-    shell::clip_value "$cmd"
-    shell::colored_echo "INFO: File moved successfully to $destination_file" 46
+	# Execute the command (using shell::run_cmd_eval to log and run it).
+	shell::run_cmd_eval "$cmd"
+	shell::clip_value "$cmd"
+	shell::colored_echo "INFO: File moved successfully to $destination_file" 46
 }
 
 # shell::fzf_remove function
@@ -150,30 +150,30 @@ shell::fzf_move() {
 #   - fzf must be installed.
 #   - Helper functions: shell::run_cmd_eval, shell::colored_echo, shell::get_os_type, shell::install_package, and shell::clip_value.
 shell::fzf_remove() {
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_REMOVE"
-        return 0
-    fi
+	# Check for the help flag (-h)
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_FZF_REMOVE"
+		return 0
+	fi
 
-    # Check if fzf is installed.
-    shell::install_package fzf
+	# Check if fzf is installed.
+	shell::install_package fzf
 
-    # Use find and fzf to select the target file or directory.
-    local target
-    target=$(find . -mindepth 1 | fzf --prompt="Select file/directory to remove: ")
-    if [ -z "$target" ]; then
-        shell::colored_echo "ERR: No file or directory selected." 196
-        return 1
-    fi
+	# Use find and fzf to select the target file or directory.
+	local target
+	target=$(find . -mindepth 1 | fzf --prompt="Select file/directory to remove: ")
+	if [ -z "$target" ]; then
+		shell::colored_echo "ERR: No file or directory selected." 196
+		return 1
+	fi
 
-    # Build the removal command.
-    local cmd="sudo rm -rf \"$target\""
+	# Build the removal command.
+	local cmd="sudo rm -rf \"$target\""
 
-    # Execute the command (using shell::run_cmd_eval to log and run it).
-    shell::run_cmd_eval "$cmd"
-    shell::clip_value "$cmd"
-    shell::colored_echo "INFO: Removed successfully: $target" 46
+	# Execute the command (using shell::run_cmd_eval to log and run it).
+	shell::run_cmd_eval "$cmd"
+	shell::clip_value "$cmd"
+	shell::colored_echo "INFO: Removed successfully: $target" 46
 }
 
 # shell::fzf_zip_attachment function
@@ -198,71 +198,71 @@ shell::fzf_remove() {
 #   shell::fzf_zip_attachment /path/to/folder
 #   shell::fzf_zip_attachment -n /path/to/folder  # Dry-run: prints the command without executing it.
 shell::fzf_zip_attachment() {
-    # Check if fzf is installed.
-    shell::install_package fzf
+	# Check if fzf is installed.
+	shell::install_package fzf
 
-    local dry_run="false"
+	local dry_run="false"
 
-    # Check for the optional dry-run flag (-n).
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+	# Check for the optional dry-run flag (-n).
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
 
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_ZIP_ATTACHMENT"
-        return 0
-    fi
+	# Check for the help flag (-h)
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_FZF_ZIP_ATTACHMENT"
+		return 0
+	fi
 
-    if [ $# -lt 1 ]; then
-        echo "Usage: shell::fzf_zip_attachment [-n] <folder_path>"
-        return 1
-    fi
+	if [ $# -lt 1 ]; then
+		echo "Usage: shell::fzf_zip_attachment [-n] <folder_path>"
+		return 1
+	fi
 
-    local folder_path="$1"
-    local zip_filename="${folder_path}.zip"
+	local folder_path="$1"
+	local zip_filename="${folder_path}.zip"
 
-    # Capture selected files into an array (splitting on newline only).
-    local IFS=$'\n'
-    local selected_files_arr=($(find "$folder_path" -type f | fzf --multi --prompt="Select files to zip:"))
+	# Capture selected files into an array (splitting on newline only).
+	local IFS=$'\n'
+	local selected_files_arr=($(find "$folder_path" -type f | fzf --multi --prompt="Select files to zip:"))
 
-    # Check if any files were selected.
-    if [ ${#selected_files_arr[@]} -eq 0 ]; then
-        shell::colored_echo "ERR: No files selected. Aborting." 196
-        return 1
-    fi
+	# Check if any files were selected.
+	if [ ${#selected_files_arr[@]} -eq 0 ]; then
+		shell::colored_echo "ERR: No files selected. Aborting." 196
+		return 1
+	fi
 
-    # Build the zip command as an array.
-    local cmd=(sudo zip -r "$zip_filename")
-    for file in "${selected_files_arr[@]}"; do
-        cmd+=("$file")
-    done
+	# Build the zip command as an array.
+	local cmd=(sudo zip -r "$zip_filename")
+	for file in "${selected_files_arr[@]}"; do
+		cmd+=("$file")
+	done
 
-    if [ "$dry_run" = "true" ]; then
-        # Construct a log-friendly command string (using proper quoting).
-        local cmd_str
-        cmd_str=$(printf '%q ' "${cmd[@]}")
-        shell::on_evict "$cmd_str"
-        return 0
-    else
-        shell::run_cmd "${cmd[@]}"
-        shell::colored_echo "INFO: Zipping selected files from '$folder_path'" 46
-    fi
+	if [ "$dry_run" = "true" ]; then
+		# Construct a log-friendly command string (using proper quoting).
+		local cmd_str
+		cmd_str=$(printf '%q ' "${cmd[@]}")
+		shell::on_evict "$cmd_str"
+		return 0
+	else
+		shell::run_cmd "${cmd[@]}"
+		shell::colored_echo "INFO: Zipping selected files from '$folder_path'" 46
+	fi
 
-    # Determine the absolute path of the created zip file.
-    local abs_zip_filename
-    if command -v realpath >/dev/null 2>&1; then
-        abs_zip_filename=$(realpath "$zip_filename")
-    else
-        case "$zip_filename" in
-        /*) abs_zip_filename="$zip_filename" ;;
-        *) abs_zip_filename="$PWD/$zip_filename" ;;
-        esac
-    fi
+	# Determine the absolute path of the created zip file.
+	local abs_zip_filename
+	if command -v realpath >/dev/null 2>&1; then
+		abs_zip_filename=$(realpath "$zip_filename")
+	else
+		case "$zip_filename" in
+		/*) abs_zip_filename="$zip_filename" ;;
+		*) abs_zip_filename="$PWD/$zip_filename" ;;
+		esac
+	fi
 
-    shell::colored_echo "$abs_zip_filename" 245
-    shell::clip_value "$abs_zip_filename"
+	shell::colored_echo "$abs_zip_filename" 245
+	shell::clip_value "$abs_zip_filename"
 }
 
 # shell::fzf_current_zip_attachment function
@@ -286,51 +286,51 @@ shell::fzf_zip_attachment() {
 #   shell::fzf_current_zip_attachment
 #   shell::fzf_current_zip_attachment -n  # Dry-run: prints the command without executing it.
 shell::fzf_current_zip_attachment() {
-    local dry_run="false"
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+	local dry_run="false"
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
 
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_CURRENT_ZIP_ATTACHMENT"
-        return 0
-    fi
+	# Check for the help flag (-h)
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_FZF_CURRENT_ZIP_ATTACHMENT"
+		return 0
+	fi
 
-    # Save the original directory (the folder to be zipped).
-    local orig_dir="$PWD"
-    local current_dir
-    current_dir=$(basename "$PWD")
-    local parent_dir
-    parent_dir=$(dirname "$PWD")
+	# Save the original directory (the folder to be zipped).
+	local orig_dir="$PWD"
+	local current_dir
+	current_dir=$(basename "$PWD")
+	local parent_dir
+	parent_dir=$(dirname "$PWD")
 
-    # Change to the parent directory so that the folder is referenced by its name only.
-    pushd "$parent_dir" >/dev/null || return 1
+	# Change to the parent directory so that the folder is referenced by its name only.
+	pushd "$parent_dir" >/dev/null || return 1
 
-    local zip_file
-    if [ "$dry_run" = "true" ]; then
-        shell::fzf_zip_attachment -n "$current_dir"
-        popd >/dev/null
-        return 0
-    else
-        shell::fzf_zip_attachment "$current_dir"
-    fi
+	local zip_file
+	if [ "$dry_run" = "true" ]; then
+		shell::fzf_zip_attachment -n "$current_dir"
+		popd >/dev/null
+		return 0
+	else
+		shell::fzf_zip_attachment "$current_dir"
+	fi
 
-    # shell::fzf_zip_attachment will create a zip file named "<folder_name>.zip" in the parent directory.
-    local created_zip="${parent_dir}/${current_dir}.zip"
-    popd >/dev/null
+	# shell::fzf_zip_attachment will create a zip file named "<folder_name>.zip" in the parent directory.
+	local created_zip="${parent_dir}/${current_dir}.zip"
+	popd >/dev/null
 
-    # Move the zip file into the original directory.
-    local desired_zip="${orig_dir}/${current_dir}.zip"
-    if [ -f "$created_zip" ]; then
-        mv "$created_zip" "$desired_zip"
-        shell::colored_echo "INFO: Renamed zip file to '$desired_zip'" 46
-        shell::clip_value "$desired_zip"
-    else
-        shell::colored_echo "ERR: Expected zip file not found." 196
-        return 1
-    fi
+	# Move the zip file into the original directory.
+	local desired_zip="${orig_dir}/${current_dir}.zip"
+	if [ -f "$created_zip" ]; then
+		mv "$created_zip" "$desired_zip"
+		shell::colored_echo "INFO: Renamed zip file to '$desired_zip'" 46
+		shell::clip_value "$desired_zip"
+	else
+		shell::colored_echo "ERR: Expected zip file not found." 196
+		return 1
+	fi
 }
 
 # shell::fzf_send_telegram_attachment function
@@ -356,54 +356,54 @@ shell::fzf_current_zip_attachment() {
 #   shell::fzf_send_telegram_attachment 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Report"
 #   shell::fzf_send_telegram_attachment -n 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Test" /path/to/folder
 shell::fzf_send_telegram_attachment() {
-    # Check if fzf is installed.
-    shell::install_package fzf
+	# Check if fzf is installed.
+	shell::install_package fzf
 
-    local dry_run="false"
-    # Check for the optional dry-run flag (-n).
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+	local dry_run="false"
+	# Check for the optional dry-run flag (-n).
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
 
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_SEND_TELEGRAM_ATTACHMENT"
-        return 0
-    fi
+	# Check for the help flag (-h)
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_FZF_SEND_TELEGRAM_ATTACHMENT"
+		return 0
+	fi
 
-    # Ensure that at least three arguments remain: token, chat_id, description.
-    if [ $# -lt 3 ]; then
-        echo "Usage: shell::fzf_send_telegram_attachment [-n] <token> <chat_id> <description> [folder_path]"
-        return 1
-    fi
+	# Ensure that at least three arguments remain: token, chat_id, description.
+	if [ $# -lt 3 ]; then
+		echo "Usage: shell::fzf_send_telegram_attachment [-n] <token> <chat_id> <description> [folder_path]"
+		return 1
+	fi
 
-    local token="$1"
-    local chatID="$2"
-    local description="$3"
-    shift 3
+	local token="$1"
+	local chatID="$2"
+	local description="$3"
+	shift 3
 
-    # Use provided folder path or default to current directory.
-    local folder_path="${1:-$PWD}"
-    if [ ! -d "$folder_path" ]; then
-        shell::colored_echo "ERR: '$folder_path' is not a valid directory." 196
-        return 1
-    fi
+	# Use provided folder path or default to current directory.
+	local folder_path="${1:-$PWD}"
+	if [ ! -d "$folder_path" ]; then
+		shell::colored_echo "ERR: '$folder_path' is not a valid directory." 196
+		return 1
+	fi
 
-    # Capture selected files into an array using fzf.
-    local IFS=$'\n'
-    local selected_files_arr=($(find "$folder_path" -type f | fzf --multi --prompt="Select attachments to send: "))
+	# Capture selected files into an array using fzf.
+	local IFS=$'\n'
+	local selected_files_arr=($(find "$folder_path" -type f | fzf --multi --prompt="Select attachments to send: "))
 
-    # Check if any files were selected.
-    if [ ${#selected_files_arr[@]} -eq 0 ]; then
-        shell::colored_echo "ERR: No attachments selected. Aborting." 196
-        return 1
-    fi
+	# Check if any files were selected.
+	if [ ${#selected_files_arr[@]} -eq 0 ]; then
+		shell::colored_echo "ERR: No attachments selected. Aborting." 196
+		return 1
+	fi
 
-    # Call shell::send_telegram_attachment with the selected files.
-    if [ "$dry_run" = "true" ]; then
-        shell::send_telegram_attachment -n "$token" "$chatID" "$description" "${selected_files_arr[@]}"
-    else
-        shell::send_telegram_attachment "$token" "$chatID" "$description" "${selected_files_arr[@]}"
-    fi
+	# Call shell::send_telegram_attachment with the selected files.
+	if [ "$dry_run" = "true" ]; then
+		shell::send_telegram_attachment -n "$token" "$chatID" "$description" "${selected_files_arr[@]}"
+	else
+		shell::send_telegram_attachment "$token" "$chatID" "$description" "${selected_files_arr[@]}"
+	fi
 }

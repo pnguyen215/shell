@@ -29,33 +29,33 @@
 #   -   This function is compatible with both Linux and macOS.
 #   -   It uses `go env GOPRIVATE` to reliably fetch the GOPRIVATE setting.
 shell::get_go_privates() {
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_GET_GO_PRIVATES"
-        return 0
-    fi
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_GET_GO_PRIVATES"
+		return 0
+	fi
 
-    local dry_run="false"
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+	local dry_run="false"
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
 
-    local cmd="go env GOPRIVATE"
+	local cmd="go env GOPRIVATE"
 
-    if [ "$dry_run" = "true" ]; then
-        shell::on_evict "$cmd"
-    else
-        shell::async "$cmd" &
-        local pid=$!
-        wait $pid
+	if [ "$dry_run" = "true" ]; then
+		shell::on_evict "$cmd"
+	else
+		shell::async "$cmd" &
+		local pid=$!
+		wait $pid
 
-        if [ $? -eq 0 ]; then
-            shell::colored_echo "INFO: Go privates setting retrieved successfully: ${cmd}" 46
-        else
-            shell::colored_echo "ERR: Failed to retrieve GOPRIVATE." 196
-            return 1
-        fi
-    fi
+		if [ $? -eq 0 ]; then
+			shell::colored_echo "INFO: Go privates setting retrieved successfully: ${cmd}" 46
+		else
+			shell::colored_echo "ERR: Failed to retrieve GOPRIVATE." 196
+			return 1
+		fi
+	fi
 }
 
 # shell::set_go_privates function
@@ -92,52 +92,52 @@ shell::get_go_privates() {
 #   -   It uses `go env -w GOPRIVATE=<value>` to set the GOPRIVATE setting.
 #   -   It supports dry-run and asynchronous execution.
 shell::set_go_privates() {
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_SET_GO_PRIVATES"
-        return 0
-    fi
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_SET_GO_PRIVATES"
+		return 0
+	fi
 
-    local dry_run="false"
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+	local dry_run="false"
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
 
-    if [ $# -eq 0 ]; then
-        echo "Usage: shell::set_go_privates [-n] <repository1> [repository2] ..."
-        return 1
-    fi
+	if [ $# -eq 0 ]; then
+		echo "Usage: shell::set_go_privates [-n] <repository1> [repository2] ..."
+		return 1
+	fi
 
-    # Join all repositories with a comma
-    local repositories_by_comma
-    IFS=','
-    repositories_by_comma="$*"
-    unset IFS
+	# Join all repositories with a comma
+	local repositories_by_comma
+	IFS=','
+	repositories_by_comma="$*"
+	unset IFS
 
-    # Check if GOPRIVATE is already set
-    local existing_go_private=$(go env GOPRIVATE)
+	# Check if GOPRIVATE is already set
+	local existing_go_private=$(go env GOPRIVATE)
 
-    if [ -n "$existing_go_private" ]; then
-        # Append to existing GOPRIVATE value
-        repositories_by_comma="$existing_go_private,$repositories_by_comma"
-    fi
+	if [ -n "$existing_go_private" ]; then
+		# Append to existing GOPRIVATE value
+		repositories_by_comma="$existing_go_private,$repositories_by_comma"
+	fi
 
-    local cmd="go env -w GOPRIVATE=\"$repositories_by_comma\""
+	local cmd="go env -w GOPRIVATE=\"$repositories_by_comma\""
 
-    if [ "$dry_run" = "true" ]; then
-        shell::on_evict "$cmd"
-    else
-        shell::async "$cmd" &
-        local pid=$!
-        wait $pid
+	if [ "$dry_run" = "true" ]; then
+		shell::on_evict "$cmd"
+	else
+		shell::async "$cmd" &
+		local pid=$!
+		wait $pid
 
-        if [ $? -eq 0 ]; then
-            shell::colored_echo "INFO: GOPRIVATE set successfully to: $repositories_by_comma" 46
-        else
-            shell::colored_echo "ERR: Failed to set GOPRIVATE." 196
-            return 1
-        fi
-    fi
+		if [ $? -eq 0 ]; then
+			shell::colored_echo "INFO: GOPRIVATE set successfully to: $repositories_by_comma" 46
+		else
+			shell::colored_echo "ERR: Failed to set GOPRIVATE." 196
+			return 1
+		fi
+	fi
 }
 
 # shell::fzf_remove_go_privates function
@@ -171,68 +171,68 @@ shell::set_go_privates() {
 #   - Supports dry-run and asynchronous execution via shell::on_evict and shell::async.
 #   - Compatible with both Linux (Ubuntu 22.04 LTS) and macOS.
 shell::fzf_remove_go_privates() {
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_REMOVE_GO_PRIVATES"
-        return 0
-    fi
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_FZF_REMOVE_GO_PRIVATES"
+		return 0
+	fi
 
-    local dry_run="false"
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+	local dry_run="false"
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
 
-    # Ensure fzf is installed
-    shell::install_package fzf
+	# Ensure fzf is installed
+	shell::install_package fzf
 
-    # Retrieve current GOPRIVATE value
-    local current_goprivate=$(go env GOPRIVATE)
-    if [ -z "$current_goprivate" ]; then
-        shell::colored_echo "WARN: GOPRIVATE is not set." 33
-        return 0
-    fi
+	# Retrieve current GOPRIVATE value
+	local current_goprivate=$(go env GOPRIVATE)
+	if [ -z "$current_goprivate" ]; then
+		shell::colored_echo "WARN: GOPRIVATE is not set." 33
+		return 0
+	fi
 
-    # Split GOPRIVATE into an array of entries
-    local entries=($(echo "$current_goprivate" | tr ',' ' '))
+	# Split GOPRIVATE into an array of entries
+	local entries=($(echo "$current_goprivate" | tr ',' ' '))
 
-    # Use fzf to select entries to remove (multi-select enabled)
-    local selected=$(printf "%s\n" "${entries[@]}" | fzf --multi --prompt="Select entries to remove: ")
-    if [ -z "$selected" ]; then
-        shell::colored_echo "WARN: No entries selected for removal." 33
-        return 0
-    fi
+	# Use fzf to select entries to remove (multi-select enabled)
+	local selected=$(printf "%s\n" "${entries[@]}" | fzf --multi --prompt="Select entries to remove: ")
+	if [ -z "$selected" ]; then
+		shell::colored_echo "WARN: No entries selected for removal." 33
+		return 0
+	fi
 
-    # Build new entries list by excluding selected ones
-    local new_entries=()
-    for entry in "${entries[@]}"; do
-        if ! echo "$selected" | grep -q "^$entry$"; then
-            new_entries+=("$entry")
-        fi
-    done
+	# Build new entries list by excluding selected ones
+	local new_entries=()
+	for entry in "${entries[@]}"; do
+		if ! echo "$selected" | grep -q "^$entry$"; then
+			new_entries+=("$entry")
+		fi
+	done
 
-    # Construct the new GOPRIVATE value
-    local new_goprivate=$(
-        IFS=','
-        echo "${new_entries[*]}"
-    )
+	# Construct the new GOPRIVATE value
+	local new_goprivate=$(
+		IFS=','
+		echo "${new_entries[*]}"
+	)
 
-    # Prepare the command to update GOPRIVATE
-    local cmd="go env -w GOPRIVATE=\"$new_goprivate\""
+	# Prepare the command to update GOPRIVATE
+	local cmd="go env -w GOPRIVATE=\"$new_goprivate\""
 
-    if [ "$dry_run" = "true" ]; then
-        shell::on_evict "$cmd"
-    else
-        # Execute asynchronously and wait for completion
-        shell::async "$cmd" &
-        local pid=$!
-        wait $pid
-        if [ $? -eq 0 ]; then
-            shell::colored_echo "INFO: Removed selected entries from GOPRIVATE." 46
-        else
-            shell::colored_echo "ERR: Failed to update GOPRIVATE." 196
-            return 1
-        fi
-    fi
+	if [ "$dry_run" = "true" ]; then
+		shell::on_evict "$cmd"
+	else
+		# Execute asynchronously and wait for completion
+		shell::async "$cmd" &
+		local pid=$!
+		wait $pid
+		if [ $? -eq 0 ]; then
+			shell::colored_echo "INFO: Removed selected entries from GOPRIVATE." 46
+		else
+			shell::colored_echo "ERR: Failed to update GOPRIVATE." 196
+			return 1
+		fi
+	fi
 }
 
 # shell::create_go_app function
@@ -265,86 +265,86 @@ shell::fzf_remove_go_privates() {
 #   shell::create_go_app -n my_app /tmp/go_projects  # Previews initialization in a target folder.
 #   shell::create_go_app https://github.com/user/repo /home/user/src # Initializes from a GitHub URL in a target folder.
 shell::create_go_app() {
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_CREATE_GO_APP"
-        return 0
-    fi
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_CREATE_GO_APP"
+		return 0
+	fi
 
-    local dry_run="false"
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+	local dry_run="false"
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
 
-    if [ -z "$1" ]; then
-        echo "Usage: shell::create_go_app [-n] [-h] <app_name|github_url> [target_folder]"
-        return 1
-    fi
+	if [ -z "$1" ]; then
+		echo "Usage: shell::create_go_app [-n] [-h] <app_name|github_url> [target_folder]"
+		return 1
+	fi
 
-    local app_name="$1"
-    local target_folder="$2"
-    local original_dir="$PWD" # Save the original directory
-    local module_name="$app_name"
-    local is_url="false"
+	local app_name="$1"
+	local target_folder="$2"
+	local original_dir="$PWD" # Save the original directory
+	local module_name="$app_name"
+	local is_url="false"
 
-    # Check if the app name is a URL
-    if [[ "$app_name" =~ ^(http:\/\/|https:\/\/) ]]; then
-        is_url="true"
-        # If it's a URL, extract the module name
-        module_name="${module_name#http://}"
-        module_name="${module_name#https://}"
-        module_name="${module_name%/}" # Remove trailing slashes
-    fi
+	# Check if the app name is a URL
+	if [[ "$app_name" =~ ^(http:\/\/|https:\/\/) ]]; then
+		is_url="true"
+		# If it's a URL, extract the module name
+		module_name="${module_name#http://}"
+		module_name="${module_name#https://}"
+		module_name="${module_name%/}" # Remove trailing slashes
+	fi
 
-    # If a target folder is specified, create it and change directory
-    if [ -n "$target_folder" ]; then
-        shell::colored_echo "WARN: Ensuring target directory exists: $target_folder" 33
-        if [ "$dry_run" = "true" ]; then
-            shell::on_evict "shell::create_directory_if_not_exists \"$target_folder\""
-            shell::on_evict "cd \"$target_folder\""
-        else
-            shell::create_directory_if_not_exists "$target_folder"
-            if [ $? -ne 0 ]; then
-                shell::colored_echo "ERR: Could not create or access target directory '$target_folder'." 196
-                return 1
-            fi
-            cd "$target_folder" || {
-                shell::colored_echo "ERR: Could not change to target directory '$target_folder'." 196
-                return 1
-            }
-        fi
-    fi
+	# If a target folder is specified, create it and change directory
+	if [ -n "$target_folder" ]; then
+		shell::colored_echo "WARN: Ensuring target directory exists: $target_folder" 33
+		if [ "$dry_run" = "true" ]; then
+			shell::on_evict "shell::create_directory_if_not_exists \"$target_folder\""
+			shell::on_evict "cd \"$target_folder\""
+		else
+			shell::create_directory_if_not_exists "$target_folder"
+			if [ $? -ne 0 ]; then
+				shell::colored_echo "ERR: Could not create or access target directory '$target_folder'." 196
+				return 1
+			fi
+			cd "$target_folder" || {
+				shell::colored_echo "ERR: Could not change to target directory '$target_folder'." 196
+				return 1
+			}
+		fi
+	fi
 
-    local init_cmd="go mod init $module_name"
-    local tidy_cmd="go mod tidy"
+	local init_cmd="go mod init $module_name"
+	local tidy_cmd="go mod tidy"
 
-    # Execute go mod init
-    shell::colored_echo "DEBUG: Initializing Go module: $module_name" 244
-    if [ "$dry_run" = "true" ]; then
-        shell::on_evict "$init_cmd"
-    else
-        shell::run_cmd_eval "$init_cmd"
-    fi
+	# Execute go mod init
+	shell::colored_echo "DEBUG: Initializing Go module: $module_name" 244
+	if [ "$dry_run" = "true" ]; then
+		shell::on_evict "$init_cmd"
+	else
+		shell::run_cmd_eval "$init_cmd"
+	fi
 
-    # Execute go mod tidy
-    shell::colored_echo "DEBUG: Tidying Go dependencies" 244
-    if [ "$dry_run" = "true" ]; then
-        shell::on_evict "$tidy_cmd"
-    else
-        shell::run_cmd_eval "$tidy_cmd"
-    fi
+	# Execute go mod tidy
+	shell::colored_echo "DEBUG: Tidying Go dependencies" 244
+	if [ "$dry_run" = "true" ]; then
+		shell::on_evict "$tidy_cmd"
+	else
+		shell::run_cmd_eval "$tidy_cmd"
+	fi
 
-    # Change back to the original directory if a target folder was used
-    if [ -n "$target_folder" ]; then
-        if [ "$dry_run" = "true" ]; then
-            shell::on_evict "cd \"$original_dir\""
-        else
-            cd "$original_dir" || {
-                shell::colored_echo "ERR: Warning: Could not change back to original directory '$original_dir'." 11
-            }
-        fi
-    fi
-    shell::colored_echo "INFO: Go application initialized successfully." 46
+	# Change back to the original directory if a target folder was used
+	if [ -n "$target_folder" ]; then
+		if [ "$dry_run" = "true" ]; then
+			shell::on_evict "cd \"$original_dir\""
+		else
+			cd "$original_dir" || {
+				shell::colored_echo "ERR: Warning: Could not change back to original directory '$original_dir'." 11
+			}
+		fi
+	fi
+	shell::colored_echo "INFO: Go application initialized successfully." 46
 }
 
 # shell::add_go_app_settings function
@@ -359,16 +359,16 @@ shell::create_go_app() {
 # Each file is downloaded using the shell::download_dataset function, which ensures that the files are
 # fetched from the specified URLs and saved in the appropriate locations.
 shell::add_go_app_settings() {
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_ADD_GO_APP_SETTINGS"
-        return 0
-    fi
-    shell::add_go_gitignore
-    shell::download_dataset "docs/VERSION_RELEASE.md" $SHELL_PROJECT_DOC_VERSION_RELEASE
-    shell::download_dataset "Makefile" $SHELL_PROJECT_GO_MAKEFILE
-    shell::download_dataset ".github/workflows/gh_wrk_base.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_BASE
-    shell::download_dataset ".github/workflows/gh_wrk_news.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_NEWS
-    shell::download_dataset ".github/workflows/gh_wrk_news_go.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_NEWS_GO
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_ADD_GO_APP_SETTINGS"
+		return 0
+	fi
+	shell::add_go_gitignore
+	shell::download_dataset "docs/VERSION_RELEASE.md" $SHELL_PROJECT_DOC_VERSION_RELEASE
+	shell::download_dataset "Makefile" $SHELL_PROJECT_GO_MAKEFILE
+	shell::download_dataset ".github/workflows/gh_wrk_base.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_BASE
+	shell::download_dataset ".github/workflows/gh_wrk_news.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_NEWS
+	shell::download_dataset ".github/workflows/gh_wrk_news_go.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_NEWS_GO
 }
 
 # shell::add_go_gitignore function
@@ -380,9 +380,9 @@ shell::add_go_app_settings() {
 # The .gitignore file is essential for specifying which files and directories
 # should be ignored by Git, helping to keep the repository clean and free of unnecessary files.
 shell::add_go_gitignore() {
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_ADD_GO_GITIGNORE"
-        return 0
-    fi
-    shell::download_dataset ".gitignore" $SHELL_PROJECT_GITIGNORE_GO
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_ADD_GO_GITIGNORE"
+		return 0
+	fi
+	shell::download_dataset ".gitignore" $SHELL_PROJECT_GITIGNORE_GO
 }

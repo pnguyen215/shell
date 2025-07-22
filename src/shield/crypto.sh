@@ -25,37 +25,37 @@
 # Notes:
 #   - Requires OpenSSL to be installed.
 shell::generate_random_key() {
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_GENERATE_RANDOM_KEY"
-        return 0
-    fi
+	# Check for the help flag (-h)
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_GENERATE_RANDOM_KEY"
+		return 0
+	fi
 
-    local bytes="${1:-32}" # Default to 32 bytes if no argument is provided
+	local bytes="${1:-32}" # Default to 32 bytes if no argument is provided
 
-    # Check if OpenSSL is installed
-    if ! shell::is_command_available openssl; then
-        shell::colored_echo "ERR: shell::generate_random_key: OpenSSL is not installed" 196 >&2
-        return 1
-    fi
+	# Check if OpenSSL is installed
+	if ! shell::is_command_available openssl; then
+		shell::colored_echo "ERR: shell::generate_random_key: OpenSSL is not installed" 196 >&2
+		return 1
+	fi
 
-    # Validate that bytes is a number
-    if ! [[ "$bytes" =~ ^[0-9]+$ ]]; then
-        shell::colored_echo "ERR: shell::generate_random_key: Invalid byte size. Must be a number." 196 >&2
-        return 1
-    fi
+	# Validate that bytes is a number
+	if ! [[ "$bytes" =~ ^[0-9]+$ ]]; then
+		shell::colored_echo "ERR: shell::generate_random_key: Invalid byte size. Must be a number." 196 >&2
+		return 1
+	fi
 
-    # Generate a random key in hexadecimal format
-    local key=$(openssl rand -hex "$bytes")
+	# Generate a random key in hexadecimal format
+	local key=$(openssl rand -hex "$bytes")
 
-    # Check if key generation was successful
-    if [ -z "$key" ]; then
-        shell::colored_echo "ERR: shell::generate_random_key: Key generation failed" 196 >&2
-        return 1
-    fi
+	# Check if key generation was successful
+	if [ -z "$key" ]; then
+		shell::colored_echo "ERR: shell::generate_random_key: Key generation failed" 196 >&2
+		return 1
+	fi
 
-    echo "$key"
-    return 0
+	echo "$key"
+	return 0
 }
 
 # shell::encode::aes256cbc function
@@ -90,69 +90,69 @@ shell::generate_random_key() {
 #   - The encryption key must be 64 bytes for AES-256-CBC.
 #   - If SHELL_SHIELD_ENCRYPTION_KEY is not set and no key is provided, the function fails.
 shell::encode::aes256cbc() {
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_ENCODE_AES256CBC"
-        return 0
-    fi
+	# Check for the help flag (-h)
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_ENCODE_AES256CBC"
+		return 0
+	fi
 
-    local value="$1"
-    local key="$2"
-    local iv="$3"
+	local value="$1"
+	local key="$2"
+	local iv="$3"
 
-    # Validate input
-    if [ -z "$value" ]; then
-        shell::colored_echo "ERR: shell::encode::aes256cbc: Missing argument value" 196 >&2
-        echo "Usage: shell::encode::aes256cbc [-h] <value> [key] [iv]"
-        return 1
-    fi
+	# Validate input
+	if [ -z "$value" ]; then
+		shell::colored_echo "ERR: shell::encode::aes256cbc: Missing argument value" 196 >&2
+		echo "Usage: shell::encode::aes256cbc [-h] <value> [key] [iv]"
+		return 1
+	fi
 
-    # Use SHELL_SHIELD_ENCRYPTION_KEY if no key is provided
-    if [ -z "$key" ]; then
-        local hasKey=$(shell::exist_key_conf "SHELL_SHIELD_ENCRYPTION_KEY")
-        if [ "$hasKey" = "false" ]; then
-            shell::add_key_conf "SHELL_SHIELD_ENCRYPTION_KEY" "$(shell::generate_random_key 32)"
-        fi
-        key=$(shell::get_key_conf_value "SHELL_SHIELD_ENCRYPTION_KEY")
-    fi
+	# Use SHELL_SHIELD_ENCRYPTION_KEY if no key is provided
+	if [ -z "$key" ]; then
+		local hasKey=$(shell::exist_key_conf "SHELL_SHIELD_ENCRYPTION_KEY")
+		if [ "$hasKey" = "false" ]; then
+			shell::add_key_conf "SHELL_SHIELD_ENCRYPTION_KEY" "$(shell::generate_random_key 32)"
+		fi
+		key=$(shell::get_key_conf_value "SHELL_SHIELD_ENCRYPTION_KEY")
+	fi
 
-    # Use SHELL_SHIELD_ENCRYPTION_IV if no iv is provided
-    if [ -z "$iv" ]; then
-        local hasIv=$(shell::exist_key_conf "SHELL_SHIELD_ENCRYPTION_IV")
-        if [ "$hasIv" = "false" ]; then
-            shell::add_key_conf "SHELL_SHIELD_ENCRYPTION_IV" "$(shell::generate_random_key 16)"
-        fi
-        iv=$(shell::get_key_conf_value "SHELL_SHIELD_ENCRYPTION_IV")
-    fi
+	# Use SHELL_SHIELD_ENCRYPTION_IV if no iv is provided
+	if [ -z "$iv" ]; then
+		local hasIv=$(shell::exist_key_conf "SHELL_SHIELD_ENCRYPTION_IV")
+		if [ "$hasIv" = "false" ]; then
+			shell::add_key_conf "SHELL_SHIELD_ENCRYPTION_IV" "$(shell::generate_random_key 16)"
+		fi
+		iv=$(shell::get_key_conf_value "SHELL_SHIELD_ENCRYPTION_IV")
+	fi
 
-    # Validate key length (64 bytes for AES-256)
-    if [ ${#key} -ne 64 ]; then
-        shell::colored_echo "ERR: shell::encode::aes256cbc: Encryption key must be exactly 64 bytes" 196 >&2
-        return 1
-    fi
+	# Validate key length (64 bytes for AES-256)
+	if [ ${#key} -ne 64 ]; then
+		shell::colored_echo "ERR: shell::encode::aes256cbc: Encryption key must be exactly 64 bytes" 196 >&2
+		return 1
+	fi
 
-    # Validate iv length (32 bytes for AES-256)
-    if [ ${#iv} -ne 32 ]; then
-        shell::colored_echo "ERR: shell::encode::aes256cbc: Initialization vector must be exactly 32 bytes" 196 >&2
-        return 1
-    fi
+	# Validate iv length (32 bytes for AES-256)
+	if [ ${#iv} -ne 32 ]; then
+		shell::colored_echo "ERR: shell::encode::aes256cbc: Initialization vector must be exactly 32 bytes" 196 >&2
+		return 1
+	fi
 
-    # Check if OpenSSL is installed
-    if ! shell::is_command_available openssl; then
-        shell::colored_echo "ERR: shell::encode::aes256cbc: OpenSSL is not installed" 196 >&2
-        return 1
-    fi
+	# Check if OpenSSL is installed
+	if ! shell::is_command_available openssl; then
+		shell::colored_echo "ERR: shell::encode::aes256cbc: OpenSSL is not installed" 196 >&2
+		return 1
+	fi
 
-    # Encrypt the value string and encode in Base64
-    local encrypted=$(printf "%s" "$value" | openssl enc -aes-256-cbc -base64 -K "$key" -iv "$iv" 2>/dev/null)
-    if [ $? -ne 0 ]; then
-        shell::colored_echo "ERR: shell::encode::aes256cbc: Encryption failed. Please check your key and try again." 196 >&2
-        return 1
-    fi
+	# Encrypt the value string and encode in Base64
+	local encrypted=$(printf "%s" "$value" | openssl enc -aes-256-cbc -base64 -K "$key" -iv "$iv" 2>/dev/null)
+	if [ $? -ne 0 ]; then
+		shell::colored_echo "ERR: shell::encode::aes256cbc: Encryption failed. Please check your key and try again." 196 >&2
+		return 1
+	fi
 
-    echo "$encrypted"
-    shell::clip_value "$encrypted"
-    return 0
+	echo "$encrypted"
+	shell::clip_value "$encrypted"
+	return 0
 }
 
 # shell::decode::aes256cbc function
@@ -186,69 +186,69 @@ shell::encode::aes256cbc() {
 #   - The encryption key must be 64 bytes for AES-256-CBC.
 #   - If SHELL_SHIELD_ENCRYPTION_KEY is not set and no key is provided, the function fails.
 shell::decode::aes256cbc() {
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_DECODE_AES256CBC"
-        return 0
-    fi
+	# Check for the help flag (-h)
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_DECODE_AES256CBC"
+		return 0
+	fi
 
-    local value="$1"
-    local key="$2"
-    local iv="$3"
-    # Validate input
-    if [ -z "$value" ]; then
-        shell::colored_echo "ERR: shell::decode::aes256cbc: Missing argument value" 196 >&2
-        echo "Usage: shell::decode::aes256cbc [-h] <value> [key] [iv]"
-        return 1
-    fi
+	local value="$1"
+	local key="$2"
+	local iv="$3"
+	# Validate input
+	if [ -z "$value" ]; then
+		shell::colored_echo "ERR: shell::decode::aes256cbc: Missing argument value" 196 >&2
+		echo "Usage: shell::decode::aes256cbc [-h] <value> [key] [iv]"
+		return 1
+	fi
 
-    # Use SHELL_SHIELD_ENCRYPTION_KEY if no key is provided
-    if [ -z "$key" ]; then
-        local hasKey=$(shell::exist_key_conf "SHELL_SHIELD_ENCRYPTION_KEY")
-        if [ "$hasKey" = "false" ]; then
-            shell::colored_echo "ERR: shell::decode::aes256cbc: SHELL_SHIELD_ENCRYPTION_KEY is not set. Please set it or provide a key." 196 >&2
-            return 1
-        fi
-        key=$(shell::get_key_conf_value "SHELL_SHIELD_ENCRYPTION_KEY")
-    fi
+	# Use SHELL_SHIELD_ENCRYPTION_KEY if no key is provided
+	if [ -z "$key" ]; then
+		local hasKey=$(shell::exist_key_conf "SHELL_SHIELD_ENCRYPTION_KEY")
+		if [ "$hasKey" = "false" ]; then
+			shell::colored_echo "ERR: shell::decode::aes256cbc: SHELL_SHIELD_ENCRYPTION_KEY is not set. Please set it or provide a key." 196 >&2
+			return 1
+		fi
+		key=$(shell::get_key_conf_value "SHELL_SHIELD_ENCRYPTION_KEY")
+	fi
 
-    # Use SHELL_SHIELD_ENCRYPTION_IV if no iv is provided
-    if [ -z "$iv" ]; then
-        local hasIv=$(shell::exist_key_conf "SHELL_SHIELD_ENCRYPTION_IV")
-        if [ "$hasIv" = "false" ]; then
-            shell::colored_echo "ERR: shell::decode::aes256cbc: SHELL_SHIELD_ENCRYPTION_IV is not set. Please set it or provide a key." 196 >&2
-            return 1
-        fi
-        iv=$(shell::get_key_conf_value "SHELL_SHIELD_ENCRYPTION_IV")
-    fi
+	# Use SHELL_SHIELD_ENCRYPTION_IV if no iv is provided
+	if [ -z "$iv" ]; then
+		local hasIv=$(shell::exist_key_conf "SHELL_SHIELD_ENCRYPTION_IV")
+		if [ "$hasIv" = "false" ]; then
+			shell::colored_echo "ERR: shell::decode::aes256cbc: SHELL_SHIELD_ENCRYPTION_IV is not set. Please set it or provide a key." 196 >&2
+			return 1
+		fi
+		iv=$(shell::get_key_conf_value "SHELL_SHIELD_ENCRYPTION_IV")
+	fi
 
-    # Validate key length (64 bytes for AES-256)
-    if [ ${#key} -ne 64 ]; then
-        shell::colored_echo "ERR: shell::decode::aes256cbc: Encryption key must be exactly 64 bytes" 196 >&2
-        return 1
-    fi
+	# Validate key length (64 bytes for AES-256)
+	if [ ${#key} -ne 64 ]; then
+		shell::colored_echo "ERR: shell::decode::aes256cbc: Encryption key must be exactly 64 bytes" 196 >&2
+		return 1
+	fi
 
-    # Validate iv length (32 bytes for AES-256)
-    if [ ${#iv} -ne 32 ]; then
-        shell::colored_echo "ERR: shell::decode::aes256cbc: Initialization vector must be exactly 32 bytes" 196 >&2
-        return 1
-    fi
+	# Validate iv length (32 bytes for AES-256)
+	if [ ${#iv} -ne 32 ]; then
+		shell::colored_echo "ERR: shell::decode::aes256cbc: Initialization vector must be exactly 32 bytes" 196 >&2
+		return 1
+	fi
 
-    # Check if OpenSSL is installed
-    if ! shell::is_command_available openssl; then
-        shell::colored_echo "ERR: shell::decode::aes256cbc: OpenSSL is not installed" 196 >&2
-        return 1
-    fi
+	# Check if OpenSSL is installed
+	if ! shell::is_command_available openssl; then
+		shell::colored_echo "ERR: shell::decode::aes256cbc: OpenSSL is not installed" 196 >&2
+		return 1
+	fi
 
-    local decrypted=$(echo "$value" | openssl enc -aes-256-cbc -d -base64 -K "$key" -iv "$iv" 2>/dev/null)
-    if [ $? -ne 0 ]; then
-        shell::colored_echo "ERR: shell::decode::aes256cbc: Decryption failed. Please check your key and try again." 196 >&2
-        return 1
-    fi
+	local decrypted=$(echo "$value" | openssl enc -aes-256-cbc -d -base64 -K "$key" -iv "$iv" 2>/dev/null)
+	if [ $? -ne 0 ]; then
+		shell::colored_echo "ERR: shell::decode::aes256cbc: Decryption failed. Please check your key and try again." 196 >&2
+		return 1
+	fi
 
-    echo "$decrypted"
-    shell::clip_value "$decrypted"
-    return 0
+	echo "$decrypted"
+	shell::clip_value "$decrypted"
+	return 0
 }
 
 # shell::cryptography::create_password_hash function
@@ -290,37 +290,37 @@ shell::decode::aes256cbc() {
 #   - The function handles prompting for password if not provided directly, but this function
 #     expects it as an argument for automation.
 shell::cryptography::create_password_hash() {
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_CRYPTOGRAPHY_CREATE_PASSWORD_HASH"
-        return 0
-    fi
+	# Check for the help flag (-h)
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_CRYPTOGRAPHY_CREATE_PASSWORD_HASH"
+		return 0
+	fi
 
-    local algorithm="$1"
-    local password="$2"
+	local algorithm="$1"
+	local password="$2"
 
-    if [ -z "$algorithm" ] || [ -z "$password" ]; then
-        shell::colored_echo "ERR: shell::cryptography::create_password_hash: Missing required parameters." 196 >&2
-        echo "Usage: shell::cryptography::create_password_hash [-h] <algorithm> <password>"
-        return 1
-    fi
+	if [ -z "$algorithm" ] || [ -z "$password" ]; then
+		shell::colored_echo "ERR: shell::cryptography::create_password_hash: Missing required parameters." 196 >&2
+		echo "Usage: shell::cryptography::create_password_hash [-h] <algorithm> <password>"
+		return 1
+	fi
 
-    if ! shell::is_command_available openssl; then
-        shell::colored_echo "ERR: shell::cryptography::create_password_hash: OpenSSL is not installed." 196 >&2
-        return 1
-    fi
+	if ! shell::is_command_available openssl; then
+		shell::colored_echo "ERR: shell::cryptography::create_password_hash: OpenSSL is not installed." 196 >&2
+		return 1
+	fi
 
-    # Use openssl passwd. -stdin reads password from stdin.
-    # The algorithm is passed as an option, e.g., -1, -apr1, -aixmd5, -5, -6.
-    local hashed_password=$(printf "%s" "$password" | openssl passwd "-$algorithm" -stdin 2>/dev/null)
+	# Use openssl passwd. -stdin reads password from stdin.
+	# The algorithm is passed as an option, e.g., -1, -apr1, -aixmd5, -5, -6.
+	local hashed_password=$(printf "%s" "$password" | openssl passwd "-$algorithm" -stdin 2>/dev/null)
 
-    if [ $? -ne 0 ] || [ -z "$hashed_password" ]; then
-        shell::colored_echo "ERR: shell::cryptography::create_password_hash: Failed to create password hash. Check algorithm or OpenSSL installation." 196 >&2
-        return 1
-    fi
+	if [ $? -ne 0 ] || [ -z "$hashed_password" ]; then
+		shell::colored_echo "ERR: shell::cryptography::create_password_hash: Failed to create password hash. Check algorithm or OpenSSL installation." 196 >&2
+		return 1
+	fi
 
-    echo "$hashed_password"
-    return 0
+	echo "$hashed_password"
+	return 0
 }
 
 # shell::encode::file::aes256cbc function
@@ -358,98 +358,98 @@ shell::cryptography::create_password_hash() {
 #   - The initialization vector must be 32 bytes (hex) for AES-256-CBC.
 #   - If SHELL_SHIELD_ENCRYPTION_KEY or SHELL_SHIELD_ENCRYPTION_IV is not set and no key/IV is provided, the function generates and stores them.
 shell::encode::file::aes256cbc() {
-    local dry_run="false"
+	local dry_run="false"
 
-    # Check for help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_ENCODE_FILE_AES256CBC"
-        return 0
-    fi
+	# Check for help flag (-h)
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_ENCODE_FILE_AES256CBC"
+		return 0
+	fi
 
-    # Check for dry-run flag (-n)
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+	# Check for dry-run flag (-n)
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
 
-    local input_file="$1"
-    local output_file="$2"
-    local key="$3"
-    local iv="$4"
+	local input_file="$1"
+	local output_file="$2"
+	local key="$3"
+	local iv="$4"
 
-    # Validate input parameters
-    if [ -z "$input_file" ] || [ -z "$output_file" ]; then
-        shell::colored_echo "ERR: shell::encode::file::aes256cbc: Missing input or output file" 196 >&2
-        echo "Usage: shell::encode::file::aes256cbc [-n] [-h] <input_file> <output_file> [key] [iv]" >&2
-        return 1
-    fi
+	# Validate input parameters
+	if [ -z "$input_file" ] || [ -z "$output_file" ]; then
+		shell::colored_echo "ERR: shell::encode::file::aes256cbc: Missing input or output file" 196 >&2
+		echo "Usage: shell::encode::file::aes256cbc [-n] [-h] <input_file> <output_file> [key] [iv]" >&2
+		return 1
+	fi
 
-    # Check if input file exists
-    if [ ! -f "$input_file" ]; then
-        shell::colored_echo "ERR: shell::encode::file::aes256cbc: Input file '$input_file' does not exist" 196 >&2
-        return 1
-    fi
+	# Check if input file exists
+	if [ ! -f "$input_file" ]; then
+		shell::colored_echo "ERR: shell::encode::file::aes256cbc: Input file '$input_file' does not exist" 196 >&2
+		return 1
+	fi
 
-    # Check if output file already exists
-    if [ -e "$output_file" ] && [ "$dry_run" = "false" ]; then
-        shell::colored_echo "ERR: shell::encode::file::aes256cbc: Output file '$output_file' already exists" 196 >&2
-        return 1
-    fi
+	# Check if output file already exists
+	if [ -e "$output_file" ] && [ "$dry_run" = "false" ]; then
+		shell::colored_echo "ERR: shell::encode::file::aes256cbc: Output file '$output_file' already exists" 196 >&2
+		return 1
+	fi
 
-    # Use SHELL_SHIELD_ENCRYPTION_KEY if no key is provided
-    if [ -z "$key" ]; then
-        local hasKey=$(shell::exist_key_conf "SHELL_SHIELD_ENCRYPTION_KEY")
-        if [ "$hasKey" = "false" ]; then
-            shell::add_key_conf "SHELL_SHIELD_ENCRYPTION_KEY" "$(shell::generate_random_key 32)"
-        fi
-        key=$(shell::get_key_conf_value "SHELL_SHIELD_ENCRYPTION_KEY")
-    fi
+	# Use SHELL_SHIELD_ENCRYPTION_KEY if no key is provided
+	if [ -z "$key" ]; then
+		local hasKey=$(shell::exist_key_conf "SHELL_SHIELD_ENCRYPTION_KEY")
+		if [ "$hasKey" = "false" ]; then
+			shell::add_key_conf "SHELL_SHIELD_ENCRYPTION_KEY" "$(shell::generate_random_key 32)"
+		fi
+		key=$(shell::get_key_conf_value "SHELL_SHIELD_ENCRYPTION_KEY")
+	fi
 
-    # Use SHELL_SHIELD_ENCRYPTION_IV if no iv is provided
-    if [ -z "$iv" ]; then
-        local hasIv=$(shell::exist_key_conf "SHELL_SHIELD_ENCRYPTION_IV")
-        if [ "$hasIv" = "false" ]; then
-            shell::add_key_conf "SHELL_SHIELD_ENCRYPTION_IV" "$(shell::generate_random_key 16)"
-        fi
-        iv=$(shell::get_key_conf_value "SHELL_SHIELD_ENCRYPTION_IV")
-    fi
+	# Use SHELL_SHIELD_ENCRYPTION_IV if no iv is provided
+	if [ -z "$iv" ]; then
+		local hasIv=$(shell::exist_key_conf "SHELL_SHIELD_ENCRYPTION_IV")
+		if [ "$hasIv" = "false" ]; then
+			shell::add_key_conf "SHELL_SHIELD_ENCRYPTION_IV" "$(shell::generate_random_key 16)"
+		fi
+		iv=$(shell::get_key_conf_value "SHELL_SHIELD_ENCRYPTION_IV")
+	fi
 
-    # Validate key length (64 bytes for AES-256)
-    if [ ${#key} -ne 64 ]; then
-        shell::colored_echo "ERR: shell::encode::file::aes256cbc: Encryption key must be exactly 64 bytes" 196 >&2
-        return 1
-    fi
+	# Validate key length (64 bytes for AES-256)
+	if [ ${#key} -ne 64 ]; then
+		shell::colored_echo "ERR: shell::encode::file::aes256cbc: Encryption key must be exactly 64 bytes" 196 >&2
+		return 1
+	fi
 
-    # Validate iv length (32 bytes for AES-256)
-    if [ ${#iv} -ne 32 ]; then
-        shell::colored_echo "ERR: shell::encode::file::aes256cbc: Initialization vector must be exactly 32 bytes" 196 >&2
-        return 1
-    fi
+	# Validate iv length (32 bytes for AES-256)
+	if [ ${#iv} -ne 32 ]; then
+		shell::colored_echo "ERR: shell::encode::file::aes256cbc: Initialization vector must be exactly 32 bytes" 196 >&2
+		return 1
+	fi
 
-    # Check if OpenSSL is installed
-    if ! shell::is_command_available openssl; then
-        shell::colored_echo "ERR: shell::encode::file::aes256cbc: OpenSSL is not installed" 196 >&2
-        return 1
-    fi
+	# Check if OpenSSL is installed
+	if ! shell::is_command_available openssl; then
+		shell::colored_echo "ERR: shell::encode::file::aes256cbc: OpenSSL is not installed" 196 >&2
+		return 1
+	fi
 
-    # Construct the encryption command
-    local cmd="openssl enc -aes-256-cbc -K \"$key\" -iv \"$iv\" -in \"$input_file\" -out \"$output_file\""
+	# Construct the encryption command
+	local cmd="openssl enc -aes-256-cbc -K \"$key\" -iv \"$iv\" -in \"$input_file\" -out \"$output_file\""
 
-    # Execute or print the command based on dry-run mode
-    if [ "$dry_run" = "true" ]; then
-        shell::on_evict "$cmd"
-        return 0
-    fi
+	# Execute or print the command based on dry-run mode
+	if [ "$dry_run" = "true" ]; then
+		shell::on_evict "$cmd"
+		return 0
+	fi
 
-    # Encrypt the file using the constructed command
-    if ! shell::run_cmd_eval "$cmd" 2>/dev/null; then
-        shell::colored_echo "ERR: shell::encode::file::aes256cbc: Encryption failed. Please check your key and try again." 196 >&2
-        return 1
-    fi
+	# Encrypt the file using the constructed command
+	if ! shell::run_cmd_eval "$cmd" 2>/dev/null; then
+		shell::colored_echo "ERR: shell::encode::file::aes256cbc: Encryption failed. Please check your key and try again." 196 >&2
+		return 1
+	fi
 
-    shell::colored_echo "INFO: File encrypted successfully to '$output_file'" 46
-    shell::clip_value "$output_file"
-    return 0
+	shell::colored_echo "INFO: File encrypted successfully to '$output_file'" 46
+	shell::clip_value "$output_file"
+	return 0
 }
 
 # shell::decode::file::aes256cbc function
@@ -487,98 +487,98 @@ shell::encode::file::aes256cbc() {
 #   - The initialization vector must be 32 bytes (hex) for AES-256-CBC.
 #   - If SHELL_SHIELD_ENCRYPTION_KEY or SHELL_SHIELD_ENCRYPTION_IV is not set and no key/IV is provided, the function fails.
 shell::decode::file::aes256cbc() {
-    local dry_run="false"
+	local dry_run="false"
 
-    # Check for help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_DECODE_FILE_AES256CBC"
-        return 0
-    fi
+	# Check for help flag (-h)
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_DECODE_FILE_AES256CBC"
+		return 0
+	fi
 
-    # Check for dry-run flag (-n)
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+	# Check for dry-run flag (-n)
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
 
-    local input_file="$1"
-    local output_file="$2"
-    local key="$3"
-    local iv="$4"
+	local input_file="$1"
+	local output_file="$2"
+	local key="$3"
+	local iv="$4"
 
-    # Validate input parameters
-    if [ -z "$input_file" ] || [ -z "$output_file" ]; then
-        shell::colored_echo "ERR: shell::decode::file::aes256cbc: Missing input or output file" 196 >&2
-        echo "Usage: shell::decode::file::aes256cbc [-n] [-h] <input_file> <output_file> [key] [iv]" >&2
-        return 1
-    fi
+	# Validate input parameters
+	if [ -z "$input_file" ] || [ -z "$output_file" ]; then
+		shell::colored_echo "ERR: shell::decode::file::aes256cbc: Missing input or output file" 196 >&2
+		echo "Usage: shell::decode::file::aes256cbc [-n] [-h] <input_file> <output_file> [key] [iv]" >&2
+		return 1
+	fi
 
-    # Check if input file exists
-    if [ ! -f "$input_file" ]; then
-        shell::colored_echo "ERR: shell::decode::file::aes256cbc: Input file '$input_file' does not exist" 196 >&2
-        return 1
-    fi
+	# Check if input file exists
+	if [ ! -f "$input_file" ]; then
+		shell::colored_echo "ERR: shell::decode::file::aes256cbc: Input file '$input_file' does not exist" 196 >&2
+		return 1
+	fi
 
-    # Check if output file already exists
-    if [ -e "$output_file" ] && [ "$dry_run" = "false" ]; then
-        shell::colored_echo "ERR: shell::decode::file::aes256cbc: Output file '$output_file' already exists" 196 >&2
-        return 1
-    fi
+	# Check if output file already exists
+	if [ -e "$output_file" ] && [ "$dry_run" = "false" ]; then
+		shell::colored_echo "ERR: shell::decode::file::aes256cbc: Output file '$output_file' already exists" 196 >&2
+		return 1
+	fi
 
-    # Use SHELL_SHIELD_ENCRYPTION_KEY if no key is provided
-    if [ -z "$key" ]; then
-        local hasKey=$(shell::exist_key_conf "SHELL_SHIELD_ENCRYPTION_KEY")
-        if [ "$hasKey" = "false" ]; then
-            shell::colored_echo "ERR: shell::decode::file::aes256cbc: SHELL_SHIELD_ENCRYPTION_KEY is not set. Please set it or provide a key." 196 >&2
-            return 1
-        fi
-        key=$(shell::get_key_conf_value "SHELL_SHIELD_ENCRYPTION_KEY")
-    fi
+	# Use SHELL_SHIELD_ENCRYPTION_KEY if no key is provided
+	if [ -z "$key" ]; then
+		local hasKey=$(shell::exist_key_conf "SHELL_SHIELD_ENCRYPTION_KEY")
+		if [ "$hasKey" = "false" ]; then
+			shell::colored_echo "ERR: shell::decode::file::aes256cbc: SHELL_SHIELD_ENCRYPTION_KEY is not set. Please set it or provide a key." 196 >&2
+			return 1
+		fi
+		key=$(shell::get_key_conf_value "SHELL_SHIELD_ENCRYPTION_KEY")
+	fi
 
-    # Use SHELL_SHIELD_ENCRYPTION_IV if no iv is provided
-    if [ -z "$iv" ]; then
-        local hasIv=$(shell::exist_key_conf "SHELL_SHIELD_ENCRYPTION_IV")
-        if [ "$hasIv" = "false" ]; then
-            shell::colored_echo "ERR: shell::decode::file::aes256cbc: SHELL_SHIELD_ENCRYPTION_IV is not set. Please set it or provide an IV." 196 >&2
-            return 1
-        fi
-        iv=$(shell::get_key_conf_value "SHELL_SHIELD_ENCRYPTION_IV")
-    fi
+	# Use SHELL_SHIELD_ENCRYPTION_IV if no iv is provided
+	if [ -z "$iv" ]; then
+		local hasIv=$(shell::exist_key_conf "SHELL_SHIELD_ENCRYPTION_IV")
+		if [ "$hasIv" = "false" ]; then
+			shell::colored_echo "ERR: shell::decode::file::aes256cbc: SHELL_SHIELD_ENCRYPTION_IV is not set. Please set it or provide an IV." 196 >&2
+			return 1
+		fi
+		iv=$(shell::get_key_conf_value "SHELL_SHIELD_ENCRYPTION_IV")
+	fi
 
-    # Validate key length (64 bytes for AES-256)
-    if [ ${#key} -ne 64 ]; then
-        shell::colored_echo "ERR: shell::decode::file::aes256cbc: Encryption key must be exactly 64 bytes" 196 >&2
-        return 1
-    fi
+	# Validate key length (64 bytes for AES-256)
+	if [ ${#key} -ne 64 ]; then
+		shell::colored_echo "ERR: shell::decode::file::aes256cbc: Encryption key must be exactly 64 bytes" 196 >&2
+		return 1
+	fi
 
-    # Validate iv length (32 bytes for AES-256)
-    if [ ${#iv} -ne 32 ]; then
-        shell::colored_echo "ERR: shell::decode::file::aes256cbc: Initialization vector must be exactly 32 bytes" 196 >&2
-        return 1
-    fi
+	# Validate iv length (32 bytes for AES-256)
+	if [ ${#iv} -ne 32 ]; then
+		shell::colored_echo "ERR: shell::decode::file::aes256cbc: Initialization vector must be exactly 32 bytes" 196 >&2
+		return 1
+	fi
 
-    # Check if OpenSSL is installed
-    if ! shell::is_command_available openssl; then
-        shell::colored_echo "ERR: shell::decode::file::aes256cbc: OpenSSL is not installed" 196 >&2
-        return 1
-    fi
+	# Check if OpenSSL is installed
+	if ! shell::is_command_available openssl; then
+		shell::colored_echo "ERR: shell::decode::file::aes256cbc: OpenSSL is not installed" 196 >&2
+		return 1
+	fi
 
-    # Construct the decryption command
-    local cmd="openssl enc -aes-256-cbc -d -K \"$key\" -iv \"$iv\" -in \"$input_file\" -out \"$output_file\""
+	# Construct the decryption command
+	local cmd="openssl enc -aes-256-cbc -d -K \"$key\" -iv \"$iv\" -in \"$input_file\" -out \"$output_file\""
 
-    # Execute or print the command based on dry-run mode
-    if [ "$dry_run" = "true" ]; then
-        shell::on_evict "$cmd"
-        return 0
-    fi
+	# Execute or print the command based on dry-run mode
+	if [ "$dry_run" = "true" ]; then
+		shell::on_evict "$cmd"
+		return 0
+	fi
 
-    # Decrypt the file using the constructed command
-    if ! shell::run_cmd_eval "$cmd" 2>/dev/null; then
-        shell::colored_echo "ERR: shell::decode::file::aes256cbc: Decryption failed. Please check your key and try again." 196 >&2
-        return 1
-    fi
+	# Decrypt the file using the constructed command
+	if ! shell::run_cmd_eval "$cmd" 2>/dev/null; then
+		shell::colored_echo "ERR: shell::decode::file::aes256cbc: Decryption failed. Please check your key and try again." 196 >&2
+		return 1
+	fi
 
-    shell::colored_echo "INFO: File decrypted successfully to '$output_file'" 46
-    shell::clip_value "$output_file"
-    return 0
+	shell::colored_echo "INFO: File decrypted successfully to '$output_file'" 46
+	shell::clip_value "$output_file"
+	return 0
 }

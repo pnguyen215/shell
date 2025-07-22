@@ -21,39 +21,39 @@
 #   shell::read_conf ~/.my-config                # Sources the configuration file.
 #   shell::read_conf -n ~/.my-config             # Prints the sourcing command without executing it.
 shell::read_conf() {
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_READ_CONF"
-        return 0
-    fi
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_READ_CONF"
+		return 0
+	fi
 
-    local dry_run="false"
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+	local dry_run="false"
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
 
-    # Check if a filename is provided.
-    if [ $# -lt 1 ]; then
-        echo "Usage: shell::read_conf [-n] <filename>"
-        return 1
-    fi
+	# Check if a filename is provided.
+	if [ $# -lt 1 ]; then
+		echo "Usage: shell::read_conf [-n] <filename>"
+		return 1
+	fi
 
-    local filename="$1"
+	local filename="$1"
 
-    # Verify that the configuration file exists.
-    if [[ ! -f "$filename" ]]; then
-        shell::colored_echo "ERR: Conf file '$filename' not found." 196
-        return 1
-    fi
+	# Verify that the configuration file exists.
+	if [[ ! -f "$filename" ]]; then
+		shell::colored_echo "ERR: Conf file '$filename' not found." 196
+		return 1
+	fi
 
-    # Check if dry mode is enabled.
-    # If so, print the command to source the file.
-    # Otherwise, source the file.
-    if [ "$dry_run" = "true" ]; then
-        shell::on_evict "source \"$filename\""
-    else
-        shell::run_cmd source "$filename"
-    fi
+	# Check if dry mode is enabled.
+	# If so, print the command to source the file.
+	# Otherwise, source the file.
+	if [ "$dry_run" = "true" ]; then
+		shell::on_evict "source \"$filename\""
+	else
+		shell::run_cmd source "$filename"
+	fi
 }
 
 # shell::add_key_conf function
@@ -78,53 +78,53 @@ shell::read_conf() {
 #   shell::add_key_conf my_setting "some secret value"         # Encodes the value and adds the entry.
 #   shell::add_key_conf -n my_setting "some secret value"      # Prints the command without executing it.
 shell::add_key_conf() {
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_ADD_KEY_CONF"
-        return 0
-    fi
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_ADD_KEY_CONF"
+		return 0
+	fi
 
-    local dry_run="false"
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+	local dry_run="false"
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
 
-    # Check if a key and value are provided.
-    # If not, print usage information and return an error.
-    if [ $# -lt 2 ]; then
-        echo "Usage: shell::add_key_conf [-n] <key> <value>"
-        return 1
-    fi
+	# Check if a key and value are provided.
+	# If not, print usage information and return an error.
+	if [ $# -lt 2 ]; then
+		echo "Usage: shell::add_key_conf [-n] <key> <value>"
+		return 1
+	fi
 
-    local key="$1"
-    local value="$2"
-    key=$(shell::sanitize_upper_var_name "$key")
+	local key="$1"
+	local value="$2"
+	key=$(shell::sanitize_upper_var_name "$key")
 
-    # Encode the value using Base64 and remove any newlines.
-    local encoded_value
-    encoded_value=$(echo -n "$value" | base64 | tr -d '\n')
+	# Encode the value using Base64 and remove any newlines.
+	local encoded_value
+	encoded_value=$(echo -n "$value" | base64 | tr -d '\n')
 
-    # Ensure the configuration file exists.
-    shell::create_file_if_not_exists "$SHELL_KEY_CONF_FILE"
-    shell::unlock_permissions "$SHELL_KEY_CONF_FILE"
+	# Ensure the configuration file exists.
+	shell::create_file_if_not_exists "$SHELL_KEY_CONF_FILE"
+	shell::unlock_permissions "$SHELL_KEY_CONF_FILE"
 
-    # Build the command to append the key and encoded value to the configuration file.
-    local cmd="echo \"$key=$encoded_value\" >> \"$SHELL_KEY_CONF_FILE\""
+	# Build the command to append the key and encoded value to the configuration file.
+	local cmd="echo \"$key=$encoded_value\" >> \"$SHELL_KEY_CONF_FILE\""
 
-    # Check if the dry mode is enabled.
-    # If so, print the command to be executed.
-    # Otherwise, execute the command to add the configuration entry.
-    if [ "$dry_run" = "true" ]; then
-        shell::on_evict "$cmd"
-    else
-        result=$(shell::exist_key_conf $key)
-        if [ "$result" = "true" ]; then
-            shell::colored_echo "WARN: The key '$key' exists. Please consider updating it by using shell::fzf_update_key_conf" 11
-            return 0
-        fi
-        shell::run_cmd_eval "$cmd"
-        shell::colored_echo "INFO: Added configuration: $key (encoded value)" 46
-    fi
+	# Check if the dry mode is enabled.
+	# If so, print the command to be executed.
+	# Otherwise, execute the command to add the configuration entry.
+	if [ "$dry_run" = "true" ]; then
+		shell::on_evict "$cmd"
+	else
+		result=$(shell::exist_key_conf $key)
+		if [ "$result" = "true" ]; then
+			shell::colored_echo "WARN: The key '$key' exists. Please consider updating it by using shell::fzf_update_key_conf" 11
+			return 0
+		fi
+		shell::run_cmd_eval "$cmd"
+		shell::colored_echo "INFO: Added configuration: $key (encoded value)" 46
+	fi
 }
 
 # shell::add_key_conf_comment function
@@ -151,55 +151,55 @@ shell::add_key_conf() {
 # shell::add_key_conf_comment my_key "my secret" "This is a comment"
 # shell::add_key_conf_comment -n my_key "my secret" "Dry-run with comment"
 shell::add_key_conf_comment() {
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_ADD_KEY_CONF_COMMENT"
-        return 0
-    fi
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_ADD_KEY_CONF_COMMENT"
+		return 0
+	fi
 
-    local dry_run="false"
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+	local dry_run="false"
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
 
-    if [ $# -lt 2 ]; then
-        echo "Usage: shell::add_key_conf_comment [-n] <key> <value> [comment]"
-        return 1
-    fi
+	if [ $# -lt 2 ]; then
+		echo "Usage: shell::add_key_conf_comment [-n] <key> <value> [comment]"
+		return 1
+	fi
 
-    local key="$1"
-    local value="$2"
-    local comment="$3"
+	local key="$1"
+	local value="$2"
+	local comment="$3"
 
-    key=$(shell::sanitize_upper_var_name "$key")
+	key=$(shell::sanitize_upper_var_name "$key")
 
-    # Encode the value using Base64 and remove any newlines
-    local encoded_value
-    encoded_value=$(echo -n "$value" | base64 | tr -d '\n')
+	# Encode the value using Base64 and remove any newlines
+	local encoded_value
+	encoded_value=$(echo -n "$value" | base64 | tr -d '\n')
 
-    # Ensure the configuration file exists
-    shell::create_file_if_not_exists "$SHELL_KEY_CONF_FILE"
-    shell::unlock_permissions "$SHELL_KEY_CONF_FILE"
+	# Ensure the configuration file exists
+	shell::create_file_if_not_exists "$SHELL_KEY_CONF_FILE"
+	shell::unlock_permissions "$SHELL_KEY_CONF_FILE"
 
-    # Check if the key already exists
-    if [ "$(shell::exist_key_conf "$key")" = "true" ]; then
-        shell::colored_echo "WARN: The key '$key' exists. Please consider updating it by using shell::fzf_update_key_conf" 11
-        return 0
-    fi
+	# Check if the key already exists
+	if [ "$(shell::exist_key_conf "$key")" = "true" ]; then
+		shell::colored_echo "WARN: The key '$key' exists. Please consider updating it by using shell::fzf_update_key_conf" 11
+		return 0
+	fi
 
-    # Build the command to append the comment and key-value pair
-    local cmd=""
-    if [ -n "$comment" ]; then
-        cmd="echo \"# $comment\" >> \"$SHELL_KEY_CONF_FILE\" && "
-    fi
-    cmd+="echo \"$key=$encoded_value\" >> \"$SHELL_KEY_CONF_FILE\""
+	# Build the command to append the comment and key-value pair
+	local cmd=""
+	if [ -n "$comment" ]; then
+		cmd="echo \"# $comment\" >> \"$SHELL_KEY_CONF_FILE\" && "
+	fi
+	cmd+="echo \"$key=$encoded_value\" >> \"$SHELL_KEY_CONF_FILE\""
 
-    if [ "$dry_run" = "true" ]; then
-        shell::on_evict "$cmd"
-    else
-        shell::run_cmd_eval "$cmd"
-        shell::colored_echo "INFO: Added configuration: $key (encoded value) with comment" 46
-    fi
+	if [ "$dry_run" = "true" ]; then
+		shell::on_evict "$cmd"
+	else
+		shell::run_cmd_eval "$cmd"
+		shell::colored_echo "INFO: Added configuration: $key (encoded value) with comment" 46
+	fi
 }
 
 # shell::fzf_get_key_conf function
@@ -221,49 +221,49 @@ shell::add_key_conf_comment() {
 # Example:
 #   shell::fzf_get_key_conf      # Interactively select a key and display its decoded value.
 shell::fzf_get_key_conf() {
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_GET_KEY_CONF"
-        return 0
-    fi
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_FZF_GET_KEY_CONF"
+		return 0
+	fi
 
-    if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
-        shell::colored_echo "ERR: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
-        return 1
-    fi
+	if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
+		shell::colored_echo "ERR: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
+		return 1
+	fi
 
-    shell::install_package fzf
+	shell::install_package fzf
 
-    # Extract only the keys from the configuration file and select one using fzf.
-    local selected_key
-    # selected_key=$(cut -d '=' -f 1 "$SHELL_KEY_CONF_FILE" | fzf --prompt="Select config key: ")
-    selected_key=$(grep -v '^\s*#' "$SHELL_KEY_CONF_FILE" | cut -d '=' -f 1 | fzf --prompt="Select config key: ")
-    if [ -z "$selected_key" ]; then
-        shell::colored_echo "ERR: No configuration selected." 196
-        return 1
-    fi
+	# Extract only the keys from the configuration file and select one using fzf.
+	local selected_key
+	# selected_key=$(cut -d '=' -f 1 "$SHELL_KEY_CONF_FILE" | fzf --prompt="Select config key: ")
+	selected_key=$(grep -v '^\s*#' "$SHELL_KEY_CONF_FILE" | cut -d '=' -f 1 | fzf --prompt="Select config key: ")
+	if [ -z "$selected_key" ]; then
+		shell::colored_echo "ERR: No configuration selected." 196
+		return 1
+	fi
 
-    # Retrieve the full line corresponding to the selected key.
-    local selected_line
-    selected_line=$(grep "^${selected_key}=" "$SHELL_KEY_CONF_FILE")
-    if [ -z "$selected_line" ]; then
-        shell::colored_echo "ERR: Selected key '$selected_key' not found in configuration." 196
-        return 1
-    fi
+	# Retrieve the full line corresponding to the selected key.
+	local selected_line
+	selected_line=$(grep "^${selected_key}=" "$SHELL_KEY_CONF_FILE")
+	if [ -z "$selected_line" ]; then
+		shell::colored_echo "ERR: Selected key '$selected_key' not found in configuration." 196
+		return 1
+	fi
 
-    local encoded_value
-    encoded_value=$(echo "$selected_line" | cut -d '=' -f 2-)
+	local encoded_value
+	encoded_value=$(echo "$selected_line" | cut -d '=' -f 2-)
 
-    local os_type
-    os_type=$(shell::get_os_type)
-    local decoded_value
-    if [ "$os_type" = "macos" ]; then
-        decoded_value=$(echo "$encoded_value" | base64 -D)
-    else
-        decoded_value=$(echo "$encoded_value" | base64 -d)
-    fi
+	local os_type
+	os_type=$(shell::get_os_type)
+	local decoded_value
+	if [ "$os_type" = "macos" ]; then
+		decoded_value=$(echo "$encoded_value" | base64 -D)
+	else
+		decoded_value=$(echo "$encoded_value" | base64 -d)
+	fi
 
-    shell::colored_echo "[k] Key: $selected_key" 33
-    shell::clip_value "$decoded_value"
+	shell::colored_echo "[k] Key: $selected_key" 33
+	shell::clip_value "$decoded_value"
 }
 
 # shell::get_key_conf_value function
@@ -285,43 +285,43 @@ shell::fzf_get_key_conf() {
 # Example:
 #   shell::get_key_conf_value my_setting   # Outputs the decoded value for the key 'my_setting'.
 shell::get_key_conf_value() {
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_GET_KEY_CONF_VALUE"
-        return 0
-    fi
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_GET_KEY_CONF_VALUE"
+		return 0
+	fi
 
-    if [ $# -lt 1 ]; then
-        echo "Usage: shell::get_key_conf_value [-h] <key>"
-        return 1
-    fi
+	if [ $# -lt 1 ]; then
+		echo "Usage: shell::get_key_conf_value [-h] <key>"
+		return 1
+	fi
 
-    local key="$1"
+	local key="$1"
 
-    if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
-        shell::colored_echo "ERR: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
-        return 1
-    fi
+	if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
+		shell::colored_echo "ERR: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
+		return 1
+	fi
 
-    local conf_line
-    conf_line=$(grep "^${key}=" "$SHELL_KEY_CONF_FILE")
-    if [ -z "$conf_line" ]; then
-        shell::colored_echo "ERR: Key '$key' not found in configuration." 196
-        return 1
-    fi
+	local conf_line
+	conf_line=$(grep "^${key}=" "$SHELL_KEY_CONF_FILE")
+	if [ -z "$conf_line" ]; then
+		shell::colored_echo "ERR: Key '$key' not found in configuration." 196
+		return 1
+	fi
 
-    local encoded_value
-    encoded_value=$(echo "$conf_line" | cut -d '=' -f 2-)
+	local encoded_value
+	encoded_value=$(echo "$conf_line" | cut -d '=' -f 2-)
 
-    local os_type
-    os_type=$(shell::get_os_type)
-    local decoded_value
-    if [ "$os_type" = "macos" ]; then
-        decoded_value=$(echo "$encoded_value" | base64 -D)
-    else
-        decoded_value=$(echo "$encoded_value" | base64 -d)
-    fi
+	local os_type
+	os_type=$(shell::get_os_type)
+	local decoded_value
+	if [ "$os_type" = "macos" ]; then
+		decoded_value=$(echo "$encoded_value" | base64 -D)
+	else
+		decoded_value=$(echo "$encoded_value" | base64 -d)
+	fi
 
-    echo "$decoded_value"
+	echo "$decoded_value"
 }
 
 # shell::fzf_remove_key_conf function
@@ -346,66 +346,66 @@ shell::get_key_conf_value() {
 #   shell::fzf_remove_key_conf         # Interactively select a key and remove its configuration entry.
 #   shell::fzf_remove_key_conf -n      # Prints the removal command without executing it.
 shell::fzf_remove_key_conf() {
-    local dry_run="false"
+	local dry_run="false"
 
-    # Check for the optional dry-run flag (-n)
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+	# Check for the optional dry-run flag (-n)
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
 
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_REMOVE_KEY_CONF"
-        return 0
-    fi
+	# Check for the help flag (-h)
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_FZF_REMOVE_KEY_CONF"
+		return 0
+	fi
 
-    if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
-        shell::colored_echo "ERR: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
-        return 1
-    fi
+	if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
+		shell::colored_echo "ERR: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
+		return 1
+	fi
 
-    shell::install_package fzf
+	shell::install_package fzf
 
-    # Extract only the keys from the configuration file and select one using fzf.
-    local selected_key
-    # selected_key=$(cut -d '=' -f 1 "$SHELL_KEY_CONF_FILE" | fzf --prompt="Select config key to remove: ")
-    selected_key=$(grep -v '^\s*#' "$SHELL_KEY_CONF_FILE" | cut -d '=' -f 1 | fzf --prompt="Select config key to remove: ")
-    if [ -z "$selected_key" ]; then
-        shell::colored_echo "ERR: No configuration selected." 196
-        return 1
-    fi
+	# Extract only the keys from the configuration file and select one using fzf.
+	local selected_key
+	# selected_key=$(cut -d '=' -f 1 "$SHELL_KEY_CONF_FILE" | fzf --prompt="Select config key to remove: ")
+	selected_key=$(grep -v '^\s*#' "$SHELL_KEY_CONF_FILE" | cut -d '=' -f 1 | fzf --prompt="Select config key to remove: ")
+	if [ -z "$selected_key" ]; then
+		shell::colored_echo "ERR: No configuration selected." 196
+		return 1
+	fi
 
-    if [ "$(shell::is_protected_key_conf "$selected_key")" = "true" ]; then
-        shell::colored_echo "ERR: '$selected_key' is a protected key and cannot be modified." 196
-        return 1
-    fi
+	if [ "$(shell::is_protected_key_conf "$selected_key")" = "true" ]; then
+		shell::colored_echo "ERR: '$selected_key' is a protected key and cannot be modified." 196
+		return 1
+	fi
 
-    local os_type
-    os_type=$(shell::get_os_type)
-    local sed_cmd=""
-    local use_sudo="sudo "
+	local os_type
+	os_type=$(shell::get_os_type)
+	local sed_cmd=""
+	local use_sudo="sudo "
 
-    # Check if the configuration file is writable; if not, use sudo.
-    # if [ ! -w "$SHELL_KEY_CONF_FILE" ]; then
-    #     use_sudo="sudo "
-    # fi
+	# Check if the configuration file is writable; if not, use sudo.
+	# if [ ! -w "$SHELL_KEY_CONF_FILE" ]; then
+	#     use_sudo="sudo "
+	# fi
 
-    # Construct the sed command to remove the line starting with "selected_key="
-    if [ "$os_type" = "macos" ]; then
-        # On macOS, use sed -i '' for in-place editing.
-        sed_cmd="${use_sudo}sed -i '' \"/^${selected_key}=/d\" \"$SHELL_KEY_CONF_FILE\""
-    else
-        # On Linux, use sed -i for in-place editing.
-        sed_cmd="${use_sudo}sed -i \"/^${selected_key}=/d\" \"$SHELL_KEY_CONF_FILE\""
-    fi
+	# Construct the sed command to remove the line starting with "selected_key="
+	if [ "$os_type" = "macos" ]; then
+		# On macOS, use sed -i '' for in-place editing.
+		sed_cmd="${use_sudo}sed -i '' \"/^${selected_key}=/d\" \"$SHELL_KEY_CONF_FILE\""
+	else
+		# On Linux, use sed -i for in-place editing.
+		sed_cmd="${use_sudo}sed -i \"/^${selected_key}=/d\" \"$SHELL_KEY_CONF_FILE\""
+	fi
 
-    if [ "$dry_run" = "true" ]; then
-        shell::on_evict "$sed_cmd"
-    else
-        shell::run_cmd_eval "$sed_cmd"
-        shell::colored_echo "INFO: Removed configuration for key: $selected_key" 46
-    fi
+	if [ "$dry_run" = "true" ]; then
+		shell::on_evict "$sed_cmd"
+	else
+		shell::run_cmd_eval "$sed_cmd"
+		shell::colored_echo "INFO: Removed configuration for key: $selected_key" 46
+	fi
 }
 
 # shell::fzf_update_key_conf function
@@ -430,68 +430,68 @@ shell::fzf_remove_key_conf() {
 #   shell::fzf_update_key_conf       # Interactively select a key, enter a new value, and update its entry.
 #   shell::fzf_update_key_conf -n    # Prints the update command without executing it.
 shell::fzf_update_key_conf() {
-    local dry_run="false"
+	local dry_run="false"
 
-    # Check for the optional dry-run flag (-n)
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+	# Check for the optional dry-run flag (-n)
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
 
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_UPDATE_KEY_CONF"
-        return 0
-    fi
+	# Check for the help flag (-h)
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_FZF_UPDATE_KEY_CONF"
+		return 0
+	fi
 
-    if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
-        shell::colored_echo "ERR: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
-        return 1
-    fi
+	if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
+		shell::colored_echo "ERR: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
+		return 1
+	fi
 
-    shell::install_package fzf
+	shell::install_package fzf
 
-    # Extract only the keys from the configuration file and select one using fzf.
-    local selected_key
-    # selected_key=$(cut -d '=' -f 1 "$SHELL_KEY_CONF_FILE" | fzf --prompt="Select config key to update: ")
-    selected_key=$(grep -v '^\s*#' "$SHELL_KEY_CONF_FILE" | cut -d '=' -f 1 | fzf --prompt="Select config key to update: ")
-    if [ -z "$selected_key" ]; then
-        shell::colored_echo "ERR: No configuration selected." 196
-        return 1
-    fi
+	# Extract only the keys from the configuration file and select one using fzf.
+	local selected_key
+	# selected_key=$(cut -d '=' -f 1 "$SHELL_KEY_CONF_FILE" | fzf --prompt="Select config key to update: ")
+	selected_key=$(grep -v '^\s*#' "$SHELL_KEY_CONF_FILE" | cut -d '=' -f 1 | fzf --prompt="Select config key to update: ")
+	if [ -z "$selected_key" ]; then
+		shell::colored_echo "ERR: No configuration selected." 196
+		return 1
+	fi
 
-    # Prompt the user for the new value.
-    shell::colored_echo ">> Enter new value for key '$selected_key':" 33
-    read -r new_value
-    if [ -z "$new_value" ]; then
-        shell::colored_echo "ERR: No new value entered. Update aborted." 196
-        return 1
-    fi
+	# Prompt the user for the new value.
+	shell::colored_echo ">> Enter new value for key '$selected_key':" 33
+	read -r new_value
+	if [ -z "$new_value" ]; then
+		shell::colored_echo "ERR: No new value entered. Update aborted." 196
+		return 1
+	fi
 
-    # Encode the new value using Base64 and remove any newline characters.
-    local encoded_value
-    encoded_value=$(echo -n "$new_value" | base64 | tr -d '\n')
+	# Encode the new value using Base64 and remove any newline characters.
+	local encoded_value
+	encoded_value=$(echo -n "$new_value" | base64 | tr -d '\n')
 
-    local os_type
-    os_type=$(shell::get_os_type)
-    local sed_cmd=""
-    local use_sudo="sudo "
+	local os_type
+	os_type=$(shell::get_os_type)
+	local sed_cmd=""
+	local use_sudo="sudo "
 
-    # Construct the sed command to update the line starting with "selected_key=".
-    if [ "$os_type" = "macos" ]; then
-        # For macOS, use sed -i '' for in-place editing.
-        sed_cmd="${use_sudo}sed -i '' \"s/^${selected_key}=.*/${selected_key}=${encoded_value}/\" \"$SHELL_KEY_CONF_FILE\""
-    else
-        # For Linux, use sed -i for in-place editing.
-        sed_cmd="${use_sudo}sed -i \"s/^${selected_key}=.*/${selected_key}=${encoded_value}/\" \"$SHELL_KEY_CONF_FILE\""
-    fi
+	# Construct the sed command to update the line starting with "selected_key=".
+	if [ "$os_type" = "macos" ]; then
+		# For macOS, use sed -i '' for in-place editing.
+		sed_cmd="${use_sudo}sed -i '' \"s/^${selected_key}=.*/${selected_key}=${encoded_value}/\" \"$SHELL_KEY_CONF_FILE\""
+	else
+		# For Linux, use sed -i for in-place editing.
+		sed_cmd="${use_sudo}sed -i \"s/^${selected_key}=.*/${selected_key}=${encoded_value}/\" \"$SHELL_KEY_CONF_FILE\""
+	fi
 
-    if [ "$dry_run" = "true" ]; then
-        shell::on_evict "$sed_cmd"
-    else
-        shell::run_cmd_eval "$sed_cmd"
-        shell::colored_echo "INFO: Updated configuration for key: $selected_key" 46
-    fi
+	if [ "$dry_run" = "true" ]; then
+		shell::on_evict "$sed_cmd"
+	else
+		shell::run_cmd_eval "$sed_cmd"
+		shell::colored_echo "INFO: Updated configuration for key: $selected_key" 46
+	fi
 }
 
 # shell::exist_key_conf function
@@ -529,31 +529,31 @@ shell::fzf_update_key_conf() {
 # Example:
 #   shell::exist_key_conf my_setting   # Echoes "true" and returns 0 if 'my_setting' exists; otherwise, echoes "false" and returns 1.
 shell::exist_key_conf() {
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_EXIST_KEY_CONF"
-        return 0
-    fi
+	# Check for the help flag (-h)
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_EXIST_KEY_CONF"
+		return 0
+	fi
 
-    if [ $# -lt 1 ]; then
-        echo "Usage: shell::exist_key_conf [-h] <key>"
-        return 1
-    fi
+	if [ $# -lt 1 ]; then
+		echo "Usage: shell::exist_key_conf [-h] <key>"
+		return 1
+	fi
 
-    local key="$1"
+	local key="$1"
 
-    if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
-        shell::colored_echo "ERR: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
-        return 1
-    fi
+	if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
+		shell::colored_echo "ERR: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
+		return 1
+	fi
 
-    if grep -q "^${key}=" "$SHELL_KEY_CONF_FILE"; then
-        echo "true"
-        return 0
-    else
-        echo "false"
-        return 1
-    fi
+	if grep -q "^${key}=" "$SHELL_KEY_CONF_FILE"; then
+		echo "true"
+		return 0
+	else
+		echo "false"
+		return 1
+	fi
 }
 
 # shell::fzf_rename_key_conf function
@@ -578,76 +578,76 @@ shell::exist_key_conf() {
 #   shell::fzf_rename_key_conf         # Interactively select a key and rename it.
 #   shell::fzf_rename_key_conf -n      # Prints the renaming command without executing it.
 shell::fzf_rename_key_conf() {
-    local dry_run="false"
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+	local dry_run="false"
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
 
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_RENAME_KEY_CONF"
-        return 0
-    fi
+	# Check for the help flag (-h)
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_FZF_RENAME_KEY_CONF"
+		return 0
+	fi
 
-    if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
-        shell::colored_echo "ERR: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
-        return 1
-    fi
+	if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
+		shell::colored_echo "ERR: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
+		return 1
+	fi
 
-    shell::install_package fzf
+	shell::install_package fzf
 
-    # Use fzf to select an existing key.
-    local old_key
-    # old_key=$(cut -d '=' -f 1 "$SHELL_KEY_CONF_FILE" | fzf --prompt="Select a key to rename: ")
-    old_key=$(grep -v '^\s*#' "$SHELL_KEY_CONF_FILE" | cut -d '=' -f 1 | fzf --prompt="Select config key to rename: ")
-    if [ -z "$old_key" ]; then
-        shell::colored_echo "ERR: No key selected. Aborting rename." 196
-        return 1
-    fi
+	# Use fzf to select an existing key.
+	local old_key
+	# old_key=$(cut -d '=' -f 1 "$SHELL_KEY_CONF_FILE" | fzf --prompt="Select a key to rename: ")
+	old_key=$(grep -v '^\s*#' "$SHELL_KEY_CONF_FILE" | cut -d '=' -f 1 | fzf --prompt="Select config key to rename: ")
+	if [ -z "$old_key" ]; then
+		shell::colored_echo "ERR: No key selected. Aborting rename." 196
+		return 1
+	fi
 
-    if [ "$(shell::is_protected_key_conf "$old_key")" = "true" ]; then
-        shell::colored_echo "ERR: '$old_key' is a protected key and cannot be modified." 196
-        return 1
-    fi
+	if [ "$(shell::is_protected_key_conf "$old_key")" = "true" ]; then
+		shell::colored_echo "ERR: '$old_key' is a protected key and cannot be modified." 196
+		return 1
+	fi
 
-    # Prompt for the new key name.
-    shell::colored_echo "Enter new key name for '$old_key':" 33
-    read -r new_key
-    if [ -z "$new_key" ]; then
-        shell::colored_echo "ERR: No new key name entered. Aborting rename." 196
-        return 1
-    fi
+	# Prompt for the new key name.
+	shell::colored_echo "Enter new key name for '$old_key':" 33
+	read -r new_key
+	if [ -z "$new_key" ]; then
+		shell::colored_echo "ERR: No new key name entered. Aborting rename." 196
+		return 1
+	fi
 
-    # sanitized key
-    new_key=$(shell::sanitize_upper_var_name "$new_key")
+	# sanitized key
+	new_key=$(shell::sanitize_upper_var_name "$new_key")
 
-    # Check if the new key already exists.
-    local exist
-    exist=$(shell::exist_key_conf "$new_key")
-    if [ "$exist" = "true" ]; then
-        shell::colored_echo "ERR: Key '$new_key' already exists. Aborting rename." 196
-        return 1
-    fi
+	# Check if the new key already exists.
+	local exist
+	exist=$(shell::exist_key_conf "$new_key")
+	if [ "$exist" = "true" ]; then
+		shell::colored_echo "ERR: Key '$new_key' already exists. Aborting rename." 196
+		return 1
+	fi
 
-    local os_type
-    os_type=$(shell::get_os_type)
-    local sed_cmd=""
-    local use_sudo="sudo "
+	local os_type
+	os_type=$(shell::get_os_type)
+	local sed_cmd=""
+	local use_sudo="sudo "
 
-    # Construct the sed command to replace the key name.
-    if [ "$os_type" = "macos" ]; then
-        sed_cmd="${use_sudo}sed -i '' \"s/^${old_key}=/${new_key}=/\" \"$SHELL_KEY_CONF_FILE\""
-    else
-        sed_cmd="${use_sudo}sed -i \"s/^${old_key}=/${new_key}=/\" \"$SHELL_KEY_CONF_FILE\""
-    fi
+	# Construct the sed command to replace the key name.
+	if [ "$os_type" = "macos" ]; then
+		sed_cmd="${use_sudo}sed -i '' \"s/^${old_key}=/${new_key}=/\" \"$SHELL_KEY_CONF_FILE\""
+	else
+		sed_cmd="${use_sudo}sed -i \"s/^${old_key}=/${new_key}=/\" \"$SHELL_KEY_CONF_FILE\""
+	fi
 
-    if [ "$dry_run" = "true" ]; then
-        shell::on_evict "$sed_cmd"
-    else
-        shell::run_cmd_eval "$sed_cmd"
-        shell::colored_echo "INFO: Renamed key '$old_key' to '$new_key'" 46
-    fi
+	if [ "$dry_run" = "true" ]; then
+		shell::on_evict "$sed_cmd"
+	else
+		shell::run_cmd_eval "$sed_cmd"
+		shell::colored_echo "INFO: Renamed key '$old_key' to '$new_key'" 46
+	fi
 }
 
 # shell::is_protected_key_conf function
@@ -670,43 +670,43 @@ shell::fzf_rename_key_conf() {
 #       return 1
 #   fi
 shell::is_protected_key_conf() {
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_IS_PROTECTED_KEY_CONF"
-        return 0
-    fi
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_IS_PROTECTED_KEY_CONF"
+		return 0
+	fi
 
-    if [ $# -lt 1 ]; then
-        echo "Usage: shell::is_protected_key_conf <key>"
-        return 1
-    fi
+	if [ $# -lt 1 ]; then
+		echo "Usage: shell::is_protected_key_conf <key>"
+		return 1
+	fi
 
-    local key="$1"
-    local file="$SHELL_KEY_CONF_FILE_PROTECTED"
+	local key="$1"
+	local file="$SHELL_KEY_CONF_FILE_PROTECTED"
 
-    # Check if the key exists in the protected configuration file.
-    # If the key is found, echo "true" and return 0.
-    if [ -f "$file" ] && grep -q "^${key}$" "$file"; then
-        echo "true"
-        return 0
-    fi
+	# Check if the key exists in the protected configuration file.
+	# If the key is found, echo "true" and return 0.
+	if [ -f "$file" ] && grep -q "^${key}$" "$file"; then
+		echo "true"
+		return 0
+	fi
 
-    # If the key is not found in the protected configuration file,
-    # check against the SHELL_PROTECTED_KEYS array.
-    if [ -z "${SHELL_PROTECTED_KEYS+x}" ]; then
-        shell::colored_echo "ERR: SHELL_PROTECTED_KEYS array is not defined." 196
-        return 1
-    fi
-    # Iterate over the SHELL_PROTECTED_KEYS array to check if the key is protected.
-    # If the key matches any entry in the array, echo "true" and return 0.
-    for protected in "${SHELL_PROTECTED_KEYS[@]}"; do
-        if [ "$protected" = "$key" ]; then
-            echo "true"
-            return 0
-        fi
-    done
+	# If the key is not found in the protected configuration file,
+	# check against the SHELL_PROTECTED_KEYS array.
+	if [ -z "${SHELL_PROTECTED_KEYS+x}" ]; then
+		shell::colored_echo "ERR: SHELL_PROTECTED_KEYS array is not defined." 196
+		return 1
+	fi
+	# Iterate over the SHELL_PROTECTED_KEYS array to check if the key is protected.
+	# If the key matches any entry in the array, echo "true" and return 0.
+	for protected in "${SHELL_PROTECTED_KEYS[@]}"; do
+		if [ "$protected" = "$key" ]; then
+			echo "true"
+			return 0
+		fi
+	done
 
-    echo "false"
-    return 1
+	echo "false"
+	return 1
 }
 
 # shell::fzf_add_group_key_conf function
@@ -726,87 +726,87 @@ shell::is_protected_key_conf() {
 #   shell::fzf_add_group_key_conf         # Prompts for a group name and lets you select keys to group.
 #   shell::fzf_add_group_key_conf -n      # Prints the command for creating/updating the group without executing it.
 shell::fzf_add_group_key_conf() {
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_ADD_GROUP_KEY_CONF"
-        return 0
-    fi
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_FZF_ADD_GROUP_KEY_CONF"
+		return 0
+	fi
 
-    local dry_run="false"
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+	local dry_run="false"
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
 
-    # Ensure the group configuration file exists.
-    shell::create_file_if_not_exists "$SHELL_GROUP_CONF_FILE"
-    shell::unlock_permissions "$SHELL_GROUP_CONF_FILE"
+	# Ensure the group configuration file exists.
+	shell::create_file_if_not_exists "$SHELL_GROUP_CONF_FILE"
+	shell::unlock_permissions "$SHELL_GROUP_CONF_FILE"
 
-    # Prompt the user for a group name.
-    shell::colored_echo "[e] Enter group name:" 208
-    read -r group_name
-    if [ -z "$group_name" ]; then
-        shell::colored_echo "ERR: No group name entered. Aborting." 196
-        return 1
-    fi
+	# Prompt the user for a group name.
+	shell::colored_echo "[e] Enter group name:" 208
+	read -r group_name
+	if [ -z "$group_name" ]; then
+		shell::colored_echo "ERR: No group name entered. Aborting." 196
+		return 1
+	fi
 
-    # Ensure the individual configuration file exists.
-    if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
-        shell::colored_echo "ERR: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
-        return 1
-    fi
+	# Ensure the individual configuration file exists.
+	if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
+		shell::colored_echo "ERR: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
+		return 1
+	fi
 
-    # Ensure fzf is installed.
-    shell::install_package fzf
+	# Ensure fzf is installed.
+	shell::install_package fzf
 
-    # Sanitize the group name to ensure it is a valid variable name.
-    # This is done to avoid issues with special characters or spaces in the group name.
-    # shell::sanitize_upper_var_name function is expected to be defined elsewhere in the script.
-    group_name=$(shell::sanitize_upper_var_name "$group_name")
+	# Sanitize the group name to ensure it is a valid variable name.
+	# This is done to avoid issues with special characters or spaces in the group name.
+	# shell::sanitize_upper_var_name function is expected to be defined elsewhere in the script.
+	group_name=$(shell::sanitize_upper_var_name "$group_name")
 
-    # Use fzf with multi-select to choose keys from SHELL_KEY_CONF_FILE.
-    local selected_keys
-    # selected_keys=$(cut -d '=' -f 1 "$SHELL_KEY_CONF_FILE" | fzf --multi --prompt="Select config keys for group '$group_name': ")
-    selected_keys=$(grep -v '^\s*#' "$SHELL_KEY_CONF_FILE" | cut -d '=' -f 1 | fzf --multi --prompt="Select config keys for group '$group_name': ")
+	# Use fzf with multi-select to choose keys from SHELL_KEY_CONF_FILE.
+	local selected_keys
+	# selected_keys=$(cut -d '=' -f 1 "$SHELL_KEY_CONF_FILE" | fzf --multi --prompt="Select config keys for group '$group_name': ")
+	selected_keys=$(grep -v '^\s*#' "$SHELL_KEY_CONF_FILE" | cut -d '=' -f 1 | fzf --multi --prompt="Select config keys for group '$group_name': ")
 
-    # Check if any keys were selected.
-    # If no keys were selected, print an error message and return.
-    if [ -z "$selected_keys" ]; then
-        shell::colored_echo "ERR: No keys selected. Aborting group creation." 196
-        return 1
-    fi
+	# Check if any keys were selected.
+	# If no keys were selected, print an error message and return.
+	if [ -z "$selected_keys" ]; then
+		shell::colored_echo "ERR: No keys selected. Aborting group creation." 196
+		return 1
+	fi
 
-    # Convert the multi-line selection to a comma-separated list.
-    local keys_csv
-    keys_csv=$(echo "$selected_keys" | paste -sd "," -)
+	# Convert the multi-line selection to a comma-separated list.
+	local keys_csv
+	keys_csv=$(echo "$selected_keys" | paste -sd "," -)
 
-    # Construct the group entry in the format: group_name=key1,key2,...,keyN
-    local group_entry="${group_name}=${keys_csv}"
+	# Construct the group entry in the format: group_name=key1,key2,...,keyN
+	local group_entry="${group_name}=${keys_csv}"
 
-    # If the group already exists, update it; otherwise, append it.
-    if grep -q "^${group_name}=" "$SHELL_GROUP_CONF_FILE"; then
-        local os_type
-        os_type=$(shell::get_os_type)
-        local sed_cmd=""
-        if [ "$os_type" = "macos" ]; then
-            sed_cmd="sed -i '' \"s/^${group_name}=.*/${group_entry}/\" \"$SHELL_GROUP_CONF_FILE\""
-        else
-            sed_cmd="sed -i \"s/^${group_name}=.*/${group_entry}/\" \"$SHELL_GROUP_CONF_FILE\""
-        fi
-        if [ "$dry_run" = "true" ]; then
-            shell::on_evict "$sed_cmd"
-        else
-            shell::run_cmd_eval "$sed_cmd"
-            shell::colored_echo "INFO: Updated group '$group_name' with keys: $keys_csv" 46
-        fi
-    else
-        local cmd="echo \"$group_entry\" >> \"$SHELL_GROUP_CONF_FILE\""
-        if [ "$dry_run" = "true" ]; then
-            shell::on_evict "$cmd"
-        else
-            shell::run_cmd_eval "$cmd"
-            shell::colored_echo "INFO: Created group '$group_name' with keys: $keys_csv" 46
-        fi
-    fi
+	# If the group already exists, update it; otherwise, append it.
+	if grep -q "^${group_name}=" "$SHELL_GROUP_CONF_FILE"; then
+		local os_type
+		os_type=$(shell::get_os_type)
+		local sed_cmd=""
+		if [ "$os_type" = "macos" ]; then
+			sed_cmd="sed -i '' \"s/^${group_name}=.*/${group_entry}/\" \"$SHELL_GROUP_CONF_FILE\""
+		else
+			sed_cmd="sed -i \"s/^${group_name}=.*/${group_entry}/\" \"$SHELL_GROUP_CONF_FILE\""
+		fi
+		if [ "$dry_run" = "true" ]; then
+			shell::on_evict "$sed_cmd"
+		else
+			shell::run_cmd_eval "$sed_cmd"
+			shell::colored_echo "INFO: Updated group '$group_name' with keys: $keys_csv" 46
+		fi
+	else
+		local cmd="echo \"$group_entry\" >> \"$SHELL_GROUP_CONF_FILE\""
+		if [ "$dry_run" = "true" ]; then
+			shell::on_evict "$cmd"
+		else
+			shell::run_cmd_eval "$cmd"
+			shell::colored_echo "INFO: Created group '$group_name' with keys: $keys_csv" 46
+		fi
+	fi
 }
 
 # shell::read_group_key_conf function
@@ -826,87 +826,87 @@ shell::fzf_add_group_key_conf() {
 # Example:
 #   shell::read_group_key_conf my_group   # Displays the configurations for the keys in the group 'my_group'.
 shell::read_group_key_conf() {
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_READ_GROUP_KEY_CONF"
-        return 0
-    fi
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_READ_GROUP_KEY_CONF"
+		return 0
+	fi
 
-    if [ $# -lt 1 ]; then
-        echo "Usage: shell::read_group_key_conf [-h] <group_name>"
-        return 1
-    fi
+	if [ $# -lt 1 ]; then
+		echo "Usage: shell::read_group_key_conf [-h] <group_name>"
+		return 1
+	fi
 
-    local group_name="$1"
+	local group_name="$1"
 
-    # Check if the group configuration file exists.
-    if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
-        shell::colored_echo "ERR: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
-        return 1
-    fi
+	# Check if the group configuration file exists.
+	if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
+		shell::colored_echo "ERR: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
+		return 1
+	fi
 
-    # Sanitize the group name to ensure it is a valid variable name.
-    # This is done to avoid issues with special characters or spaces in the group name.
-    # shell::sanitize_upper_var_name function is expected to be defined elsewhere in the script.
-    group_name=$(shell::sanitize_upper_var_name "$group_name")
+	# Sanitize the group name to ensure it is a valid variable name.
+	# This is done to avoid issues with special characters or spaces in the group name.
+	# shell::sanitize_upper_var_name function is expected to be defined elsewhere in the script.
+	group_name=$(shell::sanitize_upper_var_name "$group_name")
 
-    # Retrieve the group entry for the specified group name.
-    local group_entry
-    group_entry=$(grep "^${group_name}=" "$SHELL_GROUP_CONF_FILE")
-    if [ -z "$group_entry" ]; then
-        shell::colored_echo "ERR: Group '$group_name' not found." 196
-        return 1
-    fi
+	# Retrieve the group entry for the specified group name.
+	local group_entry
+	group_entry=$(grep "^${group_name}=" "$SHELL_GROUP_CONF_FILE")
+	if [ -z "$group_entry" ]; then
+		shell::colored_echo "ERR: Group '$group_name' not found." 196
+		return 1
+	fi
 
-    # Extract the comma-separated list of keys.
-    local keys_csv
-    keys_csv=$(echo "$group_entry" | cut -d '=' -f 2-)
-    if [ -z "$keys_csv" ]; then
-        shell::colored_echo "ERR: No keys defined in group '$group_name'." 196
-        return 1
-    fi
+	# Extract the comma-separated list of keys.
+	local keys_csv
+	keys_csv=$(echo "$group_entry" | cut -d '=' -f 2-)
+	if [ -z "$keys_csv" ]; then
+		shell::colored_echo "ERR: No keys defined in group '$group_name'." 196
+		return 1
+	fi
 
-    local os_type
-    os_type=$(shell::get_os_type)
-    local json_obj="{"
-    local first=1
+	local os_type
+	os_type=$(shell::get_os_type)
+	local json_obj="{"
+	local first=1
 
-    # Convert the comma-separated keys to an array in a way compatible with both Bash and zsh.
-    if [ -n "$BASH_VERSION" ]; then
-        IFS=',' read -r -a keys_array <<<"$keys_csv"
-    else
-        IFS=',' read -rA keys_array <<<"$keys_csv"
-    fi
+	# Convert the comma-separated keys to an array in a way compatible with both Bash and zsh.
+	if [ -n "$BASH_VERSION" ]; then
+		IFS=',' read -r -a keys_array <<<"$keys_csv"
+	else
+		IFS=',' read -rA keys_array <<<"$keys_csv"
+	fi
 
-    for key in "${keys_array[@]}"; do
-        # Retrieve the configuration entry from SHELL_KEY_CONF_FILE for each key.
-        local conf_line
-        conf_line=$(grep "^${key}=" "$SHELL_KEY_CONF_FILE")
-        if [ -z "$conf_line" ]; then
-            continue
-        fi
+	for key in "${keys_array[@]}"; do
+		# Retrieve the configuration entry from SHELL_KEY_CONF_FILE for each key.
+		local conf_line
+		conf_line=$(grep "^${key}=" "$SHELL_KEY_CONF_FILE")
+		if [ -z "$conf_line" ]; then
+			continue
+		fi
 
-        local encoded_value
-        encoded_value=$(echo "$conf_line" | cut -d '=' -f 2-)
-        local decoded_value
-        if [ "$os_type" = "macos" ]; then
-            decoded_value=$(echo "$encoded_value" | base64 -D)
-        else
-            decoded_value=$(echo "$encoded_value" | base64 -d)
-        fi
+		local encoded_value
+		encoded_value=$(echo "$conf_line" | cut -d '=' -f 2-)
+		local decoded_value
+		if [ "$os_type" = "macos" ]; then
+			decoded_value=$(echo "$encoded_value" | base64 -D)
+		else
+			decoded_value=$(echo "$encoded_value" | base64 -d)
+		fi
 
-        # Append a comma if not the first key.
-        if [ $first -eq 0 ]; then
-            json_obj+=","
-        else
-            first=0
-        fi
+		# Append a comma if not the first key.
+		if [ $first -eq 0 ]; then
+			json_obj+=","
+		else
+			first=0
+		fi
 
-        json_obj+="\"$key\":\"$decoded_value\""
-    done
+		json_obj+="\"$key\":\"$decoded_value\""
+	done
 
-    json_obj+="}"
-    shell::colored_echo "$json_obj" 33
-    shell::clip_value "$json_obj"
+	json_obj+="}"
+	shell::colored_echo "$json_obj" 33
+	shell::clip_value "$json_obj"
 }
 
 # shell::fzf_remove_group_key_conf function
@@ -929,48 +929,48 @@ shell::read_group_key_conf() {
 #   shell::fzf_remove_group_key_conf         # Interactively select a group and remove its entry.
 #   shell::fzf_remove_group_key_conf -n      # Prints the removal command without executing it.
 shell::fzf_remove_group_key_conf() {
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_REMOVE_GROUP_KEY_CONF"
-        return 0
-    fi
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_FZF_REMOVE_GROUP_KEY_CONF"
+		return 0
+	fi
 
-    local dry_run="false"
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+	local dry_run="false"
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
 
-    if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
-        shell::colored_echo "ERR: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
-        return 1
-    fi
+	if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
+		shell::colored_echo "ERR: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
+		return 1
+	fi
 
-    shell::install_package fzf
+	shell::install_package fzf
 
-    local selected_group
-    selected_group=$(cut -d '=' -f 1 "$SHELL_GROUP_CONF_FILE" | fzf --prompt="Select a group to remove: ")
-    if [ -z "$selected_group" ]; then
-        shell::colored_echo "ERR: No group selected." 196
-        return 1
-    fi
+	local selected_group
+	selected_group=$(cut -d '=' -f 1 "$SHELL_GROUP_CONF_FILE" | fzf --prompt="Select a group to remove: ")
+	if [ -z "$selected_group" ]; then
+		shell::colored_echo "ERR: No group selected." 196
+		return 1
+	fi
 
-    local os_type
-    os_type=$(shell::get_os_type)
-    local sed_cmd=""
-    local use_sudo="sudo "
+	local os_type
+	os_type=$(shell::get_os_type)
+	local sed_cmd=""
+	local use_sudo="sudo "
 
-    if [ "$os_type" = "macos" ]; then
-        sed_cmd="${use_sudo}sed -i '' \"/^${selected_group}=/d\" \"$SHELL_GROUP_CONF_FILE\""
-    else
-        sed_cmd="${use_sudo}sed -i \"/^${selected_group}=/d\" \"$SHELL_GROUP_CONF_FILE\""
-    fi
+	if [ "$os_type" = "macos" ]; then
+		sed_cmd="${use_sudo}sed -i '' \"/^${selected_group}=/d\" \"$SHELL_GROUP_CONF_FILE\""
+	else
+		sed_cmd="${use_sudo}sed -i \"/^${selected_group}=/d\" \"$SHELL_GROUP_CONF_FILE\""
+	fi
 
-    if [ "$dry_run" = "true" ]; then
-        shell::on_evict "$sed_cmd"
-    else
-        shell::run_cmd_eval "$sed_cmd"
-        shell::colored_echo "INFO: Removed group: $selected_group" 46
-    fi
+	if [ "$dry_run" = "true" ]; then
+		shell::on_evict "$sed_cmd"
+	else
+		shell::run_cmd_eval "$sed_cmd"
+		shell::colored_echo "INFO: Removed group: $selected_group" 46
+	fi
 }
 
 # shell::fzf_update_group_key_conf function
@@ -992,68 +992,68 @@ shell::fzf_remove_group_key_conf() {
 #   shell::fzf_update_group_key_conf         # Interactively select a group, update its keys, and update the group entry.
 #   shell::fzf_update_group_key_conf -n      # Prints the update command without executing it.
 shell::fzf_update_group_key_conf() {
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_UPDATE_GROUP_KEY_CONF"
-        return 0
-    fi
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_FZF_UPDATE_GROUP_KEY_CONF"
+		return 0
+	fi
 
-    local dry_run="false"
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+	local dry_run="false"
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
 
-    if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
-        shell::colored_echo "ERR: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
-        return 1
-    fi
+	if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
+		shell::colored_echo "ERR: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
+		return 1
+	fi
 
-    shell::install_package fzf
+	shell::install_package fzf
 
-    # Select the group to update.
-    local selected_group
-    selected_group=$(cut -d '=' -f 1 "$SHELL_GROUP_CONF_FILE" | fzf --prompt="Select a group to update: ")
-    if [ -z "$selected_group" ]; then
-        shell::colored_echo "ERR: No group selected." 196
-        return 1
-    fi
+	# Select the group to update.
+	local selected_group
+	selected_group=$(cut -d '=' -f 1 "$SHELL_GROUP_CONF_FILE" | fzf --prompt="Select a group to update: ")
+	if [ -z "$selected_group" ]; then
+		shell::colored_echo "ERR: No group selected." 196
+		return 1
+	fi
 
-    # Ensure the individual configuration file exists.
-    if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
-        shell::colored_echo "ERR: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
-        return 1
-    fi
+	# Ensure the individual configuration file exists.
+	if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
+		shell::colored_echo "ERR: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
+		return 1
+	fi
 
-    # Let the user select new keys for the group from all available keys.
-    local new_keys
-    # new_keys=$(cut -d '=' -f 1 "$SHELL_KEY_CONF_FILE" | fzf --multi --prompt="Select new keys for group '$selected_group': " | paste -sd "," -)
-    new_keys=$(grep -v '^\s*#' "$SHELL_KEY_CONF_FILE" | cut -d '=' -f 1 | fzf --multi --prompt="Select new keys for group '$selected_group': " | paste -sd "," -)
+	# Let the user select new keys for the group from all available keys.
+	local new_keys
+	# new_keys=$(cut -d '=' -f 1 "$SHELL_KEY_CONF_FILE" | fzf --multi --prompt="Select new keys for group '$selected_group': " | paste -sd "," -)
+	new_keys=$(grep -v '^\s*#' "$SHELL_KEY_CONF_FILE" | cut -d '=' -f 1 | fzf --multi --prompt="Select new keys for group '$selected_group': " | paste -sd "," -)
 
-    # Check if any keys were selected.
-    # If no keys were selected, print an error message and return.
-    if [ -z "$new_keys" ]; then
-        shell::colored_echo "ERR: No keys selected. Aborting update." 196
-        return 1
-    fi
+	# Check if any keys were selected.
+	# If no keys were selected, print an error message and return.
+	if [ -z "$new_keys" ]; then
+		shell::colored_echo "ERR: No keys selected. Aborting update." 196
+		return 1
+	fi
 
-    local new_group_entry="${selected_group}=${new_keys}"
-    local os_type
-    os_type=$(shell::get_os_type)
-    local sed_cmd=""
-    local use_sudo="sudo "
+	local new_group_entry="${selected_group}=${new_keys}"
+	local os_type
+	os_type=$(shell::get_os_type)
+	local sed_cmd=""
+	local use_sudo="sudo "
 
-    if [ "$os_type" = "macos" ]; then
-        sed_cmd="${use_sudo}sed -i '' \"s/^${selected_group}=.*/${new_group_entry}/\" \"$SHELL_GROUP_CONF_FILE\""
-    else
-        sed_cmd="${use_sudo}sed -i \"s/^${selected_group}=.*/${new_group_entry}/\" \"$SHELL_GROUP_CONF_FILE\""
-    fi
+	if [ "$os_type" = "macos" ]; then
+		sed_cmd="${use_sudo}sed -i '' \"s/^${selected_group}=.*/${new_group_entry}/\" \"$SHELL_GROUP_CONF_FILE\""
+	else
+		sed_cmd="${use_sudo}sed -i \"s/^${selected_group}=.*/${new_group_entry}/\" \"$SHELL_GROUP_CONF_FILE\""
+	fi
 
-    if [ "$dry_run" = "true" ]; then
-        shell::on_evict "$sed_cmd"
-    else
-        shell::run_cmd_eval "$sed_cmd"
-        shell::colored_echo "INFO: Updated group '$selected_group' with new keys: $new_keys" 46
-    fi
+	if [ "$dry_run" = "true" ]; then
+		shell::on_evict "$sed_cmd"
+	else
+		shell::run_cmd_eval "$sed_cmd"
+		shell::colored_echo "INFO: Updated group '$selected_group' with new keys: $new_keys" 46
+	fi
 }
 
 # shell::fzf_rename_group_key_conf function
@@ -1078,63 +1078,63 @@ shell::fzf_update_group_key_conf() {
 #   shell::fzf_rename_group_key_conf         # Interactively select a group and rename it.
 #   shell::fzf_rename_group_key_conf -n      # Prints the renaming command without executing it.
 shell::fzf_rename_group_key_conf() {
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_RENAME_GROUP_KEY_CONF"
-        return 0
-    fi
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_FZF_RENAME_GROUP_KEY_CONF"
+		return 0
+	fi
 
-    local dry_run="false"
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+	local dry_run="false"
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
 
-    if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
-        shell::colored_echo "ERR: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
-        return 1
-    fi
+	if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
+		shell::colored_echo "ERR: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
+		return 1
+	fi
 
-    shell::install_package fzf
+	shell::install_package fzf
 
-    # Use fzf to let the user select an existing group.
-    local old_group
-    old_group=$(cut -d '=' -f 1 "$SHELL_GROUP_CONF_FILE" | fzf --prompt="Select group to rename: ")
-    if [ -z "$old_group" ]; then
-        shell::colored_echo "ERR: No group selected. Aborting rename." 196
-        return 1
-    fi
+	# Use fzf to let the user select an existing group.
+	local old_group
+	old_group=$(cut -d '=' -f 1 "$SHELL_GROUP_CONF_FILE" | fzf --prompt="Select group to rename: ")
+	if [ -z "$old_group" ]; then
+		shell::colored_echo "ERR: No group selected. Aborting rename." 196
+		return 1
+	fi
 
-    # Prompt for the new group name.
-    shell::colored_echo "[e] Enter new name for group '$old_group':" 208
-    read -r new_group
-    if [ -z "$new_group" ]; then
-        shell::colored_echo "ERR: No new group name entered. Aborting rename." 196
-        return 1
-    fi
+	# Prompt for the new group name.
+	shell::colored_echo "[e] Enter new name for group '$old_group':" 208
+	read -r new_group
+	if [ -z "$new_group" ]; then
+		shell::colored_echo "ERR: No new group name entered. Aborting rename." 196
+		return 1
+	fi
 
-    # Sanitize the new group name to ensure it is a valid variable name.
-    # This is done to avoid issues with special characters or spaces in the group name.
-    # shell::sanitize_upper_var_name function is expected to be defined elsewhere in the script.
-    new_group=$(shell::sanitize_upper_var_name "$new_group")
+	# Sanitize the new group name to ensure it is a valid variable name.
+	# This is done to avoid issues with special characters or spaces in the group name.
+	# shell::sanitize_upper_var_name function is expected to be defined elsewhere in the script.
+	new_group=$(shell::sanitize_upper_var_name "$new_group")
 
-    # Construct the sed command to update the group name while preserving the keys.
-    local os_type
-    os_type=$(shell::get_os_type)
-    local sed_cmd=""
-    local use_sudo="sudo "
+	# Construct the sed command to update the group name while preserving the keys.
+	local os_type
+	os_type=$(shell::get_os_type)
+	local sed_cmd=""
+	local use_sudo="sudo "
 
-    if [ "$os_type" = "macos" ]; then
-        sed_cmd="${use_sudo}sed -i '' \"s/^${old_group}=/${new_group}=/\" \"$SHELL_GROUP_CONF_FILE\""
-    else
-        sed_cmd="${use_sudo}sed -i \"s/^${old_group}=/${new_group}=/\" \"$SHELL_GROUP_CONF_FILE\""
-    fi
+	if [ "$os_type" = "macos" ]; then
+		sed_cmd="${use_sudo}sed -i '' \"s/^${old_group}=/${new_group}=/\" \"$SHELL_GROUP_CONF_FILE\""
+	else
+		sed_cmd="${use_sudo}sed -i \"s/^${old_group}=/${new_group}=/\" \"$SHELL_GROUP_CONF_FILE\""
+	fi
 
-    if [ "$dry_run" = "true" ]; then
-        shell::on_evict "$sed_cmd"
-    else
-        shell::run_cmd_eval "$sed_cmd"
-        shell::colored_echo "INFO: Renamed group '$old_group' to '$new_group'" 46
-    fi
+	if [ "$dry_run" = "true" ]; then
+		shell::on_evict "$sed_cmd"
+	else
+		shell::run_cmd_eval "$sed_cmd"
+		shell::colored_echo "INFO: Renamed group '$old_group' to '$new_group'" 46
+	fi
 }
 
 # shell::list_group_key_conf function
@@ -1153,25 +1153,25 @@ shell::fzf_rename_group_key_conf() {
 # Example:
 #   shell::list_group_key_conf       # Displays all group names.
 shell::list_group_key_conf() {
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_LIST_GROUP_KEY_CONF"
-        return 0
-    fi
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_LIST_GROUP_KEY_CONF"
+		return 0
+	fi
 
-    if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
-        shell::colored_echo "ERR: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
-        return 1
-    fi
+	if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
+		shell::colored_echo "ERR: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
+		return 1
+	fi
 
-    # Extract group names from the configuration file.
-    local groups
-    groups=$(cut -d '=' -f 1 "$SHELL_GROUP_CONF_FILE")
-    if [ -z "$groups" ]; then
-        shell::colored_echo "ERR: No groups found in '$SHELL_GROUP_CONF_FILE'." 196
-        return 1
-    fi
+	# Extract group names from the configuration file.
+	local groups
+	groups=$(cut -d '=' -f 1 "$SHELL_GROUP_CONF_FILE")
+	if [ -z "$groups" ]; then
+		shell::colored_echo "ERR: No groups found in '$SHELL_GROUP_CONF_FILE'." 196
+		return 1
+	fi
 
-    echo "$groups"
+	echo "$groups"
 }
 
 # shell::fzf_view_group_key_conf function
@@ -1194,84 +1194,84 @@ shell::list_group_key_conf() {
 # Example:
 #   shell::fzf_view_group_key_conf   # Prompts to select a group, then a key within that group, and displays the decoded value.
 shell::fzf_view_group_key_conf() {
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_VIEW_GROUP_KEY_CONF"
-        return 0
-    fi
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_FZF_VIEW_GROUP_KEY_CONF"
+		return 0
+	fi
 
-    # Ensure the group configuration file exists.
-    if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
-        shell::colored_echo "ERR: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
-        return 1
-    fi
+	# Ensure the group configuration file exists.
+	if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
+		shell::colored_echo "ERR: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
+		return 1
+	fi
 
-    shell::install_package fzf
+	shell::install_package fzf
 
-    # Extract group names from SHELL_GROUP_CONF_FILE and let the user select one.
-    local groups
-    groups=$(cut -d '=' -f 1 "$SHELL_GROUP_CONF_FILE")
-    local selected_group
-    selected_group=$(echo "$groups" | fzf --prompt="Select a group name: ")
-    if [ -z "$selected_group" ]; then
-        shell::colored_echo "ERR: No group selected." 196
-        return 1
-    fi
+	# Extract group names from SHELL_GROUP_CONF_FILE and let the user select one.
+	local groups
+	groups=$(cut -d '=' -f 1 "$SHELL_GROUP_CONF_FILE")
+	local selected_group
+	selected_group=$(echo "$groups" | fzf --prompt="Select a group name: ")
+	if [ -z "$selected_group" ]; then
+		shell::colored_echo "ERR: No group selected." 196
+		return 1
+	fi
 
-    # Retrieve the group entry for the selected group.
-    local group_entry
-    group_entry=$(grep "^${selected_group}=" "$SHELL_GROUP_CONF_FILE")
-    if [ -z "$group_entry" ]; then
-        shell::colored_echo "ERR: Group '$selected_group' not found in configuration." 196
-        return 1
-    fi
+	# Retrieve the group entry for the selected group.
+	local group_entry
+	group_entry=$(grep "^${selected_group}=" "$SHELL_GROUP_CONF_FILE")
+	if [ -z "$group_entry" ]; then
+		shell::colored_echo "ERR: Group '$selected_group' not found in configuration." 196
+		return 1
+	fi
 
-    # Extract the comma-separated list of keys.
-    local keys_csv
-    keys_csv=$(echo "$group_entry" | cut -d '=' -f 2-)
-    if [ -z "$keys_csv" ]; then
-        shell::colored_echo "ERR: No keys defined in group '$selected_group'." 196
-        return 1
-    fi
+	# Extract the comma-separated list of keys.
+	local keys_csv
+	keys_csv=$(echo "$group_entry" | cut -d '=' -f 2-)
+	if [ -z "$keys_csv" ]; then
+		shell::colored_echo "ERR: No keys defined in group '$selected_group'." 196
+		return 1
+	fi
 
-    # Convert the comma-separated keys into a list (one per line) and use fzf to select one key.
-    local selected_key
-    selected_key=$(echo "$keys_csv" | tr ',' '\n' | fzf --prompt="Select a key from group '$selected_group': ")
-    if [ -z "$selected_key" ]; then
-        shell::colored_echo "ERR: No key selected from group '$selected_group'." 196
-        return 1
-    fi
+	# Convert the comma-separated keys into a list (one per line) and use fzf to select one key.
+	local selected_key
+	selected_key=$(echo "$keys_csv" | tr ',' '\n' | fzf --prompt="Select a key from group '$selected_group': ")
+	if [ -z "$selected_key" ]; then
+		shell::colored_echo "ERR: No key selected from group '$selected_group'." 196
+		return 1
+	fi
 
-    # Ensure the individual configuration file exists.
-    if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
-        shell::colored_echo "ERR: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
-        return 1
-    fi
+	# Ensure the individual configuration file exists.
+	if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
+		shell::colored_echo "ERR: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
+		return 1
+	fi
 
-    # Retrieve the configuration entry corresponding to the selected key.
-    local conf_line
-    conf_line=$(grep "^${selected_key}=" "$SHELL_KEY_CONF_FILE")
-    if [ -z "$conf_line" ]; then
-        shell::colored_echo "ERR: Key '$selected_key' not found in configuration." 196
-        return 1
-    fi
+	# Retrieve the configuration entry corresponding to the selected key.
+	local conf_line
+	conf_line=$(grep "^${selected_key}=" "$SHELL_KEY_CONF_FILE")
+	if [ -z "$conf_line" ]; then
+		shell::colored_echo "ERR: Key '$selected_key' not found in configuration." 196
+		return 1
+	fi
 
-    # Extract the encoded value.
-    local encoded_value
-    encoded_value=$(echo "$conf_line" | cut -d '=' -f 2-)
+	# Extract the encoded value.
+	local encoded_value
+	encoded_value=$(echo "$conf_line" | cut -d '=' -f 2-)
 
-    # Decode the value based on the operating system.
-    local os_type
-    os_type=$(shell::get_os_type)
-    local decoded_value
-    if [ "$os_type" = "macos" ]; then
-        decoded_value=$(echo "$encoded_value" | base64 -D)
-    else
-        decoded_value=$(echo "$encoded_value" | base64 -d)
-    fi
+	# Decode the value based on the operating system.
+	local os_type
+	os_type=$(shell::get_os_type)
+	local decoded_value
+	if [ "$os_type" = "macos" ]; then
+		decoded_value=$(echo "$encoded_value" | base64 -D)
+	else
+		decoded_value=$(echo "$encoded_value" | base64 -d)
+	fi
 
-    shell::colored_echo "[g] Group: $selected_group" 33
-    shell::colored_echo "[k] Key: $selected_key" 33
-    shell::clip_value "$decoded_value"
+	shell::colored_echo "[g] Group: $selected_group" 33
+	shell::colored_echo "[k] Key: $selected_key" 33
+	shell::clip_value "$decoded_value"
 }
 
 # shell::fzf_clone_group_key_conf function
@@ -1296,79 +1296,79 @@ shell::fzf_view_group_key_conf() {
 #   shell::fzf_clone_group_key_conf         # Interactively select a group and create a clone with a new group name.
 #   shell::fzf_clone_group_key_conf -n      # Prints the cloning command without executing it.
 shell::fzf_clone_group_key_conf() {
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_CLONE_GROUP_KEY_CONF"
-        return 0
-    fi
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_FZF_CLONE_GROUP_KEY_CONF"
+		return 0
+	fi
 
-    local dry_run="false"
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+	local dry_run="false"
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
 
-    # Ensure the group configuration file exists.
-    if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
-        shell::colored_echo "ERR: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
-        return 1
-    fi
+	# Ensure the group configuration file exists.
+	if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
+		shell::colored_echo "ERR: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
+		return 1
+	fi
 
-    shell::install_package fzf
+	shell::install_package fzf
 
-    # Use fzf to let the user select an existing group.
-    local selected_group
-    selected_group=$(cut -d '=' -f 1 "$SHELL_GROUP_CONF_FILE" | fzf --prompt="Select a group to clone: ")
-    if [ -z "$selected_group" ]; then
-        shell::colored_echo "ERR: No group selected. Aborting clone." 196
-        return 1
-    fi
+	# Use fzf to let the user select an existing group.
+	local selected_group
+	selected_group=$(cut -d '=' -f 1 "$SHELL_GROUP_CONF_FILE" | fzf --prompt="Select a group to clone: ")
+	if [ -z "$selected_group" ]; then
+		shell::colored_echo "ERR: No group selected. Aborting clone." 196
+		return 1
+	fi
 
-    # Retrieve the group entry to get the keys.
-    local group_entry
-    group_entry=$(grep "^${selected_group}=" "$SHELL_GROUP_CONF_FILE")
-    if [ -z "$group_entry" ]; then
-        shell::colored_echo "ERR: Group '$selected_group' not found." 196
-        return 1
-    fi
+	# Retrieve the group entry to get the keys.
+	local group_entry
+	group_entry=$(grep "^${selected_group}=" "$SHELL_GROUP_CONF_FILE")
+	if [ -z "$group_entry" ]; then
+		shell::colored_echo "ERR: Group '$selected_group' not found." 196
+		return 1
+	fi
 
-    local keys_csv
-    keys_csv=$(echo "$group_entry" | cut -d '=' -f 2-)
-    if [ -z "$keys_csv" ]; then
-        shell::colored_echo "ERR: No keys defined in group '$selected_group'." 196
-        return 1
-    fi
+	local keys_csv
+	keys_csv=$(echo "$group_entry" | cut -d '=' -f 2-)
+	if [ -z "$keys_csv" ]; then
+		shell::colored_echo "ERR: No keys defined in group '$selected_group'." 196
+		return 1
+	fi
 
-    # Prompt for the new group name.
-    shell::colored_echo "[e] Enter new group name for the clone of '$selected_group':" 208
-    read -r new_group
-    if [ -z "$new_group" ]; then
-        shell::colored_echo "ERR: No new group name entered. Aborting clone." 196
-        return 1
-    fi
+	# Prompt for the new group name.
+	shell::colored_echo "[e] Enter new group name for the clone of '$selected_group':" 208
+	read -r new_group
+	if [ -z "$new_group" ]; then
+		shell::colored_echo "ERR: No new group name entered. Aborting clone." 196
+		return 1
+	fi
 
-    # Sanitize the new group name to ensure it is a valid variable name.
-    # This is done to avoid issues with special characters or spaces in the group name.
-    # shell::sanitize_upper_var_name function is expected to be defined elsewhere in the script.
-    new_group=$(shell::sanitize_upper_var_name "$new_group")
+	# Sanitize the new group name to ensure it is a valid variable name.
+	# This is done to avoid issues with special characters or spaces in the group name.
+	# shell::sanitize_upper_var_name function is expected to be defined elsewhere in the script.
+	new_group=$(shell::sanitize_upper_var_name "$new_group")
 
-    # Check if the new group name already exists.
-    if grep -q "^${new_group}=" "$SHELL_GROUP_CONF_FILE"; then
-        shell::colored_echo "ERR: Group '$new_group' already exists." 196
-        return 1
-    fi
+	# Check if the new group name already exists.
+	if grep -q "^${new_group}=" "$SHELL_GROUP_CONF_FILE"; then
+		shell::colored_echo "ERR: Group '$new_group' already exists." 196
+		return 1
+	fi
 
-    # Construct the new group entry.
-    local new_group_entry="${new_group}=${keys_csv}"
+	# Construct the new group entry.
+	local new_group_entry="${new_group}=${keys_csv}"
 
-    # Build the command to append the new group entry.
-    local cmd="echo \"$new_group_entry\" >> \"$SHELL_GROUP_CONF_FILE\""
+	# Build the command to append the new group entry.
+	local cmd="echo \"$new_group_entry\" >> \"$SHELL_GROUP_CONF_FILE\""
 
-    if [ "$dry_run" = "true" ]; then
-        shell::on_evict "$cmd"
-    else
-        shell::run_cmd_eval "$cmd"
-        shell::colored_echo "INFO: Created new group '$new_group' as a clone of '$selected_group' with keys: $keys_csv" 46
-    fi
+	if [ "$dry_run" = "true" ]; then
+		shell::on_evict "$cmd"
+	else
+		shell::run_cmd_eval "$cmd"
+		shell::colored_echo "INFO: Created new group '$new_group' as a clone of '$selected_group' with keys: $keys_csv" 46
+	fi
 }
 
 # shell::sync_group_key_conf function
@@ -1393,79 +1393,79 @@ shell::fzf_clone_group_key_conf() {
 #   shell::sync_group_key_conf         # Synchronizes the group configuration file.
 #   shell::sync_group_key_conf -n      # Displays the updated group configuration without modifying the file.
 shell::sync_group_key_conf() {
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_SYNC_GROUP_KEY_CONF"
-        return 0
-    fi
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_SYNC_GROUP_KEY_CONF"
+		return 0
+	fi
 
-    local dry_run="false"
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+	local dry_run="false"
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
 
-    if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
-        shell::colored_echo "ERR: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
-        return 1
-    fi
+	if [ ! -f "$SHELL_GROUP_CONF_FILE" ]; then
+		shell::colored_echo "ERR: Group configuration file '$SHELL_GROUP_CONF_FILE' not found." 196
+		return 1
+	fi
 
-    shell::colored_echo "DEBUG: Syncing group configuration..." 244
+	shell::colored_echo "DEBUG: Syncing group configuration..." 244
 
-    # Create a temporary file for the updated configuration.
-    local temp_file
-    temp_file=$(mktemp) || {
-        shell::colored_echo "ERR: Unable to create temporary file." 196
-        return 1
-    }
+	# Create a temporary file for the updated configuration.
+	local temp_file
+	temp_file=$(mktemp) || {
+		shell::colored_echo "ERR: Unable to create temporary file." 196
+		return 1
+	}
 
-    # Process each group entry.
-    while IFS= read -r line || [ -n "$line" ]; do
-        # Skip empty lines.
-        [ -z "$line" ] && continue
+	# Process each group entry.
+	while IFS= read -r line || [ -n "$line" ]; do
+		# Skip empty lines.
+		[ -z "$line" ] && continue
 
-        # Extract group name and keys.
-        local group_name keys_csv
-        group_name=$(echo "$line" | cut -d '=' -f 1)
-        keys_csv=$(echo "$line" | cut -d '=' -f 2-)
-        [ -z "$group_name" ] && continue
+		# Extract group name and keys.
+		local group_name keys_csv
+		group_name=$(echo "$line" | cut -d '=' -f 1)
+		keys_csv=$(echo "$line" | cut -d '=' -f 2-)
+		[ -z "$group_name" ] && continue
 
-        # Build a new comma-separated list of valid keys.
-        local new_keys=""
-        # Use a portable loop to split keys_csv.
-        while IFS= read -r key; do
-            if [ "$(shell::exist_key_conf "$key")" = "true" ]; then
-                if [ -z "$new_keys" ]; then
-                    new_keys="$key"
-                else
-                    new_keys="${new_keys},${key}"
-                fi
-            fi
-        done <<<"$(echo "$keys_csv" | tr ',' '\n')"
+		# Build a new comma-separated list of valid keys.
+		local new_keys=""
+		# Use a portable loop to split keys_csv.
+		while IFS= read -r key; do
+			if [ "$(shell::exist_key_conf "$key")" = "true" ]; then
+				if [ -z "$new_keys" ]; then
+					new_keys="$key"
+				else
+					new_keys="${new_keys},${key}"
+				fi
+			fi
+		done <<<"$(echo "$keys_csv" | tr ',' '\n')"
 
-        if [ -n "$new_keys" ]; then
-            echo "${group_name}=${new_keys}" >>"$temp_file"
-        else
-            shell::colored_echo "WARN: Group '$group_name' has no valid keys and will be removed." 11
-        fi
-    done <"$SHELL_GROUP_CONF_FILE"
+		if [ -n "$new_keys" ]; then
+			echo "${group_name}=${new_keys}" >>"$temp_file"
+		else
+			shell::colored_echo "WARN: Group '$group_name' has no valid keys and will be removed." 11
+		fi
+	done <"$SHELL_GROUP_CONF_FILE"
 
-    # If dry-run mode is enabled, print the new configuration and remove the temporary file.
-    # Otherwise, replace the original configuration file with the new one.
-    if [ "$dry_run" = "true" ]; then
-        shell::clip_value "$(cat "$temp_file")"
-        shell::run_cmd_eval "sudo rm $temp_file"
-    else
-        local backup_file="$SHELL_GROUP_CONF_BACKUP_FILE"
-        # Change end of the backup file with YYYYMMDD format.
-        backup_file="${backup_file}_$(date +%Y%m%d_%H%M%S)"
-        # Check if the backup file does not exist, and create it if necessary.
-        if [ ! -f "$backup_file" ]; then
-            shell::create_file_if_not_exists "$backup_file"
-        fi
-        shell::run_cmd_eval "sudo cp $SHELL_GROUP_CONF_FILE $backup_file"
-        shell::run_cmd_eval "sudo mv $temp_file $SHELL_GROUP_CONF_FILE"
-        shell::colored_echo "INFO: Group configuration synchronized successfully." 46
-    fi
+	# If dry-run mode is enabled, print the new configuration and remove the temporary file.
+	# Otherwise, replace the original configuration file with the new one.
+	if [ "$dry_run" = "true" ]; then
+		shell::clip_value "$(cat "$temp_file")"
+		shell::run_cmd_eval "sudo rm $temp_file"
+	else
+		local backup_file="$SHELL_GROUP_CONF_BACKUP_FILE"
+		# Change end of the backup file with YYYYMMDD format.
+		backup_file="${backup_file}_$(date +%Y%m%d_%H%M%S)"
+		# Check if the backup file does not exist, and create it if necessary.
+		if [ ! -f "$backup_file" ]; then
+			shell::create_file_if_not_exists "$backup_file"
+		fi
+		shell::run_cmd_eval "sudo cp $SHELL_GROUP_CONF_FILE $backup_file"
+		shell::run_cmd_eval "sudo mv $temp_file $SHELL_GROUP_CONF_FILE"
+		shell::colored_echo "INFO: Group configuration synchronized successfully." 46
+	fi
 }
 
 # shell::fzf_view_key_conf_viz function
@@ -1502,80 +1502,80 @@ shell::sync_group_key_conf() {
 #   - Uses ANSI color codes for formatting (yellow for key, cyan for value).
 #   - The configuration file is expected to contain key=value pairs with Base64-encoded values.
 shell::fzf_view_key_conf_viz() {
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_VIEW_KEY_CONF_VISUALIZATION"
-        return 0
-    fi
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_FZF_VIEW_KEY_CONF_VISUALIZATION"
+		return 0
+	fi
 
-    local dry_run="false"
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+	local dry_run="false"
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
 
-    # Validate configuration file existence
-    if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
-        shell::colored_echo "ERR: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
-        return 1
-    fi
+	# Validate configuration file existence
+	if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
+		shell::colored_echo "ERR: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
+		return 1
+	fi
 
-    # Ensure fzf is installed
-    shell::install_package fzf || {
-        shell::colored_echo "ERR: fzf is required but could not be installed." 196
-        return 1
-    }
+	# Ensure fzf is installed
+	shell::install_package fzf || {
+		shell::colored_echo "ERR: fzf is required but could not be installed." 196
+		return 1
+	}
 
-    # Define ANSI color codes using tput
-    local yellow=$(tput setaf 3) # Yellow for key
-    local cyan=$(tput setaf 6)   # Cyan for value
-    local normal=$(tput sgr0)    # Reset to normal
+	# Define ANSI color codes using tput
+	local yellow=$(tput setaf 3) # Yellow for key
+	local cyan=$(tput setaf 6)   # Cyan for value
+	local normal=$(tput sgr0)    # Reset to normal
 
-    # Determine OS type for Base64 decoding
-    local os_type
-    os_type=$(shell::get_os_type)
-    local base64_decode_cmd
-    if [ "$os_type" = "macos" ]; then
-        base64_decode_cmd="base64 -D"
-    else
-        base64_decode_cmd="base64 -d"
-    fi
+	# Determine OS type for Base64 decoding
+	local os_type
+	os_type=$(shell::get_os_type)
+	local base64_decode_cmd
+	if [ "$os_type" = "macos" ]; then
+		base64_decode_cmd="base64 -D"
+	else
+		base64_decode_cmd="base64 -d"
+	fi
 
-    # Prepare colored key list for fzf
-    # local key_list
-    # key_list=$(cut -d '=' -f 1 "$SHELL_KEY_CONF_FILE" | awk -v yellow="$yellow" -v normal="$normal" '{print yellow $0 normal}')
-    # if [ -z "$key_list" ]; then
-    #     shell::colored_echo "ERR: No configuration keys found in '$SHELL_KEY_CONF_FILE'." 196
-    #     return 1
-    # fi
-    # Use fzf with a preview window to show only the decoded value
-    local selected_key
-    # selected_key=$(echo "$key_list" | fzf --ansi \
-    #     --prompt="Select config key: " \
-    #     --preview="grep '^{}=.*' \"$SHELL_KEY_CONF_FILE\" | cut -d '=' -f 2- | $base64_decode_cmd 2>/dev/null || echo 'Invalid Base64'")
+	# Prepare colored key list for fzf
+	# local key_list
+	# key_list=$(cut -d '=' -f 1 "$SHELL_KEY_CONF_FILE" | awk -v yellow="$yellow" -v normal="$normal" '{print yellow $0 normal}')
+	# if [ -z "$key_list" ]; then
+	#     shell::colored_echo "ERR: No configuration keys found in '$SHELL_KEY_CONF_FILE'." 196
+	#     return 1
+	# fi
+	# Use fzf with a preview window to show only the decoded value
+	local selected_key
+	# selected_key=$(echo "$key_list" | fzf --ansi \
+	#     --prompt="Select config key: " \
+	#     --preview="grep '^{}=.*' \"$SHELL_KEY_CONF_FILE\" | cut -d '=' -f 2- | $base64_decode_cmd 2>/dev/null || echo 'Invalid Base64'")
 
-    # Use grep to filter out comments and then cut to get the key names
-    # Use fzf to select a key, showing the decoded value in the preview
-    # selected_key=$(grep -v '^\s*#' "$SHELL_KEY_CONF_FILE" | cut -d '=' -f 1 |
-    #     fzf --ansi \
-    #         --prompt="Select config key: " \
-    #         --preview="grep -v '^\s*#' \"$SHELL_KEY_CONF_FILE\" | grep '^{}=' | cut -d '=' -f 2- | $base64_decode_cmd 2>/dev/null || echo 'Invalid Base64'" \
-    #         --preview-window=up:3:wrap)
+	# Use grep to filter out comments and then cut to get the key names
+	# Use fzf to select a key, showing the decoded value in the preview
+	# selected_key=$(grep -v '^\s*#' "$SHELL_KEY_CONF_FILE" | cut -d '=' -f 1 |
+	#     fzf --ansi \
+	#         --prompt="Select config key: " \
+	#         --preview="grep -v '^\s*#' \"$SHELL_KEY_CONF_FILE\" | grep '^{}=' | cut -d '=' -f 2- | $base64_decode_cmd 2>/dev/null || echo 'Invalid Base64'" \
+	#         --preview-window=up:3:wrap)
 
-    selected_key=$(grep -v '^\s*#' "$SHELL_KEY_CONF_FILE" | cut -d '=' -f 1 | awk -v yellow="$yellow" -v normal="$normal" '{print yellow $0 normal}' |
-        fzf --ansi \
-            --prompt="Select config key: " \
-            --preview="grep -v '^\s*#' \"$SHELL_KEY_CONF_FILE\" | grep '^{}=' | cut -d '=' -f 2- | $base64_decode_cmd 2>/dev/null || echo 'Invalid Base64'" \
-            --preview-window=up:3:wrap)
+	selected_key=$(grep -v '^\s*#' "$SHELL_KEY_CONF_FILE" | cut -d '=' -f 1 | awk -v yellow="$yellow" -v normal="$normal" '{print yellow $0 normal}' |
+		fzf --ansi \
+			--prompt="Select config key: " \
+			--preview="grep -v '^\s*#' \"$SHELL_KEY_CONF_FILE\" | grep '^{}=' | cut -d '=' -f 2- | $base64_decode_cmd 2>/dev/null || echo 'Invalid Base64'" \
+			--preview-window=up:3:wrap)
 
-    # Extract the uncolored key (remove ANSI codes)
-    selected_key=$(echo "$selected_key" | sed "s/$(echo -e "\033")[0-9;]*m//g")
+	# Extract the uncolored key (remove ANSI codes)
+	selected_key=$(echo "$selected_key" | sed "s/$(echo -e "\033")[0-9;]*m//g")
 
-    if [ -z "$selected_key" ]; then
-        shell::colored_echo "ERR: No configuration key selected." 196
-        return 1
-    fi
-    shell::colored_echo "INFO: Selected key: $selected_key" 46
-    shell::clip_value $(shell::get_key_conf_value "$selected_key")
+	if [ -z "$selected_key" ]; then
+		shell::colored_echo "ERR: No configuration key selected." 196
+		return 1
+	fi
+	shell::colored_echo "INFO: Selected key: $selected_key" 46
+	shell::clip_value $(shell::get_key_conf_value "$selected_key")
 }
 
 # shell::add_protected_key_conf function
@@ -1592,61 +1592,61 @@ shell::fzf_view_key_conf_viz() {
 # This function appends a key to the protected.conf file located at $SHELL_CONF_WORKING/protected.conf.
 # If the key already exists in the file, it will not be added again.
 shell::add_protected_key_conf() {
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_ADD_PROTECTED_KEY_CONF"
-        return 0
-    fi
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_ADD_PROTECTED_KEY_CONF"
+		return 0
+	fi
 
-    local dry_run="false"
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+	local dry_run="false"
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
 
-    if [ $# -lt 1 ]; then
-        echo "Usage: shell::add_protected_key_conf [-n] <key>"
-        return 1
-    fi
+	if [ $# -lt 1 ]; then
+		echo "Usage: shell::add_protected_key_conf [-n] <key>"
+		return 1
+	fi
 
-    local key="$1"
-    local file="$SHELL_KEY_CONF_FILE_PROTECTED"
+	local key="$1"
+	local file="$SHELL_KEY_CONF_FILE_PROTECTED"
 
-    # Check if the key is provided
-    if [ -z "$key" ]; then
-        shell::colored_echo "ERR: No key provided to protect." 196
-        return 1
-    fi
-    # Ensure the protected.conf file exists and has the correct permissions.
-    if [ ! -d "$SHELL_CONF_WORKING" ]; then
-        shell::colored_echo "ERR: Working directory '$SHELL_CONF_WORKING' does not exist." 196
-        return 1
-    fi
+	# Check if the key is provided
+	if [ -z "$key" ]; then
+		shell::colored_echo "ERR: No key provided to protect." 196
+		return 1
+	fi
+	# Ensure the protected.conf file exists and has the correct permissions.
+	if [ ! -d "$SHELL_CONF_WORKING" ]; then
+		shell::colored_echo "ERR: Working directory '$SHELL_CONF_WORKING' does not exist." 196
+		return 1
+	fi
 
-    # Create the protected.conf file if it does not exist.
-    # Use shell::create_file_if_not_exists to ensure the file is created.
-    # Set permissions to 777 for the file.
-    shell::create_file_if_not_exists "$file"
-    shell::unlock_permissions "$file"
+	# Create the protected.conf file if it does not exist.
+	# Use shell::create_file_if_not_exists to ensure the file is created.
+	# Set permissions to 777 for the file.
+	shell::create_file_if_not_exists "$file"
+	shell::unlock_permissions "$file"
 
-    # Check if the key is already protected.
-    # Use grep to check if the key is already in the file.
-    # The key is considered protected if it matches exactly (no partial matches).
-    # Use ^ and $ to ensure we match the whole line.
-    if grep -q "^${key}$" "$file"; then
-        shell::colored_echo "WARN: Key '$key' is already protected." 11
-        return 0
-    fi
+	# Check if the key is already protected.
+	# Use grep to check if the key is already in the file.
+	# The key is considered protected if it matches exactly (no partial matches).
+	# Use ^ and $ to ensure we match the whole line.
+	if grep -q "^${key}$" "$file"; then
+		shell::colored_echo "WARN: Key '$key' is already protected." 11
+		return 0
+	fi
 
-    # Append the key to the protected.conf file.
-    # Use echo to append the key, ensuring it is quoted to handle special characters.
-    # Use shell::on_evict for dry-run mode, otherwise run the command.
-    local cmd="echo \"$key\" >> \"$file\""
-    if [ "$dry_run" = "true" ]; then
-        shell::on_evict "$cmd"
-    else
-        shell::run_cmd_eval "$cmd"
-        shell::colored_echo "INFO: Protected key added: $key" 46
-    fi
+	# Append the key to the protected.conf file.
+	# Use echo to append the key, ensuring it is quoted to handle special characters.
+	# Use shell::on_evict for dry-run mode, otherwise run the command.
+	local cmd="echo \"$key\" >> \"$file\""
+	if [ "$dry_run" = "true" ]; then
+		shell::on_evict "$cmd"
+	else
+		shell::run_cmd_eval "$cmd"
+		shell::colored_echo "INFO: Protected key added: $key" 46
+	fi
 }
 
 # shell::fzf_add_protected_key_conf function
@@ -1659,55 +1659,55 @@ shell::add_protected_key_conf() {
 # This function uses fzf to select a key from the configuration file (excluding comments),
 # and adds it to the protected.conf file.
 shell::fzf_add_protected_key_conf() {
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_ADD_PROTECTED_KEY_CONF"
-        return 0
-    fi
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_FZF_ADD_PROTECTED_KEY_CONF"
+		return 0
+	fi
 
-    local dry_run="false"
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+	local dry_run="false"
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
 
-    # Ensure the configuration file exists.
-    if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
-        shell::colored_echo "ERR: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
-        return 1
-    fi
+	# Ensure the configuration file exists.
+	if [ ! -f "$SHELL_KEY_CONF_FILE" ]; then
+		shell::colored_echo "ERR: Configuration file '$SHELL_KEY_CONF_FILE' not found." 196
+		return 1
+	fi
 
-    shell::install_package fzf
+	shell::install_package fzf
 
-    local yellow=$(tput setaf 3)
-    local normal=$(tput sgr0)
+	local yellow=$(tput setaf 3)
+	local normal=$(tput sgr0)
 
-    # Use fzf to select a key from the configuration file.
-    # Exclude comments and format the output with colors.
-    # Use grep to filter out comments and then cut to get the key names.
-    # Use awk to color the selected key.
-    local selected_key_colored
-    selected_key_colored=$(grep -v '^\s*#' "$SHELL_KEY_CONF_FILE" | cut -d '=' -f 1 |
-        awk -v yellow="$yellow" -v normal="$normal" '{print yellow $0 normal}' |
-        fzf --ansi --prompt="Select key to protect: ")
+	# Use fzf to select a key from the configuration file.
+	# Exclude comments and format the output with colors.
+	# Use grep to filter out comments and then cut to get the key names.
+	# Use awk to color the selected key.
+	local selected_key_colored
+	selected_key_colored=$(grep -v '^\s*#' "$SHELL_KEY_CONF_FILE" | cut -d '=' -f 1 |
+		awk -v yellow="$yellow" -v normal="$normal" '{print yellow $0 normal}' |
+		fzf --ansi --prompt="Select key to protect: ")
 
-    local selected_key
-    selected_key=$(echo "$selected_key_colored" | sed "s/$(echo -e "\033")[0-9;]*m//g")
+	local selected_key
+	selected_key=$(echo "$selected_key_colored" | sed "s/$(echo -e "\033")[0-9;]*m//g")
 
-    # Check if a key was selected.
-    # If no key was selected, print an error message and return.
-    if [ -z "$selected_key" ]; then
-        shell::colored_echo "ERR: No key selected." 196
-        return 1
-    fi
+	# Check if a key was selected.
+	# If no key was selected, print an error message and return.
+	if [ -z "$selected_key" ]; then
+		shell::colored_echo "ERR: No key selected." 196
+		return 1
+	fi
 
-    # Verify dry-run mode.
-    # If dry-run mode is enabled, print the command to add the protected key.
-    # Otherwise, call shell::add_protected_key_conf to add the key.
-    if [ "$dry_run" = "true" ]; then
-        shell::add_protected_key_conf "-n" "$selected_key"
-    else
-        shell::add_protected_key_conf "$selected_key"
-    fi
+	# Verify dry-run mode.
+	# If dry-run mode is enabled, print the command to add the protected key.
+	# Otherwise, call shell::add_protected_key_conf to add the key.
+	if [ "$dry_run" = "true" ]; then
+		shell::add_protected_key_conf "-n" "$selected_key"
+	else
+		shell::add_protected_key_conf "$selected_key"
+	fi
 }
 
 # shell::fzf_remove_protected_key_conf function
@@ -1723,56 +1723,56 @@ shell::fzf_add_protected_key_conf() {
 # This function reads the protected.conf file, uses fzf to let the user select a key,
 # and removes the selected key using sed. In dry-run mode, the command is printed instead of executed.
 shell::fzf_remove_protected_key_conf() {
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FZF_REMOVE_PROTECTED_KEY_CONF"
-        return 0
-    fi
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_FZF_REMOVE_PROTECTED_KEY_CONF"
+		return 0
+	fi
 
-    local dry_run="false"
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+	local dry_run="false"
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
 
-    local file="$SHELL_KEY_CONF_FILE_PROTECTED"
-    # Check if the protected.conf file exists.
-    # If it does not exist, print an error message and return.
-    if [ ! -f "$file" ]; then
-        shell::colored_echo "ERR: Protected key file '$file' not found." 196
-        return 1
-    fi
+	local file="$SHELL_KEY_CONF_FILE_PROTECTED"
+	# Check if the protected.conf file exists.
+	# If it does not exist, print an error message and return.
+	if [ ! -f "$file" ]; then
+		shell::colored_echo "ERR: Protected key file '$file' not found." 196
+		return 1
+	fi
 
-    # Ensure fzf is installed.
-    shell::install_package fzf
+	# Ensure fzf is installed.
+	shell::install_package fzf
 
-    # Use fzf to select a protected key.
-    # Exclude comments and use fzf to let the user select a key.
-    # Use grep to filter out comments and then use fzf to select a key.
-    local selected_key
-    selected_key=$(grep -v '^\s*#' "$file" | fzf --prompt="Select protected key to remove: ")
+	# Use fzf to select a protected key.
+	# Exclude comments and use fzf to let the user select a key.
+	# Use grep to filter out comments and then use fzf to select a key.
+	local selected_key
+	selected_key=$(grep -v '^\s*#' "$file" | fzf --prompt="Select protected key to remove: ")
 
-    if [ -z "$selected_key" ]; then
-        shell::colored_echo "ERR: No key selected." 196
-        return 1
-    fi
+	if [ -z "$selected_key" ]; then
+		shell::colored_echo "ERR: No key selected." 196
+		return 1
+	fi
 
-    local os_type
-    os_type=$(shell::get_os_type)
-    local sed_cmd=""
-    if [ "$os_type" = "macos" ]; then
-        sed_cmd="sudo sed -i '' \"/^${selected_key}$/d\" \"$file\"" # Use sed with -i '' for macOS compatibility
-    else
-        sed_cmd="sudo sed -i \"/^${selected_key}$/d\" \"$file\"" # Use sed with -i for Linux compatibility
-    fi
+	local os_type
+	os_type=$(shell::get_os_type)
+	local sed_cmd=""
+	if [ "$os_type" = "macos" ]; then
+		sed_cmd="sudo sed -i '' \"/^${selected_key}$/d\" \"$file\"" # Use sed with -i '' for macOS compatibility
+	else
+		sed_cmd="sudo sed -i \"/^${selected_key}$/d\" \"$file\"" # Use sed with -i for Linux compatibility
+	fi
 
-    # If dry-run mode is enabled, print the command to remove the protected key.
-    # Otherwise, execute the command to remove the key.
-    if [ "$dry_run" = "true" ]; then
-        shell::on_evict "$sed_cmd"
-    else
-        shell::run_cmd_eval "$sed_cmd"
-        shell::colored_echo "INFO: Removed protected key: $selected_key" 46
-    fi
+	# If dry-run mode is enabled, print the command to remove the protected key.
+	# Otherwise, execute the command to remove the key.
+	if [ "$dry_run" = "true" ]; then
+		shell::on_evict "$sed_cmd"
+	else
+		shell::run_cmd_eval "$sed_cmd"
+		shell::colored_echo "INFO: Removed protected key: $selected_key" 46
+	fi
 }
 
 # shell::sync_protected_key_conf function
@@ -1789,66 +1789,66 @@ shell::fzf_remove_protected_key_conf() {
 # Any protected key that is not found in key.conf will be removed.
 # In dry-run mode, the updated list is printed instead of being written to the file.
 shell::sync_protected_key_conf() {
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_SYNC_PROTECTED_KEY_CONF"
-        return 0
-    fi
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_SYNC_PROTECTED_KEY_CONF"
+		return 0
+	fi
 
-    local dry_run="false"
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+	local dry_run="false"
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
 
-    local key_file="$SHELL_KEY_CONF_FILE"
-    local protected_file="$SHELL_KEY_CONF_FILE_PROTECTED"
+	local key_file="$SHELL_KEY_CONF_FILE"
+	local protected_file="$SHELL_KEY_CONF_FILE_PROTECTED"
 
-    # Check if the protected.conf file and key.conf file exist.
-    # If either file does not exist, print an error message and return.
-    if [ ! -f "$protected_file" ]; then
-        shell::colored_echo "ERR: Protected key file '$protected_file' not found." 196
-        return 1
-    fi
+	# Check if the protected.conf file and key.conf file exist.
+	# If either file does not exist, print an error message and return.
+	if [ ! -f "$protected_file" ]; then
+		shell::colored_echo "ERR: Protected key file '$protected_file' not found." 196
+		return 1
+	fi
 
-    # Check if the key configuration file exists.
-    # If it does not exist, print an error message and return.
-    if [ ! -f "$key_file" ]; then
-        shell::colored_echo "ERR: Key configuration file '$key_file' not found." 196
-        return 1
-    fi
+	# Check if the key configuration file exists.
+	# If it does not exist, print an error message and return.
+	if [ ! -f "$key_file" ]; then
+		shell::colored_echo "ERR: Key configuration file '$key_file' not found." 196
+		return 1
+	fi
 
-    shell::colored_echo "DEBUG: Syncing protected keys..." 244
+	shell::colored_echo "DEBUG: Syncing protected keys..." 244
 
-    # Create a temporary file to store the updated protected keys.
-    # Use mktemp to create a temporary file for the updated protected keys.
-    local temp_file
-    temp_file=$(mktemp) || {
-        shell::colored_echo "ERR: Unable to create temporary file." 196
-        return 1
-    }
+	# Create a temporary file to store the updated protected keys.
+	# Use mktemp to create a temporary file for the updated protected keys.
+	local temp_file
+	temp_file=$(mktemp) || {
+		shell::colored_echo "ERR: Unable to create temporary file." 196
+		return 1
+	}
 
-    # Read the protected keys from the protected.conf file.
-    # Use a while loop to read each line from the protected.conf file.
-    # For each key, check if it exists in the key.conf file.
-    # If the key exists, write it to the temporary file.
-    # If the key does not exist, print a warning message.
-    while IFS= read -r key; do
-        [ -z "$key" ] && continue
-        if grep -q "^${key}=" "$key_file"; then
-            echo "$key" >>"$temp_file"
-        else
-            shell::colored_echo "WARN: Removing undefined protected key: $key" 11
-        fi
-    done <"$protected_file"
+	# Read the protected keys from the protected.conf file.
+	# Use a while loop to read each line from the protected.conf file.
+	# For each key, check if it exists in the key.conf file.
+	# If the key exists, write it to the temporary file.
+	# If the key does not exist, print a warning message.
+	while IFS= read -r key; do
+		[ -z "$key" ] && continue
+		if grep -q "^${key}=" "$key_file"; then
+			echo "$key" >>"$temp_file"
+		else
+			shell::colored_echo "WARN: Removing undefined protected key: $key" 11
+		fi
+	done <"$protected_file"
 
-    # If dry-run mode is enabled, print the updated protected keys and remove the temporary file.
-    # Otherwise, move the temporary file to the protected.conf file.
-    if [ "$dry_run" = "true" ]; then
-        shell::colored_echo "DEBUG: Dry-run: Updated protected keys:" 244
-        cat "$temp_file"
-        shell::run_cmd_eval "sudo rm \"$temp_file\""
-    else
-        shell::run_cmd_eval "sudo mv \"$temp_file\" \"$protected_file\""
-        shell::colored_echo "INFO: Protected keys synchronized successfully." 46
-    fi
+	# If dry-run mode is enabled, print the updated protected keys and remove the temporary file.
+	# Otherwise, move the temporary file to the protected.conf file.
+	if [ "$dry_run" = "true" ]; then
+		shell::colored_echo "DEBUG: Dry-run: Updated protected keys:" 244
+		cat "$temp_file"
+		shell::run_cmd_eval "sudo rm \"$temp_file\""
+	else
+		shell::run_cmd_eval "sudo mv \"$temp_file\" \"$protected_file\""
+		shell::colored_echo "INFO: Protected keys synchronized successfully." 46
+	fi
 }
