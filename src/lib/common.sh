@@ -3056,13 +3056,20 @@ shell::ask() {
     fi
 
     while true; do
-        read -p "$1 ([y]/n) " -r
+        printf "%s ([y]/n) " "$1"
+        read -r reply
         reply=${reply:-"y"}
-        if [[ $reply =~ ^[Yy]$ ]]; then
+        case "$reply" in
+        [Yy] | [Yy][Ee][Ss])
             return 1
-        elif [[ $reply =~ ^[Nn]$ ]]; then
+            ;;
+        [Nn] | [Nn][Oo])
             return 0
-        fi
+            ;;
+        *)
+            echo "Please answer y/yes or n/no."
+            ;;
+        esac
     done
 }
 
