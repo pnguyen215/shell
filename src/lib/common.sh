@@ -3161,8 +3161,8 @@ view_file() {
         --padding=0 \
         --ansi \
         --layout=reverse \
-        # --info=inline \
-        # --prompt="Search > " \
+        --info=inline \
+        --prompt="Search > " \
         --pointer="▶" \
         --marker="✓" \
         --color="header:italic:underline,label:blue,border:dim" \
