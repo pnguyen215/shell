@@ -235,6 +235,12 @@ SHELL_PROJECT_GITHUB_WORKFLOW_NEWS="https://raw.githubusercontent.com/pnguyen215
 # allowing for automated notifications based on CI events.
 SHELL_PROJECT_GITHUB_WORKFLOW_NEWS_GO="https://raw.githubusercontent.com/pnguyen215/shell-devops-stores/refs/heads/master/ci-cd/github-actions/gh_wrk_news_go.yml"
 
+# SHELL_PROJECT_GITHUB_WORKFLOW_SH_PRETTY constant
+# This variable holds the URL to the GitHub Actions CI workflow configuration file for shell scripts.
+# It is used to define the continuous integration process for shell script projects using GitHub Actions.
+# This workflow is designed to ensure that shell scripts are properly formatted and adhere to best practices.
+SHELL_PROJECT_GITHUB_WORKFLOW_SH_PRETTY="https://raw.githubusercontent.com/pnguyen215/shell-devops-stores/refs/heads/master/ci-cd/github-actions/gh_wrk_sh_pretty.yml"
+
 # SHELL_PROJECT_DOC_VERSION_RELEASE constant
 # This variable holds the URL to the documentation release notes.
 # It is used to provide access to the latest release information for the project,
