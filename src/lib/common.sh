@@ -3078,7 +3078,9 @@ view_file() {
     # Create temporary files
     local temp_file=$(mktemp)
     local colored_file=$(mktemp)
-    trap "rm -f '$temp_file' '$colored_file'" EXIT
+    local goto_file=$(mktemp)
+    trap "rm -f '$temp_file' '$colored_file' '$goto_file'" EXIT
+    # trap "rm -f '$temp_file' '$colored_file'" EXIT
     
     # Debug: Check if file has content
     local file_size=$(wc -l < "$file" 2>/dev/null || echo "0")
@@ -3138,6 +3140,21 @@ view_file() {
         file_size=$(echo "$file_size" | awk '{printf "%d", $1}')
     fi
 
+        # Create goto line script
+    cat > "$goto_file" << 'GOTO_SCRIPT'
+#!/bin/bash
+echo -n "Enter line number to jump to: "
+read -r line_num
+if [[ "$line_num" =~ ^[0-9]+$ ]] && [[ $line_num -gt 0 ]]; then
+    # Use printf to output the line number for fzf to process
+    printf "%d" "$line_num"
+else
+    echo "Invalid line number: $line_num" >&2
+    exit 1
+fi
+GOTO_SCRIPT
+    chmod +x "$goto_file"
+
     # Main fzf interface with 100% width
     local selected_lines
     selected_lines=$(cat "$temp_file" | fzf \
@@ -3150,7 +3167,7 @@ view_file() {
         --bind 'shift-tab:toggle+up' \
         --bind 'ctrl-r:toggle-all' \
         --bind 'ctrl-/:toggle-preview' \
-        --bind 'ctrl-g:execute(echo "Enter line number to jump to:" && read -r line && [[ "$line" =~ ^[0-9]+$ ]] && echo "Jumping to line $line..." && exit 130)' \
+        --bind "ctrl-g:execute-silent(line_num=\$($goto_file) && if [[ \$line_num =~ ^[0-9]+\$ ]] && [[ \$line_num -le $file_size ]] && [[ \$line_num -gt 0 ]]; then echo \"+\$line_num\" > /tmp/fzf_goto; else echo \"Line \$line_num is out of range (1-$file_size)\" >&2; fi)+reload(if [[ -f /tmp/fzf_goto ]] && [[ \$(cat /tmp/fzf_goto) =~ ^\+[0-9]+\$ ]]; then line_target=\$(cat /tmp/fzf_goto | sed 's/^+//'); cat '$temp_file' | awk -v target=\"\$line_target\" 'BEGIN{found=0} {if(NR==target){print \">>> \" \$0; found=1} else {print \$0}} END{if(!found && target>NR){print \">>> Line \" target \" not found (file has \" NR \" lines)\"}}'; rm -f /tmp/fzf_goto; else cat '$temp_file'; fi)" \
         --header="File: $file | Lines: $file_size | MH: $highlighting_method | TAB: select | CTRL+A: all | CTRL+D: deselect | CTRL+G: goto line | CTRL+R: toggle all | ENTER: copy | ESC: exit" \
         --preview="echo 'Selected lines will be copied to clipboard'" \
         --preview-window="top:1:wrap" \
@@ -3169,6 +3186,8 @@ view_file() {
         --color="header:italic:underline,label:blue,border:dim" \
         --tabstop=4)
     
+    # Clean up goto temp file
+    rm -f /tmp/fzf_goto
 
     # if [[ -n "$selected_lines" ]]; then
     #     local content_to_copy
@@ -3184,7 +3203,7 @@ view_file() {
 
     if [[ -n "$selected_lines" ]]; then
         local line_numbers
-        line_numbers=$(echo "$selected_lines" | sed -n 's/^[[:space:]]*\([0-9]*\)[[:space:]].*/\1/p')
+        line_numbers=$(echo "$selected_lines" | sed -n 's/^[[:space:]]*\([0-9]*\)[[:space:]].*/\1/p' | grep -v '^>>>')
         # Get original content for these line numbers (preserve exact original formatting)
         local content_to_copy=""
         while IFS= read -r line_num; do
