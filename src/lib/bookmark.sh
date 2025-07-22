@@ -393,7 +393,7 @@ shell::fzf_list_bookmark_up() {
     # Check each path's existence and append [active] or [inactive] with appropriate color.
     selected_display_line=$(awk -F'|' -v yellow="$yellow" -v cyan="$cyan" -v green="$green" -v red="$red" -v normal="$normal" \
         '{status = system("[ -d \"" $1 "\" ]") == 0 ? green "[active]" normal : red "[inactive]" normal; print yellow $2 normal " (" cyan $1 normal ") " status}' \
-        "$bookmarks_file" | fzf --ansi --pointer="▶" --marker="✓" --prompt="Select a bookmarked path: ")
+        "$bookmarks_file" | fzf --ansi --pointer="▶" --marker="✓" --info=inline --prompt="Select a bookmarked path: ")
 
     if [ -z "$selected_display_line" ]; then
         shell::colored_echo "ERR: No bookmark selected. Aborting." 196
