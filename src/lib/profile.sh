@@ -17,18 +17,18 @@
 # Example:
 #   profile_dir=$(shell::get_profile_path "my_profile")  # Returns "$SHELL_CONF_WORKING/workspace/my_profile"
 shell::get_profile_path() {
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_GET_PROFILE_PATH"
-        return 0
-    fi
+	# Check for the help flag (-h)
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_GET_PROFILE_PATH"
+		return 0
+	fi
 
-    if [ $# -lt 1 ]; then
-        echo "Usage: shell::get_profile_path <profile_name>"
-        return 1
-    fi
-    local profile_name="$1"
-    echo "$SHELL_CONF_WORKING_WORKSPACE/$profile_name"
+	if [ $# -lt 1 ]; then
+		echo "Usage: shell::get_profile_path <profile_name>"
+		return 1
+	fi
+	local profile_name="$1"
+	echo "$SHELL_CONF_WORKING_WORKSPACE/$profile_name"
 }
 
 # shell::add_profile function
@@ -49,37 +49,37 @@ shell::get_profile_path() {
 #   shell::add_profile my_profile         # Creates the profile directory and profile.conf.
 #   shell::add_profile -n my_profile      # Prints the commands without executing them.
 shell::add_profile() {
-    local dry_run="false"
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+	local dry_run="false"
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
 
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_ADD_PROFILE"
-        return 0
-    fi
+	# Check for the help flag (-h)
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_ADD_PROFILE"
+		return 0
+	fi
 
-    if [ $# -lt 1 ]; then
-        echo "Usage: shell::add_profile [-n] <profile_name>"
-        return 1
-    fi
-    local profile_name="$1"
-    local profile_dir=$(shell::get_profile_path "$profile_name")
-    if [ -d "$profile_dir" ]; then
-        shell::colored_echo "WARN: Profile '$profile_name' already exists." 11
-        return 1
-    fi
+	if [ $# -lt 1 ]; then
+		echo "Usage: shell::add_profile [-n] <profile_name>"
+		return 1
+	fi
+	local profile_name="$1"
+	local profile_dir=$(shell::get_profile_path "$profile_name")
+	if [ -d "$profile_dir" ]; then
+		shell::colored_echo "WARN: Profile '$profile_name' already exists." 11
+		return 1
+	fi
 
-    local cmd="sudo mkdir -p \"$profile_dir\" && sudo touch \"$profile_dir/profile.conf\""
-    if [ "$dry_run" = "true" ]; then
-        shell::on_evict "$cmd"
-    else
-        shell::ensure_workspace
-        shell::run_cmd_eval "$cmd"
-        shell::colored_echo "INFO: Created profile '$profile_name'." 46
-    fi
+	local cmd="sudo mkdir -p \"$profile_dir\" && sudo touch \"$profile_dir/profile.conf\""
+	if [ "$dry_run" = "true" ]; then
+		shell::on_evict "$cmd"
+	else
+		shell::ensure_workspace
+		shell::run_cmd_eval "$cmd"
+		shell::colored_echo "INFO: Created profile '$profile_name'." 46
+	fi
 }
 
 # shell::read_profile function
@@ -100,38 +100,38 @@ shell::add_profile() {
 #   shell::read_profile my_profile         # Sources profile.conf from my_profile.
 #   shell::read_profile -n my_profile      # Prints the sourcing command without executing it.
 shell::read_profile() {
-    local dry_run="false"
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+	local dry_run="false"
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
 
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_READ_PROFILE"
-        return 0
-    fi
+	# Check for the help flag (-h)
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_READ_PROFILE"
+		return 0
+	fi
 
-    if [ $# -lt 1 ]; then
-        echo "Usage: shell::read_profile [-n] <profile_name>"
-        return 1
-    fi
-    local profile_name="$1"
-    local profile_dir=$(shell::get_profile_path "$profile_name")
-    local profile_conf="$profile_dir/profile.conf"
-    if [ ! -d "$profile_dir" ]; then
-        shell::colored_echo "ERR: Profile '$profile_name' does not exist." 196
-        return 1
-    fi
-    if [ ! -f "$profile_conf" ]; then
-        shell::colored_echo "ERR: Profile configuration file '$profile_conf' not found." 196
-        return 1
-    fi
-    if [ "$dry_run" = "true" ]; then
-        shell::read_conf -n "$profile_conf"
-    else
-        shell::read_conf "$profile_conf"
-    fi
+	if [ $# -lt 1 ]; then
+		echo "Usage: shell::read_profile [-n] <profile_name>"
+		return 1
+	fi
+	local profile_name="$1"
+	local profile_dir=$(shell::get_profile_path "$profile_name")
+	local profile_conf="$profile_dir/profile.conf"
+	if [ ! -d "$profile_dir" ]; then
+		shell::colored_echo "ERR: Profile '$profile_name' does not exist." 196
+		return 1
+	fi
+	if [ ! -f "$profile_conf" ]; then
+		shell::colored_echo "ERR: Profile configuration file '$profile_conf' not found." 196
+		return 1
+	fi
+	if [ "$dry_run" = "true" ]; then
+		shell::read_conf -n "$profile_conf"
+	else
+		shell::read_conf "$profile_conf"
+	fi
 }
 
 # shell::update_profile function
@@ -152,40 +152,40 @@ shell::read_profile() {
 #   shell::update_profile my_profile         # Opens profile.conf in the default editor.
 #   shell::update_profile -n my_profile      # Prints the editor command without executing it.
 shell::update_profile() {
-    local dry_run="false"
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+	local dry_run="false"
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
 
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_UPDATE_PROFILE"
-        return 0
-    fi
+	# Check for the help flag (-h)
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_UPDATE_PROFILE"
+		return 0
+	fi
 
-    if [ $# -lt 1 ]; then
-        echo "Usage: shell::update_profile [-n] <profile_name>"
-        return 1
-    fi
-    local profile_name="$1"
-    local profile_dir=$(shell::get_profile_path "$profile_name")
-    local profile_conf="$profile_dir/profile.conf"
-    if [ ! -d "$profile_dir" ]; then
-        shell::colored_echo "ERR: Profile '$profile_name' does not exist." 196
-        return 1
-    fi
-    if [ ! -f "$profile_conf" ]; then
-        shell::colored_echo "ERR: Profile configuration file '$profile_conf' not found." 196
-        return 1
-    fi
-    local editor="${EDITOR:-vi}"
-    local cmd="sudo $editor \"$profile_conf\""
-    if [ "$dry_run" = "true" ]; then
-        shell::on_evict "$cmd"
-    else
-        shell::run_cmd_eval "$cmd"
-    fi
+	if [ $# -lt 1 ]; then
+		echo "Usage: shell::update_profile [-n] <profile_name>"
+		return 1
+	fi
+	local profile_name="$1"
+	local profile_dir=$(shell::get_profile_path "$profile_name")
+	local profile_conf="$profile_dir/profile.conf"
+	if [ ! -d "$profile_dir" ]; then
+		shell::colored_echo "ERR: Profile '$profile_name' does not exist." 196
+		return 1
+	fi
+	if [ ! -f "$profile_conf" ]; then
+		shell::colored_echo "ERR: Profile configuration file '$profile_conf' not found." 196
+		return 1
+	fi
+	local editor="${EDITOR:-vi}"
+	local cmd="sudo $editor \"$profile_conf\""
+	if [ "$dry_run" = "true" ]; then
+		shell::on_evict "$cmd"
+	else
+		shell::run_cmd_eval "$cmd"
+	fi
 }
 
 # shell::remove_profile function
@@ -206,40 +206,40 @@ shell::update_profile() {
 #   shell::remove_profile my_profile         # Prompts to confirm deletion of my_profile.
 #   shell::remove_profile -n my_profile      # Prints the removal command without executing it.
 shell::remove_profile() {
-    local dry_run="false"
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+	local dry_run="false"
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
 
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_REMOVE_PROFILE"
-        return 0
-    fi
+	# Check for the help flag (-h)
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_REMOVE_PROFILE"
+		return 0
+	fi
 
-    if [ $# -lt 1 ]; then
-        echo "Usage: shell::remove_profile [-n] <profile_name>"
-        return 1
-    fi
-    local profile_name="$1"
-    local profile_dir=$(shell::get_profile_path "$profile_name")
-    if [ ! -d "$profile_dir" ]; then
-        shell::colored_echo "ERR: Profile '$profile_name' does not exist." 196
-        return 1
-    fi
-    if [ "$dry_run" = "true" ]; then
-        shell::on_evict "sudo rm -rf \"$profile_dir\""
-    else
-        shell::colored_echo "Are you sure you want to remove profile '$profile_name'? [y/N]" 33
-        read -r confirm
-        if [[ "$confirm" =~ ^[Yy]$ ]]; then
-            shell::run_cmd_eval sudo rm -rf "$profile_dir"
-            shell::colored_echo "INFO: Removed profile '$profile_name'." 46
-        else
-            shell::colored_echo "WARN: Removal aborted." 11
-        fi
-    fi
+	if [ $# -lt 1 ]; then
+		echo "Usage: shell::remove_profile [-n] <profile_name>"
+		return 1
+	fi
+	local profile_name="$1"
+	local profile_dir=$(shell::get_profile_path "$profile_name")
+	if [ ! -d "$profile_dir" ]; then
+		shell::colored_echo "ERR: Profile '$profile_name' does not exist." 196
+		return 1
+	fi
+	if [ "$dry_run" = "true" ]; then
+		shell::on_evict "sudo rm -rf \"$profile_dir\""
+	else
+		shell::colored_echo "Are you sure you want to remove profile '$profile_name'? [y/N]" 33
+		read -r confirm
+		if [[ "$confirm" =~ ^[Yy]$ ]]; then
+			shell::run_cmd_eval sudo rm -rf "$profile_dir"
+			shell::colored_echo "INFO: Removed profile '$profile_name'." 46
+		else
+			shell::colored_echo "WARN: Removal aborted." 11
+		fi
+	fi
 }
 
 # shell::get_profile function
@@ -258,29 +258,29 @@ shell::remove_profile() {
 # Example:
 #   shell::get_profile my_profile         # Displays the contents of profile.conf for my_profile.
 shell::get_profile() {
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_GET_PROFILE"
-        return 0
-    fi
+	# Check for the help flag (-h)
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_GET_PROFILE"
+		return 0
+	fi
 
-    if [ $# -lt 1 ]; then
-        echo "Usage: shell::get_profile <profile_name>"
-        return 1
-    fi
-    local profile_name="$1"
-    local profile_dir=$(shell::get_profile_path "$profile_name")
-    local profile_conf="$profile_dir/profile.conf"
-    if [ ! -d "$profile_dir" ]; then
-        shell::colored_echo "ERR: Profile '$profile_name' does not exist." 196
-        return 1
-    fi
-    if [ ! -f "$profile_conf" ]; then
-        shell::colored_echo "ERR: Profile configuration file '$profile_conf' not found." 196
-        return 1
-    fi
-    shell::colored_echo "DEBUG: Contents of '$profile_conf':" 244
-    shell::run_cmd_eval cat "$profile_conf"
+	if [ $# -lt 1 ]; then
+		echo "Usage: shell::get_profile <profile_name>"
+		return 1
+	fi
+	local profile_name="$1"
+	local profile_dir=$(shell::get_profile_path "$profile_name")
+	local profile_conf="$profile_dir/profile.conf"
+	if [ ! -d "$profile_dir" ]; then
+		shell::colored_echo "ERR: Profile '$profile_name' does not exist." 196
+		return 1
+	fi
+	if [ ! -f "$profile_conf" ]; then
+		shell::colored_echo "ERR: Profile configuration file '$profile_conf' not found." 196
+		return 1
+	fi
+	shell::colored_echo "DEBUG: Contents of '$profile_conf':" 244
+	shell::run_cmd_eval cat "$profile_conf"
 }
 
 # shell::rename_profile function
@@ -302,41 +302,41 @@ shell::get_profile() {
 #   shell::rename_profile old_profile new_profile         # Renames old_profile to new_profile.
 #   shell::rename_profile -n old_profile new_profile      # Prints the rename command without executing it.
 shell::rename_profile() {
-    local dry_run="false"
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+	local dry_run="false"
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
 
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_RENAME_PROFILE"
-        return 0
-    fi
+	# Check for the help flag (-h)
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_RENAME_PROFILE"
+		return 0
+	fi
 
-    if [ $# -lt 2 ]; then
-        echo "Usage: shell::rename_profile [-n] <old_name> <new_name>"
-        return 1
-    fi
-    local old_name="$1"
-    local new_name="$2"
-    local old_dir=$(shell::get_profile_path "$old_name")
-    local new_dir=$(shell::get_profile_path "$new_name")
-    if [ ! -d "$old_dir" ]; then
-        shell::colored_echo "ERR: Profile '$old_name' does not exist." 196
-        return 1
-    fi
-    if [ -d "$new_dir" ]; then
-        shell::colored_echo "ERR: Profile '$new_name' already exists." 196
-        return 1
-    fi
-    local cmd="sudo mv \"$old_dir\" \"$new_dir\""
-    if [ "$dry_run" = "true" ]; then
-        shell::on_evict "$cmd"
-    else
-        shell::run_cmd_eval "$cmd"
-        shell::colored_echo "INFO: Renamed profile '$old_name' to '$new_name'." 46
-    fi
+	if [ $# -lt 2 ]; then
+		echo "Usage: shell::rename_profile [-n] <old_name> <new_name>"
+		return 1
+	fi
+	local old_name="$1"
+	local new_name="$2"
+	local old_dir=$(shell::get_profile_path "$old_name")
+	local new_dir=$(shell::get_profile_path "$new_name")
+	if [ ! -d "$old_dir" ]; then
+		shell::colored_echo "ERR: Profile '$old_name' does not exist." 196
+		return 1
+	fi
+	if [ -d "$new_dir" ]; then
+		shell::colored_echo "ERR: Profile '$new_name' already exists." 196
+		return 1
+	fi
+	local cmd="sudo mv \"$old_dir\" \"$new_dir\""
+	if [ "$dry_run" = "true" ]; then
+		shell::on_evict "$cmd"
+	else
+		shell::run_cmd_eval "$cmd"
+		shell::colored_echo "INFO: Renamed profile '$old_name' to '$new_name'." 46
+	fi
 }
 
 # shell::add_profile_conf function
@@ -362,70 +362,70 @@ shell::rename_profile() {
 #   shell::add_profile_conf my_profile my_setting "some secret value"         # Encodes the value and adds the entry to my_profile/profile.conf
 #   shell::add_profile_conf -n my_profile my_setting "some secret value"      # Prints the command without executing it
 shell::add_profile_conf() {
-    local dry_run="false"
+	local dry_run="false"
 
-    # Check for the optional dry-run flag (-n)
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+	# Check for the optional dry-run flag (-n)
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
 
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_ADD_PROFILE_CONF"
-        return 0
-    fi
+	# Check for the help flag (-h)
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_ADD_PROFILE_CONF"
+		return 0
+	fi
 
-    # Validate the number of arguments
-    if [ $# -lt 3 ]; then
-        echo "Usage: shell::add_profile_conf [-n] <profile_name> <key> <value>"
-        return 1
-    fi
+	# Validate the number of arguments
+	if [ $# -lt 3 ]; then
+		echo "Usage: shell::add_profile_conf [-n] <profile_name> <key> <value>"
+		return 1
+	fi
 
-    local profile_name="$1"
-    local key="$2"
-    local value="$3"
-    # sanitized key
-    key=$(shell::sanitize_upper_var_name "$key")
+	local profile_name="$1"
+	local key="$2"
+	local value="$3"
+	# sanitized key
+	key=$(shell::sanitize_upper_var_name "$key")
 
-    # Get the profile directory (assumes shell::get_profile_path is defined elsewhere)
-    local profile_dir=$(shell::get_profile_path "$profile_name")
+	# Get the profile directory (assumes shell::get_profile_path is defined elsewhere)
+	local profile_dir=$(shell::get_profile_path "$profile_name")
 
-    # Ensure the profile directory exists
-    if [ ! -d "$profile_dir" ]; then
-        if [ "$dry_run" = "true" ]; then
-            shell::on_evict "sudo mkdir -p \"$profile_dir\""
-        else
-            shell::run_cmd_eval sudo mkdir -p "$profile_dir"
-        fi
-    fi
+	# Ensure the profile directory exists
+	if [ ! -d "$profile_dir" ]; then
+		if [ "$dry_run" = "true" ]; then
+			shell::on_evict "sudo mkdir -p \"$profile_dir\""
+		else
+			shell::run_cmd_eval sudo mkdir -p "$profile_dir"
+		fi
+	fi
 
-    # Define the profile.conf file path
-    local profile_conf="$profile_dir/profile.conf"
+	# Define the profile.conf file path
+	local profile_conf="$profile_dir/profile.conf"
 
-    # Ensure the profile.conf file exists
-    shell::create_file_if_not_exists "$profile_conf"
+	# Ensure the profile.conf file exists
+	shell::create_file_if_not_exists "$profile_conf"
 
-    # Encode the value using Base64 and remove any newlines
-    local encoded_value
-    encoded_value=$(echo -n "$value" | base64 | tr -d '\n')
+	# Encode the value using Base64 and remove any newlines
+	local encoded_value
+	encoded_value=$(echo -n "$value" | base64 | tr -d '\n')
 
-    # Build the command to append the key and encoded value to the profile.conf file
-    local cmd="echo \"$key=$encoded_value\" >> \"$profile_conf\""
+	# Build the command to append the key and encoded value to the profile.conf file
+	local cmd="echo \"$key=$encoded_value\" >> \"$profile_conf\""
 
-    # Execute or print the command based on dry-run mode
-    if [ "$dry_run" = "true" ]; then
-        shell::on_evict "$cmd"
-    else
-        # Check if the key already exists in the profile.conf
-        if grep -q "^${key}=" "$profile_conf"; then
-            shell::colored_echo "WARN: The key '$key' already exists in profile '$profile_name'. Consider updating it using shell::update_profile_conf." 11
-            return 0
-        fi
-        shell::unlock_permissions "$profile_conf"
-        shell::run_cmd_eval "$cmd"
-        shell::colored_echo "INFO: Added configuration to profile '$profile_name': $key (encoded value)" 46
-    fi
+	# Execute or print the command based on dry-run mode
+	if [ "$dry_run" = "true" ]; then
+		shell::on_evict "$cmd"
+	else
+		# Check if the key already exists in the profile.conf
+		if grep -q "^${key}=" "$profile_conf"; then
+			shell::colored_echo "WARN: The key '$key' already exists in profile '$profile_name'. Consider updating it using shell::update_profile_conf." 11
+			return 0
+		fi
+		shell::unlock_permissions "$profile_conf"
+		shell::run_cmd_eval "$cmd"
+		shell::colored_echo "INFO: Added configuration to profile '$profile_name': $key (encoded value)" 46
+	fi
 }
 
 # shell::get_profile_conf function
@@ -448,53 +448,53 @@ shell::add_profile_conf() {
 #   shell::get_profile_conf my_profile          # Retrieves and processes the 'my_profile' profile.
 #   shell::get_profile_conf -n my_profile       # Dry-run mode: prints the commands without executing them.
 shell::get_profile_conf() {
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_GET_PROFILE_CONF"
-        return 0
-    fi
+	# Check for the help flag (-h)
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_GET_PROFILE_CONF"
+		return 0
+	fi
 
-    if [ $# -lt 1 ]; then
-        echo "Usage: shell::get_profile_conf <profile_name>"
-        return 1
-    fi
-    shell::ensure_workspace
-    local profile_name="$1"
-    local profile_dir=$(shell::get_profile_path "$profile_name")
-    local profile_conf="$profile_dir/profile.conf"
-    if [ ! -d "$profile_dir" ]; then
-        shell::colored_echo "ERR: Profile '$profile_name' does not exist." 196
-        return 1
-    fi
-    if [ ! -f "$profile_conf" ]; then
-        shell::colored_echo "ERR: Profile configuration file '$profile_conf' not found." 196
-        return 1
-    fi
-    shell::install_package fzf
-    local selected_key
-    selected_key=$(cut -d '=' -f 1 "$profile_conf" | fzf --prompt="Select config key for profile '$profile_name': ")
-    if [ -z "$selected_key" ]; then
-        shell::colored_echo "ERR: No configuration selected." 196
-        return 1
-    fi
-    local selected_line
-    selected_line=$(grep "^${selected_key}=" "$profile_conf")
-    if [ -z "$selected_line" ]; then
-        shell::colored_echo "ERR: Selected key '$selected_key' not found in configuration." 196
-        return 1
-    fi
-    local encoded_value
-    encoded_value=$(echo "$selected_line" | cut -d '=' -f 2-)
-    local os_type
-    os_type=$(shell::get_os_type)
-    local decoded_value
-    if [ "$os_type" = "macos" ]; then
-        decoded_value=$(echo "$encoded_value" | base64 -D)
-    else
-        decoded_value=$(echo "$encoded_value" | base64 -d)
-    fi
-    shell::colored_echo "[k] Key: $selected_key" 33
-    shell::clip_value "$decoded_value"
+	if [ $# -lt 1 ]; then
+		echo "Usage: shell::get_profile_conf <profile_name>"
+		return 1
+	fi
+	shell::ensure_workspace
+	local profile_name="$1"
+	local profile_dir=$(shell::get_profile_path "$profile_name")
+	local profile_conf="$profile_dir/profile.conf"
+	if [ ! -d "$profile_dir" ]; then
+		shell::colored_echo "ERR: Profile '$profile_name' does not exist." 196
+		return 1
+	fi
+	if [ ! -f "$profile_conf" ]; then
+		shell::colored_echo "ERR: Profile configuration file '$profile_conf' not found." 196
+		return 1
+	fi
+	shell::install_package fzf
+	local selected_key
+	selected_key=$(cut -d '=' -f 1 "$profile_conf" | fzf --prompt="Select config key for profile '$profile_name': ")
+	if [ -z "$selected_key" ]; then
+		shell::colored_echo "ERR: No configuration selected." 196
+		return 1
+	fi
+	local selected_line
+	selected_line=$(grep "^${selected_key}=" "$profile_conf")
+	if [ -z "$selected_line" ]; then
+		shell::colored_echo "ERR: Selected key '$selected_key' not found in configuration." 196
+		return 1
+	fi
+	local encoded_value
+	encoded_value=$(echo "$selected_line" | cut -d '=' -f 2-)
+	local os_type
+	os_type=$(shell::get_os_type)
+	local decoded_value
+	if [ "$os_type" = "macos" ]; then
+		decoded_value=$(echo "$encoded_value" | base64 -D)
+	else
+		decoded_value=$(echo "$encoded_value" | base64 -d)
+	fi
+	shell::colored_echo "[k] Key: $selected_key" 33
+	shell::clip_value "$decoded_value"
 }
 
 # shell::get_profile_conf_value function
@@ -518,49 +518,49 @@ shell::get_profile_conf() {
 #   shell::get_profile_conf_value my_profile API_KEY
 #   shell::get_profile_conf_value -n my_profile API_KEY   # Dry-run: prints commands without executing them.
 shell::get_profile_conf_value() {
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_GET_PROFILE_CONF_VALUE"
-        return 0
-    fi
+	# Check for the help flag (-h)
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_GET_PROFILE_CONF_VALUE"
+		return 0
+	fi
 
-    if [ $# -lt 2 ]; then
-        echo "Usage: shell::get_profile_conf_value <profile_name> <key>"
-        return 1
-    fi
-    shell::ensure_workspace
-    local profile_name="$1"
-    local key="$2"
-    local profile_dir=$(shell::get_profile_path "$profile_name")
-    local profile_conf="$profile_dir/profile.conf"
-    # sanitized key
-    key=$(shell::sanitize_upper_var_name "$key")
+	if [ $# -lt 2 ]; then
+		echo "Usage: shell::get_profile_conf_value <profile_name> <key>"
+		return 1
+	fi
+	shell::ensure_workspace
+	local profile_name="$1"
+	local key="$2"
+	local profile_dir=$(shell::get_profile_path "$profile_name")
+	local profile_conf="$profile_dir/profile.conf"
+	# sanitized key
+	key=$(shell::sanitize_upper_var_name "$key")
 
-    if [ ! -d "$profile_dir" ]; then
-        shell::colored_echo "ERR: Profile '$profile_name' does not exist." 196
-        return 1
-    fi
-    if [ ! -f "$profile_conf" ]; then
-        shell::colored_echo "ERR: Profile configuration file '$profile_conf' not found." 196
-        return 1
-    fi
-    local conf_line
-    conf_line=$(grep "^${key}=" "$profile_conf")
-    if [ -z "$conf_line" ]; then
-        shell::colored_echo "ERR: Key '$key' not found in profile '$profile_name'." 196
-        return 1
-    fi
-    local encoded_value
-    encoded_value=$(echo "$conf_line" | cut -d '=' -f 2-)
-    local os_type
-    os_type=$(shell::get_os_type)
-    local decoded_value
-    if [ "$os_type" = "macos" ]; then
-        decoded_value=$(echo "$encoded_value" | base64 -D)
-    else
-        decoded_value=$(echo "$encoded_value" | base64 -d)
-    fi
-    echo "$decoded_value"
+	if [ ! -d "$profile_dir" ]; then
+		shell::colored_echo "ERR: Profile '$profile_name' does not exist." 196
+		return 1
+	fi
+	if [ ! -f "$profile_conf" ]; then
+		shell::colored_echo "ERR: Profile configuration file '$profile_conf' not found." 196
+		return 1
+	fi
+	local conf_line
+	conf_line=$(grep "^${key}=" "$profile_conf")
+	if [ -z "$conf_line" ]; then
+		shell::colored_echo "ERR: Key '$key' not found in profile '$profile_name'." 196
+		return 1
+	fi
+	local encoded_value
+	encoded_value=$(echo "$conf_line" | cut -d '=' -f 2-)
+	local os_type
+	os_type=$(shell::get_os_type)
+	local decoded_value
+	if [ "$os_type" = "macos" ]; then
+		decoded_value=$(echo "$encoded_value" | base64 -D)
+	else
+		decoded_value=$(echo "$encoded_value" | base64 -d)
+	fi
+	echo "$decoded_value"
 }
 
 # shell::remove_profile_conf function
@@ -584,55 +584,55 @@ shell::get_profile_conf_value() {
 #   shell::remove_profile_conf my_profile
 #   shell::remove_profile_conf -n my_profile   # Dry-run: prints the removal command without executing.
 shell::remove_profile_conf() {
-    local dry_run="false"
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+	local dry_run="false"
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
 
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_REMOVE_PROFILE_CONF"
-        return 0
-    fi
+	# Check for the help flag (-h)
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_REMOVE_PROFILE_CONF"
+		return 0
+	fi
 
-    if [ $# -lt 1 ]; then
-        echo "Usage: shell::remove_profile_conf [-n] <profile_name>"
-        return 1
-    fi
-    shell::ensure_workspace
-    local profile_name="$1"
-    local profile_dir=$(shell::get_profile_path "$profile_name")
-    local profile_conf="$profile_dir/profile.conf"
-    if [ ! -d "$profile_dir" ]; then
-        shell::colored_echo "ERR: Profile '$profile_name' does not exist." 196
-        return 1
-    fi
-    if [ ! -f "$profile_conf" ]; then
-        shell::colored_echo "ERR: Profile configuration file '$profile_conf' not found." 196
-        return 1
-    fi
-    shell::install_package fzf
-    local selected_key
-    selected_key=$(cut -d '=' -f 1 "$profile_conf" | fzf --prompt="Select config key to remove from profile '$profile_name': ")
-    if [ -z "$selected_key" ]; then
-        shell::colored_echo "ERR: No configuration selected." 196
-        return 1
-    fi
-    local os_type
-    os_type=$(shell::get_os_type)
-    local sed_cmd=""
-    if [ "$os_type" = "macos" ]; then
-        sed_cmd="sudo sed -i '' \"/^${selected_key}=/d\" \"$profile_conf\""
-    else
-        sed_cmd="sudo sed -i \"/^${selected_key}=/d\" \"$profile_conf\""
-    fi
-    if [ "$dry_run" = "true" ]; then
-        shell::on_evict "$sed_cmd"
-    else
-        shell::run_cmd_eval "$sed_cmd"
-        shell::colored_echo "INFO: Removed configuration for key: $selected_key from profile '$profile_name'" 46
-    fi
+	if [ $# -lt 1 ]; then
+		echo "Usage: shell::remove_profile_conf [-n] <profile_name>"
+		return 1
+	fi
+	shell::ensure_workspace
+	local profile_name="$1"
+	local profile_dir=$(shell::get_profile_path "$profile_name")
+	local profile_conf="$profile_dir/profile.conf"
+	if [ ! -d "$profile_dir" ]; then
+		shell::colored_echo "ERR: Profile '$profile_name' does not exist." 196
+		return 1
+	fi
+	if [ ! -f "$profile_conf" ]; then
+		shell::colored_echo "ERR: Profile configuration file '$profile_conf' not found." 196
+		return 1
+	fi
+	shell::install_package fzf
+	local selected_key
+	selected_key=$(cut -d '=' -f 1 "$profile_conf" | fzf --prompt="Select config key to remove from profile '$profile_name': ")
+	if [ -z "$selected_key" ]; then
+		shell::colored_echo "ERR: No configuration selected." 196
+		return 1
+	fi
+	local os_type
+	os_type=$(shell::get_os_type)
+	local sed_cmd=""
+	if [ "$os_type" = "macos" ]; then
+		sed_cmd="sudo sed -i '' \"/^${selected_key}=/d\" \"$profile_conf\""
+	else
+		sed_cmd="sudo sed -i \"/^${selected_key}=/d\" \"$profile_conf\""
+	fi
+	if [ "$dry_run" = "true" ]; then
+		shell::on_evict "$sed_cmd"
+	else
+		shell::run_cmd_eval "$sed_cmd"
+		shell::colored_echo "INFO: Removed configuration for key: $selected_key from profile '$profile_name'" 46
+	fi
 }
 
 # shell::update_profile_conf function
@@ -654,62 +654,62 @@ shell::remove_profile_conf() {
 #   shell::update_profile_conf my_profile
 #   shell::update_profile_conf -n my_profile   # dry-run mode
 shell::update_profile_conf() {
-    local dry_run="false"
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+	local dry_run="false"
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
 
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_UPDATE_PROFILE_CONF"
-        return 0
-    fi
+	# Check for the help flag (-h)
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_UPDATE_PROFILE_CONF"
+		return 0
+	fi
 
-    if [ $# -lt 1 ]; then
-        echo "Usage: shell::update_profile_conf [-n] <profile_name>"
-        return 1
-    fi
-    local profile_name="$1"
-    local profile_dir=$(shell::get_profile_path "$profile_name")
-    local profile_conf="$profile_dir/profile.conf"
-    if [ ! -d "$profile_dir" ]; then
-        shell::colored_echo "ERR: Profile '$profile_name' does not exist." 196
-        return 1
-    fi
-    if [ ! -f "$profile_conf" ]; then
-        shell::colored_echo "ERR: Profile configuration file '$profile_conf' not found." 196
-        return 1
-    fi
-    shell::install_package fzf
-    local selected_key
-    selected_key=$(cut -d '=' -f 1 "$profile_conf" | fzf --prompt="Select config key to update in profile '$profile_name': ")
-    if [ -z "$selected_key" ]; then
-        shell::colored_echo "ERR: No configuration selected." 196
-        return 1
-    fi
-    shell::colored_echo ">> Enter new value for key '$selected_key' in profile '$profile_name':" 33
-    read -r new_value
-    if [ -z "$new_value" ]; then
-        shell::colored_echo "ERR: No new value entered. Update aborted." 196
-        return 1
-    fi
-    local encoded_value
-    encoded_value=$(echo -n "$new_value" | base64 | tr -d '\n')
-    local os_type
-    os_type=$(shell::get_os_type)
-    local sed_cmd=""
-    if [ "$os_type" = "macos" ]; then
-        sed_cmd="sudo sed -i '' \"s/^${selected_key}=.*/${selected_key}=${encoded_value}/\" \"$profile_conf\""
-    else
-        sed_cmd="sudo sed -i \"s/^${selected_key}=.*/${selected_key}=${encoded_value}/\" \"$profile_conf\""
-    fi
-    if [ "$dry_run" = "true" ]; then
-        shell::on_evict "$sed_cmd"
-    else
-        shell::run_cmd_eval "$sed_cmd"
-        shell::colored_echo "INFO: Updated configuration for key: $selected_key in profile '$profile_name'" 46
-    fi
+	if [ $# -lt 1 ]; then
+		echo "Usage: shell::update_profile_conf [-n] <profile_name>"
+		return 1
+	fi
+	local profile_name="$1"
+	local profile_dir=$(shell::get_profile_path "$profile_name")
+	local profile_conf="$profile_dir/profile.conf"
+	if [ ! -d "$profile_dir" ]; then
+		shell::colored_echo "ERR: Profile '$profile_name' does not exist." 196
+		return 1
+	fi
+	if [ ! -f "$profile_conf" ]; then
+		shell::colored_echo "ERR: Profile configuration file '$profile_conf' not found." 196
+		return 1
+	fi
+	shell::install_package fzf
+	local selected_key
+	selected_key=$(cut -d '=' -f 1 "$profile_conf" | fzf --prompt="Select config key to update in profile '$profile_name': ")
+	if [ -z "$selected_key" ]; then
+		shell::colored_echo "ERR: No configuration selected." 196
+		return 1
+	fi
+	shell::colored_echo ">> Enter new value for key '$selected_key' in profile '$profile_name':" 33
+	read -r new_value
+	if [ -z "$new_value" ]; then
+		shell::colored_echo "ERR: No new value entered. Update aborted." 196
+		return 1
+	fi
+	local encoded_value
+	encoded_value=$(echo -n "$new_value" | base64 | tr -d '\n')
+	local os_type
+	os_type=$(shell::get_os_type)
+	local sed_cmd=""
+	if [ "$os_type" = "macos" ]; then
+		sed_cmd="sudo sed -i '' \"s/^${selected_key}=.*/${selected_key}=${encoded_value}/\" \"$profile_conf\""
+	else
+		sed_cmd="sudo sed -i \"s/^${selected_key}=.*/${selected_key}=${encoded_value}/\" \"$profile_conf\""
+	fi
+	if [ "$dry_run" = "true" ]; then
+		shell::on_evict "$sed_cmd"
+	else
+		shell::run_cmd_eval "$sed_cmd"
+		shell::colored_echo "INFO: Updated configuration for key: $selected_key in profile '$profile_name'" 46
+	fi
 }
 
 # shell::exist_profile_conf_key function
@@ -730,38 +730,38 @@ shell::update_profile_conf() {
 # Example:
 #   shell::exist_profile_conf_key my_profile my_key
 shell::exist_profile_conf_key() {
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_EXIST_PROFILE_CONF_KEY"
-        return 0
-    fi
+	# Check for the help flag (-h)
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_EXIST_PROFILE_CONF_KEY"
+		return 0
+	fi
 
-    if [ $# -lt 2 ]; then
-        echo "Usage: shell::exist_profile_conf_key <profile_name> <key>"
-        return 1
-    fi
-    local profile_name="$1"
-    local key="$2"
-    local profile_dir=$(shell::get_profile_path "$profile_name")
-    local profile_conf="$profile_dir/profile.conf"
-    # sanitized key
-    key=$(shell::sanitize_upper_var_name "$key")
+	if [ $# -lt 2 ]; then
+		echo "Usage: shell::exist_profile_conf_key <profile_name> <key>"
+		return 1
+	fi
+	local profile_name="$1"
+	local key="$2"
+	local profile_dir=$(shell::get_profile_path "$profile_name")
+	local profile_conf="$profile_dir/profile.conf"
+	# sanitized key
+	key=$(shell::sanitize_upper_var_name "$key")
 
-    if [ ! -d "$profile_dir" ]; then
-        shell::colored_echo "ERR: Profile '$profile_name' does not exist." 196
-        return 1
-    fi
-    if [ ! -f "$profile_conf" ]; then
-        echo "false"
-        return 1
-    fi
-    if grep -q "^${key}=" "$profile_conf"; then
-        echo "true"
-        return 0
-    else
-        echo "false"
-        return 1
-    fi
+	if [ ! -d "$profile_dir" ]; then
+		shell::colored_echo "ERR: Profile '$profile_name' does not exist." 196
+		return 1
+	fi
+	if [ ! -f "$profile_conf" ]; then
+		echo "false"
+		return 1
+	fi
+	if grep -q "^${key}=" "$profile_conf"; then
+		echo "true"
+		return 0
+	else
+		echo "false"
+		return 1
+	fi
 }
 
 # shell::rename_profile_conf_key function
@@ -785,67 +785,67 @@ shell::exist_profile_conf_key() {
 #   shell::rename_profile_conf_key my_profile
 #   shell::rename_profile_conf_key -n my_profile   # dry-run mode
 shell::rename_profile_conf_key() {
-    local dry_run="false"
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+	local dry_run="false"
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
 
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_RENAME_PROFILE_CONF_KEY"
-        return 0
-    fi
+	# Check for the help flag (-h)
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_RENAME_PROFILE_CONF_KEY"
+		return 0
+	fi
 
-    if [ $# -lt 1 ]; then
-        echo "Usage: shell::rename_profile_conf_key [-n] <profile_name>"
-        return 1
-    fi
-    local profile_name="$1"
-    local profile_dir=$(shell::get_profile_path "$profile_name")
-    local profile_conf="$profile_dir/profile.conf"
-    if [ ! -d "$profile_dir" ]; then
-        shell::colored_echo "ERR: Profile '$profile_name' does not exist." 196
-        return 1
-    fi
-    if [ ! -f "$profile_conf" ]; then
-        shell::colored_echo "ERR: Profile configuration file '$profile_conf' not found." 196
-        return 1
-    fi
-    shell::install_package fzf
-    local old_key
-    old_key=$(cut -d '=' -f 1 "$profile_conf" | fzf --prompt="Select a key to rename in profile '$profile_name': ")
-    if [ -z "$old_key" ]; then
-        shell::colored_echo "ERR: No key selected. Aborting rename." 196
-        return 1
-    fi
-    shell::colored_echo "Enter new key name for '$old_key' in profile '$profile_name':" 33
-    read -r new_key
-    if [ -z "$new_key" ]; then
-        shell::colored_echo "ERR: No new key name entered. Aborting rename." 196
-        return 1
-    fi
-    # sanitized key
-    new_key=$(shell::sanitize_upper_var_name "$new_key")
+	if [ $# -lt 1 ]; then
+		echo "Usage: shell::rename_profile_conf_key [-n] <profile_name>"
+		return 1
+	fi
+	local profile_name="$1"
+	local profile_dir=$(shell::get_profile_path "$profile_name")
+	local profile_conf="$profile_dir/profile.conf"
+	if [ ! -d "$profile_dir" ]; then
+		shell::colored_echo "ERR: Profile '$profile_name' does not exist." 196
+		return 1
+	fi
+	if [ ! -f "$profile_conf" ]; then
+		shell::colored_echo "ERR: Profile configuration file '$profile_conf' not found." 196
+		return 1
+	fi
+	shell::install_package fzf
+	local old_key
+	old_key=$(cut -d '=' -f 1 "$profile_conf" | fzf --prompt="Select a key to rename in profile '$profile_name': ")
+	if [ -z "$old_key" ]; then
+		shell::colored_echo "ERR: No key selected. Aborting rename." 196
+		return 1
+	fi
+	shell::colored_echo "Enter new key name for '$old_key' in profile '$profile_name':" 33
+	read -r new_key
+	if [ -z "$new_key" ]; then
+		shell::colored_echo "ERR: No new key name entered. Aborting rename." 196
+		return 1
+	fi
+	# sanitized key
+	new_key=$(shell::sanitize_upper_var_name "$new_key")
 
-    if grep -q "^${new_key}=" "$profile_conf"; then
-        shell::colored_echo "ERR: Key '$new_key' already exists in profile '$profile_name'." 196
-        return 1
-    fi
-    local os_type
-    os_type=$(shell::get_os_type)
-    local sed_cmd=""
-    if [ "$os_type" = "macos" ]; then
-        sed_cmd="sudo sed -i '' \"s/^${old_key}=/${new_key}=/\" \"$profile_conf\""
-    else
-        sed_cmd="sudo sed -i \"s/^${old_key}=/${new_key}=/\" \"$profile_conf\""
-    fi
-    if [ "$dry_run" = "true" ]; then
-        shell::on_evict "$sed_cmd"
-    else
-        shell::run_cmd_eval "$sed_cmd"
-        shell::colored_echo "INFO: Renamed key '$old_key' to '$new_key' in profile '$profile_name'" 46
-    fi
+	if grep -q "^${new_key}=" "$profile_conf"; then
+		shell::colored_echo "ERR: Key '$new_key' already exists in profile '$profile_name'." 196
+		return 1
+	fi
+	local os_type
+	os_type=$(shell::get_os_type)
+	local sed_cmd=""
+	if [ "$os_type" = "macos" ]; then
+		sed_cmd="sudo sed -i '' \"s/^${old_key}=/${new_key}=/\" \"$profile_conf\""
+	else
+		sed_cmd="sudo sed -i \"s/^${old_key}=/${new_key}=/\" \"$profile_conf\""
+	fi
+	if [ "$dry_run" = "true" ]; then
+		shell::on_evict "$sed_cmd"
+	else
+		shell::run_cmd_eval "$sed_cmd"
+		shell::colored_echo "INFO: Renamed key '$old_key' to '$new_key' in profile '$profile_name'" 46
+	fi
 }
 
 # shell::clone_profile_conf function
@@ -869,47 +869,47 @@ shell::rename_profile_conf_key() {
 # Example:
 #   shell::clone_profile_conf my_profile backup_profile   # Clones profile.conf from 'my_profile' to 'backup_profile'
 shell::clone_profile_conf() {
-    local dry_run="false"
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+	local dry_run="false"
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
 
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_CLONE_PROFILE_CONF"
-        return 0
-    fi
+	# Check for the help flag (-h)
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_CLONE_PROFILE_CONF"
+		return 0
+	fi
 
-    if [ $# -lt 2 ]; then
-        echo "Usage: shell::clone_profile_conf [-n] <source_profile> <destination_profile>"
-        return 1
-    fi
-    local source_profile="$1"
-    local destination_profile="$2"
-    local source_dir=$(shell::get_profile_path "$source_profile")
-    local destination_dir=$(shell::get_profile_path "$destination_profile")
-    local source_conf="$source_dir/profile.conf"
-    local destination_conf="$destination_dir/profile.conf"
-    if [ ! -d "$source_dir" ]; then
-        shell::colored_echo "ERR: Source profile '$source_profile' does not exist." 196
-        return 1
-    fi
-    if [ ! -f "$source_conf" ]; then
-        shell::colored_echo "ERR: Source profile configuration file '$source_conf' not found." 196
-        return 1
-    fi
-    if [ -d "$destination_dir" ]; then
-        shell::colored_echo "ERR: Destination profile '$destination_profile' already exists." 196
-        return 1
-    fi
-    local cmd="sudo mkdir -p \"$destination_dir\" && sudo cp \"$source_conf\" \"$destination_conf\""
-    if [ "$dry_run" = "true" ]; then
-        shell::on_evict "$cmd"
-    else
-        shell::run_cmd_eval "$cmd"
-        shell::colored_echo "INFO: Cloned profile.conf from '$source_profile' to '$destination_profile'" 46
-    fi
+	if [ $# -lt 2 ]; then
+		echo "Usage: shell::clone_profile_conf [-n] <source_profile> <destination_profile>"
+		return 1
+	fi
+	local source_profile="$1"
+	local destination_profile="$2"
+	local source_dir=$(shell::get_profile_path "$source_profile")
+	local destination_dir=$(shell::get_profile_path "$destination_profile")
+	local source_conf="$source_dir/profile.conf"
+	local destination_conf="$destination_dir/profile.conf"
+	if [ ! -d "$source_dir" ]; then
+		shell::colored_echo "ERR: Source profile '$source_profile' does not exist." 196
+		return 1
+	fi
+	if [ ! -f "$source_conf" ]; then
+		shell::colored_echo "ERR: Source profile configuration file '$source_conf' not found." 196
+		return 1
+	fi
+	if [ -d "$destination_dir" ]; then
+		shell::colored_echo "ERR: Destination profile '$destination_profile' already exists." 196
+		return 1
+	fi
+	local cmd="sudo mkdir -p \"$destination_dir\" && sudo cp \"$source_conf\" \"$destination_conf\""
+	if [ "$dry_run" = "true" ]; then
+		shell::on_evict "$cmd"
+	else
+		shell::run_cmd_eval "$cmd"
+		shell::colored_echo "INFO: Cloned profile.conf from '$source_profile' to '$destination_profile'" 46
+	fi
 }
 
 # shell::list_profile_conf function
@@ -926,31 +926,31 @@ shell::clone_profile_conf() {
 # Example:
 #   shell::list_profile_conf       # Displays the names of all profiles in the workspace.
 shell::list_profile_conf() {
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_LIST_PROFILE_CONF"
-        return 0
-    fi
+	# Check for the help flag (-h)
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_LIST_PROFILE_CONF"
+		return 0
+	fi
 
-    # Ensure that the workspace exists.
-    shell::ensure_workspace
+	# Ensure that the workspace exists.
+	shell::ensure_workspace
 
-    # Check if the workspace directory exists.
-    if [ ! -d "$SHELL_CONF_WORKING_WORKSPACE" ]; then
-        shell::colored_echo "ERR: Workspace directory '$SHELL_CONF_WORKING_WORKSPACE' does not exist." 196
-        return 1
-    fi
+	# Check if the workspace directory exists.
+	if [ ! -d "$SHELL_CONF_WORKING_WORKSPACE" ]; then
+		shell::colored_echo "ERR: Workspace directory '$SHELL_CONF_WORKING_WORKSPACE' does not exist." 196
+		return 1
+	fi
 
-    # Find all subdirectories (profiles) in the workspace.
-    local profiles
-    profiles=$(find "$SHELL_CONF_WORKING_WORKSPACE" -mindepth 1 -maxdepth 1 -type d 2>/dev/null)
+	# Find all subdirectories (profiles) in the workspace.
+	local profiles
+	profiles=$(find "$SHELL_CONF_WORKING_WORKSPACE" -mindepth 1 -maxdepth 1 -type d 2>/dev/null)
 
-    # Check if any profiles were found.
-    if [ -z "$profiles" ]; then
-        shell::colored_echo "ERR: No profiles found in workspace." 196
-        return 1
-    fi
+	# Check if any profiles were found.
+	if [ -z "$profiles" ]; then
+		shell::colored_echo "ERR: No profiles found in workspace." 196
+		return 1
+	fi
 
-    # List profile names by extracting the basename from each directory path.
-    echo "$profiles" | xargs -n 1 basename
+	# List profile names by extracting the basename from each directory path.
+	echo "$profiles" | xargs -n 1 basename
 }

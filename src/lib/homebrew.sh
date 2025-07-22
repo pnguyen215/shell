@@ -22,13 +22,13 @@
 # Example:
 #   shell::install_homebrew
 shell::install_homebrew() {
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_INSTALL_HOMEBREW"
-        return 0
-    fi
+	# Check for the help flag (-h)
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_INSTALL_HOMEBREW"
+		return 0
+	fi
 
-    shell::run_cmd_eval '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
+	shell::run_cmd_eval '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
 }
 
 # shell::removal_homebrew function
@@ -52,18 +52,18 @@ shell::install_homebrew() {
 # Example:
 #   shell::removal_homebrew
 shell::removal_homebrew() {
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_REMOVAL_HOMEBREW"
-        return 0
-    fi
+	# Check for the help flag (-h)
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_REMOVAL_HOMEBREW"
+		return 0
+	fi
 
-    if shell::is_command_available brew; then
-        echo "🚀 Uninstalling Homebrew..."
-        shell::run_cmd_eval '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh)"'
-        shell::run_cmd_eval 'sed -i.bak '/# Homebrew/d' "$HOME/.zprofile"' # Remove Homebrew-related lines from the shell profile
-        shell::colored_echo "INFO: Homebrew uninstalled successfully!" 46
-    else
-        shell::colored_echo "WARN: Homebrew is not installed. Nothing to uninstall." 11
-    fi
+	if shell::is_command_available brew; then
+		echo "🚀 Uninstalling Homebrew..."
+		shell::run_cmd_eval '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh)"'
+		shell::run_cmd_eval 'sed -i.bak '/# Homebrew/d' "$HOME/.zprofile"' # Remove Homebrew-related lines from the shell profile
+		shell::colored_echo "INFO: Homebrew uninstalled successfully!" 46
+	else
+		shell::colored_echo "WARN: Homebrew is not installed. Nothing to uninstall." 11
+	fi
 }

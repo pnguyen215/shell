@@ -11,12 +11,12 @@
 # The CI workflow file is essential for automating the build, test, and deployment
 # processes in a continuous integration environment.
 shell::add_github_workflow_ci() {
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_ADD_GITHUB_WORKFLOW_CI"
-        return 0
-    fi
-    shell::download_dataset ".github/workflows/ci.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_CI
+	# Check for the help flag (-h)
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_ADD_GITHUB_WORKFLOW_CI"
+		return 0
+	fi
+	shell::download_dataset ".github/workflows/ci.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_CI
 }
 
 # shell::add_github_workflow_ci_notification function
@@ -28,10 +28,10 @@ shell::add_github_workflow_ci() {
 # It utilizes the shell::download_dataset function to fetch the file and save it
 # in the appropriate location within the project structure.
 shell::add_github_workflow_ci_notification() {
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_ADD_GITHUB_WORKFLOW_CI_NOTIFICATION"
-        return 0
-    fi
-    shell::download_dataset ".github/workflows/ci_notify.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_CI_NOTIFICATION
+	# Check for the help flag (-h)
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_ADD_GITHUB_WORKFLOW_CI_NOTIFICATION"
+		return 0
+	fi
+	shell::download_dataset ".github/workflows/ci_notify.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_CI_NOTIFICATION
 }
