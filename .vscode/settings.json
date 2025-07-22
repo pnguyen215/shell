@@ -50,6 +50,7 @@
     "sgemviconv",
     "sgrammarai",
     "shell::opent",
+    "shfmt",
     "snapcraft",
     "softprops",
     "spreadsheetml",

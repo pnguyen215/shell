@@ -1,0 +1,64 @@
+# This GitHub Actions workflow automatically formats shell scripts in a repository using `shfmt`.
+# It includes steps to check out the code, set up `shfmt`, format all `.sh` files, check for changes, and create a pull request if any files were modified.
+
+name: GH Workflow BashScript Pretty
+
+# Permissions for the workflow
+# This workflow requires write permissions to contents and pull requests
+permissions:
+  contents: write # allows modifying files
+  pull-requests: write # allows creating/updating PRs
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+
+jobs:
+  format-sh:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the code from the repository
+      # This step uses the `actions/checkout` action to fetch the repository code.
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history for all branches and tags
+
+      # Set up the environment for formatting shell scripts
+      # This step installs `shfmt`, a shell script formatter, and formats all `.sh` files in the repository.
+      - name: Set up shfmt
+        run: |
+          curl -sSLo shfmt https://github.com/mvdan/sh/releases/download/v3.7.0/shfmt_v3.7.0_linux_amd64
+          chmod +x shfmt
+          sudo mv shfmt /usr/local/bin/
+
+      # Format all shell scripts in the repository
+      # This step uses `shfmt` to format all `.sh` files in the repository.
+      - name: Format all .sh files
+        run: |
+          shfmt -w .
+
+      # Check for changes after formatting
+      # This step checks if any files were modified by the formatting step.
+      # If changes are detected, it sets an output variable to indicate that a pull request should be created.
+      - name: Check for changes
+        id: git-check
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git diff --quiet || echo "changed=true" >> $GITHUB_OUTPUT
+
+      # Create a pull request if changes were made
+      # This step uses the `peter-evans/create-pull-request` action to create a pull request with the formatted changes.
+      - name: Create Pull Request
+        if: steps.git-check.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "chore: format shell scripts via shfmt"
+          branch: bot-auto-format
+          title: "[Bot] shfmt: for auto-formatting shell scripts"
+          body: "This PR auto-formats all `.sh` files using [shfmt](https://github.com/mvdan/sh)."
+          delete-branch: true
