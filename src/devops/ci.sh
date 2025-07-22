@@ -16,7 +16,7 @@ shell::add_github_workflow_ci() {
         echo "$USAGE_SHELL_ADD_GITHUB_WORKFLOW_CI"
         return 0
     fi
-    shell::download_dataset ".github/workflows/ci.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_CI
+    shell::download_dataset ".github/workflows/ci.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_CI_RELEASE
 }
 
 # shell::add_github_workflow_ci_notification function
@@ -33,5 +33,5 @@ shell::add_github_workflow_ci_notification() {
         echo "$USAGE_SHELL_ADD_GITHUB_WORKFLOW_CI_NOTIFICATION"
         return 0
     fi
-    shell::download_dataset ".github/workflows/ci_notify.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_CI_NOTIFICATION
+    shell::download_dataset ".github/workflows/ci_notify.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_CI_RELEASE_NOTIFICATION
 }
