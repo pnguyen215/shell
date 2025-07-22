@@ -3041,7 +3041,7 @@ shell::ask() {
 
     while true; do
         # printf "%s (y/n) " "$1"
-        shell::colored_echo "[q] $1 (y/n) " 208 -n
+        shell::colored_echo "[q] $1 (y/n) " 208
         read -r reply
         # reply=${reply:-"y"}
         case "$reply" in
