@@ -233,10 +233,10 @@ SHELL_PROJECT_GITHUB_WORKFLOW_CI_NOTIFICATION="https://raw.githubusercontent.com
 # This variable holds the URL to the documentation release notes.
 # It is used to provide access to the latest release information for the project,
 # allowing developers and users to stay informed about updates and changes.
-SHELL_PROJECT_DOC_VERSION_RELEASE="https://raw.githubusercontent.com/pnguyen215/wsdkit.keys/master/docs/RELEASE.md"
+SHELL_PROJECT_DOC_VERSION_RELEASE="https://raw.githubusercontent.com/pnguyen215/shell-devops-stores/refs/heads/master/docs/VERSIONING.md"
 
 # SHELL_PROJECT_GO_MAKEFILE constant
 # This variable holds the URL to the Makefile template for Go projects.
 # It is used to provide a standard Makefile configuration, which can help automate
 # the build process and other tasks for Go applications.
-SHELL_PROJECT_GO_MAKEFILE="https://raw.githubusercontent.com/pnguyen215/wsdkit.keys/master/cmd/go/Makefile"
+SHELL_PROJECT_GO_MAKEFILE="https://raw.githubusercontent.com/pnguyen215/shell-devops-stores/refs/heads/master/languages/golang/sdk/Makefile"
