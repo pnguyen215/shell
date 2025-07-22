@@ -3131,6 +3131,15 @@ view_file() {
     local current_datetime
     current_datetime=$(date +"%Y-%m-%d %H:%M:%S")
     
+    # Trim file_size whitespace, leading/trailing characters
+    file_size=$(echo "$file_size" | xargs)
+    # Convert file size to human-readable format
+    if [[ $file_size -gt 1000 ]]; then
+        file_size=$(echo "$file_size" | awk '{printf "%.1fK", $1/1000}')
+    else
+        file_size=$(echo "$file_size" | awk '{printf "%d", $1}')
+    fi
+
     # Main fzf interface with 100% width
     local selected_lines
     selected_lines=$(cat "$temp_file" | fzf \
