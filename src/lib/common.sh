@@ -3143,12 +3143,12 @@ view_file() {
         --bind 'shift-tab:toggle+up' \
         --bind 'ctrl-r:toggle-all' \
         --bind 'ctrl-/:toggle-preview' \
-        --header="File: $file | MH: $highlighting_method | Lines: $file_size | TAB: select | CTRL+A: all | CTRL+D: deselect | ENTER: copy | ESC: exit" \
-        --preview="echo 'Shell: selected lines will be copied to clipboard | $current_datetime'" \
+        --header="File: $file | Lines: $file_size | MH: $highlighting_method | TAB: select | CTRL+A: all | CTRL+D: deselect | ENTER: copy | ESC: exit" \
+        --preview="echo 'Selected lines will be copied to clipboard'" \
         --preview-window="top:1:wrap" \
         --height=100% \
         --border=rounded \
-        # --border-label="Shell Viewer - $current_datetime" \
+        --border-label="Shell $current_datetime" \
         --border-label-pos=top \
         --margin=0 \
         --padding=0 \
