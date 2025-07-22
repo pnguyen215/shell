@@ -18,30 +18,30 @@
 # Example:
 #   shell::fatal "Configuration file not found."
 shell::fatal() {
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_FATAL"
-        return 0
-    fi
+	# Check for the help flag (-h)
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_FATAL"
+		return 0
+	fi
 
-    # Verify argument count: expects between 0 and 1 argument.
-    shell::verify_arg_count "$#" 0 1 || exit 1
+	# Verify argument count: expects between 0 and 1 argument.
+	shell::verify_arg_count "$#" 0 1 || exit 1
 
-    # Declare positional argument (readonly) for the error message.
-    declare -r msg="${1:-"Unspecified fatal error."}"
+	# Declare positional argument (readonly) for the error message.
+	declare -r msg="${1:-"Unspecified fatal error."}"
 
-    # Declare variable to hold the call stack.
-    declare stack
+	# Declare variable to hold the call stack.
+	declare stack
 
-    # Build a string showing the function call stack.
-    stack="${FUNCNAME[*]}"
-    stack="${stack// / <- }"
+	# Build a string showing the function call stack.
+	stack="${FUNCNAME[*]}"
+	stack="${stack// / <- }"
 
-    # Print the fatal error message with red color.
-    printf "%b\\n" "${SHELL_C_AES_RED}Fatal error. ${msg}${SHELL_C_AES_RESET}" 1>&2
+	# Print the fatal error message with red color.
+	printf "%b\\n" "${SHELL_C_AES_RED}Fatal error. ${msg}${SHELL_C_AES_RESET}" 1>&2
 
-    # Print the call stack with yellow color.
-    printf "%b\\n" "${SHELL_C_AES_YELLOW}[${stack}]${SHELL_C_AES_RESET}" 1>&2
+	# Print the call stack with yellow color.
+	printf "%b\\n" "${SHELL_C_AES_YELLOW}[${stack}]${SHELL_C_AES_RESET}" 1>&2
 
-    exit 1
+	exit 1
 }

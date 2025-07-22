@@ -35,30 +35,30 @@ LLM_PROMPTS_DIR="$SHELL_DIR/src/llm/prompts"
 # Example:
 #   shell::source_directory "$LIB_DIR" # Sources all .sh files in the library directory.
 shell::source_directory() {
-    local dir="$1"
+	local dir="$1"
 
-    # Check if the directory exists before attempting to source files.
-    if [ -d "$dir" ]; then
-        # Iterate through .sh files in the directory and source them.
-        # Using a find loop is generally more robust than globbing for handling
-        # filenames with spaces or special characters, although for simple .sh
-        # files in a controlled environment, globbing might be slightly faster.
-        # Sticking with a simple glob loop for potentially better performance
-        # given the context of sourcing many small files, and assuming
-        # standard file naming conventions for configuration/library scripts.
-        for script in "$dir"/*.sh; do
-            # Check if the file exists and is a regular file before sourcing.
-            if [ -f "$script" ]; then
-                # Source the script. Redirecting stdout and stderr to /dev/null
-                # to prevent verbose output during sourcing unless there's a critical error.
-                source "$script" >/dev/null 2>&1
-            fi
-        done
-        # else
-        # Optional: Add an error message if a directory is not found, but suppressing
-        # this for cleaner output during standard sourcing.
-        # shell::colored_echo "WARN: Warning: Source directory '$dir' not found." 11
-    fi
+	# Check if the directory exists before attempting to source files.
+	if [ -d "$dir" ]; then
+		# Iterate through .sh files in the directory and source them.
+		# Using a find loop is generally more robust than globbing for handling
+		# filenames with spaces or special characters, although for simple .sh
+		# files in a controlled environment, globbing might be slightly faster.
+		# Sticking with a simple glob loop for potentially better performance
+		# given the context of sourcing many small files, and assuming
+		# standard file naming conventions for configuration/library scripts.
+		for script in "$dir"/*.sh; do
+			# Check if the file exists and is a regular file before sourcing.
+			if [ -f "$script" ]; then
+				# Source the script. Redirecting stdout and stderr to /dev/null
+				# to prevent verbose output during sourcing unless there's a critical error.
+				source "$script" >/dev/null 2>&1
+			fi
+		done
+		# else
+		# Optional: Add an error message if a directory is not found, but suppressing
+		# this for cleaner output during standard sourcing.
+		# shell::colored_echo "WARN: Warning: Source directory '$dir' not found." 11
+	fi
 }
 
 # Source configuration, library, and language scripts in order.
@@ -81,7 +81,7 @@ shell::source_directory "$LLM_AGENT_DIR"
 # Example:
 #   shell::version  # Outputs: shell v0.0.1
 shell::version() {
-    shell::retrieve_gh_latest_release "pnguyen215/shell"
+	shell::retrieve_gh_latest_release "pnguyen215/shell"
 }
 
 # shell::upgrade function
@@ -102,24 +102,24 @@ shell::version() {
 #   It checks for the presence of the source command in the user's .zshrc or .bashrc
 #   files and executes the appropriate command to ensure the new version is loaded.
 shell::upgrade() {
-    echo "🚀 Upgrading shell..."
-    install_dir="$HOME/shell"
-    [ -d "$install_dir" ] && rm -rf "$install_dir"
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/pnguyen215/shell/master/install.sh)"
-    # shell::colored_echo "INFO: shell upgraded. Restart your terminal or run 'source ~/.zshrc' or 'source ~/.bashrc' to apply changes." 46
-    if [ -f "$HOME/.zshrc" ] && grep -q "source $install_dir/src/shell.sh" "$HOME/.zshrc"; then
-        shell::clip_value "source ~/.zshrc"
-        shell::run_cmd_eval "source ~/.zshrc"
-        return 0
-    elif [ -f "$HOME/.bashrc" ] && grep -q "source $install_dir/src/shell.sh" "$HOME/.bashrc"; then
-        shell::clip_value "source ~/.bashrc"
-        shell::run_cmd_eval "source ~/.bashrc"
-        return 0
-    else
-        # Fallback: default to .bashrc if none found.
-        shell::clip_value "source ~/.bashrc"
-        shell::run_cmd_eval "source ~/.bashrc"
-    fi
+	echo "🚀 Upgrading shell..."
+	install_dir="$HOME/shell"
+	[ -d "$install_dir" ] && rm -rf "$install_dir"
+	bash -c "$(curl -fsSL https://raw.githubusercontent.com/pnguyen215/shell/master/install.sh)"
+	# shell::colored_echo "INFO: shell upgraded. Restart your terminal or run 'source ~/.zshrc' or 'source ~/.bashrc' to apply changes." 46
+	if [ -f "$HOME/.zshrc" ] && grep -q "source $install_dir/src/shell.sh" "$HOME/.zshrc"; then
+		shell::clip_value "source ~/.zshrc"
+		shell::run_cmd_eval "source ~/.zshrc"
+		return 0
+	elif [ -f "$HOME/.bashrc" ] && grep -q "source $install_dir/src/shell.sh" "$HOME/.bashrc"; then
+		shell::clip_value "source ~/.bashrc"
+		shell::run_cmd_eval "source ~/.bashrc"
+		return 0
+	else
+		# Fallback: default to .bashrc if none found.
+		shell::clip_value "source ~/.bashrc"
+		shell::run_cmd_eval "source ~/.bashrc"
+	fi
 }
 
 # shell::uninstall function
@@ -137,8 +137,8 @@ shell::upgrade() {
 #     to manually remove the source command from their shell configuration file
 #     (e.g., ~/.zshrc or ~/.bashrc).
 shell::uninstall() {
-    echo "🚀 Uninstalling shell..."
-    install_dir="$HOME/shell"
-    [ -d "$install_dir" ] && rm -rf "$install_dir"
-    shell::colored_echo "INFO: shell uninstalled. Please remove 'source $install_dir/src/shell.sh' from your shell config (e.g., ~/.zshrc or ~/.bashrc)." 46
+	echo "🚀 Uninstalling shell..."
+	install_dir="$HOME/shell"
+	[ -d "$install_dir" ] && rm -rf "$install_dir"
+	shell::colored_echo "INFO: shell uninstalled. Please remove 'source $install_dir/src/shell.sh' from your shell config (e.g., ~/.zshrc or ~/.bashrc)." 46
 }

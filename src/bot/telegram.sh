@@ -18,12 +18,12 @@
 #   message=$(shell::gen_markdown_message "*Hello*, this is a test message." "Here is some code:" "```bash\necho Hello\n```")
 #   echo "$message"
 shell::gen_markdown_message() {
-    local message=""
-    for line in "$@"; do
-        message+="$line\n"
-    done
-    # Print the final message (printf "%b" interprets backslash escapes)
-    printf "%b" "$message"
+	local message=""
+	for line in "$@"; do
+		message+="$line\n"
+	done
+	# Print the final message (printf "%b" interprets backslash escapes)
+	printf "%b" "$message"
 }
 
 # shell::send_telegram_message function
@@ -47,49 +47,49 @@ shell::gen_markdown_message() {
 #   shell::send_telegram_message 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Hello, World!"
 #   shell::send_telegram_message -n 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Dry-run: Hello, World!"
 shell::send_telegram_message() {
-    local dry_run="false"
+	local dry_run="false"
 
-    # Check for the optional dry-run flag (-n).
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+	# Check for the optional dry-run flag (-n).
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
 
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_SEND_TELEGRAM_MESSAGE"
-        return 0
-    fi
+	# Check for the help flag (-h)
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_SEND_TELEGRAM_MESSAGE"
+		return 0
+	fi
 
-    # Ensure that at least three arguments remain.
-    if [ $# -lt 3 ]; then
-        echo "Usage: shell::send_telegram_message [-n] <token> <chat_id> <message>"
-        return 1
-    fi
+	# Ensure that at least three arguments remain.
+	if [ $# -lt 3 ]; then
+		echo "Usage: shell::send_telegram_message [-n] <token> <chat_id> <message>"
+		return 1
+	fi
 
-    local token="$1"
-    local chatID="$2"
-    local message="$3"
+	local token="$1"
+	local chatID="$2"
+	local message="$3"
 
-    # Verify that both token and chatID are defined.
-    if [ -z "$token" ] || [ -z "$chatID" ]; then
-        shell::colored_echo "ERR: Bot Token or Chat ID is not defined." 196
-        return 1
-    fi
+	# Verify that both token and chatID are defined.
+	if [ -z "$token" ] || [ -z "$chatID" ]; then
+		shell::colored_echo "ERR: Bot Token or Chat ID is not defined." 196
+		return 1
+	fi
 
-    # Construct the curl command to send the Telegram message.
-    local cmd="curl -s -X POST \"https://api.telegram.org/bot${token}/sendMessage\" \
+	# Construct the curl command to send the Telegram message.
+	local cmd="curl -s -X POST \"https://api.telegram.org/bot${token}/sendMessage\" \
                 -d \"chat_id=${chatID}\" \
                 -d \"parse_mode=markdown\" \
                 -d \"text=${message}\" >/dev/null"
 
-    # Execute the command in dry-run mode or actually send the message.
-    if [ "$dry_run" = "true" ]; then
-        shell::on_evict "$cmd &"
-    else
-        shell::async "$cmd"
-        shell::colored_echo "INFO: Telegram message sent." 46
-    fi
+	# Execute the command in dry-run mode or actually send the message.
+	if [ "$dry_run" = "true" ]; then
+		shell::on_evict "$cmd &"
+	else
+		shell::async "$cmd"
+		shell::colored_echo "INFO: Telegram message sent." 46
+	fi
 }
 
 # shell::send_telegram_attachment function
@@ -114,47 +114,47 @@ shell::send_telegram_message() {
 #   shell::send_telegram_attachment 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Report" file1.pdf file2.pdf
 #   shell::send_telegram_attachment -n 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Report" file1.pdf
 shell::send_telegram_attachment() {
-    local dry_run="false"
+	local dry_run="false"
 
-    # Check for the optional dry-run flag (-n)
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+	# Check for the optional dry-run flag (-n)
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
 
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_SEND_TELEGRAM_ATTACHMENT"
-        return 0
-    fi
+	# Check for the help flag (-h)
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_SEND_TELEGRAM_ATTACHMENT"
+		return 0
+	fi
 
-    # Ensure that at least four arguments remain: token, chat_id, description, and at least one filename.
-    if [ $# -lt 4 ]; then
-        echo "Usage: shell::send_telegram_attachment [-n] <token> <chat_id> <description> [filename_1] [filename_2] [filename_3] ..."
-        return 1
-    fi
+	# Ensure that at least four arguments remain: token, chat_id, description, and at least one filename.
+	if [ $# -lt 4 ]; then
+		echo "Usage: shell::send_telegram_attachment [-n] <token> <chat_id> <description> [filename_1] [filename_2] [filename_3] ..."
+		return 1
+	fi
 
-    # Retrieve parameters.
-    local token="$1"
-    local chatID="$2"
-    local description="$3"
-    local files=("${@:4}")
-    local timestamp
-    timestamp=$(date +"%Y-%m-%d %H:%M:%S")
+	# Retrieve parameters.
+	local token="$1"
+	local chatID="$2"
+	local description="$3"
+	local files=("${@:4}")
+	local timestamp
+	timestamp=$(date +"%Y-%m-%d %H:%M:%S")
 
-    # Iterate over each file and send as an attachment asynchronously.
-    for filename in "${files[@]}"; do
-        if [ -f "$filename" ]; then
-            # Build the curl command to send the attachment.
-            local cmd="curl -s -F chat_id=\"$chatID\" -F document=@\"$filename\" -F caption=\"$description ($timestamp)\" \"https://api.telegram.org/bot${token}/sendDocument\" >/dev/null"
-            if [ "$dry_run" = "true" ]; then
-                shell::on_evict "$cmd &"
-            else
-                shell::async "$cmd"
-                shell::colored_echo "INFO: Async: Attachment '$filename' is being sent." 46
-            fi
-        else
-            shell::colored_echo "ERR: Attachment '$filename' not found. Skipping." 196
-        fi
-    done
+	# Iterate over each file and send as an attachment asynchronously.
+	for filename in "${files[@]}"; do
+		if [ -f "$filename" ]; then
+			# Build the curl command to send the attachment.
+			local cmd="curl -s -F chat_id=\"$chatID\" -F document=@\"$filename\" -F caption=\"$description ($timestamp)\" \"https://api.telegram.org/bot${token}/sendDocument\" >/dev/null"
+			if [ "$dry_run" = "true" ]; then
+				shell::on_evict "$cmd &"
+			else
+				shell::async "$cmd"
+				shell::colored_echo "INFO: Async: Attachment '$filename' is being sent." 46
+			fi
+		else
+			shell::colored_echo "ERR: Attachment '$filename' not found. Skipping." 196
+		fi
+	done
 }
