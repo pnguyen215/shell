@@ -3144,7 +3144,7 @@ view_file() {
         --bind 'ctrl-r:toggle-all' \
         --bind 'ctrl-/:toggle-preview' \
         --header="File: $file | MH: $highlighting_method | Lines: $file_size | TAB: select | CTRL+A: all | CTRL+D: deselect | ENTER: copy | ESC: exit" \
-        --preview="echo 'Shell: selected lines will be copied to clipboard' $current_datetime" \
+        --preview="echo 'Shell: selected lines will be copied to clipboard | $current_datetime'" \
         --preview-window="top:1:wrap" \
         --height=100% \
         --border=rounded \
