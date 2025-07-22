@@ -20,7 +20,6 @@ fi
 #   The 'shell::add_bookmark' function creates a bookmark for the current directory with the given name.
 #   It allows quick navigation to the specified directory using the bookmark name.
 shell::add_bookmark() {
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_ADD_BOOKMARK"
         return 0
@@ -144,7 +143,6 @@ shell::remove_bookmark() {
 # Notes:
 #   - The bookmarks file is specified by the global variable 'bookmarks_file'.
 shell::remove_bookmark_linux() {
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_REMOVE_BOOKMARK_LINUX"
         return 0
@@ -294,7 +292,7 @@ shell::fzf_list_bookmark() {
     local selected_display_line
     # Display bookmarks in the format "name (path)" for fzf.
     # The original full line from the file is also passed through so we can easily grep for it.
-    selected_display_line=$(awk -F'|' '{print $2 " (" $1 ")"}' "$bookmarks_file" | fzf --prompt="Select a bookmarked path: ")
+    selected_display_line=$(awk -F'|' '{print $2 " (" $1 ")"}' "$bookmarks_file" | fzf --pointer="▶" --marker="✓" --border=rounded --layout=reverse --prompt="Select a bookmarked path: ")
 
     if [ -z "$selected_display_line" ]; then
         shell::colored_echo "ERR: No bookmark selected. Aborting." 196
@@ -509,7 +507,7 @@ shell::fzf_remove_bookmark_down() {
 
     # Use fzf in multi-select mode to select inactive bookmarks
     local selected_display_lines
-    selected_display_lines=$(echo "$inactive_bookmarks" | fzf --ansi --multi --prompt="Select inactive bookmarks to remove: ")
+    selected_display_lines=$(echo "$inactive_bookmarks" | fzf --ansi --multi --pointer="▶" --marker="✓" --border=rounded --layout=reverse --prompt="Select inactive bookmarks to remove: ")
 
     if [ -z "$selected_display_lines" ]; then
         shell::colored_echo "ERR: No bookmarks selected. Aborting." 196
@@ -615,7 +613,7 @@ shell::fzf_remove_bookmark() {
     # Check each path's existence and append [active] or [inactive] with appropriate color.
     selected_display_line=$(awk -F'|' -v yellow="$yellow" -v cyan="$cyan" -v green="$green" -v red="$red" -v normal="$normal" \
         '{status = system("[ -d \"" $1 "\" ]") == 0 ? green "[active]" normal : red "[inactive]" normal; print yellow $2 normal " (" cyan $1 normal ") " status}' \
-        "$bookmarks_file" | fzf --ansi --prompt="Select a bookmarked path: ")
+        "$bookmarks_file" | fzf --ansi --pointer="▶" --marker="✓" --border=rounded --layout=reverse --prompt="Select a bookmarked path: ")
 
     if [ -z "$selected_display_line" ]; then
         shell::colored_echo "ERR: No bookmark selected. Aborting." 196
@@ -809,7 +807,7 @@ shell::fzf_rename_bookmark() {
     local selected_display_line
     selected_display_line=$(awk -F'|' -v yellow="$yellow" -v cyan="$cyan" -v normal="$normal" \
         '{print yellow $2 normal " (" cyan $1 normal ")"}' "$bookmarks_file" |
-        fzf --ansi --prompt="Select bookmark to rename: ")
+        fzf --ansi --pointer="▶" --marker="✓" --border=rounded --layout=reverse --prompt="Select bookmark to rename: ")
 
     # Check if a bookmark was selected
     # This checks if the user selected a bookmark. If not, it displays an error and returns.
@@ -1014,7 +1012,7 @@ shell::fzf_rename_dir_base_bookmark() {
     selected_display_line=$(awk -F'|' -v yellow="$yellow" -v cyan="$cyan" -v normal="$normal" -v home="$home_prefix" '
         $1 !~ "^" home {
             print yellow $2 normal " (" cyan $1 normal ")"
-        }' "$bookmarks_file" | fzf --ansi --prompt="Select bookmark to rename its directory: ")
+        }' "$bookmarks_file" | fzf --ansi --pointer="▶" --marker="✓" --border=rounded --layout=reverse --prompt="Select bookmark to rename its directory: ")
 
     # Check if a bookmark was selected
     # This checks if the user selected a bookmark. If not, it displays an error and returns.
