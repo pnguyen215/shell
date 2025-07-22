@@ -3042,7 +3042,7 @@ shell::ask() {
     while true; do
         printf "%s ([y]/n) " "$1"
         read -r reply
-        reply=${reply:-"y"}
+        # reply=${reply:-"y"}
         case "$reply" in
         [Yy] | [Yy][Ee][Ss])
             return 1
