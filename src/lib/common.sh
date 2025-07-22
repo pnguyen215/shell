@@ -2988,7 +2988,7 @@ shell::get_mime_type() {
 #   shell::encode_base64_file "document.pdf"
 #   shell::encode_base64_file -n "image.jpg"
 shell::encode_base64_file() {
-     if [ "$1" = "-h" ]; then
+    if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_ENCODE_BASE64_FILE"
         return 0
     fi
@@ -3026,6 +3026,44 @@ shell::encode_base64_file() {
     else
         shell::run_cmd_eval "$base64_cmd"
     fi
+}
+
+# shell::ask function
+# Interactively asks a yes/no question and returns 1 for yes, 0 for no.
+#
+# Usage:
+#   shell::ask <question>
+#
+# Parameters:
+#   - <question> : The question to ask the user.
+#
+# Description:
+#   This function prompts the user with a yes/no question and waits for input.
+#   It returns 1 if the user answers "yes" (or "y"), and 0 for "no" (or "n").
+#   The function loops until a valid response is received.
+#   If the user provides an invalid response, it will continue to prompt.
+#   The function supports a help flag (-h) to display usage information.
+shell::ask() {
+    if [ "$1" = "-h" ]; then
+        echo "Usage: shell::ask <question>"
+        echo "Interactively ask a yes/no question and return 1 for yes, 0 for no."
+        return 0
+    fi
+
+    if [ $# -ne 1 ]; then
+        echo "Usage: shell::ask <question>"
+        return 1
+    fi
+
+    while true; do
+        read -p "$1 ([y]/n) " -r
+        reply=${reply:-"y"}
+        if [[ $reply =~ ^[Yy]$ ]]; then
+            return 1
+        elif [[ $reply =~ ^[Nn]$ ]]; then
+            return 0
+        fi
+    done
 }
 
 # File viewer function using fzf with line highlighting and selection
