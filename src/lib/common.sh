@@ -3138,24 +3138,6 @@ view_file() {
         file_size=$(echo "$file_size" | awk '{printf "%d", $1}')
     fi
 
-        # Create a temporary script for line jumping
-    local jump_script=$(mktemp)
-    cat > "$jump_script" << 'EOF'
-#!/bin/bash
-echo -n "Enter line number to jump to: " >&2
-read line_num
-if [[ "$line_num" =~ ^[0-9]+$ ]] && [[ $line_num -ge 1 ]] && [[ $line_num -le $1 ]]; then
-    echo "Jumping to line $line_num..." >&2
-    # Return the line number for fzf to process
-    echo "+$line_num"
-else
-    echo "Invalid line number: $line_num (valid range: 1-$1)" >&2
-    echo ""
-fi
-EOF
-    chmod +x "$jump_script"
-    trap "rm -f '$temp_file' '$colored_file' '$jump_script'" EXIT
-
     # Main fzf interface with 100% width
     local selected_lines
     selected_lines=$(cat "$temp_file" | fzf \
@@ -3168,8 +3150,6 @@ EOF
         --bind 'shift-tab:toggle+up' \
         --bind 'ctrl-r:toggle-all' \
         --bind 'ctrl-/:toggle-preview' \
-        --bind "ctrl-g:execute-silent($jump_script $file_size > /tmp/fzf_jump)+reload(cat '$temp_file')" \
-        --bind "ctrl-l:execute(sed -n '{q}p' '$temp_file' | head -1; echo 'Press any key to continue...' >&2; read -k1)" \
         --header="File: $file | Lines: $file_size | MH: $highlighting_method | TAB: select | CTRL+A: all | CTRL+D: deselect | CTRL+G: goto line | CTRL+R: toggle all | ENTER: copy | ESC: exit" \
         --preview="echo 'Selected lines will be copied to clipboard'" \
         --preview-window="top:1:wrap" \
