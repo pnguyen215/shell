@@ -23,16 +23,15 @@
 #   shell::install_python       # Installs Python 3.
 #   shell::install_python -n    # Prints the installation command without executing it.
 shell::install_python() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_INSTALL_PYTHON"
+        return 0
+    fi
+
     local dry_run="false"
     if [ "$1" = "-n" ]; then
         dry_run="true"
         shift
-    fi
-
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_INSTALL_PYTHON"
-        return 0
     fi
 
     local os_type
@@ -117,16 +116,15 @@ shell::install_python() {
 #   - Requires sudo privileges.
 #   - On Linux, system tools may break if Python is a core dependency; use with caution.
 shell::uninstall_python() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_UNINSTALL_PYTHON"
+        return 0
+    fi
+
     local dry_run="false"
     if [ "$1" = "-n" ]; then
         dry_run="true"
         shift
-    fi
-
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_UNINSTALL_PYTHON"
-        return 0
     fi
 
     local os_type
@@ -207,16 +205,15 @@ shell::uninstall_python() {
 #   - Supports asynchronous execution via shell::async, though kept synchronous for user feedback.
 #   - Temporary files are cleaned up automatically.
 shell::uninstall_python_pip_deps() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_UNINSTALL_PYTHON_PIP_DEPS"
+        return 0
+    fi
+
     local dry_run="false"
     if [ "$1" = "-n" ]; then
         dry_run="true"
         shift
-    fi
-
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_UNINSTALL_PYTHON_PIP_DEPS"
-        return 0
     fi
 
     shell::colored_echo "WARN: WARNING: This will uninstall all pip and pip3 packages, including system packages." 11
@@ -305,16 +302,15 @@ shell::uninstall_python_pip_deps() {
 #   - Use with caution: Uninstalling system packages may break your Python environment.
 #   - Supports asynchronous execution via shell::async for non-blocking uninstallation.
 shell::uninstall_python_pip_deps::latest() {
+    if [ "$1" = "-h" ]; then
+        echo "$USAGE_SHELL_UNINSTALL_PYTHON_PIP_DEPS_LATEST"
+        return 0
+    fi
+
     local dry_run="false"
     if [ "$1" = "-n" ]; then
         dry_run="true"
         shift
-    fi
-
-    # Check for the help flag (-h)
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_UNINSTALL_PYTHON_PIP_DEPS_LATEST"
-        return 0
     fi
 
     shell::colored_echo "WARN: WARNING: This will uninstall all pip and pip3 packages, including system packages." 11
@@ -413,7 +409,6 @@ shell::uninstall_python_pip_deps::latest() {
 #   - On Linux, uses python3-venv package if needed.
 #   - Activation command is copied to clipboard for convenience.
 shell::create_python_env() {
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_CREATE_PYTHON_ENV"
         return 0
@@ -544,7 +539,6 @@ shell::create_python_env() {
 #   - Assumes pip is available in the virtual environment (upgraded by shell::create_python_env).
 #   - Compatible with both Linux (Ubuntu 22.04 LTS) and macOS.
 shell::install_pkg_python_env() {
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_INSTALL_PKG_PYTHON_ENV"
         return 0
@@ -656,7 +650,6 @@ shell::install_pkg_python_env() {
 #   - Assumes pip is available in the virtual environment.
 #   - Compatible with both Linux (Ubuntu 22.04 LTS) and macOS.
 shell::uninstall_pkg_python_env() {
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_UNINSTALL_PKG_PYTHON_ENV"
         return 0
@@ -757,7 +750,6 @@ shell::uninstall_pkg_python_env() {
 # Notes:
 #   - Requires fzf and an existing virtual environment.
 shell::fzf_uninstall_pkg_python_env() {
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_FZF_UNINSTALL_PKG_PYTHON_ENV"
         return 0
@@ -866,7 +858,6 @@ shell::fzf_uninstall_pkg_python_env() {
 # Notes:
 #   - Requires fzf.
 shell::fzf_use_python_env() {
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_FZF_USE_PYTHON_ENV"
         return 0
@@ -966,7 +957,6 @@ shell::fzf_use_python_env() {
 # Notes:
 #   - Requires fzf and an existing virtual environment.
 shell::fzf_upgrade_pkg_python_env() {
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_FZF_UPGRADE_PKG_PYTHON_ENV"
         return 0
@@ -1081,7 +1071,6 @@ shell::fzf_upgrade_pkg_python_env() {
 #   - Requires an existing virtual environment.
 #   - Assumes pip is available in the virtual environment.
 shell::upgrade_pkg_python_env() {
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_UPGRADE_PKG_PYTHON_ENV"
         return 0
@@ -1179,7 +1168,6 @@ shell::upgrade_pkg_python_env() {
 #   - Requires an existing virtual environment.
 #   - Assumes pip is available in the virtual environment.
 shell::freeze_pkg_python_env() {
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_FREEZE_PKG_PYTHON_ENV"
         return 0
@@ -1267,7 +1255,6 @@ shell::freeze_pkg_python_env() {
 #   - Requires an existing virtual environment and a requirements.txt file.
 #   - Assumes pip is available in the virtual environment.
 shell::pip_install_requirements_env() {
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_PIP_INSTALL_REQUIREMENTS_ENV"
         return 0
@@ -1350,7 +1337,6 @@ shell::pip_install_requirements_env() {
 # from the specified URL and saves it in the appropriate location within the
 # project structure.
 shell::add_python_gitignore() {
-    # Check for the help flag (-h)
     if [ "$1" = "-h" ]; then
         echo "$USAGE_SHELL_ADD_PYTHON_GITIGNORE"
         return 0

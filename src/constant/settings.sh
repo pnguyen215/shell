@@ -229,6 +229,12 @@ SHELL_PROJECT_GITHUB_WORKFLOW_BASE="https://raw.githubusercontent.com/pnguyen215
 # allowing for automated notifications based on CI events.
 SHELL_PROJECT_GITHUB_WORKFLOW_NEWS="https://raw.githubusercontent.com/pnguyen215/shell-devops-stores/refs/heads/master/ci-cd/github-actions/gh_wrk_news.yml"
 
+# SHELL_PROJECT_GITHUB_WORKFLOW_NEWS_GO constant
+# This variable holds the URL to the GitHub Actions CI notification workflow configuration file for Go projects.
+# It is used to define the notification process specifically for Go projects using GitHub Actions,
+# allowing for automated notifications based on CI events.
+SHELL_PROJECT_GITHUB_WORKFLOW_NEWS_GO="https://raw.githubusercontent.com/pnguyen215/shell-devops-stores/refs/heads/master/ci-cd/github-actions/gh_wrk_news_go.yml"
+
 # SHELL_PROJECT_DOC_VERSION_RELEASE constant
 # This variable holds the URL to the documentation release notes.
 # It is used to provide access to the latest release information for the project,
