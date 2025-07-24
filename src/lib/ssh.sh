@@ -37,18 +37,14 @@
 #   - Uses different parsing approaches based on the detected operating system
 #   - Leverages shell::run_cmd_eval for command execution and shell::on_evict for dry-run mode
 shell::list_ssh_tunnels() {
-	local dry_run="false"
-
-	# Check for the optional dry-run flag (-n)
-	if [ "$1" = "-n" ]; then
-		dry_run="true"
-		shift
-	fi
-
-	# Check for the help flag (-h)
 	if [ "$1" = "-h" ]; then
 		echo "$USAGE_SHELL_LIST_SSH_TUNNEL"
 		return 0
+	fi
+	local dry_run="false"
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
 	fi
 
 	# Get the operating system type
@@ -68,7 +64,7 @@ shell::list_ssh_tunnels() {
 	else
 		shell::colored_echo "ERR: Unsupported operating system: $os_type" 196
 		rm -f "$temp_file"
-		return 1
+		return 0
 	fi
 
 	# Execute or display the command based on dry-run flag
@@ -208,6 +204,7 @@ shell::list_ssh_tunnels() {
 
 	# Clean up
 	shell::run_cmd_eval rm -f "$temp_file"
+	return 1
 }
 
 # shell::fzf_cwd_ssh_key function
