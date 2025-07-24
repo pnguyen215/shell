@@ -748,11 +748,18 @@ shell::create_directory_if_not_exists() {
 	fi
 
 	# On macOS, if the provided path is not absolute, assume it's relative to $HOME.
-	if [[ "$os" == "macos" ]]; then
-		if [[ "$dir" != /* ]]; then
-			dir="$HOME/$dir"
-		fi
+	# if [[ "$os" == "macos" ]]; then
+	# 	if [[ "$dir" != /* ]]; then
+	# 		dir="$HOME/$dir"
+	# 	fi
+	# fi
+
+	# If the directory path is not absolute, convert it to an absolute path.
+	if [[ "$dir" != /* ]]; then
+		dir="$PWD/$dir"
 	fi
+	# Normalize the directory path
+	dir=$(realpath -m "$dir") # Use realpath to normalize the path
 
 	# Check if the directory exists.
 	if [ ! -d "$dir" ]; then
