@@ -1666,23 +1666,23 @@ shell::tune_workspace_ssh_tunnel() {
 
 	if [ $# -ne 3 ]; then
 		echo "Usage: shell::tune_workspace_ssh_tunnel [-n] <workspace_name> <conf_name> <section>"
-		return 1
+		return 0
 	fi
 
 	local workspace="$1"
 	if [ -z "$workspace" ]; then
 		shell::colored_echo "ERR: Workspace name is required." 196
-		return 1
+		return 0
 	fi
 	local conf_name="$2"
 	if [ -z "$conf_name" ]; then
 		shell::colored_echo "ERR: Configuration name is required." 196
-		return 1
+		return 0
 	fi
 	local section="$3"
 	if [ -z "$section" ]; then
 		shell::colored_echo "ERR: Section name is required." 196
-		return 1
+		return 0
 	fi
 
 	# Sanitize the workspace name and section name
@@ -1696,7 +1696,7 @@ shell::tune_workspace_ssh_tunnel() {
 	# If it does not exist, we print an error message and return
 	if [ ! -f "$conf_path" ]; then
 		shell::colored_echo "ERR: Configuration file '$conf_path' not found." 196
-		return 1
+		return 0
 	fi
 
 	# Check if the section exists in the configuration file
@@ -1704,7 +1704,7 @@ shell::tune_workspace_ssh_tunnel() {
 	# If the section does not exist, we print an error message and return
 	if ! shell::exist_ini_section "$conf_path" "$section" >/dev/null 2>&1; then
 		shell::colored_echo "ERR: Section ('$section') not found in file: $file" 196
-		return 1
+		return 0
 	fi
 
 	# Load section overrides
@@ -1757,14 +1757,14 @@ shell::fzf_tune_workspace_ssh_tunnel() {
 	local workspace
 	workspace=$(find "$SHELL_CONF_WORKING_WORKSPACE" -mindepth 1 -maxdepth 1 -type d |
 		xargs -n 1 basename |
-		fzf --prompt="Select workspace: ")
+		fzf --border=rounded --ansi --layout=reverse --pointer="▶" --marker="✓" --prompt="Select workspace: ")
 
 	# Check if a workspace was selected
 	# If no workspace was selected, we print an error message and return
 	# This ensures the user knows they need to select a workspace
 	if [ -z "$workspace" ]; then
 		shell::colored_echo "ERR: No workspace selected." 196
-		return 1
+		return 0
 	fi
 
 	# Check if the selected workspace has a .ssh directory
@@ -1773,7 +1773,7 @@ shell::fzf_tune_workspace_ssh_tunnel() {
 	local ssh_dir="$SHELL_CONF_WORKING_WORKSPACE/$workspace/.ssh"
 	if [ ! -d "$ssh_dir" ]; then
 		shell::colored_echo "ERR: Workspace '$workspace' has no .ssh directory." 196
-		return 1
+		return 0
 	fi
 
 	# Find all .conf files in the .ssh directory
@@ -1782,11 +1782,11 @@ shell::fzf_tune_workspace_ssh_tunnel() {
 	local conf_file
 	conf_file=$(find "$ssh_dir" -type f -name "*.conf" |
 		xargs -n 1 basename |
-		fzf --prompt="Select SSH config file: ")
+		fzf --border=rounded --ansi --layout=reverse --pointer="▶" --marker="✓" --prompt="Select SSH config file: ")
 
 	if [ -z "$conf_file" ]; then
 		shell::colored_echo "ERR: No config file selected." 196
-		return 1
+		return 0
 	fi
 
 	# Check if the selected .conf file exists
@@ -1794,7 +1794,7 @@ shell::fzf_tune_workspace_ssh_tunnel() {
 	section=$(printf "dev\nuat" | fzf --prompt="Select section: ")
 	if [ -z "$section" ]; then
 		shell::colored_echo "ERR: No section selected." 196
-		return 1
+		return 0
 	fi
 
 	# Check if the dry-mode is enabled
