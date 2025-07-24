@@ -549,29 +549,24 @@ shell::kill_ssh_tunnels() {
 			local kill_cmd="kill $pid"
 			shell::on_evict "$kill_cmd"
 		done
-	else
-		# Ask for confirmation before killing
-		# Use printf for prompt to avoid issues with colored_echo potentially adding newlines
-		printf "%s" "$(shell::colored_echo '[q] Do you want to kill these processes? (y/N): ' 208)"
-		read -r confirm
-
-		if [[ $confirm =~ ^[Yy]$ ]]; then
-			shell::colored_echo "DEBUG: Killing SSH tunnels..." 244
-			local kill_count=0
-			for pid in "${pids_to_kill[@]}"; do
-				if shell::run_cmd kill "$pid"; then
-					shell::colored_echo "INFO: Killed PID $pid successfully." 46
-					((kill_count++))
-				else
-					shell::colored_echo "ERR: Failed to kill PID $pid." 196
-				fi
-			done
-			shell::colored_echo "INFO: Killed $kill_count out of ${#pids_to_kill[@]} SSH tunnel process(es)." 46
-		else
-			shell::colored_echo "WARN: Aborted by user. No processes were killed." 11
-		fi
+		return 0
 	fi
-
+	shell::ask "Do you want to kill these processes? ${pids_to_kill[*]}"
+	if [[ $? -eq 1 ]]; then
+		local kill_count=0
+		for pid in "${pids_to_kill[@]}"; do
+			if shell::run_cmd kill "$pid"; then
+				shell::colored_echo "INFO: Killed PID $pid successfully." 46
+				((kill_count++))
+			else
+				shell::colored_echo "ERR: Failed to kill PID $pid." 196
+				return 0
+			fi
+		done
+		shell::colored_echo "INFO: Killed $kill_count out of ${#pids_to_kill[@]} SSH tunnel process(es)." 46
+		return 1
+	fi
+	shell::colored_echo "WARN: Aborted by user. No processes were killed." 11
 	return 0
 }
 
