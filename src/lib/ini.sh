@@ -3241,15 +3241,12 @@ shell::fzf_edit_ini_viz() {
 			return $?
 			;;
 		2)
-			shell::colored_echo "[q] Are you sure you want to remove the key '$key' from section [$section]? (y/n)" 208
-			read -r confirmation
-			if [[ "$confirmation" != "y" && "$confirmation" != "Y" ]]; then
-				shell::colored_echo "WARN: Key removal cancelled." 11
-				return 0
+			shell::ask "Are you sure you want to remove the key '$key' from section [$section]?"
+			if [[ $? -eq 1 ]]; then
+				shell::colored_echo "DEBUG: Removing key '$key' from section [$section] in file '$file'..." 244
+				shell::remove_ini_key "$file" "$section" "$key"
+				return $?
 			fi
-			shell::colored_echo "DEBUG: Removing key '$key' from section [$section] in file '$file'..." 244
-			shell::remove_ini_key "$file" "$section" "$key"
-			return $?
 			;;
 		3)
 			shell::colored_echo "[q] Are you sure you want to remove the entire section [$section]? (y/n)" 208
