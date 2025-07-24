@@ -554,21 +554,7 @@ shell::kill_ssh_tunnels() {
 	# 	return 0
 	# fi
 	if [ "$dry_run" = "true" ]; then
-		local kill_cmd=""
-		local count=${#pids_to_kill[@]}
-
-		if [ "$count" -eq 1 ]; then
-			kill_cmd="kill ${pids_to_kill[*]}"
-		else
-			for ((i=0; i<count; i++)); do
-				pid=${pids_to_kill[$i]}
-				kill_cmd+="kill $pid"
-				if [ "$i" -lt $((count - 1)) ]; then
-					kill_cmd+=" && "
-				fi
-			done
-		fi
-
+		local kill_cmd="kill ${pids_to_kill[*]}"
 		shell::on_evict "$kill_cmd"
 		return 0
 	fi
