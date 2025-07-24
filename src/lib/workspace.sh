@@ -530,7 +530,7 @@ shell::remove_workspace() {
 	# This ensures the user knows how to use the command correctly
 	if [ $# -lt 1 ]; then
 		echo "Usage: shell::remove_workspace [-n] <workspace_name>"
-		return 1
+		return 0
 	fi
 
 	local name="$1"
@@ -548,23 +548,23 @@ shell::remove_workspace() {
 	# If the directory does not exist, we print an error message and return
 	if [ ! -d "$dir" ]; then
 		shell::colored_echo "ERR: Workspace '$name' does not exist at '$dir'" 196
-		return 1
+		return 0
 	fi
 
 	# If dry-run mode is enabled, we print the command to delete the workspace directory
 	# This allows us to see what would be done without actually deleting anything
 	if [ "$dry_run" = "true" ]; then
 		shell::on_evict "sudo rm -rf \"$dir\""
-	else
-		shell::colored_echo "[q] Are you sure you want to delete workspace '$name'? [y/N]" 208
-		read -r confirm
-		if [[ "$confirm" =~ ^[Yy]$ ]]; then
-			shell::run_cmd_eval "sudo rm -rf \"$dir\""
-			shell::colored_echo "INFO: Workspace '$name' removed." 46
-		else
-			shell::colored_echo "WARN: Deletion aborted." 11
-		fi
+		return 0
 	fi
+	shell::ask "Are you sure you want to delete workspace '$name'?"
+	if [[ $? -eq 1 ]]; then
+		shell::run_cmd_eval "sudo rm -rf \"$dir\""
+		shell::colored_echo "INFO: Workspace '$name' removed." 46
+		return 1
+	fi
+	shell::colored_echo "WARN: Deletion aborted." 11
+	return 0
 }
 
 # shell::fzf_view_workspace function
