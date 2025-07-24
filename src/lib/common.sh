@@ -688,21 +688,27 @@ shell::is_package_installed_linux() {
 
 # shell::create_directory_if_not_exists function
 # Utility function to create a directory (including nested directories) if it
-# doesn't exist.
+# doesn't exist. Enhanced to detect file paths and create parent directories.
 #
 # Usage:
-#   shell::create_directory_if_not_exists <directory_path>
+#   shell::create_directory_if_not_exists <directory_path_or_file_path>
 #
 # Parameters:
-#   <directory_path> : The path of the directory to be created.
+#   <directory_path_or_file_path> : The path of the directory to be created, or a file path
+#                                   from which the parent directory will be extracted and created.
 #
 # Description:
-#   This function checks if the specified directory exists. If it does not,
-#   it creates the directory (including any necessary parent directories) using
+#   This function checks if the specified path is a file path (contains a file extension)
+#   or a directory path. If it's a file path, it extracts the parent directory using dirname.
+#   If it's a directory path, it uses the path as-is. The function then checks if the target
+#   directory exists, and if not, creates it (including any necessary parent directories) using
 #   sudo to ensure proper privileges.
 #
-# Example:
+# Examples:
 #   shell::create_directory_if_not_exists /path/to/nested/directory
+#   shell::create_directory_if_not_exists /path/to/file.txt                    # Creates /path/to/
+#   shell::create_directory_if_not_exists .github/workflows/workflow.yml      # Creates .github/workflows/
+#   shell::create_directory_if_not_exists .github/workflows                   # Creates .github/workflows/
 shell::create_directory_if_not_exists() {
 	# Check for the help flag (-h)
 	if [ "$1" = "-h" ]; then
@@ -711,13 +717,36 @@ shell::create_directory_if_not_exists() {
 	fi
 
 	if [ $# -lt 1 ]; then
-		echo "Usage: shell::create_directory_if_not_exists <directory_path>"
+		echo "Usage: shell::create_directory_if_not_exists <directory_path_or_file_path>"
 		return 1
 	fi
 
-	local dir="$1"
+	local input_path="$1"
+	local dir
 	local os
 	os=$(shell::get_os_type)
+
+	# Detect if the input path appears to be a file (has a file extension)
+	# Check if the path contains a dot and the part after the last dot looks like a file extension
+	local basename_part
+	basename_part=$(basename "$input_path")
+	
+	if [[ "$basename_part" == *.* ]] && [[ "$basename_part" != .* ]]; then
+		# Extract the part after the last dot
+		local extension="${basename_part##*.}"
+		# Check if the extension looks like a file extension (1-6 alphanumeric characters)
+		if [[ "$extension" =~ ^[a-zA-Z0-9]{1,6}$ ]]; then
+			# This appears to be a file path, extract the parent directory
+			dir=$(dirname "$input_path")
+			shell::colored_echo "INFO: Detected file path '$input_path', creating parent directory '$dir'" 46
+		else
+			# Treat as directory path
+			dir="$input_path"
+		fi
+	else
+		# Treat as directory path (no extension or starts with dot like hidden directories)
+		dir="$input_path"
+	fi
 
 	# On macOS, if the provided path is not absolute, assume it's relative to $HOME.
 	if [[ "$os" == "macos" ]]; then
