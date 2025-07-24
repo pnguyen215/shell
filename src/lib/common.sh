@@ -730,7 +730,7 @@ shell::create_directory_if_not_exists() {
 	# Check if the path contains a dot and the part after the last dot looks like a file extension
 	local basename_part
 	basename_part=$(basename "$input_path")
-	
+
 	if [[ "$basename_part" == *.* ]] && [[ "$basename_part" != .* ]]; then
 		# Extract the part after the last dot
 		local extension="${basename_part##*.}"
