@@ -541,10 +541,16 @@ shell::kill_ssh_tunnels() {
 	echo "${pids_to_kill[*]}"
 
 	if [ "$dry_run" = "true" ]; then
-		for pid in "${pids_to_kill[@]}"; do
-			local kill_cmd="kill $pid"
+		local kill_cmd=""
+		if [ "${#pids_to_kill[@]}" -eq 1 ]; then
+			kill_cmd="kill ${pids_to_kill[0]}"
 			shell::on_evict "$kill_cmd"
-		done
+		else
+			for pid in "${pids_to_kill[@]}"; do
+				kill_cmd+="kill $pid && "
+			done
+			shell::on_evict "$kill_cmd"
+		fi
 		return 0
 	fi
 	shell::ask "Do you want to kill these processes? ${pids_to_kill[*]}"
