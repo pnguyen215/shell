@@ -23,13 +23,13 @@ A comprehensive shell library to streamline your development environment setup o
 
 ```bash
 shell/
-├── install.sh                    # Installation script
-├── upgrade.sh                   # Upgrade script
-├── uninstall.sh                # Uninstallation script
-├── Makefile                    # Build and test automation
+├── install.sh                 # Installation script
+├── upgrade.sh                 # Upgrade script
+├── uninstall.sh               # Uninstallation script
+├── Makefile                   # Build and test automation
 └── src/
-    ├── shell.sh                # Main entry point
-    ├── lib/                    # Core library functions
+    ├── shell.sh               # Main entry point
+    ├── lib/                   # Core library functions
     │   ├── common.sh          # System utilities and basic operations
     │   ├── bookmark.sh        # Bookmark management system
     │   ├── key.sh             # Configuration key-value management
@@ -39,22 +39,22 @@ shell/
     │   ├── ssh.sh             # SSH key and tunnel management
     │   ├── strings.sh         # String manipulation utilities
     │   ├── homebrew.sh        # Homebrew package manager
-    │   ├── oh_my_zsh.sh      # Oh My Zsh integration
+    │   ├── oh_my_zsh.sh       # Oh My Zsh integration
     │   └── ...                # Additional utility modules
-    ├── lang/                   # Language-specific support
+    ├── lang/                  # Language-specific support
     │   ├── go.sh              # Go development utilities
     │   ├── python.sh          # Python environment management
     │   ├── nodejs.sh          # Node.js project utilities
     │   ├── java.sh            # Java project utilities
     │   ├── angular.sh         # Angular project utilities
     │   └── git.sh             # Git and GitHub integration
-    ├── devops/                 # DevOps and CI/CD utilities
+    ├── devops/                # DevOps and CI/CD utilities
     │   └── ci.sh              # GitHub Actions workflow generation
-    ├── shield/                 # Security and encryption
+    ├── shield/                # Security and encryption
     │   └── crypto.sh          # Cryptographic utilities
-    ├── bot/                    # Communication integrations
+    ├── bot/                   # Communication integrations
     │   └── telegram.sh        # Telegram Bot API
-    └── llm/                    # AI and LLM integration
+    └── llm/                   # AI and LLM integration
         └── agents/
             └── gemini.sh      # Google Gemini AI agent
 ```
@@ -515,6 +515,7 @@ Interactive file operations powered by FZF (fuzzy finder) for enhanced user expe
 - **`shell::unarchive`**  
   Extracts a compressed file based on its extension (e.g., `.zip`, `.tar.gz`). Use `-n` for no-overwrite mode.  
   _Examples:_
+
   - `shell::unarchive archive.zip`
   - `shell::unarchive -n archive.tar.gz`
 
@@ -553,11 +554,13 @@ Persistent bookmark system for quick directory navigation.
 - **`shell::add_bookmark`**
   Adds a bookmark for the current directory with the specified name.
   _Example:_
+
   - `shell::add_bookmark project1`
 
 - **`shell::remove_bookmark`**
   Deletes a bookmark with the specified name from the bookmarks file.
   _Example:_
+
   - `shell::remove_bookmark project1`
 
 - **`shell::list_bookmark`**
@@ -567,6 +570,7 @@ Persistent bookmark system for quick directory navigation.
 - **`shell::go_bookmark`**
   Navigates to the directory associated with the specified bookmark name.
   _Example:_
+
   - `shell::go_bookmark project1`
 
 - **`shell::fzf_list_bookmark`**
@@ -598,6 +602,7 @@ Secure key-value storage system with Base64 encoding and group management.
 - **`shell::read_conf`**
   Sources a configuration file, allowing its variables and functions to be loaded into the current shell.
   _Example:_
+
   - `shell::read_conf ~/.my-config`
   - `shell::read_conf -n ~/.my-config`
 
@@ -605,12 +610,14 @@ Secure key-value storage system with Base64 encoding and group management.
   Adds a configuration entry (key=value) to a constant configuration file.
   The value is encoded using Base64 before being saved.
   _Example:_
+
   - `shell::add_key_conf my_setting "some secret value"`
   - `shell::add_key_conf -n my_setting "some secret value"`
 
 - **`shell::get_key_conf_value`**
   Retrieves and outputs the decoded value for a given configuration key from the key configuration file.
   _Example:_
+
   - `shell::get_key_conf_value my_setting`
 
 - **`shell::fzf_get_key_conf`**
@@ -813,11 +820,12 @@ Telegram Bot API integration for notifications and file sharing.
 - **`shell::send_telegram_message`**
   Sends a message via the Telegram Bot API.
   _Parameters_:
+
   - -n : Optional dry-run flag
   - token : The Telegram Bot API token
   - chat_id : The chat identifier where the message should be sent
   - message : The message text to send
-  _Example:_ `shell::send_telegram_message <token> <chat_id> "Hello, World!"`
+    _Example:_ `shell::send_telegram_message <token> <chat_id> "Hello, World!"`
 
 - **`shell::send_telegram_attachment`**
   Sends one or more attachments (files) via Telegram using the Bot API asynchronously.
@@ -970,12 +978,14 @@ Process management, port checking, and system analysis tools.
 - **`shell::check_port`**  
   Checks if a TCP port is in use (listening). Use `-n` to suppress output and return a status only.  
   _Examples:_
+
   - `shell::check_port 8080`
   - `shell::check_port 8080 -n`
 
 - **`shell::kill_port`**  
   Terminates all processes listening on a specified TCP port. Use `-n` for silent operation.  
   _Examples:_
+
   - `shell::kill_port 8080`
   - `shell::kill_port 8080 -n`
 
@@ -986,12 +996,14 @@ Process management, port checking, and system analysis tools.
 - **`shell::open_link`**  
   Opens a URL in the default web browser. Use `-n` for silent operation (no output).  
   _Examples:_
+
   - `shell::open_link https://example.com`
   - `shell::open_link -n https://example.com`
 
 - **`shell::loading_spinner`**  
   Displays a console loading spinner for a specified duration (in seconds). Use `-n` to run indefinitely until stopped.  
   _Examples:_
+
   - `shell::loading_spinner 10`
   - `shell::loading_spinner -n 10`
 
@@ -1002,12 +1014,14 @@ Process management, port checking, and system analysis tools.
 - **`shell::async`**  
   Runs a command or function asynchronously in the background. Use `-n` for no output.  
   _Examples:_
+
   - `shell::async my_function arg1 arg2`
   - `shell::async -n ls`
 
 - **`shell::editor`**  
   Opens a file from a specified directory in a chosen text editor. Use `-n` to open in a new instance (if supported).  
   _Examples:_
+
   - `shell::editor ~/documents`
   - `shell::editor -n ~/documents`
 
@@ -1144,6 +1158,7 @@ shell::make_gemini_request "Explain the benefits of shell scripting"
 ### Interactive FZF Integration
 
 Most functions support FZF (fuzzy finder) for enhanced interactivity:
+
 - `shell::fzf_*` functions provide interactive selection interfaces
 - Real-time filtering and search capabilities
 - Keyboard navigation with arrow keys and Enter to select

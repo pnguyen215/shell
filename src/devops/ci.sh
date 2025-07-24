@@ -48,3 +48,18 @@ shell::add_gh_wrk_sh_pretty() {
 	fi
 	shell::download_dataset ".github/workflows/gh_wrk_sh_pretty.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_SH_PRETTY
 }
+
+# shell::add_gh_wrk_news_go function
+# This function downloads the GitHub Actions workflow configuration file for Go language
+# notifications from the specified GitHub repository. This file is crucial for
+# automating notifications related to Go language CI events, ensuring that relevant
+# stakeholders are informed about the status of the Go language CI processes.
+# It utilizes the shell::download_dataset function to fetch the file and save it
+# in the appropriate location within the project structure.
+shell::add_gh_wrk_news_go() {
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_ADD_GH_WRK_NEWS_GO"
+		return 0
+	fi
+	shell::download_dataset ".github/workflows/gh_wrk_news_go.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_NEWS_GO
+}
