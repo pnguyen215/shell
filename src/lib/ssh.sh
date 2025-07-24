@@ -478,21 +478,17 @@ shell::fzf_kill_ssh_tunnels() {
 #   - Uses different parsing approaches based on the detected operating system.
 #   - Leverages shell::run_cmd for command execution and shell::on_evict for dry-run mode.
 shell::kill_ssh_tunnels() {
-	local dry_run="false"
-
-	# Check for the optional dry-run flag (-n)
-	if [ "$1" = "-n" ]; then
-		dry_run="true"
-		shift
-	fi
-
-	# Check for the help flag (-h)
 	if [ "$1" = "-h" ]; then
 		echo "$USAGE_SHELL_KILL_SSH_TUNNEL"
 		return 0
 	fi
 
-	# Get the operating system type
+	local dry_run="false"
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
+
 	local os_type
 	os_type=$(shell::get_os_type)
 
