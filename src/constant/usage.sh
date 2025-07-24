@@ -630,6 +630,34 @@ Parameters:
   - -h                              : Optional. Displays this help message.
 "
 
+USAGE_SHELL_ADD_GH_WRK_SH_PRETTY="
+shell::add_gh_wrk_sh_pretty function
+This function downloads the GitHub Actions workflow configuration file for shell script
+formatting from the specified GitHub repository. This file is essential for
+automating the formatting of shell scripts in the project, ensuring consistency and
+adherence to coding standards.
+
+Usage:
+  shell::add_gh_wrk_sh_pretty [-h]
+
+Parameters:
+  - -h                              : Optional. Displays this help message.
+"
+
+USAGE_SHELL_ADD_GH_WRK_NEWS_GO="
+shell::add_gh_wrk_news_go function
+This function downloads the GitHub Actions workflow configuration file for Go language
+notifications from the specified GitHub repository. This file is crucial for
+automating notifications related to Go language CI events, ensuring that relevant
+stakeholders are informed about the status of the Go language CI processes.
+
+Usage:
+  shell::add_gh_wrk_news_go [-h]
+
+Parameters:
+  - -h                              : Optional. Displays this help message.
+"
+
 USAGE_SHELL_SEND_TELEGRAM_HISTORICAL_GH_MESSAGE="
 shell::send_telegram_historical_gh_message function
 Sends a historical GitHub-related message via Telegram using stored configuration keys.
