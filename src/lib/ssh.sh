@@ -421,12 +421,12 @@ shell::fzf_kill_ssh_tunnels() {
 	# Use fzf to select tunnels. Pipe the info and let fzf handle the selection.
 	# --multi allows selecting multiple lines.
 	local selected_tunnels
-	selected_tunnels=$(echo "$ssh_tunnels_info" | fzf --prompt="Select tunnels to kill: ")
+	selected_tunnels=$(echo "$ssh_tunnels_info" | fzf --border=rounded --ansi --layout=reverse --pointer="▶" --marker="✓" --prompt="Select tunnels to kill: ")
 
 	# Check if any tunnels were selected.
 	if [ -z "$selected_tunnels" ]; then
 		shell::colored_echo "ERR: No SSH tunnels selected." 196
-		return 1
+		return 0
 	fi
 
 	shell::colored_echo "DEBUG: Selected tunnels:" 244
