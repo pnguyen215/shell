@@ -243,7 +243,7 @@ shell::fzf_cwd_ssh_key() {
 	# Check if the SSH directory exists.
 	if [ ! -d "$ssh_dir" ]; then
 		shell::colored_echo "ERR: SSH directory '"$ssh_dir"' not found." 196
-		return 1
+		return 0
 	fi
 
 	# Find potential key files in the SSH directory, excluding common non-key files and directories.
@@ -260,12 +260,12 @@ shell::fzf_cwd_ssh_key() {
 
 	# Use fzf to select a key file interactively.
 	local selected_key
-	selected_key=$(echo "$key_files" | fzf --prompt="Select an SSH key file: ")
+	selected_key=$(echo "$key_files" | fzf --border=rounded --ansi --layout=reverse --pointer="▶" --marker="✓" --prompt="Select an SSH key file: ")
 
 	# Check if a file was selected.
 	if [ -z "$selected_key" ]; then
 		shell::colored_echo "ERR: No SSH key file selected." 196
-		return 1
+		return 0
 	fi
 
 	# Get the absolute path of the selected file.
@@ -280,7 +280,7 @@ shell::fzf_cwd_ssh_key() {
 	# Display the absolute path and copy it to the clipboard.
 	shell::colored_echo "[k] Selected SSH key: $abs_key_path" 33
 	shell::clip_value "$abs_key_path"
-	return 0
+	return 1
 }
 
 # shell::fzf_copy_ssh_key_value function
