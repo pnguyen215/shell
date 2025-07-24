@@ -3256,20 +3256,17 @@ shell::fzf_edit_ini_viz() {
 			fi
 			;;
 		4)
-			shell::colored_echo "[q] Are you sure you want to rename the section [$section]? (y/n)" 208
-			read -r confirmation
-			if [[ "$confirmation" != "y" && "$confirmation" != "Y" ]]; then
-				shell::colored_echo "WARN: Section rename cancelled." 11
-				return 0
+			shell::ask "Are you sure you want to rename the section [$section]?"
+			if [[ $? -ne 1 ]]; then
+				shell::colored_echo "[e] Enter new name for section [$section]:" 208
+				read -r new_section_name
+				if [ -z "$new_section_name" ]; then
+					shell::colored_echo "ERR: New section name cannot be empty." 196
+					return 1
+				fi
+				shell::rename_ini_section "$file" "$section" "$new_section_name"
+				return $?
 			fi
-			shell::colored_echo "[e] Enter new name for section [$section]:" 208
-			read -r new_section_name
-			if [ -z "$new_section_name" ]; then
-				shell::colored_echo "ERR: New section name cannot be empty." 196
-				return 1
-			fi
-			shell::rename_ini_section "$file" "$section" "$new_section_name"
-			return $?
 			;;
 		5)
 			shell::colored_echo "[e] Enter new section name to add:" 208
