@@ -540,19 +540,6 @@ shell::kill_ssh_tunnels() {
 	shell::colored_echo "DEBUG: SSH tunnel(s) PIDs were found:" 244
 	echo "${pids_to_kill[*]}"
 
-	# if [ "$dry_run" = "true" ]; then
-	# 	local kill_cmd=""
-	# 	if [ "${#pids_to_kill[@]}" -eq 1 ]; then
-	# 		kill_cmd="kill ${pids_to_kill[*]}"
-	# 		shell::on_evict "$kill_cmd"
-	# 	else
-	# 		for pid in "${pids_to_kill[@]}"; do
-	# 			kill_cmd+="kill $pid && "
-	# 		done
-	# 		shell::on_evict "$kill_cmd"
-	# 	fi
-	# 	return 0
-	# fi
 	if [ "$dry_run" = "true" ]; then
 		local kill_cmd="kill ${pids_to_kill[*]}"
 		shell::on_evict "$kill_cmd"
