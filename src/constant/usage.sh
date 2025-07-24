@@ -1528,22 +1528,28 @@ Parameters:
 USAGE_SHELL_CREATE_DIRECTORY_IF_NOT_EXISTS="
 shell::create_directory_if_not_exists function
 Utility function to create a directory (including nested directories) if it
-doesn't exist.
+doesn't exist. Enhanced to detect file paths and create parent directories.
 
 Usage:
-  shell::create_directory_if_not_exists [-h] <directory_path>
+  shell::create_directory_if_not_exists [-h] <directory_path_or_file_path>
 
 Parameters:
-    - -h                : Optional. Displays this help message.
-    - <directory_path>  : The path of the directory to be created.
+    - -h                              : Optional. Displays this help message.
+    - <directory_path_or_file_path>   : The path of the directory to be created, or a file path
+                                        from which the parent directory will be extracted and created.
 
 Description:
-  This function checks if the specified directory exists. If it does not,
-  it creates the directory (including any necessary parent directories) using
+  This function checks if the specified path is a file path (contains a file extension)
+  or a directory path. If it's a file path, it extracts the parent directory using dirname.
+  If it's a directory path, it uses the path as-is. The function then checks if the target
+  directory exists, and if not, creates it (including any necessary parent directories) using
   sudo to ensure proper privileges.
 
-Example:
+Examples:
   shell::create_directory_if_not_exists /path/to/nested/directory
+  shell::create_directory_if_not_exists /path/to/file.txt                    # Creates /path/to/
+  shell::create_directory_if_not_exists .github/workflows/workflow.yml      # Creates .github/workflows/
+  shell::create_directory_if_not_exists .github/workflows                   # Creates .github/workflows/
 "
 
 USAGE_SHELL_CREATE_FILE_IF_NOT_EXISTS="
