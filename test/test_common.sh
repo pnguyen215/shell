@@ -40,12 +40,12 @@ test_shell::get_os_type() {
 # Test shell::create_directory_if_not_exists with enhanced file path detection
 test_shell::create_directory_if_not_exists() {
 	local test_base_dir="/tmp/shell_test_$$"
-	
+
 	# Clean up any previous test data
 	rm -rf "$test_base_dir"
-	
+
 	echo "Testing shell::create_directory_if_not_exists functionality..."
-	
+
 	# Test 1: Regular directory path (existing behavior)
 	local dir_path="$test_base_dir/test/directory"
 	shell::create_directory_if_not_exists "$dir_path" >/dev/null 2>&1
@@ -57,7 +57,7 @@ test_shell::create_directory_if_not_exists() {
 		((total_tests++))
 		((failed_tests++))
 	fi
-	
+
 	# Test 2: File path with extension - should create parent directory
 	local file_path="$test_base_dir/.github/workflows/test.yml"
 	local expected_dir="$test_base_dir/.github/workflows"
@@ -70,7 +70,7 @@ test_shell::create_directory_if_not_exists() {
 		((total_tests++))
 		((failed_tests++))
 	fi
-	
+
 	# Test 3: Another file path example
 	local file_path2="$test_base_dir/config/database.conf"
 	local expected_dir2="$test_base_dir/config"
@@ -83,7 +83,7 @@ test_shell::create_directory_if_not_exists() {
 		((total_tests++))
 		((failed_tests++))
 	fi
-	
+
 	# Test 4: Directory without extension (should still work as before)
 	local dir_without_ext="$test_base_dir/some/directory/without/extension"
 	shell::create_directory_if_not_exists "$dir_without_ext" >/dev/null 2>&1
@@ -95,7 +95,7 @@ test_shell::create_directory_if_not_exists() {
 		((total_tests++))
 		((failed_tests++))
 	fi
-	
+
 	# Test 5: Relative file path
 	local rel_file_path="test_scripts_$$/$$/build.sh"
 	local current_dir=$(pwd)
@@ -113,7 +113,7 @@ test_shell::create_directory_if_not_exists() {
 		# Clean up anyway
 		sudo rm -rf "$current_dir/test_scripts_$$" 2>/dev/null
 	fi
-	
+
 	# Clean up test directories
 	rm -rf "$test_base_dir"
 }
