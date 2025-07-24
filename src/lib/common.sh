@@ -1597,6 +1597,9 @@ shell::download_dataset() {
 		fi
 	fi
 
+	# Ensure the directory exists.
+	shell::create_directory_if_not_exists "$(dirname "$filename")"
+
 	local download_cmd="curl -s -LJ \"$link\" -o \"$filename\""
 	if [ "$dry_run" = "true" ]; then
 		shell::on_evict "$download_cmd"
