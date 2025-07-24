@@ -710,7 +710,6 @@ shell::is_package_installed_linux() {
 #   shell::create_directory_if_not_exists .github/workflows/workflow.yml      # Creates .github/workflows/
 #   shell::create_directory_if_not_exists .github/workflows                   # Creates .github/workflows/
 shell::create_directory_if_not_exists() {
-	# Check for the help flag (-h)
 	if [ "$1" = "-h" ]; then
 		echo "$USAGE_SHELL_CREATE_DIRECTORY_IF_NOT_EXISTS"
 		return 0
