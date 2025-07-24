@@ -560,7 +560,7 @@ shell::kill_ssh_tunnels() {
 		if [ "$count" -eq 1 ]; then
 			kill_cmd="kill ${pids_to_kill[*]}"
 		else
-			for ((i=0; i<count; i++)); do
+			for ((i = 0; i < count; i++)); do
 				pid=${pids_to_kill[$i]}
 				kill_cmd+="kill $pid"
 				if [ "$i" -lt $((count - 1)) ]; then
