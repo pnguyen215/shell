@@ -318,7 +318,7 @@ shell::fzf_copy_ssh_key_value() {
 	local ssh_dir="${SHELL_CONF_SSH_DIR_WORKING:-$HOME/.ssh}"
 	if [ ! -d "$ssh_dir" ]; then
 		shell::colored_echo "ERR: SSH directory '$ssh_dir' not found." 196
-		return 1
+		return 0
 	fi
 
 	# Find potential key files in the SSH directory, excluding common non-key files and directories.
@@ -334,12 +334,12 @@ shell::fzf_copy_ssh_key_value() {
 
 	# Use fzf to select a key file interactively.
 	local selected_key
-	selected_key=$(echo "$key_files" | fzf --prompt="Select an SSH key file to copy: ")
+	selected_key=$(echo "$key_files" | fzf --border=rounded --ansi --layout=reverse --pointer="▶" --marker="✓" --prompt="Select an SSH key file to copy: ")
 
 	# Check if a file was selected.
 	if [ ! -f "$selected_key" ]; then
 		shell::colored_echo "ERR: Selected file '$selected_key' does not exist." 196
-		return 1
+		return 0
 	fi
 
 	# Get the absolute path of the selected file.
@@ -356,6 +356,7 @@ shell::fzf_copy_ssh_key_value() {
 
 	shell::clip_value "$content"
 	shell::colored_echo "INFO: SSH key file '$abs_key_path' copied to clipboard." 46
+	return 1
 }
 
 # shell::fzf_kill_ssh_tunnels function
