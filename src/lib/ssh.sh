@@ -543,7 +543,7 @@ shell::kill_ssh_tunnels() {
 	if [ "$dry_run" = "true" ]; then
 		local kill_cmd=""
 		if [ "${#pids_to_kill[@]}" -eq 1 ]; then
-			kill_cmd="kill ${pids_to_kill[0]}"
+			kill_cmd="kill ${pids_to_kill[*]}"
 			shell::on_evict "$kill_cmd"
 		else
 			for pid in "${pids_to_kill[@]}"; do
