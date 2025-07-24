@@ -1583,14 +1583,14 @@ shell::fzf_open_workspace_ssh_tunnel() {
 	local workspace
 	workspace=$(find "$SHELL_CONF_WORKING_WORKSPACE" -mindepth 1 -maxdepth 1 -type d |
 		xargs -n 1 basename |
-		fzf --prompt="Select workspace: ")
+		fzf --border=rounded --ansi --layout=reverse --pointer="▶" --marker="✓" --prompt="Select workspace: ")
 
 	# Check if a workspace was selected
 	# If no workspace was selected, we print an error message and return
 	# This ensures the user knows they need to select a workspace
 	if [ -z "$workspace" ]; then
 		shell::colored_echo "ERR: No workspace selected." 196
-		return 1
+		return 0
 	fi
 
 	# Check if the selected workspace has a .ssh directory
@@ -1599,7 +1599,7 @@ shell::fzf_open_workspace_ssh_tunnel() {
 	local ssh_dir="$SHELL_CONF_WORKING_WORKSPACE/$workspace/.ssh"
 	if [ ! -d "$ssh_dir" ]; then
 		shell::colored_echo "ERR: Workspace '$workspace' has no .ssh directory." 196
-		return 1
+		return 0
 	fi
 
 	# Find all .conf files in the .ssh directory
@@ -1608,11 +1608,11 @@ shell::fzf_open_workspace_ssh_tunnel() {
 	local conf_file
 	conf_file=$(find "$ssh_dir" -type f -name "*.conf" |
 		xargs -n 1 basename |
-		fzf --prompt="Select SSH config file: ")
+		fzf --border=rounded --ansi --layout=reverse --pointer="▶" --marker="✓" --prompt="Select SSH config file: ")
 
 	if [ -z "$conf_file" ]; then
 		shell::colored_echo "ERR: No config file selected." 196
-		return 1
+		return 0
 	fi
 
 	# Check if the selected .conf file exists
@@ -1620,7 +1620,7 @@ shell::fzf_open_workspace_ssh_tunnel() {
 	section=$(printf "dev\nuat" | fzf --prompt="Select section: ")
 	if [ -z "$section" ]; then
 		shell::colored_echo "ERR: No section selected." 196
-		return 1
+		return 0
 	fi
 
 	# Check if the dry-mode is enabled
