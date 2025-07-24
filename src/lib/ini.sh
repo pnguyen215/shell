@@ -3248,15 +3248,12 @@ shell::fzf_edit_ini_viz() {
 			fi
 			;;
 		3)
-			shell::colored_echo "[q] Are you sure you want to remove the entire section [$section]? (y/n)" 208
-			read -r confirmation
-			if [[ "$confirmation" != "y" && "$confirmation" != "Y" ]]; then
-				shell::colored_echo "WARN: Section removal cancelled." 11
-				return 0
+			shell::ask "Are you sure you want to remove the section [$section]?"
+			if [[ $? -eq 1 ]]; then
+				shell::colored_echo "DEBUG: Removing section [$section] from file '$file'..." 244
+				shell::remove_ini_section "$file" "$section"
+				return $?
 			fi
-			shell::colored_echo "DEBUG: Removing section [$section] from file '$file'..." 244
-			shell::remove_ini_section "$file" "$section"
-			return $?
 			;;
 		4)
 			shell::colored_echo "[q] Are you sure you want to rename the section [$section]? (y/n)" 208
