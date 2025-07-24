@@ -439,30 +439,17 @@ shell::fzf_kill_ssh_tunnels() {
 	pids_to_kill=$(echo "$selected_tunnels" | awk '{print $2}') # Assuming PID is the second column
 
 	# Ask for confirmation before killing.
-	shell::colored_echo "[q] Are you sure you want to kill the following PID(s)? $pids_to_kill [y/N]" 208
-	read -r confirmation
-
-	if [[ "$confirmation" =~ ^[Yy]$ ]]; then
+	shell::ask "Are you sure you want to kill the following PID(s)? $pids_to_kill"
+	if [[ $? -eq 1 ]]; then
 		shell::colored_echo "DEBUG: Killing PID(s): $pids_to_kill" 244
 		# Kill the selected processes.
 		# Use command substitution to pass PIDs to kill.
 		# shell::run_cmd_eval "kill $pids_to_kill" # Using the helper if preferred
 		kill $pids_to_kill # Direct kill command
-
-		# Optional: Add a small delay and check if processes are still running
-		# sleep 1
-		# if ps -p $pids_to_kill > /dev/null 2>&1; then
-		#     shell::colored_echo "ERR: Failed to kill one or more processes." 196
-		# else
-		#     shell::colored_echo "INFO: Successfully killed PID(s): $pids_to_kill" 46
-		# fi
 		shell::colored_echo "INFO: Kill command sent for PID(s): $pids_to_kill. Verify they are stopped." 46
-
-	else
-		shell::colored_echo "WARN: Kill operation cancelled." 11
-		return 0
+		return 1
 	fi
-
+	shell::colored_echo "WARN: Kill operation cancelled." 11
 	return 0
 }
 
