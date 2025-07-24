@@ -278,7 +278,7 @@ shell::fzf_cwd_ssh_key() {
 	fi
 
 	# Display the absolute path and copy it to the clipboard.
-	shell::colored_echo "[k] Selected SSH key: $abs_key_path" 33
+	shell::colored_echo "[k] Selected SSH key: $abs_key_path" 46
 	shell::clip_value "$abs_key_path"
 	return 1
 }
