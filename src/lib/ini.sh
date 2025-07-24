@@ -1299,7 +1299,6 @@ shell::remove_ini_key() {
 			# Check if this line contains the key we are looking for (using trimmed line for pattern match)
 			if [[ "$trimmed_line" =~ $key_pattern ]]; then
 				# Found the key, skip this line to remove it
-				shell::colored_echo "Found key '$key' for removal." 11
 				key_removed=1
 				continue # Move to the next line without writing the current line
 			fi
