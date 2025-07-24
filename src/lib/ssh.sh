@@ -558,7 +558,7 @@ shell::kill_ssh_tunnels() {
 		local count=${#pids_to_kill[@]}
 
 		if [ "$count" -eq 1 ]; then
-			kill_cmd="kill ${pids_to_kill[0]}"
+			kill_cmd="kill ${pids_to_kill[*]}"
 		else
 			for ((i=0; i<count; i++)); do
 				pid=${pids_to_kill[$i]}
