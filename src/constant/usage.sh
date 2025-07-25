@@ -4520,3 +4520,33 @@ Description:
   Encodes the specified file to base64 format for API consumption.
   Handles platform differences between macOS and Linux.
 "
+
+USAGE_SHELL_ENTER="
+shell::enter function
+Prompts the user with a question and returns the entered value.
+The function will keep prompting until a non-empty value is entered.
+
+Usage:
+  shell::enter [-h] <question>
+
+Parameters:
+  - -h          : Optional. Displays this help message.
+  - <question>  : The question/prompt to display to the user.
+
+Returns:
+  The non-empty value entered by the user (as output to stdout)
+
+Description:
+  This function prompts the user with a question and waits for input.
+  It validates that the user enters a non-empty value and will continue
+  prompting until a valid value is provided.
+  The function supports a help flag (-h) to display usage information.
+  Unlike shell::ask which expects yes/no answers, this function accepts any text input
+  but requires it to be non-empty.
+
+Example:
+  name=(shell::enter \"What is your name?\")
+  echo \"Hello, $name\"
+  email=(shell::enter \"Enter your email address?\")
+  echo \"Email: $email\"
+"

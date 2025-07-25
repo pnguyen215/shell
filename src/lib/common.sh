@@ -3065,7 +3065,7 @@ shell::ask() {
 
 	if [ $# -ne 1 ]; then
 		echo "Usage: shell::ask <question>"
-		return 1
+		return 0
 	fi
 
 	while true; do
@@ -3085,6 +3085,59 @@ shell::ask() {
 			;;
 		esac
 	done
+}
+
+# shell::enter function
+# Prompts the user with a question and returns the entered value.
+# The function will keep prompting until a non-empty value is entered.
+#
+# Usage:
+#   shell::enter <question>
+#
+# Parameters:
+#   - <question> : The question/prompt to display to the user.
+#
+# Returns:
+#   The non-empty value entered by the user (as output to stdout)
+#
+# Description:
+#   This function prompts the user with a question and waits for input.
+#   It validates that the user enters a non-empty value and will continue
+#   prompting until a valid value is provided.
+#   The function supports a help flag (-h) to display usage information.
+#   Unlike shell::ask which expects yes/no answers, this function accepts any text input
+#   but requires it to be non-empty.
+#
+# Example:
+#   name=$(shell::enter "What is your name?")
+#   echo "Hello, $name"
+#   email=$(shell::enter "Enter your email address:")
+#   echo "Email: $email"
+shell::enter() {
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_ENTER"
+		return 0
+	fi
+	if [ -z "$1" ]; then
+		shell::colored_echo "ERR: Question cannot be empty." 196
+		return 0
+	fi
+
+	local question="$1"
+	local user_input
+
+	while true; do
+		shell::colored_echo "[e] $question" 208
+		read -r user_input
+		user_input="${user_input#"${user_input%%[![:space:]]*}"}"
+		user_input="${user_input%"${user_input##*[![:space:]]}"}"
+		if [ -n "$user_input" ]; then
+			break
+		else
+			shell::colored_echo "ERR: Please enter a valid non-empty value." 196
+		fi
+	done
+	echo "$user_input"
 }
 
 # File viewer function using fzf with line highlighting and selection
