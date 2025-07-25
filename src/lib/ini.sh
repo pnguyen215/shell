@@ -3234,6 +3234,7 @@ shell::fzf_edit_ini_viz() {
 	select action in "Edit Value" "Remove Key" "Remove Section" "Rename Section" "Add Section" "Add Key" "Cancel"; do
 		case $REPLY in
 		1)
+			local new_value
 			new_value=$(shell::enter "Enter new value for '$key':")
 			shell::write_ini "$file" "$section" "$key" "$new_value"
 			return $?
@@ -3257,17 +3258,21 @@ shell::fzf_edit_ini_viz() {
 		4)
 			shell::ask "Are you sure you want to rename the section [$section]?"
 			if [[ $? -ne 1 ]]; then
+				local new_section_name
 				new_section_name=$(shell::enter "Enter new name for section [$section]:")
 				shell::rename_ini_section "$file" "$section" "$new_section_name"
 				return $?
 			fi
 			;;
 		5)
+			local new_section_name
 			new_section_name=$(shell::enter "Enter new section name to add:")
 			shell::add_ini_section "$file" "$new_section_name"
 			return $?
 			;;
 		6)
+			local new_key_name
+			local new_key_value
 			new_key_name=$(shell::enter "Enter new key name to add in section [$section]:")
 			new_key_value=$(shell::enter "Enter value for new key '$new_key_name':")
 			shell::write_ini "$file" "$section" "$new_key_name" "$new_key_value"
