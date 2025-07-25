@@ -3124,20 +3124,20 @@ shell::enter() {
 	fi
 
 	local question="$1"
-	local user_input
+	local entered_value
 
 	while true; do
 		shell::colored_echo "[e] $question" 208
-		read -r user_input
-		user_input="${user_input#"${user_input%%[![:space:]]*}"}"
-		user_input="${user_input%"${user_input##*[![:space:]]}"}"
-		if [ -n "$user_input" ]; then
+		read -r entered_value
+		entered_value="${entered_value#"${entered_value%%[![:space:]]*}"}"
+		entered_value="${entered_value%"${entered_value##*[![:space:]]}"}"
+		if [ -n "$entered_value" ]; then
 			break
 		else
 			shell::colored_echo "ERR: Please enter a valid non-empty value." 196
 		fi
 	done
-	echo "$user_input"
+	echo "$entered_value"
 }
 
 # File viewer function using fzf with line highlighting and selection
