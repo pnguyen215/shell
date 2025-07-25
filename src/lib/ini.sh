@@ -3237,6 +3237,7 @@ shell::fzf_edit_ini_viz() {
 			local new_value
 			shell::enter "Enter new value for '$key':"
 			new_value=$?
+			shell::colored_echo "DEBUG: New value for '$key': $new_value" 244
 			shell::write_ini "$file" "$section" "$key" "$new_value"
 			return $?
 			;;
