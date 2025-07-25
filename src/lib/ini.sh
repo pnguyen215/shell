@@ -3196,7 +3196,7 @@ shell::fzf_edit_ini_viz() {
 
 	if [ $# -lt 1 ]; then
 		echo "Usage: shell::fzf_edit_ini_viz <file>"
-		return 1
+		return 0
 	fi
 
 	local file="$1"
@@ -3204,7 +3204,7 @@ shell::fzf_edit_ini_viz() {
 	# Ensure the file exists and is readable.
 	if [ ! -f "$file" ]; then
 		shell::colored_echo "ERR: File not found: $file" 196
-		return 1
+		return 0
 	fi
 
 	# Ensure fzf is installed.
@@ -3212,19 +3212,19 @@ shell::fzf_edit_ini_viz() {
 
 	# Get the list of sections in the specified file and use fzf to select one.
 	local section
-	section=$(shell::list_ini_sections "$file" | fzf --prompt="Select section to edit: ")
+	section=$(shell::list_ini_sections "$file" | fzf --border=rounded --ansi --layout=reverse --pointer="▶" --marker="✓" --prompt="Select section to edit: ")
 	if [ -z "$section" ]; then
 		shell::colored_echo "ERR: No section selected." 196
-		return 1
+		return 0
 	fi
 
 	# Get the list of keys in the selected section and use fzf to select one.
 	# The keys are colored for better visibility.
 	local key
-	key=$(shell::list_ini_keys "$file" "$section" | fzf --prompt="Select key to edit/rename: ")
+	key=$(shell::list_ini_keys "$file" "$section" | fzf --border=rounded --ansi --layout=reverse --pointer="▶" --marker="✓" --prompt="Select key to edit/rename: ")
 	if [ -z "$key" ]; then
 		shell::colored_echo "ERR: No key selected." 196
-		return 1
+		return 0
 	fi
 
 	# Prompt the user to choose an action for the selected key.
@@ -3234,8 +3234,7 @@ shell::fzf_edit_ini_viz() {
 	select action in "Edit Value" "Remove Key" "Remove Section" "Rename Section" "Add Section" "Add Key" "Cancel"; do
 		case $REPLY in
 		1)
-			shell::colored_echo "[e] Enter new value for '$key':" 208
-			read -r new_value
+			new_value=$(shell::enter "Enter new value for '$key':")
 			shell::write_ini "$file" "$section" "$key" "$new_value"
 			return $?
 			;;
@@ -3258,39 +3257,19 @@ shell::fzf_edit_ini_viz() {
 		4)
 			shell::ask "Are you sure you want to rename the section [$section]?"
 			if [[ $? -ne 1 ]]; then
-				shell::colored_echo "[e] Enter new name for section [$section]:" 208
-				read -r new_section_name
-				if [ -z "$new_section_name" ]; then
-					shell::colored_echo "ERR: New section name cannot be empty." 196
-					return 1
-				fi
+				new_section_name=$(shell::enter "Enter new name for section [$section]:")
 				shell::rename_ini_section "$file" "$section" "$new_section_name"
 				return $?
 			fi
 			;;
 		5)
-			shell::colored_echo "[e] Enter new section name to add:" 208
-			read -r new_section_name
-			if [ -z "$new_section_name" ]; then
-				shell::colored_echo "ERR: New section name cannot be empty." 196
-				return 1
-			fi
+			new_section_name=$(shell::enter "Enter new section name to add:")
 			shell::add_ini_section "$file" "$new_section_name"
 			return $?
 			;;
 		6)
-			shell::colored_echo "[e] Enter new key name to add in section [$section]:" 208
-			read -r new_key_name
-			if [ -z "$new_key_name" ]; then
-				shell::colored_echo "ERR: New key name cannot be empty." 196
-				return 1
-			fi
-			shell::colored_echo "[e] Enter value for new key '$new_key_name':" 208
-			read -r new_key_value
-			if [ -z "$new_key_value" ]; then
-				shell::colored_echo "ERR: New key value cannot be empty." 196
-				return 1
-			fi
+			new_key_name=$(shell::enter "Enter new key name to add in section [$section]:")
+			new_key_value=$(shell::enter "Enter value for new key '$new_key_name':")
 			shell::write_ini "$file" "$section" "$new_key_name" "$new_key_value"
 			return $?
 			;;
