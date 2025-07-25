@@ -3127,7 +3127,7 @@ shell::enter() {
 	local entered_value
 
 	while true; do
-		shell::colored_echo "[e] $question" 208
+		printf "[e] %s" "$question"
 		read -r entered_value
 		entered_value="${entered_value#"${entered_value%%[![:space:]]*}"}"
 		entered_value="${entered_value%"${entered_value##*[![:space:]]}"}"
