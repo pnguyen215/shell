@@ -169,3 +169,54 @@ shell::logger::fatal() {
 	shell::logger::fmt "FATAL" 160 "stderr" "$@"
 	exit 1
 }
+
+# shell::logger::success function
+# Logs a success message if the current logging level allows it.
+#
+# Usage:
+#   shell::logger::success <message>
+#
+# Parameters:
+#   - <message> : The message to log as a success.
+#
+# Description:
+#   This function uses shell::logger::fmt to format the message with the INFO level and a specific color.
+shell::logger::success() {
+	shell::logger::fmt "INFO" 46 "stdout" "$@"
+}
+
+# shell::logger::reset function
+# Resets the logging level to DEBUG.
+#
+# Usage:
+#   shell::logger::reset
+#
+# Description:
+#   This function sets the SHELL_LOGGER_LEVEL environment variable to DEBUG,
+#   effectively resetting the logging level to the most verbose.
+shell::logger::reset() {
+	SHELL_LOGGER_LEVEL="DEBUG"
+}
+
+# shell::logger::set_level function
+# Sets the logging level to a specified value.
+#
+# Usage:
+#   shell::logger::set_level
+#
+# Description:
+#   This function sets the SHELL_LOGGER_LEVEL environment variable to the specified level,
+#   allowing for dynamic adjustment of the logging verbosity.
+shell::logger::set_level() {
+	local menu_options
+	local selected_value
+	menu_options=(
+		"DEBUG"
+		"INFO"
+		"WARN"
+		"ERROR"
+		"FATAL"
+	)
+	selected_value=$(shell::select "${menu_options[@]}")
+	SHELL_LOGGER_LEVEL="${selected_value:-DEBUG}"
+}
