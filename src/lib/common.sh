@@ -3069,7 +3069,6 @@ shell::ask() {
 	fi
 
 	while true; do
-		# printf "%s (y/n) " "$1"
 		shell::colored_echo "[q] $1 (y/n) " 208
 		read -r reply
 		# reply=${reply:-"y"}
@@ -3081,7 +3080,7 @@ shell::ask() {
 			return 0
 			;;
 		*)
-			shell::colored_echo "WARN: Please answer y/yes or n/no." 11
+			shell::colored_echo "WARN: Please answer y/yes or n/no." 11 >&2
 			;;
 		esac
 	done
