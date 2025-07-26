@@ -3226,10 +3226,10 @@ shell::fzf_edit_ini_viz() {
 	fi
 
 	local options
-	local environment
+	local selected_command
 	options=("Development" "Staging" "Production" "Testing" "Custom" "Cancel" "Exit" "Quit" "Abort" "Stop" "Close" "Done")
-	environment=$(shell::select "${options[@]}")
-	shell::colored_echo "You have selected the '$environment' environment." 46
+	selected_command=$(shell::select "${options[@]}")
+	shell::colored_echo "DEBUG: You have selected the '$selected_command'." 244
 
 	# local new_value
 	# new_value=$(shell::enter "Enter new value for '$key':")

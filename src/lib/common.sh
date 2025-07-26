@@ -3208,6 +3208,73 @@ shell::select() {
 	echo "$choice"
 }
 
+# shell::select_key function
+# Prompts the user to select an option from a list of labels using fzf,
+# and returns the corresponding key.
+#
+# Usage:
+#   shell::select_key [-h] "Label1:Key1" "Label2:Key2" ...
+#
+# Parameters:
+#   - -h        	: Optional. Displays this help message.
+#   - "Label:Key"	: A list of strings, each containing a display label and a
+#                 	  return key, separated by a colon (:).
+#
+# Returns:
+#   The key corresponding to the selected label (as output to stdout).
+#   The function will not return until a selection has been made.
+#
+# Example:
+#   options=("User-Friendly Name:machine_name_1" "Production Server:prod_srv")
+#   chosen_key=$(shell::select_key "${options[@]}")
+#   echo "The script will now use the key: $chosen_key"
+shell::select_key() {
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_SELECT_KEY"
+		return 0
+	fi
+
+	if [ "$#" -eq 0 ]; then
+		shell::colored_echo "ERR: No options provided to shell::select_key." 196 >&2
+		return 0
+	fi
+
+	shell::install_package fzf >/dev/null 2>&1
+
+	local options=("$@")
+	local labels=()
+	local selected_label
+	local selected_key
+
+	for option in "${options[@]}"; do
+		labels+=("$(echo "$option" | cut -d: -f1)")
+	done
+
+	while true; do
+		selected_label=$(printf "%s\n" "${labels[@]}" | fzf --prompt="Select an option: " \
+			--height="25%" \
+			--layout=reverse \
+			--border=rounded \
+			--pointer="▶" \
+			--marker="✓" \
+			--ansi)
+
+		if [ $? -eq 0 ]; then
+			break
+		fi
+		shell::colored_echo "WARN: A selection is required. Please choose an option and press Enter." 11 >&2
+	done
+
+	for option in "${options[@]}"; do
+		if [[ "$option" == "$selected_label":* ]]; then
+			selected_key=$(echo "$option" | cut -d: -f2-)
+			break
+		fi
+	done
+
+	echo "$selected_key"
+}
+
 # File viewer function using fzf with line highlighting and selection
 # Compatible with Linux and macOS with ANSI color support - 100% width
 view_file() {
