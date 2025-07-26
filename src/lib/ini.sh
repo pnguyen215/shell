@@ -3229,12 +3229,12 @@ shell::fzf_edit_ini_viz() {
 	local menu_options
 	local selected_key
 	menu_options=(
-	"Change Value:edit_value"
-	"Add Key:add_key"
-	"Remove Key:remove_key"
-	"Add Section:add_section"
-	"Remove Section:remove_section"
-	"Rename Section:rename_section"
+		"Change Value:edit_value"
+		"Add Key:add_key"
+		"Remove Key:remove_key"
+		"Add Section:add_section"
+		"Remove Section:remove_section"
+		"Rename Section:rename_section"
 	)
 	selected_key=$(shell::select_key "${menu_options[@]}")
 	# shell::colored_echo "DEBUG: You have selected the '$selected_key'." 244
