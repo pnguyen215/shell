@@ -2959,7 +2959,7 @@ shell::ask() {
 
 	while true; do
 		shell::colored_echo "[q] $1 (y/n) " 208
-		read -r reply # reply=${reply:-"y"}
+		read -r reply
 		case "$reply" in
 		[Yy] | [Yy][Ee][Ss])
 			return 1
@@ -2968,7 +2968,7 @@ shell::ask() {
 			return 0
 			;;
 		*)
-			shell::colored_echo "WARN: Please answer y/yes or n/no." 11 >&2
+			shell::logger::warn "Please answer y/yes or n/no."
 			;;
 		esac
 	done
@@ -3006,7 +3006,7 @@ shell::enter() {
 		return 0
 	fi
 	if [ -z "$1" ]; then
-		shell::colored_echo "ERR: Question cannot be empty." 196 >&2
+		shell::logger::error "Question cannot be empty."
 		return 0
 	fi
 
@@ -3027,7 +3027,7 @@ shell::enter() {
 		if [ -n "$entered_value" ]; then
 			break
 		else
-			shell::colored_echo "ERR: Please enter a valid non-empty value." 196 >&2
+			shell::logger::error "Please enter a valid non-empty value."
 		fi
 	done
 	echo "$entered_value"
