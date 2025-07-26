@@ -3126,13 +3126,16 @@ shell::enter() {
 	local question="$1"
 	local entered_value
 	local prompt
-	prompt=$(shell::colored_echo "[e] $question " 208)
+	# prompt=$(shell::colored_echo "[e] $question " 208)
+	prompt=$(shell::colored_echo "[e] $question " 208 -n)
 
 	while true; do
 		# Print the prompt directly to the terminal
-		printf "%s" "$prompt" >/dev/tty
+		# printf "%s" "$prompt" >/dev/tty
+		printf "%s" "$prompt" >&2
 		# Read the input directly from the terminal
-		read -r entered_value </dev/tty
+		# read -r entered_value </dev/tty
+		read -r entered_value
 		entered_value="${entered_value#"${entered_value%%[![:space:]]*}"}"
 		entered_value="${entered_value%"${entered_value##*[![:space:]]}"}"
 		if [ -n "$entered_value" ]; then
