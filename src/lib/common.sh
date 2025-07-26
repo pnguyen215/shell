@@ -528,55 +528,6 @@ shell::remove_package() {
 	fi
 }
 
-# shell::list_packages_installed function
-# Lists all packages currently installed on Linux or macOS.
-#
-# Usage:
-#   shell::list_packages_installed
-#
-# Description:
-#   On Linux:
-#     - If apt-get is available, it uses dpkg to list installed packages.
-#     - If yum or dnf is available, it uses rpm to list installed packages.
-#   On macOS:
-#     - If Homebrew is available, it lists installed Homebrew packages.
-#
-# Example usage:
-#   shell::list_packages_installed
-shell::list_packages_installed() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_LIST_PACKAGES_INSTALLED"
-		return 0
-	fi
-
-	local os_type
-	os_type=$(shell::get_os_type)
-
-	if [ "$os_type" = "linux" ]; then
-		if shell::is_command_available apt-get; then
-			shell::colored_echo "Listing installed packages (APT/Debian-based):" 34
-			shell::run_cmd_eval dpkg -l
-		elif shell::is_command_available yum || shell::is_command_available dnf; then
-			shell::colored_echo "Listing installed packages (RPM-based):" 34
-			shell::run_cmd_eval rpm -qa | sort
-		else
-			shell::colored_echo "ERR: Unsupported package manager on Linux." 196
-			return 1
-		fi
-	elif [ "$os_type" = "macos" ]; then
-		if shell::is_command_available brew; then
-			shell::colored_echo "Listing installed packages (Homebrew):" 32
-			shell::run_cmd_eval brew list
-		else
-			shell::colored_echo "ERR: Homebrew is not installed on macOS." 196
-			return 1
-		fi
-	else
-		shell::colored_echo "ERR: Unsupported operating system." 196
-		return 1
-	fi
-}
-
 # shell::is_package_installed_linux function
 # Checks if a package is installed on Linux.
 #

@@ -1475,24 +1475,6 @@ Example usage:
   shell::remove_package git
 "
 
-USAGE_SHELL_LIST_PACKAGES_INSTALLED="
-shell::list_packages_installed function
-Lists all packages currently installed on Linux or macOS.
-
-Usage:
-  shell::list_packages_installed [-h]
-
-Parameters:
-    - -h                : Optional. Displays this help message.
-
-Description:
-  On Linux:
-    - If apt-get is available, it uses dpkg to list installed packages.
-    - If yum or dnf is available, it uses rpm to list installed packages.
-  On macOS:
-    - If Homebrew is available, it lists installed Homebrew packages.
-"
-
 USAGE_SHELL_IS_PACKAGE_INSTALLED_LINUX="
 shell::is_package_installed_linux function
 Checks if a package is installed on Linux.
