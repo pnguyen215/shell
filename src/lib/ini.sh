@@ -776,8 +776,7 @@ shell::write_ini() {
 		# Trim leading and trailing whitespace from the line for easier processing.
 		local trimmed_line
 		# trimmed_line="$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-		# trimmed_line=$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' 2>/dev/null)
-		trimmed_line=$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' >/dev/null 2>&1)
+		trimmed_line=$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' 2>/dev/null)
 		# trimmed_line=$(awk '{gsub(/^[[:space:]]*/, "", $0); gsub(/[[:space:]]*$/, "", $0); print $0}' <<<"$line")
 
 		# Skip empty lines (after trimming). This removes blank lines within sections.
@@ -861,7 +860,7 @@ shell::write_ini() {
 
 	# Provide feedback based on whether the key was updated or added.
 	if [ $key_handled -eq 1 ]; then
-		shell::colored_echo "INFO: Successfully wrote key '$key' with value '$value' to section '$section'" 46 >&2
+		shell::colored_echo "INFO: Successfully wrote key '$key' with value '$value' to section '$section'" 46
 		return 1
 	else
 		# This case should ideally not be reached if shell::add_ini_section ensures

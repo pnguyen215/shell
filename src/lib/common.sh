@@ -3116,7 +3116,7 @@ shell::enter() {
 		return 0
 	fi
 	if [ -z "$1" ]; then
-		shell::colored_echo "ERR: Question cannot be empty." 196
+		shell::colored_echo "ERR: Question cannot be empty." 196 >&2
 		return 0
 	fi
 
