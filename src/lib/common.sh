@@ -3128,6 +3128,10 @@ shell::enter() {
 
 	while true; do
 		printf "[e] %s" "$question"
+		# Ensure the prompt is flushed to terminal before reading
+		if command -v tput >/dev/null 2>&1; then
+			tput sgr0  # Reset and flush terminal
+		fi
 		read -r entered_value
 		entered_value="${entered_value#"${entered_value%%[![:space:]]*}"}"
 		entered_value="${entered_value%"${entered_value##*[![:space:]]}"}"
