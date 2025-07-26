@@ -405,8 +405,7 @@ shell::install_package() {
 	local os_type
 	os_type=$(shell::get_os_type)
 
-	if [ "$os_type" = "linux" ]; then # Linux
-		# Check if the package is already installed on Linux.
+	if [ "$os_type" = "linux" ]; then
 		if shell::is_package_installed_linux "$package"; then
 			shell::logger::debug "$package is already installed. Skipping."
 			return 0
@@ -417,23 +416,24 @@ shell::install_package() {
 			if shell::run_cmd_eval "sudo snap install $package" 2>/dev/null; then
 				shell::logger::success "Successfully installed $package via snap."
 				return 1
-			else
-				shell::logger::warn "Snap installation failed or package not available in snap store. Trying traditional package managers..."
 			fi
 		fi
 
 		# Fallback to traditional package managers
 		if shell::is_command_available apt-get; then
 			shell::run_cmd_eval "sudo apt-get update && sudo apt-get install -y $package"
+			return $?
 		elif shell::is_command_available yum; then
 			shell::run_cmd_eval "sudo yum install -y $package"
+			return $?
 		elif shell::is_command_available dnf; then
 			shell::run_cmd_eval "sudo dnf install -y $package"
+			return $?
 		else
 			shell::logger::error "Unsupported package manager on Linux."
 			return 0
 		fi
-	elif [ "$os_type" = "macos" ]; then # macOS
+	elif [ "$os_type" = "macos" ]; then
 		if ! shell::is_command_available brew; then
 			shell::logger::warn "Homebrew is not installed. Installing Homebrew..."
 			shell::install_homebrew
@@ -444,6 +444,7 @@ shell::install_package() {
 			return 0
 		fi
 		shell::run_cmd_eval "brew install $package"
+		return $?
 	else
 		shell::logger::error "Unsupported operating system."
 		return 0
