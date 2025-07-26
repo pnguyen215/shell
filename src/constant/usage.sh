@@ -4576,3 +4576,33 @@ Example:
   else
       echo \"User answered no.\"
 "
+
+USAGE_SHELL_SELECT="
+shell::select function
+Prompts the user to select an option from a list of choices.
+
+Usage:
+  shell::select [-h] <option1> <option2> ... <optionN>
+
+Parameters:
+  - -h        	: Optional. Displays this help message.
+  - <option1>...: A list of strings representing the choices.
+
+Returns:
+  The selected option string (as output to stdout).
+
+Description:
+  This function displays a numbered list of options to the user and prompts
+  them to enter the number corresponding to their choice. It validates that
+  the input is a number and falls within the valid range of options.
+  The prompt and error messages are printed to stderr, so only the final
+  selected value is sent to stdout, making it safe for command substitution.
+
+Example:
+  options=(\"Apple\" \"Banana\" \"Cherry\")
+  fruit=&(shell::select \"&{options[@]}\")
+  echo \"You selected: $fruit\"
+
+  theme=&(shell::select \"Dark\" \"Light\" \"System\")
+  echo \"Chosen theme: $theme\"
+"
