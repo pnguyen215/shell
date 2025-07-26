@@ -482,7 +482,7 @@ shell::install_package() {
 	if [ "$os_type" = "linux" ]; then # Linux
 		# Check if the package is already installed on Linux.
 		if shell::is_package_installed_linux "$package"; then
-			shell::colored_echo "[x] $package is already installed. Skipping." 244
+			shell::logger::debug "$package is already installed. Skipping."
 			return 0
 		fi
 
@@ -514,7 +514,7 @@ shell::install_package() {
 		fi
 		# Check if the package is already installed by Homebrew; skip if installed.
 		if brew list --versions "$package" >/dev/null 2>&1; then
-			shell::colored_echo "[x] $package is already installed. Skipping." 244
+			shell::logger::debug "$package is already installed. Skipping."
 			return 0
 		fi
 		shell::run_cmd_eval "brew install $package"
