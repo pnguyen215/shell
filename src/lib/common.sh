@@ -3218,7 +3218,7 @@ shell::select() {
 		return 0
 	fi
 
-	shell::install_package fzf
+	shell::install_package fzf >/dev/null 2>&1
 
 	local options=("$@")
 	local choice=""
