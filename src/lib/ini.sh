@@ -3227,7 +3227,7 @@ shell::fzf_edit_ini_viz() {
 
 	local options
 	local environment
-	options=("Development" "Staging" "Production")
+	options=("Development" "Staging" "Production" "Testing" "Custom" "Cancel" "Exit" "Quit" "Abort" "Stop" "Close" "Done")
 	environment=$(shell::select "${options[@]}")
 	shell::colored_echo "You have selected the '$environment' environment." 46
 
