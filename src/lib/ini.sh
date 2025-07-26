@@ -3225,27 +3225,32 @@ shell::fzf_edit_ini_viz() {
 		return 0
 	fi
 
-	local options
-	local selected_command
-	options=("Development" "Staging" "Production" "Testing" "Custom" "Cancel" "Exit" "Quit" "Abort" "Stop" "Close" "Done")
-	selected_command=$(shell::select "${options[@]}")
-	shell::colored_echo "DEBUG: You have selected the '$selected_command'." 244
-
 	local menu_options
-	local selected_host
+	local selected_key
 	menu_options=(
-	"Production Environment:prod_server_1"
-	"Staging Server:stage_2b"
-	"Local Development:127.0.0.1"
+	"Change Value:edit_value"
+	"Add Key:add_key"
+	"Remove Key:remove_key"
+	"Add Section:add_section"
+	"Remove Section:remove_section"
+	"Rename Section:rename_section"
 	)
-	# Call the function
-	selected_host=$(shell::select_key "${menu_options[@]}")
-	shell::colored_echo "DEBUG: You have selected the '$selected_host'." 244
+	selected_key=$(shell::select_key "${menu_options[@]}")
+	# shell::colored_echo "DEBUG: You have selected the '$selected_key'." 244
+	if [ -z "$selected_key" ]; then
+		shell::colored_echo "ERR: No action selected." 196 >&2
+		return 0
+	fi
+	# Perform the action based on the selected key.
+	if [ "$selected_key" = "edit_value" ]; then
+		local new_value
+		new_value=$(shell::enter "Enter new value for '$key':")
+		shell::write_ini "$file" "$section" "$key" "$new_value"
+		return $?
+	fi
 
-	# local new_value
-	# new_value=$(shell::enter "Enter new value for '$key':")
-	# shell::colored_echo "DEBUG: New value for '$key': $new_value" 244
-	# shell::write_ini "$file" "$section" "$key" "$new_value"
+	shell::colored_echo "ERR: Invalid option." 196 >&2
+	return 0
 
 	# Prompt the user to choose an action for the selected key.
 	# The user can choose to edit the value of the key or rename the key.
