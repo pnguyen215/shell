@@ -451,20 +451,20 @@ shell::install_package() {
 	fi
 }
 
-# shell::remove_package function
+# shell::uninstall_package function
 # Cross-platform package uninstallation function for macOS and Linux.
 #
 # Usage:
-#   shell::remove_package <package_name>
+#   shell::uninstall_package <package_name>
 #
 # Parameters:
 #   - <package_name>: The name of the package to uninstall
 #
 # Example usage:
-#   shell::remove_package git
-shell::remove_package() {
+#   shell::uninstall_package git
+shell::uninstall_package() {
 	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_REMOVE_PACKAGE"
+		echo "$USAGE_SHELL_UNINSTALL_PACKAGE"
 		return 0
 	fi
 

@@ -123,9 +123,9 @@ Core functions for system management, version control, and basic operations.
   Installs a package using the appropriate package manager for the OS (e.g., `apt` for Linux, `brew` for macOS).  
   _Example:_ `shell::install_package git`
 
-- **`shell::remove_package`**  
+- **`shell::uninstall_package`**  
   Uninstalls a package using the OS-appropriate package manager.  
-  _Example:_ `shell::remove_package git`
+  _Example:_ `shell::uninstall_package git`
 
 - **`shell::list_packages_installed`**  
   Lists all packages installed on the system via the native package manager.  
@@ -955,9 +955,9 @@ Process management, port checking, and system analysis tools.
   Installs a package using the appropriate package manager for the OS (e.g., `apt` for Linux, `brew` for macOS).  
   _Example:_ `shell::install_package git`
 
-- **`shell::remove_package`**  
+- **`shell::uninstall_package`**  
   Uninstalls a package using the OS-appropriate package manager.  
-  _Example:_ `shell::remove_package git`
+  _Example:_ `shell::uninstall_package git`
 
 - **`shell::list_packages_installed`**  
   Lists all packages installed on the system via the native package manager.  

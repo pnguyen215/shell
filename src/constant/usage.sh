@@ -1460,19 +1460,19 @@ Example usage:
   shell::install_package git
 "
 
-USAGE_SHELL_REMOVE_PACKAGE="
-shell::remove_package function
+USAGE_SHELL_UNINSTALL_PACKAGE="
+shell::uninstall_package function
 Cross-platform package uninstallation function for macOS and Linux.
 
 Usage:
-  shell::remove_package [-h] <package_name>
+  shell::uninstall_package [-h] <package_name>
 
 Parameters:
     - -h                : Optional. Displays this help message.
     - <package_name>    : The name of the package to uninstall
 
 Example usage:
-  shell::remove_package git
+  shell::uninstall_package git
 "
 
 USAGE_SHELL_IS_PACKAGE_INSTALLED_LINUX="
