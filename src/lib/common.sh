@@ -754,16 +754,16 @@ shell::clip_cwd() {
 
 	if [[ "$os" == "macos" ]]; then
 		echo -n "$adr" | pbcopy
-		shell::logger::debug "Path copied to clipboard using pbcopy"
+		shell::logger::debug "Path '$adr' copied to clipboard using pbcopy"
 		return 1
 	elif [[ "$os" == "linux" ]]; then
 		if shell::is_command_available xclip; then
 			echo -n "$adr" | xclip -selection clipboard
-			shell::logger::debug "Path copied to clipboard using xclip"
+			shell::logger::debug "Path '$adr' copied to clipboard using xclip"
 			return 1
 		elif shell::is_command_available xsel; then
 			echo -n "$adr" | xsel --clipboard --input
-			shell::logger::debug "Path copied to clipboard using xsel"
+			shell::logger::debug "Path '$adr' copied to clipboard using xsel"
 			return 1
 		else
 			shell::logger::error "Clipboard tool not found. Please install xclip or xsel."
