@@ -3233,12 +3233,10 @@ shell::fzf_edit_ini_viz() {
 	environment=$(shell::select "${options[@]}")
 	shell::colored_echo "You have selected the '$environment' environment." 46
 
-	# selected_editor=$(shell::select "vim" "nano" "emacs" "vscode")
-	# shell::colored_echo "Your preferred editor is: $selected_editor" 46
-	local new_value
-	new_value=$(shell::enter "Enter new value for '$key':")
-	shell::colored_echo "DEBUG: New value for '$key': $new_value" 244
-	shell::write_ini "$file" "$section" "$key" "$new_value"
+	# local new_value
+	# new_value=$(shell::enter "Enter new value for '$key':")
+	# shell::colored_echo "DEBUG: New value for '$key': $new_value" 244
+	# shell::write_ini "$file" "$section" "$key" "$new_value"
 
 	# Prompt the user to choose an action for the selected key.
 	# The user can choose to edit the value of the key or rename the key.
