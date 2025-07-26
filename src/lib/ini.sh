@@ -3227,6 +3227,12 @@ shell::fzf_edit_ini_viz() {
 		return 0
 	fi
 
+	options=("Development" "Staging" "Production")
+	environment=$(shell::select "${options[@]}")
+	shell::colored_echo "You have selected the '$environment' environment." 46
+
+	selected_editor=$(shell::select "vim" "nano" "emacs" "vscode")
+	shell::colored_echo "Your preferred editor is: $selected_editor" 46
 	local new_value
 	new_value=$(shell::enter "Enter new value for '$key':")
 	shell::colored_echo "DEBUG: New value for '$key': $new_value" 244
