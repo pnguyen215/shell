@@ -3231,6 +3231,17 @@ shell::fzf_edit_ini_viz() {
 	selected_command=$(shell::select "${options[@]}")
 	shell::colored_echo "DEBUG: You have selected the '$selected_command'." 244
 
+	local menu_options
+	local selected_host
+	menu_options=(
+	"Production Environment:prod_server_1"
+	"Staging Server:stage_2b"
+	"Local Development:127.0.0.1"
+	)
+	# Call the function
+	selected_host=$(shell::select_key "${menu_options[@]}")
+	shell::colored_echo "DEBUG: You have selected the '$selected_host'." 244
+
 	# local new_value
 	# new_value=$(shell::enter "Enter new value for '$key':")
 	# shell::colored_echo "DEBUG: New value for '$key': $new_value" 244
