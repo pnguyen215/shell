@@ -3126,7 +3126,6 @@ shell::enter() {
 	local question="$1"
 	local entered_value
 
-	echo "[e] $question "
 	while true; do
 		# printf "[e] %s" "$question"
 		# echo -n "[e] $question "
@@ -3134,6 +3133,7 @@ shell::enter() {
 		# if command -v tput >/dev/null 2>&1; then
 		# 	tput sgr0 # Reset and flush terminal
 		# fi
+		shell::colored_echo "[e] $question " 208 -n
 		read -r entered_value
 		entered_value="${entered_value#"${entered_value%%[![:space:]]*}"}"
 		entered_value="${entered_value%"${entered_value##*[![:space:]]}"}"
@@ -3141,7 +3141,6 @@ shell::enter() {
 			break
 		else
 			shell::colored_echo "ERR: Please enter a valid non-empty value." 196
-			echo -n "[e] $question "
 		fi
 	done
 	echo "$entered_value"
