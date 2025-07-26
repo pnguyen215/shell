@@ -484,39 +484,47 @@ shell::remove_package() {
 		if shell::is_command_available apt-get; then
 			if shell::is_package_installed_linux "$package"; then
 				shell::run_cmd_eval "sudo apt-get remove -y $package"
+				return $?
 			else
-				shell::colored_echo "WARN: $package is not installed. Skipping uninstallation." 33
+				shell::logger::warn "$package is not installed. Skipping uninstallation."
+				return 0
 			fi
 		elif shell::is_command_available yum; then
 			if rpm -q "$package" >/dev/null 2>&1; then
 				shell::run_cmd_eval "sudo yum remove -y $package"
+				return $?
 			else
-				shell::colored_echo "WARN: $package is not installed. Skipping uninstallation." 33
+				shell::logger::warn "$package is not installed. Skipping uninstallation."
+				return 0
 			fi
 		elif shell::is_command_available dnf; then
 			if rpm -q "$package" >/dev/null 2>&1; then
 				shell::run_cmd_eval "sudo dnf remove -y $package"
+				return $?
 			else
-				shell::colored_echo "WARN: $package is not installed. Skipping uninstallation." 33
+				shell::logger::warn "$package is not installed. Skipping uninstallation."
+				return 0
 			fi
 		else
-			shell::colored_echo "ERR: Unsupported package manager on Linux." 196
-			return 1
+			shell::logger::error "Unsupported package manager on Linux."
+			return 0
 		fi
 	elif [ "$os_type" = "macos" ]; then
 		if shell::is_command_available brew; then
 			if brew list --versions "$package" >/dev/null 2>&1; then
 				shell::run_cmd_eval "brew uninstall $package"
+				return $?
 			else
-				shell::colored_echo "WARN: $package is not installed. Skipping uninstallation." 33
+				shell::logger::warn "$package is not installed. Skipping uninstallation."
+				return 0
 			fi
 		else
-			shell::colored_echo "ERR: Homebrew is not installed on macOS." 196
-			return 1
+			shell::logger::error "Homebrew is not installed on macOS."
+			return 0
 		fi
 	else
-		shell::colored_echo "ERR: Unsupported operating system." 196
-		return 1
+		shell::logger::error "Unsupported operating system."
+		return 0
 	fi
 }
 
