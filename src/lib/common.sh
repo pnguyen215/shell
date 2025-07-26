@@ -3231,9 +3231,9 @@ view_file() {
 		return 1
 	fi
 
-	shell::ask "Do you want to install bat, highlight, and pygmentize for syntax highlighting? [y/n]"
-	if [[ $? -eq 1 ]]; then
-		echo "Installing required packages..."
+	local asked
+	asked=$(shell::ask "Do you want to install bat, highlight, and pygmentize for syntax highlighting?")
+	if [ "$asked" = "yes" ]; then
 		shell::install_package bat
 		shell::install_package highlight
 	else

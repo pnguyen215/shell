@@ -3258,8 +3258,9 @@ shell::fzf_edit_ini_viz() {
 		return $?
 	fi
 	if [ "$selected_key" = "remove_key" ]; then
-		shell::ask "Are you sure you want to remove the key '$key' from section [$section]?"
-		if [[ $? -eq 1 ]]; then
+		local asked
+		asked=$(shell::ask "Are you sure you want to remove the key '$key' from section [$section]?")
+		if [ "$asked" = "yes" ]; then
 			shell::logger::debug "Removing key '$key' from section [$section] in file '$file'..."
 			shell::remove_ini_key "$file" "$section" "$key"
 			return $?
@@ -3273,8 +3274,9 @@ shell::fzf_edit_ini_viz() {
 		return $?
 	fi
 	if [ "$selected_key" = "remove_section" ]; then
-		shell::ask "Are you sure you want to remove the section [$section]?"
-		if [[ $? -eq 1 ]]; then
+		local asked
+		asked=$(shell::ask "Are you sure you want to remove the section [$section] and all its keys?")
+		if [ "$asked" = "yes" ]; then
 			shell::logger::debug "Removing section [$section] from file '$file'..."
 			shell::remove_ini_section "$file" "$section"
 			return $?
@@ -3282,8 +3284,9 @@ shell::fzf_edit_ini_viz() {
 		return 0
 	fi
 	if [ "$selected_key" = "rename_section" ]; then
-		shell::ask "Are you sure you want to rename the section [$section]?"
-		if [[ $? -ne 1 ]]; then
+		local asked
+		asked=$(shell::ask "Are you sure you want to rename the section [$section]?")
+		if [ "$asked" = "yes" ]; then
 			local new_section_name
 			new_section_name=$(shell::enter "Enter new name for section [$section]:")
 			shell::rename_ini_section "$file" "$section" "$new_section_name"
