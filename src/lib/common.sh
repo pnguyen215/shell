@@ -3067,7 +3067,7 @@ shell::select() {
 	fi
 
 	if [ "$#" -eq 0 ]; then
-		shell::colored_echo "ERR: No options provided to shell::select." 196 >&2
+		shell::logger::error "No options provided to shell::select."
 		return 0
 	fi
 
@@ -3091,7 +3091,7 @@ shell::select() {
 		fi
 		# If the user pressed ESC, fzf returns a non-zero code.
 		# We show a message and the loop continues, re-launching fzf.
-		shell::colored_echo "WARN: A selection is required. Please choose an option and press Enter." 11 >&2
+		shell::logger::warn "A selection is required. Please choose an option and press Enter."
 	done
 
 	# Echo the final, confirmed choice to stdout
