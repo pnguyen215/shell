@@ -2960,10 +2960,10 @@ shell::ask() {
 
 	local question="$1"
 	local options=()
-	local selected
 	options=("yes" "no")
-	selected=$(shell::select "${options[@]}")
-	echo "$selected"
+	# local selected
+	# selected=$(shell::select "${options[@]}")
+	# echo "$selected"
 	# while true; do
 	# 	shell::colored_echo "[q] $1 (y/n) " 208
 	# 	read -r reply
@@ -2979,6 +2979,29 @@ shell::ask() {
 	# 		;;
 	# 	esac
 	# done
+	shell::install_package fzf >/dev/null 2>&1
+	local choice=""
+
+	while true; do
+		choice=$(printf "%s\n" "${options[@]}" | fzf --prompt="$question" \
+			--height="25%" \
+			--layout=reverse \
+			--border=rounded \
+			--pointer="▶" \
+			--marker="✓" \
+			--ansi)
+
+		# Check fzf's exit code. A code of 0 means a selection was confirmed.
+		if [ $? -eq 0 ]; then
+			break
+		fi
+		# If the user pressed ESC, fzf returns a non-zero code.
+		# We show a message and the loop continues, re-launching fzf.
+		shell::logger::warn "A selection is required. Please choose an option and press Enter."
+	done
+
+	# Echo the final, confirmed choice to stdout
+	echo "$choice"
 }
 
 # shell::enter function
