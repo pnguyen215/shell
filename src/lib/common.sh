@@ -469,6 +469,10 @@ shell::uninstall_package() {
 	fi
 
 	local package="$1"
+	if [ -z "$package" ]; then
+		shell::logger::error "No package name provided."
+		return 0
+	fi
 	local os_type
 	os_type=$(shell::get_os_type)
 
