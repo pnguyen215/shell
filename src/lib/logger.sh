@@ -83,7 +83,7 @@ shell::logger::fmt() {
     local color="$2"
     local stream="$3"
     shift 3
-    local message="[$level:] $*"
+    local message="$level: $*"
 
     if shell::logger::can "$level"; then
         if [[ "$stream" == "stderr" ]]; then
