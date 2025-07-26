@@ -776,7 +776,7 @@ shell::write_ini() {
 		# Trim leading and trailing whitespace from the line for easier processing.
 		local trimmed_line
 		# trimmed_line="$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-		trimmed_line=$((echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//') >/dev/null 2>&1)
+		trimmed_line=$((echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//') 2>/dev/null)
 		# trimmed_line=$(awk '{gsub(/^[[:space:]]*/, "", $0); gsub(/[[:space:]]*$/, "", $0); print $0}' <<<"$line")
 
 		# Skip empty lines (after trimming). This removes blank lines within sections.
