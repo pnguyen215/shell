@@ -3218,38 +3218,31 @@ shell::select() {
 		return 0
 	fi
 
+	shell::install_package fzf
+
 	local options=("$@")
-	local choice
-	local i=1
-	local num_options=$#
-
-	# Display the list of options to stderr
-	shell::colored_echo "Please select an option:" 33 >&2
-	for option in "${options[@]}"; do
-		shell::colored_echo "  $i) $option" 244 >&2
-		i=$((i + 1))
-	done
-
-	# Prepare the prompt string safely
-	local prompt_text="[e] Enter your choice [1-${num_options}]: "
-	local colored_prompt
-	colored_prompt=$(shell::colored_echo "$prompt_text" 208 -n)
+	local choice=""
 
 	while true; do
-		# Use printf to display the prompt on stderr, then read the input.
-		# This is the most reliable method.
-		printf "%s" "$colored_prompt" >&2
-		read -r choice
+		choice=$(printf "%s\n" "${options[@]}" | fzf --prompt="Select an option: " \
+			--height="25%" \
+			--layout=reverse \
+			--border=rounded \
+			--pointer="▶" \
+			--marker="✓" \
+			--ansi)
 
-		if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le "${num_options}" ]; then
+		# Check fzf's exit code. A code of 0 means a selection was confirmed.
+		if [ $? -eq 0 ]; then
 			break
-		else
-			shell::colored_echo "ERR: Invalid selection. Please enter a number between 1 and ${num_options}." 196 >&2
 		fi
+		# If the user pressed ESC, fzf returns a non-zero code.
+		# We show a message and the loop continues, re-launching fzf.
+		shell::colored_echo "WARN: A selection is required. Please choose an option and press Enter." 11 >&2
 	done
 
-	# Echo the selected option text to stdout. The indexing is correct.
-	echo "${options[$((choice - 1))]}"
+	# Echo the final, confirmed choice to stdout
+	echo "$choice"
 }
 
 # File viewer function using fzf with line highlighting and selection
