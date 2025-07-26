@@ -2963,7 +2963,7 @@ shell::ask() {
 	local choice=""
 	while true; do
 		choice=$(printf "%s\n" "${options[@]}" | fzf --prompt="$question" \
-			--height="8%" \
+			--height="5%" \
 			--layout=reverse \
 			--border=rounded \
 			--pointer="▶" \
