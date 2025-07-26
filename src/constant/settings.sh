@@ -194,6 +194,17 @@ SHELL_INI_ALLOW_EMPTY_VALUES=${SHELL_INI_ALLOW_EMPTY_VALUES:-1} # Default is 1, 
 #   export SHELL_INI_ALLOW_SPACES_IN_NAMES=1  # Enables spaces in names
 SHELL_INI_ALLOW_SPACES_IN_NAMES=${SHELL_INI_ALLOW_SPACES_IN_NAMES:-1} # Default is 1, meaning spaces are allowed
 
+# SHELL_LOGGER_LEVEL constant
+# This variable defines the logging level for the shell logger.
+# It controls the verbosity of log messages, allowing you to filter out less important messages.
+# The available options are:
+#   - DEBUG: Detailed information, typically used for debugging purposes.
+#   - INFO: General information about the application's operation.
+#   - WARN: Indicates a potential issue that does not prevent the application from functioning.
+#   - ERROR: Indicates an error that occurred, but the application can still continue running.
+#   - FATAL: Indicates a critical error that causes the application to terminate.
+SHELL_LOGGER_LEVEL="${SHELL_LOGGER_LEVEL:-DEBUG}"
+
 ##########Developers Settings#############
 ######### Aris Nguyen 2025 ###############
 ##########Developers Settings#############

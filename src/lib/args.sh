@@ -21,7 +21,6 @@
 # Example:
 #   shell::verify_arg_count "$#" 0 1   # Verifies that the function was called with 0 or 1 argument.
 shell::verify_arg_count() {
-	# Check for the help flag (-h)
 	if [ "$1" = "-h" ]; then
 		echo "$USAGE_SHELL_VERIFY_ARG_COUNT"
 		return 0
@@ -29,7 +28,7 @@ shell::verify_arg_count() {
 
 	# Ensure exactly three parameters are provided to the function.
 	if [[ "$#" -ne "3" ]]; then
-		shell::fatal "Invalid number of arguments. Expected 3, received $#."
+		shell::logger::fatal "Invalid number of arguments. Expected 3, received $#."
 	fi
 	declare -r actual_arg_count="$1"
 	declare -r expected_arg_count_min="$2"
@@ -39,15 +38,15 @@ shell::verify_arg_count() {
 
 	# Verify that actual_arg_count is an integer.
 	if ! [[ "${actual_arg_count}" =~ ${regex} ]]; then
-		shell::fatal "\"${actual_arg_count}\" is not an integer."
+		shell::logger::fatal "\"${actual_arg_count}\" is not an integer."
 	fi
 	# Verify that expected_arg_count_min is an integer.
 	if ! [[ "${expected_arg_count_min}" =~ ${regex} ]]; then
-		shell::fatal "\"${expected_arg_count_min}\" is not an integer."
+		shell::logger::fatal "\"${expected_arg_count_min}\" is not an integer."
 	fi
 	# Verify that expected_arg_count_max is an integer.
 	if ! [[ "${expected_arg_count_max}" =~ ${regex} ]]; then
-		shell::fatal "\"${expected_arg_count_max}\" is not an integer."
+		shell::logger::fatal "\"${expected_arg_count_max}\" is not an integer."
 	fi
 
 	# Check if the actual argument count falls outside the expected range.
