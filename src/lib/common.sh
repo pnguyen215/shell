@@ -743,7 +743,6 @@ shell::create_file_if_not_exists() {
 # Description:
 #   The 'shell::clip_cwd' function copies the current directory path to the clipboard using the 'pbcopy' command.
 shell::clip_cwd() {
-	# Check for the help flag (-h)
 	if [ "$1" = "-h" ]; then
 		echo "$USAGE_SHELL_CLIP_CWD"
 		return 0
@@ -755,22 +754,24 @@ shell::clip_cwd() {
 
 	if [[ "$os" == "macos" ]]; then
 		echo -n "$adr" | pbcopy
-		shell::colored_echo "DEBUG: Path copied to clipboard using pbcopy" 244
+		shell::logger::debug "Path copied to clipboard using pbcopy"
+		return 1
 	elif [[ "$os" == "linux" ]]; then
 		if shell::is_command_available xclip; then
 			echo -n "$adr" | xclip -selection clipboard
-			shell::colored_echo "DEBUG: Path copied to clipboard using xclip" 244
+			shell::logger::debug "Path copied to clipboard using xclip"
+			return 1
 		elif shell::is_command_available xsel; then
 			echo -n "$adr" | xsel --clipboard --input
-			shell::colored_echo "DEBUG: Path copied to clipboard using xsel" 244
-		else
-			shell::colored_echo "ERR: Clipboard tool not found. Please install xclip or xsel." 196
+			shell::logger::debug "Path copied to clipboard using xsel"
 			return 1
+		else
+			shell::logger::error "Clipboard tool not found. Please install xclip or xsel."
+			return 0
 		fi
-	else
-		shell::colored_echo "ERR: Clipboard copying not supported on this OS." 196
-		return 1
 	fi
+	shell::logger::error "Clipboard copying not supported on this OS."
+	return 0
 }
 
 # shell::clip_value function
