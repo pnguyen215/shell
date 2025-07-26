@@ -437,8 +437,9 @@ shell::fzf_kill_ssh_tunnels() {
 	pids_to_kill=$(echo "$selected_tunnels" | awk '{print $2}') # Assuming PID is the second column
 
 	# Ask for confirmation before killing.
-	shell::ask "Are you sure you want to kill the following PID(s)? $pids_to_kill"
-	if [[ $? -eq 1 ]]; then
+	local asked
+	asked=$(shell::ask "Are you sure you want to kill the following PID(s)? $pids_to_kill")
+	if [ "$asked" = "yes" ]; then
 		shell::colored_echo "DEBUG: Killing PID(s): $pids_to_kill" 244
 		# Kill the selected processes.
 		# Use command substitution to pass PIDs to kill.
@@ -543,8 +544,9 @@ shell::kill_ssh_tunnels() {
 		shell::on_evict "$kill_cmd"
 		return 0
 	fi
-	shell::ask "Do you want to kill these processes? ${pids_to_kill[*]}"
-	if [[ $? -eq 1 ]]; then
+	local asked
+	asked=$(shell::ask "Do you want to kill these processes? ${pids_to_kill[*]}")
+	if [ "$asked" = "yes" ]; then
 		local kill_count=0
 		for pid in "${pids_to_kill[@]}"; do
 			if shell::run_cmd kill "$pid"; then

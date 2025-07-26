@@ -557,8 +557,9 @@ shell::remove_workspace() {
 		shell::on_evict "sudo rm -rf \"$dir\""
 		return 0
 	fi
-	shell::ask "Are you sure you want to delete workspace '$name'?"
-	if [[ $? -eq 1 ]]; then
+	local asked
+	asked=$(shell::ask "Are you sure you want to delete workspace '$name'?")
+	if [ "$asked" = "yes" ]; then
 		shell::run_cmd_eval "sudo rm -rf \"$dir\""
 		shell::colored_echo "INFO: Workspace '$name' removed." 46
 		return 1
