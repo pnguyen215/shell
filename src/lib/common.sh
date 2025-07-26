@@ -1475,8 +1475,9 @@ shell::download_dataset() {
 	local link="$2"
 	local base="$filename"
 	if [ -e "$base" ]; then
-		shell::ask "Do you want to overwrite the existing file? $base"
-		if [[ $? -eq 1 ]]; then
+		local asked
+		asked=$(shell::ask "Do you want to overwrite the existing file? $base")
+		if [ "$asked" = "yes" ]; then
 			if [ "$dry_run" = "true" ]; then
 				shell::on_evict "sudo rm \"$base\""
 			else
