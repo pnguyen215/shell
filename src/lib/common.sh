@@ -3170,11 +3170,49 @@ shell::enter() {
 #
 #   theme=$(shell::select "Dark" "Light" "System")
 #   echo "Chosen theme: $theme"
+# shell::select() {
+# 	if [ "$1" = "-h" ]; then
+# 		echo "$USAGE_SHELL_SELECT"
+# 		return 0
+# 	fi
+# 	if [ "$#" -eq 0 ]; then
+# 		shell::colored_echo "ERR: No options provided to shell::select." 196 >&2
+# 		return 0
+# 	fi
+
+# 	local options=("$@")
+# 	local choice
+# 	local i=1
+
+# 	# Display the list of options to stderr
+# 	shell::colored_echo "Please select an option:" 33 >&2
+# 	for option in "${options[@]}"; do
+# 		shell::colored_echo "  $i) $option" 244 >&2
+# 		i=$((i + 1))
+# 	done
+
+# 	while true; do
+# 		# Prompt for input on stderr
+# 		printf "%s" "$(shell::colored_echo "Enter your choice [1-$#]: " 208 -n)" >&2
+# 		read -r choice
+
+# 		# Validate that the choice is a number and within the valid range
+# 		if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le "$#" ]; then
+# 			break
+# 		else
+# 			shell::colored_echo "ERR: Invalid selection. Please enter a number between 1 and $#." 196 >&2
+# 		fi
+# 	done
+
+# 	# Echo the selected option text to stdout
+# 	echo "${options[$((choice - 1))]}"
+# }
 shell::select() {
 	if [ "$1" = "-h" ]; then
 		echo "$USAGE_SHELL_SELECT"
 		return 0
 	fi
+
 	if [ "$#" -eq 0 ]; then
 		shell::colored_echo "ERR: No options provided to shell::select." 196 >&2
 		return 0
@@ -3183,6 +3221,7 @@ shell::select() {
 	local options=("$@")
 	local choice
 	local i=1
+	local num_options=$#
 
 	# Display the list of options to stderr
 	shell::colored_echo "Please select an option:" 33 >&2
@@ -3192,15 +3231,16 @@ shell::select() {
 	done
 
 	while true; do
-		# Prompt for input on stderr
-		printf "%s" "$(shell::colored_echo "Enter your choice [1-$#]: " 208 -n)" >&2
+		# Directly call colored_echo to print the prompt to stderr.
+		# The -n flag should be handled by shell::colored_echo itself.
+		shell::colored_echo "[e] Enter your choice [1-${num_options}]: " 208 -n >&2
 		read -r choice
 
 		# Validate that the choice is a number and within the valid range
-		if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le "$#" ]; then
+		if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le "${num_options}" ]; then
 			break
 		else
-			shell::colored_echo "ERR: Invalid selection. Please enter a number between 1 and $#." 196 >&2
+			shell::colored_echo "ERR: Invalid selection. Please enter a number between 1 and ${num_options}." 196 >&2
 		fi
 	done
 

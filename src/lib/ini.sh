@@ -3200,8 +3200,6 @@ shell::fzf_edit_ini_viz() {
 	fi
 
 	local file="$1"
-	# Validate the file parameter.
-	# Ensure the file exists and is readable.
 	if [ ! -f "$file" ]; then
 		shell::colored_echo "ERR: File not found: $file" 196
 		return 0
