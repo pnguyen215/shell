@@ -3230,13 +3230,17 @@ shell::select() {
 		i=$((i + 1))
 	done
 
+	# Prepare the prompt string safely
+	local prompt_text="[e] Enter your choice [1-${num_options}]: "
+	local colored_prompt
+	colored_prompt=$(shell::colored_echo "$prompt_text" 208 -n)
+
 	while true; do
-		# Directly call colored_echo to print the prompt to stderr.
-		# The -n flag should be handled by shell::colored_echo itself.
-		shell::colored_echo "[e] Enter your choice [1-${num_options}]: " 208 -n >&2
+		# Use printf to display the prompt on stderr, then read the input.
+		# This is the most reliable method.
+		printf "%s" "$colored_prompt" >&2
 		read -r choice
 
-		# Validate that the choice is a number and within the valid range
 		if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le "${num_options}" ]; then
 			break
 		else
@@ -3244,7 +3248,7 @@ shell::select() {
 		fi
 	done
 
-	# Echo the selected option text to stdout
+	# Echo the selected option text to stdout. The indexing is correct.
 	echo "${options[$((choice - 1))]}"
 }
 
