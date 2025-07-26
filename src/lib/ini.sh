@@ -714,7 +714,7 @@ shell::write_ini() {
 	# Validate parameters
 	if [ -z "$file" ] || [ -z "$section" ] || [ -z "$key" ]; then
 		echo "Usage: shell::write_ini [-h] <file> <section> <key> <value>"
-		return 1
+		return 0
 	fi
 
 	# Sanitize the section names to ensure they are valid variable names.
@@ -729,8 +729,8 @@ shell::write_ini() {
 
 	# Check for empty value if not allowed
 	if [ -z "$value" ] && [ "${SHELL_INI_ALLOW_EMPTY_VALUES}" -eq 0 ]; then
-		shell::colored_echo "ERR: Empty values are not allowed" 196
-		return 1
+		shell::colored_echo "ERR: Empty values are not allowed" 196 >&2
+		return 0
 	fi
 
 	# Check and create file if needed
@@ -758,13 +758,13 @@ shell::write_ini() {
 	local temp_file
 	temp_file=$(shell::create_ini_temp_file)
 
-	shell::colored_echo "DEBUG: Writing key '$key' with value '$value' to section '$section' in file: $file" 244
+	shell::colored_echo "DEBUG: Writing key '$key' with value '$value' to section '$section' in file: $file" 244 >&2
 
 	# Special handling for values with quotes or special characters (remains the same)
 	# Assumes SHELL_INI_STRICT is defined.
 	if [ "${SHELL_INI_STRICT}" -eq 1 ] && [[ "$value" =~ [[:space:]\"\'\`\&\|\<\>\;\$] ]]; then
 		value="\"${value//\"/\\\"}\""
-		shell::colored_echo "WARN: Value contains special characters, quoting: $value" 11
+		shell::colored_echo "WARN: Value contains special characters, quoting: $value" 11 >&2
 	fi
 
 	# Sanitize the key to ensure it is a valid variable name.
@@ -776,7 +776,7 @@ shell::write_ini() {
 		# Trim leading and trailing whitespace from the line for easier processing.
 		local trimmed_line
 		# trimmed_line="$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-		trimmed_line=$((echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//') 2>/dev/null)
+		trimmed_line=$((echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//') >/dev/null 2>&1)
 		# trimmed_line=$(awk '{gsub(/^[[:space:]]*/, "", $0); gsub(/[[:space:]]*$/, "", $0); print $0}' <<<"$line")
 
 		# Skip empty lines (after trimming). This removes blank lines within sections.
@@ -860,12 +860,13 @@ shell::write_ini() {
 
 	# Provide feedback based on whether the key was updated or added.
 	if [ $key_handled -eq 1 ]; then
-		shell::colored_echo "INFO: Successfully wrote key '$key' with value '$value' to section '$section'" 46
+		shell::colored_echo "INFO: Successfully wrote key '$key' with value '$value' to section '$section'" 46 >&2
+		return 1
 	else
 		# This case should ideally not be reached if shell::add_ini_section ensures
 		# the section exists and the logic is correct. It's a safeguard.
-		shell::colored_echo "WARN: Section '$section' processed, but key '$key' was not added or updated." 11
-		return 1
+		shell::colored_echo "WARN: Section '$section' processed, but key '$key' was not added or updated." 11 >&2
+		return 0
 	fi
 
 	return 0
