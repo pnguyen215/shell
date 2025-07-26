@@ -3202,7 +3202,7 @@ shell::fzf_edit_ini_viz() {
 
 	local file="$1"
 	if [ ! -f "$file" ]; then
-		shell::colored_echo "ERR: File not found: $file" 196
+		shell::logger::error "File not found: $file"
 		return 0
 	fi
 
@@ -3213,7 +3213,7 @@ shell::fzf_edit_ini_viz() {
 	local section
 	section=$(shell::list_ini_sections "$file" | fzf --border=rounded --ansi --layout=reverse --pointer="▶" --marker="✓" --prompt="Select section to edit: ")
 	if [ -z "$section" ]; then
-		shell::colored_echo "ERR: No section selected." 196
+		shell::logger::error "No section selected."
 		return 0
 	fi
 
@@ -3222,7 +3222,7 @@ shell::fzf_edit_ini_viz() {
 	local key
 	key=$(shell::list_ini_keys "$file" "$section" | fzf --border=rounded --ansi --layout=reverse --pointer="▶" --marker="✓" --prompt="Select key to edit/rename: ")
 	if [ -z "$key" ]; then
-		shell::colored_echo "ERR: No key selected." 196
+		shell::logger::error "No key selected."
 		return 0
 	fi
 
@@ -3237,9 +3237,9 @@ shell::fzf_edit_ini_viz() {
 		"Rename Section:rename_section"
 	)
 	selected_key=$(shell::select_key "${menu_options[@]}")
-	# shell::colored_echo "DEBUG: You have selected the '$selected_key'." 244
+	shell::logger::debug "You have selected the '$selected_key'."
 	if [ -z "$selected_key" ]; then
-		shell::colored_echo "ERR: No action selected." 196 >&2
+		shell::logger::error "No action selected."
 		return 0
 	fi
 	# Perform the action based on the selected key.
@@ -3250,7 +3250,7 @@ shell::fzf_edit_ini_viz() {
 		return $?
 	fi
 
-	shell::colored_echo "ERR: Invalid option." 196 >&2
+	shell::logger::error "Invalid option."
 	return 0
 
 	# Prompt the user to choose an action for the selected key.
