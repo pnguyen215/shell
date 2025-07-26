@@ -3141,7 +3141,7 @@ shell::enter() {
 		if [ -n "$entered_value" ]; then
 			break
 		else
-			shell::colored_echo "ERR: Please enter a valid non-empty value." 196
+			shell::colored_echo "ERR: Please enter a valid non-empty value." 196 >&2
 		fi
 	done
 	echo "$entered_value"
