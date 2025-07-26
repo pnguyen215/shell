@@ -3129,15 +3129,9 @@ shell::enter() {
 	prompt=$(shell::colored_echo "[e] $question " 208)
 
 	while true; do
-		# printf "[e] %s" "$question"
-		# echo -n "[e] $question "
-		# Ensure the prompt is flushed to terminal before reading
-		# if command -v tput >/dev/null 2>&1; then
-		# 	tput sgr0 # Reset and flush terminal
-		# fi
-		# shell::colored_echo "[e] $question " 208 -n
-		# read -r entered_value
+		# Print the prompt directly to the terminal
 		printf "%s" "$prompt" >/dev/tty
+		# Read the input directly from the terminal
 		read -r entered_value </dev/tty
 		entered_value="${entered_value#"${entered_value%%[![:space:]]*}"}"
 		entered_value="${entered_value%"${entered_value##*[![:space:]]}"}"
