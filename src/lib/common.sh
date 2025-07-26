@@ -3143,6 +3143,71 @@ shell::enter() {
 	echo "$entered_value"
 }
 
+# shell::select function
+# Prompts the user to select an option from a list of choices.
+#
+# Usage:
+#   shell::select [-h] <option1> <option2> ... <optionN>
+#
+# Parameters:
+#   - -h        	: Optional. Displays this help message.
+#   - <option1>...	: A list of strings representing the choices.
+#
+# Returns:
+#   The selected option string (as output to stdout).
+#
+# Description:
+#   This function displays a numbered list of options to the user and prompts
+#   them to enter the number corresponding to their choice. It validates that
+#   the input is a number and falls within the valid range of options.
+#   The prompt and error messages are printed to stderr, so only the final
+#   selected value is sent to stdout, making it safe for command substitution.
+#
+# Example:
+#   options=("Apple" "Banana" "Cherry")
+#   fruit=$(shell::select "${options[@]}")
+#   echo "You selected: $fruit"
+#
+#   theme=$(shell::select "Dark" "Light" "System")
+#   echo "Chosen theme: $theme"
+shell::select() {
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_SELECT"
+		return 0
+	fi
+	if [ "$#" -eq 0 ]; then
+		shell::colored_echo "ERR: No options provided to shell::select." 196 >&2
+		return 0
+	fi
+
+	local options=("$@")
+	local choice
+	local i=1
+
+	# Display the list of options to stderr
+	shell::colored_echo "Please select an option:" 33 >&2
+	for option in "${options[@]}"; do
+		shell::colored_echo "  $i) $option" 244 >&2
+		i=$((i + 1))
+	done
+
+	while true; do
+		# Prompt for input on stderr
+		printf "%s" "$(shell::colored_echo -n "Enter your choice [1-$#]: " 208)" >&2
+		read -r choice
+
+		# Validate that the choice is a number and within the valid range
+		if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le "$#" ]; then
+			break
+		else
+			shell::colored_echo "ERR: Invalid selection. Please enter a number between 1 and $#." 196 >&2
+		fi
+	done
+
+	# Echo the selected option text to stdout
+	echo "${options[$((choice - 1))]}"
+}
+
 # File viewer function using fzf with line highlighting and selection
 # Compatible with Linux and macOS with ANSI color support - 100% width
 view_file() {
