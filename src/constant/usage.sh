@@ -4550,3 +4550,29 @@ Example:
   email=(shell::enter \"Enter your email address?\")
   echo \"Email: $email\"
 "
+
+USAGE_SHELL_ASK="
+shell::ask function
+Interactively asks a yes/no question and returns 1 for yes, 0 for no.
+
+Usage:
+  shell::ask [-h] <question>
+
+Parameters:
+  - -h          : Optional help flag. Displays this help message.
+  - <question>  : The question to ask the user.
+
+Description:
+  This function prompts the user with a yes/no question and waits for input.
+  It returns 1 if the user answers "yes" (or "y"), and 0 for "no" (or "n").
+  The function loops until a valid response is received.
+  If the user provides an invalid response, it will continue to prompt.
+  The function supports a help flag (-h) to display usage information.
+
+Example:
+  shell::ask \"Do you want to continue?\"
+  if shell::ask \"Do you want to proceed?\"; then
+      echo \"User answered yes.\"
+  else
+      echo \"User answered no.\"
+"

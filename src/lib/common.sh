@@ -3058,8 +3058,7 @@ shell::encode_base64_file() {
 #       echo "User answered no."
 shell::ask() {
 	if [ "$1" = "-h" ]; then
-		echo "Usage: shell::ask <question>"
-		echo "Interactively ask a yes/no question and return 1 for yes, 0 for no."
+		echo "$USAGE_SHELL_ASK"
 		return 0
 	fi
 
@@ -3070,8 +3069,7 @@ shell::ask() {
 
 	while true; do
 		shell::colored_echo "[q] $1 (y/n) " 208
-		read -r reply
-		# reply=${reply:-"y"}
+		read -r reply # reply=${reply:-"y"}
 		case "$reply" in
 		[Yy] | [Yy][Ee][Ss])
 			return 1
