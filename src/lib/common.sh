@@ -2957,31 +2957,10 @@ shell::ask() {
 		echo "Usage: shell::ask <question>"
 		return 0
 	fi
-
-	local question="$1"
-	local options=()
-	options=("yes" "no")
-	# local selected
-	# selected=$(shell::select "${options[@]}")
-	# echo "$selected"
-	# while true; do
-	# 	shell::colored_echo "[q] $1 (y/n) " 208
-	# 	read -r reply
-	# 	case "$reply" in
-	# 	[Yy] | [Yy][Ee][Ss])
-	# 		return 1
-	# 		;;
-	# 	[Nn] | [Nn][Oo])
-	# 		return 0
-	# 		;;
-	# 	*)
-	# 		shell::logger::warn "Please answer y/yes or n/no."
-	# 		;;
-	# 	esac
-	# done
 	shell::install_package fzf >/dev/null 2>&1
+	local question="$1"
+	local options=("yes" "no")
 	local choice=""
-
 	while true; do
 		choice=$(printf "%s\n" "${options[@]}" | fzf --prompt="$question" \
 			--height="25%" \
@@ -2995,13 +2974,26 @@ shell::ask() {
 		if [ $? -eq 0 ]; then
 			break
 		fi
-		# If the user pressed ESC, fzf returns a non-zero code.
-		# We show a message and the loop continues, re-launching fzf.
-		shell::logger::warn "A selection is required. Please choose an option and press Enter."
+		shell::logger::warn "You pressed ESC or did not select an option. Please choose 'yes' or 'no'."
 	done
 
 	# Echo the final, confirmed choice to stdout
 	echo "$choice"
+	# while true; do
+	# 	shell::colored_echo "[q] $question (y/n) " 208
+	# 	read -r reply
+	# 	case "$reply" in
+	# 	[Yy] | [Yy][Ee][Ss])
+	# 		return 1
+	# 		;;
+	# 	[Nn] | [Nn][Oo])
+	# 		return 0
+	# 		;;
+	# 	*)
+	# 		shell::logger::warn "Please answer y/yes or n/no."
+	# 		;;
+	# 	esac
+	# done
 }
 
 # shell::enter function
