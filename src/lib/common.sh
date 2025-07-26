@@ -3193,7 +3193,7 @@ shell::select() {
 
 	while true; do
 		# Prompt for input on stderr
-		printf "%s" "$(shell::colored_echo -n "Enter your choice [1-$#]: " 208)" >&2
+		printf "%s" "$(shell::colored_echo "Enter your choice [1-$#]: " 208 -n)" >&2
 		read -r choice
 
 		# Validate that the choice is a number and within the valid range
