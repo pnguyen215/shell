@@ -19,28 +19,28 @@
 #   value using a case statement for maximum portability across shells
 #   like older bash versions on macOS.
 _shell::logger::get_level_value() {
-  local level
-  level="$(echo "$1" | tr '[:lower:]' '[:upper:]')"
+	local level
+	level="$(echo "$1" | tr '[:lower:]' '[:upper:]')"
 
-  case "${level}" in
-    DEBUG) echo 0 ;;
-    INFO) echo 1 ;;
-    WARN) echo 2 ;;
-    ERROR) echo 3 ;;
-    FATAL) echo 4 ;;
-    *) echo "" ;;
-  esac
+	case "${level}" in
+	DEBUG) echo 0 ;;
+	INFO) echo 1 ;;
+	WARN) echo 2 ;;
+	ERROR) echo 3 ;;
+	FATAL) echo 4 ;;
+	*) echo "" ;;
+	esac
 }
 
 # shell::logger::can function
 # Determines if the logger can log messages at a specified level.
-# 
+#
 # Usage:
 #   shell::logger::can <level>
-# 
+#
 # Parameters:
 #   - <level> : The logging level to check (DEBUG, INFO, WARN, ERROR, FATAL).
-# 
+#
 # Description:
 #   This function checks the current logging level set in SHELL_LOGGER_LEVEL
 #   and compares it with the target level. It uses an array to define the order of logging levels.
@@ -79,19 +79,19 @@ shell::logger::can() {
 #   If it can, it formats the message with the specified level and color,
 #   and prints it to the specified output stream.
 shell::logger::fmt() {
-    local level="$1"
-    local color="$2"
-    local stream="$3"
-    shift 3
-    local message="$level: $*"
+	local level="$1"
+	local color="$2"
+	local stream="$3"
+	shift 3
+	local message="$level: $*"
 
-    if shell::logger::can "$level"; then
-        if [[ "$stream" == "stderr" ]]; then
-            shell::colored_echo "$message" "$color" >&2
-        else
-            shell::colored_echo "$message" "$color"
-        fi
-    fi
+	if shell::logger::can "$level"; then
+		if [[ "$stream" == "stderr" ]]; then
+			shell::colored_echo "$message" "$color" >&2
+		else
+			shell::colored_echo "$message" "$color"
+		fi
+	fi
 }
 
 # shell::logger::debug function
@@ -106,7 +106,7 @@ shell::logger::fmt() {
 # Description:
 #   This function uses shell::logger::fmt to format the message with the DEBUG level and a specific color.
 shell::logger::debug() {
-    shell::logger::fmt "DEBUG" 244 "stderr" "$@"
+	shell::logger::fmt "DEBUG" 244 "stderr" "$@"
 }
 
 # shell::logger::info function
@@ -121,7 +121,7 @@ shell::logger::debug() {
 # Description:
 #   This function uses shell::logger::fmt to format the message with the INFO level and a specific color.
 shell::logger::info() {
-    shell::logger::fmt "INFO" 33 "stdout" "$@"
+	shell::logger::fmt "INFO" 33 "stdout" "$@"
 }
 
 # shell::logger::warn function
@@ -136,7 +136,7 @@ shell::logger::info() {
 # Description:
 #   This function uses shell::logger::fmt to format the message with the WARN level and a specific color.
 shell::logger::warn() {
-    shell::logger::fmt "WARN" 11 "stderr" "$@"
+	shell::logger::fmt "WARN" 11 "stderr" "$@"
 }
 
 # shell::logger::error function
@@ -151,7 +151,7 @@ shell::logger::warn() {
 # Description:
 #   This function uses shell::logger::fmt to format the message with the ERROR level and a specific color.
 shell::logger::error() {
-    shell::logger::fmt "ERROR" 196 "stderr" "$@"
+	shell::logger::fmt "ERROR" 196 "stderr" "$@"
 }
 
 # shell::logger::fatal function
@@ -166,6 +166,6 @@ shell::logger::error() {
 # Description:
 #   This function uses shell::logger::fmt to format the message with the FATAL level and a specific color.
 shell::logger::fatal() {
-    shell::logger::fmt "FATAL" 160 "stderr" "$@"
-    exit 1
+	shell::logger::fmt "FATAL" 160 "stderr" "$@"
+	exit 1
 }
