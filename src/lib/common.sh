@@ -3137,7 +3137,8 @@ shell::enter() {
 		# fi
 		# shell::colored_echo "[e] $question " 208 -n
 		# read -r entered_value
-		read -r -p "$prompt" entered_value
+		printf "%s" "$prompt" >/dev/tty
+		read -r entered_value </dev/tty
 		entered_value="${entered_value#"${entered_value%%[![:space:]]*}"}"
 		entered_value="${entered_value%"${entered_value##*[![:space:]]}"}"
 		if [ -n "$entered_value" ]; then
