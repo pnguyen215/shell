@@ -3227,67 +3227,72 @@ shell::fzf_edit_ini_viz() {
 		return 0
 	fi
 
+	local new_value
+	new_value=$(shell::enter "Enter new value for '$key':")
+	shell::colored_echo "DEBUG: New value for '$key': $new_value" 244
+	shell::write_ini "$file" "$section" "$key" "$new_value"
+
 	# Prompt the user to choose an action for the selected key.
 	# The user can choose to edit the value of the key or rename the key.
 	# The options are presented in a numbered list using select.
-	shell::colored_echo "Choose action for key '$key' in section [$section]:" 33
-	select action in "Edit Value" "Remove Key" "Remove Section" "Rename Section" "Add Section" "Add Key" "Cancel"; do
-		case $REPLY in
-		1)
-			local new_value
-			new_value=$(shell::enter "Enter new value for '$key':")
-			shell::colored_echo "DEBUG: New value for '$key': $new_value" 244
-			shell::write_ini "$file" "$section" "$key" "$new_value"
-			return $?
-			;;
-		2)
-			shell::ask "Are you sure you want to remove the key '$key' from section [$section]?"
-			if [[ $? -eq 1 ]]; then
-				shell::colored_echo "DEBUG: Removing key '$key' from section [$section] in file '$file'..." 244
-				shell::remove_ini_key "$file" "$section" "$key"
-				return $?
-			fi
-			;;
-		3)
-			shell::ask "Are you sure you want to remove the section [$section]?"
-			if [[ $? -eq 1 ]]; then
-				shell::colored_echo "DEBUG: Removing section [$section] from file '$file'..." 244
-				shell::remove_ini_section "$file" "$section"
-				return $?
-			fi
-			;;
-		4)
-			shell::ask "Are you sure you want to rename the section [$section]?"
-			if [[ $? -ne 1 ]]; then
-				local new_section_name
-				new_section_name=$(shell::enter "Enter new name for section [$section]:")
-				shell::rename_ini_section "$file" "$section" "$new_section_name"
-				return $?
-			fi
-			;;
-		5)
-			local new_section_name
-			new_section_name=$(shell::enter "Enter new section name to add:")
-			shell::add_ini_section "$file" "$new_section_name"
-			return $?
-			;;
-		6)
-			local new_key_name
-			local new_key_value
-			new_key_name=$(shell::enter "Enter new key name to add in section [$section]:")
-			new_key_value=$(shell::enter "Enter value for new key '$new_key_name':")
-			shell::write_ini "$file" "$section" "$new_key_name" "$new_key_value"
-			return $?
-			;;
-		7)
-			shell::colored_echo "WARN: Cancelled." 11
-			return 0
-			;;
-		*)
-			shell::colored_echo "ERR: Invalid option." 196
-			;;
-		esac
-	done
+	# shell::colored_echo "Choose action for key '$key' in section [$section]:" 33
+	# select action in "Edit Value" "Remove Key" "Remove Section" "Rename Section" "Add Section" "Add Key" "Cancel"; do
+	# 	case $REPLY in
+	# 	1)
+	# 		local new_value
+	# 		new_value=$(shell::enter "Enter new value for '$key':")
+	# 		shell::colored_echo "DEBUG: New value for '$key': $new_value" 244
+	# 		shell::write_ini "$file" "$section" "$key" "$new_value"
+	# 		return $?
+	# 		;;
+	# 	2)
+	# 		shell::ask "Are you sure you want to remove the key '$key' from section [$section]?"
+	# 		if [[ $? -eq 1 ]]; then
+	# 			shell::colored_echo "DEBUG: Removing key '$key' from section [$section] in file '$file'..." 244
+	# 			shell::remove_ini_key "$file" "$section" "$key"
+	# 			return $?
+	# 		fi
+	# 		;;
+	# 	3)
+	# 		shell::ask "Are you sure you want to remove the section [$section]?"
+	# 		if [[ $? -eq 1 ]]; then
+	# 			shell::colored_echo "DEBUG: Removing section [$section] from file '$file'..." 244
+	# 			shell::remove_ini_section "$file" "$section"
+	# 			return $?
+	# 		fi
+	# 		;;
+	# 	4)
+	# 		shell::ask "Are you sure you want to rename the section [$section]?"
+	# 		if [[ $? -ne 1 ]]; then
+	# 			local new_section_name
+	# 			new_section_name=$(shell::enter "Enter new name for section [$section]:")
+	# 			shell::rename_ini_section "$file" "$section" "$new_section_name"
+	# 			return $?
+	# 		fi
+	# 		;;
+	# 	5)
+	# 		local new_section_name
+	# 		new_section_name=$(shell::enter "Enter new section name to add:")
+	# 		shell::add_ini_section "$file" "$new_section_name"
+	# 		return $?
+	# 		;;
+	# 	6)
+	# 		local new_key_name
+	# 		local new_key_value
+	# 		new_key_name=$(shell::enter "Enter new key name to add in section [$section]:")
+	# 		new_key_value=$(shell::enter "Enter value for new key '$new_key_name':")
+	# 		shell::write_ini "$file" "$section" "$new_key_name" "$new_key_value"
+	# 		return $?
+	# 		;;
+	# 	7)
+	# 		shell::colored_echo "WARN: Cancelled." 11
+	# 		return 0
+	# 		;;
+	# 	*)
+	# 		shell::colored_echo "ERR: Invalid option." 196
+	# 		;;
+	# 	esac
+	# done
 }
 
 # shell::dump_ini_json function
