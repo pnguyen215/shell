@@ -1,6 +1,37 @@
 #!/bin/bash
 # logger.sh
 
+# _shell::logger::get_level_value (internal function)
+# Retrieves the numerical value of a given logging level.
+#
+# Usage:
+#   _shell::logger::get_level_value <level>
+#
+# Parameters:
+#   - <level>: The logging level string (e.g., "INFO").
+#
+# Output:
+#   Prints the numerical value of the level.
+#   Prints nothing if the level is invalid.
+#
+# Description:
+#   This helper function maps a log level string to its corresponding integer
+#   value using a case statement for maximum portability across shells
+#   like older bash versions on macOS.
+_shell::logger::get_level_value() {
+  local level
+  level="$(echo "$1" | tr '[:lower:]' '[:upper:]')"
+
+  case "${level}" in
+    DEBUG) echo 0 ;;
+    INFO) echo 1 ;;
+    WARN) echo 2 ;;
+    ERROR) echo 3 ;;
+    FATAL) echo 4 ;;
+    *) echo "" ;;
+  esac
+}
+
 # shell::logger::can function
 # Determines if the logger can log messages at a specified level.
 # 
@@ -14,17 +45,21 @@
 #   This function checks the current logging level set in SHELL_LOGGER_LEVEL
 #   and compares it with the target level. It uses an array to define the order of logging levels.
 shell::logger::can() {
-    local level_order=(DEBUG INFO WARN ERROR FATAL)
-    local current_level="$SHELL_LOGGER_LEVEL"
-    local target_level="$1"
+	local target_level="$1"
+	local current_level="${SHELL_LOGGER_LEVEL:-DEBUG}"
 
-    local i current_i
-    for i in "${!level_order[@]}"; do
-        [[ "${level_order[$i]}" == "$current_level" ]] && current_i=$i
-        [[ "${level_order[$i]}" == "$target_level" ]] && target_i=$i
-    done
+	local current_value
+	current_value="$(_shell::logger::get_level_value "${current_level}")"
 
-    [[ $target_i -ge $current_i ]]
+	local target_value
+	target_value="$(_shell::logger::get_level_value "${target_level}")"
+
+	# If either level is invalid, the check fails.
+	if [[ -z "${current_value}" || -z "${target_value}" ]]; then
+		return 1
+	fi
+
+	[[ "${target_value}" -ge "${current_value}" ]]
 }
 
 # shell::logger::fmt function
