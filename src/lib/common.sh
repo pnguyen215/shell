@@ -3125,6 +3125,8 @@ shell::enter() {
 
 	local question="$1"
 	local entered_value
+	local prompt
+	prompt=$(shell::colored_echo "[e] $question " 208)
 
 	while true; do
 		# printf "[e] %s" "$question"
@@ -3133,8 +3135,9 @@ shell::enter() {
 		# if command -v tput >/dev/null 2>&1; then
 		# 	tput sgr0 # Reset and flush terminal
 		# fi
-		shell::colored_echo "[e] $question " 208 -n
-		read -r entered_value
+		# shell::colored_echo "[e] $question " 208 -n
+		# read -r entered_value
+		read -r -p "$prompt" entered_value
 		entered_value="${entered_value#"${entered_value%%[![:space:]]*}"}"
 		entered_value="${entered_value%"${entered_value##*[![:space:]]}"}"
 		if [ -n "$entered_value" ]; then
