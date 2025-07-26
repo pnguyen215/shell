@@ -3126,7 +3126,7 @@ shell::enter() {
 	local question="$1"
 	local entered_value
 
-	echo -n "[e] $question "
+	echo "[e] $question "
 	while true; do
 		# printf "[e] %s" "$question"
 		# echo -n "[e] $question "
