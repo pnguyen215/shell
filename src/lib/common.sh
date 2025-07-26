@@ -3125,7 +3125,7 @@ shell::select_key() {
 	fi
 
 	if [ "$#" -eq 0 ]; then
-		shell::colored_echo "ERR: No options provided to shell::select_key." 196 >&2
+		shell::logger::error "No options provided to shell::select_key."
 		return 0
 	fi
 
@@ -3152,7 +3152,7 @@ shell::select_key() {
 		if [ $? -eq 0 ]; then
 			break
 		fi
-		shell::colored_echo "WARN: A selection is required. Please choose an option and press Enter." 11 >&2
+		shell::logger::warn "A selection is required. Please choose an option and press Enter."
 	done
 
 	for option in "${options[@]}"; do
