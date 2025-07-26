@@ -3126,7 +3126,6 @@ shell::enter() {
 	local question="$1"
 	local entered_value
 	local prompt
-	# prompt=$(shell::colored_echo "[e] $question " 208)
 	prompt=$(shell::colored_echo "[e] $question " 208 -n)
 
 	while true; do
