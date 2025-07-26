@@ -2957,21 +2957,27 @@ shell::ask() {
 		return 0
 	fi
 
-	while true; do
-		shell::colored_echo "[q] $1 (y/n) " 208
-		read -r reply
-		case "$reply" in
-		[Yy] | [Yy][Ee][Ss])
-			return 1
-			;;
-		[Nn] | [Nn][Oo])
-			return 0
-			;;
-		*)
-			shell::logger::warn "Please answer y/yes or n/no."
-			;;
-		esac
-	done
+	local question="$1"
+	local options=()
+	local selected
+	options=("yes" "no")
+	selected=$(shell::select "${options[@]}")
+	echo "$selected"
+	# while true; do
+	# 	shell::colored_echo "[q] $1 (y/n) " 208
+	# 	read -r reply
+	# 	case "$reply" in
+	# 	[Yy] | [Yy][Ee][Ss])
+	# 		return 1
+	# 		;;
+	# 	[Nn] | [Nn][Oo])
+	# 		return 0
+	# 		;;
+	# 	*)
+	# 		shell::logger::warn "Please answer y/yes or n/no."
+	# 		;;
+	# 	esac
+	# done
 }
 
 # shell::enter function
