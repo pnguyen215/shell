@@ -133,24 +133,24 @@ shell::uninstall_python() {
 
 	if [ "$os_type" = "linux" ]; then
 		local package="python3"
-		shell::colored_echo "WARN: Warning: Removing Python3 may break system tools on Linux. Proceed with caution." 33
+		shell::colored_echo "WARN: Removing Python3 may break system tools on Linux. Proceed with caution." 11
 		if shell::is_command_available apt-get; then
 			if shell::is_package_installed_linux "$package"; then
 				shell::execute_or_evict "$dry_run" "sudo apt-get purge -y $package && sudo apt-get autoremove -y"
 			else
-				shell::colored_echo "WARN: Python3 is not installed via apt-get. Skipping." 33
+				shell::colored_echo "WARN: Python3 is not installed via apt-get. Skipping." 11
 			fi
 		elif shell::is_command_available yum; then
 			if rpm -q "$package" >/dev/null 2>&1; then
 				shell::execute_or_evict "$dry_run" "sudo yum remove -y $package"
 			else
-				shell::colored_echo "WARN: Python3 is not installed via yum. Skipping." 33
+				shell::colored_echo "WARN: Python3 is not installed via yum. Skipping." 11
 			fi
 		elif shell::is_command_available dnf; then
 			if rpm -q "$package" >/dev/null 2>&1; then
 				shell::execute_or_evict "$dry_run" "sudo dnf remove -y $package"
 			else
-				shell::colored_echo "WARN: Python3 is not installed via dnf. Skipping." 33
+				shell::colored_echo "WARN: Python3 is not installed via dnf. Skipping." 11
 			fi
 		else
 			shell::colored_echo "ERR: Unsupported package manager on Linux." 196
@@ -161,21 +161,23 @@ shell::uninstall_python() {
 			if brew list --versions python3 >/dev/null 2>&1; then
 				shell::execute_or_evict "$dry_run" "brew uninstall python3 && brew cleanup"
 			else
-				shell::colored_echo "WARN: Python3 is not installed via Homebrew. Skipping." 33
+				shell::colored_echo "WARN: Python3 is not installed via Homebrew. Skipping." 11
 			fi
 		else
 			shell::colored_echo "ERR: Homebrew is not installed on macOS." 196
-			return 1
+			return 0
 		fi
 	else
 		shell::colored_echo "ERR: Unsupported operating system." 196
-		return 1
+		return 0
 	fi
 
 	if [ "$dry_run" = "false" ] && ! shell::is_command_available python3; then
 		shell::colored_echo "INFO: Python3 removed successfully." 46
+		return 1
 	elif [ "$dry_run" = "false" ]; then
 		shell::colored_echo "WARN: Python3 binary still detected. Manual cleanup may be required." 33
+		return 0
 	fi
 }
 
