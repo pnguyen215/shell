@@ -22,24 +22,21 @@
 #   shell::send_telegram_historical_gh_message "Historical message text"
 #   shell::send_telegram_historical_gh_message -n "Dry-run historical message text"
 shell::send_telegram_historical_gh_message() {
-	local dry_run="false"
-
-	# Check for the optional dry-run flag (-n)
-	if [ "$1" = "-n" ]; then
-		dry_run="true"
-		shift
-	fi
-
-	# Check for the help flag (-h)
 	if [ "$1" = "-h" ]; then
 		echo "$USAGE_SHELL_SEND_TELEGRAM_HISTORICAL_GH_MESSAGE"
 		return 0
 	fi
 
+	local dry_run="false"
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
+
 	# Ensure that a message argument is provided.
 	if [ $# -lt 1 ]; then
 		echo "Usage: shell::send_telegram_historical_gh_message [-n] <message>"
-		return 1
+		return 0
 	fi
 
 	# Verify that the Telegram Bot token configuration exists.
@@ -48,7 +45,7 @@ shell::send_telegram_historical_gh_message() {
 	if [ "$hasToken" = "false" ]; then
 		shell::colored_echo "WARN: The key 'SHELL_HISTORICAL_GH_TELEGRAM_BOT_TOKEN' does not exist. Please consider adding it by using shell::add_key_conf" 11
 		shell::clip_value "SHELL_HISTORICAL_GH_TELEGRAM_BOT_TOKEN"
-		return 1
+		return 0
 	fi
 
 	# Verify that the Telegram Chat ID configuration exists.
@@ -57,7 +54,7 @@ shell::send_telegram_historical_gh_message() {
 	if [ "$hasChatID" = "false" ]; then
 		shell::colored_echo "WARN: The key 'SHELL_HISTORICAL_GH_TELEGRAM_CHAT_ID' does not exist. Please consider adding it by using shell::add_key_conf" 11
 		shell::clip_value "SHELL_HISTORICAL_GH_TELEGRAM_CHAT_ID"
-		return 1
+		return 0
 	fi
 
 	# Retrieve the configuration values.
@@ -98,15 +95,14 @@ shell::send_telegram_historical_gh_message() {
 #   - Requires internet access.
 #   - Works on both macOS and Linux.
 shell::retrieve_gh_latest_release() {
-	# Check for the help flag (-h)
 	if [ "$1" = "-h" ]; then
 		echo "$USAGE_SHELL_RETRIEVE_GH_LATEST_RELEASE"
 		return 0
 	fi
 
 	if [ -z "$1" ]; then
-		shell::colored_echo "ERR: Usage: shell::retrieve_gh_latest_release <owner/repo>" 196
-		return 1
+		echo "Usage: shell::retrieve_gh_latest_release <owner/repo>"
+		return 0
 	fi
 
 	local repo="$1"
@@ -152,7 +148,6 @@ shell::retrieve_gh_latest_release() {
 #   - Uses existing helper functions: shell::colored_echo and shell::run_cmd_outlet.
 #   - The Markdown formatting is tailored for platforms supporting basic Markdown (like Telegram).
 shell::retrieve_gh_repository_info() {
-	# Check for the help flag (-h)
 	if [ "$1" = "-h" ]; then
 		echo "$USAGE_SHELL_RETRIEVE_GH_REPOSITORY_INFO"
 		return 0
@@ -161,7 +156,7 @@ shell::retrieve_gh_repository_info() {
 	# Check if the current directory is a Git repository
 	if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
 		shell::colored_echo "ERR: Not in a Git repository." 196
-		return 1
+		return 0
 	fi
 
 	local repo_name
@@ -227,7 +222,7 @@ shell::retrieve_gh_repository_info() {
 	fi
 
 	echo "$response"
-	return 0
+	return 1
 }
 
 # shell::retrieve_current_gh_default_branch function
@@ -257,7 +252,6 @@ shell::retrieve_gh_repository_info() {
 #   - Works on both macOS and Linux.
 #   - Uses existing helper functions: shell::colored_echo and shell::run_cmd_eval.
 shell::retrieve_current_gh_default_branch() {
-	# Check for the help flag (-h)
 	if [ "$1" = "-h" ]; then
 		echo "$USAGE_SHELL_RETRIEVE_CURRENT_GH_DEFAULT_BRANCH"
 		return 0
@@ -266,7 +260,7 @@ shell::retrieve_current_gh_default_branch() {
 	# Check if the current directory is a Git repository
 	if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
 		shell::colored_echo "ERR: Not in a Git repository." 196
-		return 1
+		return 0
 	fi
 
 	local default_branch
@@ -276,11 +270,11 @@ shell::retrieve_current_gh_default_branch() {
 
 	if [ -z "$default_branch" ]; then
 		shell::colored_echo "ERR: Could not determine the default branch for 'origin'." 196
-		return 1
+		return 0
 	fi
 
 	echo "$default_branch"
-	return 0
+	return 1
 }
 
 # shell::retrieve_current_gh_current_branch function
@@ -308,7 +302,6 @@ shell::retrieve_current_gh_default_branch() {
 #   - Works on both macOS and Linux.
 #   - Uses existing helper functions: shell::colored_echo and shell::run_cmd_outlet.
 shell::retrieve_current_gh_current_branch() {
-	# Check for the help flag (-h)
 	if [ "$1" = "-h" ]; then
 		echo "$USAGE_SHELL_RETRIEVE_CURRENT_GH_CURRENT_BRANCH"
 		return 0
@@ -317,7 +310,7 @@ shell::retrieve_current_gh_current_branch() {
 	# Check if the current directory is a Git repository
 	if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
 		shell::colored_echo "ERR: Not in a Git repository." 196
-		return 1
+		return 0
 	fi
 
 	local current_branch
@@ -327,9 +320,9 @@ shell::retrieve_current_gh_current_branch() {
 
 	if [ -z "$current_branch" ]; then
 		shell::colored_echo "ERR: Could not determine the current branch." 196
-		return 1
+		return 0
 	fi
 
 	echo "$current_branch"
-	return 0
+	return 1
 }
