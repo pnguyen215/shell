@@ -70,26 +70,27 @@ shell::install_python() {
 			cmd="sudo dnf install -y $package"
 		else
 			shell::colored_echo "ERR: Unsupported package manager on Linux." 196
-			return 1
+			return 0
 		fi
 		shell::execute_or_evict "$dry_run" "$cmd"
 	elif [ "$os_type" = "macos" ]; then
 		if ! shell::is_command_available brew; then
-			shell::colored_echo "🍎 Installing Homebrew first..." 32
+			shell::colored_echo "DEBUG: Installing Homebrew first..." 244
 			shell::install_homebrew
 		fi
 		shell::execute_or_evict "$dry_run" "brew install python3"
 	else
 		shell::colored_echo "ERR: Unsupported operating system." 196
-		return 1
+		return 0
 	fi
 
 	# Verify installation
 	if [ "$dry_run" = "false" ] && shell::is_command_available "$python_version"; then
 		shell::colored_echo "INFO: Python3 installed successfully." 46
+		return 1
 	elif [ "$dry_run" = "false" ]; then
 		shell::colored_echo "ERR: Python3 installation failed." 196
-		return 1
+		return 0
 	fi
 }
 
