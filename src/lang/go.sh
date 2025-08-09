@@ -44,6 +44,7 @@ shell::get_go_privates() {
 
 	if [ "$dry_run" = "true" ]; then
 		shell::on_evict "$cmd"
+		return 0
 	else
 		shell::async "$cmd" &
 		local pid=$!
@@ -51,9 +52,10 @@ shell::get_go_privates() {
 
 		if [ $? -eq 0 ]; then
 			shell::colored_echo "INFO: Go privates setting retrieved successfully: ${cmd}" 46
+			return 1
 		else
 			shell::colored_echo "ERR: Failed to retrieve GOPRIVATE." 196
-			return 1
+			return 0
 		fi
 	fi
 }
@@ -105,7 +107,7 @@ shell::set_go_privates() {
 
 	if [ $# -eq 0 ]; then
 		echo "Usage: shell::set_go_privates [-n] <repository1> [repository2] ..."
-		return 1
+		return 0
 	fi
 
 	# Join all repositories with a comma
@@ -126,6 +128,7 @@ shell::set_go_privates() {
 
 	if [ "$dry_run" = "true" ]; then
 		shell::on_evict "$cmd"
+		return 0
 	else
 		shell::async "$cmd" &
 		local pid=$!
@@ -133,9 +136,10 @@ shell::set_go_privates() {
 
 		if [ $? -eq 0 ]; then
 			shell::colored_echo "INFO: GOPRIVATE set successfully to: $repositories_by_comma" 46
+			return 1
 		else
 			shell::colored_echo "ERR: Failed to set GOPRIVATE." 196
-			return 1
+			return 0
 		fi
 	fi
 }
@@ -221,6 +225,7 @@ shell::fzf_remove_go_privates() {
 
 	if [ "$dry_run" = "true" ]; then
 		shell::on_evict "$cmd"
+		return 0
 	else
 		# Execute asynchronously and wait for completion
 		shell::async "$cmd" &
@@ -228,9 +233,10 @@ shell::fzf_remove_go_privates() {
 		wait $pid
 		if [ $? -eq 0 ]; then
 			shell::colored_echo "INFO: Removed selected entries from GOPRIVATE." 46
+			return 1
 		else
 			shell::colored_echo "ERR: Failed to update GOPRIVATE." 196
-			return 1
+			return 0
 		fi
 	fi
 }
@@ -278,7 +284,7 @@ shell::create_go_app() {
 
 	if [ -z "$1" ]; then
 		echo "Usage: shell::create_go_app [-n] [-h] <app_name|github_url> [target_folder]"
-		return 1
+		return 0
 	fi
 
 	local app_name="$1"
@@ -306,11 +312,11 @@ shell::create_go_app() {
 			shell::create_directory_if_not_exists "$target_folder"
 			if [ $? -ne 0 ]; then
 				shell::colored_echo "ERR: Could not create or access target directory '$target_folder'." 196
-				return 1
+				return 0
 			fi
 			cd "$target_folder" || {
 				shell::colored_echo "ERR: Could not change to target directory '$target_folder'." 196
-				return 1
+				return 0
 			}
 		fi
 	fi
@@ -341,10 +347,12 @@ shell::create_go_app() {
 		else
 			cd "$original_dir" || {
 				shell::colored_echo "ERR: Warning: Could not change back to original directory '$original_dir'." 11
+				return 0
 			}
 		fi
 	fi
 	shell::colored_echo "INFO: Go application initialized successfully." 46
+	return 1
 }
 
 # shell::add_go_app_settings function
