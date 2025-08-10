@@ -106,16 +106,12 @@ shell::upgrade() {
 	install_dir="$HOME/shell"
 	[ -d "$install_dir" ] && rm -rf "$install_dir"
 	bash -c "$(curl -fsSL https://raw.githubusercontent.com/pnguyen215/shell/master/install.sh)"
-	shell::logger::info "shell upgraded. Restart your terminal or run 'source ~/.zshrc' or 'source ~/.bashrc' to apply changes."
 	if [ -f "$HOME/.zshrc" ] && grep -q "source $install_dir/src/shell.sh" "$HOME/.zshrc"; then
-		shell::clip_value "source ~/.zshrc"
 		shell::logger::exec_check "source ~/.zshrc" "shell upgraded" "shell upgrade aborted"
 	elif [ -f "$HOME/.bashrc" ] && grep -q "source $install_dir/src/shell.sh" "$HOME/.bashrc"; then
-		shell::clip_value "source ~/.bashrc"
 		shell::logger::exec_check "source ~/.bashrc" "shell upgraded" "shell upgrade aborted"
 	else
-		# Fallback: default to .bashrc if none found.
-		shell::clip_value "source ~/.bashrc"
+		shell::logger::warn "No .zshrc found. Falling back to .bashrc."
 		shell::logger::exec_check "source ~/.bashrc" "shell upgraded" "shell upgrade aborted"
 	fi
 }
@@ -135,8 +131,8 @@ shell::upgrade() {
 #     to manually remove the source command from their shell configuration file
 #     (e.g., ~/.zshrc or ~/.bashrc).
 shell::uninstall() {
-	echo "🚀 Uninstalling shell..."
+	shell::logger::debug "Uninstalling shell..."
 	install_dir="$HOME/shell"
 	[ -d "$install_dir" ] && rm -rf "$install_dir"
-	shell::colored_echo "INFO: shell uninstalled. Please remove 'source $install_dir/src/shell.sh' from your shell config (e.g., ~/.zshrc or ~/.bashrc)." 46
+	shell::logger::info "shell uninstalled. Please remove 'source $install_dir/src/shell.sh' from your shell config (e.g., ~/.zshrc or ~/.bashrc)."
 }
