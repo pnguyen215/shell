@@ -536,12 +536,13 @@ shell::logger::exec_check() {
 	local command="$1"
 	local success_msg="${2:-Success}"
 	local failure_msg="${3:-Aborted}"
+	local timeout="${4:-30}"  # Default 30 second timeout
 	
-	if [ -z "$command" ]; then
+	if [[ -z "$command" ]]; then
 		shell::logger::error "Command is empty"
 		return 1
 	fi
-
+	
 	if ! shell::logger::can "INFO"; then
 		eval "$command"
 		return $?
@@ -550,16 +551,77 @@ shell::logger::exec_check() {
 	# Log the command
 	shell::logger::cmd "$command"
 	
-	# Execute command and capture exit code
+	# Execute command with timeout and proper error handling
 	local exit_code
-	eval "$command"
-	exit_code=$?
+	local temp_file="/tmp/shell_logger_$"
+	
+	# Use timeout command if available, otherwise use eval directly
+	if command -v timeout >/dev/null 2>&1; then
+		# GNU/Linux timeout or macOS gtimeout
+		local timeout_cmd="timeout"
+		if [[ "$(uname)" == "Darwin" ]] && command -v gtimeout >/dev/null 2>&1; then
+			timeout_cmd="gtimeout"
+		fi
+		
+		# Execute with timeout and capture both stdout/stderr
+		eval "$command" > "$temp_file" 2>&1 &
+		local cmd_pid=$!
+		
+		# Wait for command completion with timeout
+		local count=0
+		while [[ $count -lt $timeout ]] && kill -0 $cmd_pid 2>/dev/null; do
+			sleep 1
+			((count++))
+		done
+		
+		if kill -0 $cmd_pid 2>/dev/null; then
+			# Command still running, kill it
+			kill -TERM $cmd_pid 2>/dev/null
+			sleep 2
+			kill -KILL $cmd_pid 2>/dev/null
+			exit_code=124  # timeout exit code
+		else
+			wait $cmd_pid 2>/dev/null
+			exit_code=$?
+		fi
+	else
+		# Fallback: execute directly without timeout
+		eval "$command" > "$temp_file" 2>&1
+		exit_code=$?
+	fi
+	
+	# Check for common error patterns in output
+	if [[ $exit_code -eq 0 ]] && [[ -f "$temp_file" ]]; then
+		local output
+		output=$(cat "$temp_file" 2>/dev/null)
+		
+		# Check for common error indicators even when exit code is 0
+		if echo "$output" | grep -qi -E "(error|failed|failure|cannot|unable|denied|refused|timeout|not found|permission denied|connection refused|no such file|command not found)"; then
+			exit_code=1
+		fi
+	fi
+	
+	# Show output if there are errors or if in debug mode
+	if [[ $exit_code -ne 0 ]] || [[ "${SHELL_LOGGER_LEVEL}" == "DEBUG" ]]; then
+		if [[ -f "$temp_file" ]] && [[ -s "$temp_file" ]]; then
+			local output
+			output=$(head -5 "$temp_file" 2>/dev/null)  # Show first 5 lines
+			if [[ -n "$output" ]]; then
+				shell::logger::indent 2 248 "Output: $output"
+			fi
+		fi
+	fi
+	
+	# Clean up temp file
+	rm -f "$temp_file" 2>/dev/null
 	
 	# Log result based on exit code
 	if [[ $exit_code -eq 0 ]]; then
-		shell::colored_echo "  [✓] $success_msg" 46
+		shell::colored_echo "  [✓] $success_msg" 46  # Green
+	elif [[ $exit_code -eq 124 ]]; then
+		shell::colored_echo "  [✗] Timeout after ${timeout}s" 196  # Red
 	else
-		shell::colored_echo "  [✗] $failure_msg (exit code: $exit_code)" 196
+		shell::colored_echo "  [✗] $failure_msg (exit code: $exit_code)" 196  # Red
 	fi
 	
 	return $exit_code
