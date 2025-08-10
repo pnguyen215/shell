@@ -94,6 +94,42 @@ shell::logger::fmt() {
 	fi
 }
 
+# shell::logger::reset function
+# Resets the logging level to DEBUG.
+#
+# Usage:
+#   shell::logger::reset
+#
+# Description:
+#   This function sets the SHELL_LOGGER_LEVEL environment variable to DEBUG,
+#   effectively resetting the logging level to the most verbose.
+shell::logger::reset() {
+	SHELL_LOGGER_LEVEL="DEBUG"
+}
+
+# shell::logger::set_level function
+# Sets the logging level to a specified value.
+#
+# Usage:
+#   shell::logger::set_level
+#
+# Description:
+#   This function sets the SHELL_LOGGER_LEVEL environment variable to the specified level,
+#   allowing for dynamic adjustment of the logging verbosity.
+shell::logger::set_level() {
+	local menu_options
+	local selected_value
+	menu_options=(
+		"DEBUG"
+		"INFO"
+		"WARN"
+		"ERROR"
+		"FATAL"
+	)
+	selected_value=$(shell::select "${menu_options[@]}")
+	SHELL_LOGGER_LEVEL="${selected_value:-DEBUG}"
+}
+
 # shell::logger::debug function
 # Logs a debug message if the current logging level allows it.
 #
@@ -183,40 +219,4 @@ shell::logger::fatal() {
 #   This function uses shell::logger::fmt to format the message with the INFO level and a specific color.
 shell::logger::success() {
 	shell::logger::fmt "INFO" 46 "stdout" "$@"
-}
-
-# shell::logger::reset function
-# Resets the logging level to DEBUG.
-#
-# Usage:
-#   shell::logger::reset
-#
-# Description:
-#   This function sets the SHELL_LOGGER_LEVEL environment variable to DEBUG,
-#   effectively resetting the logging level to the most verbose.
-shell::logger::reset() {
-	SHELL_LOGGER_LEVEL="DEBUG"
-}
-
-# shell::logger::set_level function
-# Sets the logging level to a specified value.
-#
-# Usage:
-#   shell::logger::set_level
-#
-# Description:
-#   This function sets the SHELL_LOGGER_LEVEL environment variable to the specified level,
-#   allowing for dynamic adjustment of the logging verbosity.
-shell::logger::set_level() {
-	local menu_options
-	local selected_value
-	menu_options=(
-		"DEBUG"
-		"INFO"
-		"WARN"
-		"ERROR"
-		"FATAL"
-	)
-	selected_value=$(shell::select "${menu_options[@]}")
-	SHELL_LOGGER_LEVEL="${selected_value:-DEBUG}"
 }
