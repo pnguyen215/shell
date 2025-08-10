@@ -459,8 +459,8 @@ shell::create_python_env() {
 			shift 2
 			;;
 		*)
-			shell::colored_echo "ERR: Unknown option '$1'. Usage: shell::create_python_env [-n] [-p <path>] [-v <version>]" 196
-			return 1
+			echo "Usage: shell::create_python_env [-n] [-p <path>] [-v <version>]"
+			return 0
 			;;
 		esac
 	done
@@ -470,7 +470,7 @@ shell::create_python_env() {
 
 	# Ensure Python is installed
 	if ! shell::is_command_available "$python_version"; then
-		shell::colored_echo "🔍 Installing $python_version..." 36
+		shell::colored_echo "DEBUG: Installing $python_version..." 244
 		if [ "$os_type" = "linux" ]; then
 			shell::execute_or_evict "$dry_run" "shell::install_python"
 			# Ensure python3-venv is installed on Linux for virtual env support
@@ -481,17 +481,17 @@ shell::create_python_env() {
 			shell::execute_or_evict "$dry_run" "shell::install_python"
 		else
 			shell::colored_echo "ERR: Unsupported operating system." 196
-			return 1
+			return 0
 		fi
 	fi
 
 	# Check if virtual environment already exists
 	if [ -d "$venv_path" ] && [ "$dry_run" = "false" ]; then
-		shell::colored_echo "WARN: Virtual environment already exists at '$venv_path'. Skipping creation." 33
+		shell::colored_echo "WARN: Virtual environment already exists at '$venv_path'. Skipping creation." 11
 	else
 		# Create the virtual environment
 		local create_cmd="$python_version -m venv \"$venv_path\""
-		shell::colored_echo "🔍 Creating virtual environment at '$venv_path' with $python_version..." 36
+		shell::colored_echo "DEBUG: Creating virtual environment at '$venv_path' with $python_version..." 244
 		shell::execute_or_evict "$dry_run" "$create_cmd"
 	fi
 
@@ -501,14 +501,14 @@ shell::create_python_env() {
 		activate_cmd="source \"$venv_path/bin/activate\""
 	else
 		shell::colored_echo "ERR: Unsupported OS for activation path." 196
-		return 1
+		return 0
 	fi
 
 	# Upgrade pip and install basic tools asynchronously
 	if [ "$dry_run" = "false" ] && [ -d "$venv_path" ]; then
 		local pip_cmd="$venv_path/bin/pip"
 		if shell::is_command_available "$pip_cmd"; then
-			shell::colored_echo "🔍 Upgrading pip and installing basic tools in the virtual environment..." 36
+			shell::colored_echo "DEBUG: Upgrading pip and installing basic tools in the virtual environment..." 244
 			local upgrade_cmd="$pip_cmd install --upgrade pip wheel setuptools"
 			shell::async "$upgrade_cmd" &
 			wait $! # Wait for async process to complete
@@ -519,7 +519,7 @@ shell::create_python_env() {
 			fi
 		else
 			shell::colored_echo "ERR: pip not found in virtual environment." 196
-			return 1
+			return 0
 		fi
 	elif [ "$dry_run" = "true" ]; then
 		shell::on_evict "$venv_path/bin/pip install --upgrade pip wheel setuptools"
@@ -532,7 +532,7 @@ shell::create_python_env() {
 		shell::clip_value "$activate_cmd"
 	elif [ "$dry_run" = "false" ]; then
 		shell::colored_echo "ERR: Failed to create virtual environment." 196
-		return 1
+		return 0
 	fi
 }
 
