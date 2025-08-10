@@ -479,7 +479,8 @@ shell::logger::cmd_copy() {
 	if ! shell::logger::can "INFO"; then
 		return 0
 	fi
-	shell::colored_echo "  $ $command" 245
+
+	shell::logger::cmd "$command"
 	shell::clip_value "$command"
 }
 
@@ -502,8 +503,56 @@ shell::logger::exec() {
 	if ! shell::logger::can "INFO"; then
 		return 0
 	fi
-	shell::colored_echo "  $ $command" 245
+
+	shell::logger::cmd "$command"
 	eval "$command"
+}
+
+# shell::logger::exec_check function
+# Logs and executes a command, then reports success or failure.
+#
+# Usage:
+#   shell::logger::exec_check <command>
+#   shell::logger::exec_check <command> <success_message> <failure_message>
+#
+# Parameters:
+#   - <command>         : The command to execute
+#   - <success_message> : Optional custom success message
+#   - <failure_message> : Optional custom failure message
+#
+# Return:
+#   Returns the exit code of the executed command
+#
+# Description:
+#   Executes a command and automatically logs success (green) or failure (red)
+#   based on the exit code. Preserves the original command's exit code.
+#   Compatible with Linux and macOS.
+shell::logger::exec_check() {
+	local command="$1"
+	local success_msg="${2:-Success}"
+	local failure_msg="${3:-Aborted}"
+	
+	if ! shell::logger::can "INFO"; then
+		eval "$command"
+		return $?
+	fi
+	
+	# Log the command
+	shell::logger::cmd "$command"
+	
+	# Execute command and capture exit code
+	local exit_code
+	eval "$command"
+	exit_code=$?
+	
+	# Log result based on exit code
+	if [[ $exit_code -eq 0 ]]; then
+		shell::colored_echo "  [✓] $success_msg" 46
+	else
+		shell::colored_echo "  [✗] $failure_msg (exit code: $exit_code)" 196
+	fi
+	
+	return $exit_code
 }
 
 # shell::logger::section function
