@@ -208,87 +208,87 @@ shell::uninstall_python() {
 #   - Supports asynchronous execution via shell::async, though kept synchronous for user feedback.
 #   - Temporary files are cleaned up automatically.
 shell::uninstall_python_pip_deps() {
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_UNINSTALL_PYTHON_PIP_DEPS"
-        return 0
-    fi
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_UNINSTALL_PYTHON_PIP_DEPS"
+		return 0
+	fi
 
-    local dry_run="false"
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+	local dry_run="false"
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
 
-    shell::colored_echo "WARN: This will uninstall all pip and pip3 packages, including system packages." 11
-    shell::colored_echo "WARN: This is potentially dangerous and could break your system Python installation." 11
-    asked=$(shell::ask "Are you absolutely sure you want to proceed?")
-    if [ "$asked" = "no" ]; then
-        shell::colored_echo "WARN: Uninstallation cancelled." 11
-        return 0
-    fi
+	shell::colored_echo "WARN: This will uninstall all pip and pip3 packages, including system packages." 11
+	shell::colored_echo "WARN: This is potentially dangerous and could break your system Python installation." 11
+	asked=$(shell::ask "Are you absolutely sure you want to proceed?")
+	if [ "$asked" = "no" ]; then
+		shell::colored_echo "WARN: Uninstallation cancelled." 11
+		return 0
+	fi
 
 	# Helper function to uninstall packages for a given pip command
-	# 
+	#
 	# Parameters:
 	#   $1 - The pip command to use (e.g., pip, pip3)
-	# 
+	#
 	# Description:
 	#   This function uninstalls all packages installed via the specified pip command.
 	#   It first lists all packages, filters out system packages, and then uninstalls them.
-	# 
+	#
 	# Parameters:
 	#   $1 - The pip command to use (e.g., pip, pip3)
-	# 
+	#
 	# Returns:
 	#   None
-    uninstall_packages() {
-        local pip_cmd="$1"
-        if shell::is_command_available "$pip_cmd"; then
-            shell::colored_echo "DEBUG: Processing $pip_cmd packages..." 244
-            local packages_file
-            packages_file=$(mktemp)
-            local freeze_cmd="$pip_cmd freeze --break-system-packages | grep -v '^-e' | grep -v '@' | cut -d= -f1 > $packages_file"
-            local uninstall_cmd="xargs $pip_cmd uninstall --break-system-packages -y < $packages_file"
+	uninstall_packages() {
+		local pip_cmd="$1"
+		if shell::is_command_available "$pip_cmd"; then
+			shell::colored_echo "DEBUG: Processing $pip_cmd packages..." 244
+			local packages_file
+			packages_file=$(mktemp)
+			local freeze_cmd="$pip_cmd freeze --break-system-packages | grep -v '^-e' | grep -v '@' | cut -d= -f1 > $packages_file"
+			local uninstall_cmd="xargs $pip_cmd uninstall --break-system-packages -y < $packages_file"
 
-            if [ "$dry_run" = "true" ]; then
-                shell::logger::cmd_copy "$freeze_cmd && $uninstall_cmd && rm $packages_file"
-            else
-                shell::run_cmd_eval "$freeze_cmd"
-                if [ -s "$packages_file" ]; then
-                    shell::run_cmd_eval "$uninstall_cmd"
-                    if [ $? -eq 0 ]; then
-                        shell::colored_echo "INFO: All $pip_cmd packages uninstalled successfully." 46
-                    else
-                        shell::colored_echo "ERR: An error occurred while uninstalling $pip_cmd packages." 196
-                    fi
-                else
-                    shell::colored_echo "WARN: No valid $pip_cmd packages found to uninstall." 11
-                fi
-                rm "$packages_file"
-            fi
-        else
-            shell::colored_echo "WARN: $pip_cmd is not installed." 11
-        fi
-    }
+			if [ "$dry_run" = "true" ]; then
+				shell::logger::cmd_copy "$freeze_cmd && $uninstall_cmd && rm $packages_file"
+			else
+				shell::run_cmd_eval "$freeze_cmd"
+				if [ -s "$packages_file" ]; then
+					shell::run_cmd_eval "$uninstall_cmd"
+					if [ $? -eq 0 ]; then
+						shell::colored_echo "INFO: All $pip_cmd packages uninstalled successfully." 46
+					else
+						shell::colored_echo "ERR: An error occurred while uninstalling $pip_cmd packages." 196
+					fi
+				else
+					shell::colored_echo "WARN: No valid $pip_cmd packages found to uninstall." 11
+				fi
+				rm "$packages_file"
+			fi
+		else
+			shell::colored_echo "WARN: $pip_cmd is not installed." 11
+		fi
+	}
 
-    # Check if pip and pip3 are the same to avoid redundant uninstallation
-    if shell::is_command_available pip && shell::is_command_available pip3; then
-        if [ "$(command -v pip)" = "$(command -v pip3)" ]; then
-            shell::colored_echo "WARN: pip and pip3 are the same; uninstalling once." 11
-            uninstall_packages "pip"
-        else
-            uninstall_packages "pip"
-            uninstall_packages "pip3"
-        fi
-    elif shell::is_command_available pip; then
-        uninstall_packages "pip"
-    elif shell::is_command_available pip3; then
-        uninstall_packages "pip3"
-    else
-        shell::colored_echo "WARN: Neither pip nor pip3 is installed." 11
-    fi
+	# Check if pip and pip3 are the same to avoid redundant uninstallation
+	if shell::is_command_available pip && shell::is_command_available pip3; then
+		if [ "$(command -v pip)" = "$(command -v pip3)" ]; then
+			shell::colored_echo "WARN: pip and pip3 are the same; uninstalling once." 11
+			uninstall_packages "pip"
+		else
+			uninstall_packages "pip"
+			uninstall_packages "pip3"
+		fi
+	elif shell::is_command_available pip; then
+		uninstall_packages "pip"
+	elif shell::is_command_available pip3; then
+		uninstall_packages "pip3"
+	else
+		shell::colored_echo "WARN: Neither pip nor pip3 is installed." 11
+	fi
 
-    shell::colored_echo "INFO: Operation completed." 46
+	shell::colored_echo "INFO: Operation completed." 46
 	return 1
 }
 
@@ -315,92 +315,92 @@ shell::uninstall_python_pip_deps() {
 #   - Use with caution: Uninstalling system packages may break your Python environment.
 #   - Supports asynchronous execution via shell::async for non-blocking uninstallation.
 shell::uninstall_python_pip_deps::latest() {
-    if [ "$1" = "-h" ]; then
-        echo "$USAGE_SHELL_UNINSTALL_PYTHON_PIP_DEPS_LATEST"
-        return 0
-    fi
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_UNINSTALL_PYTHON_PIP_DEPS_LATEST"
+		return 0
+	fi
 
-    local dry_run="false"
-    if [ "$1" = "-n" ]; then
-        dry_run="true"
-        shift
-    fi
+	local dry_run="false"
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
 
-    shell::colored_echo "WARN: This will uninstall all pip and pip3 packages, including system packages." 11
-    shell::colored_echo "WARN: This is potentially dangerous and could break your system Python installation." 11
-    asked=$(shell::ask "Are you absolutely sure you want to proceed?")
-    if [ "$asked" = "no" ]; then
-        shell::colored_echo "WARN: Uninstallation cancelled." 11
-        return 0
-    fi
+	shell::colored_echo "WARN: This will uninstall all pip and pip3 packages, including system packages." 11
+	shell::colored_echo "WARN: This is potentially dangerous and could break your system Python installation." 11
+	asked=$(shell::ask "Are you absolutely sure you want to proceed?")
+	if [ "$asked" = "no" ]; then
+		shell::colored_echo "WARN: Uninstallation cancelled." 11
+		return 0
+	fi
 
 	# Helper function to uninstall packages for a given pip command asynchronously
-	# 
+	#
 	# Parameters:
 	#   $1 - The pip command to use (e.g., pip, pip3)
-	# 
+	#
 	# Description:
 	#   This function uninstalls all packages installed via the specified pip command asynchronously.
 	#   It first lists all packages, filters out system packages, and then uninstalls them.
-	# 
+	#
 	# Parameters:
 	#   $1 - The pip command to use (e.g., pip, pip3)
-	# 
+	#
 	# Returns:
 	#   None
-    uninstall_packages() {
-        local pip_cmd="$1"
-        if shell::is_command_available "$pip_cmd"; then
-            shell::colored_echo "DEBUG: Processing $pip_cmd packages asynchronously..." 244
-            local packages_file
-            packages_file=$(mktemp)
-            # Build command to capture installed packages (ignoring editable installs and VCS links)
-            local freeze_cmd="$pip_cmd freeze --break-system-packages | grep -v '^-e' | grep -v '@' | cut -d= -f1 > $packages_file"
-            # Build uninstallation command that reads the package list and removes packages
-            local uninstall_cmd="xargs $pip_cmd uninstall --break-system-packages -y < $packages_file"
-            if [ "$dry_run" = "true" ]; then
-                shell::logger::cmd_copy "$freeze_cmd && $uninstall_cmd && rm $packages_file"
-            else
-                # Execute the freeze command synchronously to capture the list of packages
-                shell::run_cmd_eval "$freeze_cmd"
-                if [ -s "$packages_file" ]; then
-                    # Run the uninstallation command asynchronously
-                    shell::async "$uninstall_cmd && rm $packages_file" &
-                    wait $! # Wait for the asynchronous process to finish
-                    if [ $? -eq 0 ]; then
-                        shell::colored_echo "INFO: All $pip_cmd packages uninstalled successfully." 46
-                    else
-                        shell::colored_echo "ERR: An error occurred while uninstalling $pip_cmd packages." 196
-                    fi
-                else
-                    shell::colored_echo "WARN: No valid $pip_cmd packages found to uninstall." 11
-                fi
-                # Clean up the temporary file if it still exists
-                [ -f "$packages_file" ] && rm "$packages_file"
-            fi
-        else
-            shell::colored_echo "WARN: $pip_cmd is not installed." 11
-        fi
-    }
+	uninstall_packages() {
+		local pip_cmd="$1"
+		if shell::is_command_available "$pip_cmd"; then
+			shell::colored_echo "DEBUG: Processing $pip_cmd packages asynchronously..." 244
+			local packages_file
+			packages_file=$(mktemp)
+			# Build command to capture installed packages (ignoring editable installs and VCS links)
+			local freeze_cmd="$pip_cmd freeze --break-system-packages | grep -v '^-e' | grep -v '@' | cut -d= -f1 > $packages_file"
+			# Build uninstallation command that reads the package list and removes packages
+			local uninstall_cmd="xargs $pip_cmd uninstall --break-system-packages -y < $packages_file"
+			if [ "$dry_run" = "true" ]; then
+				shell::logger::cmd_copy "$freeze_cmd && $uninstall_cmd && rm $packages_file"
+			else
+				# Execute the freeze command synchronously to capture the list of packages
+				shell::run_cmd_eval "$freeze_cmd"
+				if [ -s "$packages_file" ]; then
+					# Run the uninstallation command asynchronously
+					shell::async "$uninstall_cmd && rm $packages_file" &
+					wait $! # Wait for the asynchronous process to finish
+					if [ $? -eq 0 ]; then
+						shell::colored_echo "INFO: All $pip_cmd packages uninstalled successfully." 46
+					else
+						shell::colored_echo "ERR: An error occurred while uninstalling $pip_cmd packages." 196
+					fi
+				else
+					shell::colored_echo "WARN: No valid $pip_cmd packages found to uninstall." 11
+				fi
+				# Clean up the temporary file if it still exists
+				[ -f "$packages_file" ] && rm "$packages_file"
+			fi
+		else
+			shell::colored_echo "WARN: $pip_cmd is not installed." 11
+		fi
+	}
 
-    # Check if pip and pip3 are the same to avoid redundant uninstallation
-    if shell::is_command_available pip && shell::is_command_available pip3; then
-        if [ "$(command -v pip)" = "$(command -v pip3)" ]; then
-            shell::colored_echo "WARN: pip and pip3 are the same; uninstalling once." 11
-            uninstall_packages "pip"
-        else
-            uninstall_packages "pip"
-            uninstall_packages "pip3"
-        fi
-    elif shell::is_command_available pip; then
-        uninstall_packages "pip"
-    elif shell::is_command_available pip3; then
-        uninstall_packages "pip3"
-    else
-        shell::colored_echo "WARN: Neither pip nor pip3 is installed." 11
-    fi
+	# Check if pip and pip3 are the same to avoid redundant uninstallation
+	if shell::is_command_available pip && shell::is_command_available pip3; then
+		if [ "$(command -v pip)" = "$(command -v pip3)" ]; then
+			shell::colored_echo "WARN: pip and pip3 are the same; uninstalling once." 11
+			uninstall_packages "pip"
+		else
+			uninstall_packages "pip"
+			uninstall_packages "pip3"
+		fi
+	elif shell::is_command_available pip; then
+		uninstall_packages "pip"
+	elif shell::is_command_available pip3; then
+		uninstall_packages "pip3"
+	else
+		shell::colored_echo "WARN: Neither pip nor pip3 is installed." 11
+	fi
 
-    shell::colored_echo "INFO: Operation completed." 46
+	shell::colored_echo "INFO: Operation completed." 46
 	return 1
 }
 
