@@ -220,3 +220,24 @@ shell::logger::fatal() {
 shell::logger::success() {
 	shell::logger::fmt "INFO" 46 "stdout" "$@"
 }
+
+# shell::logger::usage function
+# Logs CLI usage instructions with proper indentation and formatting.
+#
+# Usage:
+#   shell::logger::usage <title>
+#   shell::logger::item <command> <description>
+#   shell::logger::option <option> <description>
+#   shell::logger::example <example>
+#
+# Description:
+#   Provides a set of functions for displaying professional CLI usage documentation
+#   with consistent indentation and colors. Compatible with Linux and macOS.
+shell::logger::usage() {
+	local title="$1"
+	shift
+	if ! shell::logger::can "INFO"; then
+		return 0
+	fi
+	shell::colored_echo "USAGE: $title" 39
+}
