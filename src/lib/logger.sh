@@ -269,3 +269,32 @@ shell::logger::item() {
 		shell::colored_echo "  $command" 245
 	fi
 }
+
+# shell::logger::option function
+# Logs an option with an optional description.
+#
+# Usage:
+#   shell::logger::option <option> <description>
+#
+# Parameters:
+#   - <option> : The option to log.
+#   - <description> : (Optional) A description of the option.
+#
+# Description:
+#   This function logs an option with an optional description. If a description
+#   is provided, it is indented and formatted for readability. The option is
+#   displayed in a specific color (246) to stand out.
+shell::logger::option() {
+	local option="$1"
+	local description="$2"
+	
+	if ! shell::logger::can "INFO"; then
+		return 0
+	fi
+	
+	if [[ -n "$description" ]]; then
+		printf "    %-20s %s\n" "$option" "$description" | shell::colored_echo "$(cat)" 246
+	else
+		shell::colored_echo "    $option" 246
+	fi
+}
