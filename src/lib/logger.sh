@@ -483,11 +483,11 @@ shell::logger::cmd_copy() {
 	shell::clip_value "$command"
 }
 
-# shell::logger::cmd_eval_run function
+# shell::logger::exec function
 # Logs a command with an optional description and executes it using eval.
 #
 # Usage:
-#   shell::logger::cmd_eval_run <command> <description>
+#   shell::logger::exec <command> <description>
 #
 # Parameters:
 #   - <command> : The command to log and execute.
@@ -497,7 +497,7 @@ shell::logger::cmd_copy() {
 #   This function logs a command with an optional description and executes it
 #   using eval. If a description is provided, it is indented and formatted for
 #   readability. The command is displayed in a specific color (245) to stand out.
-shell::logger::cmd_eval_run() {
+shell::logger::exec() {
 	local command="$1"
 	if ! shell::logger::can "INFO"; then
 		return 0
