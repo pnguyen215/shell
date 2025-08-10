@@ -255,7 +255,8 @@ shell::run_cmd() {
 		emoji="[v]" # Apple for macOS
 	fi
 
-	shell::colored_echo "$emoji $command" $color_code
+	# shell::colored_echo "$emoji $command" $color_code
+	shell::logger::cmd "$command"
 	# Execute the command without using eval
 	"$@"
 }
@@ -316,7 +317,8 @@ shell::run_cmd_eval() {
 		emoji="[v]" # Apple for macOS
 	fi
 
-	shell::colored_echo "$emoji $command" $color_code
+	# shell::colored_echo "$emoji $command" $color_code
+	shell::logger::cmd "$command"
 	eval "$command"
 }
 
