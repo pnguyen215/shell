@@ -235,7 +235,6 @@ shell::logger::success() {
 #   with consistent indentation and colors. Compatible with Linux and macOS.
 shell::logger::usage() {
 	local title="$1"
-	shift
 	if ! shell::logger::can "INFO"; then
 		return 0
 	fi
@@ -258,7 +257,7 @@ shell::logger::usage() {
 shell::logger::item() {
 	local command="$1"
 	local description="$2"
-	shift 2
+
 	if ! shell::logger::can "INFO"; then
 		return 0
 	fi
