@@ -393,6 +393,28 @@ shell::logger::step() {
 	shell::colored_echo "STEP $step_number: $description" 33
 }
 
+# shell::logger::step_note function
+# Logs a note with an optional description.
+#
+# Usage:
+#   shell::logger::step_note <note> <description>
+#
+# Parameters:
+#   - <note> : The note to log.
+#   - <description> : (Optional) A description of the note.
+#
+# Description:
+#   This function logs a note with an optional description. If a description
+#   is provided, it is indented and formatted for readability. The note is
+#   displayed in a specific color (248) to stand out.
+shell::logger::step_note() {
+	local note="$1"
+	if ! shell::logger::can "INFO"; then
+		return 0
+	fi
+	shell::colored_echo "  NOTE: $note" 248
+}
+
 # shell::logger::cmd function
 # Logs a command with an optional description.
 #
