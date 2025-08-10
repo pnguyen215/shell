@@ -503,7 +503,12 @@ shell::logger::exec() {
 	if ! shell::logger::can "INFO"; then
 		return 0
 	fi
-
+	
+	if [ -z "$command" ]; then
+		shell::logger::error "Command is empty"
+		return 1
+	fi
+	
 	shell::logger::cmd "$command"
 	eval "$command"
 }
@@ -532,6 +537,11 @@ shell::logger::exec_check() {
 	local success_msg="${2:-Success}"
 	local failure_msg="${3:-Aborted}"
 	
+	if [ -z "$command" ]; then
+		shell::logger::error "Command is empty"
+		return 1
+	fi
+
 	if ! shell::logger::can "INFO"; then
 		eval "$command"
 		return $?

@@ -102,24 +102,21 @@ shell::version() {
 #   It checks for the presence of the source command in the user's .zshrc or .bashrc
 #   files and executes the appropriate command to ensure the new version is loaded.
 shell::upgrade() {
-	echo "🚀 Upgrading shell..."
+	shell::logger::debug "Upgrading shell..."
 	install_dir="$HOME/shell"
 	[ -d "$install_dir" ] && rm -rf "$install_dir"
 	bash -c "$(curl -fsSL https://raw.githubusercontent.com/pnguyen215/shell/master/install.sh)"
-	# shell::colored_echo "INFO: shell upgraded. Restart your terminal or run 'source ~/.zshrc' or 'source ~/.bashrc' to apply changes." 46
+	shell::logger::info "shell upgraded. Restart your terminal or run 'source ~/.zshrc' or 'source ~/.bashrc' to apply changes."
 	if [ -f "$HOME/.zshrc" ] && grep -q "source $install_dir/src/shell.sh" "$HOME/.zshrc"; then
 		shell::clip_value "source ~/.zshrc"
-		shell::logger::exec_check "source ~/.zshrc"
-		return 1
+		shell::logger::exec_check "source ~/.zshrc" "shell upgraded" "shell upgrade aborted"
 	elif [ -f "$HOME/.bashrc" ] && grep -q "source $install_dir/src/shell.sh" "$HOME/.bashrc"; then
 		shell::clip_value "source ~/.bashrc"
-		shell::logger::exec_check "source ~/.bashrc"
-		return 1
+		shell::logger::exec_check "source ~/.bashrc" "shell upgraded" "shell upgrade aborted"
 	else
 		# Fallback: default to .bashrc if none found.
 		shell::clip_value "source ~/.bashrc"
-		shell::logger::exec_check "source ~/.bashrc"
-		return 1
+		shell::logger::exec_check "source ~/.bashrc" "shell upgraded" "shell upgrade aborted"
 	fi
 }
 
