@@ -457,7 +457,7 @@ shell::logger::cmd() {
 		return 0
 	fi
 	
-	shell::colored_echo "  $ $command" 245
+	shell::colored_echo "  $ $command" 111
 }
 
 # shell::logger::cmd_copy function
