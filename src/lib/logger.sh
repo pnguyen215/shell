@@ -322,3 +322,49 @@ shell::logger::example() {
 	
 	shell::colored_echo "EXAMPLE: $example" 42
 }
+
+# shell::logger::indent function
+# Logs a message with indentation and optional color.
+#
+# Usage:
+#   shell::logger::indent <level> <message>
+#   shell::logger::indent <level> <color> <message>
+#
+# Parameters:
+#   - <level> : The indentation level (0-5).
+#   - <color> : (Optional) The color code for the message.
+#   - <message> : The message to log.
+#
+# Description:
+#   This function logs a message with indentation and optional color. The
+#   indentation level determines the number of spaces to indent the message.
+#   If no color is provided, the default color (245) is used.
+shell::logger::indent() {
+	local level="$1"
+	local color="$2"
+	local message="$3"
+	
+	if ! shell::logger::can "INFO"; then
+		return 0
+	fi
+	
+	# If only 2 arguments, treat second as message with default color
+	if [[ -z "$message" ]]; then
+		message="$color"
+		color="245"
+	fi
+	
+	# Validate level (0-5)
+	if ! [[ "$level" =~ ^[0-5]$ ]]; then
+		level=0
+	fi
+	
+	# Create indentation string
+	local indent=""
+	local i
+	for ((i = 0; i < level * 2; i++)); do
+		indent+=" "
+	done
+	
+	shell::colored_echo "${indent}${message}" "$color"
+}
