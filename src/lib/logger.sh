@@ -293,7 +293,9 @@ shell::logger::option() {
 	fi
 	
 	if [[ -n "$description" ]]; then
-		printf "    %-20s %s\n" "$option" "$description" | shell::colored_echo "$(cat)" 246
+		local formatted_line
+		formatted_line=$(printf "    %-20s %s" "$option" "$description")
+		shell::colored_echo "$formatted_line" 246
 	else
 		shell::colored_echo "    $option" 246
 	fi
