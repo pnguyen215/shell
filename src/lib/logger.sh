@@ -392,3 +392,27 @@ shell::logger::step() {
 	
 	shell::colored_echo "STEP $step_number: $description" 33
 }
+
+# shell::logger::cmd function
+# Logs a command with an optional description.
+#
+# Usage:
+#   shell::logger::cmd <command> <description>
+#
+# Parameters:
+#   - <command> : The command to log.
+#   - <description> : (Optional) A description of the command.
+#
+# Description:
+#   This function logs a command with an optional description. If a description
+#   is provided, it is indented and formatted for readability. The command is
+#   displayed in a specific color (245) to stand out.
+shell::logger::cmd() {
+	local command="$1"
+	
+	if ! shell::logger::can "INFO"; then
+		return 0
+	fi
+	
+	shell::colored_echo "  $ $command" 245
+}
