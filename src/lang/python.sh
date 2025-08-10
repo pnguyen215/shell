@@ -593,15 +593,14 @@ shell::install_pkg_python_env() {
 
 	# Validate that at least one package is specified
 	if [ ${#packages[@]} -eq 0 ]; then
-		shell::colored_echo "ERR: No packages specified." 196
-		shell::colored_echo "Usage: shell::install_pkg_python_env [-n] [-p <path>] <package1> [package2 ...]"
-		return 1
+		echo "Usage: shell::install_pkg_python_env [-n] [-p <path>] <package1> [package2 ...]"
+		return 0
 	fi
 
 	# Check if the virtual environment exists
 	if [ ! -d "$venv_path" ] || [ ! -f "$venv_path/bin/pip" ]; then
 		shell::colored_echo "ERR: Virtual environment at '$venv_path' does not exist or is invalid. Create it with shell::create_python_env first." 196
-		return 1
+		return 0
 	fi
 
 	local os_type
@@ -611,7 +610,7 @@ shell::install_pkg_python_env() {
 	# Ensure pip command is available
 	if ! shell::is_command_available "$pip_cmd"; then
 		shell::colored_echo "ERR: pip not found in virtual environment at '$venv_path'." 196
-		return 1
+		return 0
 	fi
 
 	# Construct the install command
@@ -621,7 +620,7 @@ shell::install_pkg_python_env() {
 	done
 
 	# Execute or preview the installation
-	shell::colored_echo "🔍 Installing packages (${packages[*]}) into virtual environment at '$venv_path'..." 36
+	shell::colored_echo "DEBUG: Installing packages (${packages[*]}) into virtual environment at '$venv_path'..." 244
 	if [ "$dry_run" = "true" ]; then
 		shell::on_evict "$install_cmd"
 	else
@@ -631,9 +630,10 @@ shell::install_pkg_python_env() {
 		wait $pid
 		if [ $? -eq 0 ]; then
 			shell::colored_echo "INFO: Packages installed successfully: ${packages[*]}" 46
+			return 1
 		else
 			shell::colored_echo "ERR: Failed to install one or more packages." 196
-			return 1
+			return 0
 		fi
 	fi
 }
