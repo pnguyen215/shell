@@ -451,7 +451,7 @@ shell::logger::step_note() {
 #   is provided, it is indented and formatted for readability. The command is
 #   displayed in a specific color (245) to stand out.
 shell::logger::cmd() {
-	local command="$1"
+	local command="$*"
 	
 	if ! shell::logger::can "INFO"; then
 		return 0
@@ -475,7 +475,7 @@ shell::logger::cmd() {
 #   the clipboard. If a description is provided, it is indented and formatted for
 #   readability. The command is displayed in a specific color (245) to stand out.
 shell::logger::cmd_copy() {
-	local command="$1"
+	local command="$*"
 	if ! shell::logger::can "INFO"; then
 		return 0
 	fi
@@ -499,7 +499,7 @@ shell::logger::cmd_copy() {
 #   using eval. If a description is provided, it is indented and formatted for
 #   readability. The command is displayed in a specific color (245) to stand out.
 shell::logger::exec() {
-	local command="$1"
+	local command="$*"
 	if ! shell::logger::can "INFO"; then
 		return 0
 	fi
