@@ -895,38 +895,6 @@ shell::get_temp_dir() {
 	fi
 }
 
-# shell::on_evict function
-# Hook to print a command without executing it.
-#
-# Usage:
-#   shell::on_evict <command>
-#
-# Parameters:
-#   - <command>: The command to be printed.
-#
-# Description:
-#   The 'shell::on_evict' function prints a command without executing it.
-#   It is designed as a hook for logging or displaying commands without actual execution.
-#
-# Example usage:
-#   shell::on_evict ls -l
-#
-# Instructions:
-#   1. Use 'shell::on_evict' to print a command without executing it.
-#
-# Notes:
-#   - This function is useful for displaying commands in logs or hooks without execution.
-shell::on_evict() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_ON_EVICT"
-		return 0
-	fi
-
-	local command="$*"
-	shell::colored_echo "[prev] $command" 49
-	shell::clip_value "$command"
-}
-
 # shell::check_port function
 # Checks if a specific TCP port is in use (listening).
 #
@@ -940,7 +908,7 @@ shell::on_evict() {
 # Description:
 #   This function uses lsof to determine if any process is actively listening on the specified TCP port.
 #   It filters the output for lines containing "LISTEN", which indicates that the port is in use.
-#   When the dry-run flag (-n) is provided, the command is printed using shell::on_evict instead of being executed.
+#   When the dry-run flag (-n) is provided, the command is printed using shell::logger::cmd_copy instead of being executed.
 #
 # Example:
 #   shell::check_port 8080        # Executes the command.
@@ -967,7 +935,7 @@ shell::check_port() {
 	local cmd="lsof -nP -iTCP:\"$port\" | grep LISTEN"
 
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$cmd"
+		shell::logger::cmd_copy "$cmd"
 	else
 		shell::run_cmd_eval "$cmd"
 	fi
@@ -986,7 +954,7 @@ shell::check_port() {
 # Description:
 #   This function checks each specified port to determine if any processes are listening on it,
 #   using lsof. If any are found, it forcefully terminates them by sending SIGKILL (-9).
-#   In dry-run mode (enabled by the -n flag), the kill command is printed using shell::on_evict instead of executed.
+#   In dry-run mode (enabled by the -n flag), the kill command is printed using shell::logger::cmd_copy instead of executed.
 #
 # Example:
 #   shell::kill_port 8080              # Kills processes on port 8080.
@@ -1028,12 +996,12 @@ shell::kill_port() {
 		if [ -n "$pids" ]; then
 			shell::colored_echo "INFO: Processing port $port with PIDs: $pids" 46
 			for pid in $pids; do
-				# Construct the kill command as an array to reuse it for both shell::on_evict and shell::run_cmd.
+				# Construct the kill command as an array to reuse it for both shell::logger::cmd_copy and shell::run_cmd.
 				local cmd=("kill" "-9" "$pid")
 				# local cmd="kill -9 $pid"
 				if [ "$dry_run" = "true" ]; then
-					# shell::on_evict "$cmd"
-					shell::on_evict "${cmd[*]}"
+					# shell::logger::cmd_copy "$cmd"
+					shell::logger::cmd_copy "${cmd[*]}"
 				else
 					# shell::run_cmd kill -9 "$pid"
 					shell::run_cmd "${cmd[@]}"
@@ -1052,7 +1020,7 @@ shell::kill_port() {
 #   shell::copy_files [-n] <source_filename> <new_filename1> [<new_filename2> ...]
 #
 # Parameters:
-#   - -n             : Optional dry-run flag. If provided, the command will be printed using shell::on_evict instead of executed.
+#   - -n             : Optional dry-run flag. If provided, the command will be printed using shell::logger::cmd_copy instead of executed.
 #   - <source_filename> : The file to copy.
 #   - <new_filenameX>   : One or more new filenames (within the current working directory) where the source file will be copied.
 #
@@ -1060,7 +1028,7 @@ shell::kill_port() {
 #   The function first checks for a dry-run flag (-n). It then verifies that at least two arguments remain.
 #   For each destination filename, it checks if the file already exists in the current working directory.
 #   If not, it builds the command to copy the source file (using sudo) to the destination.
-#   In dry-run mode, the command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
+#   In dry-run mode, the command is printed using shell::logger::cmd_copy; otherwise, it is executed using shell::run_cmd_eval.
 #
 # Example:
 #   shell::copy_files myfile.txt newfile.txt            # Copies myfile.txt to newfile.txt.
@@ -1106,7 +1074,7 @@ shell::copy_files() {
 		# Build the copy command.
 		local cmd="sudo cp \"$source\" \"$destination_file\""
 		if [ "$dry_run" = "true" ]; then
-			shell::on_evict "$cmd"
+			shell::logger::cmd_copy "$cmd"
 		else
 			shell::run_cmd_eval "$cmd"
 			shell::colored_echo "INFO: File copied successfully to $destination_file" 46
@@ -1121,7 +1089,7 @@ shell::copy_files() {
 #   shell::move_files [-n] <destination_folder> <file1> <file2> ... <fileN>
 #
 # Parameters:
-#   - -n                  : Optional dry-run flag. If provided, the command will be printed using shell::on_evict instead of executed.
+#   - -n                  : Optional dry-run flag. If provided, the command will be printed using shell::logger::cmd_copy instead of executed.
 #   - <destination_folder>: The target directory where the files will be moved.
 #   - <fileX>             : One or more source files to be moved.
 #
@@ -1131,7 +1099,7 @@ shell::copy_files() {
 #     - It checks whether the source file exists.
 #     - It verifies that the destination file (using the basename of the source) does not already exist in the destination folder.
 #     - It builds the command to move the file (using sudo mv).
-#   In dry-run mode, the command is printed using shell::on_evict; otherwise, the command is executed using shell::run_cmd.
+#   In dry-run mode, the command is printed using shell::logger::cmd_copy; otherwise, the command is executed using shell::run_cmd.
 #   If an error occurs for a particular file (e.g., missing source or destination file conflict), the error is logged and the function continues with the next file.
 #
 # Example:
@@ -1178,7 +1146,7 @@ shell::move_files() {
 
 		local cmd="sudo mv \"$source\" \"$destination\""
 		if [ "$dry_run" = "true" ]; then
-			shell::on_evict "$cmd"
+			shell::logger::cmd_copy "$cmd"
 		else
 			shell::run_cmd sudo mv "$source" "$destination"
 			if [ $? -eq 0 ]; then
@@ -1197,13 +1165,13 @@ shell::move_files() {
 #   shell::remove_files [-n] <filename/dir>
 #
 # Parameters:
-#   - -n           : Optional dry-run flag. If provided, the command will be printed using shell::on_evict instead of executed.
+#   - -n           : Optional dry-run flag. If provided, the command will be printed using shell::logger::cmd_copy instead of executed.
 #   - <filename/dir>: The file or directory to remove.
 #
 # Description:
 #   The function first checks for an optional dry-run flag (-n). It then verifies that a target argument is provided.
 #   It builds the command to remove the specified target using "sudo rm -rf".
-#   In dry-run mode, the command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd.
+#   In dry-run mode, the command is printed using shell::logger::cmd_copy; otherwise, it is executed using shell::run_cmd.
 #
 # Example:
 #   shell::remove_files my-dir          # Removes the directory 'my-dir'.
@@ -1231,7 +1199,7 @@ shell::remove_files() {
 	local cmd="sudo rm -rf \"$target\""
 
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$cmd"
+		shell::logger::cmd_copy "$cmd"
 	else
 		shell::run_cmd sudo rm -rf "$target"
 	fi
@@ -1244,7 +1212,7 @@ shell::remove_files() {
 #   shell::editor [-n] <folder>
 #
 # Parameters:
-#   - -n       : Optional dry-run flag. If provided, the command will be printed using shell::on_evict instead of executed.
+#   - -n       : Optional dry-run flag. If provided, the command will be printed using shell::logger::cmd_copy instead of executed.
 #   - <folder> : The directory containing the files you want to edit.
 #
 # Description:
@@ -1265,7 +1233,7 @@ shell::remove_files() {
 #
 # Requirements:
 #   - fzf must be installed.
-#   - Helper functions: shell::run_cmd, shell::on_evict, shell::colored_echo, and shell::get_os_type.
+#   - Helper functions: shell::run_cmd, shell::logger::cmd_copy, shell::colored_echo, and shell::get_os_type.
 shell::editor() {
 	if [ "$1" = "-h" ]; then
 		echo "$USAGE_SHELL_EDITOR"
@@ -1460,7 +1428,7 @@ shell::editor() {
 	# Build the command string.
 	local cmd="$selected_command \"$selected_file\""
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$cmd"
+		shell::logger::cmd_copy "$cmd"
 	else
 		shell::run_cmd $selected_command "$selected_file"
 	fi
@@ -1473,7 +1441,7 @@ shell::editor() {
 #   shell::download_dataset [-n] <filename_with_extension> <download_link>
 #
 # Parameters:
-#   - -n                     : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+#   - -n                     : Optional dry-run flag. If provided, commands are printed using shell::logger::cmd_copy instead of executed.
 #   - <filename_with_extension> : The target filename (with path) where the dataset will be saved.
 #   - <download_link>         : The URL from which the dataset will be downloaded.
 #
@@ -1481,7 +1449,7 @@ shell::editor() {
 #   This function downloads a file from a given URL and saves it under the specified filename.
 #   It extracts the directory from the filename, ensures the directory exists, and changes to that directory
 #   before attempting the download. If the file already exists, it prompts the user for confirmation before
-#   overwriting it. In dry-run mode, the function uses shell::on_evict to display the commands without executing them.
+#   overwriting it. In dry-run mode, the function uses shell::logger::cmd_copy to display the commands without executing them.
 #
 # Example:
 #   shell::download_dataset mydata.zip https://example.com/mydata.zip
@@ -1511,7 +1479,7 @@ shell::download_dataset() {
 		asked=$(shell::ask "Do you want to overwrite the existing file? $base")
 		if [ "$asked" = "yes" ]; then
 			if [ "$dry_run" = "true" ]; then
-				shell::on_evict "sudo rm \"$base\""
+				shell::logger::cmd_copy "sudo rm \"$base\""
 			else
 				shell::run_cmd sudo rm "$base"
 			fi
@@ -1523,7 +1491,7 @@ shell::download_dataset() {
 
 	local download_cmd="curl -s -LJ \"$link\" -o \"$filename\""
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$download_cmd"
+		shell::logger::cmd_copy "$download_cmd"
 		return 0
 	else
 		shell::run_cmd curl -s -LJ "$link" -o "$filename"
@@ -1544,13 +1512,13 @@ shell::download_dataset() {
 #   shell::unarchive [-n] <filename>
 #
 # Parameters:
-#   - -n        : Optional dry-run flag. If provided, the extraction command is printed using shell::on_evict instead of executed.
+#   - -n        : Optional dry-run flag. If provided, the extraction command is printed using shell::logger::cmd_copy instead of executed.
 #   - <filename>: The compressed file to extract.
 #
 # Description:
 #   The function first checks for an optional dry-run flag (-n) and then verifies that exactly one argument (the filename) is provided.
 #   It checks if the given file exists and, if so, determines the correct extraction command based on the file extension.
-#   In dry-run mode, the command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
+#   In dry-run mode, the command is printed using shell::logger::cmd_copy; otherwise, it is executed using shell::run_cmd_eval.
 #
 # Example:
 #   shell::unarchive archive.tar.gz           # Extracts archive.tar.gz.
@@ -1619,7 +1587,7 @@ shell::unarchive() {
 		esac
 
 		if [ "$dry_run" = "true" ]; then
-			shell::on_evict "$cmd"
+			shell::logger::cmd_copy "$cmd"
 		else
 			shell::run_cmd_eval "$cmd"
 		fi
@@ -1636,12 +1604,12 @@ shell::unarchive() {
 #   shell::list_high_mem_usage [-n]
 #
 # Parameters:
-#   - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+#   - -n : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
 #
 # Description:
 #   This function retrieves the operating system type using shell::get_os_type. For macOS, it uses 'top' to sort processes by resident size (RSIZE)
 #   and filters the output to display processes consuming at least 100 MB. For Linux, it uses 'ps' to list processes sorted by memory usage.
-#   In dry-run mode, the constructed command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
+#   In dry-run mode, the constructed command is printed using shell::logger::cmd_copy; otherwise, it is executed using shell::run_cmd_eval.
 #
 # Example:
 #   shell::list_high_mem_usage       # Displays processes with high memory consumption.
@@ -1678,7 +1646,7 @@ shell::list_high_mem_usage() {
 	fi
 
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$cmd"
+		shell::logger::cmd_copy "$cmd"
 	else
 		shell::run_cmd_eval "$cmd"
 	fi
@@ -1691,13 +1659,13 @@ shell::list_high_mem_usage() {
 #   shell::open_link [-n] <url>
 #
 # Parameters:
-#   - -n   : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+#   - -n   : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
 #   - <url>: The URL to open in the default web browser.
 #
 # Description:
 #   This function determines the current operating system using shell::get_os_type. On macOS, it uses the 'open' command;
 #   on Linux, it uses 'xdg-open' (if available). If the required command is missing on Linux, an error is displayed.
-#   In dry-run mode, the command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
+#   In dry-run mode, the command is printed using shell::logger::cmd_copy; otherwise, it is executed using shell::run_cmd_eval.
 #
 # Example:
 #   shell::open_link https://example.com         # Opens the URL in the default browser.
@@ -1742,7 +1710,7 @@ shell::open_link() {
 	fi
 
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$cmd"
+		shell::logger::cmd_copy "$cmd"
 	else
 		shell::run_cmd_eval "$cmd"
 	fi
@@ -1755,13 +1723,13 @@ shell::open_link() {
 #   shell::loading_spinner [-n] [duration]
 #
 # Parameters:
-#   - -n        : Optional dry-run flag. If provided, the spinner command is printed using shell::on_evict instead of executed.
+#   - -n        : Optional dry-run flag. If provided, the spinner command is printed using shell::logger::cmd_copy instead of executed.
 #   - [duration]: Optional. The duration in seconds for which the spinner should be displayed. Default is 3 seconds.
 #
 # Description:
 #   The function calculates an end time based on the provided duration and then iterates,
 #   printing a sequence of spinner characters to create a visual loading effect.
-#   In dry-run mode, it uses shell::on_evict to display a message indicating what would be executed,
+#   In dry-run mode, it uses shell::logger::cmd_copy to display a message indicating what would be executed,
 #   without actually running the spinner.
 #
 # Example usage:
@@ -1788,7 +1756,7 @@ shell::loading_spinner() {
 	local end_time=$((SECONDS + duration))
 
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "Display loading spinner for ${duration} seconds"
+		shell::logger::cmd_copy "Display loading spinner for ${duration} seconds"
 		return 0
 	fi
 
@@ -1878,12 +1846,12 @@ shell::measure_time() {
 #   shell::async [-n] <command> [arguments...]
 #
 # Parameters:
-#   - -n        : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+#   - -n        : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
 #   - <command> [arguments...]: The command (or function) with its arguments to be executed asynchronously.
 #
 # Description:
 #   The shell::async function builds the command from the provided arguments and runs it in the background.
-#   If the optional dry-run flag (-n) is provided, the command is printed using shell::on_evict instead of executing it.
+#   If the optional dry-run flag (-n) is provided, the command is printed using shell::logger::cmd_copy instead of executing it.
 #   Otherwise, the command is executed asynchronously using eval, and the process ID (PID) is displayed.
 #
 # Example:
@@ -1908,7 +1876,7 @@ shell::async() {
 	local cmd="$*"
 
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$cmd &"
+		shell::logger::cmd_copy "$cmd &"
 		return 0
 	else
 		# Execute the command asynchronously (in the background)
@@ -1941,7 +1909,7 @@ shell::execute_or_evict() {
 	local dry_run="$1"
 	local command="$2"
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$command"
+		shell::logger::cmd_copy "$command"
 	else
 		shell::run_cmd_eval "$command"
 	fi
@@ -2137,7 +2105,7 @@ shell::ls() {
 #   It also validates the permission groups and provides error messages for invalid inputs.
 #
 # Parameters:
-#   - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+#   - -n : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
 #   - <target> : The file or directory to set permissions on.
 #   - [owner=...] : Optional. Set permissions for the owner (e.g., owner=read,write).
 #   - [group=...] : Optional. Set permissions for the group (e.g., group=read,execute).
@@ -2212,7 +2180,7 @@ shell::set_permissions() {
 	# This allows for a dry-run to see what would happen without making changes.
 	# This is useful for testing or when you want to ensure the command is correct before applying it.
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$cmd"
+		shell::logger::cmd_copy "$cmd"
 	else
 		shell::run_cmd_eval "$cmd"
 		shell::colored_echo "INFO: Permissions set to $mode for '$target'" 46
@@ -2226,7 +2194,7 @@ shell::set_permissions() {
 #   shell::unlock_permissions [-n] <file/dir>
 #
 # Parameters:
-#   - -n (optional): Dry-run mode. Instead of executing the command, prints it using shell::on_evict.
+#   - -n (optional): Dry-run mode. Instead of executing the command, prints it using shell::logger::cmd_copy.
 #   - <file/dir> : The path to the file or directory to modify.
 #
 # Description:
@@ -2287,7 +2255,7 @@ shell::unlock_permissions() {
 	# If dry-run mode is enabled, print the command instead of executing it.
 	# If the target already has 777 permissions, skip execution.
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$chmod_cmd"
+		shell::logger::cmd_copy "$chmod_cmd"
 	else
 		# If the current permission is not 777, execute the chmod command.
 		if [ "$current_perm" -eq 777 ]; then
@@ -2306,7 +2274,7 @@ shell::unlock_permissions() {
 # shell::fzf_set_permissions [-n] <target>
 #
 # Parameters:
-# - -n : Optional dry-run flag. If provided, the chmod command is printed using shell::on_evict instead of executed.
+# - -n : Optional dry-run flag. If provided, the chmod command is printed using shell::logger::cmd_copy instead of executed.
 # - <target> : The file or directory to modify permissions for.
 #
 # Description:
@@ -2358,7 +2326,7 @@ shell::fzf_set_permissions() {
 
 	# If dry-run mode is enabled, print the command instead of executing it
 	# This allows the user to see what permissions would be set without actually changing them.
-	# If dry_run is true, the command is printed using shell::on_evict.
+	# If dry_run is true, the command is printed using shell::logger::cmd_copy.
 	# Otherwise, the command is executed to set the permissions.
 	if [ "$dry_run" = "true" ]; then
 		shell::set_permissions "-n" "$target" "owner=$owner" "group=$group" "others=$others"
@@ -2905,7 +2873,7 @@ shell::get_mime_type() {
 #   shell::encode_base64_file [-n] [-h] <file_path>
 #
 # Parameters:
-#   - -n         : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+#   - -n         : Optional dry-run flag. If provided, commands are printed using shell::logger::cmd_copy instead of executed.
 #   - -h         : Optional. Displays this help message.
 #   - <file_path>: The path to the file to encode.
 #
@@ -2951,7 +2919,7 @@ shell::encode_base64_file() {
 	fi
 
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$base64_cmd"
+		shell::logger::cmd_copy "$base64_cmd"
 	else
 		shell::run_cmd_eval "$base64_cmd"
 	fi

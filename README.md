@@ -155,9 +155,9 @@ Core functions for system management, version control, and basic operations.
   Returns the OS-appropriate temporary directory path (e.g., `/tmp` on Linux).  
   _Example:_ `TEMP_DIR=$(shell::get_temp_dir)`
 
-- **`shell::on_evict`**  
+- **`shell::logger::cmd_copy`**  
   Prints a command to the terminal without executing it, useful for debugging or logging.  
-  _Example:_ `shell::on_evict ls -l`
+  _Example:_ `shell::logger::cmd_copy ls -l`
 
 - **`shell::check_port`**  
   Checks if a TCP port is in use (listening). Use `-n` to suppress output and return a status only.  
@@ -426,7 +426,7 @@ Core functions for system management, version control, and basic operations.
 
   - _Parameters_:
 
-    - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+    - -n : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
     - token : The Telegram Bot API token.
     - chat_id : The chat identifier where the message should be sent.
     - message : The message text to send.
@@ -438,7 +438,7 @@ Core functions for system management, version control, and basic operations.
 
   - _Parameters_:
 
-    - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+    - -n : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
     - message : The message text to send.
 
   - `shell::send_telegram_historical_gh_message [-n] <message>`
@@ -448,7 +448,7 @@ Core functions for system management, version control, and basic operations.
 
   - _Parameters_:
 
-    - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+    - -n : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
     - token : The Telegram Bot API token.
     - chat_id : The chat identifier where the message should be sent.
     - description: A text description that is appended to each attachment's caption along with a timestamp.
@@ -461,7 +461,7 @@ Core functions for system management, version control, and basic operations.
 
   - _Parameters_:
 
-    - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+    - -n : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
     - folder_path : The folder (directory) from which to select files for zipping.
 
   - `shell::fzf_zip_attachment [-n] <folder_path>`
@@ -471,7 +471,7 @@ Core functions for system management, version control, and basic operations.
 
   - _Parameters_:
 
-    - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+    - -n : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
 
   - `shell::fzf_current_zip_attachment [-n]`
 
@@ -480,7 +480,7 @@ Core functions for system management, version control, and basic operations.
 
   - _Parameters_:
 
-    - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+    - -n : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
     - token: The Telegram Bot API token.
     - chat_id: The chat identifier where the attachments are sent.
     - description: A text description appended to each attachment's caption along with a timestamp.

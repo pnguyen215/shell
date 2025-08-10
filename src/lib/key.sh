@@ -8,13 +8,13 @@
 #   shell::read_conf [-n] <filename>
 #
 # Parameters:
-#   - -n       : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+#   - -n       : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
 #   - <filename>: The configuration file to source.
 #
 # Description:
 #   The function checks that a filename is provided and that the specified file exists.
 #   If the file is not found, an error message is displayed.
-#   In dry-run mode, the command "source <filename>" is printed using shell::on_evict.
+#   In dry-run mode, the command "source <filename>" is printed using shell::logger::cmd_copy.
 #   Otherwise, the file is sourced using shell::run_cmd to log the execution.
 #
 # Example:
@@ -50,7 +50,7 @@ shell::read_conf() {
 	# If so, print the command to source the file.
 	# Otherwise, source the file.
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "source \"$filename\""
+		shell::logger::cmd_copy "source \"$filename\""
 	else
 		shell::run_cmd source "$filename"
 	fi
@@ -64,7 +64,7 @@ shell::read_conf() {
 #   shell::add_key_conf [-n] <key> <value>
 #
 # Parameters:
-#   - -n       : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+#   - -n       : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
 #   - <key>    : The configuration key.
 #   - <value>  : The configuration value to be encoded and saved.
 #
@@ -115,7 +115,7 @@ shell::add_key_conf() {
 	# If so, print the command to be executed.
 	# Otherwise, execute the command to add the configuration entry.
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$cmd"
+		shell::logger::cmd_copy "$cmd"
 	else
 		result=$(shell::exist_key_conf $key)
 		if [ "$result" = "true" ]; then
@@ -135,7 +135,7 @@ shell::add_key_conf() {
 # shell::add_key_conf_comment [-n] <key> <value> [comment]
 #
 # Parameters:
-# - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+# - -n : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
 # - <key> : The configuration key.
 # - <value> : The configuration value to be encoded and saved.
 # - [comment] : Optional comment to be added above the key-value pair.
@@ -195,7 +195,7 @@ shell::add_key_conf_comment() {
 	cmd+="echo \"$key=$encoded_value\" >> \"$SHELL_KEY_CONF_FILE\""
 
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$cmd"
+		shell::logger::cmd_copy "$cmd"
 	else
 		shell::run_cmd_eval "$cmd"
 		shell::colored_echo "INFO: Added configuration: $key (encoded value) with comment" 46
@@ -332,7 +332,7 @@ shell::get_key_conf_value() {
 #   shell::fzf_remove_key_conf [-n]
 #
 # Parameters:
-#   - -n : Optional dry-run flag. If provided, the removal command is printed using shell::on_evict instead of executed.
+#   - -n : Optional dry-run flag. If provided, the removal command is printed using shell::logger::cmd_copy instead of executed.
 #
 # Description:
 #   The function reads the configuration file defined by the constant SHELL_KEY_CONF_FILE, where each entry is in the format:
@@ -340,7 +340,7 @@ shell::get_key_conf_value() {
 #   It extracts only the keys (before the '=') and uses fzf for interactive selection.
 #   Once a key is selected, it constructs a command to remove the line that starts with "key=" from the configuration file.
 #   The command uses sed with different options depending on the operating system (macOS or Linux).
-#   In dry-run mode, the command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
+#   In dry-run mode, the command is printed using shell::logger::cmd_copy; otherwise, it is executed using shell::run_cmd_eval.
 #
 # Example:
 #   shell::fzf_remove_key_conf         # Interactively select a key and remove its configuration entry.
@@ -401,7 +401,7 @@ shell::fzf_remove_key_conf() {
 	fi
 
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$sed_cmd"
+		shell::logger::cmd_copy "$sed_cmd"
 	else
 		shell::run_cmd_eval "$sed_cmd"
 		shell::colored_echo "INFO: Removed configuration for key: $selected_key" 46
@@ -416,7 +416,7 @@ shell::fzf_remove_key_conf() {
 #   shell::fzf_update_key_conf [-n]
 #
 # Parameters:
-#   - -n : Optional dry-run flag. If provided, the update command is printed using shell::on_evict instead of executed.
+#   - -n : Optional dry-run flag. If provided, the update command is printed using shell::logger::cmd_copy instead of executed.
 #
 # Description:
 #   The function reads the configuration file defined by SHELL_KEY_CONF_FILE, which contains entries in the format:
@@ -487,7 +487,7 @@ shell::fzf_update_key_conf() {
 	fi
 
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$sed_cmd"
+		shell::logger::cmd_copy "$sed_cmd"
 	else
 		shell::run_cmd_eval "$sed_cmd"
 		shell::colored_echo "INFO: Updated configuration for key: $selected_key" 46
@@ -563,7 +563,7 @@ shell::exist_key_conf() {
 #   shell::fzf_rename_key_conf [-n]
 #
 # Parameters:
-#   - -n : Optional dry-run flag. If provided, the renaming command is printed using shell::on_evict instead of executed.
+#   - -n : Optional dry-run flag. If provided, the renaming command is printed using shell::logger::cmd_copy instead of executed.
 #
 # Description:
 #   The function reads the configuration file defined by SHELL_KEY_CONF_FILE, which stores entries in the format:
@@ -572,7 +572,7 @@ shell::exist_key_conf() {
 #   After selection, the function prompts for a new key name and checks if the new key already exists.
 #   If the new key does not exist, it constructs a sed command to replace the old key with the new key in the file.
 #   The sed command uses in-place editing options appropriate for macOS (sed -i '') or Linux (sed -i).
-#   In dry-run mode, the command is printed via shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
+#   In dry-run mode, the command is printed via shell::logger::cmd_copy; otherwise, it is executed using shell::run_cmd_eval.
 #
 # Example:
 #   shell::fzf_rename_key_conf         # Interactively select a key and rename it.
@@ -643,7 +643,7 @@ shell::fzf_rename_key_conf() {
 	fi
 
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$sed_cmd"
+		shell::logger::cmd_copy "$sed_cmd"
 	else
 		shell::run_cmd_eval "$sed_cmd"
 		shell::colored_echo "INFO: Renamed key '$old_key' to '$new_key'" 46
@@ -720,7 +720,7 @@ shell::is_protected_key_conf() {
 #   one or more configuration keys (from SHELL_KEY_CONF_FILE). It then stores the group in SHELL_GROUP_CONF_FILE in the format:
 #       group_name=key1,key2,...,keyN
 #   If the group name already exists, the group entry is updated with the new selection.
-#   An optional dry-run flag (-n) can be used to print the command via shell::on_evict instead of executing it.
+#   An optional dry-run flag (-n) can be used to print the command via shell::logger::cmd_copy instead of executing it.
 #
 # Example:
 #   shell::fzf_add_group_key_conf         # Prompts for a group name and lets you select keys to group.
@@ -793,7 +793,7 @@ shell::fzf_add_group_key_conf() {
 			sed_cmd="sed -i \"s/^${group_name}=.*/${group_entry}/\" \"$SHELL_GROUP_CONF_FILE\""
 		fi
 		if [ "$dry_run" = "true" ]; then
-			shell::on_evict "$sed_cmd"
+			shell::logger::cmd_copy "$sed_cmd"
 		else
 			shell::run_cmd_eval "$sed_cmd"
 			shell::colored_echo "INFO: Updated group '$group_name' with keys: $keys_csv" 46
@@ -801,7 +801,7 @@ shell::fzf_add_group_key_conf() {
 	else
 		local cmd="echo \"$group_entry\" >> \"$SHELL_GROUP_CONF_FILE\""
 		if [ "$dry_run" = "true" ]; then
-			shell::on_evict "$cmd"
+			shell::logger::cmd_copy "$cmd"
 		else
 			shell::run_cmd_eval "$cmd"
 			shell::colored_echo "INFO: Created group '$group_name' with keys: $keys_csv" 46
@@ -917,13 +917,13 @@ shell::read_group_key_conf() {
 #   shell::fzf_remove_group_key_conf [-n]
 #
 # Parameters:
-#   - -n : Optional dry-run flag. If provided, the removal command is printed using shell::on_evict instead of executed.
+#   - -n : Optional dry-run flag. If provided, the removal command is printed using shell::logger::cmd_copy instead of executed.
 #
 # Description:
 #   The function extracts group names from SHELL_GROUP_CONF_FILE and uses fzf for interactive selection.
 #   Once a group is selected, it constructs a sed command (with appropriate in-place options for macOS or Linux)
 #   to remove the line that starts with "group_name=".
-#   If the file is not writable, sudo is prepended. In dry-run mode, the command is printed via shell::on_evict.
+#   If the file is not writable, sudo is prepended. In dry-run mode, the command is printed via shell::logger::cmd_copy.
 #
 # Example:
 #   shell::fzf_remove_group_key_conf         # Interactively select a group and remove its entry.
@@ -966,7 +966,7 @@ shell::fzf_remove_group_key_conf() {
 	fi
 
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$sed_cmd"
+		shell::logger::cmd_copy "$sed_cmd"
 	else
 		shell::run_cmd_eval "$sed_cmd"
 		shell::colored_echo "INFO: Removed group: $selected_group" 46
@@ -980,7 +980,7 @@ shell::fzf_remove_group_key_conf() {
 #   shell::fzf_update_group_key_conf [-n] [-h]
 #
 # Parameters:
-#   - -n : Optional dry-run flag. If provided, the update command is printed using shell::on_evict instead of executed.
+#   - -n : Optional dry-run flag. If provided, the update command is printed using shell::logger::cmd_copy instead of executed.
 #
 # Description:
 #   The function reads SHELL_GROUP_CONF_FILE and uses fzf to let you select an existing group.
@@ -1049,7 +1049,7 @@ shell::fzf_update_group_key_conf() {
 	fi
 
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$sed_cmd"
+		shell::logger::cmd_copy "$sed_cmd"
 	else
 		shell::run_cmd_eval "$sed_cmd"
 		shell::colored_echo "INFO: Updated group '$selected_group' with new keys: $new_keys" 46
@@ -1063,7 +1063,7 @@ shell::fzf_update_group_key_conf() {
 #   shell::fzf_rename_group_key_conf [-n]
 #
 # Parameters:
-#   - -n : Optional dry-run flag. If provided, the renaming command is printed using shell::on_evict instead of executed.
+#   - -n : Optional dry-run flag. If provided, the renaming command is printed using shell::logger::cmd_copy instead of executed.
 #
 # Description:
 #   The function reads the group configuration file (SHELL_GROUP_CONF_FILE) where each line is in the format:
@@ -1072,7 +1072,7 @@ shell::fzf_update_group_key_conf() {
 #   After selection, the function prompts for a new group name.
 #   It then constructs a sed command to replace the old group name with the new one in the configuration file.
 #   The sed command uses in-place editing options appropriate for macOS (sed -i '') or Linux (sed -i).
-#   In dry-run mode, the command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
+#   In dry-run mode, the command is printed using shell::logger::cmd_copy; otherwise, it is executed using shell::run_cmd_eval.
 #
 # Example:
 #   shell::fzf_rename_group_key_conf         # Interactively select a group and rename it.
@@ -1130,7 +1130,7 @@ shell::fzf_rename_group_key_conf() {
 	fi
 
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$sed_cmd"
+		shell::logger::cmd_copy "$sed_cmd"
 	else
 		shell::run_cmd_eval "$sed_cmd"
 		shell::colored_echo "INFO: Renamed group '$old_group' to '$new_group'" 46
@@ -1281,7 +1281,7 @@ shell::fzf_view_group_key_conf() {
 #   shell::fzf_clone_group_key_conf [-n]
 #
 # Parameters:
-#   - -n : Optional dry-run flag. If provided, the cloning command is printed using shell::on_evict instead of executed.
+#   - -n : Optional dry-run flag. If provided, the cloning command is printed using shell::logger::cmd_copy instead of executed.
 #
 # Description:
 #   The function reads the group configuration file (SHELL_GROUP_CONF_FILE) where each line is in the format:
@@ -1290,7 +1290,7 @@ shell::fzf_view_group_key_conf() {
 #   After selection, it prompts for a new group name.
 #   The new group entry is then constructed with the new group name and the same comma-separated keys
 #   as the selected group, and appended to SHELL_GROUP_CONF_FILE.
-#   In dry-run mode, the final command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
+#   In dry-run mode, the final command is printed using shell::logger::cmd_copy; otherwise, it is executed using shell::run_cmd_eval.
 #
 # Example:
 #   shell::fzf_clone_group_key_conf         # Interactively select a group and create a clone with a new group name.
@@ -1364,7 +1364,7 @@ shell::fzf_clone_group_key_conf() {
 	local cmd="echo \"$new_group_entry\" >> \"$SHELL_GROUP_CONF_FILE\""
 
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$cmd"
+		shell::logger::cmd_copy "$cmd"
 	else
 		shell::run_cmd_eval "$cmd"
 		shell::colored_echo "INFO: Created new group '$new_group' as a clone of '$selected_group' with keys: $keys_csv" 46
@@ -1380,14 +1380,14 @@ shell::fzf_clone_group_key_conf() {
 #   shell::sync_group_key_conf [-n]
 #
 # Parameters:
-#   - -n : Optional dry-run flag. If provided, the new group configuration is printed using shell::on_evict instead of being applied.
+#   - -n : Optional dry-run flag. If provided, the new group configuration is printed using shell::logger::cmd_copy instead of being applied.
 #
 # Description:
 #   The function reads each group entry from SHELL_GROUP_CONF_FILE (entries in the format: group_name=key1,key2,...,keyN).
 #   For each group, it splits the comma‑separated list of keys and checks each key using shell::exist_key_conf.
 #   It builds a new list of valid keys. If the new list is non‑empty, the group entry is updated;
 #   if it is empty, the group entry is omitted.
-#   In dry‑run mode, the new group configuration is printed via shell::on_evict without modifying the file.
+#   In dry‑run mode, the new group configuration is printed via shell::logger::cmd_copy without modifying the file.
 #
 # Example:
 #   shell::sync_group_key_conf         # Synchronizes the group configuration file.
@@ -1488,7 +1488,7 @@ shell::sync_group_key_conf() {
 # Requirements:
 #   - fzf must be installed.
 #   - The 'SHELL_KEY_CONF_FILE' variable must be set.
-#   - Helper functions: shell::install_package, shell::colored_echo, shell::get_os_type, shell::clip_value, shell::on_evict.
+#   - Helper functions: shell::install_package, shell::colored_echo, shell::get_os_type, shell::clip_value, shell::logger::cmd_copy.
 #
 # Example usage:
 #   shell::fzf_view_key_conf_viz         # Select a key and copy its decoded value.
@@ -1585,7 +1585,7 @@ shell::fzf_view_key_conf_viz() {
 # shell::add_protected_key_conf [-n] <key>
 #
 # Parameters:
-# - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+# - -n : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
 # - <key> : The key to mark as protected.
 #
 # Description:
@@ -1639,10 +1639,10 @@ shell::add_protected_key_conf() {
 
 	# Append the key to the protected.conf file.
 	# Use echo to append the key, ensuring it is quoted to handle special characters.
-	# Use shell::on_evict for dry-run mode, otherwise run the command.
+	# Use shell::logger::cmd_copy for dry-run mode, otherwise run the command.
 	local cmd="echo \"$key\" >> \"$file\""
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$cmd"
+		shell::logger::cmd_copy "$cmd"
 	else
 		shell::run_cmd_eval "$cmd"
 		shell::colored_echo "INFO: Protected key added: $key" 46
@@ -1717,7 +1717,7 @@ shell::fzf_add_protected_key_conf() {
 # shell::fzf_remove_protected_key_conf [-n]
 #
 # Parameters:
-# - -n : Optional dry-run flag. If provided, the removal command is printed using shell::on_evict instead of executed.
+# - -n : Optional dry-run flag. If provided, the removal command is printed using shell::logger::cmd_copy instead of executed.
 #
 # Description:
 # This function reads the protected.conf file, uses fzf to let the user select a key,
@@ -1768,7 +1768,7 @@ shell::fzf_remove_protected_key_conf() {
 	# If dry-run mode is enabled, print the command to remove the protected key.
 	# Otherwise, execute the command to remove the key.
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$sed_cmd"
+		shell::logger::cmd_copy "$sed_cmd"
 	else
 		shell::run_cmd_eval "$sed_cmd"
 		shell::colored_echo "INFO: Removed protected key: $selected_key" 46
@@ -1782,7 +1782,7 @@ shell::fzf_remove_protected_key_conf() {
 # shell::sync_protected_key_conf [-n]
 #
 # Parameters:
-# - -n : Optional dry-run flag. If provided, the updated protected.conf is printed using shell::on_evict instead of being applied.
+# - -n : Optional dry-run flag. If provided, the updated protected.conf is printed using shell::logger::cmd_copy instead of being applied.
 #
 # Description:
 # This function compares the keys listed in protected.conf with those in key.conf.

@@ -12,7 +12,7 @@
 #   shell::get_go_privates [-n]
 #
 # Parameters:
-#   -n: Optional. If provided, the command is printed using shell::on_evict instead of executed.
+#   -n: Optional. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
 #
 # Options:
 #   None
@@ -43,7 +43,7 @@ shell::get_go_privates() {
 	local cmd="go env GOPRIVATE"
 
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$cmd"
+		shell::logger::cmd_copy "$cmd"
 		return 0
 	else
 		shell::async "$cmd" &
@@ -74,7 +74,7 @@ shell::get_go_privates() {
 #
 # Parameters:
 #   -n: Optional.
-#   If provided, the command is printed using shell::on_evict instead of executed.
+#   If provided, the command is printed using shell::logger::cmd_copy instead of executed.
 #   <repository1>: The first repository to add to GOPRIVATE.
 #   [repository2] [repository3] ...: Additional repositories to add to GOPRIVATE.
 #
@@ -127,7 +127,7 @@ shell::set_go_privates() {
 	local cmd="go env -w GOPRIVATE=\"$repositories_by_comma\""
 
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$cmd"
+		shell::logger::cmd_copy "$cmd"
 		return 0
 	else
 		shell::async "$cmd" &
@@ -155,7 +155,7 @@ shell::set_go_privates() {
 #   shell::fzf_remove_go_privates [-n]
 #
 # Parameters:
-#   -n: Optional. If provided, the command is printed using shell::on_evict instead of executed.
+#   -n: Optional. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
 #
 # Options:
 #   None
@@ -172,7 +172,7 @@ shell::set_go_privates() {
 #   - Requires fzf and Go to be installed; fzf is installed automatically if missing.
 #   - Uses `go env GOPRIVATE` to retrieve the current value.
 #   - Uses `go env -w GOPRIVATE=<new_value>` to set the updated value.
-#   - Supports dry-run and asynchronous execution via shell::on_evict and shell::async.
+#   - Supports dry-run and asynchronous execution via shell::logger::cmd_copy and shell::async.
 #   - Compatible with both Linux (Ubuntu 22.04 LTS) and macOS.
 shell::fzf_remove_go_privates() {
 	if [ "$1" = "-h" ]; then
@@ -224,7 +224,7 @@ shell::fzf_remove_go_privates() {
 	local cmd="go env -w GOPRIVATE=\"$new_goprivate\""
 
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$cmd"
+		shell::logger::cmd_copy "$cmd"
 		return 0
 	else
 		# Execute asynchronously and wait for completion
@@ -250,7 +250,7 @@ shell::fzf_remove_go_privates() {
 #
 # Parameters:
 #   - -n : Optional dry-run flag.
-#          If provided, the commands are printed using shell::on_evict instead of being executed.
+#          If provided, the commands are printed using shell::logger::cmd_copy instead of being executed.
 #   - <app_name|github_url> : The name of the application or a GitHub URL to initialize the module.
 #   - [target_folder] : Optional. The path to the folder where the Go application should be created.
 #                       If not provided, the application is created in the current directory.
@@ -306,8 +306,8 @@ shell::create_go_app() {
 	if [ -n "$target_folder" ]; then
 		shell::colored_echo "WARN: Ensuring target directory exists: $target_folder" 33
 		if [ "$dry_run" = "true" ]; then
-			shell::on_evict "shell::create_directory_if_not_exists \"$target_folder\""
-			shell::on_evict "cd \"$target_folder\""
+			shell::logger::cmd_copy "shell::create_directory_if_not_exists \"$target_folder\""
+			shell::logger::cmd_copy "cd \"$target_folder\""
 		else
 			shell::create_directory_if_not_exists "$target_folder"
 			if [ $? -ne 0 ]; then
@@ -327,7 +327,7 @@ shell::create_go_app() {
 	# Execute go mod init
 	shell::colored_echo "DEBUG: Initializing Go module: $module_name" 244
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$init_cmd"
+		shell::logger::cmd_copy "$init_cmd"
 	else
 		shell::run_cmd_eval "$init_cmd"
 	fi
@@ -335,7 +335,7 @@ shell::create_go_app() {
 	# Execute go mod tidy
 	shell::colored_echo "DEBUG: Tidying Go dependencies" 244
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$tidy_cmd"
+		shell::logger::cmd_copy "$tidy_cmd"
 	else
 		shell::run_cmd_eval "$tidy_cmd"
 	fi
@@ -343,7 +343,7 @@ shell::create_go_app() {
 	# Change back to the original directory if a target folder was used
 	if [ -n "$target_folder" ]; then
 		if [ "$dry_run" = "true" ]; then
-			shell::on_evict "cd \"$original_dir\""
+			shell::logger::cmd_copy "cd \"$original_dir\""
 		else
 			cd "$original_dir" || {
 				shell::colored_echo "ERR: Warning: Could not change back to original directory '$original_dir'." 11

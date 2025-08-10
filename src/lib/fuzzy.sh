@@ -183,14 +183,14 @@ shell::fzf_remove() {
 #   shell::fzf_zip_attachment [-n] <folder_path>
 #
 # Parameters:
-#   - -n          : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+#   - -n          : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
 #   - <folder_path>: The folder (directory) from which to select files for zipping.
 #
 # Description:
 #   This function uses the 'find' command to list all files in the specified folder,
 #   and then launches 'fzf' in multi-select mode to allow interactive file selection.
 #   If one or more files are selected, a zip command is constructed to compress those files.
-#   In dry-run mode (-n), the command is printed (via shell::on_evict) without execution;
+#   In dry-run mode (-n), the command is printed (via shell::logger::cmd_copy) without execution;
 #   otherwise, it is executed using shell::run_cmd_eval.
 #   Finally, the absolute path of the created zip file is echoed.
 #
@@ -243,7 +243,7 @@ shell::fzf_zip_attachment() {
 		# Construct a log-friendly command string (using proper quoting).
 		local cmd_str
 		cmd_str=$(printf '%q ' "${cmd[@]}")
-		shell::on_evict "$cmd_str"
+		shell::logger::cmd_copy "$cmd_str"
 		return 0
 	else
 		shell::run_cmd "${cmd[@]}"
@@ -273,7 +273,7 @@ shell::fzf_zip_attachment() {
 #   shell::fzf_current_zip_attachment [-n]
 #
 # Parameters:
-#   - -n         : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+#   - -n         : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
 #
 # Description:
 #   This function obtains the current directory's name and its parent directory.
@@ -341,7 +341,7 @@ shell::fzf_current_zip_attachment() {
 #   shell::fzf_send_telegram_attachment [-n] <token> <chat_id> <description> [folder_path]
 #
 # Parameters:
-#   - -n           : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+#   - -n           : Optional dry-run flag. If provided, commands are printed using shell::logger::cmd_copy instead of executed.
 #   - <token>      : The Telegram Bot API token.
 #   - <chat_id>    : The chat identifier where the attachments are sent.
 #   - <description>: A text description appended to each attachment's caption along with a timestamp.

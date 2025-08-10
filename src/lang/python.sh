@@ -11,7 +11,7 @@
 #   shell::install_python [-n]
 #
 # Parameters:
-#   - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+#   - -n : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
 #
 # Description:
 #   Installs Python 3 using the appropriate package manager based on the OS:
@@ -101,7 +101,7 @@ shell::install_python() {
 #   shell::uninstall_python [-n]
 #
 # Parameters:
-#   - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+#   - -n : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
 #
 # Description:
 #   Thoroughly uninstalls Python 3 using the appropriate package manager:
@@ -188,7 +188,7 @@ shell::uninstall_python() {
 #   shell::uninstall_python_pip_deps [-n]
 #
 # Parameters:
-#   -n: Optional flag to perform a dry-run (uses shell::on_evict to print commands without executing).
+#   -n: Optional flag to perform a dry-run (uses shell::logger::cmd_copy to print commands without executing).
 #
 # Description:
 #   This function uninstalls all packages installed via pip and pip3, including system packages,
@@ -251,7 +251,7 @@ shell::uninstall_python_pip_deps() {
             local uninstall_cmd="xargs $pip_cmd uninstall --break-system-packages -y < $packages_file"
 
             if [ "$dry_run" = "true" ]; then
-                shell::on_evict "$freeze_cmd && $uninstall_cmd && rm $packages_file"
+                shell::logger::cmd_copy "$freeze_cmd && $uninstall_cmd && rm $packages_file"
             else
                 shell::run_cmd_eval "$freeze_cmd"
                 if [ -s "$packages_file" ]; then
@@ -299,7 +299,7 @@ shell::uninstall_python_pip_deps() {
 #   shell::uninstall_python_pip_deps::latest [-n]
 #
 # Parameters:
-#   -n: Optional flag to perform a dry-run (uses shell::on_evict to print commands without executing).
+#   -n: Optional flag to perform a dry-run (uses shell::logger::cmd_copy to print commands without executing).
 #
 # Description:
 #   This function uninstalls all packages installed via pip and pip3, including system packages,
@@ -359,7 +359,7 @@ shell::uninstall_python_pip_deps::latest() {
             # Build uninstallation command that reads the package list and removes packages
             local uninstall_cmd="xargs $pip_cmd uninstall --break-system-packages -y < $packages_file"
             if [ "$dry_run" = "true" ]; then
-                shell::on_evict "$freeze_cmd && $uninstall_cmd && rm $packages_file"
+                shell::logger::cmd_copy "$freeze_cmd && $uninstall_cmd && rm $packages_file"
             else
                 # Execute the freeze command synchronously to capture the list of packages
                 shell::run_cmd_eval "$freeze_cmd"
@@ -411,7 +411,7 @@ shell::uninstall_python_pip_deps::latest() {
 #   shell::create_python_env [-n] [-p <path>] [-v <version>]
 #
 # Parameters:
-#   - -n          : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+#   - -n          : Optional dry-run flag. If provided, commands are printed using shell::logger::cmd_copy instead of executed.
 #   - -p <path>   : Optional. Specifies the path where the virtual environment will be created (defaults to ./venv).
 #   - -v <version>: Optional. Specifies the Python version (e.g., 3.10); defaults to system Python3.
 #
@@ -522,7 +522,7 @@ shell::create_python_env() {
 			return 0
 		fi
 	elif [ "$dry_run" = "true" ]; then
-		shell::on_evict "$venv_path/bin/pip install --upgrade pip wheel setuptools"
+		shell::logger::cmd_copy "$venv_path/bin/pip install --upgrade pip wheel setuptools"
 	fi
 
 	# Verify and provide activation instructions
@@ -543,7 +543,7 @@ shell::create_python_env() {
 #   shell::install_pkg_python_env [-n] [-p <path>] <package1> [package2 ...]
 #
 # Parameters:
-#   - -n          : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+#   - -n          : Optional dry-run flag. If provided, commands are printed using shell::logger::cmd_copy instead of executed.
 #   - -p <path>   : Optional. Specifies the path to the virtual environment (defaults to ./venv).
 #   - <package1> [package2 ...] : One or more Python package names to install (e.g., numpy, requests).
 #
@@ -622,7 +622,7 @@ shell::install_pkg_python_env() {
 	# Execute or preview the installation
 	shell::colored_echo "DEBUG: Installing packages (${packages[*]}) into virtual environment at '$venv_path'..." 244
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$install_cmd"
+		shell::logger::cmd_copy "$install_cmd"
 	else
 		# Run the installation asynchronously
 		shell::async "$install_cmd" &
@@ -646,7 +646,7 @@ shell::install_pkg_python_env() {
 #
 # Parameters:
 #   - -n          : Optional dry-run flag.
-#                     If provided, commands are printed using shell::on_evict
+#                     If provided, commands are printed using shell::logger::cmd_copy
 #                     instead of executed.
 #   - -p <path>   : Optional.
 #                     Specifies the path to the virtual environment (defaults to ./venv).
@@ -734,7 +734,7 @@ shell::uninstall_pkg_python_env() {
 	# Execute or preview the uninstallation
 	shell::colored_echo "🔍 Uninstalling packages (${packages[*]}) from virtual environment at '$venv_path'..." 36
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$uninstall_cmd"
+		shell::logger::cmd_copy "$uninstall_cmd"
 	else
 		# Run the uninstallation asynchronously
 		shell::async "$uninstall_cmd" &
@@ -757,7 +757,7 @@ shell::uninstall_pkg_python_env() {
 #
 # Parameters:
 #   - -n          : Optional dry-run flag.
-#                     If provided, commands are printed using shell::on_evict
+#                     If provided, commands are printed using shell::logger::cmd_copy
 #                     instead of executed.
 #   - -p <path>   : Optional.
 #                     Specifies the path to the virtual environment (defaults to ./venv).
@@ -864,7 +864,7 @@ shell::fzf_uninstall_pkg_python_env() {
 #
 # Parameters:
 #   - -n          : Optional dry-run flag.
-#                     If provided, commands are printed using shell::on_evict
+#                     If provided, commands are printed using shell::logger::cmd_copy
 #                     instead of executed.
 #   - -p <path>   : Optional.
 #                     Specifies the parent path to search for virtual environments (defaults to current directory).
@@ -938,7 +938,7 @@ shell::fzf_use_python_env() {
 		if [[ "$deactivate_choice" =~ ^[Yy](es)?$ ]]; then
 			local deactivate_cmd="deactivate"
 			if [ "$dry_run" = "true" ]; then
-				shell::on_evict "$deactivate_cmd"
+				shell::logger::cmd_copy "$deactivate_cmd"
 			else
 				shell::run_cmd_eval "$deactivate_cmd"
 			fi
@@ -949,7 +949,7 @@ shell::fzf_use_python_env() {
 	# Activate the selected virtual environment
 	shell::colored_echo "🔍 Activating virtual environment: $selected_venv" 36
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$activate_cmd"
+		shell::logger::cmd_copy "$activate_cmd"
 	else
 		shell::run_cmd_eval "$activate_cmd"
 		shell::colored_echo "INFO: Virtual environment activated." 46
@@ -964,7 +964,7 @@ shell::fzf_use_python_env() {
 #
 # Parameters:
 #   - -n          : Optional dry-run flag.
-#                     If provided, commands are printed using shell::on_evict
+#                     If provided, commands are printed using shell::logger::cmd_copy
 #                     instead of executed.
 #   - -p <path>   : Optional.
 #                     Specifies the path to the virtual environment (defaults to ./venv).
@@ -1057,7 +1057,7 @@ shell::fzf_upgrade_pkg_python_env() {
 	shell::colored_echo "🔍 Upgrading selected packages..." 36
 	if [ "$dry_run" = "true" ]; then
 		for cmd in "${upgrade_commands[@]}"; do
-			shell::on_evict "$cmd"
+			shell::logger::cmd_copy "$cmd"
 		done
 	else
 		for cmd in "${upgrade_commands[@]}"; do
@@ -1075,7 +1075,7 @@ shell::fzf_upgrade_pkg_python_env() {
 #
 # Parameters:
 #   - -n          : Optional dry-run flag.
-#                     If provided, commands are printed using shell::on_evict instead of executed.
+#                     If provided, commands are printed using shell::logger::cmd_copy instead of executed.
 #   - -p <path>   : Optional.
 #                     Specifies the path to the virtual environment (defaults to ./venv).
 #   - <package1> [package2 ...]: One or more Python package names to upgrade.
@@ -1153,7 +1153,7 @@ shell::upgrade_pkg_python_env() {
 	# Execute or preview the upgrade
 	shell::colored_echo "🔍 Upgrading packages (${packages[*]}) in virtual environment at '$venv_path'..." 36
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$upgrade_cmd"
+		shell::logger::cmd_copy "$upgrade_cmd"
 	else
 		# Execute the upgrade asynchronously
 		shell::async "$upgrade_cmd" &
@@ -1175,7 +1175,7 @@ shell::upgrade_pkg_python_env() {
 #   shell::freeze_pkg_python_env [-n] [-p <path>]
 #
 # Parameters:
-#   - -n          : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+#   - -n          : Optional dry-run flag. If provided, commands are printed using shell::logger::cmd_copy instead of executed.
 #   - -p <path>   : Optional. Specifies the path to the virtual environment (defaults to ./venv).
 #
 # Description:
@@ -1240,7 +1240,7 @@ shell::freeze_pkg_python_env() {
 	# Execute or preview the freeze command
 	shell::colored_echo "🔍 Exporting installed packages to $venv_path/requirements.txt..." 36
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$freeze_cmd"
+		shell::logger::cmd_copy "$freeze_cmd"
 	else
 		# Execute the freeze command asynchronously
 		shell::async "$freeze_cmd" &
@@ -1262,7 +1262,7 @@ shell::freeze_pkg_python_env() {
 #   shell::pip_install_requirements_env [-n] [-p <path>]
 #
 # Parameters:
-#   - -n          : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+#   - -n          : Optional dry-run flag. If provided, commands are printed using shell::logger::cmd_copy instead of executed.
 #   - -p <path>   : Optional. Specifies the path to the virtual environment (defaults to ./venv).
 #
 # Description:
@@ -1336,7 +1336,7 @@ shell::pip_install_requirements_env() {
 	# Execute or preview the install command
 	shell::colored_echo "🔍 Installing packages from $requirements_file into $venv_path..." 36
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$install_cmd"
+		shell::logger::cmd_copy "$install_cmd"
 	else
 		# Execute the install command asynchronously
 		shell::async "$install_cmd" &

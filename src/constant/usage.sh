@@ -9,7 +9,7 @@ Usage:
   shell::gen_ssh_key [-n] [-t key_type] [-p passphrase] [-h] [email] [key_filename]
 
 Parameters:
-  - -n              : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - -n              : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
   - -t key_type     : Optional. Specifies the key type (e.g., rsa, ed25519). Defaults to rsa.
   - -p passphrase   : Optional. Specifies the passphrase for the key. Defaults to empty (no passphrase).
   - -h              : Optional. Displays this help message.
@@ -41,7 +41,7 @@ Usage:
   shell::kill_ssh_tunnels [-n] [-h]
 
 Parameters:
-  - -n              : Optional dry-run flag. If provided, kill commands are printed using shell::on_evict instead of executed.
+  - -n              : Optional dry-run flag. If provided, kill commands are printed using shell::logger::cmd_copy instead of executed.
   - -h              : Optional. Displays this help message.
 
 Description:
@@ -58,7 +58,7 @@ Notes:
   - Requires the 'ps' and 'kill' commands to be available.
   - Works on both macOS and Linux systems.
   - Uses different parsing approaches based on the detected operating system.
-  - Leverages shell::run_cmd for command execution and shell::on_evict for dry-run mode.
+  - Leverages shell::run_cmd for command execution and shell::logger::cmd_copy for dry-run mode.
 "
 
 USAGE_SHELL_LIST_SSH_TUNNEL="
@@ -69,7 +69,7 @@ Usage:
   shell::list_ssh_tunnels [-n] [-h]
 
 Parameters:
-  - -n              : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+  - -n              : Optional dry-run flag. If provided, commands are printed using shell::logger::cmd_copy instead of executed.
   - -h              : Optional. Displays this help message.
 
 Description:
@@ -97,7 +97,7 @@ Notes:
   - Requires the 'ps' command to be available
   - Works on both macOS and Linux systems
   - Uses different parsing approaches based on the detected operating system
-  - Leverages shell::run_cmd_eval for command execution and shell::on_evict for dry-run mode
+  - Leverages shell::run_cmd_eval for command execution and shell::logger::cmd_copy for dry-run mode
 "
 
 USAGE_SHELL_FZF_CWD_SSH_KEY="
@@ -160,14 +160,14 @@ Usage:
   shell::read_conf [-n] [-h] <filename>
 
 Parameters:
-  - -n              : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - -n              : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
   - -h              : Optional. Displays this help message.
   - <filename>      : The configuration file to source.
 
 Description:
   The function checks that a filename is provided and that the specified file exists.
   If the file is not found, an error message is displayed.
-  In dry-run mode, the command 'source <filename >' is printed using shell::on_evict.
+  In dry-run mode, the command 'source <filename >' is printed using shell::logger::cmd_copy.
   Otherwise, the file is sourced using shell::run_cmd to log the execution.
 
 Example:
@@ -184,7 +184,7 @@ Usage:
   shell::add_key_conf [-n] [-h] <key> <value>
 
 Parameters:
-  - -n       : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - -n       : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
   - -h       : Optional. Displays this help message.
   - <key>    : The configuration key.
   - <value>  : The configuration value to be encoded and saved.
@@ -255,7 +255,7 @@ Usage:
   shell::fzf_remove_key_conf [-n] [-h]
 
 Parameters:
-  - -n              : Optional dry-run flag. If provided, the removal command is printed using shell::on_evict instead of executed.
+  - -n              : Optional dry-run flag. If provided, the removal command is printed using shell::logger::cmd_copy instead of executed.
   - -h              : Optional. Displays this help message.
 
 Description:
@@ -264,7 +264,7 @@ Description:
   It extracts only the keys (before the '=') and uses fzf for interactive selection.
   Once a key is selected, it constructs a command to remove the line that starts with \"key=\" from the configuration file.
   The command uses sed with different options depending on the operating system (macOS or Linux).
-  In dry-run mode, the command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
+  In dry-run mode, the command is printed using shell::logger::cmd_copy; otherwise, it is executed using shell::run_cmd_eval.
 
 Example:
   shell::fzf_remove_key_conf         # Interactively select a key and remove its configuration entry.
@@ -280,7 +280,7 @@ Usage:
   shell::fzf_update_key_conf [-n] [-h]
 
 Parameters:
-  - -n              : Optional dry-run flag. If provided, the update command is printed using shell::on_evict instead of executed.
+  - -n              : Optional dry-run flag. If provided, the update command is printed using shell::logger::cmd_copy instead of executed.
   - -h              : Optional. Displays this help message.
 
 Description:
@@ -323,7 +323,7 @@ Usage:
   shell::fzf_rename_key_conf [-n] [-h]
 
 Parameters:
-  - -n   : Optional dry-run flag. If provided, the renaming command is printed using shell::on_evict instead of executed.
+  - -n   : Optional dry-run flag. If provided, the renaming command is printed using shell::logger::cmd_copy instead of executed.
   - -h   : Optional. Displays this help message.
 
 Description:
@@ -333,7 +333,7 @@ Description:
   After selection, the function prompts for a new key name and checks if the new key already exists.
   If the new key does not exist, it constructs a sed command to replace the old key with the new key in the file.
   The sed command uses in-place editing options appropriate for macOS (sed -i '') or Linux (sed -i).
-  In dry-run mode, the command is printed via shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
+  In dry-run mode, the command is printed via shell::logger::cmd_copy; otherwise, it is executed using shell::run_cmd_eval.
 
 Example:
   shell::fzf_rename_key_conf         # Interactively select a key and rename it.
@@ -372,7 +372,7 @@ Description:
   one or more configuration keys (from SHELL_KEY_CONF_FILE). It then stores the group in SHELL_GROUP_CONF_FILE in the format:
       group_name=key1,key2,...,keyN
   If the group name already exists, the group entry is updated with the new selection.
-  An optional dry-run flag (-n) can be used to print the command via shell::on_evict instead of executing it.
+  An optional dry-run flag (-n) can be used to print the command via shell::logger::cmd_copy instead of executing it.
 
 Example:
   shell::fzf_add_group_key_conf         # Prompts for a group name and lets you select keys to group.
@@ -407,14 +407,14 @@ Usage:
   shell::fzf_remove_group_key_conf [-n] [-h]
 
 Parameters:
-  - -n   : Optional dry-run flag. If provided, the removal command is printed using shell::on_evict instead of executed.
+  - -n   : Optional dry-run flag. If provided, the removal command is printed using shell::logger::cmd_copy instead of executed.
   - -h   : Optional. Displays this help message.
 
 Description:
   The function extracts group names from SHELL_GROUP_CONF_FILE and uses fzf for interactive selection.
   Once a group is selected, it constructs a sed command (with appropriate in-place options for macOS or Linux)
   to remove the line that starts with \"group_name=\".
-  If the file is not writable, sudo is prepended. In dry-run mode, the command is printed via shell::on_evict.
+  If the file is not writable, sudo is prepended. In dry-run mode, the command is printed via shell::logger::cmd_copy.
 
 Example:
   shell::fzf_remove_group_key_conf         # Interactively select a group and remove its entry.
@@ -429,7 +429,7 @@ Usage:
   shell::fzf_update_group_key_conf [-n] [-h]
 
 Parameters:
-  - -n : Optional dry-run flag. If provided, the update command is printed using shell::on_evict instead of executed.
+  - -n : Optional dry-run flag. If provided, the update command is printed using shell::logger::cmd_copy instead of executed.
   - -h   : Optional. Displays this help message.
 
 Description:
@@ -451,7 +451,7 @@ Usage:
   shell::fzf_rename_group_key_conf [-n] [-h]
 
 Parameters:
-  - -n   : Optional dry-run flag. If provided, the renaming command is printed using shell::on_evict instead of executed.
+  - -n   : Optional dry-run flag. If provided, the renaming command is printed using shell::logger::cmd_copy instead of executed.
   - -h   : Optional. Displays this help message.
 
 Description:
@@ -461,7 +461,7 @@ Description:
   After selection, the function prompts for a new group name.
   It then constructs a sed command to replace the old group name with the new one in the configuration file.
   The sed command uses in-place editing options appropriate for macOS (sed -i '') or Linux (sed -i).
-  In dry-run mode, the command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
+  In dry-run mode, the command is printed using shell::logger::cmd_copy; otherwise, it is executed using shell::run_cmd_eval.
 
 Example:
   shell::fzf_rename_group_key_conf         # Interactively select a group and rename it.
@@ -516,7 +516,7 @@ Usage:
   shell::fzf_clone_group_key_conf [-n] [-h]
 
 Parameters:
-  - -n   : Optional dry-run flag. If provided, the cloning command is printed using shell::on_evict instead of executed.
+  - -n   : Optional dry-run flag. If provided, the cloning command is printed using shell::logger::cmd_copy instead of executed.
   - -h   : Optional. Displays this help message.
 
 Description:
@@ -526,7 +526,7 @@ Description:
   After selection, it prompts for a new group name.
   The new group entry is then constructed with the new group name and the same comma-separated keys
   as the selected group, and appended to SHELL_GROUP_CONF_FILE.
-  In dry-run mode, the final command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
+  In dry-run mode, the final command is printed using shell::logger::cmd_copy; otherwise, it is executed using shell::run_cmd_eval.
 "
 
 USAGE_SHELL_SYNC_GROUP_KEY_CONF="
@@ -539,7 +539,7 @@ Usage:
   shell::sync_group_key_conf [-n] [-h]
 
 Parameters:
-  - -n   : Optional dry-run flag. If provided, the new group configuration is printed using shell::on_evict instead of being applied.
+  - -n   : Optional dry-run flag. If provided, the new group configuration is printed using shell::logger::cmd_copy instead of being applied.
   - -h   : Optional. Displays this help message.
 
 Description:
@@ -547,7 +547,7 @@ Description:
   For each group, it splits the comma-separated list of keys and checks each key using shell::exist_key_conf.
   It builds a new list of valid keys. If the new list is non-empty, the group entry is updated;
   if it is empty, the group entry is omitted.
-  In dry-run mode, the new group configuration is printed via shell::on_evict without modifying the file.
+  In dry-run mode, the new group configuration is printed via shell::logger::cmd_copy without modifying the file.
 "
 
 USAGE_SHELL_VERIFY_ARG_COUNT="
@@ -646,7 +646,7 @@ Usage:
   shell::send_telegram_historical_gh_message [-n] [-h] <message>
 
 Parameters:
-  - -n              : Optional dry-run flag. If provided, the command will be printed using shell::on_evict instead of executed.
+  - -n              : Optional dry-run flag. If provided, the command will be printed using shell::logger::cmd_copy instead of executed.
   - -h              : Optional. Displays this help message.
   - <message>       : The message text to send.
 
@@ -695,7 +695,7 @@ Usage:
   shell::get_go_privates [-n] [-h]
 
 Parameters:
-    - -n     : Optional. If provided, the command is printed using shell::on_evict instead of executed.
+    - -n     : Optional. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
     - -h     : Optional. Displays this help message.
 
 Example:
@@ -717,7 +717,7 @@ Usage:
   shell::set_go_privates [-n] [-h] <repository1> [repository2] ...
 
 Parameters:
-  - -n                              : Optional. If provided, the command is printed using shell::on_evict instead of executed.
+  - -n                              : Optional. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
   - -h                              : Optional. Displays this help message.
   - <repository1>                   : The first repository to add to GOPRIVATE.
   - [repository2] [repository3] ... : Additional repositories to add to GOPRIVATE.
@@ -742,7 +742,7 @@ Usage:
   shell::fzf_remove_go_privates [-n] [-h]
 
 Parameters:
-  - -n                              : Optional. If provided, the command is printed using shell::on_evict instead of executed.
+  - -n                              : Optional. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
   - -h                              : Optional. Displays this help message.
 
 Example:
@@ -760,7 +760,7 @@ Usage:
 
 Parameters:
   - -n : Optional dry-run flag.
-         If provided, the commands are printed using shell::on_evict instead of being executed.
+         If provided, the commands are printed using shell::logger::cmd_copy instead of being executed.
   - -h : Optional. Displays this help message.
   - <app_name|github_url> : The name of the application or a GitHub URL to initialize the module.
   - [target_folder] : Optional. The path to the folder where the Go application should be created.
@@ -852,7 +852,7 @@ Usage:
   shell::install_python [-n] [-h]
 
 Parameters:
-  - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - -n : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
   - -h : Optional. Displays this help message.
 
 Description:
@@ -874,7 +874,7 @@ Usage:
   shell::uninstall_python [-n] [-h]
 
 Parameters:
-  - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - -n : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
   - -h : Optional. Displays this help message.
 
 Description:
@@ -896,7 +896,7 @@ Usage:
   shell::uninstall_python_pip_deps [-n] [-h]
 
 Parameters:
-  - -n  : Optional flag to perform a dry-run (uses shell::on_evict to print commands without executing).
+  - -n  : Optional flag to perform a dry-run (uses shell::logger::cmd_copy to print commands without executing).
   - -h  : Optional. Displays this help message.
 
 Description:
@@ -917,7 +917,7 @@ Usage:
   shell::uninstall_python_pip_deps::latest [-n] [-h]
 
 Parameters:
-  - -n  : Optional flag to perform a dry-run (uses shell::on_evict to print commands without executing).
+  - -n  : Optional flag to perform a dry-run (uses shell::logger::cmd_copy to print commands without executing).
   - -h  : Optional. Displays this help message.
 
 Description:
@@ -939,7 +939,7 @@ Usage:
   shell::create_python_env [-n] [-h] [-p <path>] [-v <version>]
 
 Parameters:
-  - -n          : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+  - -n          : Optional dry-run flag. If provided, commands are printed using shell::logger::cmd_copy instead of executed.
   - -h          : Optional. Displays this help message.
   - -p <path>   : Optional. Specifies the path where the virtual environment will be created (defaults to ./venv).
   - -v <version>: Optional. Specifies the Python version (e.g., 3.10); defaults to system Python3.
@@ -967,7 +967,7 @@ Usage:
   shell::install_pkg_python_env [-n] [-h] [-p <path>] <package1> [package2 ...]
 
 Parameters:
-  - -n          : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+  - -n          : Optional dry-run flag. If provided, commands are printed using shell::logger::cmd_copy instead of executed.
   - -h          : Optional. Displays this help message.
   - -p <path>   : Optional. Specifies the path to the virtual environment (defaults to ./venv).
   - <package1> [package2 ...] : One or more Python package names to install (e.g., numpy, requests).
@@ -994,7 +994,7 @@ Usage:
 
 Parameters:
   - -n          : Optional dry-run flag.
-                    If provided, commands are printed using shell::on_evict
+                    If provided, commands are printed using shell::logger::cmd_copy
                     instead of executed.
   - -h          : Optional. Displays this help message.
   - -p <path>   : Optional.
@@ -1028,7 +1028,7 @@ Usage:
 
 Parameters:
   - -n          : Optional dry-run flag.
-                    If provided, commands are printed using shell::on_evict
+                    If provided, commands are printed using shell::logger::cmd_copy
                     instead of executed.
   - -h          : Optional. Displays this help message.
   - -p <path>   : Optional.
@@ -1054,7 +1054,7 @@ Usage:
 
 Parameters:
   - -n          : Optional dry-run flag.
-                    If provided, commands are printed using shell::on_evict
+                    If provided, commands are printed using shell::logger::cmd_copy
                     instead of executed.
   - -h          : Optional. Displays this help message.
   - -p <path>   : Optional.
@@ -1081,7 +1081,7 @@ Usage:
 
 Parameters:
   - -n          : Optional dry-run flag.
-                    If provided, commands are printed using shell::on_evict
+                    If provided, commands are printed using shell::logger::cmd_copy
                     instead of executed.
   - -h          : Optional. Displays this help message.
   - -p <path>   : Optional.
@@ -1107,7 +1107,7 @@ Usage:
 
 Parameters:
   - -n          : Optional dry-run flag.
-                    If provided, commands are printed using shell::on_evict instead of executed.
+                    If provided, commands are printed using shell::logger::cmd_copy instead of executed.
   - -h          : Optional. Displays this help message.
   - -p <path>   : Optional.
                     Specifies the path to the virtual environment (defaults to ./venv).
@@ -1134,7 +1134,7 @@ Usage:
   shell::freeze_pkg_python_env [-n] [-h] [-p <path>]
 
 Parameters:
-  - -n          : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+  - -n          : Optional dry-run flag. If provided, commands are printed using shell::logger::cmd_copy instead of executed.
   - -h          : Optional. Displays this help message.
   - -p <path>   : Optional. Specifies the path to the virtual environment (defaults to ./venv).
 
@@ -1158,7 +1158,7 @@ Usage:
   shell::pip_install_requirements_env [-n] [-h] [-p <path>]
 
 Parameters:
-  - -n          : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+  - -n          : Optional dry-run flag. If provided, commands are printed using shell::logger::cmd_copy instead of executed.
   - -h          : Optional. Displays this help message.
   - -p <path>   : Optional. Specifies the path to the virtual environment (defaults to ./venv).
 
@@ -1545,7 +1545,7 @@ Usage:
   shell::unlock_permissions [-n] [-h] <file/dir>
 
 Parameters:
-  - -n (optional)   : Dry-run mode. Instead of executing the command, prints it using shell::on_evict.
+  - -n (optional)   : Dry-run mode. Instead of executing the command, prints it using shell::logger::cmd_copy.
   - -h              : Optional. Displays this help message.
   - <file/dir>      : The path to the file or directory to modify.
 
@@ -1610,22 +1610,22 @@ Returns:
 "
 
 USAGE_SHELL_ON_EVICT="
-shell::on_evict function
+shell::logger::cmd_copy function
 Hook to print a command without executing it.
 
 Usage:
-  shell::on_evict [-h] <command>
+  shell::logger::cmd_copy [-h] <command>
 
 Parameters:
     - -h            : Optional. Displays this help message.
     - <command>     : The command to be printed.
 
 Description:
-  The 'shell::on_evict' function prints a command without executing it.
+  The 'shell::logger::cmd_copy' function prints a command without executing it.
   It is designed as a hook for logging or displaying commands without actual execution.
 
 Example usage:
-  shell::on_evict ls -l
+  shell::logger::cmd_copy ls -l
 "
 
 USAGE_SHELL_CHECK_PORT="
@@ -1643,7 +1643,7 @@ Parameters:
 Description:
   This function uses lsof to determine if any process is actively listening on the specified TCP port.
   It filters the output for lines containing \"LISTEN\", which indicates that the port is in use.
-  When the dry-run flag (-n) is provided, the command is printed using shell::on_evict instead of being executed.
+  When the dry-run flag (-n) is provided, the command is printed using shell::logger::cmd_copy instead of being executed.
 
 Example:
   shell::check_port 8080        # Executes the command.
@@ -1665,7 +1665,7 @@ Parameters:
 Description:
   This function checks each specified port to determine if any processes are listening on it,
   using lsof. If any are found, it forcefully terminates them by sending SIGKILL (-9).
-  In dry-run mode (enabled by the -n flag), the kill command is printed using shell::on_evict instead of executed.
+  In dry-run mode (enabled by the -n flag), the kill command is printed using shell::logger::cmd_copy instead of executed.
 
 Example:
   shell::kill_port 8080              # Kills processes on port 8080.
@@ -1680,7 +1680,7 @@ Usage:
   shell::copy_files [-n] [-h] <source_filename> <new_filename1> [<new_filename2> ...]
 
 Parameters:
-    - -n                : Optional dry-run flag. If provided, the command will be printed using shell::on_evict instead of executed.
+    - -n                : Optional dry-run flag. If provided, the command will be printed using shell::logger::cmd_copy instead of executed.
     - -h                : Optional. Displays this help message.
     - <source_filename> : The file to copy.
     - <new_filenameX>   : One or more new filenames (within the current working directory) where the source file will be copied.
@@ -1689,7 +1689,7 @@ Description:
   The function first checks for a dry-run flag (-n). It then verifies that at least two arguments remain.
   For each destination filename, it checks if the file already exists in the current working directory.
   If not, it builds the command to copy the source file (using sudo) to the destination.
-  In dry-run mode, the command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
+  In dry-run mode, the command is printed using shell::logger::cmd_copy; otherwise, it is executed using shell::run_cmd_eval.
 
 Example:
   shell::copy_files myfile.txt newfile.txt            # Copies myfile.txt to newfile.txt.
@@ -1710,7 +1710,7 @@ Parameters:
 Description:
   This function checks each specified port to determine if any processes are listening on it,
   using lsof. If any are found, it forcefully terminates them by sending SIGKILL (-9).
-  In dry-run mode (enabled by the -n flag), the kill command is printed using shell::on_evict instead of executed.
+  In dry-run mode (enabled by the -n flag), the kill command is printed using shell::logger::cmd_copy instead of executed.
 
 Example:
   shell::kill_port 8080              # Kills processes on port 8080.
@@ -1725,7 +1725,7 @@ Usage:
   shell::copy_files [-n] [-h] <source_filename> <new_filename1> [<new_filename2> ...]
 
 Parameters:
-  - -n                : Optional dry-run flag. If provided, the command will be printed using shell::on_evict instead of executed.
+  - -n                : Optional dry-run flag. If provided, the command will be printed using shell::logger::cmd_copy instead of executed.
   - -h                : Optional. Displays this help message.
   - <source_filename> : The file to copy.
   - <new_filenameX>   : One or more new filenames (within the current working directory) where the source file will be copied.
@@ -1734,7 +1734,7 @@ Description:
   The function first checks for a dry-run flag (-n). It then verifies that at least two arguments remain.
   For each destination filename, it checks if the file already exists in the current working directory.
   If not, it builds the command to copy the source file (using sudo) to the destination.
-  In dry-run mode, the command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
+  In dry-run mode, the command is printed using shell::logger::cmd_copy; otherwise, it is executed using shell::run_cmd_eval.
 
 Example:
   shell::copy_files myfile.txt newfile.txt                   # Copies myfile.txt to newfile.txt.
@@ -1749,7 +1749,7 @@ Usage:
   shell::move_files [-n] [-h] <destination_folder> <file1> <file2> ... <fileN>
 
 Parameters:
-  - -n                  : Optional dry-run flag. If provided, the command will be printed using shell::on_evict instead of executed.
+  - -n                  : Optional dry-run flag. If provided, the command will be printed using shell::logger::cmd_copy instead of executed.
   - -h                  : Optional. Displays this help message.
   - <destination_folder>: The target directory where the files will be moved.
   - <fileX>             : One or more source files to be moved.
@@ -1760,7 +1760,7 @@ Description:
     - It checks whether the source file exists.
     - It verifies that the destination file (using the basename of the source) does not already exist in the destination folder.
     - It builds the command to move the file (using sudo mv).
-  In dry-run mode, the command is printed using shell::on_evict; otherwise, the command is executed using shell::run_cmd.
+  In dry-run mode, the command is printed using shell::logger::cmd_copy; otherwise, the command is executed using shell::run_cmd.
   If an error occurs for a particular file (e.g., missing source or destination file conflict), the error is logged and the function continues with the next file.
 
 Example:
@@ -1776,14 +1776,14 @@ Usage:
   shell::remove_files [-n] [-h] <filename/dir>
 
 Parameters:
-  - -n            : Optional dry-run flag. If provided, the command will be printed using shell::on_evict instead of executed.
+  - -n            : Optional dry-run flag. If provided, the command will be printed using shell::logger::cmd_copy instead of executed.
   - -h            : Optional. Displays this help message.
   - <filename/dir>: The file or directory to remove.
 
 Description:
   The function first checks for an optional dry-run flag (-n). It then verifies that a target argument is provided.
   It builds the command to remove the specified target using \"sudo rm -rf\".
-  In dry-run mode, the command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd.
+  In dry-run mode, the command is printed using shell::logger::cmd_copy; otherwise, it is executed using shell::run_cmd.
 
 Example:
   shell::remove_files my-dir         # Removes the directory 'my-dir'.
@@ -1798,7 +1798,7 @@ Usage:
   shell::editor [-n] [-h] <folder>
 
 Parameters:
-  - -n       : Optional dry-run flag. If provided, the command will be printed using shell::on_evict instead of executed.
+  - -n       : Optional dry-run flag. If provided, the command will be printed using shell::logger::cmd_copy instead of executed.
   - -h       : Optional. Displays this help message.
   - <folder> : The directory containing the files you want to edit.
 
@@ -1827,7 +1827,7 @@ Usage:
   shell::download_dataset [-n] [-h] <filename_with_extension> <download_link>
 
 Parameters:
-  - -n                        : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+  - -n                        : Optional dry-run flag. If provided, commands are printed using shell::logger::cmd_copy instead of executed.
   - -h                        : Optional. Displays this help message.
   - <filename_with_extension> : The target filename (with path) where the dataset will be saved.
   - <download_link>           : The URL from which the dataset will be downloaded.
@@ -1836,7 +1836,7 @@ Description:
   This function downloads a file from a given URL and saves it under the specified filename.
   It extracts the directory from the filename, ensures the directory exists, and changes to that directory
   before attempting the download. If the file already exists, it prompts the user for confirmation before
-  overwriting it. In dry-run mode, the function uses shell::on_evict to display the commands without executing them.
+  overwriting it. In dry-run mode, the function uses shell::logger::cmd_copy to display the commands without executing them.
 
 Example:
   shell::download_dataset mydata.zip https://example.com/mydata.zip
@@ -1851,14 +1851,14 @@ Usage:
   shell::unarchive [-n] [-h] <filename>
 
 Parameters:
-  - -n        : Optional dry-run flag. If provided, the extraction command is printed using shell::on_evict instead of executed.
+  - -n        : Optional dry-run flag. If provided, the extraction command is printed using shell::logger::cmd_copy instead of executed.
   - -h        : Optional. Displays this help message.
   - <filename>: The compressed file to extract.
 
 Description:
   The function first checks for an optional dry-run flag (-n) and then verifies that exactly one argument (the filename) is provided.
   It checks if the given file exists and, if so, determines the correct extraction command based on the file extension.
-  In dry-run mode, the command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
+  In dry-run mode, the command is printed using shell::logger::cmd_copy; otherwise, it is executed using shell::run_cmd_eval.
 
 Example:
   shell::unarchive archive.tar.gz           # Extracts archive.tar.gz.
@@ -1873,13 +1873,13 @@ Usage:
   shell::list_high_mem_usage [-n] [-h]
 
 Parameters:
-  - -n        : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - -n        : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
   - -h        : Optional. Displays this help message.
 
 Description:
   This function retrieves the operating system type using shell::get_os_type. For macOS, it uses 'top' to sort processes by resident size (RSIZE)
   and filters the output to display processes consuming at least 100 MB. For Linux, it uses 'ps' to list processes sorted by memory usage.
-  In dry-run mode, the constructed command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
+  In dry-run mode, the constructed command is printed using shell::logger::cmd_copy; otherwise, it is executed using shell::run_cmd_eval.
 
 Example:
   shell::list_high_mem_usage       # Displays processes with high memory consumption.
@@ -1894,14 +1894,14 @@ Usage:
   shell::open_link [-n] [-h] <url>
 
 Parameters:
-  - -n   : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - -n   : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
   - -h   : Optional. Displays this help message.
   - <url>: The URL to open in the default web browser.
 
 Description:
   This function determines the current operating system using shell::get_os_type. On macOS, it uses the 'open' command;
   on Linux, it uses 'xdg-open' (if available). If the required command is missing on Linux, an error is displayed.
-  In dry-run mode, the command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
+  In dry-run mode, the command is printed using shell::logger::cmd_copy; otherwise, it is executed using shell::run_cmd_eval.
 
 Example:
   shell::open_link https://example.com         # Opens the URL in the default browser.
@@ -1916,14 +1916,14 @@ Usage:
   shell::loading_spinner [-n] [-h] [duration]
 
 Parameters:
-  - -n        : Optional dry-run flag. If provided, the spinner command is printed using shell::on_evict instead of executed.
+  - -n        : Optional dry-run flag. If provided, the spinner command is printed using shell::logger::cmd_copy instead of executed.
   - -h        : Optional. Displays this help message.
   - [duration]: Optional. The duration in seconds for which the spinner should be displayed. Default is 3 seconds.
 
 Description:
   The function calculates an end time based on the provided duration and then iterates,
   printing a sequence of spinner characters to create a visual loading effect.
-  In dry-run mode, it uses shell::on_evict to display a message indicating what would be executed,
+  In dry-run mode, it uses shell::logger::cmd_copy to display a message indicating what would be executed,
   without actually running the spinner.
 
 Example usage:
@@ -1961,13 +1961,13 @@ Usage:
   shell::async [-n] [-h] <command> [arguments...]
 
 Parameters:
-  - -n                      : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - -n                      : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
   - -h                      : Optional. Displays this help message.
   - <command> [arguments...]: The command (or function) with its arguments to be executed asynchronously.
 
 Description:
   The shell::async function builds the command from the provided arguments and runs it in the background.
-  If the optional dry-run flag (-n) is provided, the command is printed using shell::on_evict instead of executing it.
+  If the optional dry-run flag (-n) is provided, the command is printed using shell::logger::cmd_copy instead of executing it.
   Otherwise, the command is executed asynchronously using eval, and the process ID (PID) is displayed.
 
 Example:
@@ -2052,7 +2052,7 @@ Usage:
   shell::fzf_zip_attachment [-n] [-h] <folder_path>
 
 Parameters:
-  - -n            : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - -n            : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
   - -h            : Optional. Displays this help message.
   - <folder_path> : The folder (directory) from which to select files for zipping.
 
@@ -2060,7 +2060,7 @@ Description:
   This function uses the 'find' command to list all files in the specified folder,
   and then launches 'fzf' in multi-select mode to allow interactive file selection.
   If one or more files are selected, a zip command is constructed to compress those files.
-  In dry-run mode (-n), the command is printed (via shell::on_evict) without execution;
+  In dry-run mode (-n), the command is printed (via shell::logger::cmd_copy) without execution;
   otherwise, it is executed using shell::run_cmd_eval.
   Finally, the absolute path of the created zip file is echoed.
 
@@ -2078,7 +2078,7 @@ Usage:
   shell::fzf_current_zip_attachment [-n] [-h]
 
 Parameters:
-  - -n         : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - -n         : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
   - -h         : Optional. Displays this help message.
 
 Description:
@@ -2102,7 +2102,7 @@ Usage:
   shell::fzf_send_telegram_attachment [-n] [-h] <token> <chat_id> <description> [folder_path]
 
 Parameters:
-  - -n           : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+  - -n           : Optional dry-run flag. If provided, commands are printed using shell::logger::cmd_copy instead of executed.
   - -h           : Optional. Displays this help message.
   - <token>      : The Telegram Bot API token.
   - <chat_id>    : The chat identifier where the attachments are sent.
@@ -2161,14 +2161,14 @@ Usage:
   shell::install_oh_my_zsh [-n] [-h]
 
 Parameters:
-  - -n : Optional dry-run flag. If provided, the installation command is printed using shell::on_evict instead of executed.
+  - -n : Optional dry-run flag. If provided, the installation command is printed using shell::logger::cmd_copy instead of executed.
   - -h : Optional. Displays this help message.
 
 Description:
   The function checks whether the Oh My Zsh directory ($HOME/.oh-my-zsh) exists.
   If it exists, it prints a message indicating that Oh My Zsh is already installed.
   Otherwise, it proceeds to install Oh My Zsh by executing the installation script fetched via curl.
-  In dry-run mode, the command is displayed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
+  In dry-run mode, the command is displayed using shell::logger::cmd_copy; otherwise, it is executed using shell::run_cmd_eval.
 
 Example:
   shell::install_oh_my_zsh         # Installs Oh My Zsh if needed.
@@ -2183,14 +2183,14 @@ Usage:
   shell::removal_oh_my_zsh [-n] [-h]
 
 Parameters:
-  - -n : Optional dry-run flag. If provided, the uninstallation commands are printed using shell::on_evict instead of executed.
+  - -n : Optional dry-run flag. If provided, the uninstallation commands are printed using shell::logger::cmd_copy instead of executed.
   - -h : Optional. Displays this help message.
 
 Description:
   This function checks whether the Oh My Zsh directory ($HOME/.oh-my-zsh) exists.
   If it does, the function proceeds to remove it using 'rm -rf'. Additionally, if a backup of the original .zshrc
   (stored as $HOME/.zshrc.pre-oh-my-zsh) exists, it restores that backup by moving it back to $HOME/.zshrc.
-  In dry-run mode, the commands are displayed using shell::on_evict; otherwise, they are executed using shell::run_cmd_eval.
+  In dry-run mode, the commands are displayed using shell::logger::cmd_copy; otherwise, they are executed using shell::run_cmd_eval.
 
 Example:
   shell::removal_oh_my_zsh         # Uninstalls Oh My Zsh if installed.
@@ -2205,7 +2205,7 @@ Usage:
   shell::send_telegram_message [-n] [-h] <token> <chat_id> <message>
 
 Parameters:
-  - -n          : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - -n          : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
   - -h          : Optional. Displays this help message.
   - <token>     : The Telegram Bot API token.
   - <chat_id>   : The chat identifier where the message should be sent.
@@ -2214,7 +2214,7 @@ Parameters:
 Description:
   The function first checks for an optional dry-run flag. It then verifies that at least three arguments are provided.
   If the bot token or chat ID is missing, it prints an error message. Otherwise, it constructs a curl command to send
-  the message via Telegram's API. In dry-run mode, the command is printed using shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
+  the message via Telegram's API. In dry-run mode, the command is printed using shell::logger::cmd_copy; otherwise, it is executed using shell::run_cmd_eval.
 
 Example:
   shell::send_telegram_message 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 \"Hello, World!\"
@@ -2229,7 +2229,7 @@ Usage:
   shell::send_telegram_attachment [-n] [-h] <token> <chat_id> <description> [filename_1] [filename_2] [filename_3] ...
 
 Parameters:
-  - -n           : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - -n           : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
   - -h          : Optional. Displays this help message.
   - <token>      : The Telegram Bot API token.
   - <chat_id>    : The chat identifier to which the attachments are sent.
@@ -2239,7 +2239,7 @@ Parameters:
 Description:
   The function first checks for an optional dry-run flag (-n) and verifies that the required parameters
   are provided. For each provided file, if the file exists, it builds a curl command to send the file
-  asynchronously via Telegram's API. In dry-run mode, the command is printed using shell::on_evict.
+  asynchronously via Telegram's API. In dry-run mode, the command is printed using shell::logger::cmd_copy.
 
 Example:
   shell::send_telegram_attachment 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 \"Report\" file1.pdf file2.pdf
@@ -2285,7 +2285,7 @@ Usage:
   shell::add_profile [-n] [-h] <profile_name>
 
 Parameters:
-  - -n             : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+  - -n             : Optional dry-run flag. If provided, commands are printed using shell::logger::cmd_copy instead of executed.
   - -h             : Optional. Displays this help message.
   - <profile_name> : The name of the profile to create.
 
@@ -2306,7 +2306,7 @@ Usage:
   shell::read_profile [-n] [-h] <profile_name>
 
 Parameters:
-  - -n             : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - -n             : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
   - -h             : Optional. Displays this help message.
   - <profile_name> : The name of the profile to read.
 
@@ -2327,7 +2327,7 @@ Usage:
   shell::update_profile [-n] [-h] <profile_name>
 
 Parameters:
-  - -n             : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - -n             : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
   - -h             : Optional. Displays this help message.
   - <profile_name> : The name of the profile to update.
 
@@ -2348,7 +2348,7 @@ Usage:
   shell::remove_profile [-n] [-h] <profile_name>
 
 Parameters:
-  - -n             : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - -n             : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
   - -h             : Optional. Displays this help message.
   - <profile_name> : The name of the profile to remove.
 
@@ -2388,7 +2388,7 @@ Usage:
   shell::rename_profile [-n] [-h] <old_name> <new_name>
 
 Parameters:
-  - -n             : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - -n             : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
   - -h             : Optional. Displays this help message.
   - <old_name>     : The current name of the profile.
   - <new_name>     : The new name for the profile.
@@ -2411,7 +2411,7 @@ Usage:
   shell::add_profile_conf [-n] [-h] <profile_name> <key> <value>
 
 Parameters:
-  - -n             : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - -n             : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
   - -h             : Optional. Displays this help message.
   - <profile_name> : The name of the profile.
   - <key>          : The configuration key.
@@ -2436,7 +2436,7 @@ Usage:
   shell::get_profile_conf [-n] [-h] <profile_name>
 
 Parameters:
-  - -n (optional)   : Dry-run mode. Instead of executing commands, prints them using shell::on_evict.
+  - -n (optional)   : Dry-run mode. Instead of executing commands, prints them using shell::logger::cmd_copy.
   - -h              : Optional. Displays this help message.
   - <profile_name>  : The name of the configuration profile.
 
@@ -2459,7 +2459,7 @@ Usage:
   shell::get_profile_conf_value [-n] [-h] <profile_name> <key>
 
 Parameters:
-  - -n (optional)   : Dry-run mode. Instead of executing commands, prints them using shell::on_evict.
+  - -n (optional)   : Dry-run mode. Instead of executing commands, prints them using shell::logger::cmd_copy.
   - -h              : Optional. Displays this help message.
   - <profile_name>  : The name of the configuration profile.
   - <key>           : The configuration key whose value will be retrieved.
@@ -2483,7 +2483,7 @@ Usage:
   shell::remove_profile_conf [-n] [-h] <profile_name>
 
 Parameters:
-  - -n (optional)   : Dry-run mode. Instead of executing commands, prints them using shell::on_evict.
+  - -n (optional)   : Dry-run mode. Instead of executing commands, prints them using shell::logger::cmd_copy.
   - -h              : Optional. Displays this help message.
   - <profile_name>  : The name of the configuration profile.
 
@@ -2491,7 +2491,7 @@ Description:
   This function locates the profile directory and its configuration file, verifies their existence,
   and then uses fzf to let the user select a configuration key to remove.
   It builds an OS-specific sed command to delete the line containing the selected key.
-  In dry-run mode, the command is printed using shell::on_evict; otherwise, it is executed asynchronously
+  In dry-run mode, the command is printed using shell::logger::cmd_copy; otherwise, it is executed asynchronously
   using shell::async with shell::run_cmd_eval.
 
 Example:
@@ -2507,7 +2507,7 @@ Usage:
   shell::update_profile_conf [-n] [-h] <profile_name>
 
 Parameters:
-  - -n              : Optional dry-run flag. If provided, the update command is printed using shell::on_evict without executing.
+  - -n              : Optional dry-run flag. If provided, the update command is printed using shell::logger::cmd_copy without executing.
   - -h              : Optional. Displays this help message.
   - <profile_name>  : The name of the profile to update.
 
@@ -2550,7 +2550,7 @@ Usage:
   shell::rename_profile_conf_key [-n] [-h] <profile_name>
 
 Parameters:
-  - -n            : Optional dry-run flag. If provided, prints the sed command using shell::on_evict without executing.
+  - -n            : Optional dry-run flag. If provided, prints the sed command using shell::logger::cmd_copy without executing.
   - -h            : Optional. Displays this help message.
   - <profile_name>: The name of the profile whose key should be renamed.
 
@@ -2559,7 +2559,7 @@ Description:
   It then uses fzf to allow the user to select the existing key to rename.
   After prompting for a new key name and verifying that it does not already exist,
   the function constructs an OS-specific sed command to replace the old key with the new one.
-  In dry-run mode, the command is printed via shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
+  In dry-run mode, the command is printed via shell::logger::cmd_copy; otherwise, it is executed using shell::run_cmd_eval.
 
 Example:
   shell::rename_profile_conf_key my_profile
@@ -2939,7 +2939,7 @@ Usage:
   shell::fzf_remove_ini_key [-n] <file> <section>
 
 Parameters:
-  - -n        : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+  - -n        : Optional dry-run flag. If provided, commands are printed using shell::logger::cmd_copy instead of executed.
   - <file>    : The path to the INI file.
   - <section> : The section within the INI file from which to remove a key.
 
@@ -2963,7 +2963,7 @@ Usage:
   shell::remove_ini_key [-n] <file> <section> <key>
 
 Parameters:
-  - -n        : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+  - -n        : Optional dry-run flag. If provided, commands are printed using shell::logger::cmd_copy instead of executed.
   - <file>    : The path to the INI file.
   - <section> : The section within the INI file from which to remove the key.
   - <key>     : The key to be removed from the specified section.
@@ -3491,7 +3491,7 @@ Usage:
 shell::add_key_conf_comment [-n] <key> <value> [comment]
 
 Parameters:
-  - -n        : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - -n        : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
   - <key>     : The configuration key.
   - <value>   : The configuration value to be encoded and saved.
   - [comment] : Optional comment to be added above the key-value pair.
@@ -3517,7 +3517,7 @@ Parameters:
   - <key>     : The key to mark as protected.
 
 Parameters:
-  - -n    : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - -n    : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
   - <key> : The key to mark as protected.
 "
 
@@ -3545,7 +3545,7 @@ Usage:
 shell::fzf_remove_protected_key_conf [-n] [-h]
 
 Parameters:
-  - -n : Optional dry-run flag. If provided, the removal command is printed using shell::on_evict instead of executed.
+  - -n : Optional dry-run flag. If provided, the removal command is printed using shell::logger::cmd_copy instead of executed.
   - -h : Optional. Displays this help message.
 
 Description:
@@ -3561,7 +3561,7 @@ Usage:
 shell::sync_protected_key_conf [-n] [-h]
 
 Parameters:
-  - -n : Optional dry-run flag. If provided, the updated protected.conf is printed using shell::on_evict instead of being applied.
+  - -n : Optional dry-run flag. If provided, the updated protected.conf is printed using shell::logger::cmd_copy instead of being applied.
   - -h : Optional. Displays this help message.
 
 Description:
@@ -3578,7 +3578,7 @@ Usage:
 shell::set_permissions [-n] <target> [owner=...] [group=...] [others=...]
 
 Parameters:
-  - -n          : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+  - -n          : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
   - <target>    : The file or directory to set permissions on.
   - [owner=...] : Optional. Set permissions for the owner (e.g., owner=read,write).
   - [group=...] : Optional. Set permissions for the group (e.g., group=read,execute).
@@ -3601,7 +3601,7 @@ Usage:
 shell::fzf_set_permissions [-n] [-h] <target>
 
 Parameters:
-  - -n        : Optional dry-run flag. If provided, the chmod command is printed using shell::on_evict instead of executed.
+  - -n        : Optional dry-run flag. If provided, the chmod command is printed using shell::logger::cmd_copy instead of executed.
   - -h        : Optional. Displays this help message.
   - <target>  : The file or directory to modify permissions for.
 
@@ -3619,7 +3619,7 @@ Usage:
 shell::fzf_view_ssh_key [-n] [-h]
 
 Parameters:
-  - -n : Optional dry-run flag. If provided, the preview command is printed using shell::on_evict instead of executed.
+  - -n : Optional dry-run flag. If provided, the preview command is printed using shell::logger::cmd_copy instead of executed.
   - -h : Optional. Displays this help message.
 
 Description:
@@ -3637,7 +3637,7 @@ Usage:
 shell::fzf_remove_ssh_keys [-n] [-h]
 
 Parameters:
-  - -n : Optional dry-run flag. If provided, the removal command is printed using shell::on_evict instead of executed.
+  - -n : Optional dry-run flag. If provided, the removal command is printed using shell::logger::cmd_copy instead of executed.
   - -h : Optional. Displays this help message.
 
 Description:
@@ -3732,7 +3732,7 @@ Usage:
 shell::add_workspace [-n] [-h] <workspace_name>
 
 Parameters:
-  - -n                : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+  - -n                : Optional dry-run flag. If provided, commands are printed using shell::logger::cmd_copy instead of executed.
   - -h                : Optional. Displays this help message.
   - <workspace_name>  : The name of the workspace to create.
 
@@ -3750,7 +3750,7 @@ Usage:
 shell::remove_workspace [-n] [-h] <workspace_name>
 
 Parameters:
-  - -n               : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+  - -n               : Optional dry-run flag. If provided, commands are printed using shell::logger::cmd_copy instead of executed.
   - -h               : Optional. Displays this help message.
   - <workspace_name> : The name of the workspace to remove.
 
@@ -3799,7 +3799,7 @@ Usage:
 shell::fzf_remove_workspace [-n] [-h]
 
 Parameters:
-  - -n : Optional dry-run flag. If provided, the removal command is printed using shell::on_evict instead of executed.
+  - -n : Optional dry-run flag. If provided, the removal command is printed using shell::logger::cmd_copy instead of executed.
   - -h : Optional. Displays this help message.
 
 Description:
@@ -3815,7 +3815,7 @@ Usage:
 shell::rename_workspace [-n] [-h] <old_name> <new_name>
 
 Parameters:
-  - -n          : Optional dry-run flag. If provided, the rename command is printed using shell::on_evict instead of executed.
+  - -n          : Optional dry-run flag. If provided, the rename command is printed using shell::logger::cmd_copy instead of executed.
   - -h          : Optional. Displays this help message.
   - <old_name>  : The current name of the workspace.
   - <new_name>  : The new name for the workspace.
@@ -3834,7 +3834,7 @@ Usage:
 shell::fzf_rename_workspace [-n] [-h]
 
 Parameters:
-  - -n : Optional dry-run flag. If provided, the rename command is printed using shell::on_evict instead of executed.
+  - -n : Optional dry-run flag. If provided, the rename command is printed using shell::logger::cmd_copy instead of executed.
   - -h : Optional. Displays this help message.
 
 Description:
@@ -3868,7 +3868,7 @@ Usage:
 shell::clone_workspace [-n] [-h] <source_workspace> <destination_workspace>
 
 Parameters:
-  - -n                      : Optional dry-run flag. If provided, the clone command is printed using shell::on_evict instead of executed.
+  - -n                      : Optional dry-run flag. If provided, the clone command is printed using shell::logger::cmd_copy instead of executed.
   - -h                      : Optional. Displays this help message.
   - <source_workspace>      : The name of the existing workspace to clone.
   - <destination_workspace> : The name of the new workspace to create.
@@ -3887,7 +3887,7 @@ Usage:
 shell::fzf_clone_workspace [-n] [-h]
 
 Parameters:
-  - -n : Optional dry-run flag. If provided, the clone command is printed using shell::on_evict instead of executed.
+  - -n : Optional dry-run flag. If provided, the clone command is printed using shell::logger::cmd_copy instead of executed.
   - -h : Optional. Displays this help message.
 
 Description:
@@ -3945,7 +3945,7 @@ Usage:
 shell::add_workspace_ssh_conf [-n] [-h] <workspace_name> <ssh_conf_name>
 
 Parameters:
-  - -n                : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+  - -n                : Optional dry-run flag. If provided, commands are printed using shell::logger::cmd_copy instead of executed.
   - -h                : Optional. Displays this help message.
   - <workspace_name>  : The name of the workspace.
   - <ssh_conf_name>   : The name of the SSH configuration file to add (e.g., kafka.conf).
@@ -3967,7 +3967,7 @@ Usage:
 shell::fzf_add_workspace_ssh_conf [-n] [-h]
 
 Parameters:
-  - -n : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+  - -n : Optional dry-run flag. If provided, commands are printed using shell::logger::cmd_copy instead of executed.
   - -h : Optional. Displays this help message.
 
 Description:
@@ -4142,7 +4142,7 @@ Usage:
 shell::open_workspace_ssh_tunnel [-n] [-h] <workspace_name> <conf_name> <section>
 
 Parameters:
-- -n               : Optional dry-run flag. If provided, the command is printed using shell::on_evict.
+- -n               : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy.
 - -h               : Optional. Displays this help message.
 - <workspace_name> : The name of the workspace.
 - <conf_name>      : The name of the SSH configuration file (e.g., kafka.conf).
@@ -4165,7 +4165,7 @@ Usage:
 shell::fzf_open_workspace_ssh_tunnel [-n] [-h]
 
 Parameters:
-  - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict.
+  - -n : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy.
   - -h : Optional. Displays this help message.
 
 Description:
@@ -4230,7 +4230,7 @@ Usage:
 shell::open_ssh_tunnel_builder [-n] [-h]
 
 Parameters:
-  - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict.
+  - -n : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy.
   - -h : Optional. Displays this help message.
 
 Description:
@@ -4250,7 +4250,7 @@ Usage:
 shell::rename_ssh_key [-n] [-h] <old_name> <new_name>
 
 Parameters:
-  - -n          : Optional dry-run flag. If provided, the rename command is printed using shell::on_evict instead of executed.
+  - -n          : Optional dry-run flag. If provided, the rename command is printed using shell::logger::cmd_copy instead of executed.
   - -h          : Optional. Displays this help message.
   - <old_name>  : The current name of the SSH key file.
   - <new_name>  : The new name for the SSH key file.
@@ -4272,7 +4272,7 @@ Usage:
 shell::fzf_rename_ssh_key [-n] [-h]
 
 Parameters:
-  - -n : Optional dry-run flag. If provided, the rename command is printed using shell::on_evict.
+  - -n : Optional dry-run flag. If provided, the rename command is printed using shell::logger::cmd_copy.
   - -h : Optional. Displays this help message.
 
 Description:
@@ -4290,7 +4290,7 @@ Usage:
 shell::tune_ssh_tunnel [-n] [-h] <private_key> <user> <host> <port>
 
 Parameters:
-  - -n            : Optional dry-run flag. If provided, the SSH command is printed using shell::on_evict instead of executed.
+  - -n            : Optional dry-run flag. If provided, the SSH command is printed using shell::logger::cmd_copy instead of executed.
   - -h            : Optional. Displays this help message.
   - <private_key> : Path to the SSH private key file.
   - <user>        : SSH username.
@@ -4314,7 +4314,7 @@ Usage:
 shell::tune_ssh_tunnel_builder [-n] [-h]
 
 Parameters:
-  - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict.
+  - -n : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy.
   - -h : Optional. Displays this help message.
 
 Description:
@@ -4334,7 +4334,7 @@ Usage:
 shell::tune_workspace_ssh_tunnel [-n] [-h] <workspace_name> <conf_name> <section>
 
 Parameters:
-  - -n               : Optional dry-run flag. If provided, the command is printed using shell::on_evict.
+  - -n               : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy.
   - -h               : Optional. Displays this help message.
   - <workspace_name> : The name of the workspace.
   - <conf_name>      : The name of the SSH configuration file (e.g., kafka.conf).
@@ -4357,7 +4357,7 @@ Usage:
 shell::fzf_tune_workspace_ssh_tunnel [-n]
 
 Parameters:
-- -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict.
+- -n : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy.
 
 Description:
 Uses fzf to select a workspace and a .conf file, then selects a section (dev or uat),
@@ -4422,7 +4422,7 @@ Usage:
 shell::eval_gemini_en_vi [-n] [-d] [-h] <sentence_english>
 
 Parameters:
-  - -n : Optional dry-run flag. If provided, the curl command is printed using shell::on_evict instead of executed.
+  - -n : Optional dry-run flag. If provided, the curl command is printed using shell::logger::cmd_copy instead of executed.
   - -d : Optional debugging flag. If provided, debug information is printed.
   - -h : Optional help flag. If provided, displays usage information.
 
@@ -4440,7 +4440,7 @@ Usage:
 shell::make_gemini_request [-n] [-d] [-h] <request_payload>
 
 Parameters:
-  - -n : Optional dry-run flag. If provided, the curl command is printed using shell::on_evict instead of executed.
+  - -n : Optional dry-run flag. If provided, the curl command is printed using shell::logger::cmd_copy instead of executed.
   - -d : Optional debugging flag. If provided, debug information is printed.
   - -h : Optional help flag. If provided, displays usage information.
   - <request_payload> : The JSON payload to send to the Gemini API.
@@ -4474,7 +4474,7 @@ Usage:
   shell::encode_base64_file [-n] [-h] <file_path>
 
 Parameters:
-  - -n         : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+  - -n         : Optional dry-run flag. If provided, commands are printed using shell::logger::cmd_copy instead of executed.
   - -h         : Optional. Displays this help message.
   - <file_path>: The path to the file to encode.
 

@@ -38,7 +38,7 @@ shell::get_profile_path() {
 #   shell::add_profile [-n] <profile_name>
 #
 # Parameters:
-#   - -n             : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+#   - -n             : Optional dry-run flag. If provided, commands are printed using shell::logger::cmd_copy instead of executed.
 #   - <profile_name> : The name of the profile to create.
 #
 # Description:
@@ -74,7 +74,7 @@ shell::add_profile() {
 
 	local cmd="sudo mkdir -p \"$profile_dir\" && sudo touch \"$profile_dir/profile.conf\""
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$cmd"
+		shell::logger::cmd_copy "$cmd"
 	else
 		shell::ensure_workspace
 		shell::run_cmd_eval "$cmd"
@@ -89,7 +89,7 @@ shell::add_profile() {
 #   shell::read_profile [-n] <profile_name>
 #
 # Parameters:
-#   - -n             : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+#   - -n             : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
 #   - <profile_name> : The name of the profile to read.
 #
 # Description:
@@ -141,7 +141,7 @@ shell::read_profile() {
 #   shell::update_profile [-n] <profile_name>
 #
 # Parameters:
-#   - -n             : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+#   - -n             : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
 #   - <profile_name> : The name of the profile to update.
 #
 # Description:
@@ -182,7 +182,7 @@ shell::update_profile() {
 	local editor="${EDITOR:-vi}"
 	local cmd="sudo $editor \"$profile_conf\""
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$cmd"
+		shell::logger::cmd_copy "$cmd"
 	else
 		shell::run_cmd_eval "$cmd"
 	fi
@@ -195,7 +195,7 @@ shell::update_profile() {
 #   shell::remove_profile [-n] <profile_name>
 #
 # Parameters:
-#   - -n             : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+#   - -n             : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
 #   - <profile_name> : The name of the profile to remove.
 #
 # Description:
@@ -229,7 +229,7 @@ shell::remove_profile() {
 		return 1
 	fi
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "sudo rm -rf \"$profile_dir\""
+		shell::logger::cmd_copy "sudo rm -rf \"$profile_dir\""
 	else
 		shell::colored_echo "Are you sure you want to remove profile '$profile_name'? [y/N]" 33
 		read -r confirm
@@ -290,7 +290,7 @@ shell::get_profile() {
 #   shell::rename_profile [-n] <old_name> <new_name>
 #
 # Parameters:
-#   - -n             : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+#   - -n             : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
 #   - <old_name>     : The current name of the profile.
 #   - <new_name>     : The new name for the profile.
 #
@@ -332,7 +332,7 @@ shell::rename_profile() {
 	fi
 	local cmd="sudo mv \"$old_dir\" \"$new_dir\""
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$cmd"
+		shell::logger::cmd_copy "$cmd"
 	else
 		shell::run_cmd_eval "$cmd"
 		shell::colored_echo "INFO: Renamed profile '$old_name' to '$new_name'." 46
@@ -347,7 +347,7 @@ shell::rename_profile() {
 #   shell::add_profile_conf [-n] <profile_name> <key> <value>
 #
 # Parameters:
-#   -n             : Optional dry-run flag. If provided, the command is printed using shell::on_evict instead of executed.
+#   -n             : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
 #   <profile_name> : The name of the profile.
 #   <key>          : The configuration key.
 #   <value>        : The configuration value to be encoded and saved.
@@ -394,7 +394,7 @@ shell::add_profile_conf() {
 	# Ensure the profile directory exists
 	if [ ! -d "$profile_dir" ]; then
 		if [ "$dry_run" = "true" ]; then
-			shell::on_evict "sudo mkdir -p \"$profile_dir\""
+			shell::logger::cmd_copy "sudo mkdir -p \"$profile_dir\""
 		else
 			shell::run_cmd_eval sudo mkdir -p "$profile_dir"
 		fi
@@ -415,7 +415,7 @@ shell::add_profile_conf() {
 
 	# Execute or print the command based on dry-run mode
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$cmd"
+		shell::logger::cmd_copy "$cmd"
 	else
 		# Check if the key already exists in the profile.conf
 		if grep -q "^${key}=" "$profile_conf"; then
@@ -435,7 +435,7 @@ shell::add_profile_conf() {
 #   shell::get_profile_conf [-n] <profile_name>
 #
 # Parameters:
-#   - -n (optional): Dry-run mode. Instead of executing commands, prints them using shell::on_evict.
+#   - -n (optional): Dry-run mode. Instead of executing commands, prints them using shell::logger::cmd_copy.
 #   - <profile_name>: The name of the configuration profile.
 #
 # Description:
@@ -504,7 +504,7 @@ shell::get_profile_conf() {
 #   shell::get_profile_conf_value [-n] <profile_name> <key>
 #
 # Parameters:
-#   - -n (optional): Dry-run mode. Instead of executing commands, prints them using shell::on_evict.
+#   - -n (optional): Dry-run mode. Instead of executing commands, prints them using shell::logger::cmd_copy.
 #   - <profile_name>: The name of the configuration profile.
 #   - <key>: The configuration key whose value will be retrieved.
 #
@@ -570,14 +570,14 @@ shell::get_profile_conf_value() {
 #   shell::remove_profile_conf [-n] <profile_name>
 #
 # Parameters:
-#   - -n (optional): Dry-run mode. Instead of executing commands, prints them using shell::on_evict.
+#   - -n (optional): Dry-run mode. Instead of executing commands, prints them using shell::logger::cmd_copy.
 #   - <profile_name>: The name of the configuration profile.
 #
 # Description:
 #   This function locates the profile directory and its configuration file, verifies their existence,
 #   and then uses fzf to let the user select a configuration key to remove.
 #   It builds an OS-specific sed command to delete the line containing the selected key.
-#   In dry-run mode, the command is printed using shell::on_evict; otherwise, it is executed asynchronously
+#   In dry-run mode, the command is printed using shell::logger::cmd_copy; otherwise, it is executed asynchronously
 #   using shell::async with shell::run_cmd_eval.
 #
 # Example:
@@ -628,7 +628,7 @@ shell::remove_profile_conf() {
 		sed_cmd="sudo sed -i \"/^${selected_key}=/d\" \"$profile_conf\""
 	fi
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$sed_cmd"
+		shell::logger::cmd_copy "$sed_cmd"
 	else
 		shell::run_cmd_eval "$sed_cmd"
 		shell::colored_echo "INFO: Removed configuration for key: $selected_key from profile '$profile_name'" 46
@@ -642,7 +642,7 @@ shell::remove_profile_conf() {
 #   shell::update_profile_conf [-n] <profile_name>
 #
 # Parameters:
-#   - -n              : Optional dry-run flag. If provided, the update command is printed using shell::on_evict without executing.
+#   - -n              : Optional dry-run flag. If provided, the update command is printed using shell::logger::cmd_copy without executing.
 #   - <profile_name>  : The name of the profile to update.
 #
 # Description:
@@ -705,7 +705,7 @@ shell::update_profile_conf() {
 		sed_cmd="sudo sed -i \"s/^${selected_key}=.*/${selected_key}=${encoded_value}/\" \"$profile_conf\""
 	fi
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$sed_cmd"
+		shell::logger::cmd_copy "$sed_cmd"
 	else
 		shell::run_cmd_eval "$sed_cmd"
 		shell::colored_echo "INFO: Updated configuration for key: $selected_key in profile '$profile_name'" 46
@@ -771,7 +771,7 @@ shell::exist_profile_conf_key() {
 #   shell::rename_profile_conf_key [-n] <profile_name>
 #
 # Parameters:
-#   - -n            : Optional dry-run flag. If provided, prints the sed command using shell::on_evict without executing.
+#   - -n            : Optional dry-run flag. If provided, prints the sed command using shell::logger::cmd_copy without executing.
 #   - <profile_name>: The name of the profile whose key should be renamed.
 #
 # Description:
@@ -779,7 +779,7 @@ shell::exist_profile_conf_key() {
 #   It then uses fzf to allow the user to select the existing key to rename.
 #   After prompting for a new key name and verifying that it does not already exist,
 #   the function constructs an OS-specific sed command to replace the old key with the new one.
-#   In dry-run mode, the command is printed via shell::on_evict; otherwise, it is executed using shell::run_cmd_eval.
+#   In dry-run mode, the command is printed via shell::logger::cmd_copy; otherwise, it is executed using shell::run_cmd_eval.
 #
 # Example:
 #   shell::rename_profile_conf_key my_profile
@@ -841,7 +841,7 @@ shell::rename_profile_conf_key() {
 		sed_cmd="sudo sed -i \"s/^${old_key}=/${new_key}=/\" \"$profile_conf\""
 	fi
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$sed_cmd"
+		shell::logger::cmd_copy "$sed_cmd"
 	else
 		shell::run_cmd_eval "$sed_cmd"
 		shell::colored_echo "INFO: Renamed key '$old_key' to '$new_key' in profile '$profile_name'" 46
@@ -905,7 +905,7 @@ shell::clone_profile_conf() {
 	fi
 	local cmd="sudo mkdir -p \"$destination_dir\" && sudo cp \"$source_conf\" \"$destination_conf\""
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$cmd"
+		shell::logger::cmd_copy "$cmd"
 	else
 		shell::run_cmd_eval "$cmd"
 		shell::colored_echo "INFO: Cloned profile.conf from '$source_profile' to '$destination_profile'" 46

@@ -136,7 +136,7 @@ shell::dump_gemini_conf_json() {
 # shell::make_gemini_request [-n] [-d] [-h] <request_payload>
 #
 # Parameters:
-# - -n : Optional dry-run flag. If provided, the curl command is printed using shell::on_evict instead of executed.
+# - -n : Optional dry-run flag. If provided, the curl command is printed using shell::logger::cmd_copy instead of executed.
 # - -d : Optional debugging flag. If provided, debug information is printed.
 # - -h : Optional help flag. If provided, displays usage information.
 # - <request_payload> : The JSON payload to send to the Gemini API.
@@ -216,7 +216,7 @@ shell::make_gemini_request() {
 		local sanitized_payload
 		sanitized_payload=$(echo "$payload" | tr -d '\n\r\t' | sed 's/  */ /g')
 		local curl_cmd="curl -s -X POST \"$url\" -H \"Content-Type: application/json\" -d '$sanitized_payload'"
-		shell::on_evict "$curl_cmd"
+		shell::logger::cmd_copy "$curl_cmd"
 		return 0
 	fi
 
@@ -324,7 +324,7 @@ shell::make_gemini_request() {
 # shell::eval_gemini_en_vi [-n] [-d] [-h] <sentence_english>
 #
 # Parameters:
-# - -n : Optional dry-run flag. If provided, the curl command is printed using shell::on_evict instead of executed.
+# - -n : Optional dry-run flag. If provided, the curl command is printed using shell::logger::cmd_copy instead of executed.
 # - -d : Optional debugging flag. If provided, debug information is printed.
 # - -h : Optional help flag. If provided, displays usage information.
 #
@@ -502,7 +502,7 @@ shell::eval_gemini_en_vi() {
 # shell::eval_gemini_vi_en [-n] [-d] [-h] <sentence_vietnamese>
 #
 # Parameters:
-# - -n : Optional dry-run flag. If provided, the curl command is printed using shell::on_evict instead of executed.
+# - -n : Optional dry-run flag. If provided, the curl command is printed using shell::logger::cmd_copy instead of executed.
 # - -d : Optional debugging flag. If provided, debug information is printed.
 # - -h : Optional help flag. If provided, displays usage information.
 #

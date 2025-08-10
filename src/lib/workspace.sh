@@ -198,7 +198,7 @@ shell::populate_ssh_conf() {
 # shell::add_workspace [-n] <workspace_name>
 #
 # Parameters:
-# - -n : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+# - -n : Optional dry-run flag. If provided, commands are printed using shell::logger::cmd_copy instead of executed.
 # - <workspace_name> : The name of the workspace to create.
 #
 # Description:
@@ -277,9 +277,9 @@ shell::add_workspace() {
 
 	# If dry-run mode is enabled, we print the command instead of executing it
 	# This allows us to see what would be done without making any changes
-	# If dry_run is true, we call shell::on_evict with the command
+	# If dry_run is true, we call shell::logger::cmd_copy with the command
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$cmd"
+		shell::logger::cmd_copy "$cmd"
 	else
 		shell::create_file_if_not_exists "$profile"
 		shell::create_directory_if_not_exists "$ssh_dir"
@@ -305,7 +305,7 @@ shell::add_workspace() {
 # shell::add_workspace_ssh_conf [-n] <workspace_name> <ssh_conf_name>
 #
 # Parameters:
-# - -n : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+# - -n : Optional dry-run flag. If provided, commands are printed using shell::logger::cmd_copy instead of executed.
 # - <workspace_name> : The name of the workspace.
 # - <ssh_conf_name> : The name of the SSH configuration file to add (e.g., kafka.conf).
 #
@@ -386,7 +386,7 @@ shell::add_workspace_ssh_conf() {
 	# This allows us to see what would be done without actually creating the file
 	# If dry_run is false, we create the file and populate it with default values
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "touch \"$file\" && shell::populate_ssh_conf \"$file\" \"$conf\""
+		shell::logger::cmd_copy "touch \"$file\" && shell::populate_ssh_conf \"$file\" \"$conf\""
 	else
 		shell::create_file_if_not_exists "$file"
 		shell::populate_ssh_conf "$file" "$conf"
@@ -401,7 +401,7 @@ shell::add_workspace_ssh_conf() {
 # shell::fzf_add_workspace_ssh_conf [-n]
 #
 # Parameters:
-# - -n : Optional dry-run flag. If provided, commands are printed using shell::on_evict instead of executed.
+# - -n : Optional dry-run flag. If provided, commands are printed using shell::logger::cmd_copy instead of executed.
 #
 # Description:
 # This function uses fzf to select a workspace and a missing SSH configuration file.
@@ -554,7 +554,7 @@ shell::remove_workspace() {
 	# If dry-run mode is enabled, we print the command to delete the workspace directory
 	# This allows us to see what would be done without actually deleting anything
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "sudo rm -rf \"$dir\""
+		shell::logger::cmd_copy "sudo rm -rf \"$dir\""
 		return 0
 	fi
 	local asked
@@ -714,7 +714,7 @@ shell::fzf_edit_workspace() {
 # shell::fzf_remove_workspace [-n]
 #
 # Parameters:
-# - -n : Optional dry-run flag. If provided, the removal command is printed using shell::on_evict instead of executed.
+# - -n : Optional dry-run flag. If provided, the removal command is printed using shell::logger::cmd_copy instead of executed.
 #
 # Description:
 # This function lists all workspace directories under $SHELL_CONF_WORKING_WORKSPACE,
@@ -775,7 +775,7 @@ shell::fzf_remove_workspace() {
 # shell::rename_workspace [-n] <old_name> <new_name>
 #
 # Parameters:
-# - -n : Optional dry-run flag. If provided, the rename command is printed using shell::on_evict instead of executed.
+# - -n : Optional dry-run flag. If provided, the rename command is printed using shell::logger::cmd_copy instead of executed.
 # - <old_name> : The current name of the workspace.
 # - <new_name> : The new name for the workspace.
 #
@@ -846,7 +846,7 @@ shell::rename_workspace() {
 	# If dry-run mode is enabled, we print the command instead of executing it
 	local cmd="sudo mv \"$old_dir\" \"$new_dir\""
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$cmd"
+		shell::logger::cmd_copy "$cmd"
 	else
 		shell::run_cmd_eval "$cmd"
 		shell::colored_echo "INFO: Workspace renamed from '$old_name' to '$new_name'" 46
@@ -860,7 +860,7 @@ shell::rename_workspace() {
 # shell::fzf_rename_workspace [-n]
 #
 # Parameters:
-# - -n : Optional dry-run flag. If provided, the rename command is printed using shell::on_evict instead of executed.
+# - -n : Optional dry-run flag. If provided, the rename command is printed using shell::logger::cmd_copy instead of executed.
 #
 # Description:
 # This function lists all workspace directories under $SHELL_CONF_WORKING_WORKSPACE,
@@ -1076,7 +1076,7 @@ shell::fzf_manage_workspace() {
 # shell::clone_workspace [-n] <source_workspace> <destination_workspace>
 #
 # Parameters:
-# - -n : Optional dry-run flag. If provided, the clone command is printed using shell::on_evict instead of executed.
+# - -n : Optional dry-run flag. If provided, the clone command is printed using shell::logger::cmd_copy instead of executed.
 # - <source_workspace> : The name of the existing workspace to clone.
 # - <destination_workspace> : The name of the new workspace to create.
 #
@@ -1150,7 +1150,7 @@ shell::clone_workspace() {
 	# If dry-run mode is enabled, we print the command instead of executing it
 	# This allows us to see what would be done without making any changes
 	if [ "$dry_run" = "true" ]; then
-		shell::on_evict "$cmd"
+		shell::logger::cmd_copy "$cmd"
 	else
 		shell::run_cmd_eval "$cmd"
 		shell::unlock_permissions "$destination_dir"
@@ -1165,7 +1165,7 @@ shell::clone_workspace() {
 # shell::fzf_clone_workspace [-n]
 #
 # Parameters:
-# - -n : Optional dry-run flag. If provided, the clone command is printed using shell::on_evict instead of executed.
+# - -n : Optional dry-run flag. If provided, the clone command is printed using shell::logger::cmd_copy instead of executed.
 #
 # Description:
 # This function lists all workspace directories under $SHELL_CONF_WORKING_WORKSPACE,
@@ -1453,7 +1453,7 @@ shell::dump_workspace_json() {
 # shell::open_workspace_ssh_tunnel [-n] <workspace_name> <conf_name> <section>
 #
 # Parameters:
-# - -n               : Optional dry-run flag. If provided, the command is printed using shell::on_evict.
+# - -n               : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy.
 # - <workspace_name> : The name of the workspace.
 # - <conf_name>      : The name of the SSH configuration file (e.g., kafka.conf).
 # - <section>        : The section to use (e.g., dev, uat).
@@ -1556,7 +1556,7 @@ shell::open_workspace_ssh_tunnel() {
 # shell::fzf_open_workspace_ssh_tunnel [-n]
 #
 # Parameters:
-# - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict.
+# - -n : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy.
 #
 # Description:
 # Uses fzf to select a workspace and a .conf file, then selects a section (dev or uat),
@@ -1641,7 +1641,7 @@ shell::fzf_open_workspace_ssh_tunnel() {
 # shell::tune_workspace_ssh_tunnel [-n] <workspace_name> <conf_name> <section>
 #
 # Parameters:
-# - -n               : Optional dry-run flag. If provided, the command is printed using shell::on_evict.
+# - -n               : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy.
 # - <workspace_name> : The name of the workspace.
 # - <conf_name>      : The name of the SSH configuration file (e.g., kafka.conf).
 # - <section>        : The section to use (e.g., dev, uat).
@@ -1734,7 +1734,7 @@ shell::tune_workspace_ssh_tunnel() {
 # shell::fzf_tune_workspace_ssh_tunnel [-n]
 #
 # Parameters:
-# - -n : Optional dry-run flag. If provided, the command is printed using shell::on_evict.
+# - -n : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy.
 #
 # Description:
 # Uses fzf to select a workspace and a .conf file, then selects a section (dev or uat),
