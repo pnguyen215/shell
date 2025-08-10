@@ -368,3 +368,27 @@ shell::logger::indent() {
 	
 	shell::colored_echo "${indent}${message}" "$color"
 }
+
+# shell::logger::step function
+# Logs a step with a step number and description.
+#
+# Usage:
+#   shell::logger::step <step_number> <description>
+#
+# Parameters:
+#   - <step_number> : The step number to log.
+#   - <description> : The description of the step.
+#
+# Description:
+#   This function logs a step with a step number and description. The step
+#   number is displayed in a specific color (33) to stand out.
+shell::logger::step() {
+	local step_number="$1"
+	local description="$2"
+	
+	if ! shell::logger::can "INFO"; then
+		return 0
+	fi
+	
+	shell::colored_echo "STEP $step_number: $description" 33
+}
