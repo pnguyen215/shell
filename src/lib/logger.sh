@@ -438,3 +438,27 @@ shell::logger::cmd() {
 	
 	shell::colored_echo "  $ $command" 245
 }
+
+# shell::logger::section function
+# Logs a section title with a separator.
+#
+# Usage:
+#   shell::logger::section <title>
+#
+# Parameters:
+#   - <title> : The title of the section.
+#
+# Description:
+#   This function logs a section title with a separator. The title is displayed
+#   in a specific color (39) to stand out. The separator consists of 60 equal
+#   signs.
+shell::logger::section() {
+	local title="$1"
+	if ! shell::logger::can "INFO"; then
+		return 0
+	fi
+	local separator=$(printf '%.0s=' {1..60})
+	shell::colored_echo "$separator" 240
+	shell::colored_echo "  $title" 39
+	shell::colored_echo "$separator" 240
+}
