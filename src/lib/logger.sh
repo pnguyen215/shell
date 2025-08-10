@@ -241,3 +241,32 @@ shell::logger::usage() {
 	fi
 	shell::colored_echo "USAGE: $title" 39
 }
+
+# shell::logger::item function
+# Logs a command or option with an optional description.
+#
+# Usage:
+#   shell::logger::item <command> <description>
+#
+# Parameters:
+#   - <command> : The command or option to log.
+#   - <description> : (Optional) A description of the command or option.
+#
+# Description:
+#   This function logs a command or option with an optional description. If a
+#   description is provided, it is indented and formatted for readability.
+shell::logger::item() {
+	local command="$1"
+	local description="$2"
+	shift 2
+	if ! shell::logger::can "INFO"; then
+		return 0
+	fi
+	
+	if [[ -n "$description" ]]; then
+		shell::colored_echo "  $command" 245
+		shell::colored_echo "    $description" 250
+	else
+		shell::colored_echo "  $command" 245
+	fi
+}
