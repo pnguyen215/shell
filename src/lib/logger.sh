@@ -107,6 +107,19 @@ shell::logger::reset() {
 	SHELL_LOGGER_LEVEL="DEBUG"
 }
 
+# shell::logger::reset_options function
+# Resets the options display flag.
+#
+# Usage:
+#   shell::logger::reset_options
+#
+# Description:
+#   Call this function to reset the options display state, allowing
+#   "OPTIONS:" to be displayed again for a new section.
+shell::logger::reset_options() {
+	unset _SHELL_LOGGER_OPTIONS_SHOWN
+}
+
 # shell::logger::set_level function
 # Sets the logging level to a specified value.
 #
@@ -290,6 +303,12 @@ shell::logger::option() {
 	
 	if ! shell::logger::can "INFO"; then
 		return 0
+	fi
+
+	# Display OPTIONS label if this is the first option call
+	if [[ -z "$_SHELL_LOGGER_OPTIONS_SHOWN" ]]; then
+		shell::colored_echo "OPTIONS:" 39
+		export _SHELL_LOGGER_OPTIONS_SHOWN=1
 	fi
 	
 	if [[ -n "$description" ]]; then
