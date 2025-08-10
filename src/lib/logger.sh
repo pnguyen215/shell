@@ -519,18 +519,23 @@ shell::logger::exec() {
 # Usage:
 #   shell::logger::exec_check <command>
 #   shell::logger::exec_check <command> <success_message> <failure_message>
+#   shell::logger::exec_check <command> <success_message> <failure_message> <timeout>
 #
 # Parameters:
 #   - <command>         : The command to execute
-#   - <success_message> : Optional custom success message
-#   - <failure_message> : Optional custom failure message
+#   - <success_message> : Optional custom success message (default: "Success")
+#   - <failure_message> : Optional custom failure message (default: "Aborted")
+#   - <timeout>         : Optional timeout in seconds (default: 30)
 #
 # Return:
 #   Returns the exit code of the executed command
 #
 # Description:
 #   Executes a command and automatically logs success (green) or failure (red)
-#   based on the exit code. Preserves the original command's exit code.
+#   based on the exit code. Captures output and shows it on errors or in debug mode.
+#   Detects error patterns in output even when exit code is 0.
+#   Supports timeout to prevent hanging commands.
+#   Preserves the original command's exit code.
 #   Compatible with Linux and macOS.
 shell::logger::exec_check() {
 	local command="$1"
@@ -553,49 +558,56 @@ shell::logger::exec_check() {
 	
 	# Execute command with timeout and proper error handling
 	local exit_code
-	local temp_file="/tmp/shell_logger_$"
+	local temp_file="/tmp/shell_logger_$$_$(date +%s)"
 	
-	# Use timeout command if available, otherwise use eval directly
-	if command -v timeout >/dev/null 2>&1; then
-		# GNU/Linux timeout or macOS gtimeout
-		local timeout_cmd="timeout"
-		if [[ "$(uname)" == "Darwin" ]] && command -v gtimeout >/dev/null 2>&1; then
+	# Simplified timeout implementation compatible with Linux and macOS
+	if [[ "$timeout" -gt 0 ]]; then
+		# Use timeout command if available
+		local timeout_cmd=""
+		if command -v timeout >/dev/null 2>&1; then
+			timeout_cmd="timeout"
+		elif command -v gtimeout >/dev/null 2>&1; then
 			timeout_cmd="gtimeout"
 		fi
 		
-		# Execute with timeout and capture both stdout/stderr
-		eval "$command" > "$temp_file" 2>&1 &
-		local cmd_pid=$!
-		
-		# Wait for command completion with timeout
-		local count=0
-		while [[ $count -lt $timeout ]] && kill -0 $cmd_pid 2>/dev/null; do
-			sleep 1
-			((count++))
-		done
-		
-		if kill -0 $cmd_pid 2>/dev/null; then
-			# Command still running, kill it
-			kill -TERM $cmd_pid 2>/dev/null
-			sleep 2
-			kill -KILL $cmd_pid 2>/dev/null
-			exit_code=124  # timeout exit code
-		else
-			wait $cmd_pid 2>/dev/null
+		if [[ -n "$timeout_cmd" ]]; then
+			# Execute with timeout using timeout command
+			$timeout_cmd "$timeout" bash -c "$command" > "$temp_file" 2>&1
 			exit_code=$?
+		else
+			# Manual timeout implementation
+			eval "$command" > "$temp_file" 2>&1 &
+			local cmd_pid=$!
+			local count=0
+			
+			# Wait for command completion with timeout
+			while [[ $count -lt $timeout ]] && kill -0 $cmd_pid 2>/dev/null; do
+				sleep 1
+				((count++))
+			done
+			
+			if kill -0 $cmd_pid 2>/dev/null; then
+				# Command still running, kill it
+				kill -TERM $cmd_pid 2>/dev/null
+				wait $cmd_pid 2>/dev/null || true
+				exit_code=124  # timeout exit code
+			else
+				wait $cmd_pid 2>/dev/null
+				exit_code=$?
+			fi
 		fi
 	else
-		# Fallback: execute directly without timeout
+		# Execute directly without timeout
 		eval "$command" > "$temp_file" 2>&1
 		exit_code=$?
 	fi
 	
-	# Check for common error patterns in output
+	# Check for common error patterns in output even when exit code is 0
 	if [[ $exit_code -eq 0 ]] && [[ -f "$temp_file" ]]; then
 		local output
 		output=$(cat "$temp_file" 2>/dev/null)
 		
-		# Check for common error indicators even when exit code is 0
+		# Check for common error indicators
 		if echo "$output" | grep -qi -E "(error|failed|failure|cannot|unable|denied|refused|timeout|not found|permission denied|connection refused|no such file|command not found)"; then
 			exit_code=1
 		fi
