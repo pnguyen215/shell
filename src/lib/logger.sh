@@ -460,6 +460,29 @@ shell::logger::cmd() {
 	shell::colored_echo "  $ $command" 245
 }
 
+# shell::logger::cmd_copy function
+# Logs a command with an optional description and copies it to the clipboard.
+#
+# Usage:
+#   shell::logger::cmd_copy <command> <description>
+#
+# Parameters:
+#   - <command> : The command to log and copy.
+#   - <description> : (Optional) A description of the command.
+#
+# Description:
+#   This function logs a command with an optional description and copies it to
+#   the clipboard. If a description is provided, it is indented and formatted for
+#   readability. The command is displayed in a specific color (245) to stand out.
+shell::logger::cmd_copy() {
+	local command="$1"
+	if ! shell::logger::can "INFO"; then
+		return 0
+	fi
+	shell::colored_echo "  $ $command" 245
+	shell::clip_value "$command"
+}
+
 # shell::logger::cmd_eval_run function
 # Logs a command with an optional description and executes it using eval.
 #

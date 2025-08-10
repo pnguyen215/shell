@@ -835,6 +835,34 @@ shell::clip_value() {
 	return 0
 }
 
+# shell::clipboard::copy function
+# Calls the shell::clip_value function to copy the provided value to the clipboard.
+#
+# Usage:
+#   shell::clipboard::copy <value>
+#
+# Parameters:
+#   <value> - The text string or value to copy to the clipboard.
+#
+# Description:
+#   This function first checks if a value has been provided. If not, it displays an error message.
+#   If a value is provided, it calls the shell::clip_value function to copy the value to the clipboard.
+#
+# Dependencies:
+#   - shell::clip_value: To copy the value to the clipboard.
+#
+# Example:
+#   shell::clipboard::copy "Hello, World!"
+#   shell::clipboard::copy "ls -l"
+shell::clipboard::copy() {
+	local value="$1"
+	if [[ -z "$value" ]]; then
+		shell::logger::error "No value provided to copy."
+		return 1
+	fi
+	shell::clip_value "$value"
+}
+
 # shell::get_temp_dir function
 # Returns the appropriate temporary directory based on the detected kernel.
 #
