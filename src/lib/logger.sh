@@ -292,7 +292,6 @@ shell::logger::option() {
 		return 0
 	fi
 	
-	shell::colored_echo "OPTIONS:" 39
 	if [[ -n "$description" ]]; then
 		local formatted_line
 		formatted_line=$(printf "    %-20s %s" "$option" "$description")
