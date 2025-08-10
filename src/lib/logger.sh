@@ -298,3 +298,27 @@ shell::logger::option() {
 		shell::colored_echo "    $option" 246
 	fi
 }
+
+# shell::logger::example function
+# Logs an example command with an optional description.
+#
+# Usage:
+#   shell::logger::example <example> <description>
+#
+# Parameters:
+#   - <example> : The example command to log.
+#   - <description> : (Optional) A description of the example.
+#
+# Description:
+#   This function logs an example command with an optional description. If a
+#   description is provided, it is indented and formatted for readability. The
+#   example is displayed in a specific color (42) to stand out.
+shell::logger::example() {
+	local example="$1"
+	
+	if ! shell::logger::can "INFO"; then
+		return 0
+	fi
+	
+	shell::colored_echo "EXAMPLE: $example" 42
+}
