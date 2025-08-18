@@ -958,8 +958,8 @@ shell::open_ssh_tunnel() {
 	while [ $attempt -le $retry ]; do
 		shell::colored_echo "DEBUG: Attempting SSH tunnel (try $attempt of $retry)..." 244
 		# eval "$cmd"
-		# shell::logger::exec_check "$cmd"
-		shell::logger::cmd_copy "$cmd"
+		shell::logger::exec_check "$cmd"
+		# shell::logger::cmd_copy "$cmd"
 		# sleep 1
 
 		# Check if the SSH tunnel is established by looking for the local port in listening state.
