@@ -3403,3 +3403,29 @@ shell::parse_options() {
         shift
     done
 }
+
+my_function() {
+    local args verbose dry_run force help
+
+    # Parse options and arguments
+    shell::parse_options args verbose dry_run force help -- "$@"
+
+    # Xử lý help
+    if [[ "$help" == true ]]; then
+        echo "Usage: my_function [OPTIONS] <command> [args...]"
+        echo "  -v, --verbose    Verbose mode"
+        echo "  -n, --dry-run    Dry run"
+        echo "  -f, --force      Force mode"
+        echo "  -h, --help       Show help"
+        return 0
+    fi
+
+    # Hiển thị trạng thái các flag
+    echo "Verbose: $verbose"
+    echo "Dry run: $dry_run"
+    echo "Force: $force"
+    echo "Help: $help"
+
+    # Hiển thị các argument còn lại
+    echo "Command and args: ${args[*]}"
+}
