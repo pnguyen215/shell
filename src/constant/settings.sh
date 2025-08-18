@@ -148,27 +148,6 @@ SHELL_PROTECTED_KEYS=("SHELL_SHIELD_ENCRYPTION_KEY" "SHELL_SHIELD_ENCRYPTION_IV"
 # It is used to store and manage SSH related configurations.
 SHELL_CONF_SSH_DIR_WORKING="$HOME/.ssh"
 
-# SHELL_C_AES_RED constant
-# This variable defines the ANSI escape code for red text color. It is used to highlight error messages or critical alerts in the shell.
-# if [ -z "${SHELL_C_AES_RED+x}" ]; then
-#     declare -gr SHELL_C_AES_RED="\\033[0;31m"
-# fi
-SHELL_C_AES_RED="\\033[0;31m"
-
-# SHELL_C_AES_RESET constant
-# This variable defines the ANSI escape code to reset text formatting to default. It is used to clear any previous text color or style.
-# if [ -z "${SHELL_C_AES_RESET+x}" ]; then
-#     declare -gr SHELL_C_AES_RESET="\\033[0m"
-# fi
-SHELL_C_AES_RESET="\\033[0m"
-
-# SHELL_C_AES_YELLOW constant
-# This variable defines the ANSI escape code for yellow text color. It is used to highlight warnings or important information in the shell.
-# if [ -z "${SHELL_C_AES_YELLOW+x}" ]; then
-#     declare -gr SHELL_C_AES_YELLOW="\\033[0;33m"
-# fi
-SHELL_C_AES_YELLOW="\\033[0;33m"
-
 # SHELL_INI_STRICT constant
 # This variable determines the strictness of validation for section and key names in INI files.
 # When set to 1, it enforces strict validation rules, ensuring that section and key names
