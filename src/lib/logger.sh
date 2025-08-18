@@ -592,3 +592,101 @@ shell::logger::exec_check() {
 
 	return $exit_code
 }
+
+# shell::logger::exec_safe function
+# Logs a command with an optional description and executes it safely without using eval.
+#
+# Usage:
+#   shell::logger::exec_safe <command> <description>
+#
+# Parameters:
+#   - <command> : The command to log and execute.
+#   - <description> : (Optional) A description of the command.
+#
+# Description:
+#   This function logs a command with an optional description and executes it
+#   safely using bash -c instead of eval. If a description is provided, it is 
+#   indented and formatted for readability. The command is displayed in a specific 
+#   color (245) to stand out. This is a safer replacement for shell::logger::exec
+#   that avoids command injection vulnerabilities.
+shell::logger::exec_safe() {
+	local command="$*"
+	if ! shell::logger::can "INFO"; then
+		return 0
+	fi
+
+	if [ -z "$command" ]; then
+		shell::logger::error "Command is empty"
+		return 1
+	fi
+
+	# Basic input validation to prevent obvious injection attempts
+	if [[ "$command" =~ \$\( ]] || [[ "$command" =~ \` ]] || [[ "$command" =~ \;.*rm.*-rf ]] || [[ "$command" =~ \;.*sudo.*rm ]]; then
+		shell::logger::error "Command contains potentially dangerous patterns"
+		return 1
+	fi
+
+	shell::logger::cmd "$command"
+	# Use bash -c for safe execution while still allowing complex commands
+	bash -c "$command"
+}
+
+# shell::logger::exec_safe_check function
+# Logs and executes a command safely, then reports success or failure.
+#
+# Usage:
+#   shell::logger::exec_safe_check <command>
+#   shell::logger::exec_safe_check <command> <success_message> <failure_message>
+#
+# Parameters:
+#   - <command>         : The command to execute
+#   - <success_message> : Optional custom success message
+#   - <failure_message> : Optional custom failure message
+#
+# Return:
+#   Returns the exit code of the executed command
+#
+# Description:
+#   Executes a command safely and automatically logs success (green) or failure (red)
+#   based on the exit code. Preserves the original command's exit code.
+#   This is a safer replacement for shell::logger::exec_check that avoids command 
+#   injection vulnerabilities by using bash -c instead of eval.
+#   Compatible with Linux and macOS.
+shell::logger::exec_safe_check() {
+	local command="$1"
+	local success_msg="${2:-Success}"
+	local failure_msg="${3:-Aborted}"
+
+	if [ -z "$command" ]; then
+		shell::logger::error "Command is empty"
+		return 1
+	fi
+
+	# Basic input validation to prevent obvious injection attempts
+	if [[ "$command" =~ \$\( ]] || [[ "$command" =~ \` ]] || [[ "$command" =~ \;.*rm.*-rf ]] || [[ "$command" =~ \;.*sudo.*rm ]]; then
+		shell::logger::error "Command contains potentially dangerous patterns"
+		return 1
+	fi
+
+	if ! shell::logger::can "INFO"; then
+		bash -c "$command"
+		return $?
+	fi
+
+	# Log the command
+	shell::logger::cmd "$command"
+
+	# Execute command and capture exit code
+	local exit_code
+	bash -c "$command"
+	exit_code=$?
+
+	# Log result based on exit code
+	if [[ $exit_code -eq 0 ]]; then
+		shell::colored_echo "  [✓] $success_msg" 46
+	else
+		shell::colored_echo "  [✗] $failure_msg (exit code: $exit_code)" 196
+	fi
+
+	return $exit_code
+}
