@@ -3187,6 +3187,149 @@ shell::select_key() {
 	echo "$selected_key"
 }
 
+# shell::multiselect function
+# Prompts the user to select multiple options from a list of choices using fzf.
+#
+# Usage:
+#   shell::multiselect [-h] <option1> <option2> ... <optionN>
+#
+# Parameters:
+#   - -h        	: Optional. Displays this help message.
+#   - <option1>...: A list of strings representing the choices.
+#
+# Returns:
+#   The selected option strings as space-separated values (as output to stdout).
+#   Returns empty string if no selections are made.
+#
+# Description:
+#   This function uses fzf with multi-select capability to allow users to
+#   select multiple options from a provided list. Users can select options
+#   using Tab or Shift+Tab, and confirm their selection with Enter.
+#   The function handles empty selections gracefully and returns all
+#   selected options as a space-separated string.
+#
+# Example:
+#   options=("Development" "Staging" "Production")
+#   selected=$(shell::multiselect "${options[@]}")
+#   echo "Selected environments: $selected"
+#
+#   features=$(shell::multiselect "Feature A" "Feature B" "Feature C")
+#   echo "Selected features: $features"
+shell::multiselect() {
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_MULTISELECT"
+		return 0
+	fi
+
+	if [ "$#" -eq 0 ]; then
+		shell::logger::error "No options provided to shell::multiselect."
+		return 0
+	fi
+
+	shell::install_package fzf >/dev/null 2>&1
+
+	local options=("$@")
+	local selections
+
+	# Use fzf with multi-select capability
+	selections=$(printf "%s\n" "${options[@]}" | fzf --prompt="Select options (Tab to select, Enter to confirm): " \
+		--height="25%" \
+		--layout=reverse \
+		--border=rounded \
+		--pointer="▶" \
+		--marker="✓" \
+		--ansi \
+		--multi)
+
+	# Convert newline-separated selections to space-separated string
+	# Handle empty selections gracefully
+	if [ -n "$selections" ]; then
+		echo "$selections" | tr '\n' ' ' | sed 's/[[:space:]]*$//'
+	fi
+}
+
+# shell::multiselect_key function
+# Prompts the user to select multiple options from a list of labels using fzf,
+# and returns the corresponding keys.
+#
+# Usage:
+#   shell::multiselect_key [-h] "Label1:Key1" "Label2:Key2" ...
+#
+# Parameters:
+#   - -h        	: Optional. Displays this help message.
+#   - "Label:Key"	: A list of strings, each containing a display label and a
+#                 	  return key, separated by a colon (:).
+#
+# Returns:
+#   The keys corresponding to the selected labels as space-separated values
+#   (as output to stdout). Returns empty string if no selections are made.
+#
+# Description:
+#   This function displays a list of user-friendly labels and allows the user
+#   to select multiple options using fzf with multi-select capability. It then
+#   returns the corresponding key values that were associated with the selected
+#   labels. This is useful for presenting human-readable options while working
+#   with machine-readable identifiers in multi-selection scenarios.
+#
+# Example:
+#   options=("Development:dev" "Staging:staging" "Production:prod")
+#   environments=$(shell::multiselect_key "${options[@]}")
+#   echo "Selected environments: $environments"
+#
+#   services=("Web Server:nginx" "Database:postgresql" "Cache:redis")
+#   selected=$(shell::multiselect_key "${services[@]}")
+#   echo "Selected services: $selected"
+shell::multiselect_key() {
+	if [ "$1" = "-h" ]; then
+		echo "$USAGE_SHELL_MULTISELECT_KEY"
+		return 0
+	fi
+
+	if [ "$#" -eq 0 ]; then
+		shell::logger::error "No options provided to shell::multiselect_key."
+		return 0
+	fi
+
+	shell::install_package fzf >/dev/null 2>&1
+
+	local options=("$@")
+	local labels=()
+	local selected_labels
+	local selected_keys=()
+
+	# Extract labels from "Label:Key" format
+	for option in "${options[@]}"; do
+		labels+=("$(echo "$option" | cut -d: -f1)")
+	done
+
+	# Use fzf with multi-select capability to select labels
+	selected_labels=$(printf "%s\n" "${labels[@]}" | fzf --prompt="Select options (Tab to select, Enter to confirm): " \
+		--height="25%" \
+		--layout=reverse \
+		--border=rounded \
+		--pointer="▶" \
+		--marker="✓" \
+		--ansi \
+		--multi)
+
+	# Convert selected labels back to their corresponding keys
+	if [ -n "$selected_labels" ]; then
+		while IFS= read -r selected_label; do
+			for option in "${options[@]}"; do
+				if [[ "$option" == "$selected_label":* ]]; then
+					local key
+					key=$(echo "$option" | cut -d: -f2-)
+					selected_keys+=("$key")
+					break
+				fi
+			done
+		done <<< "$selected_labels"
+
+		# Output keys as space-separated string
+		printf "%s" "${selected_keys[*]}"
+	fi
+}
+
 # File viewer function using fzf with line highlighting and selection
 # Compatible with Linux and macOS with ANSI color support - 100% width
 view_file() {
