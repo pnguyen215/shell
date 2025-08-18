@@ -301,8 +301,12 @@ shell::logger::option() {
 	local option="$1"
 	local description="$2"
 
+	# Check if logging is enabled
+	# If not, return immediately without logging
+	# Return 1 to indicate that logging is disabled
+	# Return 0 to indicate that logging is enabled
 	if ! shell::logger::can "INFO"; then
-		return 0
+		return 1
 	fi
 
 	# Display OPTIONS label if this is the first option call
@@ -338,7 +342,7 @@ shell::logger::example() {
 	local example="$1"
 
 	if ! shell::logger::can "INFO"; then
-		return 0
+		return 1
 	fi
 
 	shell::colored_echo "EXAMPLE: $example" 42
