@@ -620,12 +620,6 @@ shell::logger::exec_safe() {
 		return 1
 	fi
 
-	# Basic input validation to prevent obvious injection attempts
-	if [[ "$command" =~ \$\( ]] || [[ "$command" =~ \` ]] || [[ "$command" =~ \;.*rm.*-rf ]] || [[ "$command" =~ \;.*sudo.*rm ]]; then
-		shell::logger::error "Command contains potentially dangerous patterns"
-		return 1
-	fi
-
 	shell::logger::cmd "$command"
 	# Use bash -c for safe execution while still allowing complex commands
 	bash -c "$command"
@@ -659,12 +653,6 @@ shell::logger::exec_safe_check() {
 
 	if [ -z "$command" ]; then
 		shell::logger::error "Command is empty"
-		return 1
-	fi
-
-	# Basic input validation to prevent obvious injection attempts
-	if [[ "$command" =~ \$\( ]] || [[ "$command" =~ \` ]] || [[ "$command" =~ \;.*rm.*-rf ]] || [[ "$command" =~ \;.*sudo.*rm ]]; then
-		shell::logger::error "Command contains potentially dangerous patterns"
 		return 1
 	fi
 
