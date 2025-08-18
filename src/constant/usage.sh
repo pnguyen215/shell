@@ -550,29 +550,6 @@ Description:
   In dry-run mode, the new group configuration is printed via shell::logger::cmd_copy without modifying the file.
 "
 
-USAGE_SHELL_VERIFY_ARG_COUNT="
-shell::verify_arg_count function
-Verifies that the number of provided arguments falls within an expected range.
-
-Usage:
-  shell::verify_arg_count [-h] <actual_arg_count> <expected_arg_count_min> <expected_arg_count_max>
-
-Parameters:
-  - -h                      : Optional. Displays this help message.
-  - <actual_arg_count>      : The number of arguments that were passed.
-  - <expected_arg_count_min>: The minimum number of arguments expected.
-  - <expected_arg_count_max>: The maximum number of arguments expected.
-
-Description:
-  The function first checks that exactly three arguments are provided.
-  It then verifies that all arguments are integers.
-  Finally, it compares the actual argument count to the expected range.
-  If the count is outside the expected range, it prints an error message in red and returns 1.
-
-Example:
-  shell::verify_arg_count \"$#\" 0 1   # Verifies that the function was called with 0 or 1 argument.
-"
-
 USAGE_SHELL_ADD_ANGULAR_GITIGNORE="
 shell::add_angular_gitignore function
 This function downloads the .gitignore file specifically for Angular projects.
