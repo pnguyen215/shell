@@ -3363,13 +3363,18 @@ shell::multiselect_key() {
 #   The function is intended to be used at the start of any shell function that needs standardized option parsing.
 #   Using name ref allows the caller to access the parsed values directly in their own local variables.
 shell::parse_options() {
-    local -n _args="$1" _verbose="$2" _dry_run="$3" _force="$4" _help="$5"
+    local _args_var="$1"
+    local _verbose_var="$2"
+    local _dry_run_var="$3"
+    local _force_var="$4"
+    local _help_var="$5"
     shift 5
-    _verbose=false
-    _dry_run=false
-    _force=false
-    _help=false
-    _args=()
+
+    local _args=()
+    local _verbose=false
+    local _dry_run=false
+    local _force=false
+    local _help=false
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --verbose) _verbose=true; shift ;;
@@ -3402,30 +3407,4 @@ shell::parse_options() {
         _args+=("$1")
         shift
     done
-}
-
-my_function() {
-    local args verbose dry_run force help
-
-    # Parse options and arguments
-    shell::parse_options args verbose dry_run force help -- "$@"
-
-    # Xử lý help
-    if [[ "$help" == true ]]; then
-        echo "Usage: my_function [OPTIONS] <command> [args...]"
-        echo "  -v, --verbose    Verbose mode"
-        echo "  -n, --dry-run    Dry run"
-        echo "  -f, --force      Force mode"
-        echo "  -h, --help       Show help"
-        return 0
-    fi
-
-    # Hiển thị trạng thái các flag
-    echo "Verbose: $verbose"
-    echo "Dry run: $dry_run"
-    echo "Force: $force"
-    echo "Help: $help"
-
-    # Hiển thị các argument còn lại
-    echo "Command and args: ${args[*]}"
 }
