@@ -592,8 +592,3 @@ shell::logger::exec_check() {
 
 	return $exit_code
 }
-
-shell::logger::exec2_safe() {
-	echo "Executing: $*"
-	"$@"
-}
