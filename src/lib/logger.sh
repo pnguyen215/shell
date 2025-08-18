@@ -274,7 +274,7 @@ shell::logger::item() {
 	if ! shell::logger::can "INFO"; then
 		return 0
 	fi
-	
+
 	if [[ -n "$description" ]]; then
 		shell::colored_echo "  $command" 245
 		shell::colored_echo "    $description" 250
@@ -300,7 +300,7 @@ shell::logger::item() {
 shell::logger::option() {
 	local option="$1"
 	local description="$2"
-	
+
 	if ! shell::logger::can "INFO"; then
 		return 0
 	fi
@@ -310,7 +310,7 @@ shell::logger::option() {
 		shell::colored_echo "OPTIONS:" 39
 		export _SHELL_LOGGER_OPTIONS_SHOWN=1
 	fi
-	
+
 	if [[ -n "$description" ]]; then
 		local formatted_line
 		formatted_line=$(printf "    %-20s %s" "$option" "$description")
@@ -336,11 +336,11 @@ shell::logger::option() {
 #   example is displayed in a specific color (42) to stand out.
 shell::logger::example() {
 	local example="$1"
-	
+
 	if ! shell::logger::can "INFO"; then
 		return 0
 	fi
-	
+
 	shell::colored_echo "EXAMPLE: $example" 42
 }
 
@@ -364,29 +364,29 @@ shell::logger::indent() {
 	local level="$1"
 	local color="$2"
 	local message="$3"
-	
+
 	if ! shell::logger::can "INFO"; then
 		return 0
 	fi
-	
+
 	# If only 2 arguments, treat second as message with default color
 	if [[ -z "$message" ]]; then
 		message="$color"
 		color="245"
 	fi
-	
+
 	# Validate level (0-5)
 	if ! [[ "$level" =~ ^[0-5]$ ]]; then
 		level=0
 	fi
-	
+
 	# Create indentation string
 	local indent=""
 	local i
 	for ((i = 0; i < level * 2; i++)); do
 		indent+=" "
 	done
-	
+
 	shell::colored_echo "${indent}${message}" "$color"
 }
 
@@ -406,11 +406,11 @@ shell::logger::indent() {
 shell::logger::step() {
 	local step_number="$1"
 	local description="$2"
-	
+
 	if ! shell::logger::can "INFO"; then
 		return 0
 	fi
-	
+
 	shell::colored_echo "STEP $step_number: $description" 33
 }
 
@@ -476,11 +476,11 @@ shell::logger::section() {
 #   displayed in a specific color (245) to stand out.
 shell::logger::cmd() {
 	local command="$*"
-	
+
 	if ! shell::logger::can "INFO"; then
 		return 0
 	fi
-	
+
 	shell::colored_echo "  $ $command" 111
 }
 
@@ -527,12 +527,12 @@ shell::logger::exec() {
 	if ! shell::logger::can "INFO"; then
 		return 0
 	fi
-	
+
 	if [ -z "$command" ]; then
 		shell::logger::error "Command is empty"
 		return 1
 	fi
-	
+
 	shell::logger::cmd "$command"
 	eval "$command"
 }
@@ -560,7 +560,7 @@ shell::logger::exec_check() {
 	local command="$1"
 	local success_msg="${2:-Success}"
 	local failure_msg="${3:-Aborted}"
-	
+
 	if [ -z "$command" ]; then
 		shell::logger::error "Command is empty"
 		return 1
@@ -570,21 +570,21 @@ shell::logger::exec_check() {
 		eval "$command"
 		return $?
 	fi
-	
+
 	# Log the command
 	shell::logger::cmd "$command"
-	
+
 	# Execute command and capture exit code
 	local exit_code
 	eval "$command"
 	exit_code=$?
-	
+
 	# Log result based on exit code
 	if [[ $exit_code -eq 0 ]]; then
 		shell::colored_echo "  [✓] $success_msg" 46
 	else
 		shell::colored_echo "  [✗] $failure_msg (exit code: $exit_code)" 196
 	fi
-	
+
 	return $exit_code
 }

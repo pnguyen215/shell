@@ -3323,7 +3323,7 @@ shell::multiselect_key() {
 					break
 				fi
 			done
-		done <<< "$selected_labels"
+		done <<<"$selected_labels"
 
 		# Output keys as space-separated string
 		printf "%s" "${selected_keys[*]}"
