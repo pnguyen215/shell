@@ -5,10 +5,12 @@
 ## Table of Contents
 
 ### Quick Reference
+
 1. [Quick Start Guide](#quick-start-guide) - Essential patterns and examples
 2. [Common Patterns Cheat Sheet](#common-patterns-cheat-sheet) - Copy-paste ready snippets
 
 ### Core Conventions
+
 3. [General Guidelines](#general-guidelines) - Fundamental principles
 4. [File Structure](#file-structure) - How to organize your scripts
 5. [Naming Conventions](#naming-conventions) - Consistent naming patterns
@@ -16,24 +18,28 @@
 7. [Functions](#functions) - Design and documentation patterns
 
 ### Essential Practices
+
 8. [Error Handling](#error-handling) - Robust error management
 9. [Exit Codes](#exit-codes) - Simplified exit code reference
 10. [Formatting and Style](#formatting-and-style) - Readable code standards
 11. [Comments and Documentation](#comments-and-documentation) - Self-documenting code
 
 ### Advanced Topics
+
 12. [Security Guidelines](#security-guidelines) - Secure coding practices
 13. [Performance Optimization](#performance-optimization) - Writing efficient scripts
 14. [Testing and Quality](#testing-and-quality) - Testing frameworks and quality assurance
 15. [Debugging and Troubleshooting](#debugging-and-troubleshooting) - Common issues and solutions
 
 ### Modern Shell Practices
+
 16. [CI/CD Integration](#cicd-integration) - Using shell scripts in automation
 17. [Container Considerations](#container-considerations) - Shell scripts in Docker/containers
 18. [Cross-Platform Compatibility](#cross-platform-compatibility) - Linux, macOS, and Windows considerations
 19. [Package Management Integration](#package-management-integration) - Working with system packages
 
 ### Reference
+
 20. [Complete Examples](#complete-examples) - Real-world script examples
 21. [Quick Decision Trees](#quick-decision-trees) - When to use what
 22. [Quality Checklists](#quality-checklists) - Script review guidelines
@@ -85,6 +91,7 @@ main "$@"
 ### Essential Patterns
 
 #### Argument Parsing
+
 ```bash
 parse_args() {
     while [[ $# -gt 0 ]]; do
@@ -100,6 +107,7 @@ parse_args() {
 ```
 
 #### File Operations
+
 ```bash
 # Safe file operations
 backup_file() {
@@ -116,6 +124,7 @@ ensure_writable() {
 ```
 
 #### Logging
+
 ```bash
 log() {
     local level="$1"; shift
@@ -127,17 +136,18 @@ log() {
 ## Common Patterns Cheat Sheet
 
 ### Quick Checks
+
 ```bash
 # Command exists?
 command -v git >/dev/null || { echo "git not found" >&2; exit 1; }
 
 # File operations
 [[ -f "$file" ]] && echo "File exists"
-[[ -r "$file" ]] && echo "File readable" 
+[[ -r "$file" ]] && echo "File readable"
 [[ -w "$file" ]] && echo "File writable"
 [[ -x "$file" ]] && echo "File executable"
 
-# Directory operations  
+# Directory operations
 [[ -d "$dir" ]] || mkdir -p "$dir"
 
 # Variable checks
@@ -146,6 +156,7 @@ command -v git >/dev/null || { echo "git not found" >&2; exit 1; }
 ```
 
 ### Array Operations
+
 ```bash
 # Declare and use arrays
 declare -a files=("file1" "file2" "file3")
@@ -161,10 +172,11 @@ done
 ```
 
 ### String Operations
+
 ```bash
 # Extract components
 filename="${path##*/}"          # basename
-directory="${path%/*}"          # dirname  
+directory="${path%/*}"          # dirname
 extension="${file##*.}"         # extension
 basename="${file%.*}"          # filename without extension
 
@@ -174,6 +186,7 @@ new_string="${string//old/new}"         # Replace all
 ```
 
 ### Process Management
+
 ```bash
 # Background process with cleanup
 start_background_task() {
@@ -185,7 +198,6 @@ start_background_task() {
 # Wait with timeout
 timeout 30 some_command || echo "Command timed out"
 ```
-
 
 ---
 
@@ -323,6 +335,7 @@ sysmon.sh
 ### Declaration Principles
 
 **Constants and Readonly Variables:**
+
 - Use `UPPER_SNAKE_CASE` for constants and global configuration
 - Always use `readonly` for values that shouldn't change
 - Group related constants together
@@ -341,6 +354,7 @@ readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ```
 
 **Local Variables:**
+
 - Use `lower_snake_case` for local variables
 - Always declare with `local` in functions
 - Initialize with default values when appropriate
@@ -537,9 +551,10 @@ trap cleanup EXIT INT TERM
 ### Quick Reference
 
 **Standard Exit Codes (Always Use These)**
+
 ```bash
 readonly EXIT_SUCCESS=0        # Success
-readonly EXIT_FAILURE=1        # General error  
+readonly EXIT_FAILURE=1        # General error
 readonly EXIT_USAGE=2         # Invalid usage/arguments
 readonly EXIT_CONFIG=3        # Configuration error
 readonly EXIT_PERMISSION=4    # Permission denied
@@ -550,6 +565,7 @@ readonly EXIT_TIMEOUT=6       # Operation timeout
 ### Common Categories
 
 **System Errors (10-19)**
+
 ```bash
 readonly EXIT_DEPENDENCY=10   # Missing dependency
 readonly EXIT_DISK_SPACE=11   # Insufficient disk space
@@ -557,7 +573,8 @@ readonly EXIT_NETWORK=12      # Network error
 readonly EXIT_SERVICE=13      # Service unavailable
 ```
 
-**Application Errors (20-29)**  
+**Application Errors (20-29)**
+
 ```bash
 readonly EXIT_VALIDATION=20   # Input validation failed
 readonly EXIT_PROCESSING=21   # Processing error
@@ -565,6 +582,7 @@ readonly EXIT_OUTPUT=22       # Output error
 ```
 
 ### Usage Examples
+
 ```bash
 # Check dependencies
 command -v git >/dev/null || exit $EXIT_DEPENDENCY
@@ -762,7 +780,6 @@ if [[ -z "$source_dir" ]]; then
 fi
 ```
 
-
 ---
 
 ## Security Guidelines
@@ -770,42 +787,44 @@ fi
 ### Input Validation and Sanitization
 
 **Path Validation**
+
 ```bash
 validate_path() {
     local path="$1"
     local allow_absolute="${2:-false}"
-    
+
     # Check for path traversal attempts
     if [[ "$path" == *..* ]]; then
         echo "Error: Path traversal detected" >&2
         return 1
     fi
-    
+
     # Check for absolute paths if not allowed
     if [[ "$path" == /* ]] && [[ "$allow_absolute" != "true" ]]; then
         echo "Error: Absolute paths not allowed" >&2
         return 1
     fi
-    
+
     # Check for dangerous characters
     if [[ "$path" =~ [[:space:]';|&$`] ]]; then
         echo "Error: Dangerous characters in path" >&2
         return 1
     fi
-    
+
     return 0
 }
 ```
 
 **Input Sanitization**
+
 ```bash
 sanitize_input() {
     local input="$1"
     local allowed_pattern="$2"
-    
+
     # Default to alphanumeric, dash, underscore, dot
     allowed_pattern="${allowed_pattern:-'^[a-zA-Z0-9._-]+$'}"
-    
+
     if [[ "$input" =~ $allowed_pattern ]]; then
         echo "$input"
         return 0
@@ -819,27 +838,29 @@ sanitize_input() {
 ### Secure File Operations
 
 **Safe Temporary Files**
+
 ```bash
 create_secure_temp() {
     local template="${1:-secure.XXXXXX}"
     local temp_file
-    
+
     # Create with restrictive permissions
     umask 0077
     temp_file=$(mktemp "/tmp/$template")
-    
+
     # Verify permissions
     if [[ "$(stat -f %A "$temp_file" 2>/dev/null || stat -c %a "$temp_file")" != "600" ]]; then
         rm -f "$temp_file"
         echo "Error: Failed to create secure temp file" >&2
         return 1
     fi
-    
+
     echo "$temp_file"
 }
 ```
 
 **Avoid Command Injection**
+
 ```bash
 # BAD - Vulnerable to injection
 execute_bad() {
@@ -851,12 +872,12 @@ execute_bad() {
 execute_safe() {
     local user_input="$1"
     local safe_input
-    
+
     # Validate input first
     if ! safe_input=$(sanitize_input "$user_input" '^[a-zA-Z0-9/_.-]+$'); then
         return 1
     fi
-    
+
     # Use array for command execution
     local cmd=(ls "$safe_input")
     "${cmd[@]}"
@@ -869,14 +890,14 @@ execute_safe() {
 # Load secrets securely
 load_secrets() {
     local secrets_file="$1"
-    
+
     # Check file permissions
     local perms
     perms=$(stat -f %A "$secrets_file" 2>/dev/null || stat -c %a "$secrets_file")
     if [[ "$perms" != "600" ]]; then
         echo "Warning: Secrets file has loose permissions: $perms" >&2
     fi
-    
+
     # Source secrets file safely
     if [[ -f "$secrets_file" ]]; then
         # shellcheck source=/dev/null
@@ -901,6 +922,7 @@ log_safe() {
 ### Efficient Patterns
 
 **Use Built-ins Over External Commands**
+
 ```bash
 # SLOW - External commands
 get_basename_slow() {
@@ -922,6 +944,7 @@ get_dirname_fast() {
 ```
 
 **Optimize Loops and Conditionals**
+
 ```bash
 # SLOW - Multiple external calls
 check_files_slow() {
@@ -938,12 +961,12 @@ check_files_slow() {
 check_files_fast() {
     local count=0
     local -a existing_files=()
-    
+
     # Collect existing files first
     for file in "$@"; do
         [[ -f "$file" ]] && existing_files+=("$file")
     done
-    
+
     echo "${#existing_files[@]}"
 }
 ```
@@ -951,11 +974,12 @@ check_files_fast() {
 ### Memory and Resource Management
 
 **Large File Processing**
+
 ```bash
 process_large_file() {
     local file="$1"
     local chunk_size="${2:-1000}"
-    
+
     # Process in chunks instead of loading entire file
     while IFS= read -r -N "$chunk_size" chunk || [[ -n "$chunk" ]]; do
         # Process chunk
@@ -966,7 +990,7 @@ process_large_file() {
 # Use process substitution for pipes
 process_with_substitution() {
     local logfile="$1"
-    
+
     # Instead of: cat "$logfile" | grep "ERROR" | wc -l
     # Use process substitution:
     while IFS= read -r line; do
@@ -976,28 +1000,28 @@ process_with_substitution() {
 ```
 
 **Parallel Processing**
+
 ```bash
 parallel_processing() {
     local -a files=("$@")
     local max_jobs=4
     local job_count=0
-    
+
     for file in "${files[@]}"; do
         # Process in background
         process_file "$file" &
-        
+
         # Limit concurrent jobs
         if (( ++job_count >= max_jobs )); then
             wait -n  # Wait for any job to complete
             ((job_count--))
         fi
     done
-    
+
     # Wait for remaining jobs
     wait
 }
 ```
-
 
 ---
 
@@ -1006,6 +1030,7 @@ parallel_processing() {
 ### Testing Framework
 
 **Simple Test Runner**
+
 ```bash
 #!/bin/bash
 # test_runner.sh
@@ -1035,9 +1060,9 @@ assert_equals() {
     local expected="$1"
     local actual="$2"
     local test_name="${3:-assertion}"
-    
+
     ((TESTS_RUN++))
-    
+
     if [[ "$expected" == "$actual" ]]; then
         echo "✓ $test_name"
         ((TESTS_PASSED++))
@@ -1052,9 +1077,9 @@ assert_equals() {
 assert_file_exists() {
     local file="$1"
     local test_name="${2:-file exists: $file}"
-    
+
     ((TESTS_RUN++))
-    
+
     if [[ -f "$file" ]]; then
         echo "✓ $test_name"
         ((TESTS_PASSED++))
@@ -1069,12 +1094,12 @@ assert_file_exists() {
 test_function_validation() {
     # Source the script
     source "$SCRIPT_UNDER_TEST"
-    
+
     # Test valid input
     local result
     result=$(validate_email "test@example.com" 2>/dev/null; echo $?)
     assert_equals "0" "$result" "validate_email accepts valid email"
-    
+
     # Test invalid input
     result=$(validate_email "invalid-email" 2>/dev/null; echo $?)
     assert_equals "1" "$result" "validate_email rejects invalid email"
@@ -1084,14 +1109,14 @@ test_function_validation() {
 run_tests() {
     echo "Running tests for $(basename "$SCRIPT_UNDER_TEST")"
     echo "================================================"
-    
+
     setup
-    
+
     # Run all test functions
     test_function_validation
-    
+
     teardown
-    
+
     # Summary
     echo
     echo "Test Summary:"
@@ -1099,7 +1124,7 @@ run_tests() {
     echo "Tests run: $TESTS_RUN"
     echo "Passed: $TESTS_PASSED"
     echo "Failed: $TESTS_FAILED"
-    
+
     if [[ $TESTS_FAILED -eq 0 ]]; then
         echo "All tests passed! ✓"
         exit 0
@@ -1116,15 +1141,16 @@ run_tests() {
 ### Quality Assurance
 
 **Linting and Static Analysis**
+
 ```bash
 # Quality check script
 quality_check() {
     local script="$1"
     local exit_code=0
-    
+
     echo "Running quality checks on $script"
     echo "================================="
-    
+
     # Shellcheck
     if command -v shellcheck >/dev/null; then
         echo "Running shellcheck..."
@@ -1135,7 +1161,7 @@ quality_check() {
             echo "✓ Shellcheck passed"
         fi
     fi
-    
+
     # Basic syntax check
     echo "Checking syntax..."
     if ! bash -n "$script"; then
@@ -1144,21 +1170,21 @@ quality_check() {
     else
         echo "✓ Syntax check passed"
     fi
-    
+
     # Check for common issues
     echo "Checking common issues..."
-    
+
     # Unquoted variables
     if grep -n '\$[A-Za-z_][A-Za-z0-9_]*[^"]' "$script" | grep -v '#'; then
         echo "⚠ Found potentially unquoted variables"
         exit_code=1
     fi
-    
+
     # Missing error handling
     if ! grep -q 'set -e\|set -euo\|set -eu' "$script"; then
         echo "⚠ Consider using 'set -euo pipefail' for better error handling"
     fi
-    
+
     return $exit_code
 }
 ```
@@ -1170,6 +1196,7 @@ quality_check() {
 ### Debugging Techniques
 
 **Debug Mode**
+
 ```bash
 # Enable debug mode with environment variable
 if [[ "${DEBUG:-}" == "true" ]]; then
@@ -1188,21 +1215,22 @@ debug "Current working directory: $(pwd)"
 ```
 
 **Error Tracing**
+
 ```bash
 # Enhanced error handling with stack trace
 error_handler() {
     local exit_code=$?
     local line_num=$1
-    
+
     echo "Error occurred in script $0 at line $line_num" >&2
     echo "Exit code: $exit_code" >&2
     echo "Call stack:" >&2
-    
+
     local i=0
     while caller $i >&2; do
         ((i++))
     done
-    
+
     exit $exit_code
 }
 
@@ -1213,6 +1241,7 @@ trap 'error_handler $LINENO' ERR
 ### Common Issues and Solutions
 
 **Variable Scoping Issues**
+
 ```bash
 # PROBLEM: Global variable unexpectedly changed
 counter=0
@@ -1232,6 +1261,7 @@ counter=$(increment_correct "$counter")
 ```
 
 **Array Handling Issues**
+
 ```bash
 # PROBLEM: Array elements with spaces
 files=("file with spaces.txt" "another file.txt")
@@ -1248,6 +1278,7 @@ done
 ```
 
 **Pipeline Error Handling**
+
 ```bash
 # PROBLEM: Pipeline errors not caught
 if cat nonexistent_file | grep "pattern"; then
@@ -1264,7 +1295,6 @@ else
 fi
 ```
 
-
 ---
 
 ## CI/CD Integration
@@ -1272,46 +1302,48 @@ fi
 ### GitHub Actions
 
 **Basic Shell Script CI**
+
 ```yaml
 # .github/workflows/shell-ci.yml
 name: Shell Script CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y shellcheck bats
-    
-    - name: Lint shell scripts
-      run: |
-        find . -name "*.sh" -type f | xargs shellcheck
-    
-    - name: Run tests
-      run: |
-        # Run all test files
-        find tests/ -name "*.bats" -exec bats {} \;
-    
-    - name: Check formatting
-      run: |
-        # Check if scripts follow conventions
-        ./scripts/quality_check.sh src/*.sh
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck bats
+
+      - name: Lint shell scripts
+        run: |
+          find . -name "*.sh" -type f | xargs shellcheck
+
+      - name: Run tests
+        run: |
+          # Run all test files
+          find tests/ -name "*.bats" -exec bats {} \;
+
+      - name: Check formatting
+        run: |
+          # Check if scripts follow conventions
+          ./scripts/quality_check.sh src/*.sh
 ```
 
 ### Automated Testing Setup
 
 **CI Test Runner**
+
 ```bash
 #!/bin/bash
 # ci/test-runner.sh
@@ -1326,13 +1358,13 @@ readonly MAX_COMPLEXITY=200
 
 run_quality_checks() {
     echo "Running quality checks..."
-    
+
     # Shellcheck all scripts
     find "$PROJECT_ROOT" -name "*.sh" -type f | while read -r script; do
         echo "Checking $script"
         shellcheck "$script" || return 1
     done
-    
+
     # Check complexity (simple line count for now)
     find "$PROJECT_ROOT" -name "*.sh" -type f | while read -r script; do
         local lines
@@ -1345,12 +1377,12 @@ run_quality_checks() {
 
 run_tests() {
     echo "Running tests..."
-    
+
     # Run all test suites
     if [[ -d "$PROJECT_ROOT/tests" ]]; then
         bats "$PROJECT_ROOT/tests"/*.bats
     fi
-    
+
     # Run integration tests
     if [[ -f "$PROJECT_ROOT/tests/integration.sh" ]]; then
         "$PROJECT_ROOT/tests/integration.sh"
@@ -1359,10 +1391,10 @@ run_tests() {
 
 main() {
     echo "Starting CI pipeline..."
-    
+
     run_quality_checks
     run_tests
-    
+
     echo "CI pipeline completed successfully!"
 }
 
@@ -1376,6 +1408,7 @@ main "$@"
 ### Docker Best Practices
 
 **Multi-stage Build for Shell Scripts**
+
 ```dockerfile
 # Dockerfile for shell script deployment
 FROM ubuntu:22.04 AS builder
@@ -1417,6 +1450,7 @@ ENTRYPOINT ["/opt/scripts/main.sh"]
 ```
 
 **Container-Aware Shell Scripts**
+
 ```bash
 #!/bin/bash
 # container-aware.sh
@@ -1430,19 +1464,19 @@ is_container() {
 setup_container_env() {
     if is_container; then
         echo "Running in container environment"
-        
+
         # Use environment variables for configuration
         readonly CONFIG_FILE="${CONFIG_FILE:-/config/app.conf}"
         readonly LOG_FILE="${LOG_FILE:-/logs/app.log}"
         readonly DATA_DIR="${DATA_DIR:-/data}"
-        
+
         # Ensure directories exist
         mkdir -p "$(dirname "$CONFIG_FILE")" \
                  "$(dirname "$LOG_FILE")" \
                  "$DATA_DIR"
     else
         echo "Running in host environment"
-        
+
         # Use traditional paths
         readonly CONFIG_FILE="${HOME}/.config/app/config.conf"
         readonly LOG_FILE="/tmp/app.log"
@@ -1453,16 +1487,16 @@ setup_container_env() {
 # Graceful shutdown handling for containers
 graceful_shutdown() {
     echo "Received shutdown signal, cleaning up..."
-    
+
     # Stop background processes
     if [[ -n "${BACKGROUND_PID:-}" ]]; then
         kill -TERM "$BACKGROUND_PID" 2>/dev/null || true
         wait "$BACKGROUND_PID" 2>/dev/null || true
     fi
-    
+
     # Flush logs
     sync
-    
+
     exit 0
 }
 
@@ -1471,9 +1505,9 @@ trap graceful_shutdown TERM INT
 
 main() {
     setup_container_env
-    
+
     echo "Starting application..."
-    
+
     # Your application logic here
     while true; do
         echo "Application running... (PID: $$)"
@@ -1494,7 +1528,7 @@ main "$@"
 # Comprehensive platform detection
 detect_platform() {
     local os arch
-    
+
     # Detect OS
     case "${OSTYPE:-$(uname -s)}" in
         linux*)   os="linux" ;;
@@ -1504,7 +1538,7 @@ detect_platform() {
         win32*)   os="windows" ;;
         *)        os="unknown" ;;
     esac
-    
+
     # Detect architecture
     case "$(uname -m)" in
         x86_64|amd64) arch="x64" ;;
@@ -1513,7 +1547,7 @@ detect_platform() {
         armv7l)       arch="arm" ;;
         *)            arch="unknown" ;;
     esac
-    
+
     echo "${os}-${arch}"
 }
 ```
@@ -1539,7 +1573,7 @@ portable_date() {
 portable_stat() {
     local file="$1"
     local format="$2"
-    
+
     if stat --version >/dev/null 2>&1; then
         # GNU stat (Linux)
         stat -c "$format" "$file"
@@ -1552,7 +1586,7 @@ portable_stat() {
 # Example usage
 get_file_size() {
     local file="$1"
-    
+
     if [[ "$OSTYPE" == "darwin"* ]]; then
         portable_stat "$file" "%z"
     else
@@ -1587,7 +1621,7 @@ install_package() {
     local package="$1"
     local pm
     pm=$(detect_package_manager)
-    
+
     case "$pm" in
         apt)
             sudo apt-get update && sudo apt-get install -y "$package"
@@ -1615,14 +1649,14 @@ install_package() {
 ensure_dependencies() {
     local -a required_packages=("$@")
     local -a missing_packages=()
-    
+
     # Check which packages are missing
     for package in "${required_packages[@]}"; do
         if ! command -v "$package" >/dev/null; then
             missing_packages+=("$package")
         fi
     done
-    
+
     # Install missing packages
     if [[ ${#missing_packages[@]} -gt 0 ]]; then
         echo "Installing missing packages: ${missing_packages[*]}"
@@ -1638,7 +1672,6 @@ ensure_dependencies() {
 # Usage
 ensure_dependencies curl jq git
 ```
-
 
 ---
 
@@ -1684,15 +1717,15 @@ readonly EXIT_BACKUP_FAILED=5
 # Load configuration
 load_config() {
     local config_file="$1"
-    
+
     if [[ -f "$config_file" ]]; then
         # Source config with validation
         source "$config_file"
-        
+
         # Validate required variables
         : "${BACKUP_SOURCE:?BACKUP_SOURCE not set in config}"
         : "${BACKUP_DESTINATION:?BACKUP_DESTINATION not set in config}"
-        
+
         # Set defaults for optional variables
         RETENTION_DAYS="${RETENTION_DAYS:-$DEFAULT_RETENTION_DAYS}"
         COMPRESSION="${COMPRESSION:-$DEFAULT_COMPRESSION}"
@@ -1722,7 +1755,7 @@ acquire_lock() {
     if [[ -f "$LOCK_FILE" ]]; then
         local pid
         pid=$(cat "$LOCK_FILE" 2>/dev/null)
-        
+
         if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null; then
             if [[ "$FORCE" == "true" ]]; then
                 log "WARN" "Removing stale lock file (forced)"
@@ -1736,7 +1769,7 @@ acquire_lock() {
             rm -f "$LOCK_FILE"
         fi
     fi
-    
+
     echo $$ > "$LOCK_FILE"
     log "INFO" "Acquired lock"
 }
@@ -1752,9 +1785,9 @@ release_lock() {
 cleanup() {
     local exit_code=$?
     log "INFO" "Cleaning up..."
-    
+
     release_lock
-    
+
     exit $exit_code
 }
 
@@ -1764,19 +1797,19 @@ perform_backup() {
     timestamp=$(date +%Y%m%d_%H%M%S)
     local backup_name="backup_${timestamp}"
     local backup_path="${BACKUP_DESTINATION}/${backup_name}"
-    
+
     log "INFO" "Starting backup: $backup_name"
     log "INFO" "Source: $BACKUP_SOURCE"
     log "INFO" "Destination: $backup_path"
-    
+
     if [[ "$DRY_RUN" == "true" ]]; then
         log "INFO" "DRY RUN: Would create backup at $backup_path"
         return 0
     fi
-    
+
     # Create backup directory
     mkdir -p "$BACKUP_DESTINATION"
-    
+
     # Perform backup based on compression type
     case "$COMPRESSION" in
         gzip)
@@ -1796,7 +1829,7 @@ perform_backup() {
             return 1
             ;;
     esac
-    
+
     # Verify backup
     if [[ "$COMPRESSION" != "none" ]]; then
         local backup_file
@@ -1805,7 +1838,7 @@ perform_backup() {
             bzip2) backup_file="${backup_path}.tar.bz2" ;;
             xz) backup_file="${backup_path}.tar.xz" ;;
         esac
-        
+
         if [[ -f "$backup_file" ]]; then
             local size
             size=$(du -h "$backup_file" | cut -f1)
@@ -1815,19 +1848,19 @@ perform_backup() {
             return 1
         fi
     fi
-    
+
     # Cleanup old backups
     cleanup_old_backups
 }
 
 cleanup_old_backups() {
     log "INFO" "Cleaning up backups older than $RETENTION_DAYS days"
-    
+
     if [[ "$DRY_RUN" == "true" ]]; then
         find "$BACKUP_DESTINATION" -name "backup_*" -type f -mtime +$RETENTION_DAYS
         return 0
     fi
-    
+
     local removed_count=0
     while IFS= read -r -d '' old_backup; do
         if rm "$old_backup"; then
@@ -1837,7 +1870,7 @@ cleanup_old_backups() {
             log "WARN" "Failed to remove: $(basename "$old_backup")"
         fi
     done < <(find "$BACKUP_DESTINATION" -name "backup_*" -type f -mtime +$RETENTION_DAYS -print0)
-    
+
     log "INFO" "Removed $removed_count old backup(s)"
 }
 
@@ -1858,118 +1891,13 @@ OPTIONS:
 
 CONFIGURATION:
     The script requires a configuration file with the following variables:
-    
+
     BACKUP_SOURCE="/path/to/source"          # Required
     BACKUP_DESTINATION="/path/to/backups"    # Required
     RETENTION_DAYS=7                         # Optional (default: 7)
     COMPRESSION="gzip"                       # Optional (gzip|bzip2|xz|none)
 
----
-
-## Quick Decision Trees
-
-### When to Use Different Approaches
-
-**Error Handling Decision Tree**
 ```
-Error occurred?
-├─ Expected error (user input, missing file)?
-│  ├─ Return error code and log message
-│  └─ Continue execution with fallback
-└─ Unexpected error (system failure, bug)?
-   ├─ Log detailed error information
-   ├─ Clean up resources
-   └─ Exit with appropriate code
-```
-
-**Function Design Decision Tree**
-```
-Need to process data?
-├─ Single value input/output?
-│  └─ Use simple function with return code
-├─ Multiple values?
-│  ├─ Related data? → Use array or structured approach
-│  └─ Unrelated data? → Separate functions
-└─ Complex processing?
-   └─ Break into smaller functions
-```
-
-**Variable Scope Decision Tree**
-```
-Variable usage?
-├─ Used only in function?
-│  └─ Use local variable
-├─ Used across functions in script?
-│  └─ Use global variable (carefully)
-├─ Configuration value?
-│  └─ Use readonly constant
-└─ Environment configuration?
-   └─ Use environment variable with default
-```
-
----
-
-## Quality Checklists
-
-### Pre-Deployment Checklist
-
-**Code Quality**
-- [ ] Script passes shellcheck without warnings
-- [ ] All functions have proper documentation
-- [ ] Error handling is implemented throughout
-- [ ] No hardcoded paths or credentials
-- [ ] Proper exit codes are used
-- [ ] All variables are quoted appropriately
-- [ ] Arrays are handled safely with proper expansion
-
-**Security Review**
-- [ ] Input validation is implemented
-- [ ] No command injection vulnerabilities
-- [ ] Temporary files are created securely
-- [ ] Cleanup is performed on exit
-- [ ] No secrets in source code
-- [ ] File permissions are appropriate
-
-**Functionality**
-- [ ] All command-line options work as expected
-- [ ] Help message is clear and complete
-- [ ] Script handles edge cases gracefully
-- [ ] Dry-run mode works correctly
-- [ ] Logging provides useful information
-- [ ] Script is idempotent where appropriate
-
-**Maintainability**
-- [ ] Code is readable and well-commented
-- [ ] Functions are single-purpose and small
-- [ ] Configuration is externalized
-- [ ] Script follows consistent naming conventions
-- [ ] Dependencies are clearly documented
-
-### Production Readiness Checklist
-
-**Operational**
-- [ ] Monitoring and alerting configured
-- [ ] Log rotation is set up
-- [ ] Backup and recovery procedures documented
-- [ ] Performance benchmarks established
-- [ ] Resource usage is acceptable
-- [ ] Script works in target environment
-
-**Documentation**
-- [ ] README with installation instructions
-- [ ] Configuration examples provided  
-- [ ] Troubleshooting guide available
-- [ ] API/interface documentation complete
-- [ ] Change log maintained
-
-**Testing**
-- [ ] Unit tests cover main functionality
-- [ ] Integration tests verify end-to-end flow
-- [ ] Performance tests validate scalability
-- [ ] Security tests check for vulnerabilities
-- [ ] Tests run in CI/CD pipeline
-
----
 
 ## Regex Patterns Reference
 
@@ -2026,7 +1954,7 @@ validate_format() {
     local input="$1"
     local pattern="$2"
     local description="${3:-input}"
-    
+
     if [[ "$input" =~ $pattern ]]; then
         return 0
     else
