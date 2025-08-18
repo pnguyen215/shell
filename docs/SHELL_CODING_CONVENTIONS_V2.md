@@ -41,9 +41,7 @@
 ### Reference
 
 20. [Complete Examples](#complete-examples) - Real-world script examples
-21. [Quick Decision Trees](#quick-decision-trees) - When to use what
-22. [Quality Checklists](#quality-checklists) - Script review guidelines
-23. [Regex Patterns Reference](#regex-patterns-reference) - Common validation patterns
+21. [Regex Patterns Reference](#regex-patterns-reference) - Common validation patterns
 
 ---
 
