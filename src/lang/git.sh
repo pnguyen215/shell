@@ -22,49 +22,55 @@
 #   shell::send_telegram_historical_gh_message "Historical message text"
 #   shell::send_telegram_historical_gh_message -n "Dry-run historical message text"
 shell::send_telegram_historical_gh_message() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_SEND_TELEGRAM_HISTORICAL_GH_MESSAGE"
-		return 0
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Send historical GitHub message via Telegram"
+		shell::logger::usage "shell::send_telegram_historical_gh_message [-n] [-h] <message>"
+		shell::logger::item "message" "The message text to send"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
+		shell::logger::example "shell::send_telegram_historical_gh_message \"Hello, World!\""
+		shell::logger::example "shell::send_telegram_historical_gh_message -n \"Hello, World!\""
+		return $RETURN_SUCCESS
 	fi
 
 	local dry_run="false"
-	if [ "$1" = "-n" ]; then
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
 		dry_run="true"
 		shift
 	fi
+	
+	local message="$1"
 
-	# Ensure that a message argument is provided.
-	if [ $# -lt 1 ]; then
-		echo "Usage: shell::send_telegram_historical_gh_message [-n] <message>"
-		return 0
+	if [ -z "$message" ]; then
+		shell::logger::error "Message is required"
+		return $RETURN_INVALID
 	fi
 
 	# Verify that the Telegram Bot token configuration exists.
 	local hasToken
 	hasToken=$(shell::exist_key_conf "SHELL_HISTORICAL_GH_TELEGRAM_BOT_TOKEN")
 	if [ "$hasToken" = "false" ]; then
-		shell::colored_echo "WARN: The key 'SHELL_HISTORICAL_GH_TELEGRAM_BOT_TOKEN' does not exist. Please consider adding it by using shell::add_key_conf" 11
+		shell::logger::warn "The key 'SHELL_HISTORICAL_GH_TELEGRAM_BOT_TOKEN' does not exist. Please consider adding it by using shell::add_key_conf"
 		shell::clip_value "SHELL_HISTORICAL_GH_TELEGRAM_BOT_TOKEN"
-		return 0
+		return $RETURN_INVALID
 	fi
 
 	# Verify that the Telegram Chat ID configuration exists.
 	local hasChatID
 	hasChatID=$(shell::exist_key_conf "SHELL_HISTORICAL_GH_TELEGRAM_CHAT_ID")
 	if [ "$hasChatID" = "false" ]; then
-		shell::colored_echo "WARN: The key 'SHELL_HISTORICAL_GH_TELEGRAM_CHAT_ID' does not exist. Please consider adding it by using shell::add_key_conf" 11
+		shell::logger::warn "The key 'SHELL_HISTORICAL_GH_TELEGRAM_CHAT_ID' does not exist. Please consider adding it by using shell::add_key_conf"
 		shell::clip_value "SHELL_HISTORICAL_GH_TELEGRAM_CHAT_ID"
-		return 0
+		return $RETURN_INVALID
 	fi
 
 	# Retrieve the configuration values.
-	local message="$1"
 	local token
 	token=$(shell::get_key_conf_value "SHELL_HISTORICAL_GH_TELEGRAM_BOT_TOKEN")
 	local chatID
 	chatID=$(shell::get_key_conf_value "SHELL_HISTORICAL_GH_TELEGRAM_CHAT_ID")
 
-	# Call shell::send_telegram_message with or without dry-run flag.
 	if [ "$dry_run" = "true" ]; then
 		shell::send_telegram_message -n "$token" "$chatID" "$message"
 	else
