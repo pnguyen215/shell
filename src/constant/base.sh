@@ -1,5 +1,5 @@
 #!/bin/bash
-# __cons__.sh
+# base.sh
 
 # Constants
 # Constants are values that are not expected to change during the execution of a program.

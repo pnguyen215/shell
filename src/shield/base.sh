@@ -1,5 +1,5 @@
 #!/bin/bash
-# __shield__.sh
+# base.sh
 
 # Encryption
 # Encryption is the process of converting data into a coded, unreadable format (ciphertext) to prevent unauthorized access.
