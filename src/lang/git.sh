@@ -143,9 +143,4 @@ shell::retrieve_gh_latest_release() {
 		fi
 	fi
 	return $RETURN_SUCCESS
-	# if shell::is_command_available jq; then
-	# 	curl --silent "$api_url" | jq -r '.tag_name'
-	# else
-	# 	curl --silent "$api_url" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/'
-	# fi
 }
