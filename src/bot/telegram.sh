@@ -85,11 +85,6 @@ shell::send_telegram_message() {
 		return $RETURN_INVALID
 	fi
 
-	# Construct the curl command to send the Telegram message.
-	# local cmd="curl -s -X POST \"https://api.telegram.org/bot${token}/sendMessage\" \
-    #             -d \"chat_id=${chatID}\" \
-    #             -d \"parse_mode=markdown\" \
-    #             -d \"text=${message}\" >/dev/null"
 	local cmd="curl -s -X POST \"https://api.telegram.org/bot${token}/sendMessage\" -d \"chat_id=${chatID}\" -d \"parse_mode=markdown\" -d \"text=${message}\" >/dev/null"
 
 	# Execute the command in dry-run mode or actually send the message.
