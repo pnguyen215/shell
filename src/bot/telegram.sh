@@ -48,6 +48,7 @@ shell::gen_markdown_message() {
 #   shell::send_telegram_message -n 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Dry-run: Hello, World!"
 shell::send_telegram_message() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
 		shell::logger::usage "shell::send_telegram_message [-n] [-h] <token> <chat_id> <message>"
 		shell::logger::item "token" "The Telegram Bot API token"
 		shell::logger::item "chat_id" "The chat identifier where the message should be sent"
@@ -95,7 +96,7 @@ shell::send_telegram_message() {
 		shell::logger::cmd_copy "$cmd &"
 	else
 		shell::async "$cmd"
-		shell::logger::info "Telegram message sent"
+		shell::logger::success "Telegram message sent"
 	fi
 
 	return $RETURN_SUCCESS
