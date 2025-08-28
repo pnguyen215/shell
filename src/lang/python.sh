@@ -1362,9 +1362,11 @@ shell::pip_install_requirements_env() {
 # from the specified URL and saves it in the appropriate location within the
 # project structure.
 shell::add_python_gitignore() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_ADD_PYTHON_GITIGNORE"
-		return 0
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Add .gitignore file for Python project"
+		return $RETURN_SUCCESS
 	fi
 	shell::download_dataset ".gitignore" $SHELL_PROJECT_GITIGNORE_PYTHON
+	return $RETURN_SUCCESS
 }
