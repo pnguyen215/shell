@@ -345,7 +345,8 @@ shell::logger::example() {
 		return 1
 	fi
 
-	shell::colored_echo "EXAMPLE: $example" 42
+	shell::colored_echo "Eg:" 42
+	shell::logger::cmd "$example"
 }
 
 # shell::logger::indent function

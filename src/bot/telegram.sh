@@ -47,28 +47,22 @@ shell::gen_markdown_message() {
 #   shell::send_telegram_message 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Hello, World!"
 #   shell::send_telegram_message -n 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Dry-run: Hello, World!"
 shell::send_telegram_message() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_SEND_TELEGRAM_MESSAGE"
-		return 0
-	fi
-
-	local dry_run="false"
-	if [ "$1" = "-n" ]; then
-		dry_run="true"
-		shift
-	fi
-
-	# Ensure that at least three arguments remain.
-	if [ $# -lt 3 ]; then
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::usage "shell::send_telegram_message [-n] [-h] <token> <chat_id> <message>"
 		shell::logger::item "token" "The Telegram Bot API token"
 		shell::logger::item "chat_id" "The chat identifier where the message should be sent"
 		shell::logger::item "message" "The message text to send"
-		shell::logger::option "-h" "Show this help message"
-		shell::logger::option "-n" "Print the command instead of executing it"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
 		shell::logger::example "shell::send_telegram_message 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 \"Hello, World!\""
 		shell::logger::example "shell::send_telegram_message -n 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 \"Hello, World!\""
-		return $RETURN_INVALID
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
 	fi
 
 	local token="$1"
@@ -93,8 +87,9 @@ shell::send_telegram_message() {
 	else
 		shell::async "$cmd"
 		shell::logger::info "Telegram message sent"
-		return $RETURN_SUCCESS
 	fi
+
+	return $RETURN_SUCCESS
 }
 
 # shell::send_telegram_attachment function
