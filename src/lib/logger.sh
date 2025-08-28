@@ -120,16 +120,16 @@ shell::logger::reset_options() {
 	unset _SHELL_LOGGER_OPTIONS_SHOWN
 }
 
-# shell::logger::set_level function
+# shell::logger::level function
 # Sets the logging level to a specified value.
 #
 # Usage:
-#   shell::logger::set_level
+#   shell::logger::level
 #
 # Description:
 #   This function sets the SHELL_LOGGER_LEVEL environment variable to the specified level,
 #   allowing for dynamic adjustment of the logging verbosity.
-shell::logger::set_level() {
+shell::logger::level() {
 	local menu_options
 	local selected_value
 	menu_options=(

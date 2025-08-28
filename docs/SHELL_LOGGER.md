@@ -65,7 +65,7 @@ shell::logger::reset
 shell::logger::info "Level reset to DEBUG"
 
 # Set level interactively (shows menu)
-# shell::logger::set_level
+# shell::logger::level
 ```
 
 **Output:**

@@ -12,9 +12,11 @@
 # from the specified URL and saves it in the appropriate location within the
 # project structure.
 shell::add_angular_gitignore() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_ADD_ANGULAR_GITIGNORE"
-		return 0
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Add .gitignore file for Angular project"
+		return $RETURN_SUCCESS
 	fi
 	shell::download_dataset ".gitignore" $SHELL_PROJECT_GITIGNORE_ANGULAR
+	return $RETURN_SUCCESS
 }
