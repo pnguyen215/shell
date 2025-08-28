@@ -3363,48 +3363,81 @@ shell::multiselect_key() {
 #   The function is intended to be used at the start of any shell function that needs standardized option parsing.
 #   Using name ref allows the caller to access the parsed values directly in their own local variables.
 shell::parse_options() {
-    local _args_var="$1"
-    local _verbose_var="$2"
-    local _dry_run_var="$3"
-    local _force_var="$4"
-    local _help_var="$5"
-    shift 5
+	local _args_var="$1"
+	local _verbose_var="$2"
+	local _dry_run_var="$3"
+	local _force_var="$4"
+	local _help_var="$5"
+	shift 5
 
-    local _args=()
-    local _verbose=false
-    local _dry_run=false
-    local _force=false
-    local _help=false
-    while [[ $# -gt 0 ]]; do
-        case "$1" in
-            --verbose) _verbose=true; shift ;;
-            --dry-run) _dry_run=true; shift ;;
-            --force)   _force=true; shift ;;
-            --help)    _help=true; shift ;;
-            -[!-]*)
-                local i
-                for ((i=1;i<${#1};i++)); do
-                    case "${1:$i:1}" in
-                        v) _verbose=true ;;
-                        n) _dry_run=true ;;
-                        f) _force=true ;;
-                        h) _help=true ;;
-                        *) shell::logger::error "Unknown option: -${1:$i:1}"; return 2 ;;
-                    esac
-                done
-                shift
-                ;;
-            --) shift; break ;;
-            -v) _verbose=true; shift ;;
-            -n) _dry_run=true; shift ;;
-            -f) _force=true; shift ;;
-            -h) _help=true; shift ;;
-            -*) shell::logger::error "Unknown option: $1"; return 2 ;;
-            *)  break ;;
-        esac
-    done
-    while [[ $# -gt 0 ]]; do
-        _args+=("$1")
-        shift
-    done
+	local _args=()
+	local _verbose=false
+	local _dry_run=false
+	local _force=false
+	local _help=false
+	while [[ $# -gt 0 ]]; do
+		case "$1" in
+		--verbose)
+			_verbose=true
+			shift
+			;;
+		--dry-run)
+			_dry_run=true
+			shift
+			;;
+		--force)
+			_force=true
+			shift
+			;;
+		--help)
+			_help=true
+			shift
+			;;
+		-[!-]*)
+			local i
+			for ((i = 1; i < ${#1}; i++)); do
+				case "${1:$i:1}" in
+				v) _verbose=true ;;
+				n) _dry_run=true ;;
+				f) _force=true ;;
+				h) _help=true ;;
+				*)
+					shell::logger::error "Unknown option: -${1:$i:1}"
+					return 2
+					;;
+				esac
+			done
+			shift
+			;;
+		--)
+			shift
+			break
+			;;
+		-v)
+			_verbose=true
+			shift
+			;;
+		-n)
+			_dry_run=true
+			shift
+			;;
+		-f)
+			_force=true
+			shift
+			;;
+		-h)
+			_help=true
+			shift
+			;;
+		-*)
+			shell::logger::error "Unknown option: $1"
+			return 2
+			;;
+		*) break ;;
+		esac
+	done
+	while [[ $# -gt 0 ]]; do
+		_args+=("$1")
+		shift
+	done
 }

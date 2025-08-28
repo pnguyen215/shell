@@ -184,4 +184,3 @@ shell::send_telegram_attachment() {
 		fi
 	done
 }
-

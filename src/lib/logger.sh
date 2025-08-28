@@ -606,8 +606,8 @@ shell::logger::exec_check() {
 #
 # Description:
 #   This function logs a command with an optional description and executes it
-#   safely using bash -c instead of eval. If a description is provided, it is 
-#   indented and formatted for readability. The command is displayed in a specific 
+#   safely using bash -c instead of eval. If a description is provided, it is
+#   indented and formatted for readability. The command is displayed in a specific
 #   color (245) to stand out. This is a safer replacement for shell::logger::exec
 #   that avoids command injection vulnerabilities.
 shell::logger::exec_safe() {
@@ -644,7 +644,7 @@ shell::logger::exec_safe() {
 # Description:
 #   Executes a command safely and automatically logs success (green) or failure (red)
 #   based on the exit code. Preserves the original command's exit code.
-#   This is a safer replacement for shell::logger::exec_check that avoids command 
+#   This is a safer replacement for shell::logger::exec_check that avoids command
 #   injection vulnerabilities by using bash -c instead of eval.
 #   Compatible with Linux and macOS.
 shell::logger::exec_safe_check() {
