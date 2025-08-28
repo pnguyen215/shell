@@ -47,24 +47,28 @@ shell::gen_markdown_message() {
 #   shell::send_telegram_message 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Hello, World!"
 #   shell::send_telegram_message -n 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Dry-run: Hello, World!"
 shell::send_telegram_message() {
-	local dry_run="false"
-
-	# Check for the optional dry-run flag (-n).
-	if [ "$1" = "-n" ]; then
-		dry_run="true"
-		shift
-	fi
-
-	# Check for the help flag (-h)
 	if [ "$1" = "-h" ]; then
 		echo "$USAGE_SHELL_SEND_TELEGRAM_MESSAGE"
 		return 0
 	fi
 
+	local dry_run="false"
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
+
 	# Ensure that at least three arguments remain.
 	if [ $# -lt 3 ]; then
-		echo "Usage: shell::send_telegram_message [-n] <token> <chat_id> <message>"
-		return 1
+		shell::logger::usage "shell::send_telegram_message [-n] [-h] <token> <chat_id> <message>"
+		shell::logger::item "token" "The Telegram Bot API token"
+		shell::logger::item "chat_id" "The chat identifier where the message should be sent"
+		shell::logger::item "message" "The message text to send"
+		shell::logger::option "-h" "Show this help message"
+		shell::logger::option "-n" "Print the command instead of executing it"
+		shell::logger::example "shell::send_telegram_message 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 \"Hello, World!\""
+		shell::logger::example "shell::send_telegram_message -n 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 \"Hello, World!\""
+		return $RETURN_INVALID
 	fi
 
 	local token="$1"
@@ -73,8 +77,8 @@ shell::send_telegram_message() {
 
 	# Verify that both token and chatID are defined.
 	if [ -z "$token" ] || [ -z "$chatID" ]; then
-		shell::colored_echo "ERR: Bot Token or Chat ID is not defined." 196
-		return 1
+		shell::logger::error "Bot Token or Chat ID is not defined"
+		return $RETURN_INVALID
 	fi
 
 	# Construct the curl command to send the Telegram message.
@@ -88,7 +92,8 @@ shell::send_telegram_message() {
 		shell::logger::cmd_copy "$cmd &"
 	else
 		shell::async "$cmd"
-		shell::colored_echo "INFO: Telegram message sent." 46
+		shell::logger::info "Telegram message sent"
+		return $RETURN_SUCCESS
 	fi
 }
 
