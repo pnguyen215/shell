@@ -137,9 +137,9 @@ shell::retrieve_gh_latest_release() {
 		fi
 	else
 		if shell::is_command_available jq; then
-			shell::logger::exec_check "$cmd_with_jq"
+			shell::logger::exec_check "$cmd_with_jq" "GitHub latest release retrieved" "GitHub latest release aborted"
 		else
-			shell::logger::exec_check "$cmd_with_grep"
+			shell::logger::exec_check "$cmd_with_grep" "GitHub latest release retrieved" "GitHub latest release aborted"
 		fi
 	fi
 	return $RETURN_SUCCESS
