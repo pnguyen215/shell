@@ -127,7 +127,7 @@ shell::retrieve_gh_latest_release() {
 
 	local api_url="https://api.github.com/repos/${repo}/releases/latest"
 	local cmd_with_jq="curl --silent \"$api_url\" | jq -r '.tag_name'"
-	local cmd_with_grep="curl --silent \"$api_url\" | grep '"\"tag_name\":'" | sed -E 's/.*"([^"]+)".*/\1/'"
+	local cmd_with_grep="curl --silent \"$api_url\" | grep '\"tag_name\":' | sed -E 's/.*\"([^\"]+)\".*/\1/'"
 
 	if [ "$dry_run" = "true" ]; then
 		if shell::is_command_available jq; then
