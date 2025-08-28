@@ -124,33 +124,53 @@ shell::send_telegram_message() {
 #   shell::send_telegram_attachment 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Report" file1.pdf file2.pdf
 #   shell::send_telegram_attachment -n 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Report" file1.pdf
 shell::send_telegram_attachment() {
-	local dry_run="false"
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::usage "shell::send_telegram_attachment [-n] [-h] <token> <chat_id> <description> [filename_1] [filename_2] [filename_3] ..."
+		shell::logger::item "token" "The Telegram Bot API token"
+		shell::logger::item "chat_id" "The chat identifier to which the attachments are sent"
+		shell::logger::item "description" "A text description that is appended to each attachment's caption along with a timestamp"
+		shell::logger::item "filename_N" "One or more filenames of the attachments to send"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
+		shell::logger::example "shell::send_telegram_attachment 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 \"Report\" file1.pdf file2.pdf"
+		shell::logger::example "shell::send_telegram_attachment -n 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 \"Report\" file1.pdf"
+		return $RETURN_SUCCESS
+	fi
 
-	# Check for the optional dry-run flag (-n)
-	if [ "$1" = "-n" ]; then
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
 		dry_run="true"
 		shift
 	fi
 
-	# Check for the help flag (-h)
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_SEND_TELEGRAM_ATTACHMENT"
-		return 0
-	fi
-
-	# Ensure that at least four arguments remain: token, chat_id, description, and at least one filename.
-	if [ $# -lt 4 ]; then
-		echo "Usage: shell::send_telegram_attachment [-n] <token> <chat_id> <description> [filename_1] [filename_2] [filename_3] ..."
-		return 1
-	fi
-
-	# Retrieve parameters.
 	local token="$1"
 	local chatID="$2"
 	local description="$3"
 	local files=("${@:4}")
-	local timestamp
-	timestamp=$(date +"%Y-%m-%d %H:%M:%S")
+
+	if [ -z "$token" ]; then
+		shell::logger::error "Bot Token is not defined"
+		return $RETURN_INVALID
+	fi
+
+	if [ -z "$chatID" ]; then
+		shell::logger::error "Chat ID is not defined"
+		return $RETURN_INVALID
+	fi
+
+	if [ -z "$description" ]; then
+		shell::logger::error "Description is not defined"
+		return $RETURN_INVALID
+	fi
+
+	if [ ${#files[@]} -eq 0 ]; then
+		shell::logger::error "No files to send"
+		return $RETURN_INVALID
+	fi
+
+	local timestamp=$(date +"%Y-%m-%d %H:%M:%S")
+	shell::logger::debug "Sending ${#files[@]} attachments to chat '$chatID' with description: $description"
 
 	# Iterate over each file and send as an attachment asynchronously.
 	for filename in "${files[@]}"; do
@@ -161,10 +181,11 @@ shell::send_telegram_attachment() {
 				shell::logger::cmd_copy "$cmd &"
 			else
 				shell::async "$cmd"
-				shell::colored_echo "INFO: Async: Attachment '$filename' is being sent." 46
+				shell::logger::success "Attachment '$filename' is being sent."
 			fi
 		else
-			shell::colored_echo "ERR: Attachment '$filename' not found. Skipping." 196
+			shell::logger::error "Attachment '$filename' not found. Skipping."
 		fi
 	done
 }
+
