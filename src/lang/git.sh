@@ -101,25 +101,51 @@ shell::send_telegram_historical_gh_message() {
 #   - Requires internet access.
 #   - Works on both macOS and Linux.
 shell::retrieve_gh_latest_release() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_RETRIEVE_GH_LATEST_RELEASE"
-		return 0
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Retrieve latest release tag from GitHub repository"
+		shell::logger::usage "shell::retrieve_gh_latest_release <owner/repo>"
+		shell::logger::item "owner/repo" "GitHub repository in the format 'owner/repo'"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
+		shell::logger::example "shell::retrieve_gh_latest_release \"cli/cli\""
+		return $RETURN_SUCCESS
 	fi
 
-	if [ -z "$1" ]; then
-		echo "Usage: shell::retrieve_gh_latest_release <owner/repo>"
-		return 0
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
 	fi
 
 	local repo="$1"
-	local api_url="https://api.github.com/repos/${repo}/releases/latest"
 
-	shell::colored_echo "🧪 Fetching latest release for $repo..." 36
-
-	# Use jq if available, otherwise fallback
-	if shell::is_command_available jq; then
-		curl --silent "$api_url" | jq -r '.tag_name'
-	else
-		curl --silent "$api_url" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/'
+	if [ -z "$repo" ]; then
+		shell::logger::error "Repository is required"
+		return $RETURN_INVALID
 	fi
+
+	local api_url="https://api.github.com/repos/${repo}/releases/latest"
+	local cmd_with_jq="curl --silent \"$api_url\" | jq -r '.tag_name'"
+	local cmd_with_grep="curl --silent \"$api_url\" | grep '"\"tag_name\":'" | sed -E 's/.*"([^"]+)".*/\1/'"
+
+	if [ "$dry_run" = "true" ]; then
+		if shell::is_command_available jq; then
+			shell::logger::cmd_copy "$cmd_with_jq"
+		else
+			shell::logger::cmd_copy "$cmd_with_grep"
+		fi
+	else
+		if shell::is_command_available jq; then
+			shell::logger::exec_check "$cmd_with_jq"
+		else
+			shell::logger::exec_check "$cmd_with_grep"
+		fi
+	fi
+	return $RETURN_SUCCESS
+	# if shell::is_command_available jq; then
+	# 	curl --silent "$api_url" | jq -r '.tag_name'
+	# else
+	# 	curl --silent "$api_url" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/'
+	# fi
 }
