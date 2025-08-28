@@ -69,9 +69,18 @@ shell::send_telegram_message() {
 	local chatID="$2"
 	local message="$3"
 
-	# Verify that both token and chatID are defined.
-	if [ -z "$token" ] || [ -z "$chatID" ]; then
-		shell::logger::error "Bot Token or Chat ID is not defined"
+	if [ -z "$token" ]; then
+		shell::logger::error "Bot Token is not defined"
+		return $RETURN_INVALID
+	fi
+
+	if [ -z "$chatID" ]; then
+		shell::logger::error "Chat ID is not defined"
+		return $RETURN_INVALID
+	fi
+
+	if [ -z "$message" ]; then
+		shell::logger::error "Message is not defined"
 		return $RETURN_INVALID
 	fi
 
