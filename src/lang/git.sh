@@ -39,7 +39,7 @@ shell::send_telegram_historical_gh_message() {
 		dry_run="true"
 		shift
 	fi
-	
+
 	local message="$1"
 
 	if [ -z "$message" ]; then
