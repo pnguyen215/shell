@@ -367,9 +367,20 @@ shell::create_go_app() {
 # Each file is downloaded using the shell::download_dataset function, which ensures that the files are
 # fetched from the specified URLs and saved in the appropriate locations.
 shell::add_go_app_settings() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_ADD_GO_APP_SETTINGS"
-		return 0
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::section "Go Settings"
+		shell::logger::info "Add Go application settings"
+		shell::logger::indent 0 "go-project/"
+		shell::logger::indent 1 "docs/"
+		shell::logger::indent 2 "VERSION_RELEASE.md"
+		shell::logger::indent 1 ".github/"
+		shell::logger::indent 2 "workflows/"
+		shell::logger::indent 3 "gh_wrk_base.yml"
+		shell::logger::indent 3 "gh_wrk_news.yml"
+		shell::logger::indent 3 "gh_wrk_news_go.yml"
+		shell::logger::indent 1 "Makefile"
+		return $RETURN_SUCCESS
 	fi
 	shell::add_go_gitignore
 	shell::download_dataset "docs/VERSION_RELEASE.md" $SHELL_PROJECT_DOC_VERSION_RELEASE
@@ -377,6 +388,7 @@ shell::add_go_app_settings() {
 	shell::download_dataset ".github/workflows/gh_wrk_base.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_BASE
 	shell::download_dataset ".github/workflows/gh_wrk_news.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_NEWS
 	shell::download_dataset ".github/workflows/gh_wrk_news_go.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_NEWS_GO
+	return $RETURN_SUCCESS
 }
 
 # shell::add_go_gitignore function
