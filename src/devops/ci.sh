@@ -11,11 +11,13 @@
 # The CI workflow file is essential for automating the build, test, and deployment
 # processes in a continuous integration environment.
 shell::add_gh_wrk_base() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_ADD_GH_WRK_BASE"
-		return 0
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Add GitHub Actions workflow file for continuous integration"
+		return $RETURN_SUCCESS
 	fi
 	shell::download_dataset ".github/workflows/gh_wrk_base.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_BASE
+	return $RETURN_SUCCESS
 }
 
 # shell::add_gh_wrk_news function
@@ -27,11 +29,13 @@ shell::add_gh_wrk_base() {
 # It utilizes the shell::download_dataset function to fetch the file and save it
 # in the appropriate location within the project structure.
 shell::add_gh_wrk_news() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_ADD_GH_WRK_NEWS"
-		return 0
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Add GitHub Actions workflow file for continuous integration notification"
+		return $RETURN_SUCCESS
 	fi
 	shell::download_dataset ".github/workflows/gh_wrk_news.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_NEWS
+	return $RETURN_SUCCESS
 }
 
 # shell::add_gh_wrk_sh_pretty function
@@ -42,11 +46,13 @@ shell::add_gh_wrk_news() {
 # It utilizes the shell::download_dataset function to fetch the file and save it
 # in the appropriate location within the project structure.
 shell::add_gh_wrk_sh_pretty() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_ADD_GH_WRK_SH_PRETTY"
-		return 0
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Add GitHub Actions workflow file for shell script formatting"
+		return $RETURN_SUCCESS
 	fi
 	shell::download_dataset ".github/workflows/gh_wrk_sh_pretty.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_SH_PRETTY
+	return $RETURN_SUCCESS
 }
 
 # shell::add_gh_wrk_news_go function
@@ -57,9 +63,11 @@ shell::add_gh_wrk_sh_pretty() {
 # It utilizes the shell::download_dataset function to fetch the file and save it
 # in the appropriate location within the project structure.
 shell::add_gh_wrk_news_go() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_ADD_GH_WRK_NEWS_GO"
-		return 0
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Add GitHub Actions workflow file for Go language notification"
+		return $RETURN_SUCCESS
 	fi
 	shell::download_dataset ".github/workflows/gh_wrk_news_go.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_NEWS_GO
+	return $RETURN_SUCCESS
 }
