@@ -287,23 +287,34 @@ shell::fzf_remove_go_privates() {
 #   shell::create_go_app -n my_app /tmp/go_projects  # Previews initialization in a target folder.
 #   shell::create_go_app https://github.com/user/repo /home/user/src # Initializes from a GitHub URL in a target folder.
 shell::create_go_app() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_CREATE_GO_APP"
-		return 0
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Create Go application"
+		shell::logger::usage "shell::create_go_app [-n] [-h] <app_name|github_url> [target_folder]"
+		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
+		shell::logger::option "-h, --help" "Display this help message"
+		shell::logger::option "<app_name|github_url>" "The name of the application or a GitHub URL to initialize the module"
+		shell::logger::option "[target_folder]" "Optional. The path to the folder where the Go application should be created"
+		shell::logger::example "shell::create_go_app my_app"
+		shell::logger::example "shell::create_go_app my_app /path/to/my/folder"
+		shell::logger::example "shell::create_go_app -n my_app"
+		shell::logger::example "shell::create_go_app -n my_app /tmp/go_projects"
+		shell::logger::example "shell::create_go_app https://github.com/user/repo /home/user/src"
+		return $RETURN_SUCCESS
 	fi
 
 	local dry_run="false"
-	if [ "$1" = "-n" ]; then
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
 		dry_run="true"
 		shift
 	fi
 
-	if [ -z "$1" ]; then
-		echo "Usage: shell::create_go_app [-n] [-h] <app_name|github_url> [target_folder]"
-		return 0
+	local app_name="$1"
+	if [ -z "$app_name" ]; then
+		shell::logger::error "Application name or GitHub URL is required."
+		return $RETURN_FAILURE
 	fi
 
-	local app_name="$1"
 	local target_folder="$2"
 	local original_dir="$PWD" # Save the original directory
 	local module_name="$app_name"
@@ -320,19 +331,19 @@ shell::create_go_app() {
 
 	# If a target folder is specified, create it and change directory
 	if [ -n "$target_folder" ]; then
-		shell::colored_echo "WARN: Ensuring target directory exists: $target_folder" 33
+		shell::logger::warn "Ensuring target directory exists: $target_folder"
 		if [ "$dry_run" = "true" ]; then
 			shell::logger::cmd_copy "shell::create_directory_if_not_exists \"$target_folder\""
 			shell::logger::cmd_copy "cd \"$target_folder\""
 		else
 			shell::create_directory_if_not_exists "$target_folder"
 			if [ $? -ne 0 ]; then
-				shell::colored_echo "ERR: Could not create or access target directory '$target_folder'." 196
-				return 0
+				shell::logger::error "Could not create or access target directory '$target_folder'."
+				return $RETURN_FAILURE
 			fi
 			cd "$target_folder" || {
-				shell::colored_echo "ERR: Could not change to target directory '$target_folder'." 196
-				return 0
+				shell::logger::error "Could not change to target directory '$target_folder'."
+				return $RETURN_FAILURE
 			}
 		fi
 	fi
@@ -341,7 +352,7 @@ shell::create_go_app() {
 	local tidy_cmd="go mod tidy"
 
 	# Execute go mod init
-	shell::colored_echo "DEBUG: Initializing Go module: $module_name" 244
+	shell::logger::debug "Initializing Go module: $module_name"
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::cmd_copy "$init_cmd"
 	else
@@ -349,7 +360,7 @@ shell::create_go_app() {
 	fi
 
 	# Execute go mod tidy
-	shell::colored_echo "DEBUG: Tidying Go dependencies" 244
+	shell::logger::debug "Tidying Go dependencies"
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::cmd_copy "$tidy_cmd"
 	else
@@ -362,13 +373,13 @@ shell::create_go_app() {
 			shell::logger::cmd_copy "cd \"$original_dir\""
 		else
 			cd "$original_dir" || {
-				shell::colored_echo "ERR: Warning: Could not change back to original directory '$original_dir'." 11
-				return 0
+				shell::logger::warn "Could not change back to original directory '$original_dir'."
+				return $RETURN_FAILURE
 			}
 		fi
 	fi
-	shell::colored_echo "INFO: Go application initialized successfully." 46
-	return 1
+	shell::logger::info "Go application initialized successfully."
+	return $RETURN_SUCCESS
 }
 
 # shell::add_go_app_settings function
