@@ -29,7 +29,7 @@
 #   -   This function is compatible with both Linux and macOS.
 #   -   It uses `go env GOPRIVATE` to reliably fetch the GOPRIVATE setting.
 shell::get_go_privates() {
-	if [ "$1" = "-h" || "$1" = "--help" ]; then
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Retrieve GOPRIVATE setting"
 		shell::logger::usage "shell::get_go_privates [-n] [-h]"
@@ -41,7 +41,7 @@ shell::get_go_privates() {
 	fi
 
 	local dry_run="false"
-	if [ "$1" = "-n" || "$1" = "--dry-run" ]; then
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
 		dry_run="true"
 		shift
 	fi
