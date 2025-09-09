@@ -243,23 +243,30 @@ shell::uninstall_python() {
 #   - Supports asynchronous execution via shell::async, though kept synchronous for user feedback.
 #   - Temporary files are cleaned up automatically.
 shell::uninstall_python_pip_deps() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_UNINSTALL_PYTHON_PIP_DEPS"
-		return 0
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Uninstall all pip and pip3 packages"
+		shell::logger::usage "shell::uninstall_python_pip_deps [-n | --dry-run] [-h | --help]"
+		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
+		shell::logger::option "-h, --help" "Display this help message"
+		shell::logger::example "shell::uninstall_python_pip_deps"
+		shell::logger::example "shell::uninstall_python_pip_deps -n"
+		shell::logger::example "shell::uninstall_python_pip_deps --dry-run"
+		return $RETURN_SUCCESS
 	fi
 
 	local dry_run="false"
-	if [ "$1" = "-n" ]; then
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
 		dry_run="true"
 		shift
 	fi
 
-	shell::colored_echo "WARN: This will uninstall all pip and pip3 packages, including system packages." 11
-	shell::colored_echo "WARN: This is potentially dangerous and could break your system Python installation." 11
-	asked=$(shell::ask "Are you absolutely sure you want to proceed?")
+	shell::logger::warn "This will uninstall all pip and pip3 packages, including system packages."
+	shell::logger::warn "This is potentially dangerous and could break your system Python installation."
+	local asked=$(shell::ask "Are you absolutely sure you want to proceed?")
 	if [ "$asked" = "no" ]; then
-		shell::colored_echo "WARN: Uninstallation cancelled." 11
-		return 0
+		shell::logger::warn "Uninstallation cancelled."
+		return $RETURN_NOT_IMPLEMENTED
 	fi
 
 	# Helper function to uninstall packages for a given pip command
@@ -279,7 +286,7 @@ shell::uninstall_python_pip_deps() {
 	uninstall_packages() {
 		local pip_cmd="$1"
 		if shell::is_command_available "$pip_cmd"; then
-			shell::colored_echo "DEBUG: Processing $pip_cmd packages..." 244
+			shell::logger::debug "Processing $pip_cmd packages..."
 			local packages_file
 			packages_file=$(mktemp)
 			local freeze_cmd="$pip_cmd freeze --break-system-packages | grep -v '^-e' | grep -v '@' | cut -d= -f1 > $packages_file"
@@ -287,29 +294,31 @@ shell::uninstall_python_pip_deps() {
 
 			if [ "$dry_run" = "true" ]; then
 				shell::logger::cmd_copy "$freeze_cmd && $uninstall_cmd && rm $packages_file"
+				return $RETURN_SUCCESS
 			else
 				shell::run_cmd_eval "$freeze_cmd"
 				if [ -s "$packages_file" ]; then
 					shell::run_cmd_eval "$uninstall_cmd"
 					if [ $? -eq 0 ]; then
-						shell::colored_echo "INFO: All $pip_cmd packages uninstalled successfully." 46
+						shell::logger::info "All $pip_cmd packages uninstalled successfully."
 					else
-						shell::colored_echo "ERR: An error occurred while uninstalling $pip_cmd packages." 196
+						shell::logger::error "An error occurred while uninstalling $pip_cmd packages."
 					fi
 				else
-					shell::colored_echo "WARN: No valid $pip_cmd packages found to uninstall." 11
+					shell::logger::warn "No valid $pip_cmd packages found to uninstall."
 				fi
-				rm "$packages_file"
+				local cmd="rm $packages_file"
+				shell::logger::exec_check "$cmd"
 			fi
 		else
-			shell::colored_echo "WARN: $pip_cmd is not installed." 11
+			shell::logger::warn "$pip_cmd is not installed."
 		fi
 	}
 
 	# Check if pip and pip3 are the same to avoid redundant uninstallation
 	if shell::is_command_available pip && shell::is_command_available pip3; then
 		if [ "$(command -v pip)" = "$(command -v pip3)" ]; then
-			shell::colored_echo "WARN: pip and pip3 are the same; uninstalling once." 11
+			shell::logger::warn "pip and pip3 are the same; uninstalling once."
 			uninstall_packages "pip"
 		else
 			uninstall_packages "pip"
@@ -320,11 +329,11 @@ shell::uninstall_python_pip_deps() {
 	elif shell::is_command_available pip3; then
 		uninstall_packages "pip3"
 	else
-		shell::colored_echo "WARN: Neither pip nor pip3 is installed." 11
+		shell::logger::warn "Neither pip nor pip3 is installed."
 	fi
 
-	shell::colored_echo "INFO: Operation completed." 46
-	return 1
+	shell::logger::info "Uninstallation completed."
+	return $RETURN_SUCCESS
 }
 
 # shell::uninstall_python_pip_deps::latest function
