@@ -23,19 +23,25 @@
 #   shell::install_python       # Installs Python 3.
 #   shell::install_python -n    # Prints the installation command without executing it.
 shell::install_python() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_INSTALL_PYTHON"
-		return 0
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Install Python 3"
+		shell::logger::usage "shell::install_python [-n | --dry-run] [-h | --help]"
+		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
+		shell::logger::option "-h, --help" "Display this help message"
+		shell::logger::example "shell::install_python"
+		shell::logger::example "shell::install_python -n"
+		shell::logger::example "shell::install_python --dry-run"
+		return $RETURN_SUCCESS
 	fi
 
 	local dry_run="false"
-	if [ "$1" = "-n" ]; then
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
 		dry_run="true"
 		shift
 	fi
 
-	local os_type
-	os_type=$(shell::get_os_type)
+	local os_type=$(shell::get_os_type)
 	local python_version="python3"
 	local is_installed="false"
 
@@ -55,13 +61,13 @@ shell::install_python() {
 	fi
 
 	if [ "$is_installed" = "true" ]; then
-		shell::colored_echo "WARN: Python3 is already installed via package manager. Skipping." 33
-		return 0
+		shell::logger::warn "Python3 is already installed via package manager. Skipping."
+		return $RETURN_NOT_IMPLEMENTED
 	fi
 
+	local cmd=""
 	if [ "$os_type" = "linux" ]; then
 		local package="python3"
-		local cmd=""
 		if shell::is_command_available apt-get; then
 			cmd="sudo apt-get update && sudo apt-get install -y $package"
 		elif shell::is_command_available yum; then
@@ -69,28 +75,34 @@ shell::install_python() {
 		elif shell::is_command_available dnf; then
 			cmd="sudo dnf install -y $package"
 		else
-			shell::colored_echo "ERR: Unsupported package manager on Linux." 196
-			return 0
+			shell::logger::error "Unsupported package manager on Linux."
+			return $RETURN_FAILURE
 		fi
-		shell::execute_or_evict "$dry_run" "$cmd"
+		if [ "$dry_run" = "true" ]; then
+			shell::logger::cmd_copy "$cmd"
+			return $RETURN_SUCCESS
+		fi
+		shell::logger::exec_check "$cmd"
 	elif [ "$os_type" = "macos" ]; then
 		if ! shell::is_command_available brew; then
-			shell::colored_echo "DEBUG: Installing Homebrew first..." 244
+			shell::logger::debug "Installing Homebrew first..."
 			shell::install_homebrew
 		fi
-		shell::execute_or_evict "$dry_run" "brew install python3"
+		cmd="brew install python3"
+		if [ "$dry_run" = "true" ]; then
+			shell::logger::cmd_copy "$cmd"
+			return $RETURN_SUCCESS
+		fi
+		shell::logger::exec_check "$cmd"
 	else
-		shell::colored_echo "ERR: Unsupported operating system." 196
-		return 0
+		shell::logger::error "Unsupported operating system."
+		return $RETURN_FAILURE
 	fi
 
 	# Verify installation
 	if [ "$dry_run" = "false" ] && shell::is_command_available "$python_version"; then
-		shell::colored_echo "INFO: Python3 installed successfully." 46
-		return 1
-	elif [ "$dry_run" = "false" ]; then
-		shell::colored_echo "ERR: Python3 installation failed." 196
-		return 0
+		shell::logger::info "Python3 installed successfully."
+		return $RETURN_SUCCESS
 	fi
 }
 
