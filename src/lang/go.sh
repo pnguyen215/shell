@@ -29,13 +29,19 @@
 #   -   This function is compatible with both Linux and macOS.
 #   -   It uses `go env GOPRIVATE` to reliably fetch the GOPRIVATE setting.
 shell::get_go_privates() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_GET_GO_PRIVATES"
-		return 0
+	if [ "$1" = "-h" || "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Retrieve GOPRIVATE setting"
+		shell::logger::usage "shell::get_go_privates [-n] [-h]"
+		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
+		shell::logger::option "-h, --help" "Display this help message"
+		shell::logger::example "shell::get_go_privates"
+		shell::logger::example "shell::get_go_privates -n"
+		return $RETURN_SUCCESS
 	fi
 
 	local dry_run="false"
-	if [ "$1" = "-n" ]; then
+	if [ "$1" = "-n" || "$1" = "--dry-run" ]; then
 		dry_run="true"
 		shift
 	fi
@@ -44,18 +50,18 @@ shell::get_go_privates() {
 
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::cmd_copy "$cmd"
-		return 0
+		return $RETURN_SUCCESS
 	else
 		shell::async "$cmd" &
 		local pid=$!
 		wait $pid
 
 		if [ $? -eq 0 ]; then
-			shell::colored_echo "INFO: Go privates setting retrieved successfully: ${cmd}" 46
-			return 1
+			shell::logger::info "Go privates setting retrieved successfully: ${cmd}"
+			return $RETURN_SUCCESS
 		else
-			shell::colored_echo "ERR: Failed to retrieve GOPRIVATE." 196
-			return 0
+			shell::logger::error "Failed to retrieve GOPRIVATE."
+			return $RETURN_FAILURE
 		fi
 	fi
 }
