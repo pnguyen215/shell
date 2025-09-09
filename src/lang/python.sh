@@ -25,7 +25,7 @@
 shell::install_python() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
-		shell::logger::info "Install Python 3"
+		shell::logger::info "Install Python3"
 		shell::logger::usage "shell::install_python [-n | --dry-run] [-h | --help]"
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
 		shell::logger::option "-h, --help" "Display this help message"
