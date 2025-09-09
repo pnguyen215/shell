@@ -261,13 +261,13 @@ shell::uninstall_python_pip_deps() {
 		shift
 	fi
 
-	shell::logger::warn "This will uninstall all pip and pip3 packages, including system packages."
-	shell::logger::warn "This is potentially dangerous and could break your system Python installation."
 	local asked=$(shell::ask "Are you absolutely sure you want to proceed?")
 	if [ "$asked" = "no" ]; then
 		shell::logger::warn "Uninstallation cancelled."
 		return $RETURN_NOT_IMPLEMENTED
 	fi
+
+	shell::logger::warn "This will uninstall all pip and pip3 packages, including system packages and user-installed packages."
 
 	# Helper function to uninstall packages for a given pip command
 	#
