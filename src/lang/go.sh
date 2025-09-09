@@ -186,13 +186,19 @@ shell::set_go_privates() {
 #   - Supports dry-run and asynchronous execution via shell::logger::cmd_copy and shell::async.
 #   - Compatible with both Linux (Ubuntu 22.04 LTS) and macOS.
 shell::fzf_remove_go_privates() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_FZF_REMOVE_GO_PRIVATES"
-		return 0
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Remove GOPRIVATE entries"
+		shell::logger::usage "shell::fzf_remove_go_privates [-n]"
+		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
+		shell::logger::option "-h, --help" "Display this help message"
+		shell::logger::example "shell::fzf_remove_go_privates"
+		shell::logger::example "shell::fzf_remove_go_privates -n"
+		return $RETURN_SUCCESS
 	fi
 
 	local dry_run="false"
-	if [ "$1" = "-n" ]; then
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
 		dry_run="true"
 		shift
 	fi
@@ -203,8 +209,8 @@ shell::fzf_remove_go_privates() {
 	# Retrieve current GOPRIVATE value
 	local current_goprivate=$(go env GOPRIVATE)
 	if [ -z "$current_goprivate" ]; then
-		shell::colored_echo "WARN: GOPRIVATE is not set." 33
-		return 0
+		shell::logger::warn "GOPRIVATE is not set. Nothing to remove."
+		return $RETURN_EMPTY
 	fi
 
 	# Split GOPRIVATE into an array of entries
@@ -213,8 +219,8 @@ shell::fzf_remove_go_privates() {
 	# Use fzf to select entries to remove (multi-select enabled)
 	local selected=$(printf "%s\n" "${entries[@]}" | fzf --multi --prompt="Select entries to remove: ")
 	if [ -z "$selected" ]; then
-		shell::colored_echo "WARN: No entries selected for removal." 33
-		return 0
+		shell::logger::warn "No entries selected for removal."
+		return $RETURN_NOT_IMPLEMENTED
 	fi
 
 	# Build new entries list by excluding selected ones
@@ -236,18 +242,17 @@ shell::fzf_remove_go_privates() {
 
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::cmd_copy "$cmd"
-		return 0
+		return $RETURN_SUCCESS
 	else
-		# Execute asynchronously and wait for completion
 		shell::async "$cmd" &
 		local pid=$!
 		wait $pid
 		if [ $? -eq 0 ]; then
-			shell::colored_echo "INFO: Removed selected entries from GOPRIVATE." 46
-			return 1
+			shell::logger::info "Removed selected entries from GOPRIVATE."
+			return $RETURN_SUCCESS
 		else
-			shell::colored_echo "ERR: Failed to update GOPRIVATE." 196
-			return 0
+			shell::logger::error "Failed to update GOPRIVATE."
+			return $RETURN_FAILURE
 		fi
 	fi
 }
