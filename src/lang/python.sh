@@ -129,67 +129,90 @@ shell::install_python() {
 #   - Requires sudo privileges.
 #   - On Linux, system tools may break if Python is a core dependency; use with caution.
 shell::uninstall_python() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_UNINSTALL_PYTHON"
-		return 0
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Uninstall Python3"
+		shell::logger::usage "shell::uninstall_python [-n | --dry-run] [-h | --help]"
+		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
+		shell::logger::option "-h, --help" "Display this help message"
+		shell::logger::example "shell::uninstall_python"
+		shell::logger::example "shell::uninstall_python -n"
+		shell::logger::example "shell::uninstall_python --dry-run"
+		return $RETURN_SUCCESS
 	fi
 
 	local dry_run="false"
-	if [ "$1" = "-n" ]; then
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
 		dry_run="true"
 		shift
 	fi
 
-	local os_type
-	os_type=$(shell::get_os_type)
+	local os_type=$(shell::get_os_type)
+	local cmd=""
 
 	if [ "$os_type" = "linux" ]; then
 		local package="python3"
-		shell::colored_echo "WARN: Removing Python3 may break system tools on Linux. Proceed with caution." 11
 		if shell::is_command_available apt-get; then
 			if shell::is_package_installed_linux "$package"; then
-				shell::execute_or_evict "$dry_run" "sudo apt-get purge -y $package && sudo apt-get autoremove -y"
+				cmd="sudo apt-get purge -y $package && sudo apt-get autoremove -y"
+				if [ "$dry_run" = "true" ]; then
+					shell::logger::cmd_copy "$cmd"
+					return $RETURN_SUCCESS
+				fi
+				shell::logger::exec_check "$cmd"
 			else
-				shell::colored_echo "WARN: Python3 is not installed via apt-get. Skipping." 11
+				shell::logger::warn "Python3 is not installed via apt-get. Skipping."
 			fi
 		elif shell::is_command_available yum; then
 			if rpm -q "$package" >/dev/null 2>&1; then
-				shell::execute_or_evict "$dry_run" "sudo yum remove -y $package"
+				cmd="sudo yum remove -y $package"
+				if [ "$dry_run" = "true" ]; then
+					shell::logger::cmd_copy "$cmd"
+					return $RETURN_SUCCESS
+				fi
+				shell::logger::exec_check "$cmd"
 			else
-				shell::colored_echo "WARN: Python3 is not installed via yum. Skipping." 11
+				shell::logger::warn "Python3 is not installed via yum. Skipping."
 			fi
 		elif shell::is_command_available dnf; then
 			if rpm -q "$package" >/dev/null 2>&1; then
-				shell::execute_or_evict "$dry_run" "sudo dnf remove -y $package"
+				cmd="sudo dnf remove -y $package"
+				if [ "$dry_run" = "true" ]; then
+					shell::logger::cmd_copy "$cmd"
+					return $RETURN_SUCCESS
+				fi
+				shell::logger::exec_check "$cmd"
 			else
-				shell::colored_echo "WARN: Python3 is not installed via dnf. Skipping." 11
+				shell::logger::warn "Python3 is not installed via dnf. Skipping."
 			fi
 		else
-			shell::colored_echo "ERR: Unsupported package manager on Linux." 196
-			return 1
+			shell::logger::error "Unsupported package manager on Linux."
+			return $RETURN_FAILURE
 		fi
 	elif [ "$os_type" = "macos" ]; then
 		if shell::is_command_available brew; then
 			if brew list --versions python3 >/dev/null 2>&1; then
-				shell::execute_or_evict "$dry_run" "brew uninstall python3 && brew cleanup"
+				cmd="brew uninstall python3 && brew cleanup"
+				if [ "$dry_run" = "true" ]; then
+					shell::logger::cmd_copy "$cmd"
+					return $RETURN_SUCCESS
+				fi
+				shell::logger::exec_check "$cmd"
 			else
-				shell::colored_echo "WARN: Python3 is not installed via Homebrew. Skipping." 11
+				shell::logger::warn "Python3 is not installed via Homebrew. Skipping."
 			fi
 		else
-			shell::colored_echo "ERR: Homebrew is not installed on macOS." 196
-			return 0
+			shell::logger::error "Homebrew is not installed on macOS."
+			return $RETURN_FAILURE
 		fi
 	else
-		shell::colored_echo "ERR: Unsupported operating system." 196
-		return 0
+		shell::logger::error "Unsupported operating system."
+		return $RETURN_FAILURE
 	fi
 
 	if [ "$dry_run" = "false" ] && ! shell::is_command_available python3; then
-		shell::colored_echo "INFO: Python3 removed successfully." 46
-		return 1
-	elif [ "$dry_run" = "false" ]; then
-		shell::colored_echo "WARN: Python3 binary still detected. Manual cleanup may be required." 33
-		return 0
+		shell::logger::info "Python3 removed successfully."
+		return $RETURN_SUCCESS
 	fi
 }
 
