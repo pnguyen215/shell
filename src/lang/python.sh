@@ -261,10 +261,12 @@ shell::uninstall_python_pip_deps() {
 		shift
 	fi
 
-	local asked=$(shell::ask "Are you absolutely sure you want to proceed?")
-	if [ "$asked" = "no" ]; then
-		shell::logger::warn "Uninstallation cancelled."
-		return $RETURN_NOT_IMPLEMENTED
+	if [ "$dry_run" = "false" ]; then
+		local asked=$(shell::ask "Are you absolutely sure you want to proceed?")
+		if [ "$asked" = "no" ]; then
+			shell::logger::warn "Uninstallation cancelled."
+			return $RETURN_NOT_IMPLEMENTED
+		fi
 	fi
 
 	if [ "$dry_run" = "true" ]; then
@@ -332,13 +334,13 @@ shell::uninstall_python_pip_deps() {
 		uninstall_packages "pip3"
 	else
 		shell::logger::warn "Neither pip nor pip3 is installed."
-		return $RETURN_NOT_IMPLEMENTED
 	fi
 
 	if [ "$dry_run" = "false" ]; then
 		shell::logger::info "Uninstallation completed."
+		return $RETURN_SUCCESS
 	fi
-	return $RETURN_SUCCESS
+	return $RETURN_NOT_IMPLEMENTED
 }
 
 # shell::uninstall_python_pip_deps::latest function
