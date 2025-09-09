@@ -322,26 +322,23 @@ shell::uninstall_python_pip_deps() {
 		if [ "$(command -v pip)" = "$(command -v pip3)" ]; then
 			shell::logger::warn "pip and pip3 are the same; uninstalling once."
 			uninstall_packages "pip"
-			shell::logger::info "Uninstallation completed."
-			return $RETURN_SUCCESS
 		else
 			uninstall_packages "pip"
 			uninstall_packages "pip3"
-			shell::logger::info "Uninstallation completed."
-			return $RETURN_SUCCESS
 		fi
 	elif shell::is_command_available pip; then
 		uninstall_packages "pip"
-		shell::logger::info "Uninstallation completed."
-		return $RETURN_SUCCESS
 	elif shell::is_command_available pip3; then
 		uninstall_packages "pip3"
-		shell::logger::info "Uninstallation completed."
-		return $RETURN_SUCCESS
 	else
 		shell::logger::warn "Neither pip nor pip3 is installed."
 		return $RETURN_NOT_IMPLEMENTED
 	fi
+
+	if [ "$dry_run" = "false" ]; then
+		shell::logger::info "Uninstallation completed."
+	fi
+	return $RETURN_SUCCESS
 }
 
 # shell::uninstall_python_pip_deps::latest function
