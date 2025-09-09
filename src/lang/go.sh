@@ -100,33 +100,38 @@ shell::get_go_privates() {
 #   -   It uses `go env -w GOPRIVATE=<value>` to set the GOPRIVATE setting.
 #   -   It supports dry-run and asynchronous execution.
 shell::set_go_privates() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_SET_GO_PRIVATES"
-		return 0
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Set GOPRIVATE setting"
+		shell::logger::usage "shell::set_go_privates [-n] <repository1> [repository2] ..."
+		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
+		shell::logger::option "-h, --help" "Display this help message"
+		shell::logger::example "shell::set_go_privates \"example.com/private1\""
+		shell::logger::example "shell::set_go_privates -n \"example.com/private1\" \"example.com/internal\""
+		return $RETURN_SUCCESS
 	fi
 
 	local dry_run="false"
-	if [ "$1" = "-n" ]; then
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
 		dry_run="true"
 		shift
 	fi
 
-	if [ $# -eq 0 ]; then
-		echo "Usage: shell::set_go_privates [-n] <repository1> [repository2] ..."
-		return 0
+	# Join all repositories with a comma
+	local repositories_by_comma="$*"
+
+	if [ -z "$repositories_by_comma" ]; then
+		shell::logger::error "No repositories provided."
+		return $RETURN_FAILURE
 	fi
 
-	# Join all repositories with a comma
-	local repositories_by_comma
 	IFS=','
-	repositories_by_comma="$*"
 	unset IFS
 
 	# Check if GOPRIVATE is already set
 	local existing_go_private=$(go env GOPRIVATE)
 
 	if [ -n "$existing_go_private" ]; then
-		# Append to existing GOPRIVATE value
 		repositories_by_comma="$existing_go_private,$repositories_by_comma"
 	fi
 
@@ -134,18 +139,18 @@ shell::set_go_privates() {
 
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::cmd_copy "$cmd"
-		return 0
+		return $RETURN_SUCCESS
 	else
 		shell::async "$cmd" &
 		local pid=$!
 		wait $pid
 
 		if [ $? -eq 0 ]; then
-			shell::colored_echo "INFO: GOPRIVATE set successfully to: $repositories_by_comma" 46
-			return 1
+			shell::logger::info "GOPRIVATE set successfully to: $repositories_by_comma"
+			return $RETURN_SUCCESS
 		else
-			shell::colored_echo "ERR: Failed to set GOPRIVATE." 196
-			return 0
+			shell::logger::error "Failed to set GOPRIVATE."
+			return $RETURN_FAILURE
 		fi
 	fi
 }
