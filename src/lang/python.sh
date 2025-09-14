@@ -515,7 +515,6 @@ shell::create_python_env() {
 	local venv_path="./venv"
 	local python_version="python3"
 
-	# Parse optional arguments
 	while [ $# -gt 0 ]; do
 		case "$1" in
 		-n | --dry-run)
@@ -577,36 +576,38 @@ shell::create_python_env() {
 			shell::logger::error "Failed to create virtual environment."
 			return $RETURN_FAILURE
 		fi
-	fi
-
-	# Upgrade pip and install basic tools asynchronously
-	if [ "$dry_run" = "false" ] && [ -d "$venv_path" ]; then
 		local pip_cmd="$venv_path/bin/pip"
 		if shell::is_command_available "$pip_cmd"; then
-			shell::logger::debug "Upgrading pip and installing basic tools in the virtual environment..."
+			shell::logger::debug "Upgrading pip in the virtual environment at '$venv_path'..."
 			local upgrade_cmd="$pip_cmd install --upgrade pip wheel setuptools"
 			shell::logger::exec_check "$upgrade_cmd"
 			if [ $? -eq 0 ]; then
-				shell::logger::info "Pip and tools upgraded successfully."
+				shell::logger::info "Pip upgraded successfully at '$venv_path'."
 			else
-				shell::logger::error "Failed to upgrade pip/tools."
+				shell::logger::error "Failed to upgrade pip at '$venv_path'."
+				return $RETURN_FAILURE
 			fi
-		else
-			shell::logger::error "pip not found in virtual environment."
-			return $RETURN_FAILURE
 		fi
-	elif [ "$dry_run" = "true" ]; then
-		shell::logger::cmd_copy "$venv_path/bin/pip install --upgrade pip wheel setuptools"
+		local activate_cmd="source \"$venv_path/bin/activate\""
+		shell::logger::info "Virtual environment created successfully at '$venv_path'."
+		shell::logger::debug "To activate, run: $activate_cmd"
+		shell::clip_value "$activate_cmd"
+		return $RETURN_SUCCESS
 	fi
 
-	local activate_cmd="source \"$venv_path/bin/activate\""
-	if [ "$dry_run" = "false" ] && [ -f "$venv_path/bin/activate" ]; then
-		shell::logger::info "Virtual environment created successfully at '$venv_path'."
-		shell::logger::info "[a] To activate, run: $activate_cmd"
-		shell::clip_value "$activate_cmd"
-	elif [ "$dry_run" = "false" ]; then
-		shell::logger::error "Failed to create virtual environment."
-		return $RETURN_FAILURE
+	if [ "$dry_run" = "true" ]; then
+		local cmd="$python_version -m venv \"$venv_path\""
+		local pip_cmd="$venv_path/bin/pip"
+		local upgrade_cmd="$pip_cmd install --upgrade pip wheel setuptools"
+		local activate_cmd="source \"$venv_path/bin/activate\""
+		shell::logger::section "Create Python virtual environment"
+		shell::logger::step 1 "Creating virtual environment at '$venv_path' with $python_version..."
+		shell::logger::cmd "$cmd"
+		shell::logger::step 2 "Upgrading pip in the virtual environment..."
+		shell::logger::cmd "$upgrade_cmd"
+		shell::logger::step 3 "Activating virtual environment..."
+		shell::logger::cmd "$activate_cmd"
+		return $RETURN_SUCCESS
 	fi
 }
 
