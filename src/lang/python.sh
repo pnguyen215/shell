@@ -496,9 +496,19 @@ shell::uninstall_python_pip_deps::latest() {
 #   - On Linux, uses python3-venv package if needed.
 #   - Activation command is copied to clipboard for convenience.
 shell::create_python_env() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_CREATE_PYTHON_ENV"
-		return 0
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Create Python virtual environment"
+		shell::logger::usage "shell::create_python_env [-n | --dry-run] [-h | --help] [-p | --path <path>] [-v | --version <version>]"
+		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
+		shell::logger::option "-h, --help" "Display this help message"
+		shell::logger::option "-p, --path" "Specify the path where the virtual environment will be created (defaults to ./venv)"
+		shell::logger::option "-v, --version" "Specify the Python version (e.g., 3.10); defaults to system Python3"
+		shell::logger::example "shell::create_python_env -n -p ~/my_env -v 3.10"
+		shell::logger::example "shell::create_python_env -n -p ~/my_env"
+		shell::logger::example "shell::create_python_env -n"
+		shell::logger::example "shell::create_python_env -n -v 3.10"
+		return $RETURN_SUCCESS
 	fi
 
 	local dry_run="false"
@@ -508,21 +518,21 @@ shell::create_python_env() {
 	# Parse optional arguments
 	while [ $# -gt 0 ]; do
 		case "$1" in
-		-n)
+		-n | --dry-run)
 			dry_run="true"
 			shift
 			;;
-		-p)
+		-p | --path)
 			venv_path="$2"
 			shift 2
 			;;
-		-v)
+		-v | --version)
 			python_version="python$2"
 			shift 2
 			;;
 		*)
-			echo "Usage: shell::create_python_env [-n] [-p <path>] [-v <version>]"
-			return 0
+			shell::logger::error "Invalid option: $1"
+			return $RETURN_FAILURE
 			;;
 		esac
 	done
@@ -532,7 +542,7 @@ shell::create_python_env() {
 
 	# Ensure Python is installed
 	if ! shell::is_command_available "$python_version"; then
-		shell::colored_echo "DEBUG: Installing $python_version..." 244
+		shell::logger::debug "Installing $python_version..."
 		if [ "$os_type" = "linux" ]; then
 			shell::execute_or_evict "$dry_run" "shell::install_python"
 			# Ensure python3-venv is installed on Linux for virtual env support
@@ -542,18 +552,18 @@ shell::create_python_env() {
 		elif [ "$os_type" = "macos" ]; then
 			shell::execute_or_evict "$dry_run" "shell::install_python"
 		else
-			shell::colored_echo "ERR: Unsupported operating system." 196
-			return 0
+			shell::logger::error "Unsupported operating system."
+			return $RETURN_FAILURE
 		fi
 	fi
 
 	# Check if virtual environment already exists
 	if [ -d "$venv_path" ] && [ "$dry_run" = "false" ]; then
-		shell::colored_echo "WARN: Virtual environment already exists at '$venv_path'. Skipping creation." 11
+		shell::logger::warn "Virtual environment already exists at '$venv_path'. Skipping creation."
 	else
 		# Create the virtual environment
 		local create_cmd="$python_version -m venv \"$venv_path\""
-		shell::colored_echo "DEBUG: Creating virtual environment at '$venv_path' with $python_version..." 244
+		shell::logger::debug "Creating virtual environment at '$venv_path' with $python_version..."
 		shell::execute_or_evict "$dry_run" "$create_cmd"
 	fi
 
@@ -562,26 +572,26 @@ shell::create_python_env() {
 	if [ "$os_type" = "macos" ] || [ "$os_type" = "linux" ]; then
 		activate_cmd="source \"$venv_path/bin/activate\""
 	else
-		shell::colored_echo "ERR: Unsupported OS for activation path." 196
-		return 0
+		shell::logger::error "Unsupported OS for activation path."
+		return $RETURN_FAILURE
 	fi
 
 	# Upgrade pip and install basic tools asynchronously
 	if [ "$dry_run" = "false" ] && [ -d "$venv_path" ]; then
 		local pip_cmd="$venv_path/bin/pip"
 		if shell::is_command_available "$pip_cmd"; then
-			shell::colored_echo "DEBUG: Upgrading pip and installing basic tools in the virtual environment..." 244
+			shell::logger::debug "Upgrading pip and installing basic tools in the virtual environment..."
 			local upgrade_cmd="$pip_cmd install --upgrade pip wheel setuptools"
-			shell::async "$upgrade_cmd" &
+			shell::async "$upgrade_cmd"
 			wait $! # Wait for async process to complete
 			if [ $? -eq 0 ]; then
-				shell::colored_echo "INFO: Pip and tools upgraded successfully." 46
+				shell::logger::info "Pip and tools upgraded successfully."
 			else
-				shell::colored_echo "ERR: Failed to upgrade pip/tools." 196
+				shell::logger::error "Failed to upgrade pip/tools."
 			fi
 		else
-			shell::colored_echo "ERR: pip not found in virtual environment." 196
-			return 0
+			shell::logger::error "pip not found in virtual environment."
+			return $RETURN_FAILURE
 		fi
 	elif [ "$dry_run" = "true" ]; then
 		shell::logger::cmd_copy "$venv_path/bin/pip install --upgrade pip wheel setuptools"
@@ -589,12 +599,12 @@ shell::create_python_env() {
 
 	# Verify and provide activation instructions
 	if [ "$dry_run" = "false" ] && [ -f "$venv_path/bin/activate" ]; then
-		shell::colored_echo "INFO: Virtual environment created successfully at '$venv_path'." 46
-		shell::colored_echo "[a] To activate, run: $activate_cmd" 33
+		shell::logger::info "Virtual environment created successfully at '$venv_path'."
+		shell::logger::info "[a] To activate, run: $activate_cmd"
 		shell::clip_value "$activate_cmd"
 	elif [ "$dry_run" = "false" ]; then
-		shell::colored_echo "ERR: Failed to create virtual environment." 196
-		return 0
+		shell::logger::error "Failed to create virtual environment."
+		return $RETURN_FAILURE
 	fi
 }
 
