@@ -1858,16 +1858,20 @@ shell::measure_time() {
 #   shell::async my_function arg1 arg2      # Executes my_function with arguments asynchronously.
 #   shell::async -n ls -l                   # Prints the 'ls -l' command that would be executed in the background.
 shell::async() {
-	# Check for the help flag (-h)
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_ASYNC"
-		return 0
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Execute command asynchronously"
+		shell::logger::usage "shell::async [-n | --dry-run] [-h | --help] <command> [arguments...]"
+		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
+		shell::logger::option "-h, --help" "Display this help message"
+		shell::logger::option "<command> [arguments...]" "The command (with its arguments) to execute"
+		shell::logger::example "shell::async ls -l"
+		shell::logger::example "shell::async -n ls -l"
+		return $RETURN_SUCCESS
 	fi
 
 	local dry_run="false"
-
-	# Check for the optional dry-run flag (-n).
-	if [ "$1" = "-n" ]; then
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
 		dry_run="true"
 		shift
 	fi
@@ -1877,13 +1881,13 @@ shell::async() {
 
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::cmd_copy "$cmd &"
-		return 0
+		return $RETURN_SUCCESS
 	else
 		# Execute the command asynchronously (in the background)
-		eval "$cmd" &
+		shell::logger::exec_check "$cmd &"
 		local pid=$!
-		shell::colored_echo "DEBUG: Async process started with PID: $pid" 244
-		return 0
+		shell::logger::info "Async process started with PID: $pid"
+		return $RETURN_SUCCESS
 	fi
 }
 
@@ -1900,7 +1904,6 @@ shell::async() {
 # Example:
 #   shell::execute_or_evict "true" "echo Hello"
 shell::execute_or_evict() {
-	# Check for the help flag (-h)
 	if [ "$1" = "-h" ]; then
 		echo "$USAGE_SHELL_EXECUTE_OR_EVICT"
 		return 0
