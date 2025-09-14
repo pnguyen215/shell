@@ -544,13 +544,13 @@ shell::create_python_env() {
 	if ! shell::is_command_available "$python_version"; then
 		shell::logger::debug "Installing $python_version..."
 		if [ "$os_type" = "linux" ]; then
-			shell::execute_or_evict "$dry_run" "shell::install_python"
+			shell::logger::exec_check "shell::install_python"
 			# Ensure python3-venv is installed on Linux for virtual env support
 			if ! shell::is_package_installed_linux "$python_version-venv"; then
-				shell::execute_or_evict "$dry_run" "shell::install_package $python_version-venv"
+				shell::logger::exec_check "shell::install_package $python_version-venv"
 			fi
 		elif [ "$os_type" = "macos" ]; then
-			shell::execute_or_evict "$dry_run" "shell::install_python"
+			shell::logger::exec_check "shell::install_python"
 		else
 			shell::logger::error "Unsupported operating system."
 			return $RETURN_FAILURE
@@ -563,19 +563,16 @@ shell::create_python_env() {
 		return $RETURN_SUCCESS
 	else
 		# Create the virtual environment
-		create_directory_if_not_exists "$venv_path"
+		# shell::create_directory_if_not_exists "$venv_path"
 		local create_cmd="$python_version -m venv \"$venv_path\""
 		shell::logger::debug "Creating virtual environment at '$venv_path' with $python_version..."
 		shell::logger::exec_check "$create_cmd"
-	fi
-
-	# Define activation path based on OS
-	local activate_cmd
-	if [ "$os_type" = "macos" ] || [ "$os_type" = "linux" ]; then
-		activate_cmd="source \"$venv_path/bin/activate\""
-	else
-		shell::logger::error "Unsupported OS for activation path."
-		return $RETURN_FAILURE
+		if [ -d "$venv_path" ]; then
+			shell::logger::info "Virtual environment created successfully at '$venv_path'."
+		else
+			shell::logger::error "Failed to create virtual environment."
+			return $RETURN_FAILURE
+		fi
 	fi
 
 	# Upgrade pip and install basic tools asynchronously
@@ -598,7 +595,7 @@ shell::create_python_env() {
 		shell::logger::cmd_copy "$venv_path/bin/pip install --upgrade pip wheel setuptools"
 	fi
 
-	# Verify and provide activation instructions
+	local activate_cmd="source \"$venv_path/bin/activate\""
 	if [ "$dry_run" = "false" ] && [ -f "$venv_path/bin/activate" ]; then
 		shell::logger::info "Virtual environment created successfully at '$venv_path'."
 		shell::logger::info "[a] To activate, run: $activate_cmd"
