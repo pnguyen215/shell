@@ -1878,6 +1878,10 @@ shell::async() {
 
 	# Build the command string from all arguments.
 	local cmd="$*"
+	if [ -z "$cmd" ]; then
+		shell::logger::error "No command provided"
+		return $RETURN_FAILURE
+	fi
 
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::cmd_copy "$cmd &"
