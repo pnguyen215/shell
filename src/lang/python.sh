@@ -597,8 +597,7 @@ shell::create_python_env() {
 
 	if [ "$dry_run" = "true" ]; then
 		local cmd="$python_version -m venv \"$venv_path\""
-		local pip_cmd="$venv_path/bin/pip"
-		local upgrade_cmd="$pip_cmd install --upgrade pip wheel setuptools"
+		local upgrade_cmd="$venv_path/bin/pip install --upgrade pip wheel setuptools"
 		local activate_cmd="source \"$venv_path/bin/activate\""
 		shell::logger::section "Create Python virtual environment"
 		shell::logger::step 1 "Creating virtual environment at '$venv_path' with $python_version..."
