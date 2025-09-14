@@ -565,7 +565,8 @@ shell::create_python_env() {
 		create_directory_if_not_exists "$venv_path"
 		local create_cmd="$python_version -m venv \"$venv_path\""
 		shell::logger::debug "Creating virtual environment at '$venv_path' with $python_version..."
-		shell::execute_or_evict "$dry_run" "$create_cmd"
+		# shell::execute_or_evict "$dry_run" "$create_cmd"
+		shell::logger::exec_check "$create_cmd"
 	fi
 
 	# Define activation path based on OS
@@ -583,8 +584,9 @@ shell::create_python_env() {
 		if shell::is_command_available "$pip_cmd"; then
 			shell::logger::debug "Upgrading pip and installing basic tools in the virtual environment..."
 			local upgrade_cmd="$pip_cmd install --upgrade pip wheel setuptools"
-			shell::async "$upgrade_cmd"
-			wait $! # Wait for async process to complete
+			# shell::async "$upgrade_cmd"
+			shell::logger::exec_check "$upgrade_cmd"
+			# wait $! # Wait for async process to complete
 			if [ $? -eq 0 ]; then
 				shell::logger::info "Pip and tools upgraded successfully."
 			else
