@@ -537,36 +537,40 @@ shell::create_python_env() {
 		esac
 	done
 
-	local os_type
-	os_type=$(shell::get_os_type)
+	local os_type=$(shell::get_os_type)
 
-	# Ensure Python is installed
-	if ! shell::is_command_available "$python_version"; then
-		shell::logger::debug "Installing $python_version..."
-		if [ "$os_type" = "linux" ]; then
-			shell::logger::exec_check "shell::install_python"
-			# Ensure python3-venv is installed on Linux for virtual env support
-			if ! shell::is_package_installed_linux "$python_version-venv"; then
-				shell::logger::exec_check "shell::install_package $python_version-venv"
+	if [ "$dry_run" = "false" ]; then
+		if ! shell::is_command_available "$python_version"; then
+			shell::logger::debug "Installing $python_version..."
+			if [ "$os_type" = "linux" ]; then
+				shell::install_python
+				if ! shell::is_package_installed_linux "$python_version-venv"; then
+					shell::install_package "$python_version-venv"
+				fi
+			elif [ "$os_type" = "macos" ]; then
+				shell::install_python
+			else
+				shell::logger::error "Unsupported operating system."
+				return $RETURN_FAILURE
 			fi
-		elif [ "$os_type" = "macos" ]; then
-			shell::logger::exec_check "shell::install_python"
-		else
-			shell::logger::error "Unsupported operating system."
-			return $RETURN_FAILURE
 		fi
 	fi
 
-	# Check if virtual environment already exists
-	if [ -d "$venv_path" ] && [ "$dry_run" = "false" ]; then
-		shell::logger::warn "Virtual environment already exists at '$venv_path'. Skipping creation."
-		return $RETURN_SUCCESS
-	else
-		# Create the virtual environment
-		# shell::create_directory_if_not_exists "$venv_path"
-		local create_cmd="$python_version -m venv \"$venv_path\""
+	if [ "$dry_run" = "false" ]; then
+		if [ -d "$venv_path" ]; then
+			shell::logger::warn "Virtual environment already exists at '$venv_path'. Skipping creation."
+			local ask=$(shell::ask "Do you want to overwrite the existing virtual environment?")
+			if [ "$ask" = "yes" ]; then
+				shell::logger::debug "Overwriting existing virtual environment at '$venv_path'..."
+				shell::remove_files "$venv_path"
+			else
+				shell::logger::warn "Skipping overwriting existing virtual environment."
+				return $RETURN_SUCCESS
+			fi
+		fi
 		shell::logger::debug "Creating virtual environment at '$venv_path' with $python_version..."
-		shell::logger::exec_check "$create_cmd"
+		local cmd="$python_version -m venv \"$venv_path\""
+		shell::logger::exec_check "$cmd"
 		if [ -d "$venv_path" ]; then
 			shell::logger::info "Virtual environment created successfully at '$venv_path'."
 		else
