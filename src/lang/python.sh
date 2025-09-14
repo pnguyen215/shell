@@ -562,6 +562,7 @@ shell::create_python_env() {
 		shell::logger::warn "Virtual environment already exists at '$venv_path'. Skipping creation."
 	else
 		# Create the virtual environment
+		create_directory_if_not_exists "$venv_path"
 		local create_cmd="$python_version -m venv \"$venv_path\""
 		shell::logger::debug "Creating virtual environment at '$venv_path' with $python_version..."
 		shell::execute_or_evict "$dry_run" "$create_cmd"
