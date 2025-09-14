@@ -1908,17 +1908,32 @@ shell::async() {
 # Example:
 #   shell::execute_or_evict "true" "echo Hello"
 shell::execute_or_evict() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_EXECUTE_OR_EVICT"
-		return 0
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Execute command or print it based on dry-run mode"
+		shell::logger::usage "shell::execute_or_evict [-h | --help] <dry_run> <command>"
+		shell::logger::option "-h, --help" "Display this help message"
+		shell::logger::option "<dry_run>" "true to print the command, false to execute it"
+		shell::logger::option "<command> [arguments...]" "The command (with its arguments) to execute"
+		shell::logger::example "shell::execute_or_evict true echo Hello"
+		shell::logger::example "shell::execute_or_evict false echo Hello"
+		return $RETURN_SUCCESS
+	fi
+
+	if [ "$#" -lt 2 ]; then
+		shell::logger::error "No command provided" 
+		return $RETURN_FAILURE
 	fi
 
 	local dry_run="$1"
 	local command="$2"
-	if [ "$dry_run" = "true" ]; then
+	if [ "$dry_run" = "true" ] || [ "$dry_run" = "false" ]; then
 		shell::logger::cmd_copy "$command"
+		return $RETURN_SUCCESS
 	else
-		shell::run_cmd_eval "$command"
+		shell::logger::exec_check "$command"
+		local exit_code=$?
+		return $exit_code
 	fi
 }
 
