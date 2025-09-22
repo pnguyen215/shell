@@ -46,7 +46,7 @@ if [ -z "$shell_pkg_ext" ]; then
 fi
 
 # Move all contents (including hidden files) and clean up
-mv "$shell_pkg_ext"/* "$shell_pkg/" 2>/dev/null || echo "WARN: Some files couldn't be moved (possibly empty or hidden files only)."
+mv "$shell_pkg_ext"/* "$shell_pkg/" 2>/dev/null || echo "ERR: Some files couldn't be moved (possibly empty or hidden files only)."
 
 # Remove the extracted folder
 rmdir "$shell_pkg_ext" 2>/dev/null || {
@@ -63,7 +63,7 @@ if [ -f "$HOME/.zshrc" ]; then
 elif [ -f "$HOME/.bashrc" ]; then
 	shell_conf="$HOME/.bashrc"
 else
-	echo "WARN: No .zshrc or .bashrc found. Please manually add 'source $shell_pkg/src/shell.sh' to your shell config."
+	echo "ERR: No .zshrc or .bashrc found. Please manually add 'source $shell_pkg/src/shell.sh' to your shell config."
 	exit 0
 fi
 
@@ -72,7 +72,7 @@ line="source $shell_pkg/src/shell.sh"
 # Check if the line already exists in the shell config
 if ! grep -qF "$line" "$shell_conf" 2>/dev/null; then
 	echo "$line" >>"$shell_conf"
-	echo "INFO: Added shell to $shell_conf"
+	echo "≫ Added shell to $shell_conf"
 fi
 
-echo "INFO: shell installed. Restart your terminal or run 'source $shell_conf' or 'source ~/.bashrc' to apply changes."
+echo "≫ shell installed. Restart your terminal or run 'source $shell_conf' or 'source ~/.bashrc' to apply changes."
