@@ -192,14 +192,14 @@ shell::fzf_remove_go_privates() {
 	shell::install_package fzf
 
 	# Retrieve current GOPRIVATE value
-	local current_goprivate=$(go env GOPRIVATE)
-	if [ -z "$current_goprivate" ]; then
+	local current_privates=$(go env GOPRIVATE)
+	if [ -z "$current_privates" ]; then
 		shell::logger::warn "GOPRIVATE is not set. Nothing to remove."
 		return $RETURN_EMPTY
 	fi
 
 	# Split GOPRIVATE into an array of entries
-	local entries=($(echo "$current_goprivate" | tr ',' ' '))
+	local entries=($(echo "$current_privates" | tr ',' ' '))
 
 	# Use fzf to select entries to remove (multi-select enabled)
 	local selected=$(printf "%s\n" "${entries[@]}" | fzf --multi --prompt="Select entries to remove: ")
@@ -217,29 +217,19 @@ shell::fzf_remove_go_privates() {
 	done
 
 	# Construct the new GOPRIVATE value
-	local new_goprivate=$(
+	local new_privates=$(
 		IFS=','
 		echo "${new_entries[*]}"
 	)
 
-	# Prepare the command to update GOPRIVATE
-	local cmd="go env -w GOPRIVATE=\"$new_goprivate\""
+	local cmd="go env -w GOPRIVATE=\"$new_privates\""
 
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::cmd_copy "$cmd"
 		return $RETURN_SUCCESS
-	else
-		shell::async "$cmd" &
-		local pid=$!
-		wait $pid
-		if [ $? -eq 0 ]; then
-			shell::logger::info "Removed selected entries from GOPRIVATE."
-			return $RETURN_SUCCESS
-		else
-			shell::logger::error "Failed to update GOPRIVATE."
-			return $RETURN_FAILURE
-		fi
 	fi
+
+	shell::logger::exec_check "$cmd"
 }
 
 # shell::create_go_app function
