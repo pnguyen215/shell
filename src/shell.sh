@@ -102,13 +102,17 @@ shell::version() {
 #   It checks for the presence of the source command in the user's .zshrc or .bashrc
 #   files and executes the appropriate command to ensure the new version is loaded.
 shell::upgrade() {
-	shell::logger::debug "Upgrading shell..."
-	install_dir="$HOME/shell"
-	[ -d "$install_dir" ] && rm -rf "$install_dir"
+	local shell_pkg="$HOME/shell"
+	if [ -d "$shell_pkg" ]; then
+		rm -rf "$shell_pkg"
+	fi
+
+	# Download and install the latest version of the shell
 	bash -c "$(curl -fsSL https://raw.githubusercontent.com/pnguyen215/shell/master/install.sh)"
-	if [ -f "$HOME/.zshrc" ] && grep -q "source $install_dir/src/shell.sh" "$HOME/.zshrc"; then
+	
+	if [ -f "$HOME/.zshrc" ] && grep -q "source $shell_pkg/src/shell.sh" "$HOME/.zshrc"; then
 		shell::logger::exec_check "source ~/.zshrc" "shell upgraded" "shell upgrade aborted"
-	elif [ -f "$HOME/.bashrc" ] && grep -q "source $install_dir/src/shell.sh" "$HOME/.bashrc"; then
+	elif [ -f "$HOME/.bashrc" ] && grep -q "source $shell_pkg/src/shell.sh" "$HOME/.bashrc"; then
 		shell::logger::exec_check "source ~/.bashrc" "shell upgraded" "shell upgrade aborted"
 	else
 		shell::logger::warn "No .zshrc found. Falling back to .bashrc."
@@ -131,8 +135,9 @@ shell::upgrade() {
 #     to manually remove the source command from their shell configuration file
 #     (e.g., ~/.zshrc or ~/.bashrc).
 shell::uninstall() {
-	shell::logger::debug "Uninstalling shell..."
-	install_dir="$HOME/shell"
-	[ -d "$install_dir" ] && rm -rf "$install_dir"
-	shell::logger::info "shell uninstalled. Please remove 'source $install_dir/src/shell.sh' from your shell config (e.g., ~/.zshrc or ~/.bashrc)."
+	local shell_pkg="$HOME/shell"
+	if [ -d "$shell_pkg" ]; then
+		rm -rf "$shell_pkg"
+	fi
+	shell::logger::info "shell uninstalled. Please remove 'source $shell_pkg/src/shell.sh' from your shell config (e.g., ~/.zshrc or ~/.bashrc)."
 }
