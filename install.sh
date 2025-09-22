@@ -72,7 +72,7 @@ line="source $shell_pkg/src/shell.sh"
 # Check if the line already exists in the shell config
 if ! grep -qF "$line" "$shell_conf" 2>/dev/null; then
 	echo "$line" >>"$shell_conf"
-	echo "≫ Added shell to $shell_conf"
+	echo "[▸] Added shell to $shell_conf"
 fi
 
-echo "≫ shell installed. Restart your terminal or run 'source $shell_conf' or 'source ~/.bashrc' to apply changes."
+echo "[▸] shell installed. Restart your terminal or run 'source $shell_conf' or 'source ~/.bashrc' to apply changes."
