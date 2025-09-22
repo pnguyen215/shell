@@ -139,21 +139,29 @@ shell::send_telegram_attachment() {
 	fi
 
 	local timestamp=$(date +"%Y-%m-%d %H:%M:%S")
-	shell::logger::debug "Sending ${#files[@]} attachments to chat '$chatID' with description: $description"
 
-	# Iterate over each file and send as an attachment asynchronously.
-	for filename in "${files[@]}"; do
-		if [ -f "$filename" ]; then
-			# Build the curl command to send the attachment.
-			local cmd="curl -s -F chat_id=\"$chatID\" -F document=@\"$filename\" -F caption=\"$description ($timestamp)\" \"https://api.telegram.org/bot${token}/sendDocument\" >/dev/null"
-			if [ "$dry_run" = "true" ]; then
-				shell::logger::cmd_copy "$cmd &"
+	if [ "$dry_run" = "true" ]; then
+		for filename in "${files[@]}"; do
+			if [ -f "$filename" ]; then
+				local cmd="curl -s -F chat_id=\"$chatID\" -F document=@\"$filename\" -F caption=\"$description ($timestamp)\" \"https://api.telegram.org/bot${token}/sendDocument\""
+				shell::logger::cmd "$cmd"
 			else
-				shell::async "$cmd"
-				shell::logger::success "Attachment '$filename' is being sent."
+				shell::logger::error "Attachment '$filename' not found. Skipping."
 			fi
-		else
-			shell::logger::error "Attachment '$filename' not found. Skipping."
-		fi
-	done
+		done
+		return $RETURN_SUCCESS
+	fi
+
+	if [ "$dry_run" = "false" ]; then
+		shell::logger::debug "Sending ${#files[@]} attachments to chat '$chatID'"
+		for filename in "${files[@]}"; do
+			if [ -f "$filename" ]; then
+				local cmd="curl -s -F chat_id=\"$chatID\" -F document=@\"$filename\" -F caption=\"$description ($timestamp)\" \"https://api.telegram.org/bot${token}/sendDocument\" >/dev/null"
+				shell::async "$cmd"
+			else
+				shell::logger::error "Attachment '$filename' not found. Skipping."
+			fi
+		done
+		return $RETURN_SUCCESS
+	fi
 }
