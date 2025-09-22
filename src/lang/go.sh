@@ -115,6 +115,11 @@ shell::set_go_privates() {
 		return $RETURN_FAILURE
 	fi
 
+	# If the repositories entered which length is greater than 1, then add a comma
+	if [ ${#repositories} -gt 1 ]; then
+		repositories="$repositories,"
+	fi
+
 	IFS=','
 	unset IFS
 
