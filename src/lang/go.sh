@@ -304,25 +304,29 @@ shell::create_go_app() {
 		module_name="${module_name%/}"
 	fi
 
+	# If the target folder is not specified, use the current directory
+	if [ -z "$target_folder" ]; then
+		target_folder="$PWD"
+	fi
+
 	local init_cmd="go mod init $module_name"
 	local tidy_cmd="go mod tidy"
 
 	if [ "$dry_run" = "true" ]; then
+		local step=1
 		shell::logger::section "Create Go application"
-		shell::logger::step 1 "Ensure target directory exists"
-		shell::logger::cmd "shell::mkdir \"$target_folder\""
-		shell::logger::step 2 "Change to target directory"
-		shell::logger::cmd "cd \"$target_folder\""
-		shell::logger::step 3 "Initialize Go module"
+		if [ -n "$target_folder" ] && [ "$target_folder" != "$PWD" ]; then
+			shell::logger::step 1 "Ensure target directory exists"
+			shell::logger::cmd "shell::mkdir \"$target_folder\""
+			shell::logger::step 2 "Change to target directory"
+			shell::logger::cmd "cd \"$target_folder\""
+			((step++))
+		fi
+		shell::logger::step $step "Initialize Go module"
 		shell::logger::cmd "$init_cmd"
-		shell::logger::step 4 "Tidy Go dependencies"
+		shell::logger::step $((step++)) "Tidy Go dependencies"
 		shell::logger::cmd "$tidy_cmd"
 		return $RETURN_SUCCESS
-	fi
-
-	# If the target folder is not specified, use the current directory
-	if [ -z "$target_folder" ]; then
-		target_folder="$PWD"
 	fi
 
 	# If a target folder is specified, create it and change directory
