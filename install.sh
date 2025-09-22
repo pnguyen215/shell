@@ -1,7 +1,7 @@
 #!/bin/bash
 # install.sh
 
-echo "⚙️ Installing shell..."
+echo "📦 Installing shell..."
 
 # Check if curl and unzip are installed
 for cmd in curl unzip; do
@@ -12,13 +12,13 @@ for cmd in curl unzip; do
 done
 
 # GitHub repo details
-local owner="pnguyen215"
-local repo="shell"
-local shell_pkg="$HOME/shell"
-local shell_pkg_zip="$repo.zip"
+owner="pnguyen215"
+repo="shell"
+shell_pkg="$HOME/shell"
+shell_pkg_zip="$repo.zip"
 
 # Download from the master branch only
-local zip_url="https://github.com/$owner/$repo/archive/master.zip"
+zip_url="https://github.com/$owner/$repo/archive/master.zip"
 
 # Download the zip file
 curl -s -L -o "$shell_pkg_zip" "$zip_url" || {
@@ -36,7 +36,7 @@ unzip -qq -o "$shell_pkg_zip" -d "$shell_pkg" || {
 }
 
 # Find the extracted folder
-local shell_pkg_ext=$(find "$shell_pkg" -maxdepth 1 -type d -name "$repo-*" | head -n 1)
+shell_pkg_ext=$(find "$shell_pkg" -maxdepth 1 -type d -name "$repo-*" | head -n 1)
 
 # Check if the extracted folder exists
 if [ -z "$shell_pkg_ext" ]; then
@@ -57,7 +57,7 @@ rmdir "$shell_pkg_ext" 2>/dev/null || {
 rm "$shell_pkg_zip"
 
 # Update shell configuration file with priority: .zshrc > .bashrc
-local shell_conf=""
+shell_conf=""
 if [ -f "$HOME/.zshrc" ]; then
 	shell_conf="$HOME/.zshrc"
 elif [ -f "$HOME/.bashrc" ]; then
@@ -67,7 +67,7 @@ else
 	exit 0
 fi
 
-local line="source $shell_pkg/src/shell.sh"
+line="source $shell_pkg/src/shell.sh"
 
 # Check if the line already exists in the shell config
 if ! grep -qF "$line" "$shell_conf" 2>/dev/null; then
