@@ -51,19 +51,9 @@ shell::get_go_privates() {
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::cmd_copy "$cmd"
 		return $RETURN_SUCCESS
-	else
-		shell::async "$cmd" &
-		local pid=$!
-		wait $pid
-
-		if [ $? -eq 0 ]; then
-			shell::logger::info "Go privates setting retrieved successfully: ${cmd}"
-			return $RETURN_SUCCESS
-		else
-			shell::logger::error "Failed to retrieve GOPRIVATE."
-			return $RETURN_FAILURE
-		fi
 	fi
+
+	shell::logger::exec_check "$cmd"
 }
 
 # shell::set_go_privates function
