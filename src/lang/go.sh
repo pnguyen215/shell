@@ -316,7 +316,7 @@ shell::create_go_app() {
 		local step=1
 		shell::logger::section "Create Go application"
 		if [ -n "$target_folder" ] && [ "$target_folder" != "$PWD" ]; then
-			shell::logger::step $step "Ensure target directory exists"
+			shell::logger::step $((step++)) "Ensure target directory exists"
 			shell::logger::cmd "shell::mkdir \"$target_folder\""
 			shell::logger::step $((step++)) "Change to target directory"
 			shell::logger::cmd "cd \"$target_folder\""
