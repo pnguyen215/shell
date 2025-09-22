@@ -47,7 +47,7 @@ shell::install_homebrew() {
 # Dependencies:
 #   - shell::is_command_available: Checks if the 'brew' command is available in the PATH.
 #   - shell::run_cmd_eval: Executes shell commands with logging.
-#   - shell::colored_echo: Displays colored messages to the terminal.
+#   - shell::stdout: Displays colored messages to the terminal.
 #
 # Example:
 #   shell::removal_homebrew
@@ -62,8 +62,8 @@ shell::removal_homebrew() {
 		echo "🚀 Uninstalling Homebrew..."
 		shell::run_cmd_eval '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh)"'
 		shell::run_cmd_eval 'sed -i.bak '/# Homebrew/d' "$HOME/.zprofile"' # Remove Homebrew-related lines from the shell profile
-		shell::colored_echo "INFO: Homebrew uninstalled successfully!" 46
+		shell::stdout "INFO: Homebrew uninstalled successfully!" 46
 	else
-		shell::colored_echo "WARN: Homebrew is not installed. Nothing to uninstall." 11
+		shell::stdout "WARN: Homebrew is not installed. Nothing to uninstall." 11
 	fi
 }

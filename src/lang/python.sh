@@ -673,7 +673,7 @@ shell::install_pkg_python_env() {
 
 	# Check if the virtual environment exists
 	if [ ! -d "$venv_path" ] || [ ! -f "$venv_path/bin/pip" ]; then
-		shell::colored_echo "ERR: Virtual environment at '$venv_path' does not exist or is invalid. Create it with shell::create_python_env first." 196
+		shell::stdout "ERR: Virtual environment at '$venv_path' does not exist or is invalid. Create it with shell::create_python_env first." 196
 		return 0
 	fi
 
@@ -683,7 +683,7 @@ shell::install_pkg_python_env() {
 
 	# Ensure pip command is available
 	if ! shell::is_command_available "$pip_cmd"; then
-		shell::colored_echo "ERR: pip not found in virtual environment at '$venv_path'." 196
+		shell::stdout "ERR: pip not found in virtual environment at '$venv_path'." 196
 		return 0
 	fi
 
@@ -694,7 +694,7 @@ shell::install_pkg_python_env() {
 	done
 
 	# Execute or preview the installation
-	shell::colored_echo "DEBUG: Installing packages (${packages[*]}) into virtual environment at '$venv_path'..." 244
+	shell::stdout "DEBUG: Installing packages (${packages[*]}) into virtual environment at '$venv_path'..." 244
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::cmd_copy "$install_cmd"
 	else
@@ -703,10 +703,10 @@ shell::install_pkg_python_env() {
 		local pid=$!
 		wait $pid
 		if [ $? -eq 0 ]; then
-			shell::colored_echo "INFO: Packages installed successfully: ${packages[*]}" 46
+			shell::stdout "INFO: Packages installed successfully: ${packages[*]}" 46
 			return 1
 		else
-			shell::colored_echo "ERR: Failed to install one or more packages." 196
+			shell::stdout "ERR: Failed to install one or more packages." 196
 			return 0
 		fi
 	fi
@@ -778,14 +778,14 @@ shell::uninstall_pkg_python_env() {
 
 	# Validate that at least one package is specified
 	if [ ${#packages[@]} -eq 0 ]; then
-		shell::colored_echo "ERR: No packages specified." 196
-		shell::colored_echo "Usage: shell::uninstall_pkg_python_env [-n] [-p <path>] <package1> [package2 ...]"
+		shell::stdout "ERR: No packages specified." 196
+		shell::stdout "Usage: shell::uninstall_pkg_python_env [-n] [-p <path>] <package1> [package2 ...]"
 		return 1
 	fi
 
 	# Check if the virtual environment exists
 	if [ ! -d "$venv_path" ] || [ ! -f "$venv_path/bin/pip" ]; then
-		shell::colored_echo "ERR: Virtual environment at '$venv_path' does not exist or is invalid. Create it with shell::create_python_env first." 196
+		shell::stdout "ERR: Virtual environment at '$venv_path' does not exist or is invalid. Create it with shell::create_python_env first." 196
 		return 1
 	fi
 
@@ -795,7 +795,7 @@ shell::uninstall_pkg_python_env() {
 
 	# Ensure pip command is available
 	if ! shell::is_command_available "$pip_cmd"; then
-		shell::colored_echo "ERR: pip not found in virtual environment at '$venv_path'." 196
+		shell::stdout "ERR: pip not found in virtual environment at '$venv_path'." 196
 		return 1
 	fi
 
@@ -806,7 +806,7 @@ shell::uninstall_pkg_python_env() {
 	done
 
 	# Execute or preview the uninstallation
-	shell::colored_echo "🔍 Uninstalling packages (${packages[*]}) from virtual environment at '$venv_path'..." 36
+	shell::stdout "🔍 Uninstalling packages (${packages[*]}) from virtual environment at '$venv_path'..." 36
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::cmd_copy "$uninstall_cmd"
 	else
@@ -815,9 +815,9 @@ shell::uninstall_pkg_python_env() {
 		local pid=$!
 		wait $pid
 		if [ $? -eq 0 ]; then
-			shell::colored_echo "INFO: Packages uninstalled successfully: ${packages[*]}" 46
+			shell::stdout "INFO: Packages uninstalled successfully: ${packages[*]}" 46
 		else
-			shell::colored_echo "ERR: Failed to uninstall one or more packages." 196
+			shell::stdout "ERR: Failed to uninstall one or more packages." 196
 			return 1
 		fi
 	fi
@@ -869,8 +869,8 @@ shell::fzf_uninstall_pkg_python_env() {
 			shift 2
 			;;
 		*)
-			shell::colored_echo "ERR: Unknown option '$1'." 196
-			shell::colored_echo "Usage: shell::fzf_uninstall_pkg_python_env [-n] [-p <path>]"
+			shell::stdout "ERR: Unknown option '$1'." 196
+			shell::stdout "Usage: shell::fzf_uninstall_pkg_python_env [-n] [-p <path>]"
 			return 1
 			;;
 		esac
@@ -881,7 +881,7 @@ shell::fzf_uninstall_pkg_python_env() {
 
 	# Check if the virtual environment exists
 	if [ ! -d "$venv_path" ] || [ ! -f "$venv_path/bin/pip" ]; then
-		shell::colored_echo "ERR: Virtual environment at '$venv_path' does not exist or is invalid." 196
+		shell::stdout "ERR: Virtual environment at '$venv_path' does not exist or is invalid." 196
 		return 1
 	fi
 
@@ -889,7 +889,7 @@ shell::fzf_uninstall_pkg_python_env() {
 
 	# Ensure pip command is available
 	if ! shell::is_command_available "$pip_cmd"; then
-		shell::colored_echo "ERR: pip not found in virtual environment at '$venv_path'." 196
+		shell::stdout "ERR: pip not found in virtual environment at '$venv_path'." 196
 		return 1
 	fi
 
@@ -903,7 +903,7 @@ shell::fzf_uninstall_pkg_python_env() {
 
 	# Handle no selection
 	if [ -z "$selected_packages" ]; then
-		shell::colored_echo "WARN: No packages selected for uninstallation." 33
+		shell::stdout "WARN: No packages selected for uninstallation." 33
 		return 0
 	fi
 
@@ -926,7 +926,7 @@ shell::fzf_uninstall_pkg_python_env() {
 	uninstall_args+=("${selected_packages_array[@]}")
 
 	# Execute uninstallation using shell::uninstall_pkg_python_env
-	shell::colored_echo "🔍 Uninstalling selected packages..." 36
+	shell::stdout "🔍 Uninstalling selected packages..." 36
 	shell::uninstall_pkg_python_env "${uninstall_args[@]}"
 }
 
@@ -977,8 +977,8 @@ shell::fzf_use_python_env() {
 			shift 2
 			;;
 		*)
-			shell::colored_echo "ERR: Unknown option '$1'." 196
-			shell::colored_echo "Usage: shell::fzf_use_python_env [-n] [-p <path>]"
+			shell::stdout "ERR: Unknown option '$1'." 196
+			shell::stdout "Usage: shell::fzf_use_python_env [-n] [-p <path>]"
 			return 1
 			;;
 		esac
@@ -997,7 +997,7 @@ shell::fzf_use_python_env() {
 
 	# Handle no selection
 	if [ -z "$selected_venv" ]; then
-		shell::colored_echo "WARN: No virtual environment selected." 33
+		shell::stdout "WARN: No virtual environment selected." 33
 		return 0
 	fi
 
@@ -1006,8 +1006,8 @@ shell::fzf_use_python_env() {
 
 	# Handle deactivation if already in a virtual environment
 	if [ -n "$VIRTUAL_ENV" ]; then
-		shell::colored_echo "WARN: Current virtual environment: $VIRTUAL_ENV" 33
-		shell::colored_echo "❓ Do you want to deactivate it first? (y/n)" 33
+		shell::stdout "WARN: Current virtual environment: $VIRTUAL_ENV" 33
+		shell::stdout "❓ Do you want to deactivate it first? (y/n)" 33
 		read -r deactivate_choice
 		if [[ "$deactivate_choice" =~ ^[Yy](es)?$ ]]; then
 			local deactivate_cmd="deactivate"
@@ -1021,12 +1021,12 @@ shell::fzf_use_python_env() {
 	fi
 
 	# Activate the selected virtual environment
-	shell::colored_echo "🔍 Activating virtual environment: $selected_venv" 36
+	shell::stdout "🔍 Activating virtual environment: $selected_venv" 36
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::cmd_copy "$activate_cmd"
 	else
 		shell::run_cmd_eval "$activate_cmd"
-		shell::colored_echo "INFO: Virtual environment activated." 46
+		shell::stdout "INFO: Virtual environment activated." 46
 	fi
 }
 
@@ -1076,8 +1076,8 @@ shell::fzf_upgrade_pkg_python_env() {
 			shift 2
 			;;
 		*)
-			shell::colored_echo "ERR: Unknown option '$1'." 196
-			shell::colored_echo "Usage: shell::fzf_upgrade_pkg_python_env [-n] [-p <path>]"
+			shell::stdout "ERR: Unknown option '$1'." 196
+			shell::stdout "Usage: shell::fzf_upgrade_pkg_python_env [-n] [-p <path>]"
 			return 1
 			;;
 		esac
@@ -1088,7 +1088,7 @@ shell::fzf_upgrade_pkg_python_env() {
 
 	# Check if the virtual environment exists
 	if [ ! -d "$venv_path" ] || [ ! -f "$venv_path/bin/pip" ]; then
-		shell::colored_echo "ERR: Virtual environment at '$venv_path' does not exist or is invalid." 196
+		shell::stdout "ERR: Virtual environment at '$venv_path' does not exist or is invalid." 196
 		return 1
 	fi
 
@@ -1096,7 +1096,7 @@ shell::fzf_upgrade_pkg_python_env() {
 
 	# Ensure pip command is available
 	if ! shell::is_command_available "$pip_cmd"; then
-		shell::colored_echo "ERR: pip not found in virtual environment at '$venv_path'." 196
+		shell::stdout "ERR: pip not found in virtual environment at '$venv_path'." 196
 		return 1
 	fi
 
@@ -1110,7 +1110,7 @@ shell::fzf_upgrade_pkg_python_env() {
 
 	# Handle no selection
 	if [ -z "$selected_packages" ]; then
-		shell::colored_echo "WARN: No packages selected for upgrade." 33
+		shell::stdout "WARN: No packages selected for upgrade." 33
 		return 0
 	fi
 
@@ -1128,7 +1128,7 @@ shell::fzf_upgrade_pkg_python_env() {
 	done
 
 	# Execute or preview upgrade commands
-	shell::colored_echo "🔍 Upgrading selected packages..." 36
+	shell::stdout "🔍 Upgrading selected packages..." 36
 	if [ "$dry_run" = "true" ]; then
 		for cmd in "${upgrade_commands[@]}"; do
 			shell::logger::cmd_copy "$cmd"
@@ -1137,7 +1137,7 @@ shell::fzf_upgrade_pkg_python_env() {
 		for cmd in "${upgrade_commands[@]}"; do
 			shell::run_cmd_eval "$cmd"
 		done
-		shell::colored_echo "INFO: Packages upgraded successfully." 46
+		shell::stdout "INFO: Packages upgraded successfully." 46
 	fi
 }
 
@@ -1199,14 +1199,14 @@ shell::upgrade_pkg_python_env() {
 
 	# Validate that at least one package is specified
 	if [ ${#packages[@]} -eq 0 ]; then
-		shell::colored_echo "ERR: No packages specified." 196
-		shell::colored_echo "Usage: shell::upgrade_pkg_python_env [-n] [-p <path>] <package1> [package2 ...]"
+		shell::stdout "ERR: No packages specified." 196
+		shell::stdout "Usage: shell::upgrade_pkg_python_env [-n] [-p <path>] <package1> [package2 ...]"
 		return 1
 	fi
 
 	# Check if the virtual environment exists
 	if [ ! -d "$venv_path" ] || [ ! -f "$venv_path/bin/pip" ]; then
-		shell::colored_echo "ERR: Virtual environment at '$venv_path' does not exist or is invalid." 196
+		shell::stdout "ERR: Virtual environment at '$venv_path' does not exist or is invalid." 196
 		return 1
 	fi
 
@@ -1214,7 +1214,7 @@ shell::upgrade_pkg_python_env() {
 
 	# Ensure pip command is available
 	if ! shell::is_command_available "$pip_cmd"; then
-		shell::colored_echo "ERR: pip not found in virtual environment at '$venv_path'." 196
+		shell::stdout "ERR: pip not found in virtual environment at '$venv_path'." 196
 		return 1
 	fi
 
@@ -1225,7 +1225,7 @@ shell::upgrade_pkg_python_env() {
 	done
 
 	# Execute or preview the upgrade
-	shell::colored_echo "🔍 Upgrading packages (${packages[*]}) in virtual environment at '$venv_path'..." 36
+	shell::stdout "🔍 Upgrading packages (${packages[*]}) in virtual environment at '$venv_path'..." 36
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::cmd_copy "$upgrade_cmd"
 	else
@@ -1234,9 +1234,9 @@ shell::upgrade_pkg_python_env() {
 		local pid=$!
 		wait $pid
 		if [ $? -eq 0 ]; then
-			shell::colored_echo "INFO: Packages upgraded successfully: ${packages[*]}" 46
+			shell::stdout "INFO: Packages upgraded successfully: ${packages[*]}" 46
 		else
-			shell::colored_echo "ERR: Failed to upgrade one or more packages." 196
+			shell::stdout "ERR: Failed to upgrade one or more packages." 196
 			return 1
 		fi
 	fi
@@ -1287,8 +1287,8 @@ shell::freeze_pkg_python_env() {
 			shift 2
 			;;
 		*)
-			shell::colored_echo "ERR: Unknown option '$1'." 196
-			shell::colored_echo "Usage: shell::freeze_pkg_python_env [-n] [-p <path >]"
+			shell::stdout "ERR: Unknown option '$1'." 196
+			shell::stdout "Usage: shell::freeze_pkg_python_env [-n] [-p <path >]"
 			return 1
 			;;
 		esac
@@ -1296,7 +1296,7 @@ shell::freeze_pkg_python_env() {
 
 	# Check if the virtual environment exists
 	if [ ! -d "$venv_path" ] || [ ! -f "$venv_path/bin/pip" ]; then
-		shell::colored_echo "ERR: Virtual environment at '$venv_path' does not exist or is invalid." 196
+		shell::stdout "ERR: Virtual environment at '$venv_path' does not exist or is invalid." 196
 		return 1
 	fi
 
@@ -1304,7 +1304,7 @@ shell::freeze_pkg_python_env() {
 
 	# Ensure pip command is available
 	if ! shell::is_command_available "$pip_cmd"; then
-		shell::colored_echo "ERR: pip not found in virtual environment at '$venv_path'." 196
+		shell::stdout "ERR: pip not found in virtual environment at '$venv_path'." 196
 		return 1
 	fi
 
@@ -1312,7 +1312,7 @@ shell::freeze_pkg_python_env() {
 	local freeze_cmd="$pip_cmd freeze > $venv_path/requirements.txt"
 
 	# Execute or preview the freeze command
-	shell::colored_echo "🔍 Exporting installed packages to $venv_path/requirements.txt..." 36
+	shell::stdout "🔍 Exporting installed packages to $venv_path/requirements.txt..." 36
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::cmd_copy "$freeze_cmd"
 	else
@@ -1321,9 +1321,9 @@ shell::freeze_pkg_python_env() {
 		local pid=$!
 		wait $pid
 		if [ $? -eq 0 ]; then
-			shell::colored_echo "INFO: Packages exported successfully to $venv_path/requirements.txt" 46
+			shell::stdout "INFO: Packages exported successfully to $venv_path/requirements.txt" 46
 		else
-			shell::colored_echo "ERR: Failed to export packages." 196
+			shell::stdout "ERR: Failed to export packages." 196
 			return 1
 		fi
 	fi
@@ -1374,8 +1374,8 @@ shell::pip_install_requirements_env() {
 			shift 2
 			;;
 		*)
-			shell::colored_echo "ERR: Unknown option '$1'." 196
-			shell::colored_echo "Usage: shell::pip_install_requirements_env [-n] [-p <path>]"
+			shell::stdout "ERR: Unknown option '$1'." 196
+			shell::stdout "Usage: shell::pip_install_requirements_env [-n] [-p <path>]"
 			return 1
 			;;
 		esac
@@ -1383,7 +1383,7 @@ shell::pip_install_requirements_env() {
 
 	# Check if the virtual environment exists
 	if [ ! -d "$venv_path" ] || [ ! -f "$venv_path/bin/pip" ]; then
-		shell::colored_echo "ERR: Virtual environment at '$venv_path' does not exist or is invalid." 196
+		shell::stdout "ERR: Virtual environment at '$venv_path' does not exist or is invalid." 196
 		return 1
 	fi
 
@@ -1392,7 +1392,7 @@ shell::pip_install_requirements_env() {
 
 	# Check if the requirements.txt file exists
 	if [ ! -f "$requirements_file" ]; then
-		shell::colored_echo "ERR: requirements.txt file not found at '$requirements_file'." 196
+		shell::stdout "ERR: requirements.txt file not found at '$requirements_file'." 196
 		return 1
 	fi
 
@@ -1400,7 +1400,7 @@ shell::pip_install_requirements_env() {
 
 	# Ensure pip command is available
 	if ! shell::is_command_available "$pip_cmd"; then
-		shell::colored_echo "ERR: pip not found in virtual environment at '$venv_path'." 196
+		shell::stdout "ERR: pip not found in virtual environment at '$venv_path'." 196
 		return 1
 	fi
 
@@ -1408,7 +1408,7 @@ shell::pip_install_requirements_env() {
 	local install_cmd="$pip_cmd install -r $requirements_file"
 
 	# Execute or preview the install command
-	shell::colored_echo "🔍 Installing packages from $requirements_file into $venv_path..." 36
+	shell::stdout "🔍 Installing packages from $requirements_file into $venv_path..." 36
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::cmd_copy "$install_cmd"
 	else
@@ -1417,9 +1417,9 @@ shell::pip_install_requirements_env() {
 		local pid=$!
 		wait $pid
 		if [ $? -eq 0 ]; then
-			shell::colored_echo "INFO: Packages installed successfully from $requirements_file." 46
+			shell::stdout "INFO: Packages installed successfully from $requirements_file." 46
 		else
-			shell::colored_echo "ERR: Failed to install packages." 196
+			shell::stdout "ERR: Failed to install packages." 196
 			return 1
 		fi
 	fi

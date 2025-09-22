@@ -68,7 +68,7 @@ shell::add_profile() {
 	local profile_name="$1"
 	local profile_dir=$(shell::get_profile_path "$profile_name")
 	if [ -d "$profile_dir" ]; then
-		shell::colored_echo "WARN: Profile '$profile_name' already exists." 11
+		shell::stdout "WARN: Profile '$profile_name' already exists." 11
 		return 1
 	fi
 
@@ -78,7 +78,7 @@ shell::add_profile() {
 	else
 		shell::ensure_workspace
 		shell::run_cmd_eval "$cmd"
-		shell::colored_echo "INFO: Created profile '$profile_name'." 46
+		shell::stdout "INFO: Created profile '$profile_name'." 46
 	fi
 }
 
@@ -120,11 +120,11 @@ shell::read_profile() {
 	local profile_dir=$(shell::get_profile_path "$profile_name")
 	local profile_conf="$profile_dir/profile.conf"
 	if [ ! -d "$profile_dir" ]; then
-		shell::colored_echo "ERR: Profile '$profile_name' does not exist." 196
+		shell::stdout "ERR: Profile '$profile_name' does not exist." 196
 		return 1
 	fi
 	if [ ! -f "$profile_conf" ]; then
-		shell::colored_echo "ERR: Profile configuration file '$profile_conf' not found." 196
+		shell::stdout "ERR: Profile configuration file '$profile_conf' not found." 196
 		return 1
 	fi
 	if [ "$dry_run" = "true" ]; then
@@ -172,11 +172,11 @@ shell::update_profile() {
 	local profile_dir=$(shell::get_profile_path "$profile_name")
 	local profile_conf="$profile_dir/profile.conf"
 	if [ ! -d "$profile_dir" ]; then
-		shell::colored_echo "ERR: Profile '$profile_name' does not exist." 196
+		shell::stdout "ERR: Profile '$profile_name' does not exist." 196
 		return 1
 	fi
 	if [ ! -f "$profile_conf" ]; then
-		shell::colored_echo "ERR: Profile configuration file '$profile_conf' not found." 196
+		shell::stdout "ERR: Profile configuration file '$profile_conf' not found." 196
 		return 1
 	fi
 	local editor="${EDITOR:-vi}"
@@ -225,19 +225,19 @@ shell::remove_profile() {
 	local profile_name="$1"
 	local profile_dir=$(shell::get_profile_path "$profile_name")
 	if [ ! -d "$profile_dir" ]; then
-		shell::colored_echo "ERR: Profile '$profile_name' does not exist." 196
+		shell::stdout "ERR: Profile '$profile_name' does not exist." 196
 		return 1
 	fi
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::cmd_copy "sudo rm -rf \"$profile_dir\""
 	else
-		shell::colored_echo "Are you sure you want to remove profile '$profile_name'? [y/N]" 33
+		shell::stdout "Are you sure you want to remove profile '$profile_name'? [y/N]" 33
 		read -r confirm
 		if [[ "$confirm" =~ ^[Yy]$ ]]; then
 			shell::run_cmd_eval sudo rm -rf "$profile_dir"
-			shell::colored_echo "INFO: Removed profile '$profile_name'." 46
+			shell::stdout "INFO: Removed profile '$profile_name'." 46
 		else
-			shell::colored_echo "WARN: Removal aborted." 11
+			shell::stdout "WARN: Removal aborted." 11
 		fi
 	fi
 }
@@ -272,14 +272,14 @@ shell::get_profile() {
 	local profile_dir=$(shell::get_profile_path "$profile_name")
 	local profile_conf="$profile_dir/profile.conf"
 	if [ ! -d "$profile_dir" ]; then
-		shell::colored_echo "ERR: Profile '$profile_name' does not exist." 196
+		shell::stdout "ERR: Profile '$profile_name' does not exist." 196
 		return 1
 	fi
 	if [ ! -f "$profile_conf" ]; then
-		shell::colored_echo "ERR: Profile configuration file '$profile_conf' not found." 196
+		shell::stdout "ERR: Profile configuration file '$profile_conf' not found." 196
 		return 1
 	fi
-	shell::colored_echo "DEBUG: Contents of '$profile_conf':" 244
+	shell::stdout "DEBUG: Contents of '$profile_conf':" 244
 	shell::run_cmd_eval cat "$profile_conf"
 }
 
@@ -323,11 +323,11 @@ shell::rename_profile() {
 	local old_dir=$(shell::get_profile_path "$old_name")
 	local new_dir=$(shell::get_profile_path "$new_name")
 	if [ ! -d "$old_dir" ]; then
-		shell::colored_echo "ERR: Profile '$old_name' does not exist." 196
+		shell::stdout "ERR: Profile '$old_name' does not exist." 196
 		return 1
 	fi
 	if [ -d "$new_dir" ]; then
-		shell::colored_echo "ERR: Profile '$new_name' already exists." 196
+		shell::stdout "ERR: Profile '$new_name' already exists." 196
 		return 1
 	fi
 	local cmd="sudo mv \"$old_dir\" \"$new_dir\""
@@ -335,7 +335,7 @@ shell::rename_profile() {
 		shell::logger::cmd_copy "$cmd"
 	else
 		shell::run_cmd_eval "$cmd"
-		shell::colored_echo "INFO: Renamed profile '$old_name' to '$new_name'." 46
+		shell::stdout "INFO: Renamed profile '$old_name' to '$new_name'." 46
 	fi
 }
 
@@ -419,12 +419,12 @@ shell::add_profile_conf() {
 	else
 		# Check if the key already exists in the profile.conf
 		if grep -q "^${key}=" "$profile_conf"; then
-			shell::colored_echo "WARN: The key '$key' already exists in profile '$profile_name'. Consider updating it using shell::update_profile_conf." 11
+			shell::stdout "WARN: The key '$key' already exists in profile '$profile_name'. Consider updating it using shell::update_profile_conf." 11
 			return 0
 		fi
 		shell::unlock_permissions "$profile_conf"
 		shell::run_cmd_eval "$cmd"
-		shell::colored_echo "INFO: Added configuration to profile '$profile_name': $key (encoded value)" 46
+		shell::stdout "INFO: Added configuration to profile '$profile_name': $key (encoded value)" 46
 	fi
 }
 
@@ -463,24 +463,24 @@ shell::get_profile_conf() {
 	local profile_dir=$(shell::get_profile_path "$profile_name")
 	local profile_conf="$profile_dir/profile.conf"
 	if [ ! -d "$profile_dir" ]; then
-		shell::colored_echo "ERR: Profile '$profile_name' does not exist." 196
+		shell::stdout "ERR: Profile '$profile_name' does not exist." 196
 		return 1
 	fi
 	if [ ! -f "$profile_conf" ]; then
-		shell::colored_echo "ERR: Profile configuration file '$profile_conf' not found." 196
+		shell::stdout "ERR: Profile configuration file '$profile_conf' not found." 196
 		return 1
 	fi
 	shell::install_package fzf
 	local selected_key
 	selected_key=$(cut -d '=' -f 1 "$profile_conf" | fzf --prompt="Select config key for profile '$profile_name': ")
 	if [ -z "$selected_key" ]; then
-		shell::colored_echo "ERR: No configuration selected." 196
+		shell::stdout "ERR: No configuration selected." 196
 		return 1
 	fi
 	local selected_line
 	selected_line=$(grep "^${selected_key}=" "$profile_conf")
 	if [ -z "$selected_line" ]; then
-		shell::colored_echo "ERR: Selected key '$selected_key' not found in configuration." 196
+		shell::stdout "ERR: Selected key '$selected_key' not found in configuration." 196
 		return 1
 	fi
 	local encoded_value
@@ -493,7 +493,7 @@ shell::get_profile_conf() {
 	else
 		decoded_value=$(echo "$encoded_value" | base64 -d)
 	fi
-	shell::colored_echo "[k] Key: $selected_key" 33
+	shell::stdout "[k] Key: $selected_key" 33
 	shell::clip_value "$decoded_value"
 }
 
@@ -537,17 +537,17 @@ shell::get_profile_conf_value() {
 	key=$(shell::sanitize_upper_var_name "$key")
 
 	if [ ! -d "$profile_dir" ]; then
-		shell::colored_echo "ERR: Profile '$profile_name' does not exist." 196
+		shell::stdout "ERR: Profile '$profile_name' does not exist." 196
 		return 1
 	fi
 	if [ ! -f "$profile_conf" ]; then
-		shell::colored_echo "ERR: Profile configuration file '$profile_conf' not found." 196
+		shell::stdout "ERR: Profile configuration file '$profile_conf' not found." 196
 		return 1
 	fi
 	local conf_line
 	conf_line=$(grep "^${key}=" "$profile_conf")
 	if [ -z "$conf_line" ]; then
-		shell::colored_echo "ERR: Key '$key' not found in profile '$profile_name'." 196
+		shell::stdout "ERR: Key '$key' not found in profile '$profile_name'." 196
 		return 1
 	fi
 	local encoded_value
@@ -605,18 +605,18 @@ shell::remove_profile_conf() {
 	local profile_dir=$(shell::get_profile_path "$profile_name")
 	local profile_conf="$profile_dir/profile.conf"
 	if [ ! -d "$profile_dir" ]; then
-		shell::colored_echo "ERR: Profile '$profile_name' does not exist." 196
+		shell::stdout "ERR: Profile '$profile_name' does not exist." 196
 		return 1
 	fi
 	if [ ! -f "$profile_conf" ]; then
-		shell::colored_echo "ERR: Profile configuration file '$profile_conf' not found." 196
+		shell::stdout "ERR: Profile configuration file '$profile_conf' not found." 196
 		return 1
 	fi
 	shell::install_package fzf
 	local selected_key
 	selected_key=$(cut -d '=' -f 1 "$profile_conf" | fzf --prompt="Select config key to remove from profile '$profile_name': ")
 	if [ -z "$selected_key" ]; then
-		shell::colored_echo "ERR: No configuration selected." 196
+		shell::stdout "ERR: No configuration selected." 196
 		return 1
 	fi
 	local os_type
@@ -631,7 +631,7 @@ shell::remove_profile_conf() {
 		shell::logger::cmd_copy "$sed_cmd"
 	else
 		shell::run_cmd_eval "$sed_cmd"
-		shell::colored_echo "INFO: Removed configuration for key: $selected_key from profile '$profile_name'" 46
+		shell::stdout "INFO: Removed configuration for key: $selected_key from profile '$profile_name'" 46
 	fi
 }
 
@@ -674,24 +674,24 @@ shell::update_profile_conf() {
 	local profile_dir=$(shell::get_profile_path "$profile_name")
 	local profile_conf="$profile_dir/profile.conf"
 	if [ ! -d "$profile_dir" ]; then
-		shell::colored_echo "ERR: Profile '$profile_name' does not exist." 196
+		shell::stdout "ERR: Profile '$profile_name' does not exist." 196
 		return 1
 	fi
 	if [ ! -f "$profile_conf" ]; then
-		shell::colored_echo "ERR: Profile configuration file '$profile_conf' not found." 196
+		shell::stdout "ERR: Profile configuration file '$profile_conf' not found." 196
 		return 1
 	fi
 	shell::install_package fzf
 	local selected_key
 	selected_key=$(cut -d '=' -f 1 "$profile_conf" | fzf --prompt="Select config key to update in profile '$profile_name': ")
 	if [ -z "$selected_key" ]; then
-		shell::colored_echo "ERR: No configuration selected." 196
+		shell::stdout "ERR: No configuration selected." 196
 		return 1
 	fi
-	shell::colored_echo ">> Enter new value for key '$selected_key' in profile '$profile_name':" 33
+	shell::stdout ">> Enter new value for key '$selected_key' in profile '$profile_name':" 33
 	read -r new_value
 	if [ -z "$new_value" ]; then
-		shell::colored_echo "ERR: No new value entered. Update aborted." 196
+		shell::stdout "ERR: No new value entered. Update aborted." 196
 		return 1
 	fi
 	local encoded_value
@@ -708,7 +708,7 @@ shell::update_profile_conf() {
 		shell::logger::cmd_copy "$sed_cmd"
 	else
 		shell::run_cmd_eval "$sed_cmd"
-		shell::colored_echo "INFO: Updated configuration for key: $selected_key in profile '$profile_name'" 46
+		shell::stdout "INFO: Updated configuration for key: $selected_key in profile '$profile_name'" 46
 	fi
 }
 
@@ -748,7 +748,7 @@ shell::exist_profile_conf_key() {
 	key=$(shell::sanitize_upper_var_name "$key")
 
 	if [ ! -d "$profile_dir" ]; then
-		shell::colored_echo "ERR: Profile '$profile_name' does not exist." 196
+		shell::stdout "ERR: Profile '$profile_name' does not exist." 196
 		return 1
 	fi
 	if [ ! -f "$profile_conf" ]; then
@@ -805,31 +805,31 @@ shell::rename_profile_conf_key() {
 	local profile_dir=$(shell::get_profile_path "$profile_name")
 	local profile_conf="$profile_dir/profile.conf"
 	if [ ! -d "$profile_dir" ]; then
-		shell::colored_echo "ERR: Profile '$profile_name' does not exist." 196
+		shell::stdout "ERR: Profile '$profile_name' does not exist." 196
 		return 1
 	fi
 	if [ ! -f "$profile_conf" ]; then
-		shell::colored_echo "ERR: Profile configuration file '$profile_conf' not found." 196
+		shell::stdout "ERR: Profile configuration file '$profile_conf' not found." 196
 		return 1
 	fi
 	shell::install_package fzf
 	local old_key
 	old_key=$(cut -d '=' -f 1 "$profile_conf" | fzf --prompt="Select a key to rename in profile '$profile_name': ")
 	if [ -z "$old_key" ]; then
-		shell::colored_echo "ERR: No key selected. Aborting rename." 196
+		shell::stdout "ERR: No key selected. Aborting rename." 196
 		return 1
 	fi
-	shell::colored_echo "Enter new key name for '$old_key' in profile '$profile_name':" 33
+	shell::stdout "Enter new key name for '$old_key' in profile '$profile_name':" 33
 	read -r new_key
 	if [ -z "$new_key" ]; then
-		shell::colored_echo "ERR: No new key name entered. Aborting rename." 196
+		shell::stdout "ERR: No new key name entered. Aborting rename." 196
 		return 1
 	fi
 	# sanitized key
 	new_key=$(shell::sanitize_upper_var_name "$new_key")
 
 	if grep -q "^${new_key}=" "$profile_conf"; then
-		shell::colored_echo "ERR: Key '$new_key' already exists in profile '$profile_name'." 196
+		shell::stdout "ERR: Key '$new_key' already exists in profile '$profile_name'." 196
 		return 1
 	fi
 	local os_type
@@ -844,7 +844,7 @@ shell::rename_profile_conf_key() {
 		shell::logger::cmd_copy "$sed_cmd"
 	else
 		shell::run_cmd_eval "$sed_cmd"
-		shell::colored_echo "INFO: Renamed key '$old_key' to '$new_key' in profile '$profile_name'" 46
+		shell::stdout "INFO: Renamed key '$old_key' to '$new_key' in profile '$profile_name'" 46
 	fi
 }
 
@@ -892,15 +892,15 @@ shell::clone_profile_conf() {
 	local source_conf="$source_dir/profile.conf"
 	local destination_conf="$destination_dir/profile.conf"
 	if [ ! -d "$source_dir" ]; then
-		shell::colored_echo "ERR: Source profile '$source_profile' does not exist." 196
+		shell::stdout "ERR: Source profile '$source_profile' does not exist." 196
 		return 1
 	fi
 	if [ ! -f "$source_conf" ]; then
-		shell::colored_echo "ERR: Source profile configuration file '$source_conf' not found." 196
+		shell::stdout "ERR: Source profile configuration file '$source_conf' not found." 196
 		return 1
 	fi
 	if [ -d "$destination_dir" ]; then
-		shell::colored_echo "ERR: Destination profile '$destination_profile' already exists." 196
+		shell::stdout "ERR: Destination profile '$destination_profile' already exists." 196
 		return 1
 	fi
 	local cmd="sudo mkdir -p \"$destination_dir\" && sudo cp \"$source_conf\" \"$destination_conf\""
@@ -908,7 +908,7 @@ shell::clone_profile_conf() {
 		shell::logger::cmd_copy "$cmd"
 	else
 		shell::run_cmd_eval "$cmd"
-		shell::colored_echo "INFO: Cloned profile.conf from '$source_profile' to '$destination_profile'" 46
+		shell::stdout "INFO: Cloned profile.conf from '$source_profile' to '$destination_profile'" 46
 	fi
 }
 
@@ -937,7 +937,7 @@ shell::list_profile_conf() {
 
 	# Check if the workspace directory exists.
 	if [ ! -d "$SHELL_CONF_WORKING_WORKSPACE" ]; then
-		shell::colored_echo "ERR: Workspace directory '$SHELL_CONF_WORKING_WORKSPACE' does not exist." 196
+		shell::stdout "ERR: Workspace directory '$SHELL_CONF_WORKING_WORKSPACE' does not exist." 196
 		return 1
 	fi
 
@@ -947,7 +947,7 @@ shell::list_profile_conf() {
 
 	# Check if any profiles were found.
 	if [ -z "$profiles" ]; then
-		shell::colored_echo "ERR: No profiles found in workspace." 196
+		shell::stdout "ERR: No profiles found in workspace." 196
 		return 1
 	fi
 

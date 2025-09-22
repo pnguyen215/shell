@@ -37,9 +37,9 @@ shell::install_oh_my_zsh() {
 	local oh_my_zsh_dir="$HOME/.oh-my-zsh"
 
 	if [ -d "$oh_my_zsh_dir" ]; then
-		shell::colored_echo "WARN: Oh My Zsh is already installed." 46
+		shell::stdout "WARN: Oh My Zsh is already installed." 46
 	else
-		shell::colored_echo "🚀 Installing Oh My Zsh..." 33
+		shell::stdout "🚀 Installing Oh My Zsh..." 33
 		# Build the installation command
 		local install_cmd="sh -c \"\$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)\""
 
@@ -53,7 +53,7 @@ shell::install_oh_my_zsh() {
 		# sed -i.bak 's/ZSH_THEME="robbyrussell"/ZSH_THEME="your_custom_theme"/' "$HOME/.zshrc"
 		# plugins=(your_plugin1 your_plugin2)
 		# sed -i.bak '/^plugins=(/a \ \ your_custom_plugin' "$HOME/.zshrc"
-		shell::colored_echo "INFO: Oh-My-Zsh installed successfully!" 46
+		shell::stdout "INFO: Oh-My-Zsh installed successfully!" 46
 	fi
 }
 
@@ -93,11 +93,11 @@ shell::removal_oh_my_zsh() {
 	local oh_my_zsh_dir="$HOME/.oh-my-zsh"
 
 	if [ ! -d "$oh_my_zsh_dir" ]; then
-		shell::colored_echo "WARN: Oh My Zsh is not installed." 46
+		shell::stdout "WARN: Oh My Zsh is not installed." 46
 		return 0
 	fi
 
-	shell::colored_echo "🚀 Uninstalling Oh My Zsh..." 33
+	shell::stdout "🚀 Uninstalling Oh My Zsh..." 33
 
 	# Remove the Oh My Zsh directory
 	local remove_cmd="rm -rf \"$oh_my_zsh_dir\""
@@ -118,10 +118,10 @@ shell::removal_oh_my_zsh() {
 		else
 			shell::run_cmd_eval "$restore_cmd"
 		fi
-		shell::colored_echo "INFO: Original .zshrc restored from backup." 46
+		shell::stdout "INFO: Original .zshrc restored from backup." 46
 	else
-		shell::colored_echo "WARN: No backup .zshrc found. Please manually update your .zshrc if necessary." 33
+		shell::stdout "WARN: No backup .zshrc found. Please manually update your .zshrc if necessary." 33
 	fi
 
-	shell::colored_echo "INFO: Oh My Zsh uninstalled successfully!" 46
+	shell::stdout "INFO: Oh My Zsh uninstalled successfully!" 46
 }

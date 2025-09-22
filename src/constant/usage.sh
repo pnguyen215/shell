@@ -123,7 +123,7 @@ Example usage:
 Requirements:
   - fzf must be installed.
   - The user must have a $HOME/.ssh directory.
-  - Assumes the presence of helper functions: shell::install_package, shell::colored_echo, shell::clip_value, and shell::is_command_available.
+  - Assumes the presence of helper functions: shell::install_package, shell::stdout, shell::clip_value, and shell::is_command_available.
 "
 
 USAGE_SHELL_FZF_KILL_SSH_TUNNEL="
@@ -149,7 +149,7 @@ Example usage:
 
 Requirements:
   - fzf must be installed.
-  - Assumes the presence of helper functions: shell::install_package, shell::colored_echo, shell::run_cmd_eval.
+  - Assumes the presence of helper functions: shell::install_package, shell::stdout, shell::run_cmd_eval.
 "
 
 USAGE_SHELL_READ_CONF="
@@ -1294,12 +1294,12 @@ Outputs:
 "
 
 USAGE_SHELL_COLORED_ECHO="
-shell::colored_echo function
+shell::stdout function
 Prints text to the terminal with customizable colors using (tput) and ANSI escape sequences.
 Supports special characters and escape sequences commonly used in terminal environments.
 
 Usage:
-shell::colored_echo [-h] <message> [color_code] [options]
+shell::stdout [-h] <message> [color_code] [options]
 
 Parameters:
   - -h          : Optional. Displays this help message.
@@ -1316,7 +1316,7 @@ Options:
 -E: Disable interpretation of backslash escapes
 
 Description:
-The (shell::colored_echo) function prints a message in bold and a specific color, if a valid color code is provided.
+The (shell::stdout) function prints a message in bold and a specific color, if a valid color code is provided.
 It uses ANSI escape sequences for 256-color support. If no color code is specified, it defaults to blue (code 4).
 
 Supported Escape Sequences:
@@ -1348,15 +1348,15 @@ Example color codes:
   - 118: Bright Cyan
 
 Example usage:
-_shell::colored_echo \"Hello, World!\" # Prints in default blue (code 4).
-_shell::colored_echo \"Error occurred\" 196 # Prints in bright red.
-_shell::colored_echo \"Task completed\" 46 # Prints in vibrant green.
-_shell::colored_echo \"Line 1'\nLine 2'\tTabbed\" 202 # Multi-line with tab
-_shell::colored_echo \"Bell sound'\a\" 226 # With bell character
-_shell::colored_echo \"Unicode: \u2713 \u2717\" 118 # With Unicode check mark and X
-_shell::colored_echo \"Hex: \x48\x65\x6C\x6C\x6F\" 93 # "Hello" in hex
-_shell::colored_echo \"No newline\" 45 -n # Without trailing newline
-_shell::colored_echo \"Raw '\t text\" 120 -E # Disable escape interpretation
+_shell::stdout \"Hello, World!\" # Prints in default blue (code 4).
+_shell::stdout \"Error occurred\" 196 # Prints in bright red.
+_shell::stdout \"Task completed\" 46 # Prints in vibrant green.
+_shell::stdout \"Line 1'\nLine 2'\tTabbed\" 202 # Multi-line with tab
+_shell::stdout \"Bell sound'\a\" 226 # With bell character
+_shell::stdout \"Unicode: \u2713 \u2717\" 118 # With Unicode check mark and X
+_shell::stdout \"Hex: \x48\x65\x6C\x6C\x6F\" 93 # "Hello" in hex
+_shell::stdout \"No newline\" 45 -n # Without trailing newline
+_shell::stdout \"Raw '\t text\" 120 -E # Disable escape interpretation
 
 Notes:
 - Requires a terminal with 256-color support for full color range.
@@ -2684,7 +2684,7 @@ Description:
   illegal characters: square brackets and the equals sign ($(=)).
   If SHELL_INI_ALLOW_SPACES_IN_NAMES is set to 0, the function checks for
   the presence of spaces within the section name.
-  Error messages are displayed using the shell::colored_echo function.
+  Error messages are displayed using the shell::stdout function.
 
 Example usage:
   # Assuming SHELL_INI_STRICT=1 and SHELL_INI_ALLOW_SPACES_IN_NAMES=0
@@ -2925,7 +2925,7 @@ Description:
   using shell::list_ini_keys, presents the keys for interactive selection using fzf,
   and then removes the chosen key-value pair from the specified section in the INI file.
   It handles cases where the file or section does not exist and provides feedback
-  using shell::colored_echo.
+  using shell::stdout.
 
 Example:
   shell::fzf_remove_ini_key config.ini \"Database\"  # Interactively remove a key from the Database section.
@@ -3047,9 +3047,9 @@ Description:
 Example:
   # Check if a 'port' key exists in the 'Network' section of 'settings.ini'
   if shell::exist_ini_key settings.ini Network port; then
-    shell::colored_echo \"Found 'port' setting.\" 46
+    shell::stdout \"Found 'port' setting.\" 46
   else
-    shell::colored_echo \"The 'port' setting is missing.\" 196
+    shell::stdout \"The 'port' setting is missing.\" 196
   fi
 "
 
@@ -3096,7 +3096,7 @@ Returns:
 Notes:
   - Affects the current shell session's environment.
   - Relies on 'shell::list_ini_sections', 'shell::list_ini_keys', 'shell::read_ini',
-    'shell::sanitize_upper_var_name', and 'shell::colored_echo'.
+    'shell::sanitize_upper_var_name', and 'shell::stdout'.
   - If SHELL_INI_STRICT is enabled, section and key names will be validated prior
     to reading.
 "
@@ -3147,7 +3147,7 @@ Notes:
   - This function attempts to unset variables; it does not report an error if a
     variable was not found or was already unset.
   - Relies on 'shell::list_ini_sections', 'shell::list_ini_keys',
-    'shell::sanitize_upper_var_name', and 'shell::colored_echo'.
+    'shell::sanitize_upper_var_name', and 'shell::stdout'.
   - It does NOT rely on 'shell::read_ini' for values, only for deriving names.
 "
 

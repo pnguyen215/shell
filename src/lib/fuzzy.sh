@@ -19,7 +19,7 @@
 #
 # Requirements:
 #   - fzf must be installed.
-#   - Helper functions: shell::run_cmd_eval, shell::colored_echo, and shell::get_os_type.
+#   - Helper functions: shell::run_cmd_eval, shell::stdout, and shell::get_os_type.
 shell::fzf_copy() {
 	# Check for the help flag (-h)
 	if [ "$1" = "-h" ]; then
@@ -34,7 +34,7 @@ shell::fzf_copy() {
 	local source_file
 	source_file=$(find . -type f | fzf --prompt="Select source file: ")
 	if [ -z "$source_file" ]; then
-		shell::colored_echo "ERR: No source file selected." 196
+		shell::stdout "ERR: No source file selected." 196
 		return 1
 	fi
 
@@ -42,7 +42,7 @@ shell::fzf_copy() {
 	local dest_dir
 	dest_dir=$(find . -type d | fzf --prompt="Select destination directory: ")
 	if [ -z "$dest_dir" ]; then
-		shell::colored_echo "ERR: No destination directory selected." 196
+		shell::stdout "ERR: No destination directory selected." 196
 		return 1
 	fi
 
@@ -53,7 +53,7 @@ shell::fzf_copy() {
 
 	# Check if the destination file already exists.
 	if [ -e "$destination_file" ]; then
-		shell::colored_echo "ERR: Destination file '$destination_file' already exists." 196
+		shell::stdout "ERR: Destination file '$destination_file' already exists." 196
 		return 1
 	fi
 
@@ -63,7 +63,7 @@ shell::fzf_copy() {
 	# Execute the command (using shell::run_cmd_eval to log and run it).
 	shell::run_cmd_eval "$cmd"
 	shell::clip_value "$cmd"
-	shell::colored_echo "INFO: File copied successfully to $destination_file" 46
+	shell::stdout "INFO: File copied successfully to $destination_file" 46
 }
 
 # shell::fzf_move function
@@ -84,7 +84,7 @@ shell::fzf_copy() {
 #
 # Requirements:
 #   - fzf must be installed.
-#   - Helper functions: shell::run_cmd_eval, shell::colored_echo, shell::get_os_type, shell::install_package, and shell::clip_value.
+#   - Helper functions: shell::run_cmd_eval, shell::stdout, shell::get_os_type, shell::install_package, and shell::clip_value.
 shell::fzf_move() {
 	# Check for the help flag (-h)
 	if [ "$1" = "-h" ]; then
@@ -99,7 +99,7 @@ shell::fzf_move() {
 	local source_file
 	source_file=$(find . -type f | fzf --prompt="Select source file: ")
 	if [ -z "$source_file" ]; then
-		shell::colored_echo "ERR: No source file selected." 196
+		shell::stdout "ERR: No source file selected." 196
 		return 1
 	fi
 
@@ -107,7 +107,7 @@ shell::fzf_move() {
 	local dest_dir
 	dest_dir=$(find . -type d | fzf --prompt="Select destination directory: ")
 	if [ -z "$dest_dir" ]; then
-		shell::colored_echo "ERR: No destination directory selected." 196
+		shell::stdout "ERR: No destination directory selected." 196
 		return 1
 	fi
 
@@ -118,7 +118,7 @@ shell::fzf_move() {
 
 	# Check if the destination file already exists.
 	if [ -e "$destination_file" ]; then
-		shell::colored_echo "ERR: Destination file '$destination_file' already exists." 196
+		shell::stdout "ERR: Destination file '$destination_file' already exists." 196
 		return 1
 	fi
 
@@ -128,7 +128,7 @@ shell::fzf_move() {
 	# Execute the command (using shell::run_cmd_eval to log and run it).
 	shell::run_cmd_eval "$cmd"
 	shell::clip_value "$cmd"
-	shell::colored_echo "INFO: File moved successfully to $destination_file" 46
+	shell::stdout "INFO: File moved successfully to $destination_file" 46
 }
 
 # shell::fzf_remove function
@@ -148,7 +148,7 @@ shell::fzf_move() {
 #
 # Requirements:
 #   - fzf must be installed.
-#   - Helper functions: shell::run_cmd_eval, shell::colored_echo, shell::get_os_type, shell::install_package, and shell::clip_value.
+#   - Helper functions: shell::run_cmd_eval, shell::stdout, shell::get_os_type, shell::install_package, and shell::clip_value.
 shell::fzf_remove() {
 	# Check for the help flag (-h)
 	if [ "$1" = "-h" ]; then
@@ -163,7 +163,7 @@ shell::fzf_remove() {
 	local target
 	target=$(find . -mindepth 1 | fzf --prompt="Select file/directory to remove: ")
 	if [ -z "$target" ]; then
-		shell::colored_echo "ERR: No file or directory selected." 196
+		shell::stdout "ERR: No file or directory selected." 196
 		return 1
 	fi
 
@@ -173,7 +173,7 @@ shell::fzf_remove() {
 	# Execute the command (using shell::run_cmd_eval to log and run it).
 	shell::run_cmd_eval "$cmd"
 	shell::clip_value "$cmd"
-	shell::colored_echo "INFO: Removed successfully: $target" 46
+	shell::stdout "INFO: Removed successfully: $target" 46
 }
 
 # shell::fzf_zip_attachment function
@@ -229,7 +229,7 @@ shell::fzf_zip_attachment() {
 
 	# Check if any files were selected.
 	if [ ${#selected_files_arr[@]} -eq 0 ]; then
-		shell::colored_echo "ERR: No files selected. Aborting." 196
+		shell::stdout "ERR: No files selected. Aborting." 196
 		return 1
 	fi
 
@@ -247,7 +247,7 @@ shell::fzf_zip_attachment() {
 		return 0
 	else
 		shell::run_cmd "${cmd[@]}"
-		shell::colored_echo "INFO: Zipping selected files from '$folder_path'" 46
+		shell::stdout "INFO: Zipping selected files from '$folder_path'" 46
 	fi
 
 	# Determine the absolute path of the created zip file.
@@ -261,7 +261,7 @@ shell::fzf_zip_attachment() {
 		esac
 	fi
 
-	shell::colored_echo "$abs_zip_filename" 245
+	shell::stdout "$abs_zip_filename" 245
 	shell::clip_value "$abs_zip_filename"
 }
 
@@ -325,10 +325,10 @@ shell::fzf_current_zip_attachment() {
 	local desired_zip="${orig_dir}/${current_dir}.zip"
 	if [ -f "$created_zip" ]; then
 		mv "$created_zip" "$desired_zip"
-		shell::colored_echo "INFO: Renamed zip file to '$desired_zip'" 46
+		shell::stdout "INFO: Renamed zip file to '$desired_zip'" 46
 		shell::clip_value "$desired_zip"
 	else
-		shell::colored_echo "ERR: Expected zip file not found." 196
+		shell::stdout "ERR: Expected zip file not found." 196
 		return 1
 	fi
 }
@@ -386,7 +386,7 @@ shell::fzf_send_telegram_attachment() {
 	# Use provided folder path or default to current directory.
 	local folder_path="${1:-$PWD}"
 	if [ ! -d "$folder_path" ]; then
-		shell::colored_echo "ERR: '$folder_path' is not a valid directory." 196
+		shell::stdout "ERR: '$folder_path' is not a valid directory." 196
 		return 1
 	fi
 
@@ -396,7 +396,7 @@ shell::fzf_send_telegram_attachment() {
 
 	# Check if any files were selected.
 	if [ ${#selected_files_arr[@]} -eq 0 ]; then
-		shell::colored_echo "ERR: No attachments selected. Aborting." 196
+		shell::stdout "ERR: No attachments selected. Aborting." 196
 		return 1
 	fi
 

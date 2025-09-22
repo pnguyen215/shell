@@ -25,7 +25,7 @@
 #   The value of the specified key if found, or an error message if the key is not found.
 #
 # Notes:
-#   - Relies on the shell::colored_echo function for output.
+#   - Relies on the shell::stdout function for output.
 #   - The behavior is controlled by the SHELL_INI_STRICT environment variable.
 shell::read_ini() {
 	if [ "$1" = "-h" ]; then
@@ -51,7 +51,7 @@ shell::read_ini() {
 
 	# Check if file exists
 	if [ ! -f "$file" ]; then
-		shell::colored_echo "ERR: File not found: $file" 196
+		shell::stdout "ERR: File not found: $file" 196
 		return 1
 	fi
 
@@ -78,7 +78,7 @@ shell::read_ini() {
 			if [ "$in_target_section" -eq 1 ] && ! [[ "$line" =~ $section_pattern ]]; then
 				# We were in the target section, but now we've moved to a *different* section.
 				# Key was not found in the target section. Exit the loop.
-				shell::colored_echo "WARN: Reached end of target section '$section' without finding key '$key'." 33
+				shell::stdout "WARN: Reached end of target section '$section' without finding key '$key'." 33
 				return 1 # Key not found in specified section.
 			fi
 
@@ -109,7 +109,7 @@ shell::read_ini() {
 					value="${value//\\\"/\"}"
 				fi
 
-				# shell::colored_echo "INFO: Found value for key '$key'." 46
+				# shell::stdout "INFO: Found value for key '$key'." 46
 				if [ "$os_type" = "macos" ]; then
 					decoded_value=$(echo "$value" | base64 -D)
 				else
@@ -121,7 +121,7 @@ shell::read_ini() {
 		fi
 	done <"$file"
 
-	shell::colored_echo "WARN: Key not found: '$key' in section: '$section'." 33
+	shell::stdout "WARN: Key not found: '$key' in section: '$section'." 33
 	return 1
 }
 
@@ -143,7 +143,7 @@ shell::read_ini() {
 #   illegal characters: square brackets (`[` and `]`) and the equals sign (`=`).
 #   If SHELL_INI_ALLOW_SPACES_IN_NAMES is set to 0, the function checks for
 #   the presence of spaces within the section name.
-#   Error messages are displayed using the shell::colored_echo function.
+#   Error messages are displayed using the shell::stdout function.
 #
 # Example usage:
 #   # Assuming SHELL_INI_STRICT=1 and SHELL_INI_ALLOW_SPACES_IN_NAMES=0
@@ -156,7 +156,7 @@ shell::read_ini() {
 #   0 if the section name is valid, 1 otherwise.
 #
 # Notes:
-#   - Relies on the shell::colored_echo function for output.
+#   - Relies on the shell::stdout function for output.
 #   - The behavior is controlled by the SHELL_INI_STRICT and
 #     SHELL_INI_ALLOW_SPACES_IN_NAMES environment variables or constants.
 shell::validate_ini_section_name() {
@@ -169,7 +169,7 @@ shell::validate_ini_section_name() {
 	local section="$1"
 
 	if [ -z "$section" ]; then
-		shell::colored_echo "ERR: Section name cannot be empty" 196
+		shell::stdout "ERR: Section name cannot be empty" 196
 		return 1
 	fi
 
@@ -179,7 +179,7 @@ shell::validate_ini_section_name() {
 		case "$section" in
 		*\[* | *\]* | *=*)
 			# If the section contains [, ], or =, it's illegal
-			shell::colored_echo "ERR: Section name contains illegal characters: $section" 196
+			shell::stdout "ERR: Section name contains illegal characters: $section" 196
 			return 1
 			;;
 		*)
@@ -192,7 +192,7 @@ shell::validate_ini_section_name() {
 	# The [[ ... =~ ... ]] for spaces works in Zsh too with [[:space:]]
 	# Alternatively, could use case: *[[:space:]]*)
 	if [ "${SHELL_INI_ALLOW_SPACES_IN_NAMES}" -eq 0 ] && [[ "$section" =~ [[:space:]] ]]; then
-		shell::colored_echo "ERR: Section name contains spaces: $section" 196
+		shell::stdout "ERR: Section name contains spaces: $section" 196
 		return 1
 	fi
 
@@ -215,7 +215,7 @@ shell::validate_ini_section_name() {
 #   0 if the key name is valid, 1 otherwise.
 
 # Notes:
-#   - Relies on the shell::colored_echo function for output.
+#   - Relies on the shell::stdout function for output.
 #   - The behavior is controlled by the SHELL_INI_STRICT and
 #     SHELL_INI_ALLOW_SPACES_IN_NAMES environment variables or constants.
 shell::validate_ini_key_name() {
@@ -228,7 +228,7 @@ shell::validate_ini_key_name() {
 	local key="$1"
 
 	if [ -z "$key" ]; then
-		shell::colored_echo "ERR: Key name cannot be empty" 196
+		shell::stdout "ERR: Key name cannot be empty" 196
 		return 1
 	fi
 
@@ -238,7 +238,7 @@ shell::validate_ini_key_name() {
 		case "$key" in
 		*\[* | *\]* | *=*)
 			# If the key contains [, ], or =, it's illegal
-			shell::colored_echo "ERR: Key name contains illegal characters: $key" 196
+			shell::stdout "ERR: Key name contains illegal characters: $key" 196
 			return 1
 			;;
 		*)
@@ -251,7 +251,7 @@ shell::validate_ini_key_name() {
 	# The [[ ... =~ ... ]] for spaces works in Zsh too with [[:space:]]
 	# Alternatively, could use case: *[[:space:]]*)
 	if [ "${SHELL_INI_ALLOW_SPACES_IN_NAMES}" -eq 0 ] && [[ "$key" =~ [[:space:]] ]]; then
-		shell::colored_echo "ERR: Key name contains spaces: $key" 196
+		shell::stdout "ERR: Key name contains spaces: $key" 196
 		return 1
 	fi
 
@@ -369,34 +369,34 @@ shell::check_ini_file() {
 
 	# Check if file parameter is provided
 	if [ -z "$file" ]; then
-		shell::colored_echo "ERR: File path is required" 196
+		shell::stdout "ERR: File path is required" 196
 		return 1
 	fi
 
 	# Check if file exists
 	if [ ! -f "$file" ]; then
-		shell::colored_echo "WARN: File does not exist, attempting to create: $file" 11
+		shell::stdout "WARN: File does not exist, attempting to create: $file" 11
 		# Create directory if it doesn't exist
 		local dir
 		dir=$(dirname "$file")
 		if [ ! -d "$dir" ]; then
 			mkdir -p "$dir" 2>/dev/null || {
-				shell::colored_echo "ERR: Could not create directory: $dir" 196
+				shell::stdout "ERR: Could not create directory: $dir" 196
 				return 1
 			}
 		fi
 
 		# Create the file
 		if ! touch "$file" 2>/dev/null; then
-			shell::colored_echo "ERR: Could not create file: $file" 196
+			shell::stdout "ERR: Could not create file: $file" 196
 			return 1
 		fi
-		shell::colored_echo "INFO: File created successfully: $file" 46
+		shell::stdout "INFO: File created successfully: $file" 46
 	fi
 
 	# Check if file is writable
 	if [ ! -w "$file" ]; then
-		shell::colored_echo "ERR: File is not writable: $file" 196
+		shell::stdout "ERR: File is not writable: $file" 196
 		return 1
 	fi
 
@@ -425,7 +425,7 @@ shell::check_ini_file() {
 #   0 on success, 1 if the file is missing or not found.
 #
 # Notes:
-#   - Relies on the shell::colored_echo function for output.
+#   - Relies on the shell::stdout function for output.
 shell::list_ini_sections() {
 	if [ "$1" = "-h" ]; then
 		echo "$USAGE_SHELL_LIST_INI_SECTIONS"
@@ -436,13 +436,13 @@ shell::list_ini_sections() {
 
 	# Validate parameters
 	if [ -z "$file" ]; then
-		shell::colored_echo "ERR: File path is required" 196
+		shell::stdout "ERR: File path is required" 196
 		return 1
 	fi
 
 	# Check if file exists
 	if [ ! -f "$file" ]; then
-		shell::colored_echo "ERR: File not found: $file" 196
+		shell::stdout "ERR: File not found: $file" 196
 		return 1
 	fi
 
@@ -474,7 +474,7 @@ shell::list_ini_sections() {
 #   0 on success, 1 if the file or section is missing or not found.
 #
 # Notes:
-#   - Relies on the shell::colored_echo function for output.
+#   - Relies on the shell::stdout function for output.
 shell::list_ini_keys() {
 	if [ "$1" = "-h" ]; then
 		echo "$USAGE_SHELL_LIST_INI_KEYS"
@@ -483,12 +483,12 @@ shell::list_ini_keys() {
 
 	local file="$1"
 	if [ -z "$file" ]; then
-		shell::colored_echo "ERR: File path is required" 196
+		shell::stdout "ERR: File path is required" 196
 		return 1
 	fi
 	local section="$2"
 	if [ -z "$section" ]; then
-		shell::colored_echo "ERR: Section name is required" 196
+		shell::stdout "ERR: Section name is required" 196
 		return 1
 	fi
 
@@ -499,7 +499,7 @@ shell::list_ini_keys() {
 
 	# Check if file exists
 	if [ ! -f "$file" ]; then
-		shell::colored_echo "ERR: File not found: $file" 196
+		shell::stdout "ERR: File not found: $file" 196
 		return 1
 	fi
 
@@ -511,7 +511,7 @@ shell::list_ini_keys() {
 	local in_section=0
 	local found_keys=0
 
-	# shell::colored_echo "Listing keys in section '$section' in file: $file" 11
+	# shell::stdout "Listing keys in section '$section' in file: $file" 11
 
 	while IFS= read -r line || [ -n "$line" ]; do
 		# Skip comments and empty lines
@@ -540,7 +540,7 @@ shell::list_ini_keys() {
 
 	# Return 1 if no keys were found in the section
 	if [ $found_keys -eq 0 ]; then
-		shell::colored_echo "WARN: No keys found in section '$section' in file: $file" 33
+		shell::stdout "WARN: No keys found in section '$section' in file: $file" 33
 		return 1
 	fi
 
@@ -574,12 +574,12 @@ shell::exist_ini_section() {
 
 	local file="$1"
 	if [ -z "$file" ]; then
-		shell::colored_echo "ERR: File path is required" 196
+		shell::stdout "ERR: File path is required" 196
 		return 1
 	fi
 	local section="$2"
 	if [ -z "$section" ]; then
-		shell::colored_echo "ERR: Section name is required" 196
+		shell::stdout "ERR: Section name is required" 196
 		return 1
 	fi
 
@@ -590,7 +590,7 @@ shell::exist_ini_section() {
 
 	# Check if file exists
 	if [ ! -f "$file" ]; then
-		shell::colored_echo "ERR: File not found: $file" 196
+		shell::stdout "ERR: File not found: $file" 196
 		return 1
 	fi
 
@@ -598,16 +598,16 @@ shell::exist_ini_section() {
 	local escaped_section
 	escaped_section=$(shell::ini_escape_for_regex "$section")
 
-	shell::colored_echo "DEBUG: Checking if section '$section' exists in file: $file" 244
+	shell::stdout "DEBUG: Checking if section '$section' exists in file: $file" 244
 
 	# Check if section exists
 	grep -q "^\[$escaped_section\]" "$file"
 	local result=$?
 
 	if [ $result -eq 0 ]; then
-		shell::colored_echo "Section found: $section" 46
+		shell::stdout "Section found: $section" 46
 	else
-		shell::colored_echo "Section not found: $section" 196
+		shell::stdout "Section not found: $section" 196
 	fi
 
 	return $result
@@ -658,11 +658,11 @@ shell::add_ini_section() {
 
 	# Check if section already exists
 	if shell::exist_ini_section "$file" "$section"; then
-		# shell::colored_echo "WARN: Section already exists: $section" 11
+		# shell::stdout "WARN: Section already exists: $section" 11
 		return 0
 	fi
 
-	shell::colored_echo "DEBUG: Adding section '$section' to file: $file" 244
+	shell::stdout "DEBUG: Adding section '$section' to file: $file" 244
 
 	# Add a blank line before the new section unless the file is empty.
 	# Use stat in case the file requires elevated permissions to read size.
@@ -673,7 +673,7 @@ shell::add_ini_section() {
 
 	# Add the section
 	echo "[$section]" >>"$file"
-	shell::colored_echo "INFO: Successfully added section: $section" 46
+	shell::stdout "INFO: Successfully added section: $section" 46
 	return 0
 }
 
@@ -728,7 +728,7 @@ shell::write_ini() {
 
 	# Check for empty value if not allowed
 	if [ -z "$value" ] && [ "${SHELL_INI_ALLOW_EMPTY_VALUES}" -eq 0 ]; then
-		shell::colored_echo "ERR: Empty values are not allowed" 196 >&2
+		shell::stdout "ERR: Empty values are not allowed" 196 >&2
 		return 0
 	fi
 
@@ -757,13 +757,13 @@ shell::write_ini() {
 	local temp_file
 	temp_file=$(shell::create_ini_temp_file)
 
-	shell::colored_echo "DEBUG: Writing key '$key' with value '$value' to section '$section' in file: $file" 244 >&2
+	shell::stdout "DEBUG: Writing key '$key' with value '$value' to section '$section' in file: $file" 244 >&2
 
 	# Special handling for values with quotes or special characters (remains the same)
 	# Assumes SHELL_INI_STRICT is defined.
 	if [ "${SHELL_INI_STRICT}" -eq 1 ] && [[ "$value" =~ [[:space:]\"\'\`\&\|\<\>\;\$] ]]; then
 		value="\"${value//\"/\\\"}\""
-		shell::colored_echo "WARN: Value contains special characters, quoting: $value" 11 >&2
+		shell::stdout "WARN: Value contains special characters, quoting: $value" 11 >&2
 	fi
 
 	# Sanitize the key to ensure it is a valid variable name.
@@ -859,12 +859,12 @@ shell::write_ini() {
 
 	# Provide feedback based on whether the key was updated or added.
 	if [ $key_handled -eq 1 ]; then
-		shell::colored_echo "INFO: Successfully wrote key '$key' with value '$value' to section '$section'" 46
+		shell::stdout "INFO: Successfully wrote key '$key' with value '$value' to section '$section'" 46
 		return 1
 	else
 		# This case should ideally not be reached if shell::add_ini_section ensures
 		# the section exists and the logic is correct. It's a safeguard.
-		shell::colored_echo "WARN: Section '$section' processed, but key '$key' was not added or updated." 11 >&2
+		shell::stdout "WARN: Section '$section' processed, but key '$key' was not added or updated." 11 >&2
 		return 0
 	fi
 
@@ -894,7 +894,7 @@ shell::write_ini() {
 # Notes:
 #   - Assumes the INI file has sections enclosed in square brackets (e.g., [section]).
 #   - Empty lines and lines outside of sections are preserved.
-#   - Relies on helper functions like shell::colored_echo, shell::ini_escape_for_regex,
+#   - Relies on helper functions like shell::stdout, shell::ini_escape_for_regex,
 #     shell::create_ini_temp_file, and optionally shell::validate_ini_section_name
 #     if SHELL_INI_STRICT is enabled. (Note: shell::ini_escape_for_regex and
 #     shell::create_ini_temp_file are not provided in this snippet, but are assumed
@@ -908,16 +908,16 @@ shell::remove_ini_section() {
 
 	local file="$1"
 	if [ -z "$file"]; then
-		shell::colored_echo "ERR: File is required" 196
+		shell::stdout "ERR: File is required" 196
 		return 1
 	fi
 	if [ ! -f "$file" ]; then
-		shell::colored_echo "ERR: File not found: $file" 196
+		shell::stdout "ERR: File not found: $file" 196
 		return 1
 	fi
 	local section="$2"
 	if [ -z "$section" ]; then
-		shell::colored_echo "ERR: Section is required" 196
+		shell::stdout "ERR: Section is required" 196
 		return 1
 	fi
 
@@ -940,11 +940,11 @@ shell::remove_ini_section() {
 	local escaped_section
 	escaped_section=$(shell::ini_escape_for_regex "$section")
 	if ! grep -q "^\[$escaped_section\]" "$file"; then
-		shell::colored_echo "Section '$section' not found in file: $file" 11
+		shell::stdout "Section '$section' not found in file: $file" 11
 		return 0
 	fi
 
-	shell::colored_echo "DEBUG: Removing section '$section' from file: $file" 244
+	shell::stdout "DEBUG: Removing section '$section' from file: $file" 244
 
 	local section_pattern="^\[$escaped_section\]" # Regex for the target section header
 	local any_section_pattern="^\[[^]]+\]"        # Regex for any section header
@@ -1007,13 +1007,13 @@ shell::remove_ini_section() {
 
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::cmd_copy "$replace_cmd"
-		shell::colored_echo "INFO: Dry-run: Would remove section '$section' from '$file'" 46
+		shell::stdout "INFO: Dry-run: Would remove section '$section' from '$file'" 46
 	else
 		shell::run_cmd_eval "$replace_cmd"
 		if [ $? -eq 0 ] && [ $section_removed -eq 1 ]; then
-			shell::colored_echo "INFO: Successfully removed section '$section'" 46
+			shell::stdout "INFO: Successfully removed section '$section'" 46
 		else
-			shell::colored_echo "ERR: removing section '$section'" 196
+			shell::stdout "ERR: removing section '$section'" 196
 			return 1
 		fi
 	fi
@@ -1038,7 +1038,7 @@ shell::remove_ini_section() {
 #   using shell::list_ini_keys, presents the keys for interactive selection using fzf,
 #   and then removes the chosen key-value pair from the specified section in the INI file.
 #   It handles cases where the file or section does not exist and provides feedback
-#   using shell::colored_echo.
+#   using shell::stdout.
 #
 # Example:
 #   shell::fzf_remove_ini_key config.ini "Database"  # Interactively remove a key from the Database section.
@@ -1078,7 +1078,7 @@ shell::fzf_remove_ini_key() {
 
 	# Ensure fzf is installed.
 	shell::install_package fzf || {
-		shell::colored_echo "ERR: fzf is required but could not be installed." 196
+		shell::stdout "ERR: fzf is required but could not be installed." 196
 		return 1
 	}
 
@@ -1088,11 +1088,11 @@ shell::fzf_remove_ini_key() {
 
 	# Check if a key was selected.
 	if [ -z "$selected_key" ]; then
-		shell::colored_echo "ERR: No key selected. Aborting removal." 196
+		shell::stdout "ERR: No key selected. Aborting removal." 196
 		return 1
 	fi
 
-	shell::colored_echo "DEBUG: Selected key for removal: '$selected_key'" 244
+	shell::stdout "DEBUG: Selected key for removal: '$selected_key'" 244
 
 	local os_type
 	os_type=$(shell::get_os_type)
@@ -1112,7 +1112,7 @@ shell::fzf_remove_ini_key() {
 	local temp_file
 	temp_file=$(shell::create_ini_temp_file)
 
-	shell::colored_echo "DEBUG: Removing key '$selected_key' from section '$section' in file: $file" 244
+	shell::stdout "DEBUG: Removing key '$selected_key' from section '$section' in file: $file" 244
 
 	# Process the file line by line
 	# Use `|| [ -n "$line" ]` to ensure the last line is processed even if it doesn't end with a newline.
@@ -1163,15 +1163,15 @@ shell::fzf_remove_ini_key() {
 		shell::run_cmd_eval "$replace_cmd"
 		if [ $? -eq 0 ]; then
 			if [ $key_removed -eq 1 ]; then
-				shell::colored_echo "INFO: Successfully removed key '$selected_key' from section '$section'" 46
+				shell::stdout "INFO: Successfully removed key '$selected_key' from section '$section'" 46
 			else
 				# This case should not be reached if shell::list_ini_keys and fzf worked correctly,
 				# but it's a safeguard.
-				shell::colored_echo "WARN: Key '$selected_key' was selected but not found in section '$section' during removal process." 11
+				shell::stdout "WARN: Key '$selected_key' was selected but not found in section '$section' during removal process." 11
 				return 1
 			fi
 		else
-			shell::colored_echo "ERR: replacing the original file after key removal." 196
+			shell::stdout "ERR: replacing the original file after key removal." 196
 			return 1
 		fi
 	fi
@@ -1205,7 +1205,7 @@ shell::fzf_remove_ini_key() {
 # Notes:
 #   - Assumes the INI file has sections enclosed in square brackets (e.g., [section]) and key=value pairs.
 #   - Empty lines and lines outside of sections are preserved.
-#   - Relies on helper functions like shell::colored_echo, shell::ini_escape_for_regex,
+#   - Relies on helper functions like shell::stdout, shell::ini_escape_for_regex,
 #     shell::create_ini_temp_file, and optionally shell::validate_ini_section_name,
 #     shell::validate_ini_key_name if SHELL_INI_STRICT is enabled.
 #   - Uses atomic operation (mv) to replace the original file, reducing risk of data loss.
@@ -1229,17 +1229,17 @@ shell::remove_ini_key() {
 
 	local file="$1"
 	if [ ! -f "$file" ]; then
-		shell::colored_echo "ERR: File not found: $file" 196
+		shell::stdout "ERR: File not found: $file" 196
 		return 1
 	fi
 	local section="$2"
 	if [ -z "$section" ]; then
-		shell::colored_echo "ERR: Section name cannot be empty." 196
+		shell::stdout "ERR: Section name cannot be empty." 196
 		return 1
 	fi
 	local key="$3"
 	if [ -z "$key" ]; then
-		shell::colored_echo "ERR: Key name cannot be empty." 196
+		shell::stdout "ERR: Key name cannot be empty." 196
 		return 1
 	fi
 
@@ -1259,7 +1259,7 @@ shell::remove_ini_key() {
 		return 1
 	fi
 
-	shell::colored_echo "DEBUG: Attempting to remove key '$key' from section '$section' in file: $file" 244
+	shell::stdout "DEBUG: Attempting to remove key '$key' from section '$section' in file: $file" 244
 
 	# Escape section and key for regex pattern
 	local escaped_section
@@ -1325,14 +1325,14 @@ shell::remove_ini_key() {
 		shell::run_cmd_eval "$replace_cmd"
 		if [ $? -eq 0 ]; then
 			if [ $key_removed -eq 1 ]; then
-				shell::colored_echo "INFO: Successfully removed key '$key' from section '$section'" 46
+				shell::stdout "INFO: Successfully removed key '$key' from section '$section'" 46
 				return 0
 			else
-				shell::colored_echo "WARN: Key '$key' not found in section '$section'." 11
+				shell::stdout "WARN: Key '$key' not found in section '$section'." 11
 				return 1
 			fi
 		else
-			shell::colored_echo "ERR: replacing the original file after key removal." 196
+			shell::stdout "ERR: replacing the original file after key removal." 196
 			return 1
 		fi
 	fi
@@ -1367,7 +1367,7 @@ shell::remove_ini_key() {
 #   0 on success, 1 on failure (e.g., missing parameters, underlying write failure).
 #
 # Notes:
-#   - Relies on 'shell::colored_echo' for output and 'shell::write_ini' for file operations.
+#   - Relies on 'shell::stdout' for output and 'shell::write_ini' for file operations.
 #   - Interaction with SHELL_INI_STRICT in 'shell::write_ini': If SHELL_INI_STRICT is set
 #     to 1, 'shell::write_ini' might re-quote the entire array string generated by this
 #     function if it contains spaces or quotes, potentially leading to double-quoting
@@ -1426,9 +1426,9 @@ shell::set_array_ini_value() {
 
 	# Provide feedback based on the operation's success.
 	if [ $status -eq 0 ]; then
-		shell::colored_echo "INFO: Successfully wrote array value for key '$key' to section '$section'." 46
+		shell::stdout "INFO: Successfully wrote array value for key '$key' to section '$section'." 46
 	else
-		shell::colored_echo "ERR: Failed to write array value for key '$key' to section '$section'." 196
+		shell::stdout "ERR: Failed to write array value for key '$key' to section '$section'." 196
 	fi
 
 	return $status
@@ -1494,7 +1494,7 @@ shell::get_array_ini_value() {
 
 	# Validate required parameters.
 	if [ -z "$file" ] || [ -z "$section" ] || [ -z "$key" ]; then
-		shell::colored_echo "ERR: shell::get_array_ini_value: Missing required parameters." 196
+		shell::stdout "ERR: shell::get_array_ini_value: Missing required parameters." 196
 		echo "Usage: shell::get_array_ini_value [-h] <file> <section> <key>"
 		return 1
 	fi
@@ -1513,7 +1513,7 @@ shell::get_array_ini_value() {
 	# Check if shell::read_ini failed (e.g., file/section/key not found).
 	if [ $ini_read_status -ne 0 ]; then
 		# shell::read_ini already prints specific error messages, so just indicate general failure here.
-		shell::colored_echo "ERR: Failed to read raw value for key '$key' from section '$section'." 196
+		shell::stdout "ERR: Failed to read raw value for key '$key' from section '$section'." 196
 		return 1
 	fi
 
@@ -1562,7 +1562,7 @@ shell::get_array_ini_value() {
 	else
 		# This case covers scenarios where the key exists but its value is empty or malformed
 		# such that no discernible items were parsed.
-		shell::colored_echo "WARN: Key '$key' found in section '$section', but no array items could be parsed. Check format." 33
+		shell::stdout "WARN: Key '$key' found in section '$section', but no array items could be parsed. Check format." 33
 	fi
 
 	return 0
@@ -1595,16 +1595,16 @@ shell::get_array_ini_value() {
 # Example:
 #   # Check if a 'port' key exists in the 'Network' section of 'settings.ini'
 #   if shell::exist_ini_key settings.ini Network port; then
-#     shell::colored_echo "Found 'port' setting." 46
+#     shell::stdout "Found 'port' setting." 46
 #   else
-#     shell::colored_echo "The 'port' setting is missing." 196
+#     shell::stdout "The 'port' setting is missing." 196
 #   fi
 #
 # Returns:
 #   0 (success) if the key exists in the specified section and file.
 #   1 (failure) if the key does not exist, or if required parameters are missing,
 #     or if validation fails (in strict mode).
-#   Outputs status messages using 'shell::colored_echo' to standard error.
+#   Outputs status messages using 'shell::stdout' to standard error.
 #
 # Notes:
 #   - This function does not output the value of the key, only its existence status.
@@ -1646,10 +1646,10 @@ shell::exist_ini_key() {
 	# Redirect stdout and stderr to /dev/null to prevent shell::read_ini's output/errors
 	# from cluttering the console, as this function provides its own status messages.
 	if shell::read_ini "$file" "$section" "$key" >/dev/null 2>&1; then
-		shell::colored_echo "INFO: Key found: '$key' in section '$section'." 46
+		shell::stdout "INFO: Key found: '$key' in section '$section'." 46
 		return 0
 	else
-		shell::colored_echo "ERR: Key not found: '$key' in section '$section'." 196
+		shell::stdout "ERR: Key not found: '$key' in section '$section'." 196
 		return 1
 	fi
 }
@@ -1727,18 +1727,18 @@ shell::expose_ini_env() {
 
 	# Validate required parameters.
 	if [ -z "$file" ]; then
-		shell::colored_echo "ERR: shell::expose_ini_env: Missing file parameter." 196
+		shell::stdout "ERR: shell::expose_ini_env: Missing file parameter." 196
 		echo "Usage: shell::expose_ini_env [-h] <file> [prefix] [section]"
 		return 1
 	fi
 
 	# Check if file exists.
 	if [ ! -f "$file" ]; then
-		shell::colored_echo "ERR: File not found: $file" 196
+		shell::stdout "ERR: File not found: $file" 196
 		return 1
 	fi
 
-	shell::colored_echo "🔵 Exporting INI values to environment variables from '$file' (prefix: '$prefix', section: '$section')." 11
+	shell::stdout "🔵 Exporting INI values to environment variables from '$file' (prefix: '$prefix', section: '$section')." 11
 
 	# If a specific section is specified, only export keys from that section.
 	if [ -n "$section" ]; then
@@ -1771,9 +1771,9 @@ shell::expose_ini_env() {
 				fi
 
 				export "${var_name}=${value}"
-				shell::colored_echo "  ✅ Exported: ${var_name}=${value}" 46
+				shell::stdout "  ✅ Exported: ${var_name}=${value}" 46
 			else
-				shell::colored_echo "  WARN: Failed to read key '$key' from section '$section'. Skipping export." 33
+				shell::stdout "  WARN: Failed to read key '$key' from section '$section'. Skipping export." 33
 			fi
 		done < <(shell::list_ini_keys "$file" "$section") # Use process substitution for robust key listing
 
@@ -1783,7 +1783,7 @@ shell::expose_ini_env() {
 			# Validate current section name if strict mode is enabled.
 			if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
 				shell::validate_ini_section_name "$current_section" || {
-					shell::colored_echo "ERR: Skipping invalid section name '$current_section' in strict mode." 196
+					shell::stdout "ERR: Skipping invalid section name '$current_section' in strict mode." 196
 					continue # Skip to the next section
 				}
 			fi
@@ -1811,15 +1811,15 @@ shell::expose_ini_env() {
 					fi
 
 					export "${var_name}=${value}"
-					shell::colored_echo "  ✅ Exported: ${var_name}=${value}" 46
+					shell::stdout "  ✅ Exported: ${var_name}=${value}" 46
 				else
-					shell::colored_echo "  WARN: Failed to read key '$key' from section '$current_section'. Skipping export." 33
+					shell::stdout "  WARN: Failed to read key '$key' from section '$current_section'. Skipping export." 33
 				fi
 			done < <(shell::list_ini_keys "$file" "$current_section")
 		done < <(shell::list_ini_sections "$file")
 	fi
 
-	shell::colored_echo "INFO: Environment variables export completed." 46
+	shell::stdout "INFO: Environment variables export completed." 46
 	return 0
 }
 
@@ -1886,14 +1886,14 @@ shell::destroy_ini_env() {
 
 	# Validate required parameters.
 	if [ -z "$file" ]; then
-		shell::colored_echo "ERR: shell::destroy_ini_env: Missing file parameter." 196
+		shell::stdout "ERR: shell::destroy_ini_env: Missing file parameter." 196
 		echo "Usage: shell::destroy_ini_env [-h] <file> [prefix] [section]"
 		return 1
 	fi
 
 	# Check if file exists.
 	if [ ! -f "$file" ]; then
-		shell::colored_echo "ERR: File not found: $file" 196
+		shell::stdout "ERR: File not found: $file" 196
 		return 1
 	fi
 
@@ -1902,7 +1902,7 @@ shell::destroy_ini_env() {
 		# Validate section name if strict mode is enabled.
 		if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
 			shell::validate_ini_section_name "$section" || {
-				shell::colored_echo "ERR: Cannot destroy keys: Invalid section name '$section' in strict mode." 196
+				shell::stdout "ERR: Cannot destroy keys: Invalid section name '$section' in strict mode." 196
 				return 1
 			}
 		fi
@@ -1928,7 +1928,7 @@ shell::destroy_ini_env() {
 			# 'declare -p' is used for robust variable existence check across Bash versions.
 			if declare -p "$var_name" &>/dev/null; then
 				unset "$var_name"
-				shell::colored_echo "📍 Unset: ${var_name}" 208
+				shell::stdout "📍 Unset: ${var_name}" 208
 			fi
 		done < <(shell::list_ini_keys "$file" "$section")
 
@@ -1938,7 +1938,7 @@ shell::destroy_ini_env() {
 			# Validate current section name if strict mode is enabled.
 			if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
 				shell::validate_ini_section_name "$current_section" || {
-					shell::colored_echo "ERR: Skipping section with invalid name '$current_section' in strict mode." 196
+					shell::stdout "ERR: Skipping section with invalid name '$current_section' in strict mode." 196
 					continue
 				}
 			fi
@@ -1962,13 +1962,13 @@ shell::destroy_ini_env() {
 
 				if declare -p "$var_name" &>/dev/null; then
 					unset "$var_name"
-					shell::colored_echo "  🗑️ Unset: ${var_name}" 208
+					shell::stdout "  🗑️ Unset: ${var_name}" 208
 				fi
 			done < <(shell::list_ini_keys "$file" "$current_section")
 		done < <(shell::list_ini_sections "$file")
 	fi
 
-	shell::colored_echo "INFO: Environment variables destruction completed." 46
+	shell::stdout "INFO: Environment variables destruction completed." 46
 	return 0
 }
 
@@ -2091,7 +2091,7 @@ shell::get_or_default_ini_value() {
 #   section not found, new section already exists, or validation failure).
 #
 # Notes:
-#   - Relies on shell::colored_echo, shell::check_ini_file, shell::exist_ini_section,
+#   - Relies on shell::stdout, shell::check_ini_file, shell::exist_ini_section,
 #     shell::ini_escape_for_regex, shell::validate_ini_section_name, and shell::run_cmd_eval.
 shell::rename_ini_section() {
 	local dry_run="false"
@@ -2122,24 +2122,24 @@ shell::rename_ini_section() {
 
 	# Validate required parameters: file, old_section, new_section.
 	if [ $# -lt 3 ]; then
-		shell::colored_echo "ERR: shell::rename_ini_section: Missing required parameters." 196
+		shell::stdout "ERR: shell::rename_ini_section: Missing required parameters." 196
 		echo "Usage: shell::rename_ini_section [-n] [-h] <file> <old_section> <new_section>"
 		return 1
 	fi
 
 	local file="$1"
 	if [ ! -f "$file" ]; then
-		shell::colored_echo "ERR: File not found: $file" 196
+		shell::stdout "ERR: File not found: $file" 196
 		return 1
 	fi
 	local old_section="$2"
 	if [ -z "$old_section" ]; then
-		shell::colored_echo "ERR: Old section name cannot be empty." 196
+		shell::stdout "ERR: Old section name cannot be empty." 196
 		return 1
 	fi
 	local new_section="$3"
 	if [ -z "$new_section" ]; then
-		shell::colored_echo "ERR: New section name cannot be empty." 196
+		shell::stdout "ERR: New section name cannot be empty." 196
 		return 1
 	fi
 
@@ -2164,13 +2164,13 @@ shell::rename_ini_section() {
 	# Check if the old section exists. Suppress output as shell::exist_ini_section
 	# already provides verbose messages.
 	if ! shell::exist_ini_section "$file" "$old_section" >/dev/null 2>&1; then
-		shell::colored_echo "ERR: Section to rename ('$old_section') not found in file: $file" 196
+		shell::stdout "ERR: Section to rename ('$old_section') not found in file: $file" 196
 		return 1
 	fi
 
 	# Check if the new section name already exists.
 	if shell::exist_ini_section "$file" "$new_section" >/dev/null 2>&1; then
-		shell::colored_echo "ERR: New section name ('$new_section') already exists in file: $file. Aborting rename." 196
+		shell::stdout "ERR: New section name ('$new_section') already exists in file: $file. Aborting rename." 196
 		return 1
 	fi
 
@@ -2193,7 +2193,7 @@ shell::rename_ini_section() {
 
 	shell::execute_or_evict "$dry_run" "$sed_cmd"
 	if [ "$dry_run" = "false" ]; then
-		shell::colored_echo "INFO: Successfully renamed section from '$old_section' to '$new_section'." 46
+		shell::stdout "INFO: Successfully renamed section from '$old_section' to '$new_section'." 46
 	fi
 	return 0
 }
@@ -2226,7 +2226,7 @@ shell::rename_ini_section() {
 #   fzf not installed, or underlying rename failure).
 #
 # Notes:
-#   - Relies on shell::colored_echo, shell::install_package, shell::list_ini_sections,
+#   - Relies on shell::stdout, shell::install_package, shell::list_ini_sections,
 #     and shell::rename_ini_section.
 shell::fzf_rename_ini_section() {
 	local dry_run="false"
@@ -2261,7 +2261,7 @@ shell::fzf_rename_ini_section() {
 
 	# Validate required parameter: file path.
 	if [ -z "$file_param" ]; then
-		shell::colored_echo "ERR: shell::fzf_rename_ini_section: Missing required file parameter." 196
+		shell::stdout "ERR: shell::fzf_rename_ini_section: Missing required file parameter." 196
 		echo "Usage: shell::fzf_rename_ini_section [-n] [-h] <file>"
 		return 1
 	fi
@@ -2270,13 +2270,13 @@ shell::fzf_rename_ini_section() {
 
 	# Check if the specified file exists.
 	if [ ! -f "$file" ]; then
-		shell::colored_echo "ERR: File not found: $file" 196
+		shell::stdout "ERR: File not found: $file" 196
 		return 1
 	fi
 
 	# Ensure fzf is installed.
 	shell::install_package fzf || {
-		shell::colored_echo "ERR: fzf is required but could not be installed." 196
+		shell::stdout "ERR: fzf is required but could not be installed." 196
 		return 1
 	}
 
@@ -2286,17 +2286,17 @@ shell::fzf_rename_ini_section() {
 
 	# Check if a section was selected.
 	if [ -z "$selected_section" ]; then
-		shell::colored_echo "ERR: No section selected. Aborting rename." 196
+		shell::stdout "ERR: No section selected. Aborting rename." 196
 		return 1
 	fi
 
-	shell::colored_echo "Selected section for renaming: '$selected_section'" 33
+	shell::stdout "Selected section for renaming: '$selected_section'" 33
 
 	# Prompt for the new section name.
-	shell::colored_echo ">> Enter new name for section '$selected_section':" 33
+	shell::stdout ">> Enter new name for section '$selected_section':" 33
 	read -r new_section
 	if [ -z "$new_section" ]; then
-		shell::colored_echo "ERR: No new section name entered. Aborting rename." 196
+		shell::stdout "ERR: No new section name entered. Aborting rename." 196
 		return 1
 	fi
 
@@ -2338,7 +2338,7 @@ shell::fzf_rename_ini_section() {
 #   destination section already exists in strict mode, or write errors).
 #
 # Notes:
-#   - Relies on shell::colored_echo, shell::exist_ini_section, shell::add_ini_section,
+#   - Relies on shell::stdout, shell::exist_ini_section, shell::add_ini_section,
 #     shell::write_ini, shell::create_ini_temp_file, and shell::ini_escape_for_regex.
 #   - Honors SHELL_INI_STRICT for section name validation.
 shell::clone_ini_section() {
@@ -2377,23 +2377,23 @@ shell::clone_ini_section() {
 
 	# Check if file exists
 	if [ ! -f "$file" ]; then
-		shell::colored_echo "ERR: File not found: $file" 196
+		shell::stdout "ERR: File not found: $file" 196
 		return 1
 	fi
 
 	# Check if source section exists
 	if ! shell::exist_ini_section "$file" "$source_section"; then
-		shell::colored_echo "ERR: Source section '$source_section' not found in file: $file" 196
+		shell::stdout "ERR: Source section '$source_section' not found in file: $file" 196
 		return 1
 	fi
 
 	# Check if destination section already exists
 	if shell::exist_ini_section "$file" "$destination_section"; then
-		shell::colored_echo "WARN: Destination section '$destination_section' already exists. Aborting clone to prevent overwrite." 11
+		shell::stdout "WARN: Destination section '$destination_section' already exists. Aborting clone to prevent overwrite." 11
 		return 1
 	fi
 
-	shell::colored_echo "DEBUG: Cloning section '$source_section' to '$destination_section' in file: $file" 244
+	shell::stdout "DEBUG: Cloning section '$source_section' to '$destination_section' in file: $file" 244
 
 	local escaped_source_section
 	escaped_source_section=$(shell::ini_escape_for_regex "$source_section")
@@ -2464,10 +2464,10 @@ shell::clone_ini_section() {
 	else
 		shell::run_cmd_eval "$replace_cmd"
 		if [ $? -eq 0 ]; then
-			shell::colored_echo "INFO: Successfully cloned section '$source_section' to '$destination_section'." 46
+			shell::stdout "INFO: Successfully cloned section '$source_section' to '$destination_section'." 46
 			return 0
 		else
-			shell::colored_echo "ERR: replacing the original file after section clone." 196
+			shell::stdout "ERR: replacing the original file after section clone." 196
 			return 1
 		fi
 	fi
@@ -2500,7 +2500,7 @@ shell::clone_ini_section() {
 #   0 on success, 1 on failure (e.g., missing parameters, file not found, no section selected).
 #
 # Notes:
-#   - Relies on shell::colored_echo, shell::install_package, shell::list_ini_sections,
+#   - Relies on shell::stdout, shell::install_package, shell::list_ini_sections,
 #     shell::clone_ini_section, and shell::logger::cmd_copy.
 #   - Provides interactive selection and auto-suggestion for the cloned section name.
 shell::fzf_clone_ini_section() {
@@ -2519,7 +2519,7 @@ shell::fzf_clone_ini_section() {
 
 	# Validate required parameters
 	if [ $# -lt 1 ]; then
-		shell::colored_echo "ERR: shell::fzf_clone_ini_section: Missing file parameter." 196
+		shell::stdout "ERR: shell::fzf_clone_ini_section: Missing file parameter." 196
 		echo "Usage: shell::fzf_clone_ini_section [-n] [-h] <file>"
 		return 1
 	fi
@@ -2528,13 +2528,13 @@ shell::fzf_clone_ini_section() {
 
 	# Check if file exists
 	if [ ! -f "$file" ]; then
-		shell::colored_echo "ERR: File not found: $file" 196
+		shell::stdout "ERR: File not found: $file" 196
 		return 1
 	fi
 
 	# Ensure fzf is installed.
 	shell::install_package fzf || {
-		shell::colored_echo "ERR: fzf is required but could not be installed." 196
+		shell::stdout "ERR: fzf is required but could not be installed." 196
 		return 1
 	}
 
@@ -2544,18 +2544,18 @@ shell::fzf_clone_ini_section() {
 
 	# Check if a section was selected.
 	if [ -z "$selected_section" ]; then
-		shell::colored_echo "ERR: No section selected. Aborting clone." 196
+		shell::stdout "ERR: No section selected. Aborting clone." 196
 		return 1
 	fi
 
-	shell::colored_echo "DEBUG: Selected section for cloning: '$selected_section'" 244
+	shell::stdout "DEBUG: Selected section for cloning: '$selected_section'" 244
 
 	# Prompt for the new section name, with "_clone" appended as a suggestion.
-	shell::colored_echo ">> Enter new section name (e.g., ${selected_section}_clone):" 33
+	shell::stdout ">> Enter new section name (e.g., ${selected_section}_clone):" 33
 	read -r new_section_name
 	if [ -z "$new_section_name" ]; then
 		new_section_name="${selected_section}_clone"
-		shell::colored_echo "DEBUG: Using default new section name: '$new_section_name'" 244
+		shell::stdout "DEBUG: Using default new section name: '$new_section_name'" 244
 	fi
 
 	# Perform the clone operation using shell::clone_ini_section
@@ -2594,7 +2594,7 @@ shell::fzf_clone_ini_section() {
 #   0 on success, 1 on failure (e.g., missing parameters, file not found, no section selected).
 #
 # Notes:
-#   - Relies on shell::colored_echo, shell::install_package, shell::list_ini_sections,
+#   - Relies on shell::stdout, shell::install_package, shell::list_ini_sections,
 #     shell::run_cmd_eval, shell::logger::cmd_copy, and shell::ini_escape_for_regex.
 #   - Uses fzf's multi-select feature (TAB key) for selecting multiple sections.
 shell::fzf_remove_ini_sections() {
@@ -2613,7 +2613,7 @@ shell::fzf_remove_ini_sections() {
 
 	# Validate required parameters
 	if [ $# -lt 1 ]; then
-		shell::colored_echo "ERR: shell::fzf_remove_ini_sections: Missing file parameter." 196
+		shell::stdout "ERR: shell::fzf_remove_ini_sections: Missing file parameter." 196
 		echo "Usage: shell::fzf_remove_ini_sections [-n] [-h] <file>"
 		return 1
 	fi
@@ -2622,13 +2622,13 @@ shell::fzf_remove_ini_sections() {
 
 	# Check if file exists
 	if [ ! -f "$file" ]; then
-		shell::colored_echo "ERR: File not found: $file" 196
+		shell::stdout "ERR: File not found: $file" 196
 		return 1
 	fi
 
 	# Ensure fzf is installed.
 	shell::install_package fzf || {
-		shell::colored_echo "ERR: fzf is required but could not be installed." 196
+		shell::stdout "ERR: fzf is required but could not be installed." 196
 		return 1
 	}
 
@@ -2638,11 +2638,11 @@ shell::fzf_remove_ini_sections() {
 
 	# Check if any sections were selected
 	if [ ${#selected_sections[@]} -eq 0 ]; then
-		shell::colored_echo "ERR: No sections selected. Aborting removal." 196
+		shell::stdout "ERR: No sections selected. Aborting removal." 196
 		return 1
 	fi
 
-	shell::colored_echo "DEBUG: Selected sections for removal: ${selected_sections[*]}" 244
+	shell::stdout "DEBUG: Selected sections for removal: ${selected_sections[*]}" 244
 
 	local success=0
 	# Process each selected section
@@ -2663,11 +2663,11 @@ shell::fzf_remove_ini_sections() {
 	done
 
 	if [ "$dry_run" = "true" ]; then
-		shell::colored_echo "INFO: Dry-run completed. Commands for removing sections were printed." 46
+		shell::stdout "INFO: Dry-run completed. Commands for removing sections were printed." 46
 	elif [ $success -eq 0 ]; then
-		shell::colored_echo "INFO: Successfully removed all selected sections from '$file'" 46
+		shell::stdout "INFO: Successfully removed all selected sections from '$file'" 46
 	else
-		shell::colored_echo "ERR: Some sections could not be removed from '$file'" 196
+		shell::stdout "ERR: Some sections could not be removed from '$file'" 196
 		return 1
 	fi
 
@@ -2706,7 +2706,7 @@ shell::fzf_view_ini_viz() {
 	# Ensure the file exists and is readable.
 	local file="$1"
 	if [ ! -f "$file" ]; then
-		shell::colored_echo "ERR: File not found: $file" 196
+		shell::stdout "ERR: File not found: $file" 196
 		return 1
 	fi
 
@@ -2779,7 +2779,7 @@ shell::fzf_view_ini_viz() {
 	# If not, print an error message and return.
 	section=$(echo "$section" | sed "s/$(echo -e "\033")[0-9;]*m//g")
 	if [ -z "$section" ]; then
-		shell::colored_echo "ERR: No section selected." 196
+		shell::stdout "ERR: No section selected." 196
 		return 1
 	fi
 
@@ -2792,7 +2792,7 @@ shell::fzf_view_ini_viz() {
 
 	key=$(echo "$key" | sed "s/$(echo -e "\033")[0-9;]*m//g")
 	if [ -z "$key" ]; then
-		shell::colored_echo "ERR: No key selected." 196
+		shell::stdout "ERR: No key selected." 196
 		return 1
 	fi
 
@@ -2802,13 +2802,13 @@ shell::fzf_view_ini_viz() {
 	local value
 	value=$(shell::read_ini "$file" "$section" "$key")
 	if [ $? -ne 0 ]; then
-		shell::colored_echo "ERR: Failed to read value for key '$key' in section '$section'." 196
+		shell::stdout "ERR: Failed to read value for key '$key' in section '$section'." 196
 		return 1
 	fi
 
-	shell::colored_echo "DEBUG: [s] Section: $section" 244
-	shell::colored_echo "DEBUG: [k] Key: $key" 244
-	shell::colored_echo "INFO: [v] Value: $value" 46
+	shell::stdout "DEBUG: [s] Section: $section" 244
+	shell::stdout "DEBUG: [k] Key: $key" 244
+	shell::stdout "INFO: [v] Value: $value" 46
 	shell::clip_value "$value"
 }
 
@@ -2865,7 +2865,7 @@ shell::fzf_view_ini_viz_super() {
 	# Validate the file parameter.
 	# Ensure the file exists and is readable.
 	if [ ! -f "$file" ]; then
-		shell::colored_echo "ERR: File not found: $file" 196
+		shell::stdout "ERR: File not found: $file" 196
 		return 1
 	fi
 
@@ -2907,7 +2907,7 @@ shell::fzf_view_ini_viz_super() {
 	# If not, print an error message and return.
 	section=$(echo "$section" | sed "s/$(echo -e "\033")[0-9;]*m//g")
 	if [ -z "$section" ]; then
-		shell::colored_echo "ERR: No section selected." 196
+		shell::stdout "ERR: No section selected." 196
 		return 1
 	fi
 
@@ -2916,7 +2916,7 @@ shell::fzf_view_ini_viz_super() {
 	local keys
 	keys=$(shell::list_ini_keys "$file" "$section")
 	if [ -z "$keys" ]; then
-		shell::colored_echo "WARN: No keys found in section '$section'." 33
+		shell::stdout "WARN: No keys found in section '$section'." 33
 		return 1
 	fi
 
@@ -2969,7 +2969,7 @@ shell::fzf_view_ini_viz_super() {
 	fi
 
 	if [ -z "$key_selection" ]; then
-		shell::colored_echo "ERR: No key selected." 196
+		shell::stdout "ERR: No key selected." 196
 		return 1
 	fi
 
@@ -2982,8 +2982,8 @@ shell::fzf_view_ini_viz_super() {
 		key=$(echo "$key" | sed "s/$(echo -e "\033")[0-9;]*m//g")
 		local value
 		value=$(shell::read_ini "$file" "$section" "$key")
-		shell::colored_echo "DEBUG: [k] $key" 244
-		shell::colored_echo "INFO: [v] $value" 46
+		shell::stdout "DEBUG: [k] $key" 244
+		shell::stdout "INFO: [v] $value" 46
 		key=$(shell::sanitize_lower_var_name "$key")
 		output="${output}$key=$value\n"
 	done <<<"$key_selection"
@@ -3043,7 +3043,7 @@ shell::fzf_view_ini_viz_super_control() {
 	# Validate the file parameter.
 	# Ensure the file exists and is readable.
 	if [ ! -f "$file" ]; then
-		shell::colored_echo "ERR: File not found: $file" 196
+		shell::stdout "ERR: File not found: $file" 196
 		return 1
 	fi
 
@@ -3084,7 +3084,7 @@ shell::fzf_view_ini_viz_super_control() {
 		# Check if a section was selected.
 		section=$(echo "$section" | sed "s/$(echo -e "\033")[0-9;]*m//g")
 		if [ -z "$section" ]; then
-			shell::colored_echo "ERR: No section selected." 196
+			shell::stdout "ERR: No section selected." 196
 			return 1
 		fi
 
@@ -3092,7 +3092,7 @@ shell::fzf_view_ini_viz_super_control() {
 		local keys
 		keys=$(shell::list_ini_keys "$file" "$section")
 		if [ -z "$keys" ]; then
-			shell::colored_echo "WARN: No keys found in section '$section'." 33
+			shell::stdout "WARN: No keys found in section '$section'." 33
 			continue
 		fi
 
@@ -3146,7 +3146,7 @@ shell::fzf_view_ini_viz_super_control() {
 
 		# If no key was selected, return with error.
 		if [ -z "$key_selection" ]; then
-			shell::colored_echo "ERR: No key selected." 196
+			shell::stdout "ERR: No key selected." 196
 			return 1
 		fi
 
@@ -3162,8 +3162,8 @@ shell::fzf_view_ini_viz_super_control() {
 			key=$(echo "$key" | sed "s/$(echo -e "\033")[0-9;]*m//g")
 			local value
 			value=$(shell::read_ini "$file" "$section" "$key")
-			shell::colored_echo "DEBUG: [k] $key" 244
-			shell::colored_echo "INFO: [v] $value" 46
+			shell::stdout "DEBUG: [k] $key" 244
+			shell::stdout "INFO: [v] $value" 46
 			key=$(shell::sanitize_lower_var_name "$key")
 			output="${output}$key=$value\n"
 		done <<<"$key_selection"
@@ -3330,7 +3330,7 @@ shell::dump_ini_json() {
 
 	# Ensure the file exists and is readable.
 	if [ ! -f "$file" ]; then
-		shell::colored_echo "ERR: File not found: $file" 196
+		shell::stdout "ERR: File not found: $file" 196
 		return 1
 	fi
 
@@ -3339,7 +3339,7 @@ shell::dump_ini_json() {
 	local sections
 	sections=$(shell::list_ini_sections "$file")
 	if [ -z "$sections" ]; then
-		shell::colored_echo "WARN: No sections found in '$file'" 11
+		shell::stdout "WARN: No sections found in '$file'" 11
 		return 1
 	fi
 

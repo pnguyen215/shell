@@ -54,10 +54,6 @@ shell::source_directory() {
 				source "$script" >/dev/null 2>&1
 			fi
 		done
-		# else
-		# Optional: Add an error message if a directory is not found, but suppressing
-		# this for cleaner output during standard sourcing.
-		# shell::colored_echo "WARN: Warning: Source directory '$dir' not found." 11
 	fi
 }
 

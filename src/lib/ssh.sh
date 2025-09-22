@@ -62,7 +62,7 @@ shell::list_ssh_tunnels() {
 	elif [ "$os_type" = "macos" ]; then
 		ps_cmd="ps -ax -o pid,user,start,time,command | grep ssh | grep -v grep | grep -E -- '-[DLR]' > \"$temp_file\"" &>/dev/null
 	else
-		shell::colored_echo "ERR: Unsupported operating system: $os_type" 196
+		shell::stdout "ERR: Unsupported operating system: $os_type" 196
 		rm -f "$temp_file"
 		return 0
 	fi
@@ -78,7 +78,7 @@ shell::list_ssh_tunnels() {
 
 	# If no SSH tunnels were found, display a message and exit
 	if [ ! -s "$temp_file" ]; then
-		shell::colored_echo "WARN: No active SSH tunnels found." 11
+		shell::stdout "WARN: No active SSH tunnels found." 11
 		rm -f "$temp_file"
 		return 0
 	fi
@@ -87,7 +87,7 @@ shell::list_ssh_tunnels() {
 	local tunnel_count=0
 
 	# Print a header
-	# shell::colored_echo "SSH TUNNELS" 33
+	# shell::stdout "SSH TUNNELS" 33
 	# echo "==========================================================="
 
 	while IFS= read -r line; do
@@ -175,7 +175,7 @@ shell::list_ssh_tunnels() {
 
 			# Print the tunnel information with clear labels in a line-by-line format
 			echo "-----------------------------------------------------------"
-			shell::colored_echo "TUNNEL #$tunnel_count" 46
+			shell::stdout "TUNNEL #$tunnel_count" 46
 			echo "PID:           $pid"
 			echo "USER:          $user"
 			echo "START:         $start_time"
@@ -199,7 +199,7 @@ shell::list_ssh_tunnels() {
 	# Print a summary if tunnels were found
 	if [ "$tunnel_count" -gt 0 ]; then
 		echo "==========================================================="
-		shell::colored_echo "INFO: Found $tunnel_count active SSH tunnel(s)" 46
+		shell::stdout "INFO: Found $tunnel_count active SSH tunnel(s)" 46
 	fi
 
 	# Clean up
@@ -226,7 +226,7 @@ shell::list_ssh_tunnels() {
 # Requirements:
 #   - fzf must be installed.
 #   - The user must have a $HOME/.ssh directory.
-#   - Assumes the presence of helper functions: shell::install_package, shell::colored_echo, shell::clip_value, and shell::is_command_available.
+#   - Assumes the presence of helper functions: shell::install_package, shell::stdout, shell::clip_value, and shell::is_command_available.
 shell::fzf_cwd_ssh_key() {
 	if [ "$1" = "-h" ]; then
 		echo "$USAGE_SHELL_FZF_CWD_SSH_KEY"
@@ -242,7 +242,7 @@ shell::fzf_cwd_ssh_key() {
 
 	# Check if the SSH directory exists.
 	if [ ! -d "$ssh_dir" ]; then
-		shell::colored_echo "ERR: SSH directory '"$ssh_dir"' not found." 196
+		shell::stdout "ERR: SSH directory '"$ssh_dir"' not found." 196
 		return 0
 	fi
 
@@ -254,7 +254,7 @@ shell::fzf_cwd_ssh_key() {
 
 	# Check if any potential key files were found.
 	if [ -z "$key_files" ]; then
-		shell::colored_echo "WARN: No potential SSH key files found in '"$ssh_dir"'." 11
+		shell::stdout "WARN: No potential SSH key files found in '"$ssh_dir"'." 11
 		return 0
 	fi
 
@@ -264,7 +264,7 @@ shell::fzf_cwd_ssh_key() {
 
 	# Check if a file was selected.
 	if [ -z "$selected_key" ]; then
-		shell::colored_echo "ERR: No SSH key file selected." 196
+		shell::stdout "ERR: No SSH key file selected." 196
 		return 0
 	fi
 
@@ -278,7 +278,7 @@ shell::fzf_cwd_ssh_key() {
 	fi
 
 	# Display the absolute path and copy it to the clipboard.
-	shell::colored_echo "[k] Selected SSH key: $abs_key_path" 46
+	shell::stdout "[k] Selected SSH key: $abs_key_path" 46
 	shell::clip_value "$abs_key_path"
 	return 1
 }
@@ -300,7 +300,7 @@ shell::fzf_cwd_ssh_key() {
 # Requirements:
 #   - fzf must be installed.
 #   - The 'shell::clip_value' function must be available.
-#   - Helper functions: shell::install_package, shell::colored_echo, shell::clip_value.
+#   - Helper functions: shell::install_package, shell::stdout, shell::clip_value.
 #
 # Example usage:
 #   shell::fzf_copy_ssh_key_value
@@ -317,7 +317,7 @@ shell::fzf_copy_ssh_key_value() {
 	# Use the configured SSH directory or default to $HOME/.ssh.
 	local ssh_dir="${SHELL_CONF_SSH_DIR_WORKING:-$HOME/.ssh}"
 	if [ ! -d "$ssh_dir" ]; then
-		shell::colored_echo "ERR: SSH directory '$ssh_dir' not found." 196
+		shell::stdout "ERR: SSH directory '$ssh_dir' not found." 196
 		return 0
 	fi
 
@@ -328,7 +328,7 @@ shell::fzf_copy_ssh_key_value() {
 
 	# Check if any potential key files were found.
 	if [ -z "$key_files" ]; then
-		shell::colored_echo "WARN: No potential SSH key files found in '"$ssh_dir"'." 11
+		shell::stdout "WARN: No potential SSH key files found in '"$ssh_dir"'." 11
 		return 0
 	fi
 
@@ -338,7 +338,7 @@ shell::fzf_copy_ssh_key_value() {
 
 	# Check if a file was selected.
 	if [ ! -f "$selected_key" ]; then
-		shell::colored_echo "ERR: Selected file '$selected_key' does not exist." 196
+		shell::stdout "ERR: Selected file '$selected_key' does not exist." 196
 		return 0
 	fi
 
@@ -355,7 +355,7 @@ shell::fzf_copy_ssh_key_value() {
 	content=$(cat "$abs_key_path")
 
 	shell::clip_value "$content"
-	shell::colored_echo "INFO: SSH key file '$abs_key_path' copied to clipboard." 46
+	shell::stdout "INFO: SSH key file '$abs_key_path' copied to clipboard." 46
 	return 1
 }
 
@@ -378,7 +378,7 @@ shell::fzf_copy_ssh_key_value() {
 #
 # Requirements:
 #   - fzf must be installed.
-#   - Assumes the presence of helper functions: shell::install_package, shell::colored_echo, shell::run_cmd_eval.
+#   - Assumes the presence of helper functions: shell::install_package, shell::stdout, shell::run_cmd_eval.
 shell::fzf_kill_ssh_tunnels() {
 	if [ "$1" = "-h" ]; then
 		echo "$USAGE_SHELL_FZF_KILL_SSH_TUNNEL"
@@ -408,13 +408,13 @@ shell::fzf_kill_ssh_tunnels() {
 		# Filter for 'ssh' command and tunnel flags, excluding the grep process.
 		ssh_tunnels_info=$(ps auxwww | grep --color=never '[s]sh' | grep --color=never -E -- '-[LRD]')
 	else
-		shell::colored_echo "WARN: Warning: Unknown OS type '$os_type'. Using generic ps auxww command, results may vary." 11
+		shell::stdout "WARN: Warning: Unknown OS type '$os_type'. Using generic ps auxww command, results may vary." 11
 		ssh_tunnels_info=$(ps auxww | grep --color=never '[s]sh' | grep --color=never -E -- '-[LRD]')
 	fi
 
 	# Check if any potential tunnels were found.
 	if [ -z "$ssh_tunnels_info" ]; then
-		shell::colored_echo "WARN: No active SSH tunnel processes found." 11
+		shell::stdout "WARN: No active SSH tunnel processes found." 11
 		return 0
 	fi
 
@@ -425,11 +425,11 @@ shell::fzf_kill_ssh_tunnels() {
 
 	# Check if any tunnels were selected.
 	if [ -z "$selected_tunnels" ]; then
-		shell::colored_echo "ERR: No SSH tunnels selected." 196
+		shell::stdout "ERR: No SSH tunnels selected." 196
 		return 0
 	fi
 
-	shell::colored_echo "DEBUG: Selected tunnels:" 244
+	shell::stdout "DEBUG: Selected tunnels:" 244
 	echo "$selected_tunnels" # Display selected tunnels to the user
 
 	# Extract PIDs from selected lines (PID is typically the second column in ps aux/ax output).
@@ -440,15 +440,15 @@ shell::fzf_kill_ssh_tunnels() {
 	local asked
 	asked=$(shell::ask "Are you sure you want to kill the following PID(s)? $pids_to_kill")
 	if [ "$asked" = "yes" ]; then
-		shell::colored_echo "DEBUG: Killing PID(s): $pids_to_kill" 244
+		shell::stdout "DEBUG: Killing PID(s): $pids_to_kill" 244
 		# Kill the selected processes.
 		# Use command substitution to pass PIDs to kill.
 		# shell::run_cmd_eval "kill $pids_to_kill" # Using the helper if preferred
 		kill $pids_to_kill # Direct kill command
-		shell::colored_echo "INFO: Kill command sent for PID(s): $pids_to_kill. Verify they are stopped." 46
+		shell::stdout "INFO: Kill command sent for PID(s): $pids_to_kill. Verify they are stopped." 46
 		return 1
 	fi
-	shell::colored_echo "WARN: Kill operation cancelled." 11
+	shell::stdout "WARN: Kill operation cancelled." 11
 	return 0
 }
 
@@ -502,7 +502,7 @@ shell::kill_ssh_tunnels() {
 	elif [ "$os_type" = "macos" ]; then
 		ps_cmd="ps -ax -o pid,command | grep ssh | grep -v grep | grep -E -- '-[DLR]' | awk '{print \$1}' > \"$temp_pids\""
 	else
-		shell::colored_echo "ERR: Unsupported operating system: $os_type" 196
+		shell::stdout "ERR: Unsupported operating system: $os_type" 196
 		rm -f "$temp_pids"
 		return 1
 	fi
@@ -513,7 +513,7 @@ shell::kill_ssh_tunnels() {
 
 	# Check if any SSH tunnel PIDs were found
 	if [ ! -s "$temp_pids" ]; then
-		shell::colored_echo "WARN: No active SSH tunnels found to kill." 11
+		shell::stdout "WARN: No active SSH tunnels found to kill." 11
 		rm -f "$temp_pids"
 		return 0
 	fi
@@ -532,11 +532,11 @@ shell::kill_ssh_tunnels() {
 
 	# Check again if any valid PIDs were collected
 	if [ ${#pids_to_kill[@]} -eq 0 ]; then
-		shell::colored_echo "WARN: No valid SSH tunnel PIDs found to kill." 11
+		shell::stdout "WARN: No valid SSH tunnel PIDs found to kill." 11
 		return 0
 	fi
 
-	shell::colored_echo "DEBUG: SSH tunnel(s) PIDs were found:" 244
+	shell::stdout "DEBUG: SSH tunnel(s) PIDs were found:" 244
 	echo "${pids_to_kill[*]}"
 
 	if [ "$dry_run" = "true" ]; then
@@ -550,17 +550,17 @@ shell::kill_ssh_tunnels() {
 		local kill_count=0
 		for pid in "${pids_to_kill[@]}"; do
 			if shell::run_cmd kill "$pid"; then
-				shell::colored_echo "INFO: Killed PID $pid successfully." 46
+				shell::stdout "INFO: Killed PID $pid successfully." 46
 				((kill_count++))
 			else
-				shell::colored_echo "ERR: Failed to kill PID $pid." 196
+				shell::stdout "ERR: Failed to kill PID $pid." 196
 				return 0
 			fi
 		done
-		shell::colored_echo "INFO: Killed $kill_count out of ${#pids_to_kill[@]} SSH tunnel process(es)." 46
+		shell::stdout "INFO: Killed $kill_count out of ${#pids_to_kill[@]} SSH tunnel process(es)." 46
 		return 1
 	fi
-	shell::colored_echo "WARN: Aborted by user. No processes were killed." 11
+	shell::stdout "WARN: Aborted by user. No processes were killed." 11
 	return 0
 }
 
@@ -624,7 +624,7 @@ shell::gen_ssh_key() {
 			return 0
 			;;
 		*)
-			shell::colored_echo "ERR: Unknown option: $1" 196
+			shell::stdout "ERR: Unknown option: $1" 196
 			echo "$USAGE_SHELL_GEN_SSH_KEY"
 			return 1
 			;;
@@ -644,7 +644,7 @@ shell::gen_ssh_key() {
 
 	# Validate ssh-keygen availability
 	if ! shell::is_command_available ssh-keygen; then
-		shell::colored_echo "ERR: ssh-keygen is not available. Please install openssh-client." 196
+		shell::stdout "ERR: ssh-keygen is not available. Please install openssh-client." 196
 		return 1
 	fi
 
@@ -652,7 +652,7 @@ shell::gen_ssh_key() {
 	case "$key_type" in
 	rsa | ed25519) ;;
 	*)
-		shell::colored_echo "ERR: Unsupported key type '$key_type'. Supported types: rsa, ed25519." 196
+		shell::stdout "ERR: Unsupported key type '$key_type'. Supported types: rsa, ed25519." 196
 		return 1
 		;;
 	esac
@@ -663,14 +663,14 @@ shell::gen_ssh_key() {
 	else
 		shell::create_directory_if_not_exists "$ssh_dir"
 		if [ $? -ne 0 ]; then
-			shell::colored_echo "ERR: Failed to create SSH directory '$ssh_dir'." 196
+			shell::stdout "ERR: Failed to create SSH directory '$ssh_dir'." 196
 			return 1
 		fi
 	fi
 
 	# Check if key file already exists
 	if [ -f "$full_key_path" ]; then
-		shell::colored_echo "WARN: SSH key '$full_key_path' already exists. Skipping generation." 11
+		shell::stdout "WARN: SSH key '$full_key_path' already exists. Skipping generation." 11
 		return 0
 	fi
 
@@ -689,16 +689,16 @@ shell::gen_ssh_key() {
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::cmd_copy "$ssh_keygen_cmd"
 	else
-		shell::colored_echo "Generating SSH key pair: $full_key_path" 33
+		shell::stdout "Generating SSH key pair: $full_key_path" 33
 		shell::run_cmd_eval "$ssh_keygen_cmd"
 		if [ $? -eq 0 ]; then
 			shell::run_cmd_eval chmod 600 "$full_key_path"
 			shell::run_cmd_eval chmod 644 "${full_key_path}.pub"
-			shell::colored_echo "INFO: SSH key pair generated successfully:" 46
-			shell::colored_echo "  Private key: $full_key_path" 46
-			shell::colored_echo "  Public key:  ${full_key_path}.pub" 46
+			shell::stdout "INFO: SSH key pair generated successfully:" 46
+			shell::stdout "  Private key: $full_key_path" 46
+			shell::stdout "  Public key:  ${full_key_path}.pub" 46
 		else
-			shell::colored_echo "ERR: Failed to generate SSH key pair." 196
+			shell::stdout "ERR: Failed to generate SSH key pair." 196
 			return 1
 		fi
 	fi
@@ -745,7 +745,7 @@ shell::fzf_view_ssh_key() {
 
 	# Check if the SSH directory exists
 	if [ ! -d "$ssh_dir" ]; then
-		shell::colored_echo "ERR: SSH directory '$ssh_dir' not found." 196
+		shell::stdout "ERR: SSH directory '$ssh_dir' not found." 196
 		return 1
 	fi
 
@@ -757,7 +757,7 @@ shell::fzf_view_ssh_key() {
 
 	# Check if any potential key files were found
 	if [ -z "$key_files" ]; then
-		shell::colored_echo "WARN: No potential SSH key files found in '$ssh_dir'." 11
+		shell::stdout "WARN: No potential SSH key files found in '$ssh_dir'." 11
 		return 0
 	fi
 
@@ -818,7 +818,7 @@ shell::fzf_remove_ssh_keys() {
 
 	# Check if the SSH directory exists
 	if [ ! -d "$ssh_dir" ]; then
-		shell::colored_echo "ERR: SSH directory '$ssh_dir' not found." 196
+		shell::stdout "ERR: SSH directory '$ssh_dir' not found." 196
 		return 1
 	fi
 
@@ -827,7 +827,7 @@ shell::fzf_remove_ssh_keys() {
 	key_files=$(find "$ssh_dir" -maxdepth 1 -type f \( ! -name "known_hosts*" ! -name "config" ! -name "authorized_keys*" ! -name "*.log" \) 2>/dev/null)
 
 	if [ -z "$key_files" ]; then
-		shell::colored_echo "WARN: No SSH key files found in '$ssh_dir'." 11
+		shell::stdout "WARN: No SSH key files found in '$ssh_dir'." 11
 		return 0
 	fi
 
@@ -840,20 +840,20 @@ shell::fzf_remove_ssh_keys() {
 
 	# Check if any files were selected
 	if [ -z "$selected_files" ]; then
-		shell::colored_echo "ERR: No SSH key files selected." 196
+		shell::stdout "ERR: No SSH key files selected." 196
 		return 1
 	fi
 
-	shell::colored_echo "DEBUG: Selected files for removal:" 244
+	shell::stdout "DEBUG: Selected files for removal:" 244
 	echo "$selected_files"
 
 	# Ask for confirmation before deleting
 	# If dry-run is disabled, prompt the user for confirmation.
 	if [ "$dry_run" = "false" ]; then
-		shell::colored_echo "[q] Are you sure you want to delete the selected file(s)? [y/N]" 208
+		shell::stdout "[q] Are you sure you want to delete the selected file(s)? [y/N]" 208
 		read -r confirm
 		if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
-			shell::colored_echo "WARN: Deletion cancelled." 11
+			shell::stdout "WARN: Deletion cancelled." 11
 			return 0
 		fi
 	fi
@@ -867,7 +867,7 @@ shell::fzf_remove_ssh_keys() {
 			shell::logger::cmd_copy "$cmd"
 		else
 			shell::run_cmd_eval "$cmd"
-			shell::colored_echo "INFO: SSH key file removal process completed." 46
+			shell::stdout "INFO: SSH key file removal process completed." 46
 		fi
 	done <<<"$selected_files"
 	return 0
@@ -949,14 +949,14 @@ shell::open_ssh_tunnel() {
 	# If dry_run is true, we will not execute the command but print it instead.
 	# This allows the user to see what would happen without making changes.
 	if [ "$dry_run" = "true" ]; then
-		shell::colored_echo "DEBUG: $placeholder" 244
+		shell::stdout "DEBUG: $placeholder" 244
 		shell::logger::cmd_copy "$cmd"
 		return 0
 	fi
 
 	local attempt=1
 	while [ $attempt -le $retry ]; do
-		shell::colored_echo "DEBUG: Attempting SSH tunnel (try $attempt of $retry)..." 244
+		shell::stdout "DEBUG: Attempting SSH tunnel (try $attempt of $retry)..." 244
 		# eval "$cmd"
 		shell::logger::exec_check "$cmd"
 		sleep 1
@@ -965,17 +965,17 @@ shell::open_ssh_tunnel() {
 		# Using lsof to check if the local port is listening.
 		# This is a more reliable way to check if the tunnel is active.
 		if ! shell::is_command_available lsof; then
-			shell::colored_echo "ERR: lsof command is not available. Cannot check SSH tunnel status." 196
+			shell::stdout "ERR: lsof command is not available. Cannot check SSH tunnel status." 196
 			return 1
 		fi
 
 		if lsof -iTCP:"$local_port" -sTCP:LISTEN >/dev/null 2>&1; then
-			shell::colored_echo "INFO: SSH tunnel established successfully on port $local_port." 46
+			shell::stdout "INFO: SSH tunnel established successfully on port $local_port." 46
 			return 0
 		else
-			shell::colored_echo "ERR: SSH tunnel failed on attempt $attempt." 196
+			shell::stdout "ERR: SSH tunnel failed on attempt $attempt." 196
 			if [ $attempt -eq $retry ]; then
-				shell::colored_echo "ERR: Maximum retry attempts reached. SSH tunnel could not be established." 196
+				shell::stdout "ERR: Maximum retry attempts reached. SSH tunnel could not be established." 196
 				return 1
 			fi
 		fi
@@ -984,7 +984,7 @@ shell::open_ssh_tunnel() {
 		sleep 2
 	done
 
-	shell::colored_echo "ERR: Failed to establish SSH tunnel after $retry attempts." 196
+	shell::stdout "ERR: Failed to establish SSH tunnel after $retry attempts." 196
 	return 1
 }
 
@@ -1023,7 +1023,7 @@ shell::open_ssh_tunnel_builder() {
 	# Use the configured SSH directory or default to $HOME/.ssh.
 	local ssh_dir="${SHELL_CONF_SSH_DIR_WORKING:-$HOME/.ssh}"
 	if [ ! -d "$ssh_dir" ]; then
-		shell::colored_echo "ERR: SSH directory '$ssh_dir' not found." 196
+		shell::stdout "ERR: SSH directory '$ssh_dir' not found." 196
 		return 1
 	fi
 
@@ -1037,14 +1037,14 @@ shell::open_ssh_tunnel_builder() {
 			! -name "known_hosts" \
 			! -name "known_hosts.old" |
 			fzf --prompt="Select SSH private key: ")
-		[ -z "$key_file" ] && shell::colored_echo "ERR: SSH key is required." 196
+		[ -z "$key_file" ] && shell::stdout "ERR: SSH key is required." 196
 	done
 
 	# Prompt for local port to bind.
 	# Ensure the port is a valid integer between 1 and 65535.
 	local local_port=""
 	while [[ -z "$local_port" || "$local_port" -lt 1 || "$local_port" -gt 65535 ]]; do
-		shell::colored_echo "[q] Enter local port to bind (1-65535):" 208
+		shell::stdout "[q] Enter local port to bind (1-65535):" 208
 		read -r local_port
 	done
 
@@ -1053,13 +1053,13 @@ shell::open_ssh_tunnel_builder() {
 	# Ensure the port is a valid integer between 1 and 65535.
 	local target_addr=""
 	while true; do
-		shell::colored_echo "[q] Enter server target service address:" 208
+		shell::stdout "[q] Enter server target service address:" 208
 		read -r target_addr
 		target_addr=$(echo "$target_addr" | tr -d '[:space:]')
 		if shell::validate_ip_addr "$target_addr" || shell::validate_hostname "$target_addr"; then
 			break
 		fi
-		shell::colored_echo "ERR: Invalid server target address format." 196
+		shell::stdout "ERR: Invalid server target address format." 196
 	done
 
 	# Prompt for target service port.
@@ -1067,7 +1067,7 @@ shell::open_ssh_tunnel_builder() {
 	# This is the port on the target service that the SSH tunnel will connect to.
 	local target_port=""
 	while [[ -z "$target_port" || "$target_port" -lt 1 || "$target_port" -gt 65535 ]]; do
-		shell::colored_echo "[q] Enter server target service port (1-65535):" 208
+		shell::stdout "[q] Enter server target service port (1-65535):" 208
 		read -r target_port
 	done
 
@@ -1075,7 +1075,7 @@ shell::open_ssh_tunnel_builder() {
 	# This is the username used to authenticate with the SSH server.
 	local user=""
 	while [ -z "$user" ]; do
-		shell::colored_echo "[q] Enter SSH username:" 208
+		shell::stdout "[q] Enter SSH username:" 208
 		read -r user
 	done
 
@@ -1084,13 +1084,13 @@ shell::open_ssh_tunnel_builder() {
 	# Ensure the port is a valid integer between 1 and 65535.
 	local server_addr=""
 	while true; do
-		shell::colored_echo "[q] Enter SSH server address:" 208
+		shell::stdout "[q] Enter SSH server address:" 208
 		read -r server_addr
 		server_addr=$(echo "$server_addr" | tr -d '[:space:]')
 		if shell::validate_ip_addr "$server_addr" || shell::validate_hostname "$server_addr"; then
 			break
 		fi
-		shell::colored_echo "ERR: Invalid SSH server address format." 196
+		shell::stdout "ERR: Invalid SSH server address format." 196
 	done
 
 	# Prompt for SSH server port.
@@ -1098,7 +1098,7 @@ shell::open_ssh_tunnel_builder() {
 	# This is the port on the SSH server that the tunnel will connect to.
 	local server_port=""
 	while [[ -z "$server_port" || "$server_port" -lt 1 || "$server_port" -gt 65535 ]]; do
-		shell::colored_echo "[q] Enter SSH server port (1-65535):" 208
+		shell::stdout "[q] Enter SSH server port (1-65535):" 208
 		read -r server_port
 	done
 
@@ -1107,13 +1107,13 @@ shell::open_ssh_tunnel_builder() {
 	# Prompt for optional alive_interval
 	# This is the interval in seconds for sending keep-alive messages to the server.
 	while [[ -z "$alive_interval" || "$alive_interval" -lt 1 ]]; do
-		shell::colored_echo "[q] Enter server alive interval (default: 60):" 208
+		shell::stdout "[q] Enter server alive interval (default: 60):" 208
 		read -r alive_interval
 		alive_interval=$(echo "$alive_interval" | tr -d '[:space:]')
 		if [[ -z "$alive_interval" ]]; then
 			alive_interval=60
 		elif ! [[ "$alive_interval" =~ ^[0-9]+$ ]] || [ "$alive_interval" -lt 1 ]; then
-			shell::colored_echo "ERR: Invalid server alive interval format. Must be a positive integer." 196
+			shell::stdout "ERR: Invalid server alive interval format. Must be a positive integer." 196
 			alive_interval=""
 		fi
 	done
@@ -1121,13 +1121,13 @@ shell::open_ssh_tunnel_builder() {
 	# Prompt for optional timeout
 	# This is the timeout in seconds for establishing the SSH connection.
 	while [[ -z "$timeout" || "$timeout" -lt 1 ]]; do
-		shell::colored_echo "[q] Enter server connection timeout (default: 10):" 208
+		shell::stdout "[q] Enter server connection timeout (default: 10):" 208
 		read -r timeout
 		timeout=$(echo "$timeout" | tr -d '[:space:]')
 		if [[ -z "$timeout" ]]; then
 			timeout=10
 		elif ! [[ "$timeout" =~ ^[0-9]+$ ]] || [ "$timeout" -lt 1 ]; then
-			shell::colored_echo "ERR: Invalid server connection timeout format. Must be a positive integer." 196
+			shell::stdout "ERR: Invalid server connection timeout format. Must be a positive integer." 196
 			timeout=""
 		fi
 	done
@@ -1187,39 +1187,39 @@ shell::tune_ssh_tunnel() {
 	# Check if the SSH private key is provided
 	# If the key is not provided, print an error message and return.
 	if [ -z "$key" ]; then
-		shell::colored_echo "ERR: SSH private key is required." 196
+		shell::stdout "ERR: SSH private key is required." 196
 		return 1
 	fi
 	# Check if the key file is a valid file
 	# If the key file is not a valid file, print an error message and return.
 	if [ ! -f "$key" ]; then
-		shell::colored_echo "ERR: SSH private key not found: $key" 196
+		shell::stdout "ERR: SSH private key not found: $key" 196
 		return 1
 	fi
 	local user="$2"
 	# Check if the SSH user is provided
 	# If the user is not provided, print an error message and return.
 	if [ -z "$user" ]; then
-		shell::colored_echo "ERR: SSH user is required." 196
+		shell::stdout "ERR: SSH user is required." 196
 		return 1
 	fi
 	local host="$3"
 	# Check if the SSH host is provided
 	# If the host is not provided, print an error message and return.
 	if [ -z "$host" ]; then
-		shell::colored_echo "ERR: SSH host is required." 196
+		shell::stdout "ERR: SSH host is required." 196
 		return 1
 	fi
 	local port="$4"
 	# Check if the SSH port is provided
 	# If the port is not provided, print an error message and return.
 	if [ -z "$port" ]; then
-		shell::colored_echo "ERR: SSH port is required." 196
+		shell::stdout "ERR: SSH port is required." 196
 		return 1
 	fi
 	# Check if the port is a valid integer between 1 and 65535
 	if ! [[ "$port" =~ ^[0-9]+$ ]] || [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; then
-		shell::colored_echo "ERR: Invalid SSH port format. Must be a positive integer between 1 and 65535." 196
+		shell::stdout "ERR: Invalid SSH port format. Must be a positive integer between 1 and 65535." 196
 		return 1
 	fi
 
@@ -1230,7 +1230,7 @@ shell::tune_ssh_tunnel() {
 	# If dry_run is true, we will not execute the command but print it instead.
 	# This allows the user to see what would happen without making changes.
 	if [ "$dry_run" = "true" ]; then
-		shell::colored_echo "DEBUG: $placeholder" 244
+		shell::stdout "DEBUG: $placeholder" 244
 		shell::logger::cmd_copy "$cmd"
 	else
 		shell::run_cmd_eval "$cmd"
@@ -1271,7 +1271,7 @@ shell::tune_ssh_tunnel_builder() {
 	# Prompt for SSH private key file selection using fzf.
 	local ssh_dir="${SHELL_CONF_SSH_DIR_WORKING:-$HOME/.ssh}"
 	if [ ! -d "$ssh_dir" ]; then
-		shell::colored_echo "ERR: SSH directory '$ssh_dir' not found." 196
+		shell::stdout "ERR: SSH directory '$ssh_dir' not found." 196
 		return 1
 	fi
 
@@ -1282,32 +1282,32 @@ shell::tune_ssh_tunnel_builder() {
 			! -name "known_hosts" \
 			! -name "known_hosts.old" |
 			fzf --prompt="Select SSH private key: ")
-		[ -z "$key_file" ] && shell::colored_echo "ERR: SSH key is required." 196
+		[ -z "$key_file" ] && shell::stdout "ERR: SSH key is required." 196
 	done
 
 	# Prompt for SSH username.
 	local user=""
 	while [ -z "$user" ]; do
-		shell::colored_echo "[q] Enter SSH username:" 208
+		shell::stdout "[q] Enter SSH username:" 208
 		read -r user
 	done
 
 	# Prompt for SSH server address.
 	local host=""
 	while true; do
-		shell::colored_echo "[q] Enter SSH server address:" 208
+		shell::stdout "[q] Enter SSH server address:" 208
 		read -r host
 		host=$(echo "$host" | tr -d '[:space:]')
 		if shell::validate_ip_addr "$host" || shell::validate_hostname "$host"; then
 			break
 		fi
-		shell::colored_echo "ERR: Invalid SSH server address format." 196
+		shell::stdout "ERR: Invalid SSH server address format." 196
 	done
 
 	# Prompt for SSH server port.
 	local port=""
 	while [[ -z "$port" || "$port" -lt 1 || "$port" -gt 65535 ]]; do
-		shell::colored_echo "[q] Enter SSH server port (1-65535):" 208
+		shell::stdout "[q] Enter SSH server port (1-65535):" 208
 		read -r port
 	done
 
@@ -1367,20 +1367,20 @@ shell::rename_ssh_key() {
 
 	# Check if the SSH directory exists
 	if [ ! -d "$ssh_dir" ]; then
-		shell::colored_echo "ERR: SSH directory '$ssh_dir' not found." 196
+		shell::stdout "ERR: SSH directory '$ssh_dir' not found." 196
 		return 1
 	fi
 	# Check if the old file exists
 	# If the old file does not exist, print an error message and return.
 	if [[ ! -f "$old" ]]; then
-		shell::colored_echo "ERR: File '$old' not found." 196
+		shell::stdout "ERR: File '$old' not found." 196
 		return 1
 	fi
 
 	# Check if the old file is a known_hosts file
 	# If the old file is a known_hosts file, print an error message and return.
 	if [[ "$old" == *known_hosts* ]]; then
-		shell::colored_echo "ERR: Cannot rename known_hosts files." 196
+		shell::stdout "ERR: Cannot rename known_hosts files." 196
 		return 1
 	fi
 
@@ -1394,7 +1394,7 @@ shell::rename_ssh_key() {
 	# Check if the new file already exists
 	# If the new file already exists, print an error message and return.
 	if [[ -f "$new" ]]; then
-		shell::colored_echo "ERR: File '$new' already exists." 196
+		shell::stdout "ERR: File '$new' already exists." 196
 		return 1
 	fi
 
@@ -1406,7 +1406,7 @@ shell::rename_ssh_key() {
 		shell::logger::cmd_copy "$cmd"
 	else
 		shell::run_cmd_eval "$cmd"
-		shell::colored_echo "INFO: Renamed '$old_name' to '$new_name'" 46
+		shell::stdout "INFO: Renamed '$old_name' to '$new_name'" 46
 	fi
 }
 
@@ -1443,7 +1443,7 @@ shell::fzf_rename_ssh_key() {
 	# Use the configured SSH directory or default to $HOME/.ssh.
 	local ssh_dir="${SHELL_CONF_SSH_DIR_WORKING:-$HOME/.ssh}"
 	if [ ! -d "$ssh_dir" ]; then
-		shell::colored_echo "ERR: SSH directory '$ssh_dir' not found." 196
+		shell::stdout "ERR: SSH directory '$ssh_dir' not found." 196
 		return 1
 	fi
 
@@ -1454,7 +1454,7 @@ shell::fzf_rename_ssh_key() {
 
 	# Check if any potential key files were found.
 	if [ -z "$key_files" ]; then
-		shell::colored_echo "WARN: No potential SSH key files found in '"$ssh_dir"'." 11
+		shell::stdout "WARN: No potential SSH key files found in '"$ssh_dir"'." 11
 		return 0
 	fi
 
@@ -1464,14 +1464,14 @@ shell::fzf_rename_ssh_key() {
 
 	# Check if a file was selected.
 	if [ ! -f "$selected" ]; then
-		shell::colored_echo "ERR: Selected file '$selected' does not exist." 196
+		shell::stdout "ERR: Selected file '$selected' does not exist." 196
 		return 1
 	fi
 
 	# Check if a file was selected
 	# If no file was selected, print an error message and return.
 	if [ -z "$selected" ]; then
-		shell::colored_echo "ERR: No file selected." 196
+		shell::stdout "ERR: No file selected." 196
 		return 1
 	fi
 
@@ -1483,14 +1483,14 @@ shell::fzf_rename_ssh_key() {
 	# Ensure the new name is not empty.
 	# Using a while loop to ensure the user enters a valid new name.
 	while [ -z "$new_name" ]; do
-		shell::colored_echo "[e] Enter new name for '$old_name':" 208
+		shell::stdout "[e] Enter new name for '$old_name':" 208
 		read -r new_name
 	done
 
 	# Check if the new name is empty
 	# If the new name is empty, print an error message and return.
 	if [ -z "$new_name" ]; then
-		shell::colored_echo "ERR: No new name entered. Aborting rename." 196
+		shell::stdout "ERR: No new name entered. Aborting rename." 196
 		return 1
 	fi
 

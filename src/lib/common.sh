@@ -56,12 +56,12 @@ shell::get_os_type() {
 	esac
 }
 
-# shell::colored_echo function
+# shell::stdout function
 # Prints text to the terminal with customizable colors using `tput` and ANSI escape sequences.
 # Supports special characters and escape sequences commonly used in terminal environments.
 #
 # Usage:
-# shell::colored_echo <message> [color_code] [options]
+# shell::stdout <message> [color_code] [options]
 #
 # Parameters:
 # - <message>: The text message to display (supports escape sequences).
@@ -77,7 +77,7 @@ shell::get_os_type() {
 # -E: Disable interpretation of backslash escapes
 #
 # Description:
-# The `shell::colored_echo` function prints a message in bold and a specific color, if a valid color code is provided.
+# The `shell::stdout` function prints a message in bold and a specific color, if a valid color code is provided.
 # It uses ANSI escape sequences for 256-color support. If no color code is specified, it defaults to blue (code 4).
 # The function supports common escape sequences like \n, \t, \r, \b, \a, \v, \f, and Unicode sequences.
 #
@@ -97,22 +97,22 @@ shell::get_os_type() {
 # \UHHHHHHHH - Unicode escape sequence (32-bit)
 #
 # Example usage:
-# shell::colored_echo "Hello, World!" # Prints in default blue (code 4).
-# shell::colored_echo "Error occurred" 196 # Prints in bright red.
-# shell::colored_echo "Task completed" 46 # Prints in vibrant green.
-# shell::colored_echo "Line 1\nLine 2\tTabbed" 202 # Multi-line with tab
-# shell::colored_echo "Bell sound\a" 226 # With bell character
-# shell::colored_echo "Unicode: \u2713 \u2717" 118 # With Unicode check mark and X
-# shell::colored_echo "Hex: \x48\x65\x6C\x6C\x6F" 93 # "Hello" in hex
-# shell::colored_echo "No newline" 45 -n # Without trailing newline
-# shell::colored_echo "Raw \t text" 120 -E # Disable escape interpretation
+# shell::stdout "Hello, World!" # Prints in default blue (code 4).
+# shell::stdout "Error occurred" 196 # Prints in bright red.
+# shell::stdout "Task completed" 46 # Prints in vibrant green.
+# shell::stdout "Line 1\nLine 2\tTabbed" 202 # Multi-line with tab
+# shell::stdout "Bell sound\a" 226 # With bell character
+# shell::stdout "Unicode: \u2713 \u2717" 118 # With Unicode check mark and X
+# shell::stdout "Hex: \x48\x65\x6C\x6C\x6F" 93 # "Hello" in hex
+# shell::stdout "No newline" 45 -n # Without trailing newline
+# shell::stdout "Raw \t text" 120 -E # Disable escape interpretation
 #
 # Notes:
 # - Requires a terminal with 256-color support for full color range.
 # - Use ANSI color codes for finer control over colors.
 # - The function automatically detects terminal capabilities and adjusts output accordingly.
 # - Special characters are interpreted by default (equivalent to echo -e).
-shell::colored_echo() {
+shell::stdout() {
 	if [ "$1" = "-h" ]; then
 		echo "$USAGE_SHELL_COLORED_ECHO"
 		return 0
@@ -255,7 +255,7 @@ shell::run_cmd() {
 		emoji="[v]" # Apple for macOS
 	fi
 
-	# shell::colored_echo "$emoji $command" $color_code
+	# shell::stdout "$emoji $command" $color_code
 	shell::logger::cmd "$command"
 	# Execute the command without using eval
 	"$@"
@@ -317,7 +317,7 @@ shell::run_cmd_eval() {
 		emoji="[v]" # Apple for macOS
 	fi
 
-	# shell::colored_echo "$emoji $command" $color_code
+	# shell::stdout "$emoji $command" $color_code
 	shell::logger::cmd "$command"
 	eval "$command"
 }
@@ -554,7 +554,7 @@ shell::is_package_installed_linux() {
 
 	local package="$1"
 	if [ -z "$package" ]; then
-		shell::colored_echo "ERR: No package name provided." 196
+		shell::stdout "ERR: No package name provided." 196
 		return 1
 	fi
 
@@ -573,7 +573,7 @@ shell::is_package_installed_linux() {
 		# RPM-based: Check using rpm query.
 		rpm -q "$package" >/dev/null 2>&1
 	else
-		shell::colored_echo "ERR: Unsupported package manager for Linux." 196
+		shell::stdout "ERR: Unsupported package manager for Linux." 196
 		return 1
 	fi
 }
@@ -629,7 +629,7 @@ shell::create_directory_if_not_exists() {
 		if [[ "$extension" =~ ^[a-zA-Z0-9]{1,6}$ ]]; then
 			# This appears to be a file path, extract the parent directory
 			dir=$(dirname "$input_path")
-			shell::colored_echo "INFO: Detected file path '$input_path', creating parent directory '$dir'" 46
+			shell::stdout "INFO: Detected file path '$input_path', creating parent directory '$dir'" 46
 		else
 			# Treat as directory path
 			dir="$input_path"
@@ -646,18 +646,18 @@ shell::create_directory_if_not_exists() {
 
 	# Check if the directory exists.
 	if [ ! -d "$dir" ]; then
-		shell::colored_echo "WARN: Directory '$dir' does not exist. Creating the directory (including nested directories) with admin privileges..." 11
+		shell::stdout "WARN: Directory '$dir' does not exist. Creating the directory (including nested directories) with admin privileges..." 11
 		shell::run_cmd_eval 'sudo mkdir -p "$dir"' # Use sudo to create the directory and its parent directories.
 		if [ $? -eq 0 ]; then
-			shell::colored_echo "INFO: Directory created successfully." 46
+			shell::stdout "INFO: Directory created successfully." 46
 			shell::unlock_permissions "$dir"
 			return 0
 		else
-			shell::colored_echo "ERR: Failed to create the directory." 196
+			shell::stdout "ERR: Failed to create the directory." 196
 			return 1
 		fi
 	else
-		shell::colored_echo "INFO: Directory '$dir' already exists." 46
+		shell::stdout "INFO: Directory '$dir' already exists." 46
 	fi
 }
 
@@ -728,29 +728,29 @@ shell::create_file_if_not_exists() {
 
 	# Check if the parent directory exists.
 	if [ ! -d "$directory" ]; then
-		shell::colored_echo "WARN: Creating directory '$directory'..." 11
+		shell::stdout "WARN: Creating directory '$directory'..." 11
 		shell::run_cmd_eval "sudo mkdir -p \"$directory\""
 		if [ $? -eq 0 ]; then
-			shell::colored_echo "INFO: Directory created successfully." 46
+			shell::stdout "INFO: Directory created successfully." 46
 			# Optionally set directory permissions
 			shell::unlock_permissions "$directory" # # shell::run_cmd_eval "sudo chmod 700 \"$directory\""
 		else
-			shell::colored_echo "ERR: Failed to create the directory." 196
+			shell::stdout "ERR: Failed to create the directory." 196
 			return 1
 		fi
 	fi
 
 	# Check if the file exists.
 	if [ ! -e "$abs_filename" ]; then
-		shell::colored_echo "WARN: Creating file '$abs_filename'..." 11
+		shell::stdout "WARN: Creating file '$abs_filename'..." 11
 		shell::run_cmd_eval "sudo touch \"$abs_filename\""
 		if [ $? -eq 0 ]; then
-			shell::colored_echo "INFO: File created successfully." 46
+			shell::stdout "INFO: File created successfully." 46
 			# Optionally set file permissions
 			shell::unlock_permissions "$abs_filename" # shell::run_cmd_eval "sudo chmod 600 \"$abs_filename\""
 			return 0
 		else
-			shell::colored_echo "ERR: Failed to create the file." 196
+			shell::stdout "ERR: Failed to create the file." 196
 			return 1
 		fi
 	fi
@@ -815,7 +815,7 @@ shell::clip_cwd() {
 # Dependencies:
 #   - shell::get_os_type: To detect the operating system.
 #   - shell::is_command_available: To check for the availability of xclip or xsel on Linux.
-#   - shell::colored_echo: To print colored status messages.
+#   - shell::stdout: To print colored status messages.
 #
 # Example:
 #   shell::clip_value "Hello, World!"
@@ -1005,7 +1005,7 @@ shell::kill_port() {
 	fi
 
 	if [ "$#" -eq 0 ]; then
-		shell::colored_echo "WARN: No ports specified. Usage: shell::kill_port [-n] PORT [PORT...]" 11
+		shell::stdout "WARN: No ports specified. Usage: shell::kill_port [-n] PORT [PORT...]" 11
 		return 1
 	fi
 
@@ -1015,7 +1015,7 @@ shell::kill_port() {
 		pids=$(lsof -ti :"$port")
 
 		if [ -n "$pids" ]; then
-			shell::colored_echo "INFO: Processing port $port with PIDs: $pids" 46
+			shell::stdout "INFO: Processing port $port with PIDs: $pids" 46
 			for pid in $pids; do
 				# Construct the kill command as an array to reuse it for both shell::logger::cmd_copy and shell::run_cmd.
 				local cmd=("kill" "-9" "$pid")
@@ -1029,7 +1029,7 @@ shell::kill_port() {
 				fi
 			done
 		else
-			shell::colored_echo "WARN: No processes found on port $port" 11
+			shell::stdout "WARN: No processes found on port $port" 11
 		fi
 	done
 }
@@ -1088,7 +1088,7 @@ shell::copy_files() {
 		local destination_file="$destination/$filename"
 
 		if [ -e "$destination_file" ]; then
-			shell::colored_echo "ERR: Destination file '$filename' already exists." 196
+			shell::stdout "ERR: Destination file '$filename' already exists." 196
 			continue
 		fi
 
@@ -1098,7 +1098,7 @@ shell::copy_files() {
 			shell::logger::cmd_copy "$cmd"
 		else
 			shell::run_cmd_eval "$cmd"
-			shell::colored_echo "INFO: File copied successfully to $destination_file" 46
+			shell::stdout "INFO: File copied successfully to $destination_file" 46
 		fi
 	done
 }
@@ -1148,20 +1148,20 @@ shell::move_files() {
 	shift
 
 	if [ ! -d "$destination_folder" ]; then
-		shell::colored_echo "ERR: Destination folder '$destination_folder' does not exist." 196
+		shell::stdout "ERR: Destination folder '$destination_folder' does not exist." 196
 		return 1
 	fi
 
 	for source in "$@"; do
 		if [ ! -e "$source" ]; then
-			shell::colored_echo "ERR: Source file '$source' does not exist." 196
+			shell::stdout "ERR: Source file '$source' does not exist." 196
 			continue
 		fi
 
 		local destination="$destination_folder/$(basename "$source")"
 
 		if [ -e "$destination" ]; then
-			shell::colored_echo "ERR: Destination file '$destination' already exists." 196
+			shell::stdout "ERR: Destination file '$destination' already exists." 196
 			continue
 		fi
 
@@ -1171,9 +1171,9 @@ shell::move_files() {
 		else
 			shell::run_cmd sudo mv "$source" "$destination"
 			if [ $? -eq 0 ]; then
-				shell::colored_echo "INFO: File '$source' moved successfully to $destination" 46
+				shell::stdout "INFO: File '$source' moved successfully to $destination" 46
 			else
-				shell::colored_echo "ERR: moving file '$source'." 196
+				shell::stdout "ERR: moving file '$source'." 196
 			fi
 		fi
 	done
@@ -1254,7 +1254,7 @@ shell::remove_files() {
 #
 # Requirements:
 #   - fzf must be installed.
-#   - Helper functions: shell::run_cmd, shell::logger::cmd_copy, shell::colored_echo, and shell::get_os_type.
+#   - Helper functions: shell::run_cmd, shell::logger::cmd_copy, shell::stdout, and shell::get_os_type.
 shell::editor() {
 	if [ "$1" = "-h" ]; then
 		echo "$USAGE_SHELL_EDITOR"
@@ -1274,7 +1274,7 @@ shell::editor() {
 
 	local folder="$1"
 	if [ ! -d "$folder" ]; then
-		shell::colored_echo "ERR: '$folder' is not a valid directory." 196
+		shell::stdout "ERR: '$folder' is not a valid directory." 196
 		return 1
 	fi
 
@@ -1296,7 +1296,7 @@ shell::editor() {
 	local file_list
 	file_list=$(find "$folder" -type f -exec "${abs_command[@]}" {} \;)
 	if [ -z "$file_list" ]; then
-		shell::colored_echo "ERR: No files found in '$folder'." 196
+		shell::stdout "ERR: No files found in '$folder'." 196
 		return 1
 	fi
 
@@ -1304,7 +1304,7 @@ shell::editor() {
 	local selected_file
 	selected_file=$(echo "$file_list" | fzf --prompt="Select a file: ")
 	if [ -z "$selected_file" ]; then
-		shell::colored_echo "ERR: No file selected." 196
+		shell::stdout "ERR: No file selected." 196
 		return 1
 	fi
 
@@ -1312,7 +1312,7 @@ shell::editor() {
 	local selected_command
 	selected_command=$(echo "cat;less;more;vim;nano;remove;base64;clip-base64;path;clip;unlock;permissions;ex-permissions;mime-type" | tr ';' '\n' | fzf --prompt="Select an action: ")
 	if [ -z "$selected_command" ]; then
-		shell::colored_echo "ERR: No action selected." 196
+		shell::stdout "ERR: No action selected." 196
 		return 1
 	fi
 
@@ -1324,10 +1324,10 @@ shell::editor() {
 			shell::remove_files "$selected_file"
 		fi
 		if [ $? -eq 0 ]; then
-			shell::colored_echo "INFO: File '$selected_file' removed successfully." 46
+			shell::stdout "INFO: File '$selected_file' removed successfully." 46
 			return 0
 		else
-			shell::colored_echo "ERR: Failed to remove file '$selected_file'." 196
+			shell::stdout "ERR: Failed to remove file '$selected_file'." 196
 			return 1
 		fi
 	fi
@@ -1340,10 +1340,10 @@ shell::editor() {
 			shell::encode_base64_file "$selected_file"
 		fi
 		if [ $? -eq 0 ]; then
-			shell::colored_echo "INFO: File '$selected_file' encoded base64 successfully." 46
+			shell::stdout "INFO: File '$selected_file' encoded base64 successfully." 46
 			return 0
 		else
-			shell::colored_echo "ERR: Failed to encode file '$selected_file'." 196
+			shell::stdout "ERR: Failed to encode file '$selected_file'." 196
 			return 1
 		fi
 	fi
@@ -1359,15 +1359,15 @@ shell::editor() {
 		fi
 		base64_value=$(eval "$base64_cmd")
 		if [ -z "$base64_value" ]; then
-			shell::colored_echo "ERR: Failed to encode file '$selected_file' to base64." 196
+			shell::stdout "ERR: Failed to encode file '$selected_file' to base64." 196
 			return 1
 		fi
 		shell::clip_value "$base64_value"
 		if [ $? -eq 0 ]; then
-			shell::colored_echo "INFO: Base64 value of '$selected_file' copied to clipboard." 46
+			shell::stdout "INFO: Base64 value of '$selected_file' copied to clipboard." 46
 			return 0
 		else
-			shell::colored_echo "ERR: Failed to copy base64 value to clipboard." 196
+			shell::stdout "ERR: Failed to copy base64 value to clipboard." 196
 			return 1
 		fi
 	fi
@@ -1394,10 +1394,10 @@ shell::editor() {
 			shell::unlock_permissions "$selected_file"
 		fi
 		if [ $? -eq 0 ]; then
-			shell::colored_echo "INFO: Permissions for '$selected_file' unlocked successfully." 46
+			shell::stdout "INFO: Permissions for '$selected_file' unlocked successfully." 46
 			return 0
 		else
-			shell::colored_echo "ERR: Failed to unlock permissions for '$selected_file'." 196
+			shell::stdout "ERR: Failed to unlock permissions for '$selected_file'." 196
 			return 1
 		fi
 	fi
@@ -1410,10 +1410,10 @@ shell::editor() {
 			shell::fzf_set_permissions "$selected_file"
 		fi
 		if [ $? -eq 0 ]; then
-			shell::colored_echo "INFO: Permissions for '$selected_file' upgraded successfully." 46
+			shell::stdout "INFO: Permissions for '$selected_file' upgraded successfully." 46
 			return 0
 		else
-			shell::colored_echo "ERR: Failed to upgrade permissions for '$selected_file'." 196
+			shell::stdout "ERR: Failed to upgrade permissions for '$selected_file'." 196
 			return 1
 		fi
 	fi
@@ -1426,10 +1426,10 @@ shell::editor() {
 			shell::analyze_permissions --file "$selected_file"
 		fi
 		if [ $? -eq 0 ]; then
-			shell::colored_echo "INFO: Permissions for '$selected_file' analyzed successfully." 46
+			shell::stdout "INFO: Permissions for '$selected_file' analyzed successfully." 46
 			return 0
 		else
-			shell::colored_echo "ERR: Failed to analyze permissions for '$selected_file'." 196
+			shell::stdout "ERR: Failed to analyze permissions for '$selected_file'." 196
 			return 1
 		fi
 	fi
@@ -1439,10 +1439,10 @@ shell::editor() {
 		local mime_type
 		mime_type=$(shell::get_mime_type "$selected_file")
 		if [ -z "$mime_type" ]; then
-			shell::colored_echo "ERR: Failed to determine MIME type for '$selected_file'." 196
+			shell::stdout "ERR: Failed to determine MIME type for '$selected_file'." 196
 			return 1
 		fi
-		shell::colored_echo "INFO: MIME type of '$selected_file': $mime_type" 46
+		shell::stdout "INFO: MIME type of '$selected_file': $mime_type" 46
 		return 0
 	fi
 
@@ -1517,10 +1517,10 @@ shell::download_dataset() {
 	else
 		shell::run_cmd curl -s -LJ "$link" -o "$filename"
 		if [ $? -eq 0 ]; then
-			shell::colored_echo "INFO: Successfully downloaded: $filename" 46
+			shell::stdout "INFO: Successfully downloaded: $filename" 46
 			return 0
 		else
-			shell::colored_echo "ERR: Download failed for $link" 196
+			shell::stdout "ERR: Download failed for $link" 196
 			return 1
 		fi
 	fi
@@ -1602,7 +1602,7 @@ shell::unarchive() {
 			local cmd="7z x \"$file\""
 			;;
 		*)
-			shell::colored_echo "ERR: '$file' cannot be extracted via shell::unarchive()" 196
+			shell::stdout "ERR: '$file' cannot be extracted via shell::unarchive()" 196
 			return 1
 			;;
 		esac
@@ -1613,7 +1613,7 @@ shell::unarchive() {
 			shell::run_cmd_eval "$cmd"
 		fi
 	else
-		shell::colored_echo "ERR: '$file' is not a valid file" 196
+		shell::stdout "ERR: '$file' is not a valid file" 196
 		return 1
 	fi
 }
@@ -1662,7 +1662,7 @@ shell::list_high_mem_usage() {
 		# Build the command string for Linux
 		cmd="ps -axo pid,user,%mem,command --sort=-%mem | head -n 11 | tail -n +2"
 	else
-		shell::colored_echo "ERR: Unsupported OS for shell::list_high_mem_usage function." 196
+		shell::stdout "ERR: Unsupported OS for shell::list_high_mem_usage function." 196
 		return 1
 	fi
 
@@ -1722,11 +1722,11 @@ shell::open_link() {
 		if shell::is_command_available xdg-open; then
 			cmd="xdg-open \"$url\""
 		else
-			shell::colored_echo "ERR: xdg-open is not installed on Linux." 196
+			shell::stdout "ERR: xdg-open is not installed on Linux." 196
 			return 1
 		fi
 	else
-		shell::colored_echo "ERR: Unsupported OS for shell::open_link function." 196
+		shell::stdout "ERR: Unsupported OS for shell::open_link function." 196
 		return 1
 	fi
 
@@ -1832,7 +1832,7 @@ shell::measure_time() {
 			local elapsed=$((end_time - start_time))
 			local seconds=$((elapsed / 1000))
 			local milliseconds=$((elapsed % 1000))
-			shell::colored_echo "Execution time: ${seconds}s ${milliseconds}ms" 33
+			shell::stdout "Execution time: ${seconds}s ${milliseconds}ms" 33
 			return $exit_code
 		else
 			# Fallback: use SECONDS (resolution in seconds)
@@ -1841,7 +1841,7 @@ shell::measure_time() {
 			exit_code=$?
 			local end_seconds=$SECONDS
 			local elapsed_seconds=$((end_seconds - start_seconds))
-			shell::colored_echo "Execution time: ${elapsed_seconds}s" 33
+			shell::stdout "Execution time: ${elapsed_seconds}s" 33
 			return $exit_code
 		fi
 	else
@@ -1855,7 +1855,7 @@ shell::measure_time() {
 		local elapsed=$((end_time - start_time))
 		local seconds=$((elapsed / 1000))
 		local milliseconds=$((elapsed % 1000))
-		shell::colored_echo "Execution time: ${seconds}s ${milliseconds}ms" 33
+		shell::stdout "Execution time: ${seconds}s ${milliseconds}ms" 33
 		return $exit_code
 	fi
 }
@@ -1979,7 +1979,7 @@ shell::execute_or_evict() {
 #
 # Requirements:
 #   - Standard tools: ls, stat, awk, column.
-#   - Helper functions: shell::colored_echo, shell::get_os_type.
+#   - Helper functions: shell::stdout, shell::get_os_type.
 #
 # Example usage:
 #   shell::ls           # List files and folders in a simple, colored format.
@@ -2015,7 +2015,7 @@ shell::ls() {
 			;;
 		--debug) debug="true" ;;
 		*)
-			shell::colored_echo "ERR: Invalid option: $1. Usage: shell::ls [-a] [-l] [-h] [--debug]" 196
+			shell::stdout "ERR: Invalid option: $1. Usage: shell::ls [-a] [-l] [-h] [--debug]" 196
 			return 1
 			;;
 		esac
@@ -2024,11 +2024,11 @@ shell::ls() {
 
 	# Check if current directory is accessible and readable
 	if ! pwd >/dev/null 2>&1; then
-		shell::colored_echo "ERR: Cannot access current directory." 196
+		shell::stdout "ERR: Cannot access current directory." 196
 		return 1
 	fi
 	if ! [ -r . ]; then
-		shell::colored_echo "ERR: No read permission for current directory." 196
+		shell::stdout "ERR: No read permission for current directory." 196
 		return 1
 	fi
 
@@ -2041,7 +2041,7 @@ shell::ls() {
 	# Temporary file to store formatted output
 	local tmp_file
 	tmp_file=$(mktemp) || {
-		shell::colored_echo "ERR: Failed to create temporary file." 196
+		shell::stdout "ERR: Failed to create temporary file." 196
 		return 1
 	}
 	trap 'rm -f "$tmp_file"' EXIT
@@ -2063,8 +2063,8 @@ shell::ls() {
 	# Try listing with ls
 	local ls_output
 	if ! ls_output=$("${ls_cmd[@]}" 2>&1); then
-		[ "$debug" = "true" ] && shell::colored_echo "ERR: ls failed: $ls_output" 196
-		shell::colored_echo "ERR: Failed to list directory contents with ls." 196
+		[ "$debug" = "true" ] && shell::stdout "ERR: ls failed: $ls_output" 196
+		shell::stdout "ERR: Failed to list directory contents with ls." 196
 		rm -f "$tmp_file"
 		trap - EXIT
 		return 1
@@ -2118,7 +2118,7 @@ shell::ls() {
 
 	# Check if any files were processed
 	if [ $file_count -eq 0 ]; then
-		shell::colored_echo "INFO: No files or directories found." 46
+		shell::stdout "INFO: No files or directories found." 46
 		rm -f "$tmp_file"
 		trap - EXIT
 		return 0
@@ -2178,7 +2178,7 @@ shell::set_permissions() {
 	shift
 
 	if [ ! -e "$target" ]; then
-		shell::colored_echo "ERR: Target '$target' does not exist." 196
+		shell::stdout "ERR: Target '$target' does not exist." 196
 		return 1
 	fi
 
@@ -2210,7 +2210,7 @@ shell::set_permissions() {
 		group) group_perm="$value" ;;
 		others) others_perm="$value" ;;
 		*)
-			shell::colored_echo "ERR: Unknown permission group '$entity'. Use owner=..., group=..., others=..." 196
+			shell::stdout "ERR: Unknown permission group '$entity'. Use owner=..., group=..., others=..." 196
 			return 1
 			;;
 		esac
@@ -2226,7 +2226,7 @@ shell::set_permissions() {
 		shell::logger::cmd_copy "$cmd"
 	else
 		shell::run_cmd_eval "$cmd"
-		shell::colored_echo "INFO: Permissions set to $mode for '$target'" 46
+		shell::stdout "INFO: Permissions set to $mode for '$target'" 46
 	fi
 }
 
@@ -2273,7 +2273,7 @@ shell::unlock_permissions() {
 	# If the target is a directory, it will be created if it does not exist.
 	local target="$1"
 	if [ ! -e "$target" ]; then
-		shell::colored_echo "ERR: Target '$target' does not exist." 196
+		shell::stdout "ERR: Target '$target' does not exist." 196
 		return 1
 	fi
 
@@ -2305,7 +2305,7 @@ shell::unlock_permissions() {
 			return 0
 		fi
 		shell::run_cmd_eval "$chmod_cmd"
-		shell::colored_echo "DEBUG: Permissions set to (read,write,execute) for '$target'" 244
+		shell::stdout "DEBUG: Permissions set to (read,write,execute) for '$target'" 244
 		return 0
 	fi
 }
@@ -2342,7 +2342,7 @@ shell::fzf_set_permissions() {
 
 	local target="$1"
 	if [ ! -e "$target" ]; then
-		shell::colored_echo "ERR: Target '$target' does not exist." 196
+		shell::stdout "ERR: Target '$target' does not exist." 196
 		return 1
 	fi
 
@@ -2363,7 +2363,7 @@ shell::fzf_set_permissions() {
 	# Check if any permission selection is empty
 	# If any of the selections are empty, an error message is displayed and the function exits.
 	if [ -z "$owner" ] || [ -z "$group" ] || [ -z "$others" ]; then
-		shell::colored_echo "ERR: Permission selection incomplete. Aborting." 196
+		shell::stdout "ERR: Permission selection incomplete. Aborting." 196
 		return 1
 	fi
 
@@ -2398,7 +2398,7 @@ shell::fzf_set_permissions() {
 #
 # Requirements:
 #   - Standard tools: stat, tput.
-#   - Helper functions: shell::colored_echo, shell::get_os_type.
+#   - Helper functions: shell::stdout, shell::get_os_type.
 #
 # Example usage:
 #   shell::analyze_permissions -rwxr-xr-x       # Explain -rwxr-xr-x permissions.
@@ -2410,7 +2410,7 @@ shell::fzf_set_permissions() {
 #   0 on success, 1 on failure (e.g., invalid permission string, file not found).
 #
 # Notes:
-#   - Colors are applied using tput for consistency with shell::colored_echo.
+#   - Colors are applied using tput for consistency with shell::stdout.
 #   - Supports standard Unix permission strings (10 characters).
 #   - Provides octal values for use with chmod.
 shell::analyze_permissions() {
@@ -2431,7 +2431,7 @@ shell::analyze_permissions() {
 			;;
 		--file)
 			if [ -z "$2" ]; then
-				shell::colored_echo "ERR: --file requires a path." 196
+				shell::stdout "ERR: --file requires a path." 196
 				return 1
 			fi
 			file_path="$2"
@@ -2443,7 +2443,7 @@ shell::analyze_permissions() {
 			;;
 		*)
 			if [ -n "$permission_string" ]; then
-				shell::colored_echo "ERR: Multiple permission strings provided." 196
+				shell::stdout "ERR: Multiple permission strings provided." 196
 				return 1
 			fi
 			permission_string="$1"
@@ -2455,7 +2455,7 @@ shell::analyze_permissions() {
 	# If file_path is provided, get its permissions
 	if [ -n "$file_path" ]; then
 		if [ ! -e "$file_path" ]; then
-			shell::colored_echo "ERR: File '$file_path' does not exist." 196
+			shell::stdout "ERR: File '$file_path' does not exist." 196
 			return 1
 		fi
 		local os_type
@@ -2466,7 +2466,7 @@ shell::analyze_permissions() {
 			permission_string=$(stat --format="%A" "$file_path" 2>/dev/null)
 		fi
 		if [ -z "$permission_string" ]; then
-			shell::colored_echo "ERR: Failed to get permissions for '$file_path'." 196
+			shell::stdout "ERR: Failed to get permissions for '$file_path'." 196
 			return 1
 		fi
 		[ "$debug" = "true" ] && echo "Retrieved permissions: $permission_string" >&2
@@ -2480,7 +2480,7 @@ shell::analyze_permissions() {
 
 	# Validate permission string (10 characters, valid format)
 	if ! echo "$permission_string" | grep -Eq '^[-d]([-r][-w][-x]){3}$'; then
-		shell::colored_echo "ERR: Invalid permission string '$permission_string'. Expected format like -rwxr-xr-x." 196
+		shell::stdout "ERR: Invalid permission string '$permission_string'. Expected format like -rwxr-xr-x." 196
 		return 1
 	fi
 
@@ -2552,7 +2552,7 @@ shell::analyze_permissions() {
 	fi
 
 	# Output explanation
-	shell::colored_echo "INFO: Permission Explanation for ${blue}${permission_string}${normal}" 46
+	shell::stdout "INFO: Permission Explanation for ${blue}${permission_string}${normal}" 46
 	echo
 	echo "${green}File Type${normal}: The first character '${blue}${file_type}${normal}' indicates a ${file_type_desc}."
 	echo "${green}Owner Permissions${normal}: '${blue}${owner_perms}${normal}' means the owner has ${owner_desc}."
@@ -2597,7 +2597,7 @@ shell::uplink() {
 	# Otherwise, expect a .link file containing link pairs separated by "→".
 	local link_file=".link"
 	if [[ ! -f $link_file ]]; then
-		shell::colored_echo "No link file found" 196
+		shell::stdout "No link file found" 196
 		return 1
 	fi
 
@@ -2612,7 +2612,7 @@ shell::uplink() {
 			if [ -n "$src" ] && [ -n "$dest" ]; then
 				ln -vif "$src" "$dest" && chmod +x "$dest"
 			else
-				shell::colored_echo "ERR: Invalid link specification in .link: $line" 196
+				shell::stdout "ERR: Invalid link specification in .link: $line" 196
 			fi
 		fi
 	done <"$link_file"
@@ -2665,11 +2665,11 @@ shell::opent() {
 		# Use xdg-open to open the directory in the default file manager.
 		xdg-open "$dir"
 	else
-		shell::colored_echo "ERR: Unsupported operating system for shell::opent function." 196
+		shell::stdout "ERR: Unsupported operating system for shell::opent function." 196
 		return 1
 	fi
 
-	shell::colored_echo "DEBUG: Opening \"$name\" ..." 244
+	shell::stdout "DEBUG: Opening \"$name\" ..." 244
 }
 
 # shell::go_back function
@@ -2724,21 +2724,21 @@ shell::validate_ip_addr() {
 		IFS='.' read -r o1 o2 o3 o4 <<<"$ip"
 		for octet in "$o1" "$o2" "$o3" "$o4"; do
 			if ((octet < 0 || octet > 255)); then
-				shell::colored_echo "ERR: IPv4 octet '$octet' out of range (0-255)." 196
+				shell::stdout "ERR: IPv4 octet '$octet' out of range (0-255)." 196
 				return 1
 			fi
 		done
-		shell::colored_echo "INFO: '$ip' is a valid IPv4 address." 46
+		shell::stdout "INFO: '$ip' is a valid IPv4 address." 46
 		return 0
 	fi
 
 	# Validate IPv6
 	if [[ "$ip" =~ ^([0-9a-fA-F]{1,4}:){1,7}[0-9a-fA-F]{1,4}$ ]]; then
-		shell::colored_echo "INFO: '$ip' is a valid IPv6 address." 46
+		shell::stdout "INFO: '$ip' is a valid IPv6 address." 46
 		return 0
 	fi
 
-	shell::colored_echo "ERR: '$ip' is not a valid IPv4 or IPv6 address." 196
+	shell::stdout "ERR: '$ip' is not a valid IPv4 or IPv6 address." 196
 	return 1
 }
 
@@ -2771,23 +2771,23 @@ shell::validate_hostname() {
 
 	# Check total length
 	if [ "${#hostname}" -gt 253 ]; then
-		shell::colored_echo "ERR: Hostname exceeds 253 characters." 196
+		shell::stdout "ERR: Hostname exceeds 253 characters." 196
 		return 1
 	fi
 
 	# Regex for full hostname validation
 	# Allows single or multiple labels, each 1-63 characters, no leading/trailing hyphen
 	if ! [[ "$hostname" =~ ^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$ ]]; then
-		shell::colored_echo "ERR: '$hostname' is not a valid hostname format." 196
+		shell::stdout "ERR: '$hostname' is not a valid hostname format." 196
 		return 1
 	fi
 
 	# DNS resolution check
 	if nslookup "$hostname" >/dev/null 2>&1; then
-		shell::colored_echo "INFO: '$hostname' is a valid hostname and resolves via DNS." 46
+		shell::stdout "INFO: '$hostname' is a valid hostname and resolves via DNS." 46
 		return 0
 	else
-		shell::colored_echo "WARN: '$hostname' is valid but does not resolve via DNS." 11
+		shell::stdout "WARN: '$hostname' is valid but does not resolve via DNS." 11
 		return 0
 	fi
 }
@@ -2819,13 +2819,13 @@ shell::get_mime_type() {
 	fi
 
 	if [ -z "$1" ]; then
-		shell::colored_echo "ERR: File path is required" 196
+		shell::stdout "ERR: File path is required" 196
 		return 1
 	fi
 
 	# Check if the file exists
 	if [ ! -f "$1" ]; then
-		shell::colored_echo "ERR: File '$1' does not exist." 196
+		shell::stdout "ERR: File '$1' does not exist." 196
 		return 1
 	fi
 
@@ -2948,7 +2948,7 @@ shell::encode_base64_file() {
 	# If the file does not exist, print an error message and exit.
 	local file_path="$1"
 	if [ ! -f "$file_path" ]; then
-		shell::colored_echo "ERR: File not found: $file_path" 196
+		shell::stdout "ERR: File not found: $file_path" 196
 		return 1
 	fi
 
@@ -3023,7 +3023,7 @@ shell::ask() {
 	# Echo the final, confirmed choice to stdout
 	echo "$choice"
 	# while true; do
-	# 	shell::colored_echo "[q] $question (y/n) " 208
+	# 	shell::stdout "[q] $question (y/n) " 208
 	# 	read -r reply
 	# 	case "$reply" in
 	# 	[Yy] | [Yy][Ee][Ss])
@@ -3078,7 +3078,7 @@ shell::enter() {
 	local question="$1"
 	local entered_value
 	local prompt
-	prompt=$(shell::colored_echo "[e] $question " 208 -n)
+	prompt=$(shell::stdout "[e] $question " 208 -n)
 
 	while true; do
 		# Print the prompt directly to the terminal

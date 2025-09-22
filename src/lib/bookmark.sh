@@ -28,7 +28,7 @@ shell::add_bookmark() {
 	local bookmark_name="$1"
 
 	if [[ -z "$bookmark_name" ]]; then
-		shell::colored_echo "ERR: Please type a valid name for your bookmark." 196
+		shell::stdout "ERR: Please type a valid name for your bookmark." 196
 		return 1
 	fi
 
@@ -44,20 +44,20 @@ shell::add_bookmark() {
 	# Check if the bookmark already exists.
 	if [[ -z $(grep "|$bookmark_name" "$bookmarks_file") ]]; then
 		echo "$bookmark" >>"$bookmarks_file"
-		shell::colored_echo "INFO: Bookmark '$bookmark_name' saved" 46
+		shell::stdout "INFO: Bookmark '$bookmark_name' saved" 46
 	else
-		shell::colored_echo "WARN: Bookmark '$bookmark_name' already exists. Replace it? (y or n)" 11
+		shell::stdout "WARN: Bookmark '$bookmark_name' already exists. Replace it? (y or n)" 11
 		while read -r replace; do
 			if [[ "$replace" == "y" ]]; then
 				# Delete existing bookmark and save the new one.
 				shell::run_cmd_eval "sed '/.*|$bookmark_name/d' \"$bookmarks_file\" > ~/.tmp && mv ~/.tmp \"$bookmarks_file\""
 				echo "$bookmark" >>"$bookmarks_file"
-				shell::colored_echo "INFO: Bookmark '$bookmark_name' saved" 46
+				shell::stdout "INFO: Bookmark '$bookmark_name' saved" 46
 				break
 			elif [[ "$replace" == "n" ]]; then
 				break
 			else
-				shell::colored_echo "WARN: Please type 'y' or 'n':" 11
+				shell::stdout "WARN: Please type 'y' or 'n':" 11
 			fi
 		done
 	fi
@@ -88,7 +88,7 @@ shell::remove_bookmark() {
 
 	local bookmark_name="$1"
 	if [[ -z "$bookmark_name" ]]; then
-		shell::colored_echo "WARN: Type bookmark name to remove." 11
+		shell::stdout "WARN: Type bookmark name to remove." 11
 		return 1
 	fi
 
@@ -96,14 +96,14 @@ shell::remove_bookmark() {
 	bookmark=$(grep "|${bookmark_name}$" "$bookmarks_file")
 
 	if [[ -z "$bookmark" ]]; then
-		shell::colored_echo "WARN: Invalid bookmark name." 11
+		shell::stdout "WARN: Invalid bookmark name." 11
 		return 1
 	fi
 
 	# Create a secure temporary file.
 	local tmp_file
 	tmp_file=$(mktemp) || {
-		shell::colored_echo "ERR: Failed to create temporary file." 196
+		shell::stdout "ERR: Failed to create temporary file." 196
 		return 1
 	}
 
@@ -116,9 +116,9 @@ shell::remove_bookmark() {
 
 	# Execute the command using shell::run_cmd_eval.
 	if shell::run_cmd_eval "$cmd"; then
-		shell::colored_echo "INFO: Bookmark '$bookmark_name' removed" 46
+		shell::stdout "INFO: Bookmark '$bookmark_name' removed" 46
 	else
-		shell::colored_echo "ERR: Failed to remove bookmark '$bookmark_name'" 196
+		shell::stdout "ERR: Failed to remove bookmark '$bookmark_name'" 196
 		return 1
 	fi
 
@@ -151,14 +151,14 @@ shell::remove_bookmark_linux() {
 	local bookmark_name="$1"
 
 	if [[ -z "$bookmark_name" ]]; then
-		shell::colored_echo "WARN: Type bookmark name to remove." 11
+		shell::stdout "WARN: Type bookmark name to remove." 11
 		return 1
 	fi
 
 	local bookmark
 	bookmark=$(grep "|${bookmark_name}$" "$bookmarks_file")
 	if [[ -z "$bookmark" ]]; then
-		shell::colored_echo "WARN: Invalid bookmark name." 11
+		shell::stdout "WARN: Invalid bookmark name." 11
 		return 1
 	fi
 
@@ -176,9 +176,9 @@ shell::remove_bookmark_linux() {
 
 	# Execute the sed command using shell::run_cmd_eval.
 	if shell::run_cmd_eval "$sed_cmd"; then
-		shell::colored_echo "INFO: Bookmark '$bookmark_name' removed" 46
+		shell::stdout "INFO: Bookmark '$bookmark_name' removed" 46
 	else
-		shell::colored_echo "ERR: Failed to remove bookmark '$bookmark_name'" 196
+		shell::stdout "ERR: Failed to remove bookmark '$bookmark_name'" 196
 		return 1
 	fi
 }
@@ -206,15 +206,15 @@ shell::go_bookmark() {
 	bookmark=$(grep "|${bookmark_name}$" "$bookmarks_file")
 
 	if [[ -z "$bookmark" ]]; then
-		shell::colored_echo 'WARN: Bookmark not found!' 11
+		shell::stdout 'WARN: Bookmark not found!' 11
 		return 1
 	else
 		# Extract the directory (the part before the "|")
 		dir=$(echo "$bookmark" | cut -d'|' -f1)
 		if cd "$dir"; then
-			shell::colored_echo "INFO: Changed directory to: $dir" 2
+			shell::stdout "INFO: Changed directory to: $dir" 2
 		else
-			shell::colored_echo "ERR: Failed to change directory to: $dir" 196
+			shell::stdout "ERR: Failed to change directory to: $dir" 196
 			return 1
 		fi
 	fi
@@ -262,7 +262,7 @@ shell::list_bookmark() {
 # Requirements:
 #   - fzf must be installed.
 #   - The 'bookmarks_file' variable must be set.
-#   - Helper functions: shell::install_package, shell::colored_echo, shell::logger::cmd_copy.
+#   - Helper functions: shell::install_package, shell::stdout, shell::logger::cmd_copy.
 #
 # Example usage:
 #   shell::fzf_list_bookmark         # Interactively select a bookmark and navigate to it.
@@ -280,12 +280,12 @@ shell::fzf_list_bookmark() {
 	fi
 
 	if [ ! -f "$bookmarks_file" ]; then
-		shell::colored_echo "ERR: Bookmarks file '$bookmarks_file' not found." 196
+		shell::stdout "ERR: Bookmarks file '$bookmarks_file' not found." 196
 		return 1
 	fi
 
 	shell::install_package fzf || {
-		shell::colored_echo "ERR: fzf is required but could not be installed." 196
+		shell::stdout "ERR: fzf is required but could not be installed." 196
 		return 1
 	}
 
@@ -295,7 +295,7 @@ shell::fzf_list_bookmark() {
 	selected_display_line=$(awk -F'|' '{print $2 " (" $1 ")"}' "$bookmarks_file" | fzf --pointer="▶" --marker="✓" --border=rounded --layout=reverse --prompt="Select a bookmarked path: ")
 
 	if [ -z "$selected_display_line" ]; then
-		shell::colored_echo "ERR: No bookmark selected. Aborting." 196
+		shell::stdout "ERR: No bookmark selected. Aborting." 196
 		return 1
 	fi
 
@@ -310,7 +310,7 @@ shell::fzf_list_bookmark() {
 	target_path=$(grep "^.*|${selected_bookmark_name}$" "$bookmarks_file" | cut -d'|' -f1)
 
 	if [ -z "$target_path" ]; then
-		shell::colored_echo "ERR: Could not find path for selected bookmark '$selected_bookmark_name'." 196
+		shell::stdout "ERR: Could not find path for selected bookmark '$selected_bookmark_name'." 196
 		return 1
 	fi
 
@@ -319,12 +319,12 @@ shell::fzf_list_bookmark() {
 	else
 		if [ -d "$target_path" ]; then
 			cd "$target_path" || {
-				shell::colored_echo "ERR: Failed to change directory to '$target_path'." 196
+				shell::stdout "ERR: Failed to change directory to '$target_path'." 196
 				return 1
 			}
-			shell::colored_echo "INFO: Changed directory to: '$target_path'" 46
+			shell::stdout "INFO: Changed directory to: '$target_path'" 46
 		else
-			shell::colored_echo "ERR: Target directory '$target_path' does not exist." 196
+			shell::stdout "ERR: Target directory '$target_path' does not exist." 196
 			return 1
 		fi
 	fi
@@ -352,7 +352,7 @@ shell::fzf_list_bookmark() {
 # Requirements:
 #   - fzf must be installed.
 #   - The 'bookmarks_file' variable must be set.
-#   - Helper functions: shell::install_package, shell::colored_echo, shell::logger::cmd_copy.
+#   - Helper functions: shell::install_package, shell::stdout, shell::logger::cmd_copy.
 #
 # Example usage:
 #   shell::fzf_list_bookmark_up         # Interactively select a bookmark and verify its path.
@@ -370,12 +370,12 @@ shell::fzf_list_bookmark_up() {
 	fi
 
 	if [ ! -f "$bookmarks_file" ]; then
-		shell::colored_echo "ERR: Bookmarks file '$bookmarks_file' not found." 196
+		shell::stdout "ERR: Bookmarks file '$bookmarks_file' not found." 196
 		return 1
 	fi
 
 	shell::install_package fzf || {
-		shell::colored_echo "ERR: fzf is required but could not be installed." 196
+		shell::stdout "ERR: fzf is required but could not be installed." 196
 		return 1
 	}
 
@@ -394,7 +394,7 @@ shell::fzf_list_bookmark_up() {
 		"$bookmarks_file" | fzf --ansi --bind 'tab:toggle' --bind 'shift-tab:toggle+up' --pointer="▶" --marker="✓" --border=rounded --layout=reverse --prompt="Select a bookmarked path: ")
 
 	if [ -z "$selected_display_line" ]; then
-		shell::colored_echo "ERR: No bookmark selected. Aborting." 196
+		shell::stdout "ERR: No bookmark selected. Aborting." 196
 		return 1
 	fi
 
@@ -409,7 +409,7 @@ shell::fzf_list_bookmark_up() {
 	target_path=$(grep "^.*|${selected_bookmark_name}$" "$bookmarks_file" | cut -d'|' -f1)
 
 	if [ -z "$target_path" ]; then
-		shell::colored_echo "ERR: Could not find path for selected bookmark '$selected_bookmark_name'." 196
+		shell::stdout "ERR: Could not find path for selected bookmark '$selected_bookmark_name'." 196
 		return 1
 	fi
 
@@ -418,12 +418,12 @@ shell::fzf_list_bookmark_up() {
 	else
 		if [ -d "$target_path" ]; then
 			cd "$target_path" || {
-				shell::colored_echo "ERR: Failed to change directory to '$target_path'." 196
+				shell::stdout "ERR: Failed to change directory to '$target_path'." 196
 				return 1
 			}
-			shell::colored_echo "INFO: Changed directory to: '$target_path'" 46
+			shell::stdout "INFO: Changed directory to: '$target_path'" 46
 		else
-			shell::colored_echo "ERR: Target directory '$target_path' does not exist." 196
+			shell::stdout "ERR: Target directory '$target_path' does not exist." 196
 			return 1
 		fi
 	fi
@@ -451,7 +451,7 @@ shell::fzf_list_bookmark_up() {
 # Requirements:
 #   - fzf must be installed.
 #   - The 'bookmarks_file' variable must be set.
-#   - Helper functions: shell::install_package, shell::colored_echo, shell::logger::cmd_copy, shell::run_cmd_eval.
+#   - Helper functions: shell::install_package, shell::stdout, shell::logger::cmd_copy, shell::run_cmd_eval.
 #
 # Example usage:
 #   shell::fzf_remove_bookmark_down         # Interactively select and remove inactive bookmarks.
@@ -478,13 +478,13 @@ shell::fzf_remove_bookmark_down() {
 
 	# Validate bookmarks file existence
 	if [ ! -f "$bookmarks_file" ]; then
-		shell::colored_echo "ERR: Bookmarks file '$bookmarks_file' not found." 196
+		shell::stdout "ERR: Bookmarks file '$bookmarks_file' not found." 196
 		return 1
 	fi
 
 	# Ensure fzf is installed
 	shell::install_package fzf || {
-		shell::colored_echo "ERR: fzf is required but could not be installed." 196
+		shell::stdout "ERR: fzf is required but could not be installed." 196
 		return 1
 	}
 
@@ -501,7 +501,7 @@ shell::fzf_remove_bookmark_down() {
 		"$bookmarks_file")
 
 	if [ -z "$inactive_bookmarks" ]; then
-		shell::colored_echo "INFO: No inactive bookmarks found." 46
+		shell::stdout "INFO: No inactive bookmarks found." 46
 		return 0
 	fi
 
@@ -510,7 +510,7 @@ shell::fzf_remove_bookmark_down() {
 	selected_display_lines=$(echo "$inactive_bookmarks" | fzf --ansi --multi --pointer="▶" --marker="✓" --border=rounded --layout=reverse --prompt="Select inactive bookmarks to remove: ")
 
 	if [ -z "$selected_display_lines" ]; then
-		shell::colored_echo "ERR: No bookmarks selected. Aborting." 196
+		shell::stdout "ERR: No bookmarks selected. Aborting." 196
 		return 1
 	fi
 
@@ -539,12 +539,12 @@ shell::fzf_remove_bookmark_down() {
 
 	# Provide feedback
 	if [ "$dry_run" = "true" ]; then
-		shell::colored_echo "INFO: Dry-run: Would have attempted to remove ${#selected_bookmark_names[@]} bookmark(s)." 46
+		shell::stdout "INFO: Dry-run: Would have attempted to remove ${#selected_bookmark_names[@]} bookmark(s)." 46
 	else
 		if [ $failed_count -eq 0 ]; then
-			shell::colored_echo "INFO: Successfully removed $success_count inactive bookmark(s)." 46
+			shell::stdout "INFO: Successfully removed $success_count inactive bookmark(s)." 46
 		else
-			shell::colored_echo "WARN: Removed $success_count bookmark(s), but $failed_count failed." 11
+			shell::stdout "WARN: Removed $success_count bookmark(s), but $failed_count failed." 11
 			return 1
 		fi
 	fi
@@ -571,7 +571,7 @@ shell::fzf_remove_bookmark_down() {
 # Requirements:
 #   - fzf must be installed.
 #   - The 'bookmarks_file' variable must be set.
-#   - Helper functions: shell::install_package, shell::colored_echo, shell::logger::cmd_copy, shell::run_cmd_eval.
+#   - Helper functions: shell::install_package, shell::stdout, shell::logger::cmd_copy, shell::run_cmd_eval.
 #
 # Example usage:
 #   shell::fzf_remove_bookmark       # Interactively select and remove a bookmark.
@@ -591,13 +591,13 @@ shell::fzf_remove_bookmark() {
 	# Validate bookmarks file existence
 	# This checks if the bookmarks file exists before proceeding.
 	if [ ! -f "$bookmarks_file" ]; then
-		shell::colored_echo "ERR: Bookmarks file '$bookmarks_file' not found." 196
+		shell::stdout "ERR: Bookmarks file '$bookmarks_file' not found." 196
 		return 1
 	fi
 
 	# Ensure fzf is installed
 	shell::install_package fzf || {
-		shell::colored_echo "ERR: fzf is required but could not be installed." 196
+		shell::stdout "ERR: fzf is required but could not be installed." 196
 		return 1
 	}
 
@@ -616,7 +616,7 @@ shell::fzf_remove_bookmark() {
 		"$bookmarks_file" | fzf --ansi --pointer="▶" --marker="✓" --border=rounded --layout=reverse --prompt="Select a bookmarked path: ")
 
 	if [ -z "$selected_display_line" ]; then
-		shell::colored_echo "ERR: No bookmark selected. Aborting." 196
+		shell::stdout "ERR: No bookmark selected. Aborting." 196
 		return 1
 	fi
 
@@ -631,7 +631,7 @@ shell::fzf_remove_bookmark() {
 	target_path=$(grep "^.*|${selected_bookmark_name}$" "$bookmarks_file" | cut -d'|' -f1)
 
 	if [ -z "$target_path" ]; then
-		shell::colored_echo "ERR: Could not find path for selected bookmark '$selected_bookmark_name'." 196
+		shell::stdout "ERR: Could not find path for selected bookmark '$selected_bookmark_name'." 196
 		return 1
 	fi
 
@@ -671,7 +671,7 @@ shell::fzf_remove_bookmark() {
 #
 # Requirements:
 #   - The 'bookmarks_file' variable must be set.
-#   - Helper functions: shell::colored_echo, shell::logger::cmd_copy, shell::run_cmd_eval, shell::get_os_type.
+#   - Helper functions: shell::stdout, shell::logger::cmd_copy, shell::run_cmd_eval, shell::get_os_type.
 #
 # Example usage:
 #   shell::rename_bookmark old_name new_name
@@ -701,14 +701,14 @@ shell::rename_bookmark() {
 	# Check if the bookmarks file exists
 	# This checks if the bookmarks file exists before proceeding.
 	if [ ! -f "$bookmarks_file" ]; then
-		shell::colored_echo "ERR: Bookmarks file '$bookmarks_file' not found." 196
+		shell::stdout "ERR: Bookmarks file '$bookmarks_file' not found." 196
 		return 1
 	fi
 
 	# Check if old_name and new_name are provided
 	# This checks if both old_name and new_name are not empty.
 	if [[ -z "$old_name" || -z "$new_name" ]]; then
-		shell::colored_echo "ERR: Both old and new bookmark names must be provided." 196
+		shell::stdout "ERR: Both old and new bookmark names must be provided." 196
 		return 1
 	fi
 
@@ -724,7 +724,7 @@ shell::rename_bookmark() {
 	local old_entry
 	old_entry=$(grep "^.*|${old_name}$" "$bookmarks_file")
 	if [[ -z "$old_entry" ]]; then
-		shell::colored_echo "ERR: Bookmark '$old_name' does not exist." 196
+		shell::stdout "ERR: Bookmark '$old_name' does not exist." 196
 		return 1
 	fi
 
@@ -733,7 +733,7 @@ shell::rename_bookmark() {
 	local new_entry
 	new_entry=$(grep "^.*|${new_name}$" "$bookmarks_file")
 	if [[ -n "$new_entry" ]]; then
-		shell::colored_echo "ERR: Bookmark '$new_name' already exists." 196
+		shell::stdout "ERR: Bookmark '$new_name' already exists." 196
 		return 1
 	fi
 
@@ -752,7 +752,7 @@ shell::rename_bookmark() {
 		shell::logger::cmd_copy "$sed_cmd"
 	else
 		shell::run_cmd_eval "$sed_cmd"
-		shell::colored_echo "INFO: Renamed bookmark '$old_name' to '$new_name'" 46
+		shell::stdout "INFO: Renamed bookmark '$old_name' to '$new_name'" 46
 	fi
 }
 
@@ -790,7 +790,7 @@ shell::fzf_rename_bookmark() {
 	# Validate bookmarks file existence
 	# This checks if the bookmarks file exists before proceeding.
 	if [ ! -f "$bookmarks_file" ]; then
-		shell::colored_echo "ERR: Bookmarks file '$bookmarks_file' not found." 196
+		shell::stdout "ERR: Bookmarks file '$bookmarks_file' not found." 196
 		return 1
 	fi
 
@@ -813,7 +813,7 @@ shell::fzf_rename_bookmark() {
 	# This checks if the user selected a bookmark. If not, it displays an error and returns.
 	# If no bookmark is selected, it will return an empty string.
 	if [ -z "$selected_display_line" ]; then
-		shell::colored_echo "ERR: No bookmark selected. Aborting." 196
+		shell::stdout "ERR: No bookmark selected. Aborting." 196
 		return 1
 	fi
 
@@ -822,13 +822,13 @@ shell::fzf_rename_bookmark() {
 	local old_name
 	old_name=$(echo "$selected_display_line" | sed 's/ *(.*)//')
 
-	shell::colored_echo "[e] Enter new name for bookmark '$old_name':" 208
+	shell::stdout "[e] Enter new name for bookmark '$old_name':" 208
 	read -r new_name
 
 	# Check if the new name is empty
 	# This checks if the user entered a new name. If not, it displays an error and returns.
 	if [ -z "$new_name" ]; then
-		shell::colored_echo "ERR: No new name entered. Aborting rename." 196
+		shell::stdout "ERR: No new name entered. Aborting rename." 196
 		return 1
 	fi
 
@@ -889,7 +889,7 @@ shell::rename_dir_base_bookmark() {
 	# Check if the bookmarks file exists
 	# This checks if the bookmarks file exists before proceeding.
 	if [ ! -f "$bookmarks_file" ]; then
-		shell::colored_echo "ERR: Bookmarks file '$bookmarks_file' not found." 196
+		shell::stdout "ERR: Bookmarks file '$bookmarks_file' not found." 196
 		return 1
 	fi
 
@@ -903,7 +903,7 @@ shell::rename_dir_base_bookmark() {
 	# If the old_path is empty, it means the bookmark was not found.
 	# It displays an error message and returns.
 	if [ -z "$old_path" ]; then
-		shell::colored_echo "ERR: Bookmark '$bookmark_name' not found." 196
+		shell::stdout "ERR: Bookmark '$bookmark_name' not found." 196
 		return 1
 	fi
 
@@ -911,7 +911,7 @@ shell::rename_dir_base_bookmark() {
 	# This checks if the old_path is a valid directory.
 	# If it is not a directory, it displays an error message and returns.
 	if [ ! -d "$old_path" ]; then
-		shell::colored_echo "ERR: Directory '$old_path' does not exist." 196
+		shell::stdout "ERR: Directory '$old_path' does not exist." 196
 		return 1
 	fi
 
@@ -920,7 +920,7 @@ shell::rename_dir_base_bookmark() {
 	# This ensures that the user provides a valid new directory name.
 	local new_path="$(dirname "$old_path")/$new_dir_name"
 	if [ -e "$new_path" ]; then
-		shell::colored_echo "ERR: Target directory '$new_path' already exists." 196
+		shell::stdout "ERR: Target directory '$new_path' already exists." 196
 		return 1
 	fi
 
@@ -944,7 +944,7 @@ shell::rename_dir_base_bookmark() {
 		shell::logger::cmd_copy "$rename_cmd && $update_cmd"
 	else
 		shell::run_cmd_eval "$rename_cmd && $update_cmd"
-		shell::colored_echo "INFO: Renamed directory '$old_path' to '$new_path'" 46
+		shell::stdout "INFO: Renamed directory '$old_path' to '$new_path'" 46
 	fi
 }
 
@@ -967,7 +967,7 @@ shell::rename_dir_base_bookmark() {
 # Requirements:
 #   - fzf must be installed.
 #   - The 'bookmarks_file' variable must be set.
-#   - Helper functions: shell::install_package, shell::colored_echo, shell::logger::cmd_copy, shell::rename_dir_base_bookmark.
+#   - Helper functions: shell::install_package, shell::stdout, shell::logger::cmd_copy, shell::rename_dir_base_bookmark.
 #
 # Example usage:
 #   shell::fzf_rename_dir_base_bookmark       # Interactively select and rename a directory.
@@ -988,7 +988,7 @@ shell::fzf_rename_dir_base_bookmark() {
 	# This checks if the bookmarks file exists before proceeding.
 	# If the bookmarks file does not exist, it displays an error and returns.
 	if [ ! -f "$bookmarks_file" ]; then
-		shell::colored_echo "ERR: Bookmarks file '$bookmarks_file' not found." 196
+		shell::stdout "ERR: Bookmarks file '$bookmarks_file' not found." 196
 		return 1
 	fi
 
@@ -1018,7 +1018,7 @@ shell::fzf_rename_dir_base_bookmark() {
 	# This checks if the user selected a bookmark. If not, it displays an error and returns.
 	# If no bookmark is selected, it will return an empty string.
 	if [ -z "$selected_display_line" ]; then
-		shell::colored_echo "ERR: No bookmark selected. Aborting." 196
+		shell::stdout "ERR: No bookmark selected. Aborting." 196
 		return 1
 	fi
 
@@ -1027,14 +1027,14 @@ shell::fzf_rename_dir_base_bookmark() {
 	local bookmark_name
 	bookmark_name=$(echo "$selected_display_line" | sed 's/ *(.*)//')
 
-	# shell::colored_echo "[e] Enter new name for directory of bookmark '$bookmark_name':" 208
+	# shell::stdout "[e] Enter new name for directory of bookmark '$bookmark_name':" 208
 	# read -r new_dir_name
 
 	# Check if the new directory name is empty
 	# If the new_dir_name is empty, it displays an error message and returns.
 	# This ensures that the user provides a valid new directory name.
 	# if [ -z "$new_dir_name" ]; then
-	#     shell::colored_echo "ERR: No new name entered. Aborting rename." 196
+	#     shell::stdout "ERR: No new name entered. Aborting rename." 196
 	#     return 1
 	# fi
 

@@ -66,7 +66,7 @@ shell::populate_ssh_conf() {
 	# We check if the directory for the file exists
 	# If the directory does not exist, we print an error message and return
 	if [ ! -d "$(dirname "$file")" ]; then
-		shell::colored_echo "ERR: Directory for '$file' does not exist." 196
+		shell::stdout "ERR: Directory for '$file' does not exist." 196
 		return 1
 	fi
 
@@ -74,7 +74,7 @@ shell::populate_ssh_conf() {
 	# If the file already exists, we print a debug message
 	# This is useful for debugging purposes to know if we are overwriting an existing file
 	if [ -f "$file" ]; then
-		shell::colored_echo "DEBUG: File '$file' already exists. Overwriting..." 244
+		shell::stdout "DEBUG: File '$file' already exists. Overwriting..." 244
 	fi
 
 	# Define port mappings for different services
@@ -242,7 +242,7 @@ shell::add_workspace() {
 	# Check if workspace already exists
 	# If the directory already exists, we return an error
 	if [ -d "$dir" ]; then
-		shell::colored_echo "ERR: Workspace '$name' already exists at '$dir'" 196
+		shell::stdout "ERR: Workspace '$name' already exists at '$dir'" 196
 		return 1
 	fi
 
@@ -260,7 +260,7 @@ shell::add_workspace() {
 	# Check if any files were selected
 	# If no files were selected, we print an error message and return
 	if [ -z "$selected_files" ]; then
-		shell::colored_echo "ERR: No configuration files selected." 196
+		shell::stdout "ERR: No configuration files selected." 196
 		return 1
 	fi
 
@@ -284,7 +284,7 @@ shell::add_workspace() {
 		shell::create_file_if_not_exists "$profile"
 		shell::create_directory_if_not_exists "$ssh_dir"
 		shell::run_cmd_eval "$cmd"
-		shell::colored_echo "INFO: Workspace '$name' created at '$dir'" 46
+		shell::stdout "INFO: Workspace '$name' created at '$dir'" 46
 
 		# Populate profile.conf with default values
 		# We use shell::write_ini to write default values to the profile.conf file
@@ -292,7 +292,7 @@ shell::add_workspace() {
 		# We use the shell::write_ini function to write these values
 		while IFS= read -r f; do
 			local file="$ssh_dir/$f"
-			shell::colored_echo "DEBUG: Populating '$f' with default [dev] and [uat] blocks..." 244
+			shell::stdout "DEBUG: Populating '$f' with default [dev] and [uat] blocks..." 244
 			shell::populate_ssh_conf "$file" "$f"
 		done <<<"$selected_files"
 	fi
@@ -338,14 +338,14 @@ shell::add_workspace_ssh_conf() {
 	# Get the workspace name and SSH configuration name from the arguments
 	local name="$1"
 	if [ -z "$name" ]; then
-		shell::colored_echo "ERR: Workspace name is required." 196
+		shell::stdout "ERR: Workspace name is required." 196
 		return 1
 	fi
 
 	# Get the SSH configuration name from the arguments
 	local conf="$2"
 	if [ -z "$conf" ]; then
-		shell::colored_echo "ERR: SSH configuration name is required." 196
+		shell::stdout "ERR: SSH configuration name is required." 196
 		return 1
 	fi
 
@@ -368,7 +368,7 @@ shell::add_workspace_ssh_conf() {
 	# We check if the directory for the workspace exists
 	# If the directory does not exist, we print an error message and return
 	if [ ! -d "$dir" ]; then
-		shell::colored_echo "ERR: Workspace '$name' does not exist or has no .ssh directory." 196
+		shell::stdout "ERR: Workspace '$name' does not exist or has no .ssh directory." 196
 		return 1
 	fi
 
@@ -377,7 +377,7 @@ shell::add_workspace_ssh_conf() {
 	# If the file exists, we print a message and return
 	# This prevents overwriting an existing configuration file
 	if [ -f "$file" ]; then
-		shell::colored_echo "WARN: '$conf' already exists in workspace '$name'." 11
+		shell::stdout "WARN: '$conf' already exists in workspace '$name'." 11
 		return 0
 	fi
 
@@ -390,7 +390,7 @@ shell::add_workspace_ssh_conf() {
 	else
 		shell::create_file_if_not_exists "$file"
 		shell::populate_ssh_conf "$file" "$conf"
-		shell::colored_echo "INFO: '$conf' added to workspace '$name'." 46
+		shell::stdout "INFO: '$conf' added to workspace '$name'." 46
 	fi
 }
 
@@ -429,7 +429,7 @@ shell::fzf_add_workspace_ssh_conf() {
 	# We check if the directory defined by $SHELL_CONF_WORKING_WORKSPACE exists
 	local base="$SHELL_CONF_WORKING_WORKSPACE"
 	if [ ! -d "$base" ]; then
-		shell::colored_echo "ERR: Workspace directory '$base' not found." 196
+		shell::stdout "ERR: Workspace directory '$base' not found." 196
 		return 1
 	fi
 
@@ -443,7 +443,7 @@ shell::fzf_add_workspace_ssh_conf() {
 	# If no workspace was selected, we print an error message and return
 	# This ensures the user knows they need to select a workspace
 	if [ -z "$workspace" ]; then
-		shell::colored_echo "ERR: No workspace selected." 196
+		shell::stdout "ERR: No workspace selected." 196
 		return 1
 	fi
 
@@ -451,7 +451,7 @@ shell::fzf_add_workspace_ssh_conf() {
 	# We construct the path to the .ssh directory for the selected workspace
 	local ssh_dir="$base/$workspace/.ssh"
 	if [ ! -d "$ssh_dir" ]; then
-		shell::colored_echo "ERR: Workspace '$workspace' has no .ssh directory." 196
+		shell::stdout "ERR: Workspace '$workspace' has no .ssh directory." 196
 		return 1
 	fi
 
@@ -466,7 +466,7 @@ shell::fzf_add_workspace_ssh_conf() {
 	# If no files are missing, we print a message and return
 	# This means all SSH config files already exist in the workspace
 	if [ ${#missing_files[@]} -eq 0 ]; then
-		shell::colored_echo "INFO: All SSH config files already exist in workspace '$workspace'." 46
+		shell::stdout "INFO: All SSH config files already exist in workspace '$workspace'." 46
 		return 0
 	fi
 
@@ -480,7 +480,7 @@ shell::fzf_add_workspace_ssh_conf() {
 	# This ensures the user knows they need to select a file
 	# If the user did not select a file, we print an error message and return
 	if [ -z "$selected_conf" ]; then
-		shell::colored_echo "ERR: No SSH config selected." 196
+		shell::stdout "ERR: No SSH config selected." 196
 		return 1
 	fi
 
@@ -547,7 +547,7 @@ shell::remove_workspace() {
 	# Check if the workspace directory exists
 	# If the directory does not exist, we print an error message and return
 	if [ ! -d "$dir" ]; then
-		shell::colored_echo "ERR: Workspace '$name' does not exist at '$dir'" 196
+		shell::stdout "ERR: Workspace '$name' does not exist at '$dir'" 196
 		return 0
 	fi
 
@@ -561,10 +561,10 @@ shell::remove_workspace() {
 	asked=$(shell::ask "Are you sure you want to delete workspace '$name'?")
 	if [ "$asked" = "yes" ]; then
 		shell::run_cmd_eval "sudo rm -rf \"$dir\""
-		shell::colored_echo "INFO: Workspace '$name' removed." 46
+		shell::stdout "INFO: Workspace '$name' removed." 46
 		return 1
 	fi
-	shell::colored_echo "WARN: Deletion aborted." 11
+	shell::stdout "WARN: Deletion aborted." 11
 	return 0
 }
 
@@ -608,7 +608,7 @@ shell::fzf_view_workspace() {
 
 	# Check if workspace exists
 	if [ ! -d "$ssh_dir" ]; then
-		shell::colored_echo "ERR: Workspace '$name' does not exist or has no .ssh directory." 196
+		shell::stdout "ERR: Workspace '$name' does not exist or has no .ssh directory." 196
 		return 1
 	fi
 
@@ -617,7 +617,7 @@ shell::fzf_view_workspace() {
 	conf_files=$(find "$ssh_dir" -type f -name "*.conf")
 
 	if [ -z "$conf_files" ]; then
-		shell::colored_echo "WARN: No .conf files found in '$ssh_dir'" 11
+		shell::stdout "WARN: No .conf files found in '$ssh_dir'" 11
 		return 0
 	fi
 
@@ -631,7 +631,7 @@ shell::fzf_view_workspace() {
 	# If no file was selected, we print an error message and return
 	# This ensures the user knows they need to select a file
 	if [ -z "$selected_file" ]; then
-		shell::colored_echo "ERR: No file selected." 196
+		shell::stdout "ERR: No file selected." 196
 		return 1
 	fi
 
@@ -677,7 +677,7 @@ shell::fzf_edit_workspace() {
 
 	# Check if workspace exists
 	if [ ! -d "$ssh_dir" ]; then
-		shell::colored_echo "ERR: Workspace '$name' does not exist or has no .ssh directory." 196
+		shell::stdout "ERR: Workspace '$name' does not exist or has no .ssh directory." 196
 		return 1
 	fi
 
@@ -686,7 +686,7 @@ shell::fzf_edit_workspace() {
 	conf_files=$(find "$ssh_dir" -type f -name "*.conf")
 
 	if [ -z "$conf_files" ]; then
-		shell::colored_echo "WARN: No .conf files found in '$ssh_dir'" 11
+		shell::stdout "WARN: No .conf files found in '$ssh_dir'" 11
 		return 0
 	fi
 
@@ -699,7 +699,7 @@ shell::fzf_edit_workspace() {
 
 	# If no file was selected, we print an error message and return
 	if [ -z "$selected_file" ]; then
-		shell::colored_echo "ERR: No file selected." 196
+		shell::stdout "ERR: No file selected." 196
 		return 1
 	fi
 
@@ -739,7 +739,7 @@ shell::fzf_remove_workspace() {
 
 	# Check if workspace directory exists
 	if [ ! -d "$workspace_dir" ]; then
-		shell::colored_echo "ERR: Workspace directory '$workspace_dir' not found." 196
+		shell::stdout "ERR: Workspace directory '$workspace_dir' not found." 196
 		return 1
 	fi
 
@@ -755,7 +755,7 @@ shell::fzf_remove_workspace() {
 
 	# If no workspace was selected, we print an error message and return
 	if [ -z "$selected" ]; then
-		shell::colored_echo "ERR: No workspace selected." 196
+		shell::stdout "ERR: No workspace selected." 196
 		return 1
 	fi
 
@@ -828,7 +828,7 @@ shell::rename_workspace() {
 	# We check if the old directory exists and if the new directory does not
 	# If the old directory does not exist, we print an error message and return
 	if [ ! -d "$old_dir" ]; then
-		shell::colored_echo "ERR: Workspace '$old_name' does not exist at '$old_dir'" 196
+		shell::stdout "ERR: Workspace '$old_name' does not exist at '$old_dir'" 196
 		return 1
 	fi
 
@@ -836,7 +836,7 @@ shell::rename_workspace() {
 	# If the new directory already exists, we print an error message and return
 	# This prevents overwriting an existing workspace
 	if [ -d "$new_dir" ]; then
-		shell::colored_echo "ERR: Workspace '$new_name' already exists at '$new_dir'" 196
+		shell::stdout "ERR: Workspace '$new_name' already exists at '$new_dir'" 196
 		return 1
 	fi
 
@@ -849,7 +849,7 @@ shell::rename_workspace() {
 		shell::logger::cmd_copy "$cmd"
 	else
 		shell::run_cmd_eval "$cmd"
-		shell::colored_echo "INFO: Workspace renamed from '$old_name' to '$new_name'" 46
+		shell::stdout "INFO: Workspace renamed from '$old_name' to '$new_name'" 46
 	fi
 }
 
@@ -886,7 +886,7 @@ shell::fzf_rename_workspace() {
 
 	# Check if workspace directory exists
 	if [ ! -d "$workspace_dir" ]; then
-		shell::colored_echo "ERR: Workspace directory '$workspace_dir' not found." 196
+		shell::stdout "ERR: Workspace directory '$workspace_dir' not found." 196
 		return 1
 	fi
 
@@ -905,18 +905,18 @@ shell::fzf_rename_workspace() {
 	# We check if the selected variable is empty
 	# If it is empty, we print an error message and return
 	if [ -z "$selected" ]; then
-		shell::colored_echo "ERR: No workspace selected." 196
+		shell::stdout "ERR: No workspace selected." 196
 		return 1
 	fi
 
-	shell::colored_echo "[e] Enter new name for workspace '$selected':" 208
+	shell::stdout "[e] Enter new name for workspace '$selected':" 208
 	read -r new_name
 
 	# Check if a new name was entered
 	# If no new name was entered, we print an error message and return
 	# This ensures the user knows they need to provide a new name
 	if [ -z "$new_name" ]; then
-		shell::colored_echo "ERR: No new name entered. Aborting rename." 196
+		shell::stdout "ERR: No new name entered. Aborting rename." 196
 		return 1
 	fi
 
@@ -962,7 +962,7 @@ shell::fzf_manage_workspace() {
 	# If it does not exist, we print an error message and return
 	local base="$SHELL_CONF_WORKING_WORKSPACE"
 	if [ ! -d "$base" ]; then
-		shell::colored_echo "ERR: Workspace directory '$base' not found." 196
+		shell::stdout "ERR: Workspace directory '$base' not found." 196
 		return 1
 	fi
 
@@ -982,7 +982,7 @@ shell::fzf_manage_workspace() {
 	# If no workspace was selected, we print an error message and return
 	# This ensures the user knows they need to select a workspace
 	if [ -z "$selected" ]; then
-		shell::colored_echo "ERR: No workspace selected." 196
+		shell::stdout "ERR: No workspace selected." 196
 		return 1
 	fi
 
@@ -1000,7 +1000,7 @@ shell::fzf_manage_workspace() {
 	# We check if the action variable is empty
 	# If it is empty, we print an error message and return
 	if [ -z "$action" ]; then
-		shell::colored_echo "ERR: No action selected." 196
+		shell::stdout "ERR: No action selected." 196
 		return 1
 	fi
 
@@ -1020,11 +1020,11 @@ shell::fzf_manage_workspace() {
 		shell::fzf_edit_workspace "$selected"
 		;;
 	rename)
-		shell::colored_echo "[e] Enter new name for workspace '$selected':" 208
+		shell::stdout "[e] Enter new name for workspace '$selected':" 208
 		read -r new_name
 		# Check if a new name was entered
 		if [ -z "$new_name" ]; then
-			shell::colored_echo "ERR: No new name entered. Aborting rename." 196
+			shell::stdout "ERR: No new name entered. Aborting rename." 196
 			return 1
 		fi
 		# If dry mode is enabled, we print the command to rename the workspace
@@ -1047,11 +1047,11 @@ shell::fzf_manage_workspace() {
 	clone)
 		# If the action is 'clone', we call shell::clone_workspace
 		# We prompt for the new workspace name to clone to
-		shell::colored_echo "[e] Enter new name for cloned workspace from '$selected':" 208
+		shell::stdout "[e] Enter new name for cloned workspace from '$selected':" 208
 		read -r new_name
 		# Check if a new name was entered
 		if [ -z "$new_name" ]; then
-			shell::colored_echo "ERR: No new name entered. Aborting clone." 196
+			shell::stdout "ERR: No new name entered. Aborting clone." 196
 			return 1
 		fi
 		# If dry mode is enabled, we print the command to clone the workspace
@@ -1063,7 +1063,7 @@ shell::fzf_manage_workspace() {
 		fi
 		;;
 	*)
-		shell::colored_echo "ERR: Unknown action '$action'" 196
+		shell::stdout "ERR: Unknown action '$action'" 196
 		return 1
 		;;
 	esac
@@ -1130,7 +1130,7 @@ shell::clone_workspace() {
 	# If the source directory does not exist, we print an error message and return
 	# If the destination directory already exists, we print an error message and return
 	if [ ! -d "$source_dir" ]; then
-		shell::colored_echo "ERR: Source workspace '$source' does not exist at '$source_dir'" 196
+		shell::stdout "ERR: Source workspace '$source' does not exist at '$source_dir'" 196
 		return 1
 	fi
 
@@ -1138,7 +1138,7 @@ shell::clone_workspace() {
 	# If the destination directory already exists, we print an error message and return
 	# This prevents overwriting an existing workspace
 	if [ -d "$destination_dir" ]; then
-		shell::colored_echo "ERR: Destination workspace '$destination' already exists at '$destination_dir'" 196
+		shell::stdout "ERR: Destination workspace '$destination' already exists at '$destination_dir'" 196
 		return 1
 	fi
 
@@ -1154,7 +1154,7 @@ shell::clone_workspace() {
 	else
 		shell::run_cmd_eval "$cmd"
 		shell::unlock_permissions "$destination_dir"
-		shell::colored_echo "INFO: Workspace cloned from '$source' to '$destination'" 46
+		shell::stdout "INFO: Workspace cloned from '$source' to '$destination'" 46
 	fi
 }
 
@@ -1191,7 +1191,7 @@ shell::fzf_clone_workspace() {
 	# If it does not exist, we print an error message and return
 	local base="$SHELL_CONF_WORKING_WORKSPACE"
 	if [ ! -d "$base" ]; then
-		shell::colored_echo "ERR: Workspace directory '$base' not found." 196
+		shell::stdout "ERR: Workspace directory '$base' not found." 196
 		return 1
 	fi
 
@@ -1213,18 +1213,18 @@ shell::fzf_clone_workspace() {
 	# We check if the selected variable is empty
 	# If it is empty, we print an error message and return
 	if [ -z "$selected" ]; then
-		shell::colored_echo "ERR: No workspace selected." 196
+		shell::stdout "ERR: No workspace selected." 196
 		return 1
 	fi
 
-	shell::colored_echo "[e] Enter new name for cloned workspace of '$selected':" 208
+	shell::stdout "[e] Enter new name for cloned workspace of '$selected':" 208
 	read -r new_name
 
 	# Check if a new name was entered
 	# If no new name was entered, we print an error message and return
 	# This ensures the user knows they need to provide a new name
 	if [ -z "$new_name" ]; then
-		shell::colored_echo "ERR: No new name entered. Aborting clone." 196
+		shell::stdout "ERR: No new name entered. Aborting clone." 196
 		return 1
 	fi
 
@@ -1267,7 +1267,7 @@ shell::dump_workspace_json() {
 	# If it does not exist, we print an error message and return
 	local base="$SHELL_CONF_WORKING_WORKSPACE"
 	if [ ! -d "$base" ]; then
-		shell::colored_echo "ERR: Workspace directory '$base' not found." 196
+		shell::stdout "ERR: Workspace directory '$base' not found." 196
 		return 1
 	fi
 
@@ -1286,7 +1286,7 @@ shell::dump_workspace_json() {
 	# We check if the workspace variable is empty
 	# If it is empty, we print an error message and return
 	if [ -z "$workspace" ]; then
-		shell::colored_echo "ERR: No workspace selected." 196
+		shell::stdout "ERR: No workspace selected." 196
 		return 1
 	fi
 
@@ -1295,7 +1295,7 @@ shell::dump_workspace_json() {
 	# If the .ssh directory does not exist, we print an error message and return
 	local ssh_dir="$base/$workspace/.ssh"
 	if [ ! -d "$ssh_dir" ]; then
-		shell::colored_echo "ERR: Workspace '$workspace' has no .ssh directory." 196
+		shell::stdout "ERR: Workspace '$workspace' has no .ssh directory." 196
 		return 1
 	fi
 
@@ -1311,7 +1311,7 @@ shell::dump_workspace_json() {
 	# We check if the conf_file variable is empty
 	# If it is empty, we print an error message and return
 	if [ -z "$conf_file" ]; then
-		shell::colored_echo "ERR: No .conf file selected." 196
+		shell::stdout "ERR: No .conf file selected." 196
 		return 1
 	fi
 
@@ -1327,7 +1327,7 @@ shell::dump_workspace_json() {
 	# This ensures the user knows they need to select a section
 	# We check if the section variable is empty
 	if [ -z "$sections" ]; then
-		shell::colored_echo "ERR: No sections selected." 196
+		shell::stdout "ERR: No sections selected." 196
 		return 1
 	fi
 
@@ -1359,7 +1359,7 @@ shell::dump_workspace_json() {
 	# This ensures the user knows they need to select at least one field
 	# We check if the selected_fields variable is empty
 	# if [ -z "$selected_fields" ]; then
-	#     shell::colored_echo "ERR: No fields selected. Aborting." 196
+	#     shell::stdout "ERR: No fields selected. Aborting." 196
 	#     return 1
 	# fi
 
@@ -1411,7 +1411,7 @@ shell::dump_workspace_json() {
 		local keys
 		keys=$(shell::list_ini_keys "$conf_file" "$section")
 		if [ -z "$keys" ]; then
-			shell::colored_echo "WARN: No keys found in section '$section'" 11
+			shell::stdout "WARN: No keys found in section '$section'" 11
 			continue
 		fi
 
@@ -1423,7 +1423,7 @@ shell::dump_workspace_json() {
 		local selected_keys
 		selected_keys=$(echo "$keys" | fzf --multi --prompt="Select keys in [$section] to export: ")
 		if [ -z "$selected_keys" ]; then
-			shell::colored_echo "WARN: No keys selected in section '$section'. Skipping." 11
+			shell::stdout "WARN: No keys selected in section '$section'. Skipping." 11
 			continue
 		fi
 
@@ -1442,7 +1442,7 @@ shell::dump_workspace_json() {
 	done <<<"$sections"
 	json+=" } } }"
 
-	shell::colored_echo "$json" 33
+	shell::stdout "$json" 33
 	shell::clip_value "$json"
 }
 
@@ -1484,17 +1484,17 @@ shell::open_workspace_ssh_tunnel() {
 
 	local workspace="$1"
 	if [ -z "$workspace" ]; then
-		shell::colored_echo "ERR: Workspace name is required." 196
+		shell::stdout "ERR: Workspace name is required." 196
 		return 0
 	fi
 	local conf_name="$2"
 	if [ -z "$conf_name" ]; then
-		shell::colored_echo "ERR: Configuration name is required." 196
+		shell::stdout "ERR: Configuration name is required." 196
 		return 0
 	fi
 	local section="$3"
 	if [ -z "$section" ]; then
-		shell::colored_echo "ERR: Section name is required." 196
+		shell::stdout "ERR: Section name is required." 196
 		return 0
 	fi
 
@@ -1508,7 +1508,7 @@ shell::open_workspace_ssh_tunnel() {
 	# We check if the base directory for workspaces exists
 	# If it does not exist, we print an error message and return
 	if [ ! -f "$conf_path" ]; then
-		shell::colored_echo "ERR: Configuration file '$conf_path' not found." 196
+		shell::stdout "ERR: Configuration file '$conf_path' not found." 196
 		return 0
 	fi
 
@@ -1516,7 +1516,7 @@ shell::open_workspace_ssh_tunnel() {
 	# We use shell::exist_ini_section to check if the specified section exists in the configuration file
 	# If the section does not exist, we print an error message and return
 	if ! shell::exist_ini_section "$conf_path" "$section" >/dev/null 2>&1; then
-		shell::colored_echo "ERR: Section ('$section') not found in file: $file" 196
+		shell::stdout "ERR: Section ('$section') not found in file: $file" 196
 		return 0
 	fi
 
@@ -1541,10 +1541,10 @@ shell::open_workspace_ssh_tunnel() {
 	# If dry-run mode is enabled, we print the command instead of executing it
 	# This allows us to see what would be done without actually opening the SSH tunnel
 	if [ "$dry_run" = "true" ]; then
-		shell::colored_echo "DEBUG: Opening SSH tunnel for '$server_desc' at $server_addr:$server_port" 244
+		shell::stdout "DEBUG: Opening SSH tunnel for '$server_desc' at $server_addr:$server_port" 244
 		shell::open_ssh_tunnel -n "$server_file" "$local_port" "$target_addr" "$target_port" "$server_user" "$server_addr" "$server_port" "$alive_interval" "$timeout"
 	else
-		shell::colored_echo "INFO: Opening SSH tunnel for '$server_desc' at $server_addr:$server_port" 46
+		shell::stdout "INFO: Opening SSH tunnel for '$server_desc' at $server_addr:$server_port" 46
 		shell::open_ssh_tunnel "$server_file" "$local_port" "$target_addr" "$target_port" "$server_user" "$server_addr" "$server_port" "$alive_interval" "$timeout"
 	fi
 }
@@ -1590,7 +1590,7 @@ shell::fzf_open_workspace_ssh_tunnel() {
 	# If no workspace was selected, we print an error message and return
 	# This ensures the user knows they need to select a workspace
 	if [ -z "$workspace" ]; then
-		shell::colored_echo "ERR: No workspace selected." 196
+		shell::stdout "ERR: No workspace selected." 196
 		return 0
 	fi
 
@@ -1599,7 +1599,7 @@ shell::fzf_open_workspace_ssh_tunnel() {
 	# If the .ssh directory does not exist, we print an error message and return
 	local ssh_dir="$SHELL_CONF_WORKING_WORKSPACE/$workspace/.ssh"
 	if [ ! -d "$ssh_dir" ]; then
-		shell::colored_echo "ERR: Workspace '$workspace' has no .ssh directory." 196
+		shell::stdout "ERR: Workspace '$workspace' has no .ssh directory." 196
 		return 0
 	fi
 
@@ -1612,7 +1612,7 @@ shell::fzf_open_workspace_ssh_tunnel() {
 		fzf --border=rounded --ansi --layout=reverse --pointer="▶" --marker="✓" --prompt="Select SSH config file: ")
 
 	if [ -z "$conf_file" ]; then
-		shell::colored_echo "ERR: No config file selected." 196
+		shell::stdout "ERR: No config file selected." 196
 		return 0
 	fi
 
@@ -1620,7 +1620,7 @@ shell::fzf_open_workspace_ssh_tunnel() {
 	local section
 	section=$(printf "dev\nuat" | fzf --prompt="Select section: ")
 	if [ -z "$section" ]; then
-		shell::colored_echo "ERR: No section selected." 196
+		shell::stdout "ERR: No section selected." 196
 		return 0
 	fi
 
@@ -1672,17 +1672,17 @@ shell::tune_workspace_ssh_tunnel() {
 
 	local workspace="$1"
 	if [ -z "$workspace" ]; then
-		shell::colored_echo "ERR: Workspace name is required." 196
+		shell::stdout "ERR: Workspace name is required." 196
 		return 0
 	fi
 	local conf_name="$2"
 	if [ -z "$conf_name" ]; then
-		shell::colored_echo "ERR: Configuration name is required." 196
+		shell::stdout "ERR: Configuration name is required." 196
 		return 0
 	fi
 	local section="$3"
 	if [ -z "$section" ]; then
-		shell::colored_echo "ERR: Section name is required." 196
+		shell::stdout "ERR: Section name is required." 196
 		return 0
 	fi
 
@@ -1696,7 +1696,7 @@ shell::tune_workspace_ssh_tunnel() {
 	# We check if the base directory for workspaces exists
 	# If it does not exist, we print an error message and return
 	if [ ! -f "$conf_path" ]; then
-		shell::colored_echo "ERR: Configuration file '$conf_path' not found." 196
+		shell::stdout "ERR: Configuration file '$conf_path' not found." 196
 		return 0
 	fi
 
@@ -1704,7 +1704,7 @@ shell::tune_workspace_ssh_tunnel() {
 	# We use shell::exist_ini_section to check if the specified section exists in the configuration file
 	# If the section does not exist, we print an error message and return
 	if ! shell::exist_ini_section "$conf_path" "$section" >/dev/null 2>&1; then
-		shell::colored_echo "ERR: Section ('$section') not found in file: $file" 196
+		shell::stdout "ERR: Section ('$section') not found in file: $file" 196
 		return 0
 	fi
 
@@ -1719,10 +1719,10 @@ shell::tune_workspace_ssh_tunnel() {
 	# If dry-run mode is enabled, we print the command instead of executing it
 	# This allows us to see what would be done without actually opening the SSH tunnel
 	if [ "$dry_run" = "true" ]; then
-		shell::colored_echo "DEBUG: Tunning SSH tunnel for '$server_desc' at $server_addr:$server_port" 244
+		shell::stdout "DEBUG: Tunning SSH tunnel for '$server_desc' at $server_addr:$server_port" 244
 		shell::tune_ssh_tunnel -n "$server_file" "$server_user" "$server_addr" "$server_port"
 	else
-		shell::colored_echo "INFO: Tunning SSH tunnel for '$server_desc' at $server_addr:$server_port" 46
+		shell::stdout "INFO: Tunning SSH tunnel for '$server_desc' at $server_addr:$server_port" 46
 		shell::tune_ssh_tunnel "$server_file" "$server_user" "$server_addr" "$server_port"
 	fi
 }
@@ -1764,7 +1764,7 @@ shell::fzf_tune_workspace_ssh_tunnel() {
 	# If no workspace was selected, we print an error message and return
 	# This ensures the user knows they need to select a workspace
 	if [ -z "$workspace" ]; then
-		shell::colored_echo "ERR: No workspace selected." 196
+		shell::stdout "ERR: No workspace selected." 196
 		return 0
 	fi
 
@@ -1773,7 +1773,7 @@ shell::fzf_tune_workspace_ssh_tunnel() {
 	# If the .ssh directory does not exist, we print an error message and return
 	local ssh_dir="$SHELL_CONF_WORKING_WORKSPACE/$workspace/.ssh"
 	if [ ! -d "$ssh_dir" ]; then
-		shell::colored_echo "ERR: Workspace '$workspace' has no .ssh directory." 196
+		shell::stdout "ERR: Workspace '$workspace' has no .ssh directory." 196
 		return 0
 	fi
 
@@ -1786,7 +1786,7 @@ shell::fzf_tune_workspace_ssh_tunnel() {
 		fzf --border=rounded --ansi --layout=reverse --pointer="▶" --marker="✓" --prompt="Select SSH config file: ")
 
 	if [ -z "$conf_file" ]; then
-		shell::colored_echo "ERR: No config file selected." 196
+		shell::stdout "ERR: No config file selected." 196
 		return 0
 	fi
 
@@ -1794,7 +1794,7 @@ shell::fzf_tune_workspace_ssh_tunnel() {
 	local section
 	section=$(printf "dev\nuat" | fzf --prompt="Select section: ")
 	if [ -z "$section" ]; then
-		shell::colored_echo "ERR: No section selected." 196
+		shell::stdout "ERR: No section selected." 196
 		return 0
 	fi
 

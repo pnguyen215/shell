@@ -74,7 +74,7 @@ shell::populate_gemini_conf() {
 		shell::write_ini "$file" "$section" "PRESENCE_PENALTY" "${default_keys[PRESENCE_PENALTY]}"
 	fi
 
-	shell::colored_echo "INFO: Gemini configuration populated at '$file'" 46
+	shell::stdout "INFO: Gemini configuration populated at '$file'" 46
 }
 
 # shell::fzf_view_gemini_conf function
@@ -89,7 +89,7 @@ shell::populate_gemini_conf() {
 shell::fzf_view_gemini_conf() {
 	local file="$SHELL_KEY_CONF_AGENT_GEMINI_FILE"
 	if [ ! -f "$file" ]; then
-		shell::colored_echo "ERR: Gemini config file not found at '$file'" 196
+		shell::stdout "ERR: Gemini config file not found at '$file'" 196
 		return 1
 	fi
 	shell::fzf_view_ini_viz "$file"
@@ -107,7 +107,7 @@ shell::fzf_view_gemini_conf() {
 shell::fzf_edit_gemini_conf() {
 	local file="$SHELL_KEY_CONF_AGENT_GEMINI_FILE"
 	if [ ! -f "$file" ]; then
-		shell::colored_echo "ERR: Gemini config file not found at '$file'" 196
+		shell::stdout "ERR: Gemini config file not found at '$file'" 196
 		return 1
 	fi
 	shell::fzf_edit_ini_viz "$file"
@@ -175,7 +175,7 @@ shell::make_gemini_request() {
 
 	# Check if the Gemini configuration file exists
 	if [ ! -f "$SHELL_KEY_CONF_AGENT_GEMINI_FILE" ]; then
-		shell::colored_echo "ERR: Gemini config file not found at '$SHELL_KEY_CONF_AGENT_GEMINI_FILE'" 196
+		shell::stdout "ERR: Gemini config file not found at '$SHELL_KEY_CONF_AGENT_GEMINI_FILE'" 196
 		return 1
 	fi
 
@@ -186,14 +186,14 @@ shell::make_gemini_request() {
 	# Check if API_KEY is set in the Gemini config file
 	# If API_KEY is not set, it defaults to an empty string
 	if [ -z "$api_key" ]; then
-		shell::colored_echo "ERR: API_KEY config not found in Gemini config file ($SHELL_KEY_CONF_AGENT_GEMINI_FILE)." 196
+		shell::stdout "ERR: API_KEY config not found in Gemini config file ($SHELL_KEY_CONF_AGENT_GEMINI_FILE)." 196
 		return 1
 	fi
 
 	# Check if MODEL is set in the Gemini config file
 	# If MODEL is not set, it defaults to "gemini-2.0-flash"
 	if [ -z "$model" ]; then
-		shell::colored_echo "ERR: MODEL config not found in Gemini config file ($SHELL_KEY_CONF_AGENT_GEMINI_FILE)." 196
+		shell::stdout "ERR: MODEL config not found in Gemini config file ($SHELL_KEY_CONF_AGENT_GEMINI_FILE)." 196
 		return 1
 	fi
 
@@ -202,7 +202,7 @@ shell::make_gemini_request() {
 
 	# Check if the prompt file exists
 	if [ -z "$payload" ]; then
-		shell::colored_echo "ERR: Prompt request is required" 196
+		shell::stdout "ERR: Prompt request is required" 196
 		return 1
 	fi
 
@@ -227,14 +227,14 @@ shell::make_gemini_request() {
 	# Check if the response is empty
 	# If the response is empty, it indicates that there was no response from the Gemini API
 	if [ $? -ne 0 ]; then
-		shell::colored_echo "ERR: Failed to connect to Gemini API." 196
+		shell::stdout "ERR: Failed to connect to Gemini API." 196
 		return 1
 	fi
 
 	# Check if the response is empty
 	# If the response is empty, it indicates that there was no response from the Gemini API
 	if [ -z "$response" ]; then
-		shell::colored_echo "ERR: No response from Gemini API." 196
+		shell::stdout "ERR: No response from Gemini API." 196
 		return 1
 	fi
 
@@ -242,12 +242,12 @@ shell::make_gemini_request() {
 	if echo "$response" | jq -e '.error' >/dev/null 2>&1; then
 		local error_message
 		error_message=$(echo "$response" | jq -r '.error.message')
-		shell::colored_echo "ERR: Gemini API error: $error_message" 196
+		shell::stdout "ERR: Gemini API error: $error_message" 196
 		return 1
 	fi
 
 	if [ "$debugging" = "true" ]; then
-		shell::colored_echo "DEBUG: Response from Gemini API: $response" 244
+		shell::stdout "DEBUG: Response from Gemini API: $response" 244
 	fi
 
 	# Sanitize the JSON string by removing problematic characters and re-formatting
@@ -265,18 +265,18 @@ shell::make_gemini_request() {
 	sanitized_json=$(echo "$sanitized_json" | sed -e 's/[[:space:]]\+/ /g')
 
 	if [ "$debugging" = "true" ]; then
-		shell::colored_echo "DEBUG: Sanitized JSON by Gemini response: $sanitized_json" 244
+		shell::stdout "DEBUG: Sanitized JSON by Gemini response: $sanitized_json" 244
 	fi
 
 	# Try to parse the sanitized JSON
 	local parsed_json
 	parsed_json=$(echo "$sanitized_json" | jq '.' 2>/dev/null)
 
-	# shell::colored_echo "DEBUG: Parsed JSON: $parsed_json" 244
+	# shell::stdout "DEBUG: Parsed JSON: $parsed_json" 244
 
 	# Check if the parsed JSON is valid
 	if [ $? -ne 0 ]; then
-		shell::colored_echo "ERR: Failed to parse JSON response." 196
+		shell::stdout "ERR: Failed to parse JSON response." 196
 		return 1
 	fi
 
@@ -285,7 +285,7 @@ shell::make_gemini_request() {
 	text_json_raw=$(echo "$parsed_json" | jq -r '.candidates[0].content.parts[0].text')
 
 	if [ "$debugging" = "true" ]; then
-		shell::colored_echo "DEBUG: Raw text JSON content by Gemini response: $text_json_raw" 244
+		shell::stdout "DEBUG: Raw text JSON content by Gemini response: $text_json_raw" 244
 	fi
 
 	# Sanitize the embedded JSON text to handle escaped quotes and other characters
@@ -298,7 +298,7 @@ shell::make_gemini_request() {
 	text_json_clean=$(echo "$text_json_raw" | sed 's/\\"/"/g' | sed 's/\\n/\n/g' | sed 's/\\t/\t/g' | sed 's/\\r/\r/g')
 
 	if [ "$debugging" = "true" ]; then
-		shell::colored_echo "DEBUG: Cleaned text JSON content by Gemini response: $text_json_clean" 244
+		shell::stdout "DEBUG: Cleaned text JSON content by Gemini response: $text_json_clean" 244
 	fi
 
 	# Parse the cleaned embedded JSON
@@ -306,8 +306,8 @@ shell::make_gemini_request() {
 	parsed_embedded_json=$(echo "$text_json_clean" | jq '.' 2>/dev/null)
 
 	if [ $? -ne 0 ]; then
-		shell::colored_echo "ERR: Failed to parse embedded JSON after sanitization by Gemini response." 196
-		shell::colored_echo "DEBUG: Problematic JSON content by Gemini response:" 244
+		shell::stdout "ERR: Failed to parse embedded JSON after sanitization by Gemini response." 196
+		shell::stdout "DEBUG: Problematic JSON content by Gemini response:" 244
 		echo "$text_json_clean"
 		shell::clip_value "$text_json_clean"
 		return 1
@@ -364,14 +364,14 @@ shell::eval_gemini_en_vi() {
 	local sentence_english="$1"
 	sentence_english=$(shell::sanitize_text "$sentence_english")
 	if [ -z "$sentence_english" ]; then
-		shell::colored_echo "ERR: Sentence cannot be empty." 196
+		shell::stdout "ERR: Sentence cannot be empty." 196
 		return 1
 	fi
 	local prompt_file="$LLM_PROMPTS_DIR/gemini/en_eval_vi_prompt_request_v1.txt"
 
 	# Check if the prompt file exists
 	if [ ! -f "$prompt_file" ]; then
-		shell::colored_echo "ERR: Prompt file not found at '$prompt_file'" 196
+		shell::stdout "ERR: Prompt file not found at '$prompt_file'" 196
 		return 1
 	fi
 
@@ -388,7 +388,7 @@ shell::eval_gemini_en_vi() {
 
 	# Check if payload is empty or invalid
 	if [ -z "$payload" ]; then
-		shell::colored_echo "ERR: Failed to generate payload from prompt template" 196
+		shell::stdout "ERR: Failed to generate payload from prompt template" 196
 		return 1
 	fi
 
@@ -407,7 +407,7 @@ shell::eval_gemini_en_vi() {
 
 		# Check if the response is empty or if the command failed
 		if [ $? -ne 0 ] || [ -z "$response" ]; then
-			shell::colored_echo "ERR: Failed to get response from Gemini (sgemcheck): $response." 196
+			shell::stdout "ERR: Failed to get response from Gemini (sgemcheck): $response." 196
 			return 1
 		fi
 
@@ -415,7 +415,7 @@ shell::eval_gemini_en_vi() {
 		# If debugging is enabled, it prints the response from Gemini
 		# This is useful for debugging purposes to see the raw response from the API
 		if [ "$debugging" = "true" ]; then
-			shell::colored_echo "$response" 244
+			shell::stdout "$response" 244
 			return 0
 		fi
 
@@ -423,7 +423,7 @@ shell::eval_gemini_en_vi() {
 		# Get the first object as compact JSON
 		local item_json=$(echo "$response" | jq -c '.[0]')
 		if [ -z "$item_json" ] || [ "$item_json" = "null" ]; then
-			shell::colored_echo "ERR: No valid data found in Gemini response: $response." 196
+			shell::stdout "ERR: No valid data found in Gemini response: $response." 196
 			return 1
 		fi
 
@@ -451,7 +451,7 @@ shell::eval_gemini_en_vi() {
 			if [ "$os_type" = "macos" ]; then
 				# Convert to percentage (multiply by 100 and round)
 				local percentage=$(echo "$native_usage_probability" | awk '{printf "%.0f", $1 * 100}')
-				# shell::colored_echo "INFO: Native usage probability: $percentage%" 46
+				# shell::stdout "INFO: Native usage probability: $percentage%" 46
 				# Use arithmetic evaluation for comparison (more portable)
 				if [ "$percentage" -gt 75 ] 2>/dev/null; then
 					native_usage_probability_formatted="↑${percentage}%"
@@ -463,7 +463,7 @@ shell::eval_gemini_en_vi() {
 			elif [ "$os_type" = "linux" ]; then
 				local percentage_float=$(echo "$native_usage_probability * 100" | bc -l 2>/dev/null)
 				local percentage=$(printf "%.0f" "$percentage_float" 2>/dev/null)
-				# shell::colored_echo "INFO: Native usage probability: $percentage%" 46
+				# shell::stdout "INFO: Native usage probability: $percentage%" 46
 				if [[ $percentage =~ ^[0-9]+$ ]] && [ "$percentage" -gt 75 ]; then
 					native_usage_probability_formatted="↑${percentage}%"
 				elif [[ $percentage =~ ^[0-9]+$ ]] && [ "$percentage" -le 75 ]; then
@@ -475,20 +475,20 @@ shell::eval_gemini_en_vi() {
 		fi
 
 		# Display the suggested correction and its details
-		shell::colored_echo "[$native_usage_probability_formatted] $suggested_correction" 255
-		shell::colored_echo "[$native_usage_probability] $vietnamese_translation" 255
+		shell::stdout "[$native_usage_probability_formatted] $suggested_correction" 255
+		shell::stdout "[$native_usage_probability] $vietnamese_translation" 255
 		for i in $(seq 0 $((natural_alternatives_count - 1))); do
 			local alt=$(echo "$item_json" | jq -r ".natural_alternatives[$i] // empty")
 			if [ -n "$alt" ]; then
-				shell::colored_echo "[alt=$((i + 1))]: $alt" 244
+				shell::stdout "[alt=$((i + 1))]: $alt" 244
 			fi
 		done
 		for i in $(seq 0 $((example_sentences_count - 1))); do
 			local en_sentence=$(echo "$item_json" | jq -r ".example_sentences[$i].en // empty")
 			local vi_sentence=$(echo "$item_json" | jq -r ".example_sentences[$i].vi // empty")
 			if [ -n "$en_sentence" ]; then
-				shell::colored_echo "[seg=$((i + 1))]: $en_sentence" 244
-				shell::colored_echo "[svi=$((i + 1))]: $vi_sentence" 244
+				shell::stdout "[seg=$((i + 1))]: $en_sentence" 244
+				shell::stdout "[svi=$((i + 1))]: $vi_sentence" 244
 			fi
 		done
 		shell::clip_value "$suggested_correction"
@@ -542,14 +542,14 @@ shell::eval_gemini_vi_en() {
 	local sentence_vietnamese="$1"
 	sentence_vietnamese=$(shell::sanitize_text "$sentence_vietnamese")
 	if [ -z "$sentence_vietnamese" ]; then
-		shell::colored_echo "ERR: Sentence cannot be empty." 196
+		shell::stdout "ERR: Sentence cannot be empty." 196
 		return 1
 	fi
 	local prompt_file="$LLM_PROMPTS_DIR/gemini/vi_to_en_prompt_request_v1.txt"
 
 	# Check if the prompt file exists
 	if [ ! -f "$prompt_file" ]; then
-		shell::colored_echo "ERR: Prompt file not found at '$prompt_file'" 196
+		shell::stdout "ERR: Prompt file not found at '$prompt_file'" 196
 		return 1
 	fi
 
@@ -569,7 +569,7 @@ shell::eval_gemini_vi_en() {
 
 		# Check if the response is empty or if the command failed
 		if [ $? -ne 0 ] || [ -z "$response" ]; then
-			shell::colored_echo "ERR: Failed to get response from Gemini (sgemviconv): $response." 196
+			shell::stdout "ERR: Failed to get response from Gemini (sgemviconv): $response." 196
 			return 1
 		fi
 
@@ -577,7 +577,7 @@ shell::eval_gemini_vi_en() {
 		# If debugging is enabled, it prints the response from Gemini
 		# This is useful for debugging purposes to see the raw response from the API
 		if [ "$debugging" = "true" ]; then
-			shell::colored_echo "$response" 244
+			shell::stdout "$response" 244
 			return 0
 		fi
 
@@ -585,7 +585,7 @@ shell::eval_gemini_vi_en() {
 		# Get the first object as compact JSON
 		local item_json=$(echo "$response" | jq -c '.[0]')
 		if [ -z "$item_json" ] || [ "$item_json" = "null" ]; then
-			shell::colored_echo "ERR: No valid data found in Gemini response: $response." 196
+			shell::stdout "ERR: No valid data found in Gemini response: $response." 196
 			return 1
 		fi
 
@@ -612,7 +612,7 @@ shell::eval_gemini_vi_en() {
 			if [ "$os_type" = "macos" ]; then
 				# Convert to percentage (multiply by 100 and round)
 				local percentage=$(echo "$native_usage_probability" | awk '{printf "%.0f", $1 * 100}')
-				# shell::colored_echo "INFO: Native usage probability: $percentage%" 46
+				# shell::stdout "INFO: Native usage probability: $percentage%" 46
 				# Use arithmetic evaluation for comparison (more portable)
 				if [ "$percentage" -gt 75 ] 2>/dev/null; then
 					native_usage_probability_formatted="↑${percentage}%"
@@ -624,7 +624,7 @@ shell::eval_gemini_vi_en() {
 			elif [ "$os_type" = "linux" ]; then
 				local percentage_float=$(echo "$native_usage_probability * 100" | bc -l 2>/dev/null)
 				local percentage=$(printf "%.0f" "$percentage_float" 2>/dev/null)
-				# shell::colored_echo "INFO: Native usage probability: $percentage%" 46
+				# shell::stdout "INFO: Native usage probability: $percentage%" 46
 				if [[ $percentage =~ ^[0-9]+$ ]] && [ "$percentage" -gt 75 ]; then
 					native_usage_probability_formatted="↑${percentage}%"
 				elif [[ $percentage =~ ^[0-9]+$ ]] && [ "$percentage" -le 75 ]; then
@@ -636,19 +636,19 @@ shell::eval_gemini_vi_en() {
 		fi
 
 		# Display the suggested correction and its details
-		shell::colored_echo "[$native_usage_probability_formatted] $translated_english" 255
+		shell::stdout "[$native_usage_probability_formatted] $translated_english" 255
 		for i in $(seq 0 $((natural_alternatives_count - 1))); do
 			local alt=$(echo "$item_json" | jq -r ".natural_alternatives[$i] // empty")
 			if [ -n "$alt" ]; then
-				shell::colored_echo "[alt=$((i + 1))]: $alt" 244
+				shell::stdout "[alt=$((i + 1))]: $alt" 244
 			fi
 		done
 		for i in $(seq 0 $((example_sentences_count - 1))); do
 			local en_sentence=$(echo "$item_json" | jq -r ".example_sentences[$i].en // empty")
 			local vi_sentence=$(echo "$item_json" | jq -r ".example_sentences[$i].vi // empty")
 			if [ -n "$en_sentence" ]; then
-				shell::colored_echo "[seg=$((i + 1))]: $en_sentence" 244
-				shell::colored_echo "[svi=$((i + 1))]: $vi_sentence" 244
+				shell::stdout "[seg=$((i + 1))]: $en_sentence" 244
+				shell::stdout "[svi=$((i + 1))]: $vi_sentence" 244
 			fi
 		done
 		shell::clip_value "$translated_english"

@@ -69,7 +69,7 @@ shell::goto() {
 			;;
 		*)
 			if [ $# != 1 ]; then
-				shell::colored_echo "🙈 What?!" 3
+				shell::stdout "🙈 What?!" 3
 			else
 				shell::go_bookmark $1
 			fi

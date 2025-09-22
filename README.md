@@ -103,9 +103,9 @@ Core functions for system management, version control, and basic operations.
   Identifies and returns the current operating system type as a standardized string (e.g., "linux" or "macos").  
   _Example:_ `shell::get_os_type`
 
-- **`shell::colored_echo`**  
+- **`shell::stdout`**  
   Outputs text to the terminal with customizable foreground colors using `tput` and ANSI escape sequences. Requires a message and a color code (e.g., 46 for cyan).  
-  _Example:_ `shell::colored_echo "Task completed" 46`
+  _Example:_ `shell::stdout "Task completed" 46`
 
 - **`shell::run_cmd`**  
   Executes a specified command and logs it to the terminal for tracking purposes.  
@@ -935,9 +935,9 @@ Process management, port checking, and system analysis tools.
   Identifies and returns the current operating system type as a standardized string (e.g., "linux" or "macos").  
   _Example:_ `shell::get_os_type`
 
-- **`shell::colored_echo`**  
+- **`shell::stdout`**  
   Outputs text to the terminal with customizable foreground colors using `tput` and ANSI escape sequences. Requires a message and a color code (e.g., 46 for cyan).  
-  _Example:_ `shell::colored_echo "Task completed" 46`
+  _Example:_ `shell::stdout "Task completed" 46`
 
 - **`shell::run_cmd`**  
   Executes a specified command and logs it to the terminal for tracking purposes.  

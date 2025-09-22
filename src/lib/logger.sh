@@ -87,9 +87,9 @@ shell::logger::fmt() {
 
 	if shell::logger::can "$level"; then
 		if [[ "$stream" == "stderr" ]]; then
-			shell::colored_echo "$message" "$color" >&2
+			shell::stdout "$message" "$color" >&2
 		else
-			shell::colored_echo "$message" "$color"
+			shell::stdout "$message" "$color"
 		fi
 	fi
 }
@@ -251,7 +251,7 @@ shell::logger::usage() {
 	if ! shell::logger::can "INFO"; then
 		return 0
 	fi
-	shell::colored_echo "USAGE: $title" 39
+	shell::stdout "USAGE: $title" 39
 }
 
 # shell::logger::item function
@@ -276,10 +276,10 @@ shell::logger::item() {
 	fi
 
 	if [[ -n "$description" ]]; then
-		shell::colored_echo "  $command" 245
-		shell::colored_echo "    $description" 250
+		shell::stdout "  $command" 245
+		shell::stdout "    $description" 250
 	else
-		shell::colored_echo "  $command" 245
+		shell::stdout "  $command" 245
 	fi
 }
 
@@ -311,16 +311,16 @@ shell::logger::option() {
 
 	# Display OPTIONS label if this is the first option call
 	if [[ -z "$_SHELL_LOGGER_OPTIONS_SHOWN" ]]; then
-		shell::colored_echo "OPTIONS:" 39
+		shell::stdout "OPTIONS:" 39
 		export _SHELL_LOGGER_OPTIONS_SHOWN=1
 	fi
 
 	if [[ -n "$description" ]]; then
 		local formatted_line
 		formatted_line=$(printf "    %-20s %s" "$option" "$description")
-		shell::colored_echo "$formatted_line" 250
+		shell::stdout "$formatted_line" 250
 	else
-		shell::colored_echo "    $option" 250
+		shell::stdout "    $option" 250
 	fi
 }
 
@@ -345,7 +345,7 @@ shell::logger::example() {
 		return 1
 	fi
 
-	shell::colored_echo "Eg:" 42
+	shell::stdout "Eg:" 42
 	shell::logger::cmd "$example"
 }
 
@@ -392,7 +392,7 @@ shell::logger::indent() {
 		indent+=" "
 	done
 
-	shell::colored_echo "${indent}${message}" "$color"
+	shell::stdout "${indent}${message}" "$color"
 }
 
 # shell::logger::step function
@@ -416,7 +416,7 @@ shell::logger::step() {
 		return 0
 	fi
 
-	shell::colored_echo "STEP $step_number: $description" 33
+	shell::stdout "STEP $step_number: $description" 33
 }
 
 # shell::logger::step_note function
@@ -438,7 +438,7 @@ shell::logger::step_note() {
 	if ! shell::logger::can "INFO"; then
 		return 0
 	fi
-	shell::colored_echo "  NOTE: $note" 248
+	shell::stdout "  NOTE: $note" 248
 }
 
 # shell::logger::section function
@@ -460,9 +460,9 @@ shell::logger::section() {
 		return 0
 	fi
 	local separator=$(printf '%.0s=' {1..60})
-	shell::colored_echo "$separator" 240
-	shell::colored_echo "  $title" 39
-	shell::colored_echo "$separator" 240
+	shell::stdout "$separator" 240
+	shell::stdout "  $title" 39
+	shell::stdout "$separator" 240
 }
 
 # shell::logger::cmd function
@@ -486,9 +486,9 @@ shell::logger::cmd() {
 		return 0
 	fi
 
-	# shell::colored_echo "  $ $command" 111
-	# shell::colored_echo "  [▸] $command" 111
-	shell::colored_echo "  ▶ $command" 111
+	# shell::stdout "  $ $command" 111
+	# shell::stdout "  [▸] $command" 111
+	shell::stdout "  ▶ $command" 111
 }
 
 # shell::logger::cmd_copy function
@@ -588,9 +588,9 @@ shell::logger::exec_check() {
 
 	# Log result based on exit code
 	if [[ $exit_code -eq 0 ]]; then
-		shell::colored_echo "  [✓] $success_msg" 46
+		shell::stdout "  [✓] $success_msg" 46
 	else
-		shell::colored_echo "  [✗] $failure_msg (exit code: $exit_code)" 196
+		shell::stdout "  [✗] $failure_msg (exit code: $exit_code)" 196
 	fi
 
 	return $exit_code
@@ -674,9 +674,9 @@ shell::logger::exec_safe_check() {
 
 	# Log result based on exit code
 	if [[ $exit_code -eq 0 ]]; then
-		shell::colored_echo "  [✓] $success_msg" 46
+		shell::stdout "  [✓] $success_msg" 46
 	else
-		shell::colored_echo "  [✗] $failure_msg (exit code: $exit_code)" 196
+		shell::stdout "  [✗] $failure_msg (exit code: $exit_code)" 196
 	fi
 
 	return $exit_code
