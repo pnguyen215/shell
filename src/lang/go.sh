@@ -108,9 +108,9 @@ shell::set_go_privates() {
 	fi
 
 	# Join all repositories with a comma
-	local repositories_by_comma="$*"
+	local repositories="$*"
 
-	if [ -z "$repositories_by_comma" ]; then
+	if [ -z "$repositories" ]; then
 		shell::logger::error "No repositories provided."
 		return $RETURN_FAILURE
 	fi
@@ -119,30 +119,20 @@ shell::set_go_privates() {
 	unset IFS
 
 	# Check if GOPRIVATE is already set
-	local existing_go_private=$(go env GOPRIVATE)
+	local exists_privates=$(go env GOPRIVATE)
 
-	if [ -n "$existing_go_private" ]; then
-		repositories_by_comma="$existing_go_private,$repositories_by_comma"
+	if [ -n "$exists_privates" ]; then
+		repositories="$exists_privates,$repositories"
 	fi
 
-	local cmd="go env -w GOPRIVATE=\"$repositories_by_comma\""
+	local cmd="go env -w GOPRIVATE=\"$repositories\""
 
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::cmd_copy "$cmd"
 		return $RETURN_SUCCESS
-	else
-		shell::async "$cmd" &
-		local pid=$!
-		wait $pid
-
-		if [ $? -eq 0 ]; then
-			shell::logger::info "GOPRIVATE set successfully to: $repositories_by_comma"
-			return $RETURN_SUCCESS
-		else
-			shell::logger::error "Failed to set GOPRIVATE."
-			return $RETURN_FAILURE
-		fi
 	fi
+
+	shell::logger::exec_check "$cmd"
 }
 
 # shell::fzf_remove_go_privates function
