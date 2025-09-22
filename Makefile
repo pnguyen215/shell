@@ -1,7 +1,6 @@
-.PHONY: run test
+LOG_DIR=logs
+.PHONY: run test tree
 
-# ==============================================================================
-# Start Main
 run:
 	zsh ./src/shell.sh
 test:
@@ -13,3 +12,6 @@ test:
 	else \
 		echo "Some tests failed."; exit 1; \
 	fi
+tree:
+	mkdir -p $(LOG_DIR)
+	tree -I ".gradle|.idea|build|logs|.vscode|.git|.github" > ./$(LOG_DIR)/shell_source_oss.txt
