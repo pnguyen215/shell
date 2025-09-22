@@ -343,7 +343,7 @@ shell::create_go_app() {
 	if [ -n "$target_folder" ]; then
 		shell::logger::exec_check "cd \"$original_dir\""
 	fi
-	shell::logger::info "Go '$module_name' application initialized successfully in $target_folder"
+	shell::logger::info "Go '$module_name' application initialized successfully in '$target_folder'"
 	return $RETURN_SUCCESS
 }
 
