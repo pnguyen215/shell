@@ -2,7 +2,7 @@
 # uninstall.sh
 
 echo "♻️ Uninstalling shell..."
-local shell_pkg="$HOME/shell"
+shell_pkg="$HOME/shell"
 
 # Remove the shell package if it exists
 if [ -d "$shell_pkg" ]; then
