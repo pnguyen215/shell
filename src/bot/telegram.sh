@@ -60,14 +60,12 @@ shell::send_telegram_message() {
 		return $RETURN_INVALID
 	fi
 
-	local cmd="curl -s -X POST \"https://api.telegram.org/bot${token}/sendMessage\" -d \"chat_id=${chatID}\" -d \"parse_mode=markdown\" -d \"text=${message}\" >/dev/null"
-
-	# Execute the command in dry-run mode or actually send the message.
 	if [ "$dry_run" = "true" ]; then
-		shell::logger::cmd_copy "$cmd &"
+		local cmd="curl -s -X POST \"https://api.telegram.org/bot${token}/sendMessage\" -d \"chat_id=${chatID}\" -d \"parse_mode=markdown\" -d \"text=${message}\""
+		shell::logger::cmd_copy "$cmd"
 	else
-		shell::async "$cmd"
-		shell::logger::success "Telegram message sent"
+		local cmd="curl -s -X POST \"https://api.telegram.org/bot${token}/sendMessage\" -d \"chat_id=${chatID}\" -d \"parse_mode=markdown\" -d \"text=${message}\" >/dev/null"
+		shell::logger::exec_check "$cmd"
 	fi
 
 	return $RETURN_SUCCESS
