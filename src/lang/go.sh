@@ -361,7 +361,7 @@ shell::create_go_app() {
 shell::add_go_app_settings() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
-		shell::logger::section "Go Settings"
+		shell::logger::section "Go Project Settings"
 		shell::logger::info "Add Go application settings"
 		shell::logger::indent 0 "go-project/"
 		shell::logger::indent 1 "docs/"
