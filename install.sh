@@ -73,8 +73,6 @@ line="source $shell_pkg/src/shell.sh"
 if ! grep -qF "$line" "$shell_conf" 2>/dev/null; then
 	echo "$line" >>"$shell_conf"
 	echo "INFO: Added shell to $shell_conf"
-else
-	echo "WARN: Shell already sourced in $shell_conf"
 fi
 
 echo "INFO: shell installed. Restart your terminal or run 'source $shell_conf' or 'source ~/.bashrc' to apply changes."
