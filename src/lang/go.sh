@@ -291,69 +291,56 @@ shell::create_go_app() {
 	fi
 
 	local target_folder="$2"
-	local original_dir="$PWD" # Save the original directory
-	local module_name="$app_name"
 	local is_url="false"
+	local original_dir="$PWD"
+	local module_name="$app_name"
 
-	# Check if the app name is a URL
+	# Check if the app name is a URL, if so, extract the module name
+	# Remove any trailing slashes from the module name
 	if [[ "$app_name" =~ ^(http:\/\/|https:\/\/) ]]; then
 		is_url="true"
-		# If it's a URL, extract the module name
 		module_name="${module_name#http://}"
 		module_name="${module_name#https://}"
-		module_name="${module_name%/}" # Remove trailing slashes
-	fi
-
-	# If a target folder is specified, create it and change directory
-	if [ -n "$target_folder" ]; then
-		shell::logger::warn "Ensuring target directory exists: $target_folder"
-		if [ "$dry_run" = "true" ]; then
-			shell::logger::cmd_copy "shell::create_directory_if_not_exists \"$target_folder\""
-			shell::logger::cmd_copy "cd \"$target_folder\""
-		else
-			shell::create_directory_if_not_exists "$target_folder"
-			if [ $? -ne 0 ]; then
-				shell::logger::error "Could not create or access target directory '$target_folder'."
-				return $RETURN_FAILURE
-			fi
-			cd "$target_folder" || {
-				shell::logger::error "Could not change to target directory '$target_folder'."
-				return $RETURN_FAILURE
-			}
-		fi
+		module_name="${module_name%/}"
 	fi
 
 	local init_cmd="go mod init $module_name"
 	local tidy_cmd="go mod tidy"
 
-	# Execute go mod init
-	shell::logger::debug "Initializing Go module: $module_name"
 	if [ "$dry_run" = "true" ]; then
-		shell::logger::cmd_copy "$init_cmd"
-	else
-		shell::run_cmd_eval "$init_cmd"
+		shell::logger::section "Create Go application"
+		shell::logger::step 1 "Ensure target directory exists"
+		shell::logger::cmd "shell::mkdir \"$target_folder\""
+		shell::logger::step 2 "Change to target directory"
+		shell::logger::cmd "cd \"$target_folder\""
+		shell::logger::step 3 "Initialize Go module"
+		shell::logger::cmd "$init_cmd"
+		shell::logger::step 4 "Tidy Go dependencies"
+		shell::logger::cmd "$tidy_cmd"
+		return $RETURN_SUCCESS
 	fi
 
-	# Execute go mod tidy
-	shell::logger::debug "Tidying Go dependencies"
-	if [ "$dry_run" = "true" ]; then
-		shell::logger::cmd_copy "$tidy_cmd"
-	else
-		shell::run_cmd_eval "$tidy_cmd"
+	# If the target folder is not specified, use the current directory
+	if [ -z "$target_folder" ]; then
+		target_folder="$PWD"
 	fi
+
+	# If a target folder is specified, create it and change directory
+	if [ -n "$target_folder" ] && [ "$target_folder" != "$PWD" ]; then
+		shell::mkdir "$target_folder"
+		shell::logger::exec_check "cd \"$target_folder\""
+	fi
+
+	shell::logger::debug "Initializing Go module: $module_name"
+	shell::logger::exec_check "$init_cmd"
+	shell::logger::debug "Tidying Go dependencies"
+	shell::logger::exec_check "$tidy_cmd"
 
 	# Change back to the original directory if a target folder was used
 	if [ -n "$target_folder" ]; then
-		if [ "$dry_run" = "true" ]; then
-			shell::logger::cmd_copy "cd \"$original_dir\""
-		else
-			cd "$original_dir" || {
-				shell::logger::warn "Could not change back to original directory '$original_dir'."
-				return $RETURN_FAILURE
-			}
-		fi
+		shell::logger::exec_check "cd \"$original_dir\""
 	fi
-	shell::logger::info "Go application initialized successfully."
+	shell::logger::info "Go '$module_name' application initialized successfully in $target_folder"
 	return $RETURN_SUCCESS
 }
 

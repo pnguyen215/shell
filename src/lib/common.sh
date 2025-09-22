@@ -661,6 +661,27 @@ shell::create_directory_if_not_exists() {
 	fi
 }
 
+# shell::mkdir function
+# Wrapper function to create a directory using shell::create_directory_if_not_exists.
+#
+# Usage:
+#   shell::mkdir <directory_path_or_file_path>
+#
+# Parameters:
+#   <directory_path_or_file_path> : The path of the directory to be created, or a file path
+#                                   from which the parent directory will be extracted and created.
+#
+# Description:
+#   This function simply calls shell::create_directory_if_not_exists with the provided argument.
+#   It is a convenience function to create directories using a single command.
+#
+# Example:
+#   shell::mkdir /path/to/directory
+#   shell::mkdir /path/to/file.txt   # Creates /path/to/
+shell::mkdir() {
+	shell::create_directory_if_not_exists "$1"
+}
+
 # shell::create_file_if_not_exists function
 # Utility function to create a file if it doesn't exist, ensuring all parent directories are created.
 #
