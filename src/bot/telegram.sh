@@ -1,31 +1,6 @@
 #!/bin/bash
 # telegram.sh
 
-# shell::gen_markdown_message function
-# Constructs a Markdown-formatted message from multiple input lines.
-#
-# Usage:
-#   shell::gen_markdown_message <line1> <line2> ...
-#
-# Parameters:
-#   - <line1>, <line2>, ... : Lines to be concatenated into a single Markdown message.
-#
-# Description:
-#   This function concatenates the provided input lines into one message separated by newlines.
-#   You can use standard Markdown syntax (e.g., *bold*, _italic_, `code`) to format your text.
-#
-# Example:
-#   message=$(shell::gen_markdown_message "*Hello*, this is a test message." "Here is some code:" "```bash\necho Hello\n```")
-#   echo "$message"
-shell::gen_markdown_message() {
-	local message=""
-	for line in "$@"; do
-		message+="$line\n"
-	done
-	# Print the final message (printf "%b" interprets backslash escapes)
-	printf "%b" "$message"
-}
-
 # shell::send_telegram_message function
 # Sends a message via the Telegram Bot API.
 #
