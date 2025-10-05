@@ -213,6 +213,83 @@ shell::uninstall_python() {
 	shell::logger::exec_check "$cmd"
 }
 
+# shell::uninstall_pip_packages function
+# Uninstalls all pip and pip3 packages with user confirmation and optional dry-run.
+#
+# Usage:
+#   shell::uninstall_pip_packages [-n | --dry-run] [-h | --help] <pip_version>
+#
+# Parameters:
+#   - -n : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
+#   - -h, --help : Displays this help message.
+#   - pip_version : The pip version to uninstall (e.g., pip3, pip).
+#
+# Description:
+#   Uninstalls all pip and pip3 packages using the specified pip version.
+#   Prompts for confirmation before uninstalling.
+#
+# Example:
+#   shell::uninstall_pip_packages pip3       # Uninstalls all pip3 packages.
+#   shell::uninstall_pip_packages -n pip3    # Prints the uninstallation command without executing it.
+#   shell::uninstall_pip_packages --dry-run pip3  # Prints the uninstallation command without executing it.
+#
+# Notes:
+#   - Requires sudo privileges.
+shell::uninstall_pip_packages() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Uninstall pip packages"
+		shell::logger::usage "shell::uninstall_pip_packages [-n | --dry-run] [-h | --help] <pip_version>"
+		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
+		shell::logger::option "-h, --help" "Display this help message"
+		shell::logger::option "pip_version" "The pip version to uninstall (e.g., pip3, pip)"
+		shell::logger::example "shell::uninstall_pip_packages pip3"
+		shell::logger::example "shell::uninstall_pip_packages -n pip3"
+		shell::logger::example "shell::uninstall_pip_packages --dry-run pip3"
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	local pip_version="$1"
+	if [ -z "$pip_version" ]; then
+		shell::logger::error "pip version is required."
+		return $RETURN_INVALID
+	fi
+
+	local pkg_files=$(mktemp)
+	local freeze_cmd="$pip_version freeze --break-system-packages | grep -v '^-e' | grep -v '@' | cut -d= -f1 > $pkg_files"
+	local uninstall_cmd="xargs $pip_version uninstall --break-system-packages -y < $pkg_files"
+	local clean_up_cmd="rm $pkg_files"
+
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::section "Uninstallation of $pip_version packages"
+		shell::logger::step 1 "Freeze installed packages"
+		shell::logger::cmd "$freeze_cmd"
+		shell::logger::step 2 "Uninstall packages"
+		shell::logger::cmd "$uninstall_cmd"
+		shell::logger::step 3 "Clean up temporary files"
+		shell::logger::cmd "$clean_up_cmd"
+		return $RETURN_SUCCESS
+	fi
+
+	local is_installed=$(shell::check_python_installed)
+	if [ "$is_installed" = "false" ]; then
+		shell::logger::warn "Python3 is not installed."
+		return $RETURN_NOT_IMPLEMENTED
+	fi
+
+	shell::logger::exec_check "$freeze_cmd"
+	if [ -s "$pkg_files" ]; then
+		shell::logger::exec_check "$uninstall_cmd"
+	fi
+	shell::logger::exec_check "$clean_up_cmd"
+}
+
 # shell::uninstall_python_pip_deps function
 # Uninstalls all pip and pip3 packages with user confirmation and optional dry-run.
 #
