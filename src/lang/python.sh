@@ -81,6 +81,24 @@ shell::install_python() {
 	shell::logger::exec_check "$cmd"
 }
 
+# shell::check_python_installed function
+# Checks if Python (python3) is installed on the system.
+#
+# Usage:
+#   shell::check_python_installed
+#
+# Returns:
+#   - "true" if Python is installed.
+#   - "false" if Python is not installed.
+#
+# Description:
+#   Verifies the installation of Python 3 using the appropriate package manager:
+#   - On Linux: Checks apt-get, yum, or dnf package lists.
+#   - On macOS: Checks Homebrew's package list.
+#   Returns "true" if Python is found, otherwise "false".
+#
+# Example:
+#   shell::check_python_installed  # Outputs "true" or "false" based on installation status.
 shell::check_python_installed() {
 	local os_type=$(shell::get_os_type)
 	local python_version="python3"
