@@ -164,6 +164,12 @@ shell::uninstall_python() {
 		shift
 	fi
 
+	local is_installed=$(shell::check_python_installed)
+	if [ "$is_installed" = "false" ]; then
+		shell::logger::warn "Python3 is not installed."
+		return $RETURN_NOT_IMPLEMENTED
+	fi
+
 	local os_type=$(shell::get_os_type)
 	local cmd=""
 
@@ -172,35 +178,14 @@ shell::uninstall_python() {
 		if shell::is_command_available apt-get; then
 			if shell::is_package_installed_linux "$package"; then
 				cmd="sudo apt-get purge -y $package && sudo apt-get autoremove -y"
-				if [ "$dry_run" = "true" ]; then
-					shell::logger::cmd_copy "$cmd"
-					return $RETURN_SUCCESS
-				fi
-				shell::logger::exec_check "$cmd"
-			else
-				shell::logger::warn "Python3 is not installed via apt-get. Skipping."
 			fi
 		elif shell::is_command_available yum; then
 			if rpm -q "$package" >/dev/null 2>&1; then
 				cmd="sudo yum remove -y $package"
-				if [ "$dry_run" = "true" ]; then
-					shell::logger::cmd_copy "$cmd"
-					return $RETURN_SUCCESS
-				fi
-				shell::logger::exec_check "$cmd"
-			else
-				shell::logger::warn "Python3 is not installed via yum. Skipping."
 			fi
 		elif shell::is_command_available dnf; then
 			if rpm -q "$package" >/dev/null 2>&1; then
 				cmd="sudo dnf remove -y $package"
-				if [ "$dry_run" = "true" ]; then
-					shell::logger::cmd_copy "$cmd"
-					return $RETURN_SUCCESS
-				fi
-				shell::logger::exec_check "$cmd"
-			else
-				shell::logger::warn "Python3 is not installed via dnf. Skipping."
 			fi
 		else
 			shell::logger::error "Unsupported package manager on Linux."
@@ -210,13 +195,6 @@ shell::uninstall_python() {
 		if shell::is_command_available brew; then
 			if brew list --versions python3 >/dev/null 2>&1; then
 				cmd="brew uninstall python3 && brew cleanup"
-				if [ "$dry_run" = "true" ]; then
-					shell::logger::cmd_copy "$cmd"
-					return $RETURN_SUCCESS
-				fi
-				shell::logger::exec_check "$cmd"
-			else
-				shell::logger::warn "Python3 is not installed via Homebrew. Skipping."
 			fi
 		else
 			shell::logger::error "Homebrew is not installed on macOS."
@@ -227,10 +205,12 @@ shell::uninstall_python() {
 		return $RETURN_FAILURE
 	fi
 
-	if [ "$dry_run" = "false" ] && ! shell::is_command_available python3; then
-		shell::logger::info "Python3 removed successfully."
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::cmd_copy "$cmd"
 		return $RETURN_SUCCESS
 	fi
+
+	shell::logger::exec_check "$cmd"
 }
 
 # shell::uninstall_python_pip_deps function
