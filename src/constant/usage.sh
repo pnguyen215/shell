@@ -866,11 +866,11 @@ Example:
 "
 
 USAGE_SHELL_UNINSTALL_PYTHON_PIP_DEPS="
-shell::uninstall_python_pip_deps function
+shell::uninstall_pip_pkg function
 Uninstalls all pip and pip3 packages with user confirmation and optional dry-run.
 
 Usage:
-  shell::uninstall_python_pip_deps [-n] [-h]
+  shell::uninstall_pip_pkg [-n] [-h]
 
 Parameters:
   - -n  : Optional flag to perform a dry-run (uses shell::logger::cmd_copy to print commands without executing).
@@ -882,16 +882,16 @@ Description:
   and enhanced logging using shell::run_cmd_eval.
 
 Example usage:
-  shell::uninstall_python_pip_deps       # Uninstalls all pip/pip3 packages after confirmation
-  shell::uninstall_python_pip_deps -n    # Dry-run to preview commands
+  shell::uninstall_pip_pkg       # Uninstalls all pip/pip3 packages after confirmation
+  shell::uninstall_pip_pkg -n    # Dry-run to preview commands
 "
 
 USAGE_SHELL_UNINSTALL_PYTHON_PIP_DEPS_LATEST="
-shell::uninstall_python_pip_deps::latest function
+shell::uninstall_pip_pkg::latest function
 Uninstalls all pip and pip3 packages with user confirmation and optional dry-run.
 
 Usage:
-  shell::uninstall_python_pip_deps::latest [-n] [-h]
+  shell::uninstall_pip_pkg::latest [-n] [-h]
 
 Parameters:
   - -n  : Optional flag to perform a dry-run (uses shell::logger::cmd_copy to print commands without executing).
@@ -904,8 +904,8 @@ Description:
   ensuring that the function returns once the background process completes.
 
 Example usage:
-  shell::uninstall_python_pip_deps::latest       # Uninstalls all pip/pip3 packages after confirmation
-  shell::uninstall_python_pip_deps::latest -n    # Dry-run to preview commands
+  shell::uninstall_pip_pkg::latest       # Uninstalls all pip/pip3 packages after confirmation
+  shell::uninstall_pip_pkg::latest -n    # Dry-run to preview commands
 "
 
 USAGE_SHELL_CREATE_PYTHON_ENV="
