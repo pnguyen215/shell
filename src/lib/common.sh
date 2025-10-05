@@ -836,16 +836,16 @@ shell::clip_value() {
 
 	if [[ "$os" == "macos" ]]; then
 		echo -n "$value" | pbcopy
-		shell::logger::debug "✨ Copied (pbcopy)"
+		shell::stdout " ✨ Copied (pbcopy)" 244
 		return 1
 	elif [[ "$os" == "linux" ]]; then
 		if shell::is_command_available xclip; then
 			echo -n "$value" | xclip -selection clipboard
-			shell::logger::debug "✨ Copied (xclip)"
+			shell::stdout " ✨ Copied (xclip)" 244
 			return 1
 		elif shell::is_command_available xsel; then
 			echo -n "$value" | xsel --clipboard --input
-			shell::logger::debug "✨ Copied (xsel)"
+			shell::stdout " ✨ Copied (xsel)" 244
 			return 1
 		else
 			shell::logger::error "Clipboard tool not found. Please install xclip or xsel."
