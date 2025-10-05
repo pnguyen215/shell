@@ -45,6 +45,35 @@ shell::install_python() {
 	local python_version="python3"
 	local is_installed="false"
 
+	local cmd=""
+	if [ "$os_type" = "linux" ]; then
+		local package="python3"
+		if shell::is_command_available apt-get; then
+			cmd="sudo apt-get update && sudo apt-get install -y $package"
+		elif shell::is_command_available yum; then
+			cmd="sudo yum install -y $package"
+		elif shell::is_command_available dnf; then
+			cmd="sudo dnf install -y $package"
+		else
+			shell::logger::error "Unsupported package manager on Linux."
+			return $RETURN_FAILURE
+		fi
+	elif [ "$os_type" = "macos" ]; then
+		if ! shell::is_command_available brew; then
+			shell::logger::debug "Installing Homebrew first..."
+			shell::install_homebrew
+		fi
+		cmd="brew install python3"
+	else
+		shell::logger::error "Unsupported package manager on MacOS"
+		return $RETURN_FAILURE
+	fi
+
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::cmd_copy "$cmd"
+		return $RETURN_SUCCESS
+	fi
+
 	# Check installation state more precisely
 	if [ "$os_type" = "linux" ]; then
 		if shell::is_command_available apt-get && shell::is_package_installed_linux "python3"; then
@@ -65,45 +94,7 @@ shell::install_python() {
 		return $RETURN_NOT_IMPLEMENTED
 	fi
 
-	local cmd=""
-	if [ "$os_type" = "linux" ]; then
-		local package="python3"
-		if shell::is_command_available apt-get; then
-			cmd="sudo apt-get update && sudo apt-get install -y $package"
-		elif shell::is_command_available yum; then
-			cmd="sudo yum install -y $package"
-		elif shell::is_command_available dnf; then
-			cmd="sudo dnf install -y $package"
-		else
-			shell::logger::error "Unsupported package manager on Linux."
-			return $RETURN_FAILURE
-		fi
-		if [ "$dry_run" = "true" ]; then
-			shell::logger::cmd_copy "$cmd"
-			return $RETURN_SUCCESS
-		fi
-		shell::logger::exec_check "$cmd"
-	elif [ "$os_type" = "macos" ]; then
-		if ! shell::is_command_available brew; then
-			shell::logger::debug "Installing Homebrew first..."
-			shell::install_homebrew
-		fi
-		cmd="brew install python3"
-		if [ "$dry_run" = "true" ]; then
-			shell::logger::cmd_copy "$cmd"
-			return $RETURN_SUCCESS
-		fi
-		shell::logger::exec_check "$cmd"
-	else
-		shell::logger::error "Unsupported operating system."
-		return $RETURN_FAILURE
-	fi
-
-	# Verify installation
-	if [ "$dry_run" = "false" ] && shell::is_command_available "$python_version"; then
-		shell::logger::info "Python3 installed successfully."
-		return $RETURN_SUCCESS
-	fi
+	shell::logger::exec_check "$cmd"
 }
 
 # shell::uninstall_python function
