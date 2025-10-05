@@ -42,8 +42,7 @@ shell::install_python() {
 	fi
 
 	local os_type=$(shell::get_os_type)
-	local python_version="python3"
-	local is_installed="false"
+	# local python_version="python3"
 
 	local cmd=""
 	if [ "$os_type" = "linux" ]; then
@@ -75,6 +74,40 @@ shell::install_python() {
 	fi
 
 	# Check installation state more precisely
+	# if [ "$os_type" = "linux" ]; then
+	# 	if shell::is_command_available apt-get && shell::is_package_installed_linux "python3"; then
+	# 		is_installed="true"
+	# 	elif shell::is_command_available yum && rpm -q "python3" >/dev/null 2>&1; then
+	# 		is_installed="true"
+	# 	elif shell::is_command_available dnf && rpm -q "python3" >/dev/null 2>&1; then
+	# 		is_installed="true"
+	# 	fi
+	# elif [ "$os_type" = "macos" ]; then
+	# 	if shell::is_command_available brew && brew list --versions python3 >/dev/null 2>&1; then
+	# 		is_installed="true"
+	# 	fi
+	# fi
+
+	# if [ "$is_installed" = "true" ]; then
+	# 	shell::logger::warn "Python3 is already installed via package manager. Skipping."
+	# 	return $RETURN_NOT_IMPLEMENTED
+	# fi
+
+	local is_installed=$(shell::check_python_installed)
+	if [ "$is_installed" = "true" ]; then
+		shell::logger::warn "Python3 is already installed via package manager. Skipping."
+		return $RETURN_NOT_IMPLEMENTED
+	fi
+
+	shell::logger::exec_check "$cmd"
+}
+
+shell::check_python_installed() {
+	local os_type=$(shell::get_os_type)
+	local python_version="python3"
+	local is_installed="false"
+
+	# Check installation state more precisely
 	if [ "$os_type" = "linux" ]; then
 		if shell::is_command_available apt-get && shell::is_package_installed_linux "python3"; then
 			is_installed="true"
@@ -89,12 +122,8 @@ shell::install_python() {
 		fi
 	fi
 
-	if [ "$is_installed" = "true" ]; then
-		shell::logger::warn "Python3 is already installed via package manager. Skipping."
-		return $RETURN_NOT_IMPLEMENTED
-	fi
-
-	shell::logger::exec_check "$cmd"
+	echo "$is_installed"
+	return $RETURN_SUCCESS
 }
 
 # shell::uninstall_python function
