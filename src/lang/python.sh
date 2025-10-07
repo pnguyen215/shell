@@ -290,11 +290,11 @@ shell::python::pip::uninstall() {
 	shell::logger::exec_check "$clean_up_cmd"
 }
 
-# shell::uninstall_pip_pkg function
+# shell::python::pip::uninstall_all function
 # Uninstalls all pip and pip3 packages with user confirmation and optional dry-run.
 #
 # Usage:
-#   shell::uninstall_pip_pkg [-n]
+#   shell::python::pip::uninstall_all [-n]
 #
 # Parameters:
 #   -n: Optional flag to perform a dry-run (uses shell::logger::cmd_copy to print commands without executing).
@@ -305,8 +305,8 @@ shell::python::pip::uninstall() {
 #   and enhanced logging using shell::run_cmd_eval.
 #
 # Example usage:
-#   shell::uninstall_pip_pkg       # Uninstalls all pip/pip3 packages after confirmation
-#   shell::uninstall_pip_pkg -n    # Dry-run to preview commands
+#   shell::python::pip::uninstall_all       # Uninstalls all pip/pip3 packages after confirmation
+#   shell::python::pip::uninstall_all -n    # Dry-run to preview commands
 #
 # Instructions:
 #   1. Run the function with or without the -n flag.
@@ -316,16 +316,16 @@ shell::python::pip::uninstall() {
 #   - Use with caution: Uninstalling system packages may break your Python environment.
 #   - Supports asynchronous execution via shell::async, though kept synchronous for user feedback.
 #   - Temporary files are cleaned up automatically.
-shell::uninstall_pip_pkg() {
+shell::python::pip::uninstall_all() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Uninstall all pip and pip3 packages"
-		shell::logger::usage "shell::uninstall_pip_pkg [-n | --dry-run] [-h | --help]"
+		shell::logger::usage "shell::python::pip::uninstall_all [-n | --dry-run] [-h | --help]"
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
 		shell::logger::option "-h, --help" "Display this help message"
-		shell::logger::example "shell::uninstall_pip_pkg"
-		shell::logger::example "shell::uninstall_pip_pkg -n"
-		shell::logger::example "shell::uninstall_pip_pkg --dry-run"
+		shell::logger::example "shell::python::pip::uninstall_all"
+		shell::logger::example "shell::python::pip::uninstall_all -n"
+		shell::logger::example "shell::python::pip::uninstall_all --dry-run"
 		return $RETURN_SUCCESS
 	fi
 
