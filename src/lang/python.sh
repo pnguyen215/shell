@@ -609,11 +609,11 @@ shell::python::venv::pkg::install() {
 	shell::logger::exec_check "$install_cmd"
 }
 
-# shell::uninstall_pkg_python_env function
+# shell::python::venv::pkg::uninstall function
 # Uninstalls Python packages from a virtual environment using pip or pip3.
 #
 # Usage:
-#   shell::uninstall_pkg_python_env [-n] [-p <path>] <package1> [package2 ...]
+#   shell::python::venv::pkg::uninstall [-n] [-p <path>] <package1> [package2 ...]
 #
 # Parameters:
 #   - -n          : Optional dry-run flag.
@@ -636,27 +636,27 @@ shell::python::venv::pkg::install() {
 #     previewing commands.
 #
 # Example:
-#   shell::uninstall_pkg_python_env numpy pandas    # Uninstalls numpy and pandas from ./venv.
-#   shell::uninstall_pkg_python_env -n requests     # Prints uninstallation command without executing.
-#   shell::uninstall_pkg_python_env -p ~/my_env flask  # Uninstalls flask from ~/my_env.
+#   shell::python::venv::pkg::uninstall numpy pandas    # Uninstalls numpy and pandas from ./venv.
+#   shell::python::venv::pkg::uninstall -n requests     # Prints uninstallation command without executing.
+#   shell::python::venv::pkg::uninstall -p ~/my_env flask  # Uninstalls flask from ~/my_env.
 #
 # Notes:
 #   - Requires an existing virtual environment (use shell::python::venv::create
 #     to create one if needed).
 #   - Assumes pip is available in the virtual environment.
 #   - Compatible with both Linux (Ubuntu 22.04 LTS) and macOS.
-shell::uninstall_pkg_python_env() {
+shell::python::venv::pkg::uninstall() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Uninstall Python packages from an existing virtual environment using pip."
-		shell::logger::usage "Usage: shell::uninstall_pkg_python_env [-n | --dry-run] [-h | --help] [-p <path>] <package1> [package2 ...]"
+		shell::logger::usage "Usage: shell::python::venv::pkg::uninstall [-n | --dry-run] [-h | --help] [-p <path>] <package1> [package2 ...]"
 		shell::logger::option "-n | --dry-run" "Preview uninstallation commands without executing."
 		shell::logger::option "-p | --path" "Specify the path to the virtual environment (default: ./venv)."
 		shell::logger::option "<package1> [package2 ...]" "One or more Python package names to uninstall (e.g., numpy, requests)."
-		shell::logger::example "shell::uninstall_pkg_python_env numpy pandas"
-		shell::logger::example "shell::uninstall_pkg_python_env -n requests"
-		shell::logger::example "shell::uninstall_pkg_python_env -p ~/my_env flask"
-		shell::logger::example "shell::uninstall_pkg_python_env -n -p ~/my_env flask"
+		shell::logger::example "shell::python::venv::pkg::uninstall numpy pandas"
+		shell::logger::example "shell::python::venv::pkg::uninstall -n requests"
+		shell::logger::example "shell::python::venv::pkg::uninstall -p ~/my_env flask"
+		shell::logger::example "shell::python::venv::pkg::uninstall -n -p ~/my_env flask"
 		return $RETURN_SUCCESS
 	fi
 
@@ -733,7 +733,7 @@ shell::uninstall_pkg_python_env() {
 # Description:
 #   This function enhances Python package uninstallation by:
 #   - Using fzf to allow interactive selection of packages to uninstall.
-#   - Reusing shell::uninstall_pkg_python_env to perform the actual uninstallation.
+#   - Reusing shell::python::venv::pkg::uninstall to perform the actual uninstallation.
 #   - Supports dry-run and asynchronous execution.
 #
 # Example:
@@ -801,7 +801,7 @@ shell::fzf_uninstall_pkg_python_env() {
 		return 0
 	fi
 
-	# Prepare arguments for shell::uninstall_pkg_python_env
+	# Prepare arguments for shell::python::venv::pkg::uninstall
 	local uninstall_args=()
 	if [ "$dry_run" = "true" ]; then
 		uninstall_args+=("-n")
@@ -819,9 +819,9 @@ shell::fzf_uninstall_pkg_python_env() {
 
 	uninstall_args+=("${selected_packages_array[@]}")
 
-	# Execute uninstallation using shell::uninstall_pkg_python_env
+	# Execute uninstallation using shell::python::venv::pkg::uninstall
 	shell::stdout "🔍 Uninstalling selected packages..." 36
-	shell::uninstall_pkg_python_env "${uninstall_args[@]}"
+	shell::python::venv::pkg::uninstall "${uninstall_args[@]}"
 }
 
 # shell::fzf_use_python_env function
