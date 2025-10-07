@@ -72,7 +72,7 @@ shell::python::install() {
 		return $RETURN_SUCCESS
 	fi
 
-	local is_installed=$(shell::check_python_installed)
+	local is_installed=$(shell::python::is_installed)
 	if [ "$is_installed" = "true" ]; then
 		shell::logger::warn "Python3 is already installed via package manager. Skipping."
 		return $RETURN_NOT_IMPLEMENTED
@@ -81,11 +81,11 @@ shell::python::install() {
 	shell::logger::exec_check "$cmd"
 }
 
-# shell::check_python_installed function
+# shell::python::is_installed function
 # Checks if Python (python3) is installed on the system.
 #
 # Usage:
-#   shell::check_python_installed
+#   shell::python::is_installed
 #
 # Returns:
 #   - "true" if Python is installed.
@@ -98,8 +98,8 @@ shell::python::install() {
 #   Returns "true" if Python is found, otherwise "false".
 #
 # Example:
-#   shell::check_python_installed  # Outputs "true" or "false" based on installation status.
-shell::check_python_installed() {
+#   shell::python::is_installed  # Outputs "true" or "false" based on installation status.
+shell::python::is_installed() {
 	local os_type=$(shell::get_os_type)
 	local python_version="python3"
 	local is_installed="false"
@@ -164,7 +164,7 @@ shell::uninstall_python() {
 		shift
 	fi
 
-	local is_installed=$(shell::check_python_installed)
+	local is_installed=$(shell::python::is_installed)
 	if [ "$is_installed" = "false" ]; then
 		shell::logger::warn "Python3 is not installed."
 		return $RETURN_NOT_IMPLEMENTED
@@ -277,7 +277,7 @@ shell::uninstall_pip_version_pkg() {
 		return $RETURN_SUCCESS
 	fi
 
-	local is_installed=$(shell::check_python_installed)
+	local is_installed=$(shell::python::is_installed)
 	if [ "$is_installed" = "false" ]; then
 		shell::logger::warn "Python3 is not installed."
 		return $RETURN_NOT_IMPLEMENTED
