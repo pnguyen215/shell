@@ -575,49 +575,38 @@ shell::install_pkg_python_env() {
 
 	# Validate that at least one package is specified
 	if [ ${#packages[@]} -eq 0 ]; then
-		echo "Usage: shell::install_pkg_python_env [-n] [-p <path>] <package1> [package2 ...]"
-		return 0
+		shell::logger::error "No packages specified"
+		return $RETURN_FAILURE
 	fi
 
-	# Check if the virtual environment exists
-	if [ ! -d "$venv_path" ] || [ ! -f "$venv_path/bin/pip" ]; then
-		shell::stdout "ERR: Virtual environment at '$venv_path' does not exist or is invalid. Create it with shell::create_python_env first." 196
-		return 0
-	fi
-
-	local os_type
-	os_type=$(shell::get_os_type)
+	local os_type=$(shell::get_os_type)
 	local pip_cmd="$venv_path/bin/pip"
 
-	# Ensure pip command is available
-	if ! shell::is_command_available "$pip_cmd"; then
-		shell::stdout "ERR: pip not found in virtual environment at '$venv_path'." 196
-		return 0
+	if [ "$dry_run" = "false" ]; then
+		# Check if the virtual environment exists
+		if [ ! -d "$venv_path" ] || [ ! -f "$venv_path/bin/pip" ]; then
+			shell::logger::error "Virtual environment at '$venv_path' does not exist or is invalid"
+			return $RETURN_FAILURE
+		fi
+
+		# Ensure pip command is available
+		if ! shell::is_command_available "$pip_cmd"; then
+			shell::logger::error "pip not found in virtual environment at '$venv_path'"
+			return $RETURN_FAILURE
+		fi
 	fi
 
-	# Construct the install command
 	local install_cmd="$pip_cmd install"
 	for pkg in "${packages[@]}"; do
 		install_cmd="$install_cmd \"$pkg\""
 	done
 
-	# Execute or preview the installation
-	shell::stdout "DEBUG: Installing packages (${packages[*]}) into virtual environment at '$venv_path'..." 244
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::cmd_copy "$install_cmd"
-	else
-		# Run the installation asynchronously
-		shell::async "$install_cmd" &
-		local pid=$!
-		wait $pid
-		if [ $? -eq 0 ]; then
-			shell::stdout "INFO: Packages installed successfully: ${packages[*]}" 46
-			return 1
-		else
-			shell::stdout "ERR: Failed to install one or more packages." 196
-			return 0
-		fi
+		return $RETURN_SUCCESS
 	fi
+
+	shell::logger::exec_check "$install_cmd"
 }
 
 # shell::uninstall_pkg_python_env function
