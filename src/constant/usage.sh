@@ -909,11 +909,11 @@ Example usage:
 "
 
 USAGE_SHELL_CREATE_PYTHON_ENV="
-shell::create_python_env function
+shell::python::venv::create function
 Creates a Python virtual environment for development, isolating it from system packages.
 
 Usage:
-  shell::create_python_env [-n] [-h] [-p <path>] [-v <version>]
+  shell::python::venv::create [-n] [-h] [-p <path>] [-v <version>]
 
 Parameters:
   - -n          : Optional dry-run flag. If provided, commands are printed using shell::logger::cmd_copy instead of executed.
@@ -930,10 +930,10 @@ Description:
   - Verifies the environment and provides activation instructions.
 
 Example:
-  shell::create_python_env                # Creates a virtual env at ./venv with default Python3.
-  shell::create_python_env -n             # Prints commands without executing them.
-  shell::create_python_env -p ~/my_env     # Creates a virtual env at ~/my_env.
-  shell::create_python_env -v 3.10        # Uses Python 3.10 for the virtual env.
+  shell::python::venv::create                # Creates a virtual env at ./venv with default Python3.
+  shell::python::venv::create -n             # Prints commands without executing them.
+  shell::python::venv::create -p ~/my_env     # Creates a virtual env at ~/my_env.
+  shell::python::venv::create -v 3.10        # Uses Python 3.10 for the virtual env.
 "
 
 USAGE_SHELL_INSTALL_PKG_PYTHON_ENV="

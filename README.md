@@ -703,9 +703,9 @@ Utilities for various programming languages and project initialization.
   Installs Python using the system package manager.
   _Example:_ `shell::python::install 3.11`
 
-- **`shell::create_python_env`**
+- **`shell::python::venv::create`**
   Creates a new Python virtual environment.
-  _Example:_ `shell::create_python_env myenv`
+  _Example:_ `shell::python::venv::create myenv`
 
 - **`shell::fzf_use_python_env`**
   Interactively activate a Python virtual environment.
@@ -1090,7 +1090,7 @@ cd mygoapp
 shell::add_go_gitignore
 
 # Set up Python environment
-shell::create_python_env myproject
+shell::python::venv::create myproject
 shell::fzf_use_python_env  # Activate environment
 shell::install_pkg_python_env requests flask pandas
 shell::freeze_pkg_python_env > requirements.txt

@@ -365,11 +365,11 @@ shell::python::pip::uninstall_all() {
 	return $RETURN_SUCCESS
 }
 
-# shell::create_python_env function
+# shell::python::venv::create function
 # Creates a Python virtual environment for development, isolating it from system packages.
 #
 # Usage:
-#   shell::create_python_env [-n] [-p <path>] [-v <version>]
+#   shell::python::venv::create [-n] [-p <path>] [-v <version>]
 #
 # Parameters:
 #   - -n          : Optional dry-run flag. If provided, commands are printed using shell::logger::cmd_copy instead of executed.
@@ -385,28 +385,28 @@ shell::python::pip::uninstall_all() {
 #   - Verifies the environment and provides activation instructions.
 #
 # Example:
-#   shell::create_python_env                # Creates a virtual env at ./venv with default Python3.
-#   shell::create_python_env -n             # Prints commands without executing them.
-#   shell::create_python_env -p ~/my_env     # Creates a virtual env at ~/my_env.
-#   shell::create_python_env -v 3.10        # Uses Python 3.10 for the virtual env.
+#   shell::python::venv::create                # Creates a virtual env at ./venv with default Python3.
+#   shell::python::venv::create -n             # Prints commands without executing them.
+#   shell::python::venv::create -p ~/my_env     # Creates a virtual env at ~/my_env.
+#   shell::python::venv::create -v 3.10        # Uses Python 3.10 for the virtual env.
 #
 # Notes:
 #   - Requires Python3 to be available on the system.
 #   - On Linux, uses python3-venv package if needed.
 #   - Activation command is copied to clipboard for convenience.
-shell::create_python_env() {
+shell::python::venv::create() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Create Python virtual environment"
-		shell::logger::usage "shell::create_python_env [-n | --dry-run] [-h | --help] [-p | --path <path>] [-v | --version <version>]"
+		shell::logger::usage "shell::python::venv::create [-n | --dry-run] [-h | --help] [-p | --path <path>] [-v | --version <version>]"
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
 		shell::logger::option "-h, --help" "Display this help message"
 		shell::logger::option "-p, --path" "Specify the path where the virtual environment will be created (defaults to ./venv)"
 		shell::logger::option "-v, --version" "Specify the Python version (e.g., 3.10); defaults to system Python3"
-		shell::logger::example "shell::create_python_env -n -p ~/my_env -v 3.10"
-		shell::logger::example "shell::create_python_env -n -p ~/my_env"
-		shell::logger::example "shell::create_python_env -n"
-		shell::logger::example "shell::create_python_env -n -v 3.10"
+		shell::logger::example "shell::python::venv::create -n -p ~/my_env -v 3.10"
+		shell::logger::example "shell::python::venv::create -n -p ~/my_env"
+		shell::logger::example "shell::python::venv::create -n"
+		shell::logger::example "shell::python::venv::create -n -v 3.10"
 		return $RETURN_SUCCESS
 	fi
 
@@ -533,8 +533,8 @@ shell::create_python_env() {
 #   shell::install_pkg_python_env -p ~/my_env flask  # Installs flask in ~/my_env.
 #
 # Notes:
-#   - Requires an existing virtual environment (use shell::create_python_env to create one if needed).
-#   - Assumes pip is available in the virtual environment (upgraded by shell::create_python_env).
+#   - Requires an existing virtual environment (use shell::python::venv::create to create one if needed).
+#   - Assumes pip is available in the virtual environment (upgraded by shell::python::venv::create).
 #   - Compatible with both Linux (Ubuntu 22.04 LTS) and macOS.
 shell::install_pkg_python_env() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
@@ -641,7 +641,7 @@ shell::install_pkg_python_env() {
 #   shell::uninstall_pkg_python_env -p ~/my_env flask  # Uninstalls flask from ~/my_env.
 #
 # Notes:
-#   - Requires an existing virtual environment (use shell::create_python_env
+#   - Requires an existing virtual environment (use shell::python::venv::create
 #     to create one if needed).
 #   - Assumes pip is available in the virtual environment.
 #   - Compatible with both Linux (Ubuntu 22.04 LTS) and macOS.
@@ -682,7 +682,7 @@ shell::uninstall_pkg_python_env() {
 
 	# Check if the virtual environment exists
 	if [ ! -d "$venv_path" ] || [ ! -f "$venv_path/bin/pip" ]; then
-		shell::stdout "ERR: Virtual environment at '$venv_path' does not exist or is invalid. Create it with shell::create_python_env first." 196
+		shell::stdout "ERR: Virtual environment at '$venv_path' does not exist or is invalid. Create it with shell::python::venv::create first." 196
 		return 1
 	fi
 
