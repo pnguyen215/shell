@@ -822,11 +822,11 @@ Parameters:
 "
 
 USAGE_SHELL_INSTALL_PYTHON="
-shell::install_python function
+shell::python::install function
 Installs Python (python3) on macOS or Linux.
 
 Usage:
-  shell::install_python [-n] [-h]
+  shell::python::install [-n] [-h]
 
 Parameters:
   - -n : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
@@ -839,8 +839,8 @@ Description:
   Skips installation only if Python is confirmed installed via the package manager.
 
 Example:
-  shell::install_python       # Installs Python 3.
-  shell::install_python -n    # Prints the installation command without executing it.
+  shell::python::install       # Installs Python 3.
+  shell::python::install -n    # Prints the installation command without executing it.
 "
 
 USAGE_SHELL_UNINSTALL_PYTHON="
@@ -923,7 +923,7 @@ Parameters:
 
 Description:
   This function sets up a Python virtual environment to avoid package conflicts with the system OS:
-  - Ensures Python3 and pip are installed using shell::install_python.
+  - Ensures Python3 and pip are installed using shell::python::install.
   - Creates a virtual environment at the specified or default path using the specified or default Python version.
   - Upgrades pip and installs basic tools (wheel, setuptools) in the virtual environment.
   - Supports asynchronous execution for pip upgrades to speed up setup.

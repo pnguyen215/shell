@@ -4,11 +4,11 @@
 # Install packages in a virtual environment using pip and venv
 # Link: https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/
 
-# shell::install_python function
+# shell::python::install function
 # Installs Python (python3) on macOS or Linux.
 #
 # Usage:
-#   shell::install_python [-n]
+#   shell::python::install [-n]
 #
 # Parameters:
 #   - -n : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
@@ -20,18 +20,18 @@
 #   Skips installation only if Python is confirmed installed via the package manager.
 #
 # Example:
-#   shell::install_python       # Installs Python 3.
-#   shell::install_python -n    # Prints the installation command without executing it.
-shell::install_python() {
+#   shell::python::install       # Installs Python 3.
+#   shell::python::install -n    # Prints the installation command without executing it.
+shell::python::install() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Install Python3"
-		shell::logger::usage "shell::install_python [-n | --dry-run] [-h | --help]"
+		shell::logger::usage "shell::python::install [-n | --dry-run] [-h | --help]"
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
 		shell::logger::option "-h, --help" "Display this help message"
-		shell::logger::example "shell::install_python"
-		shell::logger::example "shell::install_python -n"
-		shell::logger::example "shell::install_python --dry-run"
+		shell::logger::example "shell::python::install"
+		shell::logger::example "shell::python::install -n"
+		shell::logger::example "shell::python::install --dry-run"
 		return $RETURN_SUCCESS
 	fi
 
@@ -378,7 +378,7 @@ shell::uninstall_pip_pkg() {
 #
 # Description:
 #   This function sets up a Python virtual environment to avoid package conflicts with the system OS:
-#   - Ensures Python3 and pip are installed using shell::install_python.
+#   - Ensures Python3 and pip are installed using shell::python::install.
 #   - Creates a virtual environment at the specified or default path using the specified or default Python version.
 #   - Upgrades pip and installs basic tools (wheel, setuptools) in the virtual environment.
 #   - Supports asynchronous execution for pip upgrades to speed up setup.
@@ -441,12 +441,12 @@ shell::create_python_env() {
 		if ! shell::is_command_available "$python_version"; then
 			shell::logger::debug "Installing $python_version..."
 			if [ "$os_type" = "linux" ]; then
-				shell::install_python
+				shell::python::install
 				if ! shell::is_package_installed_linux "$python_version-venv"; then
 					shell::install_package "$python_version-venv"
 				fi
 			elif [ "$os_type" = "macos" ]; then
-				shell::install_python
+				shell::python::install
 			else
 				shell::logger::error "Unsupported operating system."
 				return $RETURN_FAILURE

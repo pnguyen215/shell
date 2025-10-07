@@ -699,9 +699,9 @@ Utilities for various programming languages and project initialization.
 
 #### Python Development
 
-- **`shell::install_python`**
+- **`shell::python::install`**
   Installs Python using the system package manager.
-  _Example:_ `shell::install_python 3.11`
+  _Example:_ `shell::python::install 3.11`
 
 - **`shell::create_python_env`**
   Creates a new Python virtual environment.
