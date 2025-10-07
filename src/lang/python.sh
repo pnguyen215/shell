@@ -509,11 +509,11 @@ shell::python::venv::create() {
 	fi
 }
 
-# shell::install_pkg_python_env function
+# shell::python::venv::pkg::install function
 # Installs Python packages into an existing virtual environment using pip, avoiding system package conflicts.
 #
 # Usage:
-#   shell::install_pkg_python_env [-n] [-p <path>] <package1> [package2 ...]
+#   shell::python::venv::pkg::install [-n] [-p <path>] <package1> [package2 ...]
 #
 # Parameters:
 #   - -n          : Optional dry-run flag. If provided, commands are printed using shell::logger::cmd_copy instead of executed.
@@ -528,26 +528,26 @@ shell::python::venv::create() {
 #   - Provides feedback on success or failure, with dry-run support for previewing commands.
 #
 # Example:
-#   shell::install_pkg_python_env numpy pandas    # Installs numpy and pandas in ./venv.
-#   shell::install_pkg_python_env -n requests     # Prints installation command without executing.
-#   shell::install_pkg_python_env -p ~/my_env flask  # Installs flask in ~/my_env.
+#   shell::python::venv::pkg::install numpy pandas    # Installs numpy and pandas in ./venv.
+#   shell::python::venv::pkg::install -n requests     # Prints installation command without executing.
+#   shell::python::venv::pkg::install -p ~/my_env flask  # Installs flask in ~/my_env.
 #
 # Notes:
 #   - Requires an existing virtual environment (use shell::python::venv::create to create one if needed).
 #   - Assumes pip is available in the virtual environment (upgraded by shell::python::venv::create).
 #   - Compatible with both Linux (Ubuntu 22.04 LTS) and macOS.
-shell::install_pkg_python_env() {
+shell::python::venv::pkg::install() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Install Python packages into an existing virtual environment using pip."
-		shell::logger::usage "Usage: shell::install_pkg_python_env [-n | --dry-run] [-h | --help] [-p <path>] <package1> [package2 ...]"
+		shell::logger::usage "Usage: shell::python::venv::pkg::install [-n | --dry-run] [-h | --help] [-p <path>] <package1> [package2 ...]"
 		shell::logger::option "-n | --dry-run" "Preview installation commands without executing."
 		shell::logger::option "-p | --path" "Specify the path to the virtual environment (default: ./venv)."
 		shell::logger::option "<package1> [package2 ...]" "One or more Python package names to install (e.g., numpy, requests)."
-		shell::logger::example "shell::install_pkg_python_env numpy pandas"
-		shell::logger::example "shell::install_pkg_python_env -n requests"
-		shell::logger::example "shell::install_pkg_python_env -p ~/my_env flask"
-		shell::logger::example "shell::install_pkg_python_env -n -p ~/my_env flask"
+		shell::logger::example "shell::python::venv::pkg::install numpy pandas"
+		shell::logger::example "shell::python::venv::pkg::install -n requests"
+		shell::logger::example "shell::python::venv::pkg::install -p ~/my_env flask"
+		shell::logger::example "shell::python::venv::pkg::install -n -p ~/my_env flask"
 		return $RETURN_SUCCESS
 	fi
 

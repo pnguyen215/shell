@@ -711,9 +711,9 @@ Utilities for various programming languages and project initialization.
   Interactively activate a Python virtual environment.
   _Example:_ `shell::fzf_use_python_env`
 
-- **`shell::install_pkg_python_env`**
+- **`shell::python::venv::pkg::install`**
   Installs packages in the active Python environment.
-  _Example:_ `shell::install_pkg_python_env requests pandas`
+  _Example:_ `shell::python::venv::pkg::install requests pandas`
 
 - **`shell::freeze_pkg_python_env`**
   Generates requirements.txt from current environment.
@@ -1092,7 +1092,7 @@ shell::add_go_gitignore
 # Set up Python environment
 shell::python::venv::create myproject
 shell::fzf_use_python_env  # Activate environment
-shell::install_pkg_python_env requests flask pandas
+shell::python::venv::pkg::install requests flask pandas
 shell::freeze_pkg_python_env > requirements.txt
 ```
 

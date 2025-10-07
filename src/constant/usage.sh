@@ -937,11 +937,11 @@ Example:
 "
 
 USAGE_SHELL_INSTALL_PKG_PYTHON_ENV="
-shell::install_pkg_python_env function
+shell::python::venv::pkg::install function
 Installs Python packages into an existing virtual environment using pip, avoiding system package conflicts.
 
 Usage:
-  shell::install_pkg_python_env [-n] [-h] [-p <path>] <package1> [package2 ...]
+  shell::python::venv::pkg::install [-n] [-h] [-p <path>] <package1> [package2 ...]
 
 Parameters:
   - -n          : Optional dry-run flag. If provided, commands are printed using shell::logger::cmd_copy instead of executed.
@@ -957,9 +957,9 @@ Description:
   - Provides feedback on success or failure, with dry-run support for previewing commands.
 
 Example:
-  shell::install_pkg_python_env numpy pandas    # Installs numpy and pandas in ./venv.
-  shell::install_pkg_python_env -n requests     # Prints installation command without executing.
-  shell::install_pkg_python_env -p ~/my_env flask  # Installs flask in ~/my_env.
+  shell::python::venv::pkg::install numpy pandas    # Installs numpy and pandas in ./venv.
+  shell::python::venv::pkg::install -n requests     # Prints installation command without executing.
+  shell::python::venv::pkg::install -p ~/my_env flask  # Installs flask in ~/my_env.
 "
 
 USAGE_SHELL_UNINSTALL_PKG_PYTHON_ENV="
