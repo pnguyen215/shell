@@ -213,11 +213,11 @@ shell::python::uninstall() {
 	shell::logger::exec_check "$cmd"
 }
 
-# shell::python::pip::uninstall_packages function
+# shell::python::pip::uninstall function
 # Uninstalls all pip and pip3 packages with user confirmation and optional dry-run.
 #
 # Usage:
-#   shell::python::pip::uninstall_packages [-n | --dry-run] [-h | --help] <pip_version>
+#   shell::python::pip::uninstall [-n | --dry-run] [-h | --help] <pip_version>
 #
 # Parameters:
 #   - -n : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
@@ -229,23 +229,23 @@ shell::python::uninstall() {
 #   Prompts for confirmation before uninstalling.
 #
 # Example:
-#   shell::python::pip::uninstall_packages pip3       # Uninstalls all pip3 packages.
-#   shell::python::pip::uninstall_packages -n pip3    # Prints the uninstallation command without executing it.
-#   shell::python::pip::uninstall_packages --dry-run pip3  # Prints the uninstallation command without executing it.
+#   shell::python::pip::uninstall pip3       # Uninstalls all pip3 packages.
+#   shell::python::pip::uninstall -n pip3    # Prints the uninstallation command without executing it.
+#   shell::python::pip::uninstall --dry-run pip3  # Prints the uninstallation command without executing it.
 #
 # Notes:
 #   - Requires sudo privileges.
-shell::python::pip::uninstall_packages() {
+shell::python::pip::uninstall() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Uninstall pip packages"
-		shell::logger::usage "shell::python::pip::uninstall_packages [-n | --dry-run] [-h | --help] <pip_version>"
+		shell::logger::usage "shell::python::pip::uninstall [-n | --dry-run] [-h | --help] <pip_version>"
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
 		shell::logger::option "-h, --help" "Display this help message"
 		shell::logger::option "pip_version" "The pip version to uninstall (e.g., pip3, pip)"
-		shell::logger::example "shell::python::pip::uninstall_packages pip3"
-		shell::logger::example "shell::python::pip::uninstall_packages -n pip3"
-		shell::logger::example "shell::python::pip::uninstall_packages --dry-run pip3"
+		shell::logger::example "shell::python::pip::uninstall pip3"
+		shell::logger::example "shell::python::pip::uninstall -n pip3"
+		shell::logger::example "shell::python::pip::uninstall --dry-run pip3"
 		return $RETURN_SUCCESS
 	fi
 
@@ -344,23 +344,23 @@ shell::uninstall_pip_pkg() {
 		if shell::is_command_available pip && shell::is_command_available pip3; then
 			if [ "$(command -v pip)" = "$(command -v pip3)" ]; then
 				shell::logger::warn "pip and pip3 are the same; uninstalling once."
-				shell::python::pip::uninstall_packages "pip"
+				shell::python::pip::uninstall "pip"
 			else
-				shell::python::pip::uninstall_packages "pip"
-				shell::python::pip::uninstall_packages "pip3"
+				shell::python::pip::uninstall "pip"
+				shell::python::pip::uninstall "pip3"
 			fi
 		elif shell::is_command_available pip; then
-			shell::python::pip::uninstall_packages "pip"
+			shell::python::pip::uninstall "pip"
 		elif shell::is_command_available pip3; then
-			shell::python::pip::uninstall_packages "pip3"
+			shell::python::pip::uninstall "pip3"
 		else
 			shell::logger::warn "Neither pip nor pip3 is installed."
 		fi
 	fi
 
 	if [ "$dry_run" = "true" ]; then
-		shell::python::pip::uninstall_packages -n "pip"
-		shell::python::pip::uninstall_packages -n "pip3"
+		shell::python::pip::uninstall -n "pip"
+		shell::python::pip::uninstall -n "pip3"
 	fi
 	return $RETURN_SUCCESS
 }
