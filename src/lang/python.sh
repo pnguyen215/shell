@@ -123,11 +123,11 @@ shell::python::is_installed() {
 	return $RETURN_SUCCESS
 }
 
-# shell::uninstall_python function
+# shell::python::uninstall function
 # Removes Python (python3) and its core components from the system.
 #
 # Usage:
-#   shell::uninstall_python [-n]
+#   shell::python::uninstall [-n]
 #
 # Parameters:
 #   - -n : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
@@ -139,22 +139,22 @@ shell::python::is_installed() {
 #   Warns about potential system impact on Linux due to Python dependencies.
 #
 # Example:
-#   shell::uninstall_python       # Removes Python 3.
-#   shell::uninstall_python -n    # Prints the removal command without executing it.
+#   shell::python::uninstall       # Removes Python 3.
+#   shell::python::uninstall -n    # Prints the removal command without executing it.
 #
 # Notes:
 #   - Requires sudo privileges.
 #   - On Linux, system tools may break if Python is a core dependency; use with caution.
-shell::uninstall_python() {
+shell::python::uninstall() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Uninstall Python3"
-		shell::logger::usage "shell::uninstall_python [-n | --dry-run] [-h | --help]"
+		shell::logger::usage "shell::python::uninstall [-n | --dry-run] [-h | --help]"
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
 		shell::logger::option "-h, --help" "Display this help message"
-		shell::logger::example "shell::uninstall_python"
-		shell::logger::example "shell::uninstall_python -n"
-		shell::logger::example "shell::uninstall_python --dry-run"
+		shell::logger::example "shell::python::uninstall"
+		shell::logger::example "shell::python::uninstall -n"
+		shell::logger::example "shell::python::uninstall --dry-run"
 		return $RETURN_SUCCESS
 	fi
 

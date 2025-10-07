@@ -844,11 +844,11 @@ Example:
 "
 
 USAGE_SHELL_UNINSTALL_PYTHON="
-shell::uninstall_python function
+shell::python::uninstall function
 Removes Python (python3) and its core components from the system.
 
 Usage:
-  shell::uninstall_python [-n] [-h]
+  shell::python::uninstall [-n] [-h]
 
 Parameters:
   - -n : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
@@ -861,8 +861,8 @@ Description:
   Warns about potential system impact on Linux due to Python dependencies.
 
 Example:
-  shell::uninstall_python       # Removes Python 3.
-  shell::uninstall_python -n    # Prints the removal command without executing it.
+  shell::python::uninstall       # Removes Python 3.
+  shell::python::uninstall -n    # Prints the removal command without executing it.
 "
 
 USAGE_SHELL_UNINSTALL_PYTHON_PIP_DEPS="
