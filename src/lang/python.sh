@@ -646,9 +646,18 @@ shell::python::venv::pkg::install() {
 #   - Assumes pip is available in the virtual environment.
 #   - Compatible with both Linux (Ubuntu 22.04 LTS) and macOS.
 shell::uninstall_pkg_python_env() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_UNINSTALL_PKG_PYTHON_ENV"
-		return 0
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Uninstall Python packages from an existing virtual environment using pip."
+		shell::logger::usage "Usage: shell::uninstall_pkg_python_env [-n | --dry-run] [-h | --help] [-p <path>] <package1> [package2 ...]"
+		shell::logger::option "-n | --dry-run" "Preview uninstallation commands without executing."
+		shell::logger::option "-p | --path" "Specify the path to the virtual environment (default: ./venv)."
+		shell::logger::option "<package1> [package2 ...]" "One or more Python package names to uninstall (e.g., numpy, requests)."
+		shell::logger::example "shell::uninstall_pkg_python_env numpy pandas"
+		shell::logger::example "shell::uninstall_pkg_python_env -n requests"
+		shell::logger::example "shell::uninstall_pkg_python_env -p ~/my_env flask"
+		shell::logger::example "shell::uninstall_pkg_python_env -n -p ~/my_env flask"
+		return $RETURN_SUCCESS
 	fi
 
 	local dry_run="false"
@@ -658,11 +667,11 @@ shell::uninstall_pkg_python_env() {
 	# Parse optional arguments
 	while [ $# -gt 0 ]; do
 		case "$1" in
-		-n)
+		-n | --dry-run)
 			dry_run="true"
 			shift
 			;;
-		-p)
+		-p | --path)
 			venv_path="$2"
 			shift 2
 			;;
@@ -675,49 +684,37 @@ shell::uninstall_pkg_python_env() {
 
 	# Validate that at least one package is specified
 	if [ ${#packages[@]} -eq 0 ]; then
-		shell::stdout "ERR: No packages specified." 196
-		shell::stdout "Usage: shell::uninstall_pkg_python_env [-n] [-p <path>] <package1> [package2 ...]"
-		return 1
+		shell::logger::error "No packages specified"
+		return $RETURN_FAILURE
 	fi
 
-	# Check if the virtual environment exists
-	if [ ! -d "$venv_path" ] || [ ! -f "$venv_path/bin/pip" ]; then
-		shell::stdout "ERR: Virtual environment at '$venv_path' does not exist or is invalid. Create it with shell::python::venv::create first." 196
-		return 1
-	fi
-
-	local os_type
-	os_type=$(shell::get_os_type)
 	local pip_cmd="$venv_path/bin/pip"
 
-	# Ensure pip command is available
-	if ! shell::is_command_available "$pip_cmd"; then
-		shell::stdout "ERR: pip not found in virtual environment at '$venv_path'." 196
-		return 1
+	if [ "$dry_run" = "false" ]; then
+		# Check if the virtual environment exists
+		if [ ! -d "$venv_path" ] || [ ! -f "$venv_path/bin/pip" ]; then
+			shell::logger::error "Virtual environment at '$venv_path' does not exist or is invalid. Create it with shell::python::venv::create first."
+			return $RETURN_FAILURE
+		fi
+
+		# Ensure pip command is available
+		if ! shell::is_command_available "$pip_cmd"; then
+			shell::logger::error "pip not found in virtual environment at '$venv_path'"
+			return $RETURN_FAILURE
+		fi
 	fi
 
-	# Construct the uninstall command
 	local uninstall_cmd="$pip_cmd uninstall -y" # -y to skip confirmation
 	for pkg in "${packages[@]}"; do
 		uninstall_cmd="$uninstall_cmd \"$pkg\""
 	done
 
-	# Execute or preview the uninstallation
-	shell::stdout "🔍 Uninstalling packages (${packages[*]}) from virtual environment at '$venv_path'..." 36
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::cmd_copy "$uninstall_cmd"
-	else
-		# Run the uninstallation asynchronously
-		shell::async "$uninstall_cmd" &
-		local pid=$!
-		wait $pid
-		if [ $? -eq 0 ]; then
-			shell::stdout "INFO: Packages uninstalled successfully: ${packages[*]}" 46
-		else
-			shell::stdout "ERR: Failed to uninstall one or more packages." 196
-			return 1
-		fi
+		return $RETURN_SUCCESS
 	fi
+
+	shell::logger::exec_check "$uninstall_cmd"
 }
 
 # shell::fzf_uninstall_pkg_python_env function
