@@ -537,9 +537,18 @@ shell::create_python_env() {
 #   - Assumes pip is available in the virtual environment (upgraded by shell::create_python_env).
 #   - Compatible with both Linux (Ubuntu 22.04 LTS) and macOS.
 shell::install_pkg_python_env() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_INSTALL_PKG_PYTHON_ENV"
-		return 0
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Install Python packages into an existing virtual environment using pip."
+		shell::logger::usage "Usage: shell::install_pkg_python_env [-n | --dry-run] [-h | --help] [-p <path>] <package1> [package2 ...]"
+		shell::logger::option "-n | --dry-run" "Preview installation commands without executing."
+		shell::logger::option "-p | --path" "Specify the path to the virtual environment (default: ./venv)."
+		shell::logger::option "<package1> [package2 ...]" "One or more Python package names to install (e.g., numpy, requests)."
+		shell::logger::example "shell::install_pkg_python_env numpy pandas"
+		shell::logger::example "shell::install_pkg_python_env -n requests"
+		shell::logger::example "shell::install_pkg_python_env -p ~/my_env flask"
+		shell::logger::example "shell::install_pkg_python_env -n -p ~/my_env flask"
+		return $RETURN_SUCCESS
 	fi
 
 	local dry_run="false"
@@ -549,11 +558,11 @@ shell::install_pkg_python_env() {
 	# Parse optional arguments
 	while [ $# -gt 0 ]; do
 		case "$1" in
-		-n)
+		-n | --dry-run)
 			dry_run="true"
 			shift
 			;;
-		-p)
+		-p | --path)
 			venv_path="$2"
 			shift 2
 			;;
