@@ -746,7 +746,7 @@ shell::python::venv::pkg::uninstall_fzf() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Uninstall Python packages from an existing virtual environment using fzf for interactive selection."
-		shell::logger::usage "Usage: shell::python::venv::pkg::uninstall_fzf [-n | --dry-run] [-h | --help] [-p <path>]"
+		shell::logger::usage "shell::python::venv::pkg::uninstall_fzf [-n | --dry-run] [-h | --help] [-p <path>]"
 		shell::logger::option "-n | --dry-run" "Preview uninstallation commands without executing."
 		shell::logger::option "-p | --path" "Specify the path to the virtual environment (default: ./venv)."
 		shell::logger::example "shell::python::venv::pkg::uninstall_fzf"
