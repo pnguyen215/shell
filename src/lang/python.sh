@@ -1243,11 +1243,11 @@ shell::python::venv::pkg::freeze() {
 	shell::logger::exec_check "$freeze_cmd"
 }
 
-# shell::pip_install_requirements_env function
+# shell::python::venv::pkg::install_requirements function
 # Installs Python packages from a requirements.txt file into a virtual environment.
 #
 # Usage:
-#   shell::pip_install_requirements_env [-n] [-p <path>]
+#   shell::python::venv::pkg::install_requirements [-n] [-p <path>]
 #
 # Parameters:
 #   - -n          : Optional dry-run flag. If provided, commands are printed using shell::logger::cmd_copy instead of executed.
@@ -1261,21 +1261,21 @@ shell::python::venv::pkg::freeze() {
 #   - It implements asynchronous execution for the installation process.
 #
 # Example:
-#   shell::pip_install_requirements_env         # Installs from requirements.txt in ./venv.
-#   shell::pip_install_requirements_env -n -p ~/my_env  # Prints the installation command for ~/my_env without executing.
+#   shell::python::venv::pkg::install_requirements         # Installs from requirements.txt in ./venv.
+#   shell::python::venv::pkg::install_requirements -n -p ~/my_env  # Prints the installation command for ~/my_env without executing.
 #
 # Notes:
 #   - Requires an existing virtual environment and a requirements.txt file.
 #   - Assumes pip is available in the virtual environment.
-shell::pip_install_requirements_env() {
+shell::python::venv::pkg::install_requirements() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Installs Python packages from a requirements.txt file into a virtual environment."
-		shell::logger::usage "shell::pip_install_requirements_env [-n | --dry-run] [-h | --help] [-p | --path]"
+		shell::logger::usage "shell::python::venv::pkg::install_requirements [-n | --dry-run] [-h | --help] [-p | --path]"
 		shell::logger::option "-n | --dry-run" "Preview installation commands without executing."
 		shell::logger::option "-p | --path" "Specify the path to the virtual environment (default: ./venv)."
-		shell::logger::example "shell::pip_install_requirements_env"
-		shell::logger::example "shell::pip_install_requirements_env -n -p ~/my_env"
+		shell::logger::example "shell::python::venv::pkg::install_requirements"
+		shell::logger::example "shell::python::venv::pkg::install_requirements -n -p ~/my_env"
 		return $RETURN_SUCCESS
 	fi
 
