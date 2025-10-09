@@ -918,7 +918,7 @@ shell::fzf_use_python_env() {
 	# Handle deactivation if already in a virtual environment
 	if [ -n "$VIRTUAL_ENV" ]; then
 		local ask=$(shell::ask "Do you want to deactivate it first?")
-		if [ "$ask" = "yes"]; then
+		if [ "$ask" = "yes" ]; then
 			deactivate_cmd="deactivate"
 		fi
 	fi
