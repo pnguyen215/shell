@@ -1189,7 +1189,7 @@ shell::python::venv::pkg::freeze() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Exports a list of installed packages and their versions from a Python virtual environment to a requirements.txt file."
-		shell::logger::usage "Usage: shell::python::venv::pkg::freeze [-n | --dry-run] [-h | --help] [-p <path>]"
+		shell::logger::usage "shell::python::venv::pkg::freeze [-n | --dry-run] [-h | --help] [-p <path>]"
 		shell::logger::option "-n | --dry-run" "Preview export commands without executing."
 		shell::logger::option "-p | --path" "Specify the path to the virtual environment (default: ./venv)."
 		shell::logger::example "shell::python::venv::pkg::freeze"
