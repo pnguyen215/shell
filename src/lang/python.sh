@@ -717,11 +717,11 @@ shell::python::venv::pkg::uninstall() {
 	shell::logger::exec_check "$uninstall_cmd"
 }
 
-# shell::fzf_uninstall_pkg_python_env function
+# shell::python::venv::pkg::uninstall_fzf function
 # Interactively uninstalls Python packages from a virtual environment using fzf for package selection.
 #
 # Usage:
-#   shell::fzf_uninstall_pkg_python_env [-n] [-p <path>]
+#   shell::python::venv::pkg::uninstall_fzf [-n] [-p <path>]
 #
 # Parameters:
 #   - -n          : Optional dry-run flag.
@@ -737,20 +737,20 @@ shell::python::venv::pkg::uninstall() {
 #   - Supports dry-run and asynchronous execution.
 #
 # Example:
-#   shell::fzf_uninstall_pkg_python_env          # Uninstalls packages from ./venv after interactive selection.
-#   shell::fzf_uninstall_pkg_python_env -n -p ~/my_env  # Prints uninstallation commands for ~/my_env without executing.
+#   shell::python::venv::pkg::uninstall_fzf          # Uninstalls packages from ./venv after interactive selection.
+#   shell::python::venv::pkg::uninstall_fzf -n -p ~/my_env  # Prints uninstallation commands for ~/my_env without executing.
 #
 # Notes:
 #   - Requires fzf and an existing virtual environment.
-shell::fzf_uninstall_pkg_python_env() {
+shell::python::venv::pkg::uninstall_fzf() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Uninstall Python packages from an existing virtual environment using fzf for interactive selection."
-		shell::logger::usage "Usage: shell::fzf_uninstall_pkg_python_env [-n | --dry-run] [-h | --help] [-p <path>]"
+		shell::logger::usage "Usage: shell::python::venv::pkg::uninstall_fzf [-n | --dry-run] [-h | --help] [-p <path>]"
 		shell::logger::option "-n | --dry-run" "Preview uninstallation commands without executing."
 		shell::logger::option "-p | --path" "Specify the path to the virtual environment (default: ./venv)."
-		shell::logger::example "shell::fzf_uninstall_pkg_python_env"
-		shell::logger::example "shell::fzf_uninstall_pkg_python_env -n -p ~/my_env"
+		shell::logger::example "shell::python::venv::pkg::uninstall_fzf"
+		shell::logger::example "shell::python::venv::pkg::uninstall_fzf -n -p ~/my_env"
 		return $RETURN_SUCCESS
 	fi
 

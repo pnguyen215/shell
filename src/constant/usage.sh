@@ -997,11 +997,11 @@ Example:
 "
 
 USAGE_SHELL_FZF_UNINSTALL_PKG_PYTHON_ENV="
-shell::fzf_uninstall_pkg_python_env function
+shell::python::venv::pkg::uninstall_fzf function
 Interactively uninstalls Python packages from a virtual environment using fzf for package selection.
 
 Usage:
-  shell::fzf_uninstall_pkg_python_env [-n] [-h] [-p <path>]
+  shell::python::venv::pkg::uninstall_fzf [-n] [-h] [-p <path>]
 
 Parameters:
   - -n          : Optional dry-run flag.
@@ -1018,8 +1018,8 @@ Description:
   - Supports dry-run and asynchronous execution.
 
 Example:
-  shell::fzf_uninstall_pkg_python_env          # Uninstalls packages from ./venv after interactive selection.
-  shell::fzf_uninstall_pkg_python_env -n -p ~/my_env  # Prints uninstallation commands for ~/my_env without executing.
+  shell::python::venv::pkg::uninstall_fzf          # Uninstalls packages from ./venv after interactive selection.
+  shell::python::venv::pkg::uninstall_fzf -n -p ~/my_env  # Prints uninstallation commands for ~/my_env without executing.
 "
 
 USAGE_SHELL_FZF_USE_PYTHON_ENV="
