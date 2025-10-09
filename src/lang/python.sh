@@ -864,9 +864,15 @@ shell::python::venv::pkg::uninstall_fzf() {
 # Notes:
 #   - Requires fzf.
 shell::fzf_use_python_env() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_FZF_USE_PYTHON_ENV"
-		return 0
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Interactively selects a Python virtual environment using fzf and activates/deactivates it."
+		shell::logger::usage "Usage: shell::fzf_use_python_env [-n | --dry-run] [-h | --help] [-p <path>]"
+		shell::logger::option "-n | --dry-run" "Preview activation commands without executing."
+		shell::logger::option "-p | --path" "Specify the parent path to search for virtual environments (default: current directory)."
+		shell::logger::example "shell::fzf_use_python_env"
+		shell::logger::example "shell::fzf_use_python_env -n -p ~/projects"
+		return $RETURN_SUCCESS
 	fi
 
 	local dry_run="false"
@@ -875,18 +881,17 @@ shell::fzf_use_python_env() {
 	# Parse optional arguments
 	while [ $# -gt 0 ]; do
 		case "$1" in
-		-n)
+		-n | --dry-run)
 			dry_run="true"
 			shift
 			;;
-		-p)
+		-p | --path)
 			parent_path="$2"
 			shift 2
 			;;
 		*)
-			shell::stdout "ERR: Unknown option '$1'." 196
-			shell::stdout "Usage: shell::fzf_use_python_env [-n] [-p <path>]"
-			return 1
+			shell::logger::error "Unknown option '$1'"
+			return $RETURN_FAILURE
 			;;
 		esac
 	done
@@ -895,46 +900,50 @@ shell::fzf_use_python_env() {
 	shell::install_package fzf
 
 	# Find virtual environments
-	local venv_dirs
-	venv_dirs=$(find "$parent_path" -type d -name "bin" -print0 | xargs -0 -I {} dirname {} | grep -v "__pycache__")
+	local venv_dirs=$(find "$parent_path" -type d -name "bin" -print0 | xargs -0 -I {} dirname {} | grep -v "__pycache__")
 
 	# Use fzf to select a virtual environment
-	local selected_venv
-	selected_venv=$(echo "$venv_dirs" | fzf --prompt="Select a virtual environment: ")
+	local selected_venv=$(echo "$venv_dirs" | fzf --prompt="Select a virtual environment: ")
 
 	# Handle no selection
 	if [ -z "$selected_venv" ]; then
-		shell::stdout "WARN: No virtual environment selected." 33
-		return 0
+		shell::logger::warn "No virtual environment selected."
+		return $RETURN_SUCCESS
 	fi
 
 	# Construct the activation command
 	local activate_cmd="source \"$selected_venv/bin/activate\""
+	local deactivate_cmd=""
 
 	# Handle deactivation if already in a virtual environment
 	if [ -n "$VIRTUAL_ENV" ]; then
-		shell::stdout "WARN: Current virtual environment: $VIRTUAL_ENV" 33
-		shell::stdout "❓ Do you want to deactivate it first? (y/n)" 33
-		read -r deactivate_choice
-		if [[ "$deactivate_choice" =~ ^[Yy](es)?$ ]]; then
-			local deactivate_cmd="deactivate"
-			if [ "$dry_run" = "true" ]; then
-				shell::logger::cmd_copy "$deactivate_cmd"
-			else
-				shell::run_cmd_eval "$deactivate_cmd"
-			fi
-			return 0
+		local ask=$(shell::ask "Do you want to deactivate it first?")
+		if [ "$ask" = "yes"]; then
+			deactivate_cmd="deactivate"
 		fi
 	fi
 
-	# Activate the selected virtual environment
-	shell::stdout "🔍 Activating virtual environment: $selected_venv" 36
 	if [ "$dry_run" = "true" ]; then
-		shell::logger::cmd_copy "$activate_cmd"
-	else
-		shell::run_cmd_eval "$activate_cmd"
-		shell::stdout "INFO: Virtual environment activated." 46
+		local step=1
+		shell::logger::section "Fzf: Activate a Python virtual environment."
+		shell::logger::step $((step++)) "Find virtual environments"
+		shell::logger::cmd \"""find "$parent_path" -type d -name "bin" -print0 | xargs -0 -I {} dirname {} | grep -v "__pycache__\""
+		shell::logger::step $((step++)) "Selected virtual environment"
+		shell::logger::cmd "\"$selected_venv\""
+		if [ -n "$deactivate_cmd" ]; then
+			shell::logger::step $((step++)) "Deactivate current environment"
+			shell::logger::cmd "$deactivate_cmd"
+		fi
+		shell::logger::step $((step++)) "Activate selected environment"
+		shell::logger::cmd "$activate_cmd"
+		return $RETURN_SUCCESS
 	fi
+
+	if [ -n "$deactivate_cmd" ]; then
+		shell::logger::exec_check "$deactivate_cmd"
+	fi
+
+	shell::logger::exec_check "$activate_cmd"
 }
 
 # shell::fzf_upgrade_pkg_python_env function
