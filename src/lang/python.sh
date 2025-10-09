@@ -837,11 +837,11 @@ shell::python::venv::pkg::uninstall_fzf() {
 	shell::python::venv::pkg::uninstall "${uninstall_args[@]}"
 }
 
-# shell::fzf_use_python_env function
+# shell::python::venv::activate_fzf function
 # Interactively selects a Python virtual environment using fzf and activates/deactivates it.
 #
 # Usage:
-#   shell::fzf_use_python_env [-n] [-p <path>]
+#   shell::python::venv::activate_fzf [-n] [-p <path>]
 #
 # Parameters:
 #   - -n          : Optional dry-run flag.
@@ -858,20 +858,20 @@ shell::python::venv::pkg::uninstall_fzf() {
 #   - Supports dry-run.
 #
 # Example:
-#   shell::fzf_use_python_env          # Select and activate a venv from the current directory.
-#   shell::fzf_use_python_env -n -p ~/projects  # Prints activation command for a venv in ~/projects without executing.
+#   shell::python::venv::activate_fzf          # Select and activate a venv from the current directory.
+#   shell::python::venv::activate_fzf -n -p ~/projects  # Prints activation command for a venv in ~/projects without executing.
 #
 # Notes:
 #   - Requires fzf.
-shell::fzf_use_python_env() {
+shell::python::venv::activate_fzf() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Interactively selects a Python virtual environment using fzf and activates/deactivates it."
-		shell::logger::usage "Usage: shell::fzf_use_python_env [-n | --dry-run] [-h | --help] [-p <path>]"
+		shell::logger::usage "Usage: shell::python::venv::activate_fzf [-n | --dry-run] [-h | --help] [-p <path>]"
 		shell::logger::option "-n | --dry-run" "Preview activation commands without executing."
 		shell::logger::option "-p | --path" "Specify the parent path to search for virtual environments (default: current directory)."
-		shell::logger::example "shell::fzf_use_python_env"
-		shell::logger::example "shell::fzf_use_python_env -n -p ~/projects"
+		shell::logger::example "shell::python::venv::activate_fzf"
+		shell::logger::example "shell::python::venv::activate_fzf -n -p ~/projects"
 		return $RETURN_SUCCESS
 	fi
 

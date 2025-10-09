@@ -1023,11 +1023,11 @@ Example:
 "
 
 USAGE_SHELL_FZF_USE_PYTHON_ENV="
-shell::fzf_use_python_env function
+shell::python::venv::activate_fzf function
 Interactively selects a Python virtual environment using fzf and activates/deactivates it.
 
 Usage:
-  shell::fzf_use_python_env [-n] [-h] [-p <path>]
+  shell::python::venv::activate_fzf [-n] [-h] [-p <path>]
 
 Parameters:
   - -n          : Optional dry-run flag.
@@ -1045,8 +1045,8 @@ Description:
   - Supports dry-run.
 
 Example:
-  shell::fzf_use_python_env          # Select and activate a venv from the current directory.
-  shell::fzf_use_python_env -n -p ~/projects  # Prints activation command for a venv in ~/projects without executing.
+  shell::python::venv::activate_fzf          # Select and activate a venv from the current directory.
+  shell::python::venv::activate_fzf -n -p ~/projects  # Prints activation command for a venv in ~/projects without executing.
 "
 
 USAGE_SHELL_FZF_UPGRADE_PKG_PYTHON_ENV="
