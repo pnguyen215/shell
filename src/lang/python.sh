@@ -649,7 +649,7 @@ shell::python::venv::pkg::uninstall() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Uninstall Python packages from an existing virtual environment using pip."
-		shell::logger::usage "Usage: shell::python::venv::pkg::uninstall [-n | --dry-run] [-h | --help] [-p <path>] <package1> [package2 ...]"
+		shell::logger::usage "shell::python::venv::pkg::uninstall [-n | --dry-run] [-h | --help] [-p <path>] <package1> [package2 ...]"
 		shell::logger::option "-n | --dry-run" "Preview uninstallation commands without executing."
 		shell::logger::option "-p | --path" "Specify the path to the virtual environment (default: ./venv)."
 		shell::logger::option "<package1> [package2 ...]" "One or more Python package names to uninstall (e.g., numpy, requests)."
