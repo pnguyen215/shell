@@ -1072,7 +1072,7 @@ shell::python::venv::pkg::upgrade_fzf() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Interactively upgrades Python packages in a virtual environment using fzf for package selection."
-		shell::logger::usage "Usage: shell::python::venv::pkg::upgrade_fzf [-n | --dry-run] [-h | --help] [-p <path>]"
+		shell::logger::usage "shell::python::venv::pkg::upgrade_fzf [-n | --dry-run] [-h | --help] [-p <path>]"
 		shell::logger::option "-n | --dry-run" "Preview upgrade commands without executing."
 		shell::logger::option "-p | --path" "Specify the path to the virtual environment (default: ./venv)."
 		shell::logger::example "shell::python::venv::pkg::upgrade_fzf"
