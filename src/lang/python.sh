@@ -1161,11 +1161,11 @@ shell::python::venv::pkg::upgrade_fzf() {
 	done
 }
 
-# shell::freeze_pkg_python_env function
+# shell::python::venv::pkg::freeze function
 # Exports a list of installed packages and their versions from a Python virtual environment to a requirements.txt file.
 #
 # Usage:
-#   shell::freeze_pkg_python_env [-n] [-p <path>]
+#   shell::python::venv::pkg::freeze [-n] [-p <path>]
 #
 # Parameters:
 #   - -n          : Optional dry-run flag. If provided, commands are printed using shell::logger::cmd_copy instead of executed.
@@ -1179,21 +1179,21 @@ shell::python::venv::pkg::upgrade_fzf() {
 #   - It implements asynchronous execution for the freeze operation.
 #
 # Example:
-#   shell::freeze_pkg_python_env         # Exports requirements from ./venv.
-#   shell::freeze_pkg_python_env -n -p ~/my_env  # Prints the export command for ~/my_env without executing.
+#   shell::python::venv::pkg::freeze         # Exports requirements from ./venv.
+#   shell::python::venv::pkg::freeze -n -p ~/my_env  # Prints the export command for ~/my_env without executing.
 #
 # Notes:
 #   - Requires an existing virtual environment.
 #   - Assumes pip is available in the virtual environment.
-shell::freeze_pkg_python_env() {
+shell::python::venv::pkg::freeze() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Exports a list of installed packages and their versions from a Python virtual environment to a requirements.txt file."
-		shell::logger::usage "Usage: shell::freeze_pkg_python_env [-n | --dry-run] [-h | --help] [-p <path>]"
+		shell::logger::usage "Usage: shell::python::venv::pkg::freeze [-n | --dry-run] [-h | --help] [-p <path>]"
 		shell::logger::option "-n | --dry-run" "Preview export commands without executing."
 		shell::logger::option "-p | --path" "Specify the path to the virtual environment (default: ./venv)."
-		shell::logger::example "shell::freeze_pkg_python_env"
-		shell::logger::example "shell::freeze_pkg_python_env -n -p ~/my_env"
+		shell::logger::example "shell::python::venv::pkg::freeze"
+		shell::logger::example "shell::python::venv::pkg::freeze -n -p ~/my_env"
 		return $RETURN_SUCCESS
 	fi
 

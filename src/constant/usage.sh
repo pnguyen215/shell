@@ -1104,11 +1104,11 @@ Example:
 "
 
 USAGE_SHELL_FREEZE_PKG_PYTHON_ENV="
-shell::freeze_pkg_python_env function
+shell::python::venv::pkg::freeze function
 Exports a list of installed packages and their versions from a Python virtual environment to a requirements.txt file.
 
 Usage:
-  shell::freeze_pkg_python_env [-n] [-h] [-p <path>]
+  shell::python::venv::pkg::freeze [-n] [-h] [-p <path>]
 
 Parameters:
   - -n          : Optional dry-run flag. If provided, commands are printed using shell::logger::cmd_copy instead of executed.
@@ -1123,8 +1123,8 @@ Description:
   - It implements asynchronous execution for the freeze operation.
 
 Example:
-  shell::freeze_pkg_python_env         # Exports requirements from ./venv.
-  shell::freeze_pkg_python_env -n -p ~/my_env  # Prints the export command for ~/my_env without executing.
+  shell::python::venv::pkg::freeze         # Exports requirements from ./venv.
+  shell::python::venv::pkg::freeze -n -p ~/my_env  # Prints the export command for ~/my_env without executing.
 "
 
 USAGE_SHELL_PIP_INSTALL_REQUIREMENTS_ENV="

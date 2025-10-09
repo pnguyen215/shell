@@ -715,9 +715,9 @@ Utilities for various programming languages and project initialization.
   Installs packages in the active Python environment.
   _Example:_ `shell::python::venv::pkg::install requests pandas`
 
-- **`shell::freeze_pkg_python_env`**
+- **`shell::python::venv::pkg::freeze`**
   Generates requirements.txt from current environment.
-  _Example:_ `shell::freeze_pkg_python_env`
+  _Example:_ `shell::python::venv::pkg::freeze`
 
 - **`shell::add_python_gitignore`**
   Adds Python-specific .gitignore file to the current project.
@@ -1093,7 +1093,7 @@ shell::add_go_gitignore
 shell::python::venv::create myproject
 shell::python::venv::activate_fzf  # Activate environment
 shell::python::venv::pkg::install requests flask pandas
-shell::freeze_pkg_python_env > requirements.txt
+shell::python::venv::pkg::freeze > requirements.txt
 ```
 
 ### DevOps Integration
