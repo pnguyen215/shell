@@ -946,6 +946,103 @@ shell::python::venv::activate_fzf() {
 	shell::logger::exec_check "$activate_cmd"
 }
 
+# shell::python::venv::pkg::upgrade function
+# Upgrades Python packages in a virtual environment using pip.
+#
+# Usage:
+#   shell::python::venv::pkg::upgrade [-n] [-p <path>] <package1> [package2 ...]
+#
+# Parameters:
+#   - -n          : Optional dry-run flag.
+#                     If provided, commands are printed using shell::logger::cmd_copy instead of executed.
+#   - -p <path>   : Optional.
+#                     Specifies the path to the virtual environment (defaults to ./venv).
+#   - <package1> [package2 ...]: One or more Python package names to upgrade.
+#
+# Description:
+#   This function upgrades specified Python packages within an existing virtual environment:
+#   - Verifies the virtual environment exists at the specified or default path.
+#   - Uses the virtual environment's pip to upgrade packages.
+#   - Supports dry-run mode to preview commands.
+#   - Implements asynchronous execution for the upgrade process.
+#
+# Example:
+#   shell::python::venv::pkg::upgrade numpy pandas   # Upgrades numpy and pandas in ./venv.
+#   shell::python::venv::pkg::upgrade -n requests    # Prints upgrade command without executing.
+#   shell::python::venv::pkg::upgrade -p ~/my_env flask  # Upgrades flask in ~/my_env.
+#
+# Notes:
+#   - Requires an existing virtual environment.
+#   - Assumes pip is available in the virtual environment.
+shell::python::venv::pkg::upgrade() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Upgrades Python packages in a virtual environment using pip."
+		shell::logger::usage "Usage: shell::python::venv::pkg::upgrade [-n] [-p <path>] <package1> [package2 ...]"
+		shell::logger::option "-n" "Preview upgrade commands without executing."
+		shell::logger::option "-p <path>" "Specify the path to the virtual environment (default: ./venv)."
+		shell::logger::example "shell::python::venv::pkg::upgrade numpy pandas"
+		shell::logger::example "shell::python::venv::pkg::upgrade -n requests"
+		shell::logger::example "shell::python::venv::pkg::upgrade -p ~/my_env flask"
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	local venv_path="./venv"
+	local packages=()
+
+	# Parse optional arguments
+	while [ $# -gt 0 ]; do
+		case "$1" in
+		-n | --dry-run)
+			dry_run="true"
+			shift
+			;;
+		-p | --path)
+			venv_path="$2"
+			shift 2
+			;;
+		*)
+			packages+=("$1")
+			shift
+			;;
+		esac
+	done
+
+	# Validate that at least one package is specified
+	if [ ${#packages[@]} -eq 0 ]; then
+		shell::logger::error "No packages specified."
+		return $RETURN_FAILURE
+	fi
+
+	local pip_cmd="$venv_path/bin/pip"
+
+	# Check if the virtual environment exists
+	if [ ! -d "$venv_path" ] || [ ! -f "$pip_cmd" ]; then
+		shell::logger::error "Virtual environment at '$venv_path' does not exist or is invalid."
+		return $RETURN_FAILURE
+	fi
+
+	# Ensure pip command is available
+	if ! shell::is_command_available "$pip_cmd"; then
+		shell::logger::error "pip not found in virtual environment at '$venv_path'."
+		return $RETURN_FAILURE
+	fi
+
+	# Construct the upgrade command
+	local upgrade_cmd="$pip_cmd install --upgrade"
+	for pkg in "${packages[@]}"; do
+		upgrade_cmd="$upgrade_cmd \"$pkg\""
+	done
+
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::cmd "$upgrade_cmd"
+		return $RETURN_SUCCESS
+	fi
+
+	shell::logger::exec_check "$upgrade_cmd"
+}
+
 # shell::python::venv::pkg::upgrade_fzf function
 # Interactively upgrades Python packages in a virtual environment using fzf for package selection.
 #
@@ -1062,107 +1159,6 @@ shell::python::venv::pkg::upgrade_fzf() {
 	for cmd in "${upgrade_commands[@]}"; do
 		shell::logger::exec_check "$cmd"
 	done
-}
-
-# shell::upgrade_pkg_python_env function
-# Upgrades Python packages in a virtual environment using pip.
-#
-# Usage:
-#   shell::upgrade_pkg_python_env [-n] [-p <path>] <package1> [package2 ...]
-#
-# Parameters:
-#   - -n          : Optional dry-run flag.
-#                     If provided, commands are printed using shell::logger::cmd_copy instead of executed.
-#   - -p <path>   : Optional.
-#                     Specifies the path to the virtual environment (defaults to ./venv).
-#   - <package1> [package2 ...]: One or more Python package names to upgrade.
-#
-# Description:
-#   This function upgrades specified Python packages within an existing virtual environment:
-#   - Verifies the virtual environment exists at the specified or default path.
-#   - Uses the virtual environment's pip to upgrade packages.
-#   - Supports dry-run mode to preview commands.
-#   - Implements asynchronous execution for the upgrade process.
-#
-# Example:
-#   shell::upgrade_pkg_python_env numpy pandas   # Upgrades numpy and pandas in ./venv.
-#   shell::upgrade_pkg_python_env -n requests    # Prints upgrade command without executing.
-#   shell::upgrade_pkg_python_env -p ~/my_env flask  # Upgrades flask in ~/my_env.
-#
-# Notes:
-#   - Requires an existing virtual environment.
-#   - Assumes pip is available in the virtual environment.
-shell::upgrade_pkg_python_env() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_UPGRADE_PKG_PYTHON_ENV"
-		return 0
-	fi
-
-	local dry_run="false"
-	local venv_path="./venv"
-	local packages=()
-
-	# Parse optional arguments
-	while [ $# -gt 0 ]; do
-		case "$1" in
-		-n)
-			dry_run="true"
-			shift
-			;;
-		-p)
-			venv_path="$2"
-			shift 2
-			;;
-		*)
-			packages+=("$1")
-			shift
-			;;
-		esac
-	done
-
-	# Validate that at least one package is specified
-	if [ ${#packages[@]} -eq 0 ]; then
-		shell::stdout "ERR: No packages specified." 196
-		shell::stdout "Usage: shell::upgrade_pkg_python_env [-n] [-p <path>] <package1> [package2 ...]"
-		return 1
-	fi
-
-	# Check if the virtual environment exists
-	if [ ! -d "$venv_path" ] || [ ! -f "$venv_path/bin/pip" ]; then
-		shell::stdout "ERR: Virtual environment at '$venv_path' does not exist or is invalid." 196
-		return 1
-	fi
-
-	local pip_cmd="$venv_path/bin/pip"
-
-	# Ensure pip command is available
-	if ! shell::is_command_available "$pip_cmd"; then
-		shell::stdout "ERR: pip not found in virtual environment at '$venv_path'." 196
-		return 1
-	fi
-
-	# Construct the upgrade command
-	local upgrade_cmd="$pip_cmd install --upgrade"
-	for pkg in "${packages[@]}"; do
-		upgrade_cmd="$upgrade_cmd \"$pkg\""
-	done
-
-	# Execute or preview the upgrade
-	shell::stdout "🔍 Upgrading packages (${packages[*]}) in virtual environment at '$venv_path'..." 36
-	if [ "$dry_run" = "true" ]; then
-		shell::logger::cmd_copy "$upgrade_cmd"
-	else
-		# Execute the upgrade asynchronously
-		shell::async "$upgrade_cmd" &
-		local pid=$!
-		wait $pid
-		if [ $? -eq 0 ]; then
-			shell::stdout "INFO: Packages upgraded successfully: ${packages[*]}" 46
-		else
-			shell::stdout "ERR: Failed to upgrade one or more packages." 196
-			return 1
-		fi
-	fi
 }
 
 # shell::freeze_pkg_python_env function

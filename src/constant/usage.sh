@@ -1076,11 +1076,11 @@ Example:
 "
 
 USAGE_SHELL_UPGRADE_PKG_PYTHON_ENV="
-shell::upgrade_pkg_python_env function
+shell::python::venv::pkg::upgrade function
 Upgrades Python packages in a virtual environment using pip.
 
 Usage:
-  shell::upgrade_pkg_python_env [-n] [-h] [-p <path>] <package1> [package2 ...]
+  shell::python::venv::pkg::upgrade [-n] [-h] [-p <path>] <package1> [package2 ...]
 
 Parameters:
   - -n          : Optional dry-run flag.
@@ -1098,9 +1098,9 @@ Description:
   - Implements asynchronous execution for the upgrade process.
 
 Example:
-  shell::upgrade_pkg_python_env numpy pandas   # Upgrades numpy and pandas in ./venv.
-  shell::upgrade_pkg_python_env -n requests    # Prints upgrade command without executing.
-  shell::upgrade_pkg_python_env -p ~/my_env flask  # Upgrades flask in ~/my_env.
+  shell::python::venv::pkg::upgrade numpy pandas   # Upgrades numpy and pandas in ./venv.
+  shell::python::venv::pkg::upgrade -n requests    # Prints upgrade command without executing.
+  shell::python::venv::pkg::upgrade -p ~/my_env flask  # Upgrades flask in ~/my_env.
 "
 
 USAGE_SHELL_FREEZE_PKG_PYTHON_ENV="
