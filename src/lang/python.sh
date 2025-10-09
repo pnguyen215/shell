@@ -972,9 +972,15 @@ shell::python::venv::activate_fzf() {
 # Notes:
 #   - Requires fzf and an existing virtual environment.
 shell::fzf_upgrade_pkg_python_env() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_FZF_UPGRADE_PKG_PYTHON_ENV"
-		return 0
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Interactively upgrades Python packages in a virtual environment using fzf for package selection."
+		shell::logger::usage "Usage: shell::fzf_upgrade_pkg_python_env [-n | --dry-run] [-h | --help] [-p <path>]"
+		shell::logger::option "-n | --dry-run" "Preview upgrade commands without executing."
+		shell::logger::option "-p | --path" "Specify the path to the virtual environment (default: ./venv)."
+		shell::logger::example "shell::fzf_upgrade_pkg_python_env"
+		shell::logger::example "shell::fzf_upgrade_pkg_python_env -n -p ~/my_env"
+		return $RETURN_SUCCESS
 	fi
 
 	local dry_run="false"
@@ -983,51 +989,47 @@ shell::fzf_upgrade_pkg_python_env() {
 	# Parse optional arguments
 	while [ $# -gt 0 ]; do
 		case "$1" in
-		-n)
+		-n | --dry-run)
 			dry_run="true"
 			shift
 			;;
-		-p)
+		-p | --path)
 			venv_path="$2"
 			shift 2
 			;;
 		*)
-			shell::stdout "ERR: Unknown option '$1'." 196
-			shell::stdout "Usage: shell::fzf_upgrade_pkg_python_env [-n] [-p <path>]"
-			return 1
+			shell::logger::error "Unknown option '$1'"
+			return $RETURN_FAILURE
 			;;
 		esac
 	done
 
 	# Check if fzf is installed
 	shell::install_package fzf
+	local pip_cmd="$venv_path/bin/pip"
 
 	# Check if the virtual environment exists
-	if [ ! -d "$venv_path" ] || [ ! -f "$venv_path/bin/pip" ]; then
-		shell::stdout "ERR: Virtual environment at '$venv_path' does not exist or is invalid." 196
-		return 1
+	if [ ! -d "$venv_path" ] || [ ! -f "$pip_cmd" ]; then
+		shell::logger::error "Virtual environment at '$venv_path' does not exist or is invalid."
+		return $RETURN_FAILURE
 	fi
-
-	local pip_cmd="$venv_path/bin/pip"
 
 	# Ensure pip command is available
 	if ! shell::is_command_available "$pip_cmd"; then
-		shell::stdout "ERR: pip not found in virtual environment at '$venv_path'." 196
-		return 1
+		shell::logger::error "pip not found in virtual environment at '$venv_path'."
+		return $RETURN_FAILURE
 	fi
 
 	# Get list of installed packages
-	local installed_packages
-	installed_packages="$("$pip_cmd" freeze | grep -v '^-e' | grep -v '@' | cut -d= -f1)"
+	local installed_packages="$("$pip_cmd" freeze | grep -v '^-e' | grep -v '@' | cut -d= -f1)"
 
 	# Use fzf to select packages to upgrade
-	local selected_packages
-	selected_packages=$(echo "$installed_packages" | fzf --multi --prompt="Select packages to upgrade: ")
+	local selected_packages=$(echo "$installed_packages" | fzf --multi --prompt="Select packages to upgrade: ")
 
 	# Handle no selection
 	if [ -z "$selected_packages" ]; then
-		shell::stdout "WARN: No packages selected for upgrade." 33
-		return 0
+		shell::logger::warn "No packages selected for upgrade."
+		return $RETURN_SUCCESS
 	fi
 
 	# Prepare upgrade commands
@@ -1043,18 +1045,23 @@ shell::fzf_upgrade_pkg_python_env() {
 		upgrade_commands+=("$pip_cmd install --upgrade \"$pkg\"")
 	done
 
-	# Execute or preview upgrade commands
-	shell::stdout "🔍 Upgrading selected packages..." 36
 	if [ "$dry_run" = "true" ]; then
+		local step=1
+		shell::logger::section "Fzf: Interactively upgrades Python packages in a virtual environment"
+		shell::logger::step $((step++)) "Get list of installed packages"
+		shell::logger::cmd "\"$pip_cmd freeze | grep -v '^-e' | grep -v '@' | cut -d= -f1\""
+		shell::logger::step $((step++)) "Selected packages for upgrade"
+		shell::logger::cmd "\"$selected_packages\""
+		shell::logger::step $((step++)) "Upgrade commands"
 		for cmd in "${upgrade_commands[@]}"; do
 			shell::logger::cmd_copy "$cmd"
 		done
-	else
-		for cmd in "${upgrade_commands[@]}"; do
-			shell::run_cmd_eval "$cmd"
-		done
-		shell::stdout "INFO: Packages upgraded successfully." 46
+		return $RETURN_SUCCESS
 	fi
+	
+	for cmd in "${upgrade_commands[@]}"; do
+		shell::logger::exec_check "$cmd"
+	done
 }
 
 # shell::upgrade_pkg_python_env function
