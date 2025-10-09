@@ -824,7 +824,7 @@ shell::python::venv::pkg::uninstall_fzf() {
 	uninstall_args+=("${selected_packages_array[@]}")
 
 	if [ "$dry_run" = "true" ]; then
-		shell::logger::section "Uninstall Python packages from an existing virtual environment using fzf for interactive selection."
+		shell::logger::section "Fzf: Uninstall Python packages from an existing virtual environment."
 		shell::logger::step 1 "Get list of installed packages"
 		shell::logger::cmd "$pip_cmd freeze | grep -v '^-e' | grep -v '@' | cut -d= -f1"
 		shell::logger::step 2 "Selected packages to uninstall"
