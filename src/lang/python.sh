@@ -927,7 +927,7 @@ shell::fzf_use_python_env() {
 		local step=1
 		shell::logger::section "Fzf: Activate a Python virtual environment."
 		shell::logger::step $((step++)) "Find virtual environments"
-		shell::logger::cmd \"""find "$parent_path" -type d -name "bin" -print0 | xargs -0 -I {} dirname {} | grep -v "__pycache__\""
+		shell::logger::cmd "find \"$parent_path\" -type d -name \"bin\" -print0 | xargs -0 -I {} dirname {} | grep -v \"__pycache__\""
 		shell::logger::step $((step++)) "Selected virtual environment"
 		shell::logger::cmd "\"$selected_venv\""
 		if [ -n "$deactivate_cmd" ]; then
