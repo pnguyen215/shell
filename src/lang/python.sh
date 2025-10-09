@@ -1268,9 +1268,15 @@ shell::python::venv::pkg::freeze() {
 #   - Requires an existing virtual environment and a requirements.txt file.
 #   - Assumes pip is available in the virtual environment.
 shell::pip_install_requirements_env() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_PIP_INSTALL_REQUIREMENTS_ENV"
-		return 0
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Installs Python packages from a requirements.txt file into a virtual environment."
+		shell::logger::usage "shell::pip_install_requirements_env [-n | --dry-run] [-h | --help] [-p | --path]"
+		shell::logger::option "-n | --dry-run" "Preview installation commands without executing."
+		shell::logger::option "-p | --path" "Specify the path to the virtual environment (default: ./venv)."
+		shell::logger::example "shell::pip_install_requirements_env"
+		shell::logger::example "shell::pip_install_requirements_env -n -p ~/my_env"
+		return $RETURN_SUCCESS
 	fi
 
 	local dry_run="false"
@@ -1279,64 +1285,50 @@ shell::pip_install_requirements_env() {
 	# Parse optional arguments
 	while [ $# -gt 0 ]; do
 		case "$1" in
-		-n)
+		-n | --dry-run)
 			dry_run="true"
 			shift
 			;;
-		-p)
+		-p | --path)
 			venv_path="$2"
 			shift 2
 			;;
 		*)
-			shell::stdout "ERR: Unknown option '$1'." 196
-			shell::stdout "Usage: shell::pip_install_requirements_env [-n] [-p <path>]"
-			return 1
+			shell::logger::error "Unknown option '$1'"
+			return $RETURN_FAILURE
 			;;
 		esac
 	done
 
-	# Check if the virtual environment exists
-	if [ ! -d "$venv_path" ] || [ ! -f "$venv_path/bin/pip" ]; then
-		shell::stdout "ERR: Virtual environment at '$venv_path' does not exist or is invalid." 196
-		return 1
-	fi
-
-	# Construct path to requirements.txt
 	local requirements_file="$venv_path/requirements.txt"
+	local pip_cmd="$venv_path/bin/pip"
+
+	# Check if the virtual environment exists
+	if [ ! -d "$venv_path" ] || [ ! -f "$pip_cmd" ]; then
+		shell::logger::error "Virtual environment at '$venv_path' does not exist or is invalid."
+		return $RETURN_FAILURE
+	fi
 
 	# Check if the requirements.txt file exists
 	if [ ! -f "$requirements_file" ]; then
-		shell::stdout "ERR: requirements.txt file not found at '$requirements_file'." 196
-		return 1
+		shell::logger::error "requirements.txt file not found at '$requirements_file'."
+		return $RETURN_FAILURE
 	fi
-
-	local pip_cmd="$venv_path/bin/pip"
 
 	# Ensure pip command is available
 	if ! shell::is_command_available "$pip_cmd"; then
-		shell::stdout "ERR: pip not found in virtual environment at '$venv_path'." 196
-		return 1
+		shell::logger::error "pip not found in virtual environment at '$venv_path'."
+		return $RETURN_FAILURE
 	fi
 
-	# Construct the install command
 	local install_cmd="$pip_cmd install -r $requirements_file"
 
-	# Execute or preview the install command
-	shell::stdout "🔍 Installing packages from $requirements_file into $venv_path..." 36
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::cmd_copy "$install_cmd"
-	else
-		# Execute the install command asynchronously
-		shell::async "$install_cmd" &
-		local pid=$!
-		wait $pid
-		if [ $? -eq 0 ]; then
-			shell::stdout "INFO: Packages installed successfully from $requirements_file." 46
-		else
-			shell::stdout "ERR: Failed to install packages." 196
-			return 1
-		fi
+		return $RETURN_SUCCESS
 	fi
+
+	shell::logger::exec_check "$install_cmd"
 }
 
 # shell::python::gitignore::add function
