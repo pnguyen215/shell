@@ -811,11 +811,11 @@ Parameters:
 "
 
 USAGE_SHELL_ADD_PYTHON_GITIGNORE="
-shell::add_python_gitignore function
+shell::python::gitignore::add function
 This function downloads the .gitignore file specifically for Python projects.
 
 Usage:
-  shell::add_python_gitignore [-h]
+  shell::python::gitignore::add [-h]
 
 Parameters:
   - -h                              : Optional. Displays this help message.

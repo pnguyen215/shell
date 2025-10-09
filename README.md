@@ -719,9 +719,9 @@ Utilities for various programming languages and project initialization.
   Generates requirements.txt from current environment.
   _Example:_ `shell::python::venv::pkg::freeze`
 
-- **`shell::add_python_gitignore`**
+- **`shell::python::gitignore::add`**
   Adds Python-specific .gitignore file to the current project.
-  _Example:_ `shell::add_python_gitignore`
+  _Example:_ `shell::python::gitignore::add`
 
 #### Node.js Development
 
