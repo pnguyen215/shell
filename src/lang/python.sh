@@ -540,7 +540,7 @@ shell::python::venv::pkg::install() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Install Python packages into an existing virtual environment using pip."
-		shell::logger::usage "Usage: shell::python::venv::pkg::install [-n | --dry-run] [-h | --help] [-p <path>] <package1> [package2 ...]"
+		shell::logger::usage "shell::python::venv::pkg::install [-n | --dry-run] [-h | --help] [-p <path>] <package1> [package2 ...]"
 		shell::logger::option "-n | --dry-run" "Preview installation commands without executing."
 		shell::logger::option "-p | --path" "Specify the path to the virtual environment (default: ./venv)."
 		shell::logger::option "<package1> [package2 ...]" "One or more Python package names to install (e.g., numpy, requests)."
