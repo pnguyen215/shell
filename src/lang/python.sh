@@ -1054,7 +1054,7 @@ shell::fzf_upgrade_pkg_python_env() {
 		shell::logger::cmd "\"$selected_packages\""
 		shell::logger::step $((step++)) "Upgrade commands"
 		for cmd in "${upgrade_commands[@]}"; do
-			shell::logger::cmd_copy "$cmd"
+			shell::logger::cmd "$cmd"
 		done
 		return $RETURN_SUCCESS
 	fi
