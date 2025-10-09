@@ -978,7 +978,7 @@ shell::python::venv::pkg::upgrade() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Upgrades Python packages in a virtual environment using pip."
-		shell::logger::usage "Usage: shell::python::venv::pkg::upgrade [-n] [-p <path>] <package1> [package2 ...]"
+		shell::logger::usage "shell::python::venv::pkg::upgrade [-n] [-p <path>] <package1> [package2 ...]"
 		shell::logger::option "-n" "Preview upgrade commands without executing."
 		shell::logger::option "-p <path>" "Specify the path to the virtual environment (default: ./venv)."
 		shell::logger::example "shell::python::venv::pkg::upgrade numpy pandas"
