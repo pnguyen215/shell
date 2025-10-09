@@ -867,7 +867,7 @@ shell::python::venv::activate_fzf() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Interactively selects a Python virtual environment using fzf and activates/deactivates it."
-		shell::logger::usage "Usage: shell::python::venv::activate_fzf [-n | --dry-run] [-h | --help] [-p <path>]"
+		shell::logger::usage "shell::python::venv::activate_fzf [-n | --dry-run] [-h | --help] [-p <path>]"
 		shell::logger::option "-n | --dry-run" "Preview activation commands without executing."
 		shell::logger::option "-p | --path" "Specify the parent path to search for virtual environments (default: current directory)."
 		shell::logger::example "shell::python::venv::activate_fzf"
