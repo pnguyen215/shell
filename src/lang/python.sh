@@ -946,11 +946,11 @@ shell::python::venv::activate_fzf() {
 	shell::logger::exec_check "$activate_cmd"
 }
 
-# shell::fzf_upgrade_pkg_python_env function
+# shell::python::venv::pkg::upgrade_fzf function
 # Interactively upgrades Python packages in a virtual environment using fzf for package selection.
 #
 # Usage:
-#   shell::fzf_upgrade_pkg_python_env [-n] [-p <path>]
+#   shell::python::venv::pkg::upgrade_fzf [-n] [-p <path>]
 #
 # Parameters:
 #   - -n          : Optional dry-run flag.
@@ -966,20 +966,20 @@ shell::python::venv::activate_fzf() {
 #   - Supporting dry-run mode to preview commands.
 #
 # Example:
-#   shell::fzf_upgrade_pkg_python_env          # Upgrades packages in ./venv after interactive selection.
-#   shell::fzf_upgrade_pkg_python_env -n -p ~/my_env  # Prints upgrade commands for ~/my_env without executing.
+#   shell::python::venv::pkg::upgrade_fzf          # Upgrades packages in ./venv after interactive selection.
+#   shell::python::venv::pkg::upgrade_fzf -n -p ~/my_env  # Prints upgrade commands for ~/my_env without executing.
 #
 # Notes:
 #   - Requires fzf and an existing virtual environment.
-shell::fzf_upgrade_pkg_python_env() {
+shell::python::venv::pkg::upgrade_fzf() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Interactively upgrades Python packages in a virtual environment using fzf for package selection."
-		shell::logger::usage "Usage: shell::fzf_upgrade_pkg_python_env [-n | --dry-run] [-h | --help] [-p <path>]"
+		shell::logger::usage "Usage: shell::python::venv::pkg::upgrade_fzf [-n | --dry-run] [-h | --help] [-p <path>]"
 		shell::logger::option "-n | --dry-run" "Preview upgrade commands without executing."
 		shell::logger::option "-p | --path" "Specify the path to the virtual environment (default: ./venv)."
-		shell::logger::example "shell::fzf_upgrade_pkg_python_env"
-		shell::logger::example "shell::fzf_upgrade_pkg_python_env -n -p ~/my_env"
+		shell::logger::example "shell::python::venv::pkg::upgrade_fzf"
+		shell::logger::example "shell::python::venv::pkg::upgrade_fzf -n -p ~/my_env"
 		return $RETURN_SUCCESS
 	fi
 

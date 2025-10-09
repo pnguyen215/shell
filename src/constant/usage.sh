@@ -1050,11 +1050,11 @@ Example:
 "
 
 USAGE_SHELL_FZF_UPGRADE_PKG_PYTHON_ENV="
-shell::fzf_upgrade_pkg_python_env function
+shell::python::venv::pkg::upgrade_fzf function
 Interactively upgrades Python packages in a virtual environment using fzf for package selection.
 
 Usage:
-  shell::fzf_upgrade_pkg_python_env [-n] [-h] [-p <path>]
+  shell::python::venv::pkg::upgrade_fzf [-n] [-h] [-p <path>]
 
 Parameters:
   - -n          : Optional dry-run flag.
@@ -1071,8 +1071,8 @@ Description:
   - Supporting dry-run mode to preview commands.
 
 Example:
-  shell::fzf_upgrade_pkg_python_env          # Upgrades packages in ./venv after interactive selection.
-  shell::fzf_upgrade_pkg_python_env -n -p ~/my_env  # Prints upgrade commands for ~/my_env without executing.
+  shell::python::venv::pkg::upgrade_fzf          # Upgrades packages in ./venv after interactive selection.
+  shell::python::venv::pkg::upgrade_fzf -n -p ~/my_env  # Prints upgrade commands for ~/my_env without executing.
 "
 
 USAGE_SHELL_UPGRADE_PKG_PYTHON_ENV="
