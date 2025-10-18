@@ -778,11 +778,11 @@ It retrieves the following files:
 "
 
 USAGE_SHELL_ADD_GO_GITIGNORE="
-shell::add_go_gitignore function
+shell::go::gitignore::add function
 This function downloads the .gitignore file for a Go project.
 
 Usage:
-  shell::add_go_gitignore [-h]
+  shell::go::gitignore::add [-h]
 
 Parameters:
   - -h                              : Optional. Displays this help message.

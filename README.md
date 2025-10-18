@@ -693,9 +693,9 @@ Utilities for various programming languages and project initialization.
   Interactively remove private Go module settings.
   _Example:_ `shell::go::env::remove_private_fzf`
 
-- **`shell::add_go_gitignore`**
+- **`shell::go::gitignore::add`**
   Adds Go-specific .gitignore file to the current project.
-  _Example:_ `shell::add_go_gitignore`
+  _Example:_ `shell::go::gitignore::add`
 
 #### Python Development
 
@@ -1087,7 +1087,7 @@ shell::list_bookmark            # View all bookmarks
 # Initialize a Go project
 shell::go::module::create mygoapp
 cd mygoapp
-shell::add_go_gitignore
+shell::go::gitignore::add
 
 # Set up Python environment
 shell::python::venv::create myproject

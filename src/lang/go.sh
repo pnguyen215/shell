@@ -374,7 +374,7 @@ shell::go::scaffold::add() {
 		shell::logger::indent 1 "Makefile"
 		return $RETURN_SUCCESS
 	fi
-	shell::add_go_gitignore
+	shell::go::gitignore::add
 	shell::download_dataset "docs/VERSION_RELEASE.md" $SHELL_PROJECT_DOC_VERSION_RELEASE
 	shell::download_dataset "Makefile" $SHELL_PROJECT_GO_MAKEFILE
 	shell::download_dataset ".github/workflows/gh_wrk_base.yml" $SHELL_PROJECT_GITHUB_WORKFLOW_BASE
@@ -383,7 +383,7 @@ shell::go::scaffold::add() {
 	return $RETURN_SUCCESS
 }
 
-# shell::add_go_gitignore function
+# shell::go::gitignore::add function
 # This function downloads the .gitignore file for a Go project.
 #
 # It utilizes the shell::download_dataset function to fetch the .gitignore file
@@ -391,7 +391,7 @@ shell::go::scaffold::add() {
 #
 # The .gitignore file is essential for specifying which files and directories
 # should be ignored by Git, helping to keep the repository clean and free of unnecessary files.
-shell::add_go_gitignore() {
+shell::go::gitignore::add() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Add .gitignore file for Go project"
