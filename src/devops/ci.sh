@@ -20,7 +20,7 @@ shell::gh::workflow::base::add() {
 	return $RETURN_SUCCESS
 }
 
-# shell::github::workflow::news::add function
+# shell::gh::workflow::news::add function
 # This function downloads the GitHub Actions CI notification workflow configuration file
 # from the specified GitHub repository. This file is crucial for setting up automated
 # notifications related to CI events, ensuring that relevant stakeholders are informed
@@ -28,7 +28,7 @@ shell::gh::workflow::base::add() {
 #
 # It utilizes the shell::download_dataset function to fetch the file and save it
 # in the appropriate location within the project structure.
-shell::github::workflow::news::add() {
+shell::gh::workflow::news::add() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Add GitHub Actions workflow file for continuous integration notification"

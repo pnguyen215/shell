@@ -574,14 +574,14 @@ Parameters:
 "
 
 USAGE_SHELL_ADD_GH_WRK_NEWS="
-shell::github::workflow::news::add function
+shell::gh::workflow::news::add function
 This function downloads the GitHub Actions CI notification workflow configuration file
 from the specified GitHub repository. This file is crucial for setting up automated
 notifications related to CI events, ensuring that relevant stakeholders are informed
 about the status of the CI processes.
 
 Usage:
-  shell::github::workflow::news::add [-h]
+  shell::gh::workflow::news::add [-h]
 
 Parameters:
   - -h                              : Optional. Displays this help message.
