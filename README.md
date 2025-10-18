@@ -433,7 +433,7 @@ Core functions for system management, version control, and basic operations.
 
   - `shell::send_telegram_message [-n] <token> <chat_id> <message>`
 
-- **`shell::send_telegram_historical_gh_message`**
+- **`shell::git::telegram::send_activity`**
   Sends a historical GitHub-related message via Telegram using stored configuration keys.
 
   - _Parameters_:
@@ -441,7 +441,7 @@ Core functions for system management, version control, and basic operations.
     - -n : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
     - message : The message text to send.
 
-  - `shell::send_telegram_historical_gh_message [-n] <message>`
+  - `shell::git::telegram::send_activity [-n] <message>`
 
 - **`shell::send_telegram_attachment`**
   Sends one or more attachments (files) via Telegram using the Bot API asynchronously.
@@ -831,9 +831,9 @@ Telegram Bot API integration for notifications and file sharing.
   Sends one or more attachments (files) via Telegram using the Bot API asynchronously.
   _Example:_ `shell::send_telegram_attachment <token> <chat_id> "Files" file1.txt file2.txt`
 
-- **`shell::send_telegram_historical_gh_message`**
+- **`shell::git::telegram::send_activity`**
   Sends a historical GitHub-related message via Telegram using stored configuration keys.
-  _Example:_ `shell::send_telegram_historical_gh_message "Deployment completed"`
+  _Example:_ `shell::git::telegram::send_activity "Deployment completed"`
 
 ### AI & LLM Integration
 
@@ -1105,7 +1105,7 @@ shell::add_gh_wrk_news          # Notification workflow
 shell::add_gh_wrk_sh_pretty     # Shell script formatting
 
 # Send deployment notifications
-shell::send_telegram_historical_gh_message "Deployment to production completed successfully"
+shell::git::telegram::send_activity "Deployment to production completed successfully"
 ```
 
 ### Encryption Utilities

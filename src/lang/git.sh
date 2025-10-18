@@ -1,11 +1,11 @@
 #!/bin/bash
 # git.sh
 
-# shell::send_telegram_historical_gh_message function
+# shell::git::telegram::send_activity function
 # Sends a historical GitHub-related message via Telegram using stored configuration keys.
 #
 # Usage:
-#   shell::send_telegram_historical_gh_message [-n] <message>
+#   shell::git::telegram::send_activity [-n] <message>
 #
 # Parameters:
 #   - -n         : Optional dry-run flag. If provided, the command will be printed using shell::logger::cmd_copy instead of executed.
@@ -19,18 +19,18 @@
 #   calls shell::send_telegram_message (with the dry-run flag, if enabled) to send the message.
 #
 # Example:
-#   shell::send_telegram_historical_gh_message "Historical message text"
-#   shell::send_telegram_historical_gh_message -n "Dry-run historical message text"
-shell::send_telegram_historical_gh_message() {
+#   shell::git::telegram::send_activity "Historical message text"
+#   shell::git::telegram::send_activity -n "Dry-run historical message text"
+shell::git::telegram::send_activity() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Send historical GitHub message via Telegram"
-		shell::logger::usage "shell::send_telegram_historical_gh_message [-n] [-h] <message>"
+		shell::logger::usage "shell::git::telegram::send_activity [-n] [-h] <message>"
 		shell::logger::item "message" "The message text to send"
 		shell::logger::option "-h, --help" "Show this help message"
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
-		shell::logger::example "shell::send_telegram_historical_gh_message \"Hello, World!\""
-		shell::logger::example "shell::send_telegram_historical_gh_message -n \"Hello, World!\""
+		shell::logger::example "shell::git::telegram::send_activity \"Hello, World!\""
+		shell::logger::example "shell::git::telegram::send_activity -n \"Hello, World!\""
 		return $RETURN_SUCCESS
 	fi
 
