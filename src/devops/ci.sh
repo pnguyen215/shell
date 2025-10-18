@@ -1,7 +1,7 @@
 #!/bin/bash
 # ci.sh
 
-# shell::add_gh_wrk_base function
+# shell::github::workflow::base::add function
 # This function downloads the continuous integration (CI) workflow configuration file
 # for the DevOps process from the specified GitHub repository.
 #
@@ -10,7 +10,7 @@
 #
 # The CI workflow file is essential for automating the build, test, and deployment
 # processes in a continuous integration environment.
-shell::add_gh_wrk_base() {
+shell::github::workflow::base::add() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Add GitHub Actions workflow file for continuous integration"

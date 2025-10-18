@@ -562,12 +562,12 @@ Parameters:
 "
 
 USAGE_SHELL_ADD_GH_WRK_BASE="
-shell::add_gh_wrk_base function
+shell::github::workflow::base::add function
 This function downloads the continuous integration (CI) workflow configuration file
 for the DevOps process from the specified GitHub repository.
 
 Usage:
-  shell::add_gh_wrk_base [-h]
+  shell::github::workflow::base::add [-h]
 
 Parameters:
   - -h                              : Optional. Displays this help message.

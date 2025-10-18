@@ -745,9 +745,9 @@ Utilities for various programming languages and project initialization.
 
 GitHub Actions workflow generation and DevOps automation.
 
-- **`shell::add_gh_wrk_base`**
+- **`shell::github::workflow::base::add`**
   Adds a base GitHub Actions workflow configuration.
-  _Example:_ `shell::add_gh_wrk_base`
+  _Example:_ `shell::github::workflow::base::add`
 
 - **`shell::add_gh_wrk_news`**
   Adds a news/notification GitHub Actions workflow.
@@ -1100,7 +1100,7 @@ shell::python::venv::pkg::freeze > requirements.txt
 
 ```bash
 # Add GitHub Actions workflows
-shell::add_gh_wrk_base          # Base CI/CD workflow
+shell::github::workflow::base::add          # Base CI/CD workflow
 shell::add_gh_wrk_news          # Notification workflow
 shell::add_gh_wrk_sh_pretty     # Shell script formatting
 
