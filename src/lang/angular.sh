@@ -1,7 +1,7 @@
 #!/bin/bash
 # angular.sh
 
-# shell::add_angular_gitignore function
+# shell::angular::gitignore::add function
 # This function downloads the .gitignore file specifically for Angular projects.
 #
 # The .gitignore file is essential for specifying which files and directories
@@ -11,7 +11,7 @@
 # It utilizes the shell::download_dataset function to fetch the .gitignore file
 # from the specified URL and saves it in the appropriate location within the
 # project structure.
-shell::add_angular_gitignore() {
+shell::angular::gitignore::add() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Add .gitignore file for Angular project"

@@ -737,9 +737,9 @@ Utilities for various programming languages and project initialization.
 
 #### Angular Development
 
-- **`shell::add_angular_gitignore`**
+- **`shell::angular::gitignore::add`**
   Adds Angular-specific .gitignore file to the current project.
-  _Example:_ `shell::add_angular_gitignore`
+  _Example:_ `shell::angular::gitignore::add`
 
 ### DevOps & CI/CD
 

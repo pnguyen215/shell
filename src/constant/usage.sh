@@ -551,11 +551,11 @@ Description:
 "
 
 USAGE_SHELL_ADD_ANGULAR_GITIGNORE="
-shell::add_angular_gitignore function
+shell::angular::gitignore::add function
 This function downloads the .gitignore file specifically for Angular projects.
 
 Usage:
-  shell::add_angular_gitignore [-h]
+  shell::angular::gitignore::add [-h]
 
 Parameters:
   - -h                              : Optional. Displays this help message.
