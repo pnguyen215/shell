@@ -78,11 +78,11 @@ shell::git::telegram::send_activity() {
 	fi
 }
 
-# shell::retrieve_gh_latest_release function
+# shell::git::release::get_latest function
 # Retrieves the latest release tag from a GitHub repository using the GitHub API.
 #
 # Usage:
-#   shell::retrieve_gh_latest_release <owner/repo>
+#   shell::git::release::get_latest <owner/repo>
 #
 # Parameters:
 #   - <owner/repo>: GitHub repository in the format 'owner/repo'
@@ -91,7 +91,7 @@ shell::git::telegram::send_activity() {
 #   Outputs the latest release tag (e.g., v1.2.3), or an error message if failed.
 #
 # Example:
-#   shell::retrieve_gh_latest_release "cli/cli"
+#   shell::git::release::get_latest "cli/cli"
 #
 # Dependencies:
 #   - curl
@@ -100,15 +100,15 @@ shell::git::telegram::send_activity() {
 # Notes:
 #   - Requires internet access.
 #   - Works on both macOS and Linux.
-shell::retrieve_gh_latest_release() {
+shell::git::release::get_latest() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Retrieve latest release tag from GitHub repository"
-		shell::logger::usage "shell::retrieve_gh_latest_release <owner/repo>"
+		shell::logger::usage "shell::git::release::get_latest <owner/repo>"
 		shell::logger::item "owner/repo" "GitHub repository in the format 'owner/repo'"
 		shell::logger::option "-h, --help" "Show this help message"
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
-		shell::logger::example "shell::retrieve_gh_latest_release \"cli/cli\""
+		shell::logger::example "shell::git::release::get_latest \"cli/cli\""
 		return $RETURN_SUCCESS
 	fi
 
