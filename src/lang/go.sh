@@ -1,7 +1,7 @@
 #!/bin/bash
 # go.sh
 
-# shell::get_go_privates function
+# shell::go::env::get_private function
 #
 # Description:
 #   Retrieves and prints the value of the GOPRIVATE environment variable.
@@ -9,7 +9,7 @@
 #   should be considered private, affecting how Go commands handle dependencies.
 #
 # Usage:
-#   shell::get_go_privates [-n]
+#   shell::go::env::get_private [-n]
 #
 # Parameters:
 #   -n: Optional. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
@@ -18,25 +18,25 @@
 #   None
 #
 # Example:
-#   shell::get_go_privates
-#   shell::get_go_privates -n
+#   shell::go::env::get_private
+#   shell::go::env::get_private -n
 #
 # Instructions:
-#   1.  Run `shell::get_go_privates` to display the current GOPRIVATE value.
-#   2.  Use `shell::get_go_privates -n` to preview the command.
+#   1.  Run `shell::go::env::get_private` to display the current GOPRIVATE value.
+#   2.  Use `shell::go::env::get_private -n` to preview the command.
 #
 # Notes:
 #   -   This function is compatible with both Linux and macOS.
 #   -   It uses `go env GOPRIVATE` to reliably fetch the GOPRIVATE setting.
-shell::get_go_privates() {
+shell::go::env::get_private() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Retrieve GOPRIVATE setting"
-		shell::logger::usage "shell::get_go_privates [-n] [-h]"
+		shell::logger::usage "shell::go::env::get_private [-n] [-h]"
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
 		shell::logger::option "-h, --help" "Display this help message"
-		shell::logger::example "shell::get_go_privates"
-		shell::logger::example "shell::get_go_privates -n"
+		shell::logger::example "shell::go::env::get_private"
+		shell::logger::example "shell::go::env::get_private -n"
 		return $RETURN_SUCCESS
 	fi
 

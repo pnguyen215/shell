@@ -661,7 +661,7 @@ Dependencies:
 "
 
 USAGE_SHELL_GET_GO_PRIVATES="
-shell::get_go_privates function
+shell::go::env::get_private function
 
 Description:
   Retrieves and prints the value of the GOPRIVATE environment variable.
@@ -669,15 +669,15 @@ Description:
   should be considered private, affecting how Go commands handle dependencies.
 
 Usage:
-  shell::get_go_privates [-n] [-h]
+  shell::go::env::get_private [-n] [-h]
 
 Parameters:
     - -n     : Optional. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
     - -h     : Optional. Displays this help message.
 
 Example:
-  shell::get_go_privates
-  shell::get_go_privates -n
+  shell::go::env::get_private
+  shell::go::env::get_private -n
 "
 
 USAGE_SHELL_SET_GO_PRIVATES="

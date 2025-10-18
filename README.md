@@ -685,9 +685,9 @@ Utilities for various programming languages and project initialization.
   Sets up private Go module configuration.
   _Example:_ `shell::set_go_privates github.com/myorg`
 
-- **`shell::get_go_privates`**
+- **`shell::go::env::get_private`**
   Retrieves current private Go module settings.
-  _Example:_ `shell::get_go_privates`
+  _Example:_ `shell::go::env::get_private`
 
 - **`shell::fzf_remove_go_privates`**
   Interactively remove private Go module settings.
