@@ -753,9 +753,9 @@ GitHub Actions workflow generation and DevOps automation.
   Adds a news/notification GitHub Actions workflow.
   _Example:_ `shell::gh::workflow::news::add`
 
-- **`shell::github::workflow::bash::add_format`**
+- **`shell::gh::workflow::bash::add_format`**
   Adds a shell script formatting GitHub Actions workflow.
-  _Example:_ `shell::github::workflow::bash::add_format`
+  _Example:_ `shell::gh::workflow::bash::add_format`
 
 ### Package Management
 
@@ -1102,7 +1102,7 @@ shell::python::venv::pkg::freeze > requirements.txt
 # Add GitHub Actions workflows
 shell::gh::workflow::base::add          # Base CI/CD workflow
 shell::gh::workflow::news::add          # Notification workflow
-shell::github::workflow::bash::add_format     # Shell script formatting
+shell::gh::workflow::bash::add_format     # Shell script formatting
 
 # Send deployment notifications
 shell::git::telegram::send_activity "Deployment to production completed successfully"
