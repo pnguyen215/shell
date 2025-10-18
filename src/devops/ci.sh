@@ -38,14 +38,14 @@ shell::github::workflow::news::add() {
 	return $RETURN_SUCCESS
 }
 
-# shell::add_gh_wrk_sh_pretty function
+# shell::github::workflow::bash::add_format function
 # This function downloads the GitHub Actions workflow configuration file for shell script
 # formatting from the specified GitHub repository. This file is essential for
 # automating the formatting of shell scripts in the project, ensuring consistency and
 # adherence to coding standards.
 # It utilizes the shell::download_dataset function to fetch the file and save it
 # in the appropriate location within the project structure.
-shell::add_gh_wrk_sh_pretty() {
+shell::github::workflow::bash::add_format() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Add GitHub Actions workflow file for shell script formatting"
