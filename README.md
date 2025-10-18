@@ -749,9 +749,9 @@ GitHub Actions workflow generation and DevOps automation.
   Adds a base GitHub Actions workflow configuration.
   _Example:_ `shell::github::workflow::base::add`
 
-- **`shell::add_gh_wrk_news`**
+- **`shell::github::workflow::news::add`**
   Adds a news/notification GitHub Actions workflow.
-  _Example:_ `shell::add_gh_wrk_news`
+  _Example:_ `shell::github::workflow::news::add`
 
 - **`shell::add_gh_wrk_sh_pretty`**
   Adds a shell script formatting GitHub Actions workflow.
@@ -1101,7 +1101,7 @@ shell::python::venv::pkg::freeze > requirements.txt
 ```bash
 # Add GitHub Actions workflows
 shell::github::workflow::base::add          # Base CI/CD workflow
-shell::add_gh_wrk_news          # Notification workflow
+shell::github::workflow::news::add          # Notification workflow
 shell::add_gh_wrk_sh_pretty     # Shell script formatting
 
 # Send deployment notifications

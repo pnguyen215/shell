@@ -20,7 +20,7 @@ shell::github::workflow::base::add() {
 	return $RETURN_SUCCESS
 }
 
-# shell::add_gh_wrk_news function
+# shell::github::workflow::news::add function
 # This function downloads the GitHub Actions CI notification workflow configuration file
 # from the specified GitHub repository. This file is crucial for setting up automated
 # notifications related to CI events, ensuring that relevant stakeholders are informed
@@ -28,7 +28,7 @@ shell::github::workflow::base::add() {
 #
 # It utilizes the shell::download_dataset function to fetch the file and save it
 # in the appropriate location within the project structure.
-shell::add_gh_wrk_news() {
+shell::github::workflow::news::add() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Add GitHub Actions workflow file for continuous integration notification"
@@ -55,14 +55,14 @@ shell::add_gh_wrk_sh_pretty() {
 	return $RETURN_SUCCESS
 }
 
-# shell::add_gh_wrk_news_go function
+# shell::github::workflow::news::add_go function
 # This function downloads the GitHub Actions workflow configuration file for Go language
 # notifications from the specified GitHub repository. This file is crucial for
 # automating notifications related to Go language CI events, ensuring that relevant
 # stakeholders are informed about the status of the Go language CI processes.
 # It utilizes the shell::download_dataset function to fetch the file and save it
 # in the appropriate location within the project structure.
-shell::add_gh_wrk_news_go() {
+shell::github::workflow::news::add_go() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Add GitHub Actions workflow file for Go language notification"
