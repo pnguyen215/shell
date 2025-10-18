@@ -708,7 +708,7 @@ Example:
 "
 
 USAGE_SHELL_FZF_REMOVE_GO_PRIVATES="
-shell::fzf_remove_go_privates function
+shell::go::env::remove_private_fzf function
 
 Description:
   Uses fzf to interactively select and remove entries from the GOPRIVATE environment variable.
@@ -716,15 +716,15 @@ Description:
   affecting how Go commands handle authenticated access to dependencies.
 
 Usage:
-  shell::fzf_remove_go_privates [-n] [-h]
+  shell::go::env::remove_private_fzf [-n] [-h]
 
 Parameters:
   - -n                              : Optional. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
   - -h                              : Optional. Displays this help message.
 
 Example:
-  shell::fzf_remove_go_privates           # Interactively remove entries from GOPRIVATE.
-  shell::fzf_remove_go_privates -n        # Preview the command without executing it.
+  shell::go::env::remove_private_fzf           # Interactively remove entries from GOPRIVATE.
+  shell::go::env::remove_private_fzf -n        # Preview the command without executing it.
 "
 
 USAGE_SHELL_CREATE_GO_APP="

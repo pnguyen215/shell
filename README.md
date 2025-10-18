@@ -689,9 +689,9 @@ Utilities for various programming languages and project initialization.
   Retrieves current private Go module settings.
   _Example:_ `shell::go::env::get_private`
 
-- **`shell::fzf_remove_go_privates`**
+- **`shell::go::env::remove_private_fzf`**
   Interactively remove private Go module settings.
-  _Example:_ `shell::fzf_remove_go_privates`
+  _Example:_ `shell::go::env::remove_private_fzf`
 
 - **`shell::add_go_gitignore`**
   Adds Go-specific .gitignore file to the current project.

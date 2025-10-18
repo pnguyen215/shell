@@ -140,7 +140,7 @@ shell::go::env::set_private() {
 	shell::logger::exec_check "$cmd"
 }
 
-# shell::fzf_remove_go_privates function
+# shell::go::env::remove_private_fzf function
 #
 # Description:
 #   Uses fzf to interactively select and remove entries from the GOPRIVATE environment variable.
@@ -148,7 +148,7 @@ shell::go::env::set_private() {
 #   affecting how Go commands handle authenticated access to dependencies.
 #
 # Usage:
-#   shell::fzf_remove_go_privates [-n]
+#   shell::go::env::remove_private_fzf [-n]
 #
 # Parameters:
 #   -n: Optional. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
@@ -157,12 +157,12 @@ shell::go::env::set_private() {
 #   None
 #
 # Example:
-#   shell::fzf_remove_go_privates           # Interactively remove entries from GOPRIVATE.
-#   shell::fzf_remove_go_privates -n        # Preview the command without executing it.
+#   shell::go::env::remove_private_fzf           # Interactively remove entries from GOPRIVATE.
+#   shell::go::env::remove_private_fzf -n        # Preview the command without executing it.
 #
 # Instructions:
-#   1. Run `shell::fzf_remove_go_privates` to select and remove GOPRIVATE entries via fzf.
-#   2. Use `shell::fzf_remove_go_privates -n` to see the command that would be executed.
+#   1. Run `shell::go::env::remove_private_fzf` to select and remove GOPRIVATE entries via fzf.
+#   2. Use `shell::go::env::remove_private_fzf -n` to see the command that would be executed.
 #
 # Notes:
 #   - Requires fzf and Go to be installed; fzf is installed automatically if missing.
@@ -170,15 +170,15 @@ shell::go::env::set_private() {
 #   - Uses `go env -w GOPRIVATE=<new_value>` to set the updated value.
 #   - Supports dry-run and asynchronous execution via shell::logger::cmd_copy and shell::async.
 #   - Compatible with both Linux (Ubuntu 22.04 LTS) and macOS.
-shell::fzf_remove_go_privates() {
+shell::go::env::remove_private_fzf() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Remove GOPRIVATE entries"
-		shell::logger::usage "shell::fzf_remove_go_privates [-n]"
+		shell::logger::usage "shell::go::env::remove_private_fzf [-n]"
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
 		shell::logger::option "-h, --help" "Display this help message"
-		shell::logger::example "shell::fzf_remove_go_privates"
-		shell::logger::example "shell::fzf_remove_go_privates -n"
+		shell::logger::example "shell::go::env::remove_private_fzf"
+		shell::logger::example "shell::go::env::remove_private_fzf -n"
 		return $RETURN_SUCCESS
 	fi
 
