@@ -681,9 +681,9 @@ Utilities for various programming languages and project initialization.
   Creates a new Go application with proper structure.
   _Example:_ `shell::create_go_app myapp`
 
-- **`shell::set_go_privates`**
+- **`shell::go::env::set_private`**
   Sets up private Go module configuration.
-  _Example:_ `shell::set_go_privates github.com/myorg`
+  _Example:_ `shell::go::env::set_private github.com/myorg`
 
 - **`shell::go::env::get_private`**
   Retrieves current private Go module settings.

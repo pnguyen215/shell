@@ -56,7 +56,7 @@ shell::go::env::get_private() {
 	shell::logger::exec_check "$cmd"
 }
 
-# shell::set_go_privates function
+# shell::go::env::set_private function
 #
 # Description:
 #   Sets the GOPRIVATE environment variable to the provided value.
@@ -66,7 +66,7 @@ shell::go::env::get_private() {
 #   should be considered private, affecting how Go commands handle dependencies.
 #
 # Usage:
-#   shell::set_go_privates [-n] <repository1> [repository2] ...
+#   shell::go::env::set_private [-n] <repository1> [repository2] ...
 #
 # Parameters:
 #   -n: Optional.
@@ -78,26 +78,26 @@ shell::go::env::get_private() {
 #   None
 #
 # Example:
-#   shell::set_go_privates "example.com/private1"
-#   shell::set_go_privates -n "example.com/private1" "example.com/internal"
+#   shell::go::env::set_private "example.com/private1"
+#   shell::go::env::set_private -n "example.com/private1" "example.com/internal"
 #
 # Instructions:
-#   1.  Run `shell::set_go_privates <repository1> [repository2] ...` to set or append to the GOPRIVATE variable.
-#   2.  Use `shell::set_go_privates -n <repository1> [repository2] ...` to preview the command.
+#   1.  Run `shell::go::env::set_private <repository1> [repository2] ...` to set or append to the GOPRIVATE variable.
+#   2.  Use `shell::go::env::set_private -n <repository1> [repository2] ...` to preview the command.
 #
 # Notes:
 #   -   This function is compatible with both Linux and macOS.
 #   -   It uses `go env -w GOPRIVATE=<value>` to set the GOPRIVATE setting.
 #   -   It supports dry-run and asynchronous execution.
-shell::set_go_privates() {
+shell::go::env::set_private() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Set GOPRIVATE setting"
-		shell::logger::usage "shell::set_go_privates [-n] <repository1> [repository2] ..."
+		shell::logger::usage "shell::go::env::set_private [-n] <repository1> [repository2] ..."
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
 		shell::logger::option "-h, --help" "Display this help message"
-		shell::logger::example "shell::set_go_privates \"example.com/private1\""
-		shell::logger::example "shell::set_go_privates -n \"example.com/private1\" \"example.com/internal\""
+		shell::logger::example "shell::go::env::set_private \"example.com/private1\""
+		shell::logger::example "shell::go::env::set_private -n \"example.com/private1\" \"example.com/internal\""
 		return $RETURN_SUCCESS
 	fi
 

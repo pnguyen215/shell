@@ -681,7 +681,7 @@ Example:
 "
 
 USAGE_SHELL_SET_GO_PRIVATES="
-shell::set_go_privates function
+shell::go::env::set_private function
 
 Description:
   Sets the GOPRIVATE environment variable to the provided value.
@@ -691,7 +691,7 @@ Description:
   should be considered private, affecting how Go commands handle dependencies.
 
 Usage:
-  shell::set_go_privates [-n] [-h] <repository1> [repository2] ...
+  shell::go::env::set_private [-n] [-h] <repository1> [repository2] ...
 
 Parameters:
   - -n                              : Optional. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
@@ -703,8 +703,8 @@ Options:
   None
 
 Example:
-  shell::set_go_privates \"example.com/private1\"
-  shell::set_go_privates -n \"example.com/private1\" \"example.com/internal\"
+  shell::go::env::set_private \"example.com/private1\"
+  shell::go::env::set_private -n \"example.com/private1\" \"example.com/internal\"
 "
 
 USAGE_SHELL_FZF_REMOVE_GO_PRIVATES="
