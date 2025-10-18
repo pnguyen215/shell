@@ -71,11 +71,11 @@ shell::telegram::send() {
 	return $RETURN_SUCCESS
 }
 
-# shell::send_telegram_attachment function
+# shell::telegram::send_document function
 # Sends one or more attachments (files) via Telegram using the Bot API asynchronously.
 #
 # Usage:
-#   shell::send_telegram_attachment [-n] <token> <chat_id> <description> [filename_1] [filename_2] [filename_3] ...
+#   shell::telegram::send_document [-n] <token> <chat_id> <description> [filename_1] [filename_2] [filename_3] ...
 #
 # Parameters:
 #   - -n           : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
@@ -90,20 +90,20 @@ shell::telegram::send() {
 #   asynchronously via Telegram's API. In dry-run mode, the command is printed using shell::logger::cmd_copy.
 #
 # Example:
-#   shell::send_telegram_attachment 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Report" file1.pdf file2.pdf
-#   shell::send_telegram_attachment -n 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Report" file1.pdf
-shell::send_telegram_attachment() {
+#   shell::telegram::send_document 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Report" file1.pdf file2.pdf
+#   shell::telegram::send_document -n 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Report" file1.pdf
+shell::telegram::send_document() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
-		shell::logger::usage "shell::send_telegram_attachment [-n] [-h] <token> <chat_id> <description> [filename_1] [filename_2] [filename_3] ..."
+		shell::logger::usage "shell::telegram::send_document [-n] [-h] <token> <chat_id> <description> [filename_1] [filename_2] [filename_3] ..."
 		shell::logger::item "token" "The Telegram Bot API token"
 		shell::logger::item "chat_id" "The chat identifier to which the attachments are sent"
 		shell::logger::item "description" "A text description that is appended to each attachment's caption along with a timestamp"
 		shell::logger::item "filename_N" "One or more filenames of the attachments to send"
 		shell::logger::option "-h, --help" "Show this help message"
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
-		shell::logger::example "shell::send_telegram_attachment 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 \"Report\" file1.pdf file2.pdf"
-		shell::logger::example "shell::send_telegram_attachment -n 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 \"Report\" file1.pdf"
+		shell::logger::example "shell::telegram::send_document 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 \"Report\" file1.pdf file2.pdf"
+		shell::logger::example "shell::telegram::send_document -n 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 \"Report\" file1.pdf"
 		return $RETURN_SUCCESS
 	fi
 

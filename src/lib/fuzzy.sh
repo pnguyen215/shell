@@ -335,7 +335,7 @@ shell::fzf_current_zip_attachment() {
 
 # shell::fzf_send_telegram_attachment function
 # Uses fzf to interactively select one or more files from a folder (default: current directory)
-# and sends them as attachments via the Telegram Bot API by reusing shell::send_telegram_attachment.
+# and sends them as attachments via the Telegram Bot API by reusing shell::telegram::send_document.
 #
 # Usage:
 #   shell::fzf_send_telegram_attachment [-n] <token> <chat_id> <description> [folder_path]
@@ -350,7 +350,7 @@ shell::fzf_current_zip_attachment() {
 # Description:
 #   This function checks that the required parameters are provided and sets the folder path to the current directory if none is given.
 #   It then uses the 'find' command and fzf (in multi-select mode) to let the user choose one or more files.
-#   If files are selected, it calls shell::send_telegram_attachment (passing the dry-run flag if needed) with the selected filenames.
+#   If files are selected, it calls shell::telegram::send_document (passing the dry-run flag if needed) with the selected filenames.
 #
 # Example:
 #   shell::fzf_send_telegram_attachment 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Report"
@@ -400,10 +400,10 @@ shell::fzf_send_telegram_attachment() {
 		return 1
 	fi
 
-	# Call shell::send_telegram_attachment with the selected files.
+	# Call shell::telegram::send_document with the selected files.
 	if [ "$dry_run" = "true" ]; then
-		shell::send_telegram_attachment -n "$token" "$chatID" "$description" "${selected_files_arr[@]}"
+		shell::telegram::send_document -n "$token" "$chatID" "$description" "${selected_files_arr[@]}"
 	else
-		shell::send_telegram_attachment "$token" "$chatID" "$description" "${selected_files_arr[@]}"
+		shell::telegram::send_document "$token" "$chatID" "$description" "${selected_files_arr[@]}"
 	fi
 }

@@ -443,7 +443,7 @@ Core functions for system management, version control, and basic operations.
 
   - `shell::git::telegram::send_activity [-n] <message>`
 
-- **`shell::send_telegram_attachment`**
+- **`shell::telegram::send_document`**
   Sends one or more attachments (files) via Telegram using the Bot API asynchronously.
 
   - _Parameters_:
@@ -454,7 +454,7 @@ Core functions for system management, version control, and basic operations.
     - description: A text description that is appended to each attachment's caption along with a timestamp.
     - filename_X: One or more filenames of the attachments to send.
 
-  - `shell::send_telegram_attachment [-n] <token> <chat_id> <description> [filename_1] [filename_2] [filename_3] ...`
+  - `shell::telegram::send_document [-n] <token> <chat_id> <description> [filename_1] [filename_2] [filename_3] ...`
 
 - **`shell::fzf_zip_attachment`**
   Zips selected files from a specified folder and outputs the absolute path of the created zip file.
@@ -476,7 +476,7 @@ Core functions for system management, version control, and basic operations.
   - `shell::fzf_current_zip_attachment [-n]`
 
 - **`shell::fzf_send_telegram_attachment`**
-  Uses fzf to interactively select one or more files from a folder (default: current directory), and sends them as attachments via the Telegram Bot API by reusing shell::send_telegram_attachment.
+  Uses fzf to interactively select one or more files from a folder (default: current directory), and sends them as attachments via the Telegram Bot API by reusing shell::telegram::send_document.
 
   - _Parameters_:
 
@@ -827,9 +827,9 @@ Telegram Bot API integration for notifications and file sharing.
   - message : The message text to send
     _Example:_ `shell::telegram::send <token> <chat_id> "Hello, World!"`
 
-- **`shell::send_telegram_attachment`**
+- **`shell::telegram::send_document`**
   Sends one or more attachments (files) via Telegram using the Bot API asynchronously.
-  _Example:_ `shell::send_telegram_attachment <token> <chat_id> "Files" file1.txt file2.txt`
+  _Example:_ `shell::telegram::send_document <token> <chat_id> "Files" file1.txt file2.txt`
 
 - **`shell::git::telegram::send_activity`**
   Sends a historical GitHub-related message via Telegram using stored configuration keys.

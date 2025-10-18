@@ -2073,7 +2073,7 @@ Example:
 USAGE_SHELL_FZF_SEND_TELEGRAM_ATTACHMENT="
 shell::fzf_send_telegram_attachment function
 Uses fzf to interactively select one or more files from a folder (default: current directory)
-and sends them as attachments via the Telegram Bot API by reusing shell::send_telegram_attachment.
+and sends them as attachments via the Telegram Bot API by reusing shell::telegram::send_document.
 
 Usage:
   shell::fzf_send_telegram_attachment [-n] [-h] <token> <chat_id> <description> [folder_path]
@@ -2089,7 +2089,7 @@ Parameters:
 Description:
   This function checks that the required parameters are provided and sets the folder path to the current directory if none is given.
   It then uses the 'find' command and fzf (in multi-select mode) to let the user choose one or more files.
-  If files are selected, it calls shell::send_telegram_attachment (passing the dry-run flag if needed) with the selected filenames.
+  If files are selected, it calls shell::telegram::send_document (passing the dry-run flag if needed) with the selected filenames.
 
 Example:
   shell::fzf_send_telegram_attachment 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 \"Report\"
@@ -2199,11 +2199,11 @@ Example:
 "
 
 USAGE_SHELL_SEND_TELEGRAM_ATTACHMENT="
-shell::send_telegram_attachment function
+shell::telegram::send_document function
 Sends one or more attachments (files) via Telegram using the Bot API asynchronously.
 
 Usage:
-  shell::send_telegram_attachment [-n] [-h] <token> <chat_id> <description> [filename_1] [filename_2] [filename_3] ...
+  shell::telegram::send_document [-n] [-h] <token> <chat_id> <description> [filename_1] [filename_2] [filename_3] ...
 
 Parameters:
   - -n           : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
@@ -2219,8 +2219,8 @@ Description:
   asynchronously via Telegram's API. In dry-run mode, the command is printed using shell::logger::cmd_copy.
 
 Example:
-  shell::send_telegram_attachment 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 \"Report\" file1.pdf file2.pdf
-  shell::send_telegram_attachment -n 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 \"Report\" file1.pdf
+  shell::telegram::send_document 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 \"Report\" file1.pdf file2.pdf
+  shell::telegram::send_document -n 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 \"Report\" file1.pdf
 "
 
 USAGE_SHELL_GET_PROFILE_PATH="
