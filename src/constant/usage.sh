@@ -602,14 +602,14 @@ Parameters:
 "
 
 USAGE_SHELL_ADD_GH_WRK_NEWS_GO="
-shell::github::workflow::news::add_go function
+shell::github::workflow::go::news::add function
 This function downloads the GitHub Actions workflow configuration file for Go language
 notifications from the specified GitHub repository. This file is crucial for
 automating notifications related to Go language CI events, ensuring that relevant
 stakeholders are informed about the status of the Go language CI processes.
 
 Usage:
-  shell::github::workflow::news::add_go [-h]
+  shell::github::workflow::go::news::add [-h]
 
 Parameters:
   - -h                              : Optional. Displays this help message.

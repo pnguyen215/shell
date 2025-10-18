@@ -55,14 +55,14 @@ shell::github::workflow::bash::add_format() {
 	return $RETURN_SUCCESS
 }
 
-# shell::github::workflow::news::add_go function
+# shell::github::workflow::go::news::add function
 # This function downloads the GitHub Actions workflow configuration file for Go language
 # notifications from the specified GitHub repository. This file is crucial for
 # automating notifications related to Go language CI events, ensuring that relevant
 # stakeholders are informed about the status of the Go language CI processes.
 # It utilizes the shell::download_dataset function to fetch the file and save it
 # in the appropriate location within the project structure.
-shell::github::workflow::news::add_go() {
+shell::github::workflow::go::news::add() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Add GitHub Actions workflow file for Go language notification"
