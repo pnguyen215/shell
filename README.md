@@ -863,9 +863,9 @@ Google Gemini AI agent integration for translation and AI tasks.
 
 GitHub API integration and repository utilities.
 
-- **`shell::git::release::get_latest`**
+- **`shell::git::release::version::get`**
   Retrieves the latest release information from a GitHub repository.
-  _Example:_ `shell::git::release::get_latest pnguyen215/shell`
+  _Example:_ `shell::git::release::version::get pnguyen215/shell`
 
 - **`shell::retrieve_gh_repository_info`**
   Retrieves repository information from GitHub.

@@ -640,11 +640,11 @@ Example:
 "
 
 USAGE_SHELL_RETRIEVE_GH_LATEST_RELEASE="
-shell::git::release::get_latest function
+shell::git::release::version::get function
 Retrieves the latest release tag from a GitHub repository using the GitHub API.
 
 Usage:
-  shell::git::release::get_latest <owner/repo>
+  shell::git::release::version::get <owner/repo>
 
 Parameters:
   - <owner/repo>: GitHub repository in the format 'owner/repo'
@@ -653,7 +653,7 @@ Returns:
   Outputs the latest release tag (e.g., v1.2.3), or an error message if failed.
 
 Example:
-  shell::git::release::get_latest \"cli/cli\"
+  shell::git::release::version::get \"cli/cli\"
 
 Dependencies:
   - curl

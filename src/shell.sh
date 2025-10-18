@@ -77,7 +77,7 @@ shell::source_directory "$LLM_AGENT_DIR"
 # Example:
 #   shell::version  # Outputs: shell v0.0.1
 shell::version() {
-	shell::git::release::get_latest "pnguyen215/shell"
+	shell::git::release::version::get "pnguyen215/shell"
 }
 
 # shell::upgrade function
