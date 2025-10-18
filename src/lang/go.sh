@@ -347,7 +347,7 @@ shell::go::module::create() {
 	return $RETURN_SUCCESS
 }
 
-# shell::add_go_app_settings function
+# shell::go::scaffold::add function
 # This function downloads essential configuration files for a Go application.
 #
 # It retrieves the following files:
@@ -358,7 +358,7 @@ shell::go::module::create() {
 #
 # Each file is downloaded using the shell::download_dataset function, which ensures that the files are
 # fetched from the specified URLs and saved in the appropriate locations.
-shell::add_go_app_settings() {
+shell::go::scaffold::add() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::section "Go Project Settings"

@@ -761,11 +761,11 @@ Example:
 "
 
 USAGE_SHELL_ADD_GO_APP_SETTINGS="
-shell::add_go_app_settings function
+shell::go::scaffold::add function
 This function downloads essential configuration files for a Go application.
 
 Usage:
-  shell::add_go_app_settings [-h]
+  shell::go::scaffold::add [-h]
 
 Parameters:
   - -h                              : Optional. Displays this help message.
