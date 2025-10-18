@@ -725,9 +725,9 @@ Utilities for various programming languages and project initialization.
 
 #### Node.js Development
 
-- **`shell::add_nodejs_gitignore`**
+- **`shell::nodejs::gitignore::add`**
   Adds Node.js-specific .gitignore file to the current project.
-  _Example:_ `shell::add_nodejs_gitignore`
+  _Example:_ `shell::nodejs::gitignore::add`
 
 #### Java Development
 

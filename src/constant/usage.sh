@@ -800,11 +800,11 @@ Parameters:
 "
 
 USAGE_SHELL_ADD_NODEJS_GITIGNORE="
-shell::add_nodejs_gitignore function
+shell::nodejs::gitignore::add function
 This function downloads the .gitignore file specifically for Node.js projects.
 
 Usage:
-  shell::add_nodejs_gitignore [-h]
+  shell::nodejs::gitignore::add [-h]
 
 Parameters:
   - -h                              : Optional. Displays this help message.

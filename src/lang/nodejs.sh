@@ -1,7 +1,7 @@
 #!/bin/bash
 # nodejs.sh
 
-# shell::add_nodejs_gitignore function
+# shell::nodejs::gitignore::add function
 # This function downloads the .gitignore file specifically for Node.js projects.
 #
 # The .gitignore file is crucial for specifying which files and directories
@@ -11,7 +11,7 @@
 # It utilizes the shell::download_dataset function to fetch the .gitignore file
 # from the specified URL and saves it in the appropriate location within the
 # project structure.
-shell::add_nodejs_gitignore() {
+shell::nodejs::gitignore::add() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Add .gitignore file for Node.js project"
