@@ -632,7 +632,7 @@ Description:
   configuration keys \"SHELL_HISTORICAL_GH_TELEGRAM_BOT_TOKEN\" and \"SHELL_HISTORICAL_GH_TELEGRAM_CHAT_ID\".
   If either key is missing, a warning is printed and the corresponding key is copied to the clipboard
   to prompt the user to add it using shell::add_key_conf. If both keys exist, it retrieves their values and
-  calls shell::send_telegram_message (with the dry-run flag, if enabled) to send the message.
+  calls shell::telegram::send (with the dry-run flag, if enabled) to send the message.
 
 Example:
   shell::git::telegram::send_activity \"Historical message text\"
@@ -2175,11 +2175,11 @@ Example:
 "
 
 USAGE_SHELL_SEND_TELEGRAM_MESSAGE="
-shell::send_telegram_message function
+shell::telegram::send function
 Sends a message via the Telegram Bot API.
 
 Usage:
-  shell::send_telegram_message [-n] [-h] <token> <chat_id> <message>
+  shell::telegram::send [-n] [-h] <token> <chat_id> <message>
 
 Parameters:
   - -n          : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
@@ -2194,8 +2194,8 @@ Description:
   the message via Telegram's API. In dry-run mode, the command is printed using shell::logger::cmd_copy; otherwise, it is executed using shell::run_cmd_eval.
 
 Example:
-  shell::send_telegram_message 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 \"Hello, World!\"
-  shell::send_telegram_message -n 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 \"Dry-run: Hello, World!\"
+  shell::telegram::send 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 \"Hello, World!\"
+  shell::telegram::send -n 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 \"Dry-run: Hello, World!\"
 "
 
 USAGE_SHELL_SEND_TELEGRAM_ATTACHMENT="

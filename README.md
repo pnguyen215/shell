@@ -421,7 +421,7 @@ Core functions for system management, version control, and basic operations.
 
   - `shell::sync_group_key_conf [-n]`
 
-- **`shell::send_telegram_message`**
+- **`shell::telegram::send`**
   Sends a message via the Telegram Bot API.
 
   - _Parameters_:
@@ -431,7 +431,7 @@ Core functions for system management, version control, and basic operations.
     - chat_id : The chat identifier where the message should be sent.
     - message : The message text to send.
 
-  - `shell::send_telegram_message [-n] <token> <chat_id> <message>`
+  - `shell::telegram::send [-n] <token> <chat_id> <message>`
 
 - **`shell::git::telegram::send_activity`**
   Sends a historical GitHub-related message via Telegram using stored configuration keys.
@@ -817,7 +817,7 @@ Text manipulation and sanitization functions.
 
 Telegram Bot API integration for notifications and file sharing.
 
-- **`shell::send_telegram_message`**
+- **`shell::telegram::send`**
   Sends a message via the Telegram Bot API.
   _Parameters_:
 
@@ -825,7 +825,7 @@ Telegram Bot API integration for notifications and file sharing.
   - token : The Telegram Bot API token
   - chat_id : The chat identifier where the message should be sent
   - message : The message text to send
-    _Example:_ `shell::send_telegram_message <token> <chat_id> "Hello, World!"`
+    _Example:_ `shell::telegram::send <token> <chat_id> "Hello, World!"`
 
 - **`shell::send_telegram_attachment`**
   Sends one or more attachments (files) via Telegram using the Bot API asynchronously.

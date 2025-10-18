@@ -1,11 +1,11 @@
 #!/bin/bash
 # telegram.sh
 
-# shell::send_telegram_message function
+# shell::telegram::send function
 # Sends a message via the Telegram Bot API.
 #
 # Usage:
-#   shell::send_telegram_message [-n] <token> <chat_id> <message>
+#   shell::telegram::send [-n] <token> <chat_id> <message>
 #
 # Parameters:
 #   - -n          : Optional dry-run flag. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
@@ -19,19 +19,19 @@
 #   the message via Telegram's API. In dry-run mode, the command is printed using shell::logger::cmd_copy; otherwise, it is executed using shell::run_cmd_eval.
 #
 # Example:
-#   shell::send_telegram_message 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Hello, World!"
-#   shell::send_telegram_message -n 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Dry-run: Hello, World!"
-shell::send_telegram_message() {
+#   shell::telegram::send 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Hello, World!"
+#   shell::telegram::send -n 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Dry-run: Hello, World!"
+shell::telegram::send() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
-		shell::logger::usage "shell::send_telegram_message [-n] [-h] <token> <chat_id> <message>"
+		shell::logger::usage "shell::telegram::send [-n] [-h] <token> <chat_id> <message>"
 		shell::logger::item "token" "The Telegram Bot API token"
 		shell::logger::item "chat_id" "The chat identifier where the message should be sent"
 		shell::logger::item "message" "The message text to send"
 		shell::logger::option "-h, --help" "Show this help message"
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
-		shell::logger::example "shell::send_telegram_message 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 \"Hello, World\""
-		shell::logger::example "shell::send_telegram_message -n 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 \"Hello, World\""
+		shell::logger::example "shell::telegram::send 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 \"Hello, World\""
+		shell::logger::example "shell::telegram::send -n 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 \"Hello, World\""
 		return $RETURN_SUCCESS
 	fi
 
