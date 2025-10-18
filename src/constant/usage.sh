@@ -728,12 +728,12 @@ Example:
 "
 
 USAGE_SHELL_CREATE_GO_APP="
-shell::create_go_app function
+shell::go::module::create function
 Creates a new Go application by initializing a Go module and tidying dependencies
 within a specified target folder.
 
 Usage:
-  shell::create_go_app [-n] [-h] <app_name|github_url> [target_folder]
+  shell::go::module::create [-n] [-h] <app_name|github_url> [target_folder]
 
 Parameters:
   - -n : Optional dry-run flag.
@@ -753,11 +753,11 @@ Description:
   In dry-run mode, the commands are displayed without execution.
 
 Example:
-  shell::create_go_app my_app                      # Initializes a Go module named 'my_app' in the current directory.
-  shell::create_go_app my_app /path/to/my/folder   # Initializes 'my_app' in the specified folder.
-  shell::create_go_app -n my_app                   # Previews the initialization commands without executing them.
-  shell::create_go_app -n my_app /tmp/go_projects  # Previews initialization in a target folder.
-  shell::create_go_app https://github.com/user/repo /home/user/src # Initializes from a GitHub URL in a target folder.
+  shell::go::module::create my_app                      # Initializes a Go module named 'my_app' in the current directory.
+  shell::go::module::create my_app /path/to/my/folder   # Initializes 'my_app' in the specified folder.
+  shell::go::module::create -n my_app                   # Previews the initialization commands without executing them.
+  shell::go::module::create -n my_app /tmp/go_projects  # Previews initialization in a target folder.
+  shell::go::module::create https://github.com/user/repo /home/user/src # Initializes from a GitHub URL in a target folder.
 "
 
 USAGE_SHELL_ADD_GO_APP_SETTINGS="

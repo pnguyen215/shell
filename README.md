@@ -677,9 +677,9 @@ Utilities for various programming languages and project initialization.
 
 #### Go Development
 
-- **`shell::create_go_app`**
+- **`shell::go::module::create`**
   Creates a new Go application with proper structure.
-  _Example:_ `shell::create_go_app myapp`
+  _Example:_ `shell::go::module::create myapp`
 
 - **`shell::go::env::set_private`**
   Sets up private Go module configuration.
@@ -1085,7 +1085,7 @@ shell::list_bookmark            # View all bookmarks
 
 ```bash
 # Initialize a Go project
-shell::create_go_app mygoapp
+shell::go::module::create mygoapp
 cd mygoapp
 shell::add_go_gitignore
 

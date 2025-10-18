@@ -232,12 +232,12 @@ shell::go::env::remove_private_fzf() {
 	shell::logger::exec_check "$cmd"
 }
 
-# shell::create_go_app function
+# shell::go::module::create function
 # Creates a new Go application by initializing a Go module and tidying dependencies
 # within a specified target folder.
 #
 # Usage:
-#   shell::create_go_app [-n] <app_name|github_url> [target_folder]
+#   shell::go::module::create [-n] <app_name|github_url> [target_folder]
 #
 # Parameters:
 #   - -n : Optional dry-run flag.
@@ -256,25 +256,25 @@ shell::go::env::remove_private_fzf() {
 #   In dry-run mode, the commands are displayed without execution.
 #
 # Example:
-#   shell::create_go_app my_app                      # Initializes a Go module named 'my_app' in the current directory.
-#   shell::create_go_app my_app /path/to/my/folder   # Initializes 'my_app' in the specified folder.
-#   shell::create_go_app -n my_app                   # Previews the initialization commands without executing them.
-#   shell::create_go_app -n my_app /tmp/go_projects  # Previews initialization in a target folder.
-#   shell::create_go_app https://github.com/user/repo /home/user/src # Initializes from a GitHub URL in a target folder.
-shell::create_go_app() {
+#   shell::go::module::create my_app                      # Initializes a Go module named 'my_app' in the current directory.
+#   shell::go::module::create my_app /path/to/my/folder   # Initializes 'my_app' in the specified folder.
+#   shell::go::module::create -n my_app                   # Previews the initialization commands without executing them.
+#   shell::go::module::create -n my_app /tmp/go_projects  # Previews initialization in a target folder.
+#   shell::go::module::create https://github.com/user/repo /home/user/src # Initializes from a GitHub URL in a target folder.
+shell::go::module::create() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Create Go application"
-		shell::logger::usage "shell::create_go_app [-n] [-h] <app_name|github_url> [target_folder]"
+		shell::logger::usage "shell::go::module::create [-n] [-h] <app_name|github_url> [target_folder]"
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
 		shell::logger::option "-h, --help" "Display this help message"
 		shell::logger::option "<app_name|github_url>" "The name of the application or a GitHub URL to initialize the module"
 		shell::logger::option "[target_folder]" "Optional. The path to the folder where the Go application should be created"
-		shell::logger::example "shell::create_go_app my_app"
-		shell::logger::example "shell::create_go_app my_app /path/to/my/folder"
-		shell::logger::example "shell::create_go_app -n my_app"
-		shell::logger::example "shell::create_go_app -n my_app /tmp/go_projects"
-		shell::logger::example "shell::create_go_app https://github.com/user/repo /home/user/src"
+		shell::logger::example "shell::go::module::create my_app"
+		shell::logger::example "shell::go::module::create my_app /path/to/my/folder"
+		shell::logger::example "shell::go::module::create -n my_app"
+		shell::logger::example "shell::go::module::create -n my_app /tmp/go_projects"
+		shell::logger::example "shell::go::module::create https://github.com/user/repo /home/user/src"
 		return $RETURN_SUCCESS
 	fi
 
