@@ -731,9 +731,9 @@ Utilities for various programming languages and project initialization.
 
 #### Java Development
 
-- **`shell::add_java_gitignore`**
+- **`shell::java::gitignore::add`**
   Adds Java-specific .gitignore file to the current project.
-  _Example:_ `shell::add_java_gitignore`
+  _Example:_ `shell::java::gitignore::add`
 
 #### Angular Development
 

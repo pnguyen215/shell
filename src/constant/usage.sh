@@ -789,11 +789,11 @@ Parameters:
 "
 
 USAGE_SHELL_ADD_JAVA_GITIGNORE="
-shell::add_java_gitignore function
+shell::java::gitignore::add function
 This function downloads the .gitignore file specifically for Java projects.
 
 Usage:
-  shell::add_java_gitignore [-h]
+  shell::java::gitignore::add [-h]
 
 Parameters:
   - -h                              : Optional. Displays this help message.
