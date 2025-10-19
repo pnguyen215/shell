@@ -97,12 +97,12 @@ shell::strings::sanitize::capitalize() {
 	echo "$sanitized_output" | sed 's/^_//;s/_$//'
 }
 
-# shell::sanitize_first_lower_var_name function
+# shell::strings::sanitize::lower_preserve function
 # Converts a string into a format suitable for a lower-case environment variable name,
 # making the first letter lowercase and replacing non-alphanumeric characters
 # (except underscore) with underscores.
 # Usage:
-#   shell::sanitize_first_lower_var_name <string>
+#   shell::strings::sanitize::lower_preserve <string>
 #
 # Parameters:
 #   - <string> : The input string (e.g., INI section or key name).
@@ -111,8 +111,8 @@ shell::strings::sanitize::capitalize() {
 #   The sanitized string suitable for a lower-case shell variable name with the first letter lowercase.
 #
 # Example:
-#   sanitized=$(shell::sanitize_first_lower_var_name "My-Section.Key_Name") # Outputs "my_section_key_name"
-shell::sanitize_first_lower_var_name() {
+#   sanitized=$(shell::strings::sanitize::lower_preserve "My-Section.Key_Name") # Outputs "my_section_key_name"
+shell::strings::sanitize::lower_preserve() {
 	local input="$1"
 
 	# Handle empty input gracefully
