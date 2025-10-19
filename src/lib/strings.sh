@@ -45,13 +45,13 @@ shell::strings::sanitize::lower() {
 	echo "$input" | tr '[:upper:]' '[:lower:]' | sed -e 's/[^a-z0-9_]/_/g'
 }
 
-# shell::sanitize_first_upper_var_name function
+# shell::strings::sanitize::capitalize function
 # Converts a string into a format suitable for an environment variable name,
 # capitalizing the first letter and replacing non-alphanumeric characters
 # (except underscore) with underscores.
 #
 # Usage:
-#   shell::sanitize_first_upper_var_name <string>
+#   shell::strings::sanitize::capitalize <string>
 #
 # Parameters:
 #   - <string> : The input string (e.g., INI section or key name).
@@ -60,8 +60,8 @@ shell::strings::sanitize::lower() {
 #   The sanitized string suitable for a shell variable name with the first letter capitalized.
 #
 # Example:
-#   sanitized=$(shell::sanitize_first_upper_var_name "my-section.key_name") # Outputs "My_section_key_name"
-shell::sanitize_first_upper_var_name() {
+#   sanitized=$(shell::strings::sanitize::capitalize "my-section.key_name") # Outputs "My_section_key_name"
+shell::strings::sanitize::capitalize() {
 	local input="$1"
 
 	# Handle empty input gracefully
