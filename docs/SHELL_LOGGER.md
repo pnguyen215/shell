@@ -146,12 +146,12 @@ shell::logger::section "NODE.JS INSTALLATION"
 
 shell::logger::step 1 "Install Node Version Manager (NVM)"
 shell::logger::cmd "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash"
-shell::logger::step_note "Restart your terminal or run 'source ~/.bashrc'"
+shell::logger::note "Restart your terminal or run 'source ~/.bashrc'"
 
 shell::logger::step 2 "Install latest Node.js LTS"
 shell::logger::cmd "nvm install --lts"
 shell::logger::cmd "nvm use --lts"
-shell::logger::step_note "This installs and activates the latest LTS version"
+shell::logger::note "This installs and activates the latest LTS version"
 
 shell::logger::step 3 "Verify installation"
 shell::logger::cmd "node --version"
@@ -159,7 +159,7 @@ shell::logger::cmd "npm --version"
 
 shell::logger::step 4 "Install global packages"
 shell::logger::cmd "npm install -g yarn pm2 nodemon"
-shell::logger::step_note "These are commonly used development tools"
+shell::logger::note "These are commonly used development tools"
 ```
 
 **Output:**
@@ -293,11 +293,11 @@ shell::logger::section "DOCKER INSTALLATION & SETUP"
 shell::logger::step 1 "Install Docker Engine"
 shell::logger::cmd "curl -fsSL https://get.docker.com -o get-docker.sh"
 shell::logger::cmd "sudo sh get-docker.sh"
-shell::logger::step_note "This works on Ubuntu, Debian, CentOS, and other Linux distributions"
+shell::logger::note "This works on Ubuntu, Debian, CentOS, and other Linux distributions"
 
 shell::logger::step 2 "Configure user permissions"
 shell::logger::cmd "sudo usermod -aG docker \$USER"
-shell::logger::step_note "Log out and back in for this to take effect"
+shell::logger::note "Log out and back in for this to take effect"
 
 shell::logger::step 3 "Start and enable Docker service"
 shell::logger::cmd "sudo systemctl start docker"
@@ -345,7 +345,7 @@ shell::logger::cmd "sudo ./aws/install"
 
 shell::logger::step 2 "Configure credentials"
 shell::logger::cmd "aws configure"
-shell::logger::step_note "You'll need Access Key ID, Secret Access Key, Default region, and Output format"
+shell::logger::note "You'll need Access Key ID, Secret Access Key, Default region, and Output format"
 
 shell::logger::step 3 "Verify configuration"
 shell::logger::cmd "aws sts get-caller-identity"
@@ -400,7 +400,7 @@ shell::logger::cmd "kubectl apply -f k8s/ingress.yaml"
 
 shell::logger::step 3 "Verify deployment"
 shell::logger::cmd "kubectl get pods -w"
-shell::logger::step_note "Wait for all pods to be in Running state"
+shell::logger::note "Wait for all pods to be in Running state"
 
 shell::logger::step 4 "Check services"
 shell::logger::cmd "kubectl get services"
