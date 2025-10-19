@@ -362,7 +362,7 @@ shell::eval_gemini_en_vi() {
 
 	# Ensure the sentence_english variable is set
 	local sentence_english="$1"
-	sentence_english=$(shell::sanitize_text "$sentence_english")
+	sentence_english=$(shell::strings::sanitize::escape "$sentence_english")
 	if [ -z "$sentence_english" ]; then
 		shell::stdout "ERR: Sentence cannot be empty." 196
 		return 1
@@ -540,7 +540,7 @@ shell::eval_gemini_vi_en() {
 
 	# Ensure the sentence_vietnamese variable is set
 	local sentence_vietnamese="$1"
-	sentence_vietnamese=$(shell::sanitize_text "$sentence_vietnamese")
+	sentence_vietnamese=$(shell::strings::sanitize::escape "$sentence_vietnamese")
 	if [ -z "$sentence_vietnamese" ]; then
 		shell::stdout "ERR: Sentence cannot be empty." 196
 		return 1

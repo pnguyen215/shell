@@ -197,11 +197,11 @@ shell::strings::format::title() {
 	echo "${output_string%" "}"
 }
 
-# shell::sanitize_text function
+# shell::strings::sanitize::escape function
 # Sanitizes a text string for safe use in shell scripts and JSON.
 # It escapes special characters, removes newlines and tabs, and trims whitespace.
 # Usage:
-#   shell::sanitize_text <text>
+#   shell::strings::sanitize::escape <text>
 #
 # Parameters:
 #   - <text> : The input text to sanitize.
@@ -215,7 +215,7 @@ shell::strings::format::title() {
 #
 # Returns:
 #   The sanitized text string.
-shell::sanitize_text() {
+shell::strings::sanitize::escape() {
 	local input_text="$1"
 	# Escape special characters for sed and JSON safety
 	# 1. Escape backslashes first (must be done before other escapes)

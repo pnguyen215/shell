@@ -809,9 +809,9 @@ Text manipulation and sanitization functions.
   Capitalizes the first letter of each word.
   _Example:_ `shell::strings::format::title "hello world"`
 
-- **`shell::sanitize_text`**
+- **`shell::strings::sanitize::escape`**
   General text sanitization function.
-  _Example:_ `shell::sanitize_text "text with special chars!"`
+  _Example:_ `shell::strings::sanitize::escape "text with special chars!"`
 
 ### Communication & Bots
 
