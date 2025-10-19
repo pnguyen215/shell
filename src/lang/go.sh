@@ -12,7 +12,7 @@
 #   shell::go::env::get_private [-n]
 #
 # Parameters:
-#   -n: Optional. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
+#   -n: Optional. If provided, the command is printed using shell::logger::copy instead of executed.
 #
 # Options:
 #   None
@@ -49,7 +49,7 @@ shell::go::env::get_private() {
 	local cmd="go env GOPRIVATE"
 
 	if [ "$dry_run" = "true" ]; then
-		shell::logger::cmd_copy "$cmd"
+		shell::logger::copy "$cmd"
 		return $RETURN_SUCCESS
 	fi
 
@@ -70,7 +70,7 @@ shell::go::env::get_private() {
 #
 # Parameters:
 #   -n: Optional.
-#   If provided, the command is printed using shell::logger::cmd_copy instead of executed.
+#   If provided, the command is printed using shell::logger::copy instead of executed.
 #   <repository1>: The first repository to add to GOPRIVATE.
 #   [repository2] [repository3] ...: Additional repositories to add to GOPRIVATE.
 #
@@ -133,7 +133,7 @@ shell::go::env::set_private() {
 	local cmd="go env -w GOPRIVATE=\"$repositories\""
 
 	if [ "$dry_run" = "true" ]; then
-		shell::logger::cmd_copy "$cmd"
+		shell::logger::copy "$cmd"
 		return $RETURN_SUCCESS
 	fi
 
@@ -151,7 +151,7 @@ shell::go::env::set_private() {
 #   shell::go::env::remove_private_fzf [-n]
 #
 # Parameters:
-#   -n: Optional. If provided, the command is printed using shell::logger::cmd_copy instead of executed.
+#   -n: Optional. If provided, the command is printed using shell::logger::copy instead of executed.
 #
 # Options:
 #   None
@@ -168,7 +168,7 @@ shell::go::env::set_private() {
 #   - Requires fzf and Go to be installed; fzf is installed automatically if missing.
 #   - Uses `go env GOPRIVATE` to retrieve the current value.
 #   - Uses `go env -w GOPRIVATE=<new_value>` to set the updated value.
-#   - Supports dry-run and asynchronous execution via shell::logger::cmd_copy and shell::async.
+#   - Supports dry-run and asynchronous execution via shell::logger::copy and shell::async.
 #   - Compatible with both Linux (Ubuntu 22.04 LTS) and macOS.
 shell::go::env::remove_private_fzf() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
@@ -225,7 +225,7 @@ shell::go::env::remove_private_fzf() {
 	local cmd="go env -w GOPRIVATE=\"$new_privates\""
 
 	if [ "$dry_run" = "true" ]; then
-		shell::logger::cmd_copy "$cmd"
+		shell::logger::copy "$cmd"
 		return $RETURN_SUCCESS
 	fi
 
@@ -241,7 +241,7 @@ shell::go::env::remove_private_fzf() {
 #
 # Parameters:
 #   - -n : Optional dry-run flag.
-#          If provided, the commands are printed using shell::logger::cmd_copy instead of being executed.
+#          If provided, the commands are printed using shell::logger::copy instead of being executed.
 #   - <app_name|github_url> : The name of the application or a GitHub URL to initialize the module.
 #   - [target_folder] : Optional. The path to the folder where the Go application should be created.
 #                       If not provided, the application is created in the current directory.

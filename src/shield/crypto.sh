@@ -330,7 +330,7 @@ shell::cryptography::create_password_hash() {
 #   shell::encode::file::aes256cbc [-n] [-h] <input_file> <output_file> [key] [iv]
 #
 # Parameters:
-#   - -n           : Optional. Dry-run mode; prints the command using shell::logger::cmd_copy instead of executing it.
+#   - -n           : Optional. Dry-run mode; prints the command using shell::logger::copy instead of executing it.
 #   - -h           : Optional. Displays this help message.
 #   - <input_file> : The path to the file to encrypt.
 #   - <output_file>: The path where the encrypted file will be saved.
@@ -352,7 +352,7 @@ shell::cryptography::create_password_hash() {
 #   0 on success, 1 on failure (e.g., file not found, invalid key, or encryption failure).
 #
 # Notes:
-#   - Relies on the shell::stdout, shell::logger::cmd_copy, and shell::run_cmd_eval functions for output and command execution.
+#   - Relies on the shell::stdout, shell::logger::copy, and shell::run_cmd_eval functions for output and command execution.
 #   - Requires OpenSSL to be installed.
 #   - The encryption key must be 64 bytes (hex) for AES-256-CBC.
 #   - The initialization vector must be 32 bytes (hex) for AES-256-CBC.
@@ -437,7 +437,7 @@ shell::encode::file::aes256cbc() {
 
 	# Execute or print the command based on dry-run mode
 	if [ "$dry_run" = "true" ]; then
-		shell::logger::cmd_copy "$cmd"
+		shell::logger::copy "$cmd"
 		return 0
 	fi
 
@@ -459,7 +459,7 @@ shell::encode::file::aes256cbc() {
 #   shell::decode::file::aes256cbc [-n] [-h] <input_file> <output_file> [key] [iv]
 #
 # Parameters:
-#   - -n           : Optional. Dry-run mode; prints the command using shell::logger::cmd_copy instead of executing it.
+#   - -n           : Optional. Dry-run mode; prints the command using shell::logger::copy instead of executing it.
 #   - -h           : Optional. Displays this help message.
 #   - <input_file> : The path to the encrypted file to decrypt.
 #   - <output_file>: The path where the decrypted file will be saved.
@@ -481,7 +481,7 @@ shell::encode::file::aes256cbc() {
 #   0 on success, 1 on failure (e.g., file not found, invalid key, or decryption failure).
 #
 # Notes:
-#   - Relies on the shell::stdout, shell::logger::cmd_copy, and shell::run_cmd_eval functions for output and command execution.
+#   - Relies on the shell::stdout, shell::logger::copy, and shell::run_cmd_eval functions for output and command execution.
 #   - Requires OpenSSL to be installed.
 #   - The encryption key must be 64 bytes (hex) for AES-256-CBC.
 #   - The initialization vector must be 32 bytes (hex) for AES-256-CBC.
@@ -568,7 +568,7 @@ shell::decode::file::aes256cbc() {
 
 	# Execute or print the command based on dry-run mode
 	if [ "$dry_run" = "true" ]; then
-		shell::logger::cmd_copy "$cmd"
+		shell::logger::copy "$cmd"
 		return 0
 	fi
 
