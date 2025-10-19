@@ -155,11 +155,11 @@ shell::strings::format::camel() {
 	echo "$input" | sed -e 's/[^a-zA-Z0-9_]/ /g' -e 's/_/ /g' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) substr($i,2)}1' | tr -d ' '
 }
 
-# shell::capitalize_each_word function
+# shell::strings::format::title function
 # Capitalizes the first letter of each word in a space-separated string.
 #
 # Usage:
-#   shell::capitalize_each_word <string>
+#   shell::strings::format::title <string>
 #
 # Parameters:
 #   - <string> : The input string (e.g., "my section key name").
@@ -168,10 +168,10 @@ shell::strings::format::camel() {
 #   The string with the first letter of each word capitalized.
 #
 # Example:
-#   capitalized=$(shell::capitalize_each_word "my section key name") # Outputs "My Section Key Name"
-shell::capitalize_each_word() {
+#   capitalized=$(shell::strings::format::title "my section key name") # Outputs "My Section Key Name"
+shell::strings::format::title() {
 	if [ $# -ne 1 ]; then
-		echo "Usage: shell::capitalize_each_word <string>"
+		echo "Usage: shell::strings::format::title <string>"
 		return 1
 	fi
 

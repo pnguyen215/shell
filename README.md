@@ -805,9 +805,9 @@ Text manipulation and sanitization functions.
   Converts text to camelCase format.
   _Example:_ `shell::strings::format::camel "my variable name"`
 
-- **`shell::capitalize_each_word`**
+- **`shell::strings::format::title`**
   Capitalizes the first letter of each word.
-  _Example:_ `shell::capitalize_each_word "hello world"`
+  _Example:_ `shell::strings::format::title "hello world"`
 
 - **`shell::sanitize_text`**
   General text sanitization function.
