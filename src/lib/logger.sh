@@ -1,11 +1,11 @@
 #!/bin/bash
 # logger.sh
 
-# _shell::logger::get_level_value (internal function)
+# shell::logger::level::to_int (internal function)
 # Retrieves the numerical value of a given logging level.
 #
 # Usage:
-#   _shell::logger::get_level_value <level>
+#   shell::logger::level::to_int <level>
 #
 # Parameters:
 #   - <level>: The logging level string (e.g., "INFO").
@@ -18,7 +18,7 @@
 #   This helper function maps a log level string to its corresponding integer
 #   value using a case statement for maximum portability across shells
 #   like older bash versions on macOS.
-_shell::logger::get_level_value() {
+shell::logger::level::to_int() {
 	local level
 	level="$(echo "$1" | tr '[:lower:]' '[:upper:]')"
 
@@ -49,10 +49,10 @@ shell::logger::can() {
 	local current_level="${SHELL_LOGGER_LEVEL:-DEBUG}"
 
 	local current_value
-	current_value="$(_shell::logger::get_level_value "${current_level}")"
+	current_value="$(shell::logger::level::to_int "${current_level}")"
 
 	local target_value
-	target_value="$(_shell::logger::get_level_value "${target_level}")"
+	target_value="$(shell::logger::level::to_int "${target_level}")"
 
 	# If either level is invalid, the check fails.
 	if [[ -z "${current_value}" || -z "${target_value}" ]]; then
