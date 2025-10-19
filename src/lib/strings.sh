@@ -135,12 +135,12 @@ shell::strings::sanitize::lower_preserve() {
 	echo "$sanitized_output" | sed 's/^_//;s/_$//'
 }
 
-# shell::camel_case function
+# shell::strings::format::camel function
 # Converts a string into CamelCase format.
 # Removes non-alphanumeric characters, splits by underscores, and capitalizes
 # the first letter of each word.
 # Usage:
-#   shell::camel_case <string>
+#   shell::strings::format::camel <string>
 #
 # Parameters:
 #   - <string> : The input string (e.g., INI section or key name).
@@ -148,8 +148,8 @@ shell::strings::sanitize::lower_preserve() {
 # Returns:
 #   The CamelCase formatted string.
 # Example:
-#   camel_case=$(shell::camel_case "my-section.key_name") # Outputs "MySectionKeyName"
-shell::camel_case() {
+#   camel_case=$(shell::strings::format::camel "my-section.key_name") # Outputs "MySectionKeyName"
+shell::strings::format::camel() {
 	local input="$1"
 	# Remove non-alphanumeric characters, split by underscores, capitalize first letter of each word
 	echo "$input" | sed -e 's/[^a-zA-Z0-9_]/ /g' -e 's/_/ /g' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) substr($i,2)}1' | tr -d ' '
