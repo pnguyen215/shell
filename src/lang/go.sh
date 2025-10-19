@@ -317,14 +317,14 @@ shell::go::module::create() {
 		shell::logger::section "Create Go application"
 		if [ -n "$target_folder" ] && [ "$target_folder" != "$PWD" ]; then
 			shell::logger::step $((step++)) "Ensure target directory exists"
-			shell::logger::cmd "shell::mkdir \"$target_folder\""
+			shell::logger::command "shell::mkdir \"$target_folder\""
 			shell::logger::step $((step++)) "Change to target directory"
-			shell::logger::cmd "cd \"$target_folder\""
+			shell::logger::command "cd \"$target_folder\""
 		fi
 		shell::logger::step $((step++)) "Initialize Go module"
-		shell::logger::cmd "$init_cmd"
+		shell::logger::command "$init_cmd"
 		shell::logger::step $((step++)) "Tidy Go dependencies"
-		shell::logger::cmd "$tidy_cmd"
+		shell::logger::command "$tidy_cmd"
 		return $RETURN_SUCCESS
 	fi
 

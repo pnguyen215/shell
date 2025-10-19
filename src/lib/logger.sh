@@ -346,7 +346,7 @@ shell::logger::example() {
 	fi
 
 	shell::stdout "Eg:" 42
-	shell::logger::cmd "$example"
+	shell::logger::command "$example"
 }
 
 # shell::logger::indent function
@@ -465,11 +465,11 @@ shell::logger::section() {
 	shell::stdout "$separator" 240
 }
 
-# shell::logger::cmd function
+# shell::logger::command function
 # Logs a command with an optional description.
 #
 # Usage:
-#   shell::logger::cmd <command> <description>
+#   shell::logger::command <command> <description>
 #
 # Parameters:
 #   - <command> : The command to log.
@@ -479,7 +479,7 @@ shell::logger::section() {
 #   This function logs a command with an optional description. If a description
 #   is provided, it is indented and formatted for readability. The command is
 #   displayed in a specific color (245) to stand out.
-shell::logger::cmd() {
+shell::logger::command() {
 	local command="$*"
 
 	if ! shell::logger::can "INFO"; then
@@ -511,7 +511,7 @@ shell::logger::copy() {
 		return 0
 	fi
 
-	shell::logger::cmd "$command"
+	shell::logger::command "$command"
 	shell::clip_value "$command"
 }
 
@@ -540,7 +540,7 @@ shell::logger::exec() {
 		return 1
 	fi
 
-	shell::logger::cmd "$command"
+	shell::logger::command "$command"
 	eval "$command"
 }
 
@@ -579,7 +579,7 @@ shell::logger::exec_check() {
 	fi
 
 	# Log the command
-	shell::logger::cmd "$command"
+	shell::logger::command "$command"
 
 	# Execute command and capture exit code
 	local exit_code
@@ -623,7 +623,7 @@ shell::logger::exec_safe() {
 		return 1
 	fi
 
-	shell::logger::cmd "$command"
+	shell::logger::command "$command"
 	# Use bash -c for safe execution while still allowing complex commands
 	bash -c "$command"
 }
@@ -665,7 +665,7 @@ shell::logger::exec_safe_check() {
 	fi
 
 	# Log the command
-	shell::logger::cmd "$command"
+	shell::logger::command "$command"
 
 	# Execute command and capture exit code
 	local exit_code

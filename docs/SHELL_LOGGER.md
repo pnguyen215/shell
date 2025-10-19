@@ -145,20 +145,20 @@ EXAMPLE: my-app status
 shell::logger::section "NODE.JS INSTALLATION"
 
 shell::logger::step 1 "Install Node Version Manager (NVM)"
-shell::logger::cmd "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash"
+shell::logger::command "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash"
 shell::logger::note "Restart your terminal or run 'source ~/.bashrc'"
 
 shell::logger::step 2 "Install latest Node.js LTS"
-shell::logger::cmd "nvm install --lts"
-shell::logger::cmd "nvm use --lts"
+shell::logger::command "nvm install --lts"
+shell::logger::command "nvm use --lts"
 shell::logger::note "This installs and activates the latest LTS version"
 
 shell::logger::step 3 "Verify installation"
-shell::logger::cmd "node --version"
-shell::logger::cmd "npm --version"
+shell::logger::command "node --version"
+shell::logger::command "npm --version"
 
 shell::logger::step 4 "Install global packages"
-shell::logger::cmd "npm install -g yarn pm2 nodemon"
+shell::logger::command "npm install -g yarn pm2 nodemon"
 shell::logger::note "These are commonly used development tools"
 ```
 
@@ -291,21 +291,21 @@ shell::logger::section "DOCKER INSTALLATION & SETUP"
 
 # Installation steps
 shell::logger::step 1 "Install Docker Engine"
-shell::logger::cmd "curl -fsSL https://get.docker.com -o get-docker.sh"
-shell::logger::cmd "sudo sh get-docker.sh"
+shell::logger::command "curl -fsSL https://get.docker.com -o get-docker.sh"
+shell::logger::command "sudo sh get-docker.sh"
 shell::logger::note "This works on Ubuntu, Debian, CentOS, and other Linux distributions"
 
 shell::logger::step 2 "Configure user permissions"
-shell::logger::cmd "sudo usermod -aG docker \$USER"
+shell::logger::command "sudo usermod -aG docker \$USER"
 shell::logger::note "Log out and back in for this to take effect"
 
 shell::logger::step 3 "Start and enable Docker service"
-shell::logger::cmd "sudo systemctl start docker"
-shell::logger::cmd "sudo systemctl enable docker"
+shell::logger::command "sudo systemctl start docker"
+shell::logger::command "sudo systemctl enable docker"
 
 shell::logger::step 4 "Verify installation"
-shell::logger::cmd "docker --version"
-shell::logger::cmd "docker run hello-world"
+shell::logger::command "docker --version"
+shell::logger::command "docker run hello-world"
 
 # Usage documentation
 shell::logger::usage "docker [OPTIONS] COMMAND"
@@ -339,17 +339,17 @@ shell::logger::example "docker run --rm -it ubuntu bash"
 shell::logger::section "AWS CLI CONFIGURATION"
 
 shell::logger::step 1 "Install AWS CLI v2"
-shell::logger::cmd "curl 'https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip' -o 'awscliv2.zip'"
-shell::logger::cmd "unzip awscliv2.zip"
-shell::logger::cmd "sudo ./aws/install"
+shell::logger::command "curl 'https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip' -o 'awscliv2.zip'"
+shell::logger::command "unzip awscliv2.zip"
+shell::logger::command "sudo ./aws/install"
 
 shell::logger::step 2 "Configure credentials"
-shell::logger::cmd "aws configure"
+shell::logger::command "aws configure"
 shell::logger::note "You'll need Access Key ID, Secret Access Key, Default region, and Output format"
 
 shell::logger::step 3 "Verify configuration"
-shell::logger::cmd "aws sts get-caller-identity"
-shell::logger::cmd "aws s3 ls"
+shell::logger::command "aws sts get-caller-identity"
+shell::logger::command "aws s3 ls"
 
 shell::logger::usage "aws [OPTIONS] <service> <operation> [parameters]"
 
@@ -390,21 +390,21 @@ shell::logger::indent 1 "• kubectl configured"
 shell::logger::indent 1 "• Docker images built"
 
 shell::logger::step 1 "Prepare namespace"
-shell::logger::cmd "kubectl create namespace my-app"
-shell::logger::cmd "kubectl config set-context --current --namespace=my-app"
+shell::logger::command "kubectl create namespace my-app"
+shell::logger::command "kubectl config set-context --current --namespace=my-app"
 
 shell::logger::step 2 "Deploy application"
-shell::logger::cmd "kubectl apply -f k8s/deployment.yaml"
-shell::logger::cmd "kubectl apply -f k8s/service.yaml"
-shell::logger::cmd "kubectl apply -f k8s/ingress.yaml"
+shell::logger::command "kubectl apply -f k8s/deployment.yaml"
+shell::logger::command "kubectl apply -f k8s/service.yaml"
+shell::logger::command "kubectl apply -f k8s/ingress.yaml"
 
 shell::logger::step 3 "Verify deployment"
-shell::logger::cmd "kubectl get pods -w"
+shell::logger::command "kubectl get pods -w"
 shell::logger::note "Wait for all pods to be in Running state"
 
 shell::logger::step 4 "Check services"
-shell::logger::cmd "kubectl get services"
-shell::logger::cmd "kubectl get ingress"
+shell::logger::command "kubectl get services"
+shell::logger::command "kubectl get ingress"
 
 # Troubleshooting section
 shell::logger::section "TROUBLESHOOTING"
@@ -412,15 +412,15 @@ shell::logger::section "TROUBLESHOOTING"
 shell::logger::indent 0 "Common issues and solutions:"
 shell::logger::indent 1 196 "Pod stuck in Pending:"
 shell::logger::indent 2 "Check resource requests vs available capacity"
-shell::logger::cmd "kubectl describe node"
+shell::logger::command "kubectl describe node"
 
 shell::logger::indent 1 196 "Pod in CrashLoopBackOff:"
 shell::logger::indent 2 "Check application logs"
-shell::logger::cmd "kubectl logs <pod-name> --previous"
+shell::logger::command "kubectl logs <pod-name> --previous"
 
 shell::logger::indent 1 196 "Service not accessible:"
 shell::logger::indent 2 "Verify service selector matches pod labels"
-shell::logger::cmd "kubectl get pods --show-labels"
+shell::logger::command "kubectl get pods --show-labels"
 ```
 
 ---

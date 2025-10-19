@@ -256,7 +256,7 @@ shell::run_cmd() {
 	fi
 
 	# shell::stdout "$emoji $command" $color_code
-	shell::logger::cmd "$command"
+	shell::logger::command "$command"
 	# Execute the command without using eval
 	"$@"
 }
@@ -318,7 +318,7 @@ shell::run_cmd_eval() {
 	fi
 
 	# shell::stdout "$emoji $command" $color_code
-	shell::logger::cmd "$command"
+	shell::logger::command "$command"
 	eval "$command"
 }
 

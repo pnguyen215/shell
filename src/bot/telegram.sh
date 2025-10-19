@@ -144,7 +144,7 @@ shell::telegram::send_document() {
 		for filename in "${files[@]}"; do
 			if [ -f "$filename" ]; then
 				local cmd="curl -s -F chat_id=\"$chatID\" -F document=@\"$filename\" -F caption=\"$description ($timestamp)\" \"https://api.telegram.org/bot${token}/sendDocument\""
-				shell::logger::cmd "$cmd"
+				shell::logger::command "$cmd"
 			else
 				shell::logger::error "Attachment '$filename' not found. Skipping."
 			fi

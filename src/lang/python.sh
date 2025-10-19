@@ -269,11 +269,11 @@ shell::python::pip::uninstall() {
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::section "Uninstallation of $pip_version packages"
 		shell::logger::step 1 "Freeze installed packages"
-		shell::logger::cmd "$freeze_cmd"
+		shell::logger::command "$freeze_cmd"
 		shell::logger::step 2 "Uninstall packages"
-		shell::logger::cmd "$uninstall_cmd"
+		shell::logger::command "$uninstall_cmd"
 		shell::logger::step 3 "Clean up temporary files"
-		shell::logger::cmd "$clean_up_cmd"
+		shell::logger::command "$clean_up_cmd"
 		return $RETURN_SUCCESS
 	fi
 
@@ -500,11 +500,11 @@ shell::python::venv::create() {
 		local activate_cmd="source \"$venv_path/bin/activate\""
 		shell::logger::section "Create Python virtual environment"
 		shell::logger::step 1 "Creating virtual environment at '$venv_path' with $python_version..."
-		shell::logger::cmd "$cmd"
+		shell::logger::command "$cmd"
 		shell::logger::step 2 "Upgrading pip in the virtual environment..."
-		shell::logger::cmd "$upgrade_cmd"
+		shell::logger::command "$upgrade_cmd"
 		shell::logger::step 3 "Activating virtual environment..."
-		shell::logger::cmd "$activate_cmd"
+		shell::logger::command "$activate_cmd"
 		return $RETURN_SUCCESS
 	fi
 }
@@ -826,11 +826,11 @@ shell::python::venv::pkg::uninstall_fzf() {
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::section "Fzf: Uninstall Python packages from an existing virtual environment."
 		shell::logger::step 1 "Get list of installed packages"
-		shell::logger::cmd "$pip_cmd freeze | grep -v '^-e' | grep -v '@' | cut -d= -f1"
+		shell::logger::command "$pip_cmd freeze | grep -v '^-e' | grep -v '@' | cut -d= -f1"
 		shell::logger::step 2 "Selected packages to uninstall"
-		shell::logger::cmd "\"$selected_packages\""
+		shell::logger::command "\"$selected_packages\""
 		shell::logger::step 3 "Uninstall selected packages"
-		shell::logger::cmd "$pip_cmd uninstall ${selected_packages_array[@]}"
+		shell::logger::command "$pip_cmd uninstall ${selected_packages_array[@]}"
 		return $RETURN_SUCCESS
 	fi
 
@@ -927,15 +927,15 @@ shell::python::venv::activate_fzf() {
 		local step=1
 		shell::logger::section "Fzf: Activate a Python virtual environment."
 		shell::logger::step $((step++)) "Find virtual environments"
-		shell::logger::cmd "find \"$parent_path\" -type d -name \"bin\" -print0 | xargs -0 -I {} dirname {} | grep -v \"__pycache__\""
+		shell::logger::command "find \"$parent_path\" -type d -name \"bin\" -print0 | xargs -0 -I {} dirname {} | grep -v \"__pycache__\""
 		shell::logger::step $((step++)) "Selected virtual environment"
-		shell::logger::cmd "\"$selected_venv\""
+		shell::logger::command "\"$selected_venv\""
 		if [ -n "$deactivate_cmd" ]; then
 			shell::logger::step $((step++)) "Deactivate current environment"
-			shell::logger::cmd "$deactivate_cmd"
+			shell::logger::command "$deactivate_cmd"
 		fi
 		shell::logger::step $((step++)) "Activate selected environment"
-		shell::logger::cmd "$activate_cmd"
+		shell::logger::command "$activate_cmd"
 		return $RETURN_SUCCESS
 	fi
 
@@ -1036,7 +1036,7 @@ shell::python::venv::pkg::upgrade() {
 	done
 
 	if [ "$dry_run" = "true" ]; then
-		shell::logger::cmd "$upgrade_cmd"
+		shell::logger::command "$upgrade_cmd"
 		return $RETURN_SUCCESS
 	fi
 
@@ -1146,12 +1146,12 @@ shell::python::venv::pkg::upgrade_fzf() {
 		local step=1
 		shell::logger::section "Fzf: Interactively upgrades Python packages in a virtual environment"
 		shell::logger::step $((step++)) "Get list of installed packages"
-		shell::logger::cmd "\"$pip_cmd freeze | grep -v '^-e' | grep -v '@' | cut -d= -f1\""
+		shell::logger::command "\"$pip_cmd freeze | grep -v '^-e' | grep -v '@' | cut -d= -f1\""
 		shell::logger::step $((step++)) "Selected packages for upgrade"
-		shell::logger::cmd "\"$selected_packages\""
+		shell::logger::command "\"$selected_packages\""
 		shell::logger::step $((step++)) "Upgrade commands"
 		for cmd in "${upgrade_commands[@]}"; do
-			shell::logger::cmd "$cmd"
+			shell::logger::command "$cmd"
 		done
 		return $RETURN_SUCCESS
 	fi
