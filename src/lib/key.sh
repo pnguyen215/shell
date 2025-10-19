@@ -98,7 +98,7 @@ shell::add_key_conf() {
 
 	local key="$1"
 	local value="$2"
-	key=$(shell::sanitize_upper_var_name "$key")
+	key=$(shell::strings::sanitize::upper "$key")
 
 	# Encode the value using Base64 and remove any newlines.
 	local encoded_value
@@ -171,7 +171,7 @@ shell::add_key_conf_comment() {
 	local value="$2"
 	local comment="$3"
 
-	key=$(shell::sanitize_upper_var_name "$key")
+	key=$(shell::strings::sanitize::upper "$key")
 
 	# Encode the value using Base64 and remove any newlines
 	local encoded_value
@@ -620,7 +620,7 @@ shell::fzf_rename_key_conf() {
 	fi
 
 	# sanitized key
-	new_key=$(shell::sanitize_upper_var_name "$new_key")
+	new_key=$(shell::strings::sanitize::upper "$new_key")
 
 	# Check if the new key already exists.
 	local exist
@@ -760,8 +760,8 @@ shell::fzf_add_group_key_conf() {
 
 	# Sanitize the group name to ensure it is a valid variable name.
 	# This is done to avoid issues with special characters or spaces in the group name.
-	# shell::sanitize_upper_var_name function is expected to be defined elsewhere in the script.
-	group_name=$(shell::sanitize_upper_var_name "$group_name")
+	# shell::strings::sanitize::upper function is expected to be defined elsewhere in the script.
+	group_name=$(shell::strings::sanitize::upper "$group_name")
 
 	# Use fzf with multi-select to choose keys from SHELL_KEY_CONF_FILE.
 	local selected_keys
@@ -846,8 +846,8 @@ shell::read_group_key_conf() {
 
 	# Sanitize the group name to ensure it is a valid variable name.
 	# This is done to avoid issues with special characters or spaces in the group name.
-	# shell::sanitize_upper_var_name function is expected to be defined elsewhere in the script.
-	group_name=$(shell::sanitize_upper_var_name "$group_name")
+	# shell::strings::sanitize::upper function is expected to be defined elsewhere in the script.
+	group_name=$(shell::strings::sanitize::upper "$group_name")
 
 	# Retrieve the group entry for the specified group name.
 	local group_entry
@@ -1114,8 +1114,8 @@ shell::fzf_rename_group_key_conf() {
 
 	# Sanitize the new group name to ensure it is a valid variable name.
 	# This is done to avoid issues with special characters or spaces in the group name.
-	# shell::sanitize_upper_var_name function is expected to be defined elsewhere in the script.
-	new_group=$(shell::sanitize_upper_var_name "$new_group")
+	# shell::strings::sanitize::upper function is expected to be defined elsewhere in the script.
+	new_group=$(shell::strings::sanitize::upper "$new_group")
 
 	# Construct the sed command to update the group name while preserving the keys.
 	local os_type
@@ -1348,8 +1348,8 @@ shell::fzf_clone_group_key_conf() {
 
 	# Sanitize the new group name to ensure it is a valid variable name.
 	# This is done to avoid issues with special characters or spaces in the group name.
-	# shell::sanitize_upper_var_name function is expected to be defined elsewhere in the script.
-	new_group=$(shell::sanitize_upper_var_name "$new_group")
+	# shell::strings::sanitize::upper function is expected to be defined elsewhere in the script.
+	new_group=$(shell::strings::sanitize::upper "$new_group")
 
 	# Check if the new group name already exists.
 	if grep -q "^${new_group}=" "$SHELL_GROUP_CONF_FILE"; then

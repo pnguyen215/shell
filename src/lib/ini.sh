@@ -767,7 +767,7 @@ shell::write_ini() {
 	fi
 
 	# Sanitize the key to ensure it is a valid variable name.
-	key=$(shell::sanitize_upper_var_name "$key")
+	key=$(shell::strings::sanitize::upper "$key")
 
 	# Process the file line by line
 	# Use `|| [ -n "$line" ]` to ensure the last line is processed even if it doesn't end with a newline.
@@ -1757,14 +1757,14 @@ shell::expose_ini_env() {
 			# Only export if shell::read_ini was successful (key found and read).
 			if [ $read_status -eq 0 ]; then
 				local sanitized_section
-				sanitized_section=$(shell::sanitize_upper_var_name "$section")
+				sanitized_section=$(shell::strings::sanitize::upper "$section")
 				local sanitized_key
-				sanitized_key=$(shell::sanitize_upper_var_name "$key")
+				sanitized_key=$(shell::strings::sanitize::upper "$key")
 
 				local var_name
 				if [ -n "$prefix" ]; then
 					local sanitized_prefix
-					sanitized_prefix=$(shell::sanitize_upper_var_name "$prefix")
+					sanitized_prefix=$(shell::strings::sanitize::upper "$prefix")
 					var_name="${sanitized_prefix}_${sanitized_section}_${sanitized_key}"
 				else
 					var_name="${sanitized_section}_${sanitized_key}"
@@ -1797,14 +1797,14 @@ shell::expose_ini_env() {
 
 				if [ $read_status -eq 0 ]; then
 					local sanitized_section
-					sanitized_section=$(shell::sanitize_upper_var_name "$current_section")
+					sanitized_section=$(shell::strings::sanitize::upper "$current_section")
 					local sanitized_key
-					sanitized_key=$(shell::sanitize_upper_var_name "$key")
+					sanitized_key=$(shell::strings::sanitize::upper "$key")
 
 					local var_name
 					if [ -n "$prefix" ]; then
 						local sanitized_prefix
-						sanitized_prefix=$(shell::sanitize_upper_var_name "$prefix")
+						sanitized_prefix=$(shell::strings::sanitize::upper "$prefix")
 						var_name="${sanitized_prefix}_${sanitized_section}_${sanitized_key}"
 					else
 						var_name="${sanitized_section}_${sanitized_key}"
@@ -1908,17 +1908,17 @@ shell::destroy_ini_env() {
 		fi
 
 		local sanitized_section
-		sanitized_section=$(shell::sanitize_upper_var_name "$section")
+		sanitized_section=$(shell::strings::sanitize::upper "$section")
 
 		# Safely read keys line by line using process substitution.
 		while IFS= read -r key; do
 			local sanitized_key
-			sanitized_key=$(shell::sanitize_upper_var_name "$key")
+			sanitized_key=$(shell::strings::sanitize::upper "$key")
 
 			local var_name
 			if [ -n "$prefix" ]; then
 				local sanitized_prefix
-				sanitized_prefix=$(shell::sanitize_upper_var_name "$prefix")
+				sanitized_prefix=$(shell::strings::sanitize::upper "$prefix")
 				var_name="${sanitized_prefix}_${sanitized_section}_${sanitized_key}"
 			else
 				var_name="${sanitized_section}_${sanitized_key}"
@@ -1944,17 +1944,17 @@ shell::destroy_ini_env() {
 			fi
 
 			local sanitized_section
-			sanitized_section=$(shell::sanitize_upper_var_name "$current_section")
+			sanitized_section=$(shell::strings::sanitize::upper "$current_section")
 
 			# Safely read keys from the current section.
 			while IFS= read -r key; do
 				local sanitized_key
-				sanitized_key=$(shell::sanitize_upper_var_name "$key")
+				sanitized_key=$(shell::strings::sanitize::upper "$key")
 
 				local var_name
 				if [ -n "$prefix" ]; then
 					local sanitized_prefix
-					sanitized_prefix=$(shell::sanitize_upper_var_name "$prefix")
+					sanitized_prefix=$(shell::strings::sanitize::upper "$prefix")
 					var_name="${sanitized_prefix}_${sanitized_section}_${sanitized_key}"
 				else
 					var_name="${sanitized_section}_${sanitized_key}"

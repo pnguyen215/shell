@@ -1,13 +1,13 @@
 #!/bin/bash
 # strings.sh
 
-# shell::sanitize_upper_var_name function
+# shell::strings::sanitize::upper function
 # Converts a string into a format suitable for an environment variable name.
 # Replaces non-alphanumeric characters (except underscore) with underscores,
 # and converts to uppercase.
 #
 # Usage:
-#   shell::sanitize_upper_var_name <string>
+#   shell::strings::sanitize::upper <string>
 #
 # Parameters:
 #   - <string> : The input string (e.g., INI section or key name).
@@ -16,8 +16,8 @@
 #   The sanitized string suitable for a shell variable name.
 #
 # Example:
-#   sanitized=$(shell::sanitize_upper_var_name "My-Section.Key_Name") # Outputs "MY_SECTION_KEY_NAME"
-shell::sanitize_upper_var_name() {
+#   sanitized=$(shell::strings::sanitize::upper "My-Section.Key_Name") # Outputs "MY_SECTION_KEY_NAME"
+shell::strings::sanitize::upper() {
 	local input="$1"
 	# Convert to uppercase, replace non-alphanumeric and non-underscore with underscore
 	echo "$input" | tr '[:lower:]' '[:upper:]' | sed -e 's/[^A-Z0-9_]/_/g'

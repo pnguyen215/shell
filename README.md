@@ -793,9 +793,9 @@ AES-256-CBC encryption utilities for secure data handling.
 
 Text manipulation and sanitization functions.
 
-- **`shell::sanitize_upper_var_name`**
+- **`shell::strings::sanitize::upper`**
   Converts text to uppercase variable naming convention.
-  _Example:_ `shell::sanitize_upper_var_name "my variable name"`
+  _Example:_ `shell::strings::sanitize::upper "my variable name"`
 
 - **`shell::sanitize_lower_var_name`**
   Converts text to lowercase variable naming convention.

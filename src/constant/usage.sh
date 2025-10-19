@@ -3096,7 +3096,7 @@ Returns:
 Notes:
   - Affects the current shell session's environment.
   - Relies on 'shell::list_ini_sections', 'shell::list_ini_keys', 'shell::read_ini',
-    'shell::sanitize_upper_var_name', and 'shell::stdout'.
+    'shell::strings::sanitize::upper', and 'shell::stdout'.
   - If SHELL_INI_STRICT is enabled, section and key names will be validated prior
     to reading.
 "
@@ -3147,7 +3147,7 @@ Notes:
   - This function attempts to unset variables; it does not report an error if a
     variable was not found or was already unset.
   - Relies on 'shell::list_ini_sections', 'shell::list_ini_keys',
-    'shell::sanitize_upper_var_name', and 'shell::stdout'.
+    'shell::strings::sanitize::upper', and 'shell::stdout'.
   - It does NOT rely on 'shell::read_ini' for values, only for deriving names.
 "
 

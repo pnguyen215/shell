@@ -386,7 +386,7 @@ shell::add_profile_conf() {
 	local key="$2"
 	local value="$3"
 	# sanitized key
-	key=$(shell::sanitize_upper_var_name "$key")
+	key=$(shell::strings::sanitize::upper "$key")
 
 	# Get the profile directory (assumes shell::get_profile_path is defined elsewhere)
 	local profile_dir=$(shell::get_profile_path "$profile_name")
@@ -534,7 +534,7 @@ shell::get_profile_conf_value() {
 	local profile_dir=$(shell::get_profile_path "$profile_name")
 	local profile_conf="$profile_dir/profile.conf"
 	# sanitized key
-	key=$(shell::sanitize_upper_var_name "$key")
+	key=$(shell::strings::sanitize::upper "$key")
 
 	if [ ! -d "$profile_dir" ]; then
 		shell::stdout "ERR: Profile '$profile_name' does not exist." 196
@@ -745,7 +745,7 @@ shell::exist_profile_conf_key() {
 	local profile_dir=$(shell::get_profile_path "$profile_name")
 	local profile_conf="$profile_dir/profile.conf"
 	# sanitized key
-	key=$(shell::sanitize_upper_var_name "$key")
+	key=$(shell::strings::sanitize::upper "$key")
 
 	if [ ! -d "$profile_dir" ]; then
 		shell::stdout "ERR: Profile '$profile_name' does not exist." 196
@@ -826,7 +826,7 @@ shell::rename_profile_conf_key() {
 		return 1
 	fi
 	# sanitized key
-	new_key=$(shell::sanitize_upper_var_name "$new_key")
+	new_key=$(shell::strings::sanitize::upper "$new_key")
 
 	if grep -q "^${new_key}=" "$profile_conf"; then
 		shell::stdout "ERR: Key '$new_key' already exists in profile '$profile_name'." 196
