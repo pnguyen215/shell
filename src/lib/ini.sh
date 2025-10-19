@@ -646,7 +646,7 @@ shell::add_ini_section() {
 	fi
 
 	# Sanitize the section name to ensure it is a valid variable name.
-	section=$(shell::sanitize_lower_var_name "$section")
+	section=$(shell::strings::sanitize::lower "$section")
 
 	# Validate section name only if strict mode is enabled
 	if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
@@ -717,7 +717,7 @@ shell::write_ini() {
 	fi
 
 	# Sanitize the section names to ensure they are valid variable names.
-	section=$(shell::sanitize_lower_var_name "$section")
+	section=$(shell::strings::sanitize::lower "$section")
 
 	# Validate section and key names only if strict mode is enabled
 	# Assumes shell::validate_ini_section_name and shell::validate_ini_key_name exist.
@@ -928,7 +928,7 @@ shell::remove_ini_section() {
 	fi
 
 	# Sanitize the section name to ensure it is a valid variable name.
-	section=$(shell::sanitize_lower_var_name "$section")
+	section=$(shell::strings::sanitize::lower "$section")
 
 	# Validate section name only if strict mode is enabled (optional, based on existing code).
 	# Assumes shell::validate_ini_section_name function exists.
@@ -1244,7 +1244,7 @@ shell::remove_ini_key() {
 	fi
 
 	# Sanitize the section and key names to ensure they are valid variable names.
-	section=$(shell::sanitize_lower_var_name "$section")
+	section=$(shell::strings::sanitize::lower "$section")
 
 	# Validate section and key names only if strict mode is enabled (optional, based on existing code).
 	# Assumes shell::validate_ini_section_name and shell::validate_ini_key_name functions exist.
@@ -1394,7 +1394,7 @@ shell::set_array_ini_value() {
 
 	# Sanitize section and key names to ensure they are in lowercase.
 	# This is to ensure consistency with how they are stored in the INI file.
-	section=$(shell::sanitize_lower_var_name "$section")
+	section=$(shell::strings::sanitize::lower "$section")
 
 	local -a formatted_values=()
 	local temp_value
@@ -1501,7 +1501,7 @@ shell::get_array_ini_value() {
 
 	# Sanitize section and key names to ensure they are in lowercase.
 	# This is to ensure consistency with how they are stored in the INI file.
-	section=$(shell::sanitize_lower_var_name "$section")
+	section=$(shell::strings::sanitize::lower "$section")
 
 	# Read the raw string value from the INI file.
 	local value
@@ -1631,9 +1631,9 @@ shell::exist_ini_key() {
 
 	# Sanitize section and key names to ensure they are in lowercase and valid.
 	# This is to ensure consistency with the validation functions.
-	# shell::sanitize_lower_var_name is assumed to be a function that converts
+	# shell::strings::sanitize::lower is assumed to be a function that converts
 	# the input to lowercase and replaces invalid characters with underscores.
-	section=$(shell::sanitize_lower_var_name "$section")
+	section=$(shell::strings::sanitize::lower "$section")
 
 	# Validate section and key names if strict mode is enabled.
 	# The called validation functions will print their own error messages if validation fails.
@@ -2043,9 +2043,9 @@ shell::get_or_default_ini_value() {
 	fi
 
 	# Sanitize section and key names to ensure they are in lowercase and valid.
-	# The shell::sanitize_lower_var_name function is assumed to handle this.
+	# The shell::strings::sanitize::lower function is assumed to handle this.
 	# It should convert the section and key names to lowercase and replace invalid characters.
-	section=$(shell::sanitize_lower_var_name "$section")
+	section=$(shell::strings::sanitize::lower "$section")
 
 	local value
 	# Try to read the value, suppressing shell::read_ini's error output.
@@ -2145,10 +2145,10 @@ shell::rename_ini_section() {
 
 	# Sanitize section names to ensure they are in lowercase and valid.
 	# This is to ensure consistency and avoid issues with case sensitivity.
-	# The shell::sanitize_lower_var_name function is assumed to handle this.
+	# The shell::strings::sanitize::lower function is assumed to handle this.
 	# It should convert the section names to lowercase and replace invalid characters.
-	old_section=$(shell::sanitize_lower_var_name "$old_section")
-	new_section=$(shell::sanitize_lower_var_name "$new_section")
+	old_section=$(shell::strings::sanitize::lower "$old_section")
+	new_section=$(shell::strings::sanitize::lower "$new_section")
 
 	# Validate section names if strict mode is enabled.
 	if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
@@ -2365,9 +2365,9 @@ shell::clone_ini_section() {
 
 	# Sanitize section names to ensure they are in lowercase and valid.
 	# This is to ensure consistency and avoid issues with case sensitivity.
-	# The shell::sanitize_lower_var_name function is assumed to handle this.
-	source_section=$(shell::sanitize_lower_var_name "$source_section")
-	destination_section=$(shell::sanitize_lower_var_name "$destination_section")
+	# The shell::strings::sanitize::lower function is assumed to handle this.
+	source_section=$(shell::strings::sanitize::lower "$source_section")
+	destination_section=$(shell::strings::sanitize::lower "$destination_section")
 
 	# Validate section names if strict mode is enabled
 	if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
@@ -2929,7 +2929,7 @@ shell::fzf_view_ini_viz_super() {
 			local val
 			val=$(shell::read_ini "$file" "$section" "$key")
 			val=$(echo "$val" | sed 's/"/\\"/g') # escape double quotes
-			key=$(shell::sanitize_lower_var_name "$key")
+			key=$(shell::strings::sanitize::lower "$key")
 			if [ $first -eq 1 ]; then
 				output="$output\n  \"$key\": \"$val\""
 				first=0
@@ -2950,7 +2950,7 @@ shell::fzf_view_ini_viz_super() {
 		while IFS= read -r key; do
 			local val
 			val=$(shell::read_ini "$file" "$section" "$key")
-			key=$(shell::sanitize_lower_var_name "$key")
+			key=$(shell::strings::sanitize::lower "$key")
 			output="${output}$key: $val\n"
 		done <<<"$keys"
 		echo -e "$output"
@@ -2984,7 +2984,7 @@ shell::fzf_view_ini_viz_super() {
 		value=$(shell::read_ini "$file" "$section" "$key")
 		shell::stdout "DEBUG: [k] $key" 244
 		shell::stdout "INFO: [v] $value" 46
-		key=$(shell::sanitize_lower_var_name "$key")
+		key=$(shell::strings::sanitize::lower "$key")
 		output="${output}$key=$value\n"
 	done <<<"$key_selection"
 
@@ -3104,7 +3104,7 @@ shell::fzf_view_ini_viz_super_control() {
 				local val
 				val=$(shell::read_ini "$file" "$section" "$key")
 				val=$(echo "$val" | sed 's/"/\\"/g')
-				key=$(shell::sanitize_lower_var_name "$key")
+				key=$(shell::strings::sanitize::lower "$key")
 				if [ $first -eq 1 ]; then
 					output="$output\n  \"$key\": \"$val\""
 					first=0
@@ -3124,7 +3124,7 @@ shell::fzf_view_ini_viz_super_control() {
 			while IFS= read -r key; do
 				local val
 				val=$(shell::read_ini "$file" "$section" "$key")
-				key=$(shell::sanitize_lower_var_name "$key")
+				key=$(shell::strings::sanitize::lower "$key")
 				output="${output}$key: $val\n"
 			done <<<"$keys"
 			echo -e "$output"
@@ -3164,7 +3164,7 @@ shell::fzf_view_ini_viz_super_control() {
 			value=$(shell::read_ini "$file" "$section" "$key")
 			shell::stdout "DEBUG: [k] $key" 244
 			shell::stdout "INFO: [v] $value" 46
-			key=$(shell::sanitize_lower_var_name "$key")
+			key=$(shell::strings::sanitize::lower "$key")
 			output="${output}$key=$value\n"
 		done <<<"$key_selection"
 
@@ -3362,7 +3362,7 @@ shell::dump_ini_json() {
 			local val
 			val=$(shell::read_ini "$file" "$section" "$key" 2>/dev/null)
 			val=$(echo "$val" | sed 's/"/\\"/g')
-			key=$(shell::sanitize_lower_var_name "$key")
+			key=$(shell::strings::sanitize::lower "$key")
 			[ $first_key -eq 0 ] && output+=","
 			output+="\n    \"$key\": \"$val\""
 			first_key=0

@@ -229,10 +229,10 @@ shell::add_workspace() {
 	local name="$1"
 
 	# Sanitize the workspace name
-	# We use shell::sanitize_lower_var_name to ensure the name is in lowercase and safe for use as a directory name
+	# We use shell::strings::sanitize::lower to ensure the name is in lowercase and safe for use as a directory name
 	# This function replaces non-alphanumeric characters with underscores
 	# This helps prevent issues with invalid directory names
-	name=$(shell::sanitize_lower_var_name "$name")
+	name=$(shell::strings::sanitize::lower "$name")
 
 	local base="$SHELL_CONF_WORKING_WORKSPACE"
 	local dir="$base/$name"
@@ -350,13 +350,13 @@ shell::add_workspace_ssh_conf() {
 	fi
 
 	# Sanitize the workspace name
-	# We use shell::sanitize_lower_var_name to ensure the name is in lowercase and safe for use as a directory name
+	# We use shell::strings::sanitize::lower to ensure the name is in lowercase and safe for use as a directory name
 	# This function replaces non-alphanumeric characters with underscores
 	# This helps prevent issues with invalid directory names
-	# We use shell::sanitize_lower_var_name to ensure the name is in lowercase and safe for use as a directory name
+	# We use shell::strings::sanitize::lower to ensure the name is in lowercase and safe for use as a directory name
 	# This function replaces non-alphanumeric characters with underscores
 	# This helps prevent issues with invalid directory names
-	name=$(shell::sanitize_lower_var_name "$name")
+	name=$(shell::strings::sanitize::lower "$name")
 
 	# Construct the directory and file paths
 	# We define the base directory for the workspace and the .ssh directory
@@ -536,10 +536,10 @@ shell::remove_workspace() {
 	local name="$1"
 
 	# Sanitize the workspace name
-	# We use shell::sanitize_lower_var_name to ensure the name is in lowercase and safe for use as a directory name
+	# We use shell::strings::sanitize::lower to ensure the name is in lowercase and safe for use as a directory name
 	# This function replaces non-alphanumeric characters with underscores
 	# This helps prevent issues with invalid directory names
-	name=$(shell::sanitize_lower_var_name "$name")
+	name=$(shell::strings::sanitize::lower "$name")
 
 	local base="$SHELL_CONF_WORKING_WORKSPACE"
 	local dir="$base/$name"
@@ -598,10 +598,10 @@ shell::fzf_view_workspace() {
 	local name="$1"
 
 	# Sanitize the workspace name
-	# We use shell::sanitize_lower_var_name to ensure the name is in lowercase and safe for use as a directory name
+	# We use shell::strings::sanitize::lower to ensure the name is in lowercase and safe for use as a directory name
 	# This function replaces non-alphanumeric characters with underscores
 	# This helps prevent issues with invalid directory names
-	name=$(shell::sanitize_lower_var_name "$name")
+	name=$(shell::strings::sanitize::lower "$name")
 
 	local base="$SHELL_CONF_WORKING_WORKSPACE"
 	local ssh_dir="$base/$name/.ssh"
@@ -667,10 +667,10 @@ shell::fzf_edit_workspace() {
 	local name="$1"
 
 	# Sanitize the workspace name
-	# We use shell::sanitize_lower_var_name to ensure the name is in lowercase and safe for use as a directory name
+	# We use shell::strings::sanitize::lower to ensure the name is in lowercase and safe for use as a directory name
 	# This function replaces non-alphanumeric characters with underscores
 	# This helps prevent issues with invalid directory names
-	name=$(shell::sanitize_lower_var_name "$name")
+	name=$(shell::strings::sanitize::lower "$name")
 
 	local base="$SHELL_CONF_WORKING_WORKSPACE"
 	local ssh_dir="$base/$name/.ssh"
@@ -815,10 +815,10 @@ shell::rename_workspace() {
 	local new_name="$2"
 
 	# Sanitize the old and new workspace names
-	# We use shell::sanitize_lower_var_name to ensure the names are in lowercase and safe for use as directory names
+	# We use shell::strings::sanitize::lower to ensure the names are in lowercase and safe for use as directory names
 	# This function replaces non-alphanumeric characters with underscores
-	old_name=$(shell::sanitize_lower_var_name "$old_name")
-	new_name=$(shell::sanitize_lower_var_name "$new_name")
+	old_name=$(shell::strings::sanitize::lower "$old_name")
+	new_name=$(shell::strings::sanitize::lower "$new_name")
 
 	local base="$SHELL_CONF_WORKING_WORKSPACE"
 	local old_dir="$base/$old_name"
@@ -1116,10 +1116,10 @@ shell::clone_workspace() {
 	local destination="$2"
 
 	# Sanitize the source and destination workspace names
-	# We use shell::sanitize_lower_var_name to ensure the names are in lowercase and safe for use as directory names
+	# We use shell::strings::sanitize::lower to ensure the names are in lowercase and safe for use as directory names
 	# This function replaces non-alphanumeric characters with underscores
-	source=$(shell::sanitize_lower_var_name "$source")
-	destination=$(shell::sanitize_lower_var_name "$destination")
+	source=$(shell::strings::sanitize::lower "$source")
+	destination=$(shell::strings::sanitize::lower "$destination")
 
 	local base="$SHELL_CONF_WORKING_WORKSPACE"
 	local source_dir="$base/$source"
@@ -1374,7 +1374,7 @@ shell::dump_workspace_json() {
 	# We start with a JSON object that contains the workspace and section
 	# We iterate over the selected fields and read their values from the .conf file
 	# We use shell::read_ini to read the values for each field
-	# We use shell::sanitize_lower_var_name to ensure the keys are valid JSON keys
+	# We use shell::strings::sanitize::lower to ensure the keys are valid JSON keys
 	# We build the JSON string incrementally
 	# local json="{ \"$workspace\": { \"$config_name\": {"
 	# local first_section=1
@@ -1388,7 +1388,7 @@ shell::dump_workspace_json() {
 	#         # value=$(shell::read_ini "$conf_file" "$section" "$key" 2>/dev/null | tail -n 1)
 	#         value=$(shell::read_ini "$conf_file" "$section" "$key" 2>/dev/null | sed 's/^value=//')
 	#         [ $first_field -eq 0 ] && json+=","
-	#         key=$(shell::sanitize_lower_var_name "$key") # Ensure the key is a valid JSON key
+	#         key=$(shell::strings::sanitize::lower "$key") # Ensure the key is a valid JSON key
 	#         json+=" \"$key\": \"${value}\""
 	#         first_field=0
 	#     done <<<"$selected_fields"
@@ -1432,7 +1432,7 @@ shell::dump_workspace_json() {
 			local value
 			value=$(shell::read_ini "$conf_file" "$section" "$key" 2>/dev/null | sed 's/^value=//')
 			[ $first_field -eq 0 ] && json+=","
-			key=$(shell::sanitize_lower_var_name "$key")
+			key=$(shell::strings::sanitize::lower "$key")
 			json+=" \"$key\": \"${value}\""
 			first_field=0
 		done <<<"$selected_keys"
@@ -1499,9 +1499,9 @@ shell::open_workspace_ssh_tunnel() {
 	fi
 
 	# Sanitize the workspace name and section name
-	# We use shell::sanitize_lower_var_name to ensure the names are in lowercase and safe for use as directory names
-	workspace=$(shell::sanitize_lower_var_name "$workspace")
-	section=$(shell::sanitize_lower_var_name "$section")
+	# We use shell::strings::sanitize::lower to ensure the names are in lowercase and safe for use as directory names
+	workspace=$(shell::strings::sanitize::lower "$workspace")
+	section=$(shell::strings::sanitize::lower "$section")
 
 	local conf_path="$SHELL_CONF_WORKING_WORKSPACE/$workspace/.ssh/$conf_name"
 
@@ -1687,9 +1687,9 @@ shell::tune_workspace_ssh_tunnel() {
 	fi
 
 	# Sanitize the workspace name and section name
-	# We use shell::sanitize_lower_var_name to ensure the names are in lowercase and safe for use as directory names
-	workspace=$(shell::sanitize_lower_var_name "$workspace")
-	section=$(shell::sanitize_lower_var_name "$section")
+	# We use shell::strings::sanitize::lower to ensure the names are in lowercase and safe for use as directory names
+	workspace=$(shell::strings::sanitize::lower "$workspace")
+	section=$(shell::strings::sanitize::lower "$section")
 
 	local conf_path="$SHELL_CONF_WORKING_WORKSPACE/$workspace/.ssh/$conf_name"
 

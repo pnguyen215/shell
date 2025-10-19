@@ -797,9 +797,9 @@ Text manipulation and sanitization functions.
   Converts text to uppercase variable naming convention.
   _Example:_ `shell::strings::sanitize::upper "my variable name"`
 
-- **`shell::sanitize_lower_var_name`**
+- **`shell::strings::sanitize::lower`**
   Converts text to lowercase variable naming convention.
-  _Example:_ `shell::sanitize_lower_var_name "My Variable Name"`
+  _Example:_ `shell::strings::sanitize::lower "My Variable Name"`
 
 - **`shell::camel_case`**
   Converts text to camelCase format.

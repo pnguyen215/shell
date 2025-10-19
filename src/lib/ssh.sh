@@ -636,8 +636,8 @@ shell::gen_ssh_key() {
 
 	# Sanitize the bookmark name to ensure it is a valid variable name.
 	# This is to ensure the key filename is safe and follows conventions.
-	# shell::sanitize_lower_var_name is assumed to be a function that sanitizes the variable name.
-	key_filename=$(shell::sanitize_lower_var_name "$key_filename")
+	# shell::strings::sanitize::lower is assumed to be a function that sanitizes the variable name.
+	key_filename=$(shell::strings::sanitize::lower "$key_filename")
 
 	local ssh_dir="${SHELL_CONF_SSH_DIR_WORKING:-$HOME/.ssh}"
 	local full_key_path="$ssh_dir/$key_filename"
@@ -1359,8 +1359,8 @@ shell::rename_ssh_key() {
 	local new_name="$2"
 	# Sanitize the old and new names to ensure they are valid file names.
 	# This is to ensure the names are safe and follow conventions.
-	# shell::sanitize_lower_var_name is assumed to be a function that sanitizes the variable name.
-	new_name=$(shell::sanitize_lower_var_name "$new_name")
+	# shell::strings::sanitize::lower is assumed to be a function that sanitizes the variable name.
+	new_name=$(shell::strings::sanitize::lower "$new_name")
 
 	local old="$ssh_dir/$old_name"
 	local new="$ssh_dir/$new_name"

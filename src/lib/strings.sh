@@ -23,13 +23,13 @@ shell::strings::sanitize::upper() {
 	echo "$input" | tr '[:lower:]' '[:upper:]' | sed -e 's/[^A-Z0-9_]/_/g'
 }
 
-# shell::sanitize_lower_var_name function
+# shell::strings::sanitize::lower function
 # Converts a string into a format suitable for a lower-case environment variable name.
 # Replaces non-alphanumeric characters (except underscore) with underscores,
 # and converts to lowercase.
 #
 # Usage:
-#   shell::sanitize_lower_var_name <string>
+#   shell::strings::sanitize::lower <string>
 #
 # Parameters:
 #   - <string> : The input string (e.g., INI section or key name).
@@ -38,8 +38,8 @@ shell::strings::sanitize::upper() {
 #   The sanitized string suitable for a lower-case shell variable name.
 #
 # Example:
-#   sanitized=$(shell::sanitize_lower_var_name "My-Section.Key_Name") # Outputs "my_section_key_name"
-shell::sanitize_lower_var_name() {
+#   sanitized=$(shell::strings::sanitize::lower "My-Section.Key_Name") # Outputs "my_section_key_name"
+shell::strings::sanitize::lower() {
 	local input="$1"
 	# Convert to lowercase, replace non-alphanumeric and non-underscore with underscore
 	echo "$input" | tr '[:upper:]' '[:lower:]' | sed -e 's/[^a-z0-9_]/_/g'

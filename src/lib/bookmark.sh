@@ -33,9 +33,9 @@ shell::add_bookmark() {
 	fi
 
 	# Sanitize the bookmark name to ensure it is a valid variable name.
-	# This function should be defined in shell::sanitize_lower_var_name
+	# This function should be defined in shell::strings::sanitize::lower
 	# It should convert the name to lowercase and replace invalid characters.
-	bookmark_name=$(shell::sanitize_lower_var_name "$bookmark_name")
+	bookmark_name=$(shell::strings::sanitize::lower "$bookmark_name")
 
 	# Check if the bookmark name is empty after sanitization.
 	local bookmark
@@ -713,10 +713,10 @@ shell::rename_bookmark() {
 	fi
 
 	# Sanitize the bookmark names to ensure they are valid variable names.
-	# This function should be defined in shell::sanitize_lower_var_name
+	# This function should be defined in shell::strings::sanitize::lower
 	# It should convert the names to lowercase and replace invalid characters.
-	# old_name=$(shell::sanitize_lower_var_name "$old_name")
-	new_name=$(shell::sanitize_lower_var_name "$new_name")
+	# old_name=$(shell::strings::sanitize::lower "$old_name")
+	new_name=$(shell::strings::sanitize::lower "$new_name")
 
 	# Check if the old bookmark exists
 	# This checks if there is an entry in the bookmarks file that ends with "|<old_name>".
