@@ -8,7 +8,7 @@
 #   shell::telegram::send [-n] <token> <chat_id> <message>
 #
 # Parameters:
-#   - -n          : Optional dry-run flag. If provided, the command is printed using shell::logger::copy instead of executed.
+#   - -n          : Optional dry-run flag. If provided, the command is printed using shell::logger::command_clip instead of executed.
 #   - <token>     : The Telegram Bot API token.
 #   - <chat_id>   : The chat identifier where the message should be sent.
 #   - <message>   : The message text to send.
@@ -16,7 +16,7 @@
 # Description:
 #   The function first checks for an optional dry-run flag. It then verifies that at least three arguments are provided.
 #   If the bot token or chat ID is missing, it prints an error message. Otherwise, it constructs a curl command to send
-#   the message via Telegram's API. In dry-run mode, the command is printed using shell::logger::copy; otherwise, it is executed using shell::run_cmd_eval.
+#   the message via Telegram's API. In dry-run mode, the command is printed using shell::logger::command_clip; otherwise, it is executed using shell::run_cmd_eval.
 #
 # Example:
 #   shell::telegram::send 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Hello, World!"
@@ -62,7 +62,7 @@ shell::telegram::send() {
 
 	if [ "$dry_run" = "true" ]; then
 		local cmd="curl -s -X POST \"https://api.telegram.org/bot${token}/sendMessage\" -d \"chat_id=${chatID}\" -d \"parse_mode=markdown\" -d \"text=${message}\""
-		shell::logger::copy "$cmd"
+		shell::logger::command_clip "$cmd"
 	else
 		local cmd="curl -s -X POST \"https://api.telegram.org/bot${token}/sendMessage\" -d \"chat_id=${chatID}\" -d \"parse_mode=markdown\" -d \"text=${message}\" >/dev/null"
 		shell::logger::assert "$cmd"
@@ -78,7 +78,7 @@ shell::telegram::send() {
 #   shell::telegram::send_document [-n] <token> <chat_id> <description> [filename_1] [filename_2] [filename_3] ...
 #
 # Parameters:
-#   - -n           : Optional dry-run flag. If provided, the command is printed using shell::logger::copy instead of executed.
+#   - -n           : Optional dry-run flag. If provided, the command is printed using shell::logger::command_clip instead of executed.
 #   - <token>      : The Telegram Bot API token.
 #   - <chat_id>    : The chat identifier to which the attachments are sent.
 #   - <description>: A text description that is appended to each attachment's caption along with a timestamp.
@@ -87,7 +87,7 @@ shell::telegram::send() {
 # Description:
 #   The function first checks for an optional dry-run flag (-n) and verifies that the required parameters
 #   are provided. For each provided file, if the file exists, it builds a curl command to send the file
-#   asynchronously via Telegram's API. In dry-run mode, the command is printed using shell::logger::copy.
+#   asynchronously via Telegram's API. In dry-run mode, the command is printed using shell::logger::command_clip.
 #
 # Example:
 #   shell::telegram::send_document 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 "Report" file1.pdf file2.pdf

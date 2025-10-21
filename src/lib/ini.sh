@@ -1006,7 +1006,7 @@ shell::remove_ini_section() {
 	local replace_cmd="mv \"$temp_file\" \"$file\""
 
 	if [ "$dry_run" = "true" ]; then
-		shell::logger::copy "$replace_cmd"
+		shell::logger::command_clip "$replace_cmd"
 		shell::stdout "INFO: Dry-run: Would remove section '$section' from '$file'" 46
 	else
 		shell::run_cmd_eval "$replace_cmd"
@@ -1029,7 +1029,7 @@ shell::remove_ini_section() {
 #   shell::fzf_remove_ini_key [-n] <file> <section>
 #
 # Parameters:
-#   - -n        : Optional dry-run flag. If provided, commands are printed using shell::logger::copy instead of executed.
+#   - -n        : Optional dry-run flag. If provided, commands are printed using shell::logger::command_clip instead of executed.
 #   - <file>    : The path to the INI file.
 #   - <section> : The section within the INI file from which to remove a key.
 #
@@ -1158,7 +1158,7 @@ shell::fzf_remove_ini_key() {
 	local replace_cmd="mv \"$temp_file\" \"$file\""
 
 	if [ "$dry_run" = "true" ]; then
-		shell::logger::copy "$replace_cmd"
+		shell::logger::command_clip "$replace_cmd"
 	else
 		shell::run_cmd_eval "$replace_cmd"
 		if [ $? -eq 0 ]; then
@@ -1186,7 +1186,7 @@ shell::fzf_remove_ini_key() {
 #   shell::remove_ini_key [-n] <file> <section> <key>
 #
 # Parameters:
-#   - -n        : Optional dry-run flag. If provided, commands are printed using shell::logger::copy instead of executed.
+#   - -n        : Optional dry-run flag. If provided, commands are printed using shell::logger::command_clip instead of executed.
 #   - <file>    : The path to the INI file.
 #   - <section> : The section within the INI file from which to remove the key.
 #   - <key>     : The key to be removed from the specified section.
@@ -1320,7 +1320,7 @@ shell::remove_ini_key() {
 	local replace_cmd="mv \"$temp_file\" \"$file\""
 
 	if [ "$dry_run" = "true" ]; then
-		shell::logger::copy "$replace_cmd"
+		shell::logger::command_clip "$replace_cmd"
 	else
 		shell::run_cmd_eval "$replace_cmd"
 		if [ $? -eq 0 ]; then
@@ -2069,7 +2069,7 @@ shell::get_or_default_ini_value() {
 #   shell::rename_ini_section [-n] <file> <old_section> <new_section>
 #
 # Parameters:
-#   - -n          : Optional dry-run flag. If provided, commands are printed using shell::logger::copy instead of executed.
+#   - -n          : Optional dry-run flag. If provided, commands are printed using shell::logger::command_clip instead of executed.
 #   - <file>      : The path to the INI file.
 #   - <old_section> : The current name of the section to be renamed.
 #   - <new_section> : The new name for the section.
@@ -2205,7 +2205,7 @@ shell::rename_ini_section() {
 #   shell::fzf_rename_ini_section [-n] [-h] <file>
 #
 # Parameters:
-#   - -n     : Optional dry-run flag. If provided, commands are printed using shell::logger::copy instead of executed.
+#   - -n     : Optional dry-run flag. If provided, commands are printed using shell::logger::command_clip instead of executed.
 #   - -h     : Optional help flag. Displays this help message.
 #   - <file> : The path to the INI file.
 #
@@ -2315,7 +2315,7 @@ shell::fzf_rename_ini_section() {
 #   shell::clone_ini_section [-n] <file> <source_section> <destination_section>
 #
 # Parameters:
-#   - -n                 : Optional dry-run flag. If provided, commands are printed using shell::logger::copy instead of executed.
+#   - -n                 : Optional dry-run flag. If provided, commands are printed using shell::logger::command_clip instead of executed.
 #   - <file>             : The path to the INI file.
 #   - <source_section>   : The name of the section to clone.
 #   - <destination_section>: The name of the new section to create and copy keys into.
@@ -2442,7 +2442,7 @@ shell::clone_ini_section() {
 	append_cloned_section_cmd+="echo \"[$destination_section]\" >>\"$temp_file\""
 
 	if [ "$dry_run" = "true" ]; then
-		shell::logger::copy "$append_cloned_section_cmd"
+		shell::logger::command_clip "$append_cloned_section_cmd"
 	else
 		eval "$append_cloned_section_cmd"
 	fi
@@ -2451,7 +2451,7 @@ shell::clone_ini_section() {
 	if [ -n "$cloned_section_content" ]; then
 		local append_cloned_content_cmd="echo -e \"${cloned_section_content%\\n}\" >>\"$temp_file\"" # Remove trailing newline
 		if [ "$dry_run" = "true" ]; then
-			shell::logger::copy "$append_cloned_content_cmd"
+			shell::logger::command_clip "$append_cloned_content_cmd"
 		else
 			eval "$append_cloned_content_cmd"
 		fi
@@ -2460,7 +2460,7 @@ shell::clone_ini_section() {
 	# Atomically replace the original file with the modified temporary file
 	local replace_cmd="mv \"$temp_file\" \"$file\""
 	if [ "$dry_run" = "true" ]; then
-		shell::logger::copy "$replace_cmd"
+		shell::logger::command_clip "$replace_cmd"
 	else
 		shell::run_cmd_eval "$replace_cmd"
 		if [ $? -eq 0 ]; then
@@ -2481,7 +2481,7 @@ shell::clone_ini_section() {
 #   shell::fzf_clone_ini_section [-n] <file>
 #
 # Parameters:
-#   - -n        : Optional dry-run flag. If provided, commands are printed using shell::logger::copy instead of executed.
+#   - -n        : Optional dry-run flag. If provided, commands are printed using shell::logger::command_clip instead of executed.
 #   - <file>    : The path to the INI file.
 #
 # Description:
@@ -2501,7 +2501,7 @@ shell::clone_ini_section() {
 #
 # Notes:
 #   - Relies on shell::stdout, shell::install_package, shell::list_ini_sections,
-#     shell::clone_ini_section, and shell::logger::copy.
+#     shell::clone_ini_section, and shell::logger::command_clip.
 #   - Provides interactive selection and auto-suggestion for the cloned section name.
 shell::fzf_clone_ini_section() {
 	local dry_run="false"
@@ -2575,7 +2575,7 @@ shell::fzf_clone_ini_section() {
 #   shell::fzf_remove_ini_sections [-n] [-h] <file>
 #
 # Parameters:
-#   - -n        : Optional dry-run flag. If provided, commands are printed using shell::logger::copy instead of executed.
+#   - -n        : Optional dry-run flag. If provided, commands are printed using shell::logger::command_clip instead of executed.
 #   - -h        : Optional help flag. Displays this help message.
 #   - <file>    : The path to the INI file.
 #
@@ -2595,7 +2595,7 @@ shell::fzf_clone_ini_section() {
 #
 # Notes:
 #   - Relies on shell::stdout, shell::install_package, shell::list_ini_sections,
-#     shell::run_cmd_eval, shell::logger::copy, and shell::ini_escape_for_regex.
+#     shell::run_cmd_eval, shell::logger::command_clip, and shell::ini_escape_for_regex.
 #   - Uses fzf's multi-select feature (TAB key) for selecting multiple sections.
 shell::fzf_remove_ini_sections() {
 	local dry_run="false"

@@ -262,7 +262,7 @@ shell::list_bookmark() {
 # Requirements:
 #   - fzf must be installed.
 #   - The 'bookmarks_file' variable must be set.
-#   - Helper functions: shell::install_package, shell::stdout, shell::logger::copy.
+#   - Helper functions: shell::install_package, shell::stdout, shell::logger::command_clip.
 #
 # Example usage:
 #   shell::fzf_list_bookmark         # Interactively select a bookmark and navigate to it.
@@ -315,7 +315,7 @@ shell::fzf_list_bookmark() {
 	fi
 
 	if [ "$dry_run" = "true" ]; then
-		shell::logger::copy "cd \"$target_path\""
+		shell::logger::command_clip "cd \"$target_path\""
 	else
 		if [ -d "$target_path" ]; then
 			cd "$target_path" || {
@@ -352,7 +352,7 @@ shell::fzf_list_bookmark() {
 # Requirements:
 #   - fzf must be installed.
 #   - The 'bookmarks_file' variable must be set.
-#   - Helper functions: shell::install_package, shell::stdout, shell::logger::copy.
+#   - Helper functions: shell::install_package, shell::stdout, shell::logger::command_clip.
 #
 # Example usage:
 #   shell::fzf_list_bookmark_up         # Interactively select a bookmark and verify its path.
@@ -414,7 +414,7 @@ shell::fzf_list_bookmark_up() {
 	fi
 
 	if [ "$dry_run" = "true" ]; then
-		shell::logger::copy "cd \"$target_path\""
+		shell::logger::command_clip "cd \"$target_path\""
 	else
 		if [ -d "$target_path" ]; then
 			cd "$target_path" || {
@@ -451,7 +451,7 @@ shell::fzf_list_bookmark_up() {
 # Requirements:
 #   - fzf must be installed.
 #   - The 'bookmarks_file' variable must be set.
-#   - Helper functions: shell::install_package, shell::stdout, shell::logger::copy, shell::run_cmd_eval.
+#   - Helper functions: shell::install_package, shell::stdout, shell::logger::command_clip, shell::run_cmd_eval.
 #
 # Example usage:
 #   shell::fzf_remove_bookmark_down         # Interactively select and remove inactive bookmarks.
@@ -527,7 +527,7 @@ shell::fzf_remove_bookmark_down() {
 	local failed_count=0
 	for name in "${selected_bookmark_names[@]}"; do
 		if [ "$dry_run" = "true" ]; then
-			shell::logger::copy "shell::remove_bookmark \"$name\""
+			shell::logger::command_clip "shell::remove_bookmark \"$name\""
 		else
 			if shell::remove_bookmark "$name"; then
 				((success_count++))
@@ -571,7 +571,7 @@ shell::fzf_remove_bookmark_down() {
 # Requirements:
 #   - fzf must be installed.
 #   - The 'bookmarks_file' variable must be set.
-#   - Helper functions: shell::install_package, shell::stdout, shell::logger::copy, shell::run_cmd_eval.
+#   - Helper functions: shell::install_package, shell::stdout, shell::logger::command_clip, shell::run_cmd_eval.
 #
 # Example usage:
 #   shell::fzf_remove_bookmark       # Interactively select and remove a bookmark.
@@ -640,9 +640,9 @@ shell::fzf_remove_bookmark() {
 	# If dry-run is true, we prepare the command to remove the bookmark without executing it.
 	if [ "$dry_run" = "true" ]; then
 		if [[ "$os_type" == "linux" ]]; then
-			shell::logger::copy "shell::remove_bookmark_linux \"$selected_bookmark_name\""
+			shell::logger::command_clip "shell::remove_bookmark_linux \"$selected_bookmark_name\""
 		else
-			shell::logger::copy "shell::remove_bookmark \"$selected_bookmark_name\""
+			shell::logger::command_clip "shell::remove_bookmark \"$selected_bookmark_name\""
 		fi
 	else
 		if [[ "$os_type" == "linux" ]]; then
@@ -671,7 +671,7 @@ shell::fzf_remove_bookmark() {
 #
 # Requirements:
 #   - The 'bookmarks_file' variable must be set.
-#   - Helper functions: shell::stdout, shell::logger::copy, shell::run_cmd_eval, shell::get_os_type.
+#   - Helper functions: shell::stdout, shell::logger::command_clip, shell::run_cmd_eval, shell::get_os_type.
 #
 # Example usage:
 #   shell::rename_bookmark old_name new_name
@@ -749,7 +749,7 @@ shell::rename_bookmark() {
 	# If dry-run is true, we prepare the command to rename the bookmark without executing it.
 	# Otherwise, we execute the command to rename the bookmark.
 	if [ "$dry_run" = "true" ]; then
-		shell::logger::copy "$sed_cmd"
+		shell::logger::command_clip "$sed_cmd"
 	else
 		shell::run_cmd_eval "$sed_cmd"
 		shell::stdout "INFO: Renamed bookmark '$old_name' to '$new_name'" 46
@@ -941,7 +941,7 @@ shell::rename_dir_base_bookmark() {
 	# If dry-run is true, we prepare the command to rename the directory without executing it.
 	# Otherwise, we execute the command to rename the directory.
 	if [ "$dry_run" = "true" ]; then
-		shell::logger::copy "$rename_cmd && $update_cmd"
+		shell::logger::command_clip "$rename_cmd && $update_cmd"
 	else
 		shell::run_cmd_eval "$rename_cmd && $update_cmd"
 		shell::stdout "INFO: Renamed directory '$old_path' to '$new_path'" 46
@@ -967,7 +967,7 @@ shell::rename_dir_base_bookmark() {
 # Requirements:
 #   - fzf must be installed.
 #   - The 'bookmarks_file' variable must be set.
-#   - Helper functions: shell::install_package, shell::stdout, shell::logger::copy, shell::rename_dir_base_bookmark.
+#   - Helper functions: shell::install_package, shell::stdout, shell::logger::command_clip, shell::rename_dir_base_bookmark.
 #
 # Example usage:
 #   shell::fzf_rename_dir_base_bookmark       # Interactively select and rename a directory.

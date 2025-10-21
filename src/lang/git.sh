@@ -8,7 +8,7 @@
 #   shell::git::telegram::send_activity [-n] <message>
 #
 # Parameters:
-#   - -n         : Optional dry-run flag. If provided, the command will be printed using shell::logger::copy instead of executed.
+#   - -n         : Optional dry-run flag. If provided, the command will be printed using shell::logger::command_clip instead of executed.
 #   - <message>  : The message text to send.
 #
 # Description:
@@ -131,9 +131,9 @@ shell::git::release::version::get() {
 
 	if [ "$dry_run" = "true" ]; then
 		if shell::is_command_available jq; then
-			shell::logger::copy "$cmd_with_jq"
+			shell::logger::command_clip "$cmd_with_jq"
 		else
-			shell::logger::copy "$cmd_with_grep"
+			shell::logger::command_clip "$cmd_with_grep"
 		fi
 	else
 		if shell::is_command_available jq; then

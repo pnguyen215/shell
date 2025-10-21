@@ -491,11 +491,11 @@ shell::logger::command() {
 	shell::stdout "  ▶ $command" 111
 }
 
-# shell::logger::copy function
+# shell::logger::command_clip function
 # Logs a command with an optional description and copies it to the clipboard.
 #
 # Usage:
-#   shell::logger::copy <command> <description>
+#   shell::logger::command_clip <command> <description>
 #
 # Parameters:
 #   - <command> : The command to log and copy.
@@ -505,7 +505,7 @@ shell::logger::command() {
 #   This function logs a command with an optional description and copies it to
 #   the clipboard. If a description is provided, it is indented and formatted for
 #   readability. The command is displayed in a specific color (245) to stand out.
-shell::logger::copy() {
+shell::logger::command_clip() {
 	local command="$*"
 	if ! shell::logger::can "INFO"; then
 		return 0

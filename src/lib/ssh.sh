@@ -8,7 +8,7 @@
 #   shell::list_ssh_tunnels [-n]
 #
 # Parameters:
-#   - -n : Optional dry-run flag. If provided, commands are printed using shell::logger::copy instead of executed.
+#   - -n : Optional dry-run flag. If provided, commands are printed using shell::logger::command_clip instead of executed.
 #
 # Description:
 #   This function identifies and displays all SSH processes that are using port forwarding options
@@ -35,7 +35,7 @@
 #   - Requires the 'ps' command to be available
 #   - Works on both macOS and Linux systems
 #   - Uses different parsing approaches based on the detected operating system
-#   - Leverages shell::run_cmd_eval for command execution and shell::logger::copy for dry-run mode
+#   - Leverages shell::run_cmd_eval for command execution and shell::logger::command_clip for dry-run mode
 shell::list_ssh_tunnels() {
 	if [ "$1" = "-h" ]; then
 		echo "$USAGE_SHELL_LIST_SSH_TUNNEL"
@@ -69,7 +69,7 @@ shell::list_ssh_tunnels() {
 
 	# Execute or display the command based on dry-run flag
 	if [ "$dry_run" = "true" ]; then
-		shell::logger::copy "$ps_cmd"
+		shell::logger::command_clip "$ps_cmd"
 		rm -f "$temp_file"
 		return 0
 	else
@@ -459,7 +459,7 @@ shell::fzf_kill_ssh_tunnels() {
 #   shell::kill_ssh_tunnels [-n]
 #
 # Parameters:
-#   - -n : Optional dry-run flag. If provided, kill commands are printed using shell::logger::copy instead of executed.
+#   - -n : Optional dry-run flag. If provided, kill commands are printed using shell::logger::command_clip instead of executed.
 #
 # Description:
 #   This function identifies all SSH processes that are using port forwarding options
@@ -475,7 +475,7 @@ shell::fzf_kill_ssh_tunnels() {
 #   - Requires the 'ps' and 'kill' commands to be available.
 #   - Works on both macOS and Linux systems.
 #   - Uses different parsing approaches based on the detected operating system.
-#   - Leverages shell::run_cmd for command execution and shell::logger::copy for dry-run mode.
+#   - Leverages shell::run_cmd for command execution and shell::logger::command_clip for dry-run mode.
 shell::kill_ssh_tunnels() {
 	if [ "$1" = "-h" ]; then
 		echo "$USAGE_SHELL_KILL_SSH_TUNNEL"
@@ -541,7 +541,7 @@ shell::kill_ssh_tunnels() {
 
 	if [ "$dry_run" = "true" ]; then
 		local kill_cmd="kill ${pids_to_kill[*]}"
-		shell::logger::copy "$kill_cmd"
+		shell::logger::command_clip "$kill_cmd"
 		return 0
 	fi
 	local asked
@@ -571,7 +571,7 @@ shell::kill_ssh_tunnels() {
 #   shell::gen_ssh_key [-n] [-t key_type] [-p passphrase] [-h] [email] [key_filename]
 #
 # Parameters:
-#   - -n              : Optional dry-run flag. If provided, the command is printed using shell::logger::copy instead of executed.
+#   - -n              : Optional dry-run flag. If provided, the command is printed using shell::logger::command_clip instead of executed.
 #   - -t key_type     : Optional. Specifies the key type (e.g., rsa, ed25519). Defaults to rsa.
 #   - -p passphrase   : Optional. Specifies the passphrase for the key. Defaults to empty (no passphrase).
 #   - -h              : Optional. Displays this help message.
@@ -659,7 +659,7 @@ shell::gen_ssh_key() {
 
 	# Ensure SSH directory exists
 	if [ "$dry_run" = "true" ]; then
-		shell::logger::copy "shell::create_directory_if_not_exists \"$ssh_dir\""
+		shell::logger::command_clip "shell::create_directory_if_not_exists \"$ssh_dir\""
 	else
 		shell::create_directory_if_not_exists "$ssh_dir"
 		if [ $? -ne 0 ]; then
@@ -687,7 +687,7 @@ shell::gen_ssh_key() {
 	fi
 
 	if [ "$dry_run" = "true" ]; then
-		shell::logger::copy "$ssh_keygen_cmd"
+		shell::logger::command_clip "$ssh_keygen_cmd"
 	else
 		shell::stdout "Generating SSH key pair: $full_key_path" 33
 		shell::run_cmd_eval "$ssh_keygen_cmd"
@@ -714,7 +714,7 @@ shell::gen_ssh_key() {
 # shell::fzf_view_ssh_key [-n]
 #
 # Parameters:
-# - -n : Optional dry-run flag. If provided, the preview command is printed using shell::logger::copy instead of executed.
+# - -n : Optional dry-run flag. If provided, the preview command is printed using shell::logger::command_clip instead of executed.
 #
 # Description:
 # This function lists files within the user's SSH directory ($HOME/.ssh),
@@ -773,7 +773,7 @@ shell::fzf_view_ssh_key() {
 	# This allows the user to see what would happen without making changes.
 	# If not dry-run, execute the command.
 	if [ "$dry_run" = "true" ]; then
-		shell::logger::copy "$fzf_cmd"
+		shell::logger::command_clip "$fzf_cmd"
 		return 0
 	else
 		eval "$fzf_cmd"
@@ -787,7 +787,7 @@ shell::fzf_view_ssh_key() {
 # shell::fzf_remove_ssh_keys [-n]
 #
 # Parameters:
-# - -n : Optional dry-run flag. If provided, the removal command is printed using shell::logger::copy instead of executed.
+# - -n : Optional dry-run flag. If provided, the removal command is printed using shell::logger::command_clip instead of executed.
 #
 # Description:
 # This function lists SSH key files in the user's SSH directory ($HOME/.ssh),
@@ -864,7 +864,7 @@ shell::fzf_remove_ssh_keys() {
 	while IFS= read -r file; do
 		local cmd="sudo rm -f \"$file\""
 		if [ "$dry_run" = "true" ]; then
-			shell::logger::copy "$cmd"
+			shell::logger::command_clip "$cmd"
 		else
 			shell::run_cmd_eval "$cmd"
 			shell::stdout "INFO: SSH key file removal process completed." 46
@@ -950,7 +950,7 @@ shell::open_ssh_tunnel() {
 	# This allows the user to see what would happen without making changes.
 	if [ "$dry_run" = "true" ]; then
 		shell::stdout "DEBUG: $placeholder" 244
-		shell::logger::copy "$cmd"
+		shell::logger::command_clip "$cmd"
 		return 0
 	fi
 
@@ -995,7 +995,7 @@ shell::open_ssh_tunnel() {
 # shell::open_ssh_tunnel_builder [-n]
 #
 # Parameters:
-# - -n : Optional dry-run flag. If provided, the command is printed using shell::logger::copy.
+# - -n : Optional dry-run flag. If provided, the command is printed using shell::logger::command_clip.
 #
 # Description:
 # This function prompts the user to enter each required field for an SSH tunnel connection.
@@ -1153,7 +1153,7 @@ shell::open_ssh_tunnel_builder() {
 # shell::tune_ssh_tunnel [-n] <private_key> <user> <host> <port>
 #
 # Parameters:
-# - -n : Optional dry-run flag. If provided, the SSH command is printed using shell::logger::copy instead of executed.
+# - -n : Optional dry-run flag. If provided, the SSH command is printed using shell::logger::command_clip instead of executed.
 # - <private_key> : Path to the SSH private key file.
 # - <user> : SSH username.
 # - <host> : SSH server address.
@@ -1231,7 +1231,7 @@ shell::tune_ssh_tunnel() {
 	# This allows the user to see what would happen without making changes.
 	if [ "$dry_run" = "true" ]; then
 		shell::stdout "DEBUG: $placeholder" 244
-		shell::logger::copy "$cmd"
+		shell::logger::command_clip "$cmd"
 	else
 		shell::run_cmd_eval "$cmd"
 	fi
@@ -1244,7 +1244,7 @@ shell::tune_ssh_tunnel() {
 # shell::tune_ssh_tunnel_builder [-n]
 #
 # Parameters:
-# - -n : Optional dry-run flag. If provided, the command is printed using shell::logger::copy.
+# - -n : Optional dry-run flag. If provided, the command is printed using shell::logger::command_clip.
 #
 # Description:
 # This function prompts the user to enter each required field for an SSH tunnel connection.
@@ -1328,7 +1328,7 @@ shell::tune_ssh_tunnel_builder() {
 # shell::rename_ssh_key [-n] <old_name> <new_name>
 #
 # Parameters:
-# - -n : Optional dry-run flag. If provided, the rename command is printed using shell::logger::copy.
+# - -n : Optional dry-run flag. If provided, the rename command is printed using shell::logger::command_clip.
 # - <old_name> : The current name of the SSH key file.
 # - <new_name> : The new name for the SSH key file.
 #
@@ -1403,7 +1403,7 @@ shell::rename_ssh_key() {
 	# If dry_run is true, we will not execute the command but print it instead.
 	# This allows the user to see what would happen without making changes.
 	if [ "$dry_run" = "true" ]; then
-		shell::logger::copy "$cmd"
+		shell::logger::command_clip "$cmd"
 	else
 		shell::run_cmd_eval "$cmd"
 		shell::stdout "INFO: Renamed '$old_name' to '$new_name'" 46
@@ -1417,7 +1417,7 @@ shell::rename_ssh_key() {
 # shell::fzf_rename_ssh_key [-n]
 #
 # Parameters:
-# - -n : Optional dry-run flag. If provided, the rename command is printed using shell::logger::copy.
+# - -n : Optional dry-run flag. If provided, the rename command is printed using shell::logger::command_clip.
 #
 # Description:
 # This function lists SSH key files in the user's SSH directory ($HOME/.ssh),
