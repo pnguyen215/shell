@@ -515,11 +515,11 @@ shell::logger::copy() {
 	shell::clip_value "$command"
 }
 
-# shell::logger::exec function
+# shell::logger::execute function
 # Logs a command with an optional description and executes it using eval.
 #
 # Usage:
-#   shell::logger::exec <command> <description>
+#   shell::logger::execute <command> <description>
 #
 # Parameters:
 #   - <command> : The command to log and execute.
@@ -529,7 +529,7 @@ shell::logger::copy() {
 #   This function logs a command with an optional description and executes it
 #   using eval. If a description is provided, it is indented and formatted for
 #   readability. The command is displayed in a specific color (245) to stand out.
-shell::logger::exec() {
+shell::logger::execute() {
 	local command="$*"
 	if ! shell::logger::can "INFO"; then
 		return 0
@@ -610,7 +610,7 @@ shell::logger::assert() {
 #   This function logs a command with an optional description and executes it
 #   safely using bash -c instead of eval. If a description is provided, it is
 #   indented and formatted for readability. The command is displayed in a specific
-#   color (245) to stand out. This is a safer replacement for shell::logger::exec
+#   color (245) to stand out. This is a safer replacement for shell::logger::execute
 #   that avoids command injection vulnerabilities.
 shell::logger::dispatch() {
 	local command="$*"
