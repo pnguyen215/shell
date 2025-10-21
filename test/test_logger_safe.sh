@@ -32,37 +32,37 @@ assert_exit_code() {
 	fi
 }
 
-# Test shell::logger::exec_safe
+# Test shell::logger::dispatch
 test_shell_logger_exec_safe() {
-	echo "Testing shell::logger::exec_safe..."
+	echo "Testing shell::logger::dispatch..."
 
 	# Test 1: Simple command execution
 	echo "Test 1: Simple command"
-	shell::logger::exec_safe "echo 'test simple command'" >/dev/null 2>&1
+	shell::logger::dispatch "echo 'test simple command'" >/dev/null 2>&1
 	local exit_code=$?
 	assert_exit_code 0 $exit_code "exec_safe should succeed with simple echo command"
 
 	# Test 2: Empty command should fail
 	echo "Test 2: Empty command"
-	shell::logger::exec_safe "" >/dev/null 2>&1
+	shell::logger::dispatch "" >/dev/null 2>&1
 	local exit_code=$?
 	assert_exit_code 1 $exit_code "exec_safe should fail with empty command"
 
 	# Test 3: Command with pipes
 	echo "Test 3: Command with pipes"
-	shell::logger::exec_safe "echo 'hello world' | grep 'hello'" >/dev/null 2>&1
+	shell::logger::dispatch "echo 'hello world' | grep 'hello'" >/dev/null 2>&1
 	local exit_code=$?
 	assert_exit_code 0 $exit_code "exec_safe should handle pipes correctly"
 
 	# Test 4: Command injection attempt should be blocked
 	echo "Test 4: Command injection prevention"
-	shell::logger::exec_safe "echo test; rm -rf /tmp/nonexistent" >/dev/null 2>&1
+	shell::logger::dispatch "echo test; rm -rf /tmp/nonexistent" >/dev/null 2>&1
 	local exit_code=$?
 	assert_exit_code 1 $exit_code "exec_safe should block dangerous rm -rf patterns"
 
 	# Test 5: Backtick injection attempt should be blocked
 	echo "Test 5: Backtick injection prevention"
-	shell::logger::exec_safe "echo \`whoami\`" >/dev/null 2>&1
+	shell::logger::dispatch "echo \`whoami\`" >/dev/null 2>&1
 	local exit_code=$?
 	assert_exit_code 1 $exit_code "exec_safe should block backtick command substitution"
 }

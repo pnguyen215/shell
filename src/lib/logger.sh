@@ -596,11 +596,11 @@ shell::logger::assert() {
 	return $exit_code
 }
 
-# shell::logger::exec_safe function
+# shell::logger::dispatch function
 # Logs a command with an optional description and executes it safely without using eval.
 #
 # Usage:
-#   shell::logger::exec_safe <command> <description>
+#   shell::logger::dispatch <command> <description>
 #
 # Parameters:
 #   - <command> : The command to log and execute.
@@ -612,7 +612,7 @@ shell::logger::assert() {
 #   indented and formatted for readability. The command is displayed in a specific
 #   color (245) to stand out. This is a safer replacement for shell::logger::exec
 #   that avoids command injection vulnerabilities.
-shell::logger::exec_safe() {
+shell::logger::dispatch() {
 	local command="$*"
 	if ! shell::logger::can "INFO"; then
 		return 0
