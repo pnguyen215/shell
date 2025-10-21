@@ -41,7 +41,7 @@ shell::python::install() {
 		shift
 	fi
 
-	local os_type=$(shell::get_os_type)
+	local os_type=$(shell::base::os)
 
 	local cmd=""
 	if [ "$os_type" = "linux" ]; then
@@ -100,7 +100,7 @@ shell::python::install() {
 # Example:
 #   shell::python::is_installed  # Outputs "true" or "false" based on installation status.
 shell::python::is_installed() {
-	local os_type=$(shell::get_os_type)
+	local os_type=$(shell::base::os)
 	local python_version="python3"
 	local is_installed="false"
 
@@ -170,7 +170,7 @@ shell::python::uninstall() {
 		return $RETURN_NOT_IMPLEMENTED
 	fi
 
-	local os_type=$(shell::get_os_type)
+	local os_type=$(shell::base::os)
 	local cmd=""
 
 	if [ "$os_type" = "linux" ]; then
@@ -435,7 +435,7 @@ shell::python::venv::create() {
 		esac
 	done
 
-	local os_type=$(shell::get_os_type)
+	local os_type=$(shell::base::os)
 
 	if [ "$dry_run" = "false" ]; then
 		if ! shell::is_command_available "$python_version"; then
@@ -579,7 +579,7 @@ shell::python::venv::pkg::install() {
 		return $RETURN_FAILURE
 	fi
 
-	local os_type=$(shell::get_os_type)
+	local os_type=$(shell::base::os)
 	local pip_cmd="$venv_path/bin/pip"
 
 	if [ "$dry_run" = "false" ]; then

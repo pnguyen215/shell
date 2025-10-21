@@ -64,7 +64,7 @@ shell::read_ini() {
 	local section_pattern="^\[$escaped_section\]"
 	local any_section_pattern="^\[[^]]+\]" # Regex for any section header
 	local in_target_section=0
-	local os_type=$(shell::get_os_type)
+	local os_type=$(shell::base::os)
 	local decoded_value
 
 	while IFS= read -r line || [ -n "$line" ]; do
@@ -1095,7 +1095,7 @@ shell::fzf_remove_ini_key() {
 	shell::stdout "DEBUG: Selected key for removal: '$selected_key'" 244
 
 	local os_type
-	os_type=$(shell::get_os_type)
+	os_type=$(shell::base::os)
 
 	# Escape section and key for regex pattern
 	local escaped_section
@@ -2178,7 +2178,7 @@ shell::rename_ini_section() {
 	escaped_old_section=$(shell::ini_escape_for_regex "$old_section")
 
 	local os_type
-	os_type=$(shell::get_os_type)
+	os_type=$(shell::base::os)
 	local sed_cmd=""
 
 	# Construct the sed command for in-place editing based on OS type.
@@ -2721,7 +2721,7 @@ shell::fzf_view_ini_viz() {
 	local green=$(tput setaf 2)
 	local normal=$(tput sgr0)
 	local os_type
-	os_type=$(shell::get_os_type)
+	os_type=$(shell::base::os)
 
 	# Determine the base64 decode command based on the OS type.
 	# This is used to decode values that might be base64 encoded.

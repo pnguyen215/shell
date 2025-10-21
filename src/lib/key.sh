@@ -254,7 +254,7 @@ shell::fzf_get_key_conf() {
 	encoded_value=$(echo "$selected_line" | cut -d '=' -f 2-)
 
 	local os_type
-	os_type=$(shell::get_os_type)
+	os_type=$(shell::base::os)
 	local decoded_value
 	if [ "$os_type" = "macos" ]; then
 		decoded_value=$(echo "$encoded_value" | base64 -D)
@@ -313,7 +313,7 @@ shell::get_key_conf_value() {
 	encoded_value=$(echo "$conf_line" | cut -d '=' -f 2-)
 
 	local os_type
-	os_type=$(shell::get_os_type)
+	os_type=$(shell::base::os)
 	local decoded_value
 	if [ "$os_type" = "macos" ]; then
 		decoded_value=$(echo "$encoded_value" | base64 -D)
@@ -382,7 +382,7 @@ shell::fzf_remove_key_conf() {
 	fi
 
 	local os_type
-	os_type=$(shell::get_os_type)
+	os_type=$(shell::base::os)
 	local sed_cmd=""
 	local use_sudo="sudo "
 
@@ -473,7 +473,7 @@ shell::fzf_update_key_conf() {
 	encoded_value=$(echo -n "$new_value" | base64 | tr -d '\n')
 
 	local os_type
-	os_type=$(shell::get_os_type)
+	os_type=$(shell::base::os)
 	local sed_cmd=""
 	local use_sudo="sudo "
 
@@ -631,7 +631,7 @@ shell::fzf_rename_key_conf() {
 	fi
 
 	local os_type
-	os_type=$(shell::get_os_type)
+	os_type=$(shell::base::os)
 	local sed_cmd=""
 	local use_sudo="sudo "
 
@@ -785,7 +785,7 @@ shell::fzf_add_group_key_conf() {
 	# If the group already exists, update it; otherwise, append it.
 	if grep -q "^${group_name}=" "$SHELL_GROUP_CONF_FILE"; then
 		local os_type
-		os_type=$(shell::get_os_type)
+		os_type=$(shell::base::os)
 		local sed_cmd=""
 		if [ "$os_type" = "macos" ]; then
 			sed_cmd="sed -i '' \"s/^${group_name}=.*/${group_entry}/\" \"$SHELL_GROUP_CONF_FILE\""
@@ -866,7 +866,7 @@ shell::read_group_key_conf() {
 	fi
 
 	local os_type
-	os_type=$(shell::get_os_type)
+	os_type=$(shell::base::os)
 	local json_obj="{"
 	local first=1
 
@@ -955,7 +955,7 @@ shell::fzf_remove_group_key_conf() {
 	fi
 
 	local os_type
-	os_type=$(shell::get_os_type)
+	os_type=$(shell::base::os)
 	local sed_cmd=""
 	local use_sudo="sudo "
 
@@ -1038,7 +1038,7 @@ shell::fzf_update_group_key_conf() {
 
 	local new_group_entry="${selected_group}=${new_keys}"
 	local os_type
-	os_type=$(shell::get_os_type)
+	os_type=$(shell::base::os)
 	local sed_cmd=""
 	local use_sudo="sudo "
 
@@ -1119,7 +1119,7 @@ shell::fzf_rename_group_key_conf() {
 
 	# Construct the sed command to update the group name while preserving the keys.
 	local os_type
-	os_type=$(shell::get_os_type)
+	os_type=$(shell::base::os)
 	local sed_cmd=""
 	local use_sudo="sudo "
 
@@ -1261,7 +1261,7 @@ shell::fzf_view_group_key_conf() {
 
 	# Decode the value based on the operating system.
 	local os_type
-	os_type=$(shell::get_os_type)
+	os_type=$(shell::base::os)
 	local decoded_value
 	if [ "$os_type" = "macos" ]; then
 		decoded_value=$(echo "$encoded_value" | base64 -D)
@@ -1488,7 +1488,7 @@ shell::sync_group_key_conf() {
 # Requirements:
 #   - fzf must be installed.
 #   - The 'SHELL_KEY_CONF_FILE' variable must be set.
-#   - Helper functions: shell::install_package, shell::stdout, shell::get_os_type, shell::clip_value, shell::logger::command_clip.
+#   - Helper functions: shell::install_package, shell::stdout, shell::base::os, shell::clip_value, shell::logger::command_clip.
 #
 # Example usage:
 #   shell::fzf_view_key_conf_viz         # Select a key and copy its decoded value.
@@ -1532,7 +1532,7 @@ shell::fzf_view_key_conf_viz() {
 
 	# Determine OS type for Base64 decoding
 	local os_type
-	os_type=$(shell::get_os_type)
+	os_type=$(shell::base::os)
 	local base64_decode_cmd
 	if [ "$os_type" = "macos" ]; then
 		base64_decode_cmd="base64 -D"
@@ -1757,7 +1757,7 @@ shell::fzf_remove_protected_key_conf() {
 	fi
 
 	local os_type
-	os_type=$(shell::get_os_type)
+	os_type=$(shell::base::os)
 	local sed_cmd=""
 	if [ "$os_type" = "macos" ]; then
 		sed_cmd="sudo sed -i '' \"/^${selected_key}$/d\" \"$file\"" # Use sed with -i '' for macOS compatibility

@@ -49,7 +49,7 @@ shell::list_ssh_tunnels() {
 
 	# Get the operating system type
 	local os_type
-	os_type=$(shell::get_os_type)
+	os_type=$(shell::base::os)
 
 	# Create a temporary file for processing
 	local temp_file
@@ -395,7 +395,7 @@ shell::fzf_kill_ssh_tunnels() {
 
 	# Use different ps options based on OS for wider compatibility, similar to shell::list_ssh_tunnels
 	local os_type
-	os_type=$(shell::get_os_type) # Assuming shell::get_os_type exists and works
+	os_type=$(shell::base::os) # Assuming shell::base::os exists and works
 
 	if [ "$os_type" = "linux" ]; then
 		# Use 'ax' for all processes, 'u' for user-oriented format (PID, user, command etc.)
@@ -489,7 +489,7 @@ shell::kill_ssh_tunnels() {
 	fi
 
 	local os_type
-	os_type=$(shell::get_os_type)
+	os_type=$(shell::base::os)
 
 	# Create a temporary file for processing PIDs
 	local temp_pids

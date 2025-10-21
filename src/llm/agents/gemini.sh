@@ -427,7 +427,7 @@ shell::eval_gemini_en_vi() {
 			return 1
 		fi
 
-		local os_type=$(shell::get_os_type)
+		local os_type=$(shell::base::os)
 		local suggested_correction=$(echo "$item_json" | jq -r '.suggested_correction // empty')
 		local vietnamese_translation=$(echo "$item_json" | jq -r '.vietnamese_translation // empty')
 		local native_usage_probability=$(echo "$item_json" | jq -r '.native_usage_probability // empty')
@@ -589,7 +589,7 @@ shell::eval_gemini_vi_en() {
 			return 1
 		fi
 
-		local os_type=$(shell::get_os_type)
+		local os_type=$(shell::base::os)
 		local translated_english=$(echo "$item_json" | jq -r '.translated_english // empty')
 		local native_usage_probability=$(echo "$item_json" | jq -r '.native_usage_probability // empty')
 		local natural_alternatives_count=$(echo "$item_json" | jq '.natural_alternatives | length // 0')

@@ -1,7 +1,7 @@
 #!/bin/bash
 # common.sh
 
-# shell::get_os_type function
+# shell::base::os function
 # Determines the current operating system type and outputs a standardized string.
 #
 # Outputs:
@@ -11,7 +11,7 @@
 #   "unknown"  - For unrecognized operating systems
 #
 # Example usage:
-# os_type=$(shell::get_os_type)
+# os_type=$(shell::base::os)
 # case "$os_type" in
 #   "linux")
 #     echo "Linux system detected"
@@ -26,7 +26,7 @@
 #     echo "Unrecognized system"
 #     ;;
 # esac
-shell::get_os_type() {
+shell::base::os() {
 	if [ "$1" = "-h" ]; then
 		echo "$USAGE_SHELL_GET_OS_TYPE"
 		return 0
@@ -235,9 +235,9 @@ shell::run_cmd() {
 
 	local command="$*"
 
-	# Capture the OS type output from shell::get_os_type
+	# Capture the OS type output from shell::base::os
 	local os_type
-	os_type=$(shell::get_os_type)
+	os_type=$(shell::base::os)
 
 	# Set appropriate color based on OS
 	local color_code=36 # Default cyan
@@ -297,9 +297,9 @@ shell::run_cmd_eval() {
 	fi
 
 	local command="$*"
-	# Capture the OS type output from shell::get_os_type
+	# Capture the OS type output from shell::base::os
 	local os_type
-	os_type=$(shell::get_os_type)
+	os_type=$(shell::base::os)
 
 	# Set appropriate color based on OS
 	local color_code=36 # Default cyan
@@ -405,7 +405,7 @@ shell::install_package() {
 	fi
 
 	local os_type
-	os_type=$(shell::get_os_type)
+	os_type=$(shell::base::os)
 
 	if [ "$os_type" = "linux" ]; then
 		if shell::is_package_installed_linux "$package"; then
@@ -476,7 +476,7 @@ shell::uninstall_package() {
 		return 0
 	fi
 	local os_type
-	os_type=$(shell::get_os_type)
+	os_type=$(shell::base::os)
 
 	if [ "$os_type" = "linux" ]; then
 		# Check if package is installed via snap and remove it
@@ -615,7 +615,7 @@ shell::create_directory_if_not_exists() {
 	local input_path="$1"
 	local dir
 	local os
-	os=$(shell::get_os_type)
+	os=$(shell::base::os)
 
 	# Detect if the input path appears to be a file (has a file extension)
 	# Check if the path contains a dot and the part after the last dot looks like a file extension
@@ -773,7 +773,7 @@ shell::clip_cwd() {
 
 	local adr="$PWD"
 	local os
-	os=$(shell::get_os_type)
+	os=$(shell::base::os)
 
 	if [[ "$os" == "macos" ]]; then
 		echo -n "$adr" | pbcopy
@@ -808,12 +808,12 @@ shell::clip_cwd() {
 #
 # Description:
 #   This function first checks if a value has been provided. It then determines the current operating
-#   system using the shell::get_os_type function. On macOS, it uses pbcopy to copy the value to the clipboard.
+#   system using the shell::base::os function. On macOS, it uses pbcopy to copy the value to the clipboard.
 #   On Linux, it first checks if xclip is available and uses it; if not, it falls back to xsel.
 #   If no clipboard tool is found or the OS is unsupported, an error message is displayed.
 #
 # Dependencies:
-#   - shell::get_os_type: To detect the operating system.
+#   - shell::base::os: To detect the operating system.
 #   - shell::is_command_available: To check for the availability of xclip or xsel on Linux.
 #   - shell::stdout: To print colored status messages.
 #
@@ -832,7 +832,7 @@ shell::clip_value() {
 	fi
 
 	local os
-	os=$(shell::get_os_type)
+	os=$(shell::base::os)
 
 	if [[ "$os" == "macos" ]]; then
 		echo -n "$value" | pbcopy
@@ -903,7 +903,7 @@ shell::get_temp_dir() {
 		return 0
 	fi
 
-	shell::get_os_type
+	shell::base::os
 	local os=$?
 
 	if [ "$os" = "linux" ]; then # Linux
@@ -1254,7 +1254,7 @@ shell::remove_files() {
 #
 # Requirements:
 #   - fzf must be installed.
-#   - Helper functions: shell::run_cmd, shell::logger::command_clip, shell::stdout, and shell::get_os_type.
+#   - Helper functions: shell::run_cmd, shell::logger::command_clip, shell::stdout, and shell::base::os.
 shell::editor() {
 	if [ "$1" = "-h" ]; then
 		echo "$USAGE_SHELL_EDITOR"
@@ -1280,7 +1280,7 @@ shell::editor() {
 
 	# Determine absolute path command based on OS.
 	local os_type
-	os_type=$(shell::get_os_type)
+	os_type=$(shell::base::os)
 	local abs_command=()
 	if [ "$os_type" = "macos" ]; then
 		if command -v realpath >/dev/null 2>&1; then
@@ -1628,7 +1628,7 @@ shell::unarchive() {
 #   - -n : Optional dry-run flag. If provided, the command is printed using shell::logger::command_clip instead of executed.
 #
 # Description:
-#   This function retrieves the operating system type using shell::get_os_type. For macOS, it uses 'top' to sort processes by resident size (RSIZE)
+#   This function retrieves the operating system type using shell::base::os. For macOS, it uses 'top' to sort processes by resident size (RSIZE)
 #   and filters the output to display processes consuming at least 100 MB. For Linux, it uses 'ps' to list processes sorted by memory usage.
 #   In dry-run mode, the constructed command is printed using shell::logger::command_clip; otherwise, it is executed using shell::run_cmd_eval.
 #
@@ -1650,9 +1650,9 @@ shell::list_high_mem_usage() {
 		return 0
 	fi
 
-	# Determine the OS type using shell::get_os_type
+	# Determine the OS type using shell::base::os
 	local os_type
-	os_type=$(shell::get_os_type)
+	os_type=$(shell::base::os)
 
 	local cmd=""
 	if [ "$os_type" = "macos" ]; then
@@ -1684,7 +1684,7 @@ shell::list_high_mem_usage() {
 #   - <url>: The URL to open in the default web browser.
 #
 # Description:
-#   This function determines the current operating system using shell::get_os_type. On macOS, it uses the 'open' command;
+#   This function determines the current operating system using shell::base::os. On macOS, it uses the 'open' command;
 #   on Linux, it uses 'xdg-open' (if available). If the required command is missing on Linux, an error is displayed.
 #   In dry-run mode, the command is printed using shell::logger::command_clip; otherwise, it is executed using shell::run_cmd_eval.
 #
@@ -1713,7 +1713,7 @@ shell::open_link() {
 
 	local url="$1"
 	local os_type
-	os_type=$(shell::get_os_type)
+	os_type=$(shell::base::os)
 	local cmd=""
 
 	if [ "$os_type" = "macos" ]; then
@@ -1817,7 +1817,7 @@ shell::measure_time() {
 	fi
 
 	local os_type
-	os_type=$(shell::get_os_type)
+	os_type=$(shell::base::os)
 
 	local exit_code
 
@@ -1979,7 +1979,7 @@ shell::execute_or_evict() {
 #
 # Requirements:
 #   - Standard tools: ls, stat, awk, column.
-#   - Helper functions: shell::stdout, shell::get_os_type.
+#   - Helper functions: shell::stdout, shell::base::os.
 #
 # Example usage:
 #   shell::ls           # List files and folders in a simple, colored format.
@@ -2096,7 +2096,7 @@ shell::ls() {
 			# Get file metadata
 			local perms size modified
 			local os_type
-			os_type=$(shell::get_os_type)
+			os_type=$(shell::base::os)
 			if [ "$os_type" = "macos" ]; then
 				perms=$(stat -f "%Sp" "$file" 2>/dev/null || echo "-")
 				size=$(stat -f "%z" "$file" 2>/dev/null | awk '{if ($1 < 1024) print $1 " B"; else if ($1 < 1048576) print sprintf("%.1f KB", $1/1024); else print sprintf("%.1f MB", $1/1048576)}')
@@ -2284,7 +2284,7 @@ shell::unlock_permissions() {
 	# This will be used to check if the target already has 777 permissions.
 	local current_perm=""
 	local os_type
-	os_type=$(shell::get_os_type)
+	os_type=$(shell::base::os)
 	if [ "$os_type" = "macos" ]; then
 		current_perm=$(stat -f "%Lp" "$target")
 	else
@@ -2398,7 +2398,7 @@ shell::fzf_set_permissions() {
 #
 # Requirements:
 #   - Standard tools: stat, tput.
-#   - Helper functions: shell::stdout, shell::get_os_type.
+#   - Helper functions: shell::stdout, shell::base::os.
 #
 # Example usage:
 #   shell::analyze_permissions -rwxr-xr-x       # Explain -rwxr-xr-x permissions.
@@ -2459,7 +2459,7 @@ shell::analyze_permissions() {
 			return 1
 		fi
 		local os_type
-		os_type=$(shell::get_os_type)
+		os_type=$(shell::base::os)
 		if [ "$os_type" = "macos" ]; then
 			permission_string=$(stat -f "%Sp" "$file_path" 2>/dev/null)
 		else
@@ -2638,7 +2638,7 @@ shell::opent() {
 	fi
 
 	local os
-	os=$(shell::get_os_type)
+	os=$(shell::base::os)
 
 	local dir
 	local name
@@ -2952,7 +2952,7 @@ shell::encode_base64_file() {
 		return 1
 	fi
 
-	local os_type=$(shell::get_os_type)
+	local os_type=$(shell::base::os)
 	local base64_cmd=""
 
 	if [ "$os_type" = "macos" ]; then

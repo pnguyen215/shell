@@ -99,9 +99,9 @@ Core functions for system management, version control, and basic operations.
   Removes the shell CLI and its associated files from the system.  
   _Example:_ `shell::uninstall`
 
-- **`shell::get_os_type`**  
+- **`shell::base::os`**  
   Identifies and returns the current operating system type as a standardized string (e.g., "linux" or "macos").  
-  _Example:_ `shell::get_os_type`
+  _Example:_ `shell::base::os`
 
 - **`shell::stdout`**  
   Outputs text to the terminal with customizable foreground colors using `tput` and ANSI escape sequences. Requires a message and a color code (e.g., 46 for cyan).  
@@ -931,9 +931,9 @@ SSH key and tunnel management utilities.
 
 Process management, port checking, and system analysis tools.
 
-- **`shell::get_os_type`**  
+- **`shell::base::os`**  
   Identifies and returns the current operating system type as a standardized string (e.g., "linux" or "macos").  
-  _Example:_ `shell::get_os_type`
+  _Example:_ `shell::base::os`
 
 - **`shell::stdout`**  
   Outputs text to the terminal with customizable foreground colors using `tput` and ANSI escape sequences. Requires a message and a color code (e.g., 46 for cyan).  

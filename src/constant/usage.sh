@@ -1277,11 +1277,11 @@ Description:
 "
 
 USAGE_SHELL_GET_OS_TYPE="
-shell::get_os_type function
+shell::base::os function
 Determines the current operating system type and outputs a standardized string.
 
 Usage:
-  shell::get_os_type [-h]
+  shell::base::os [-h]
 
 Parameters:
   - -h              : Optional. Displays this help message.
@@ -1564,7 +1564,7 @@ Parameters:
 
 Description:
   This function first checks if a value has been provided. It then determines the current operating
-  system using the shell::get_os_type function. On macOS, it uses pbcopy to copy the value to the clipboard.
+  system using the shell::base::os function. On macOS, it uses pbcopy to copy the value to the clipboard.
   On Linux, it first checks if xclip is available and uses it; if not, it falls back to xsel.
   If no clipboard tool is found or the OS is unsupported, an error message is displayed.
 
@@ -1854,7 +1854,7 @@ Parameters:
   - -h        : Optional. Displays this help message.
 
 Description:
-  This function retrieves the operating system type using shell::get_os_type. For macOS, it uses 'top' to sort processes by resident size (RSIZE)
+  This function retrieves the operating system type using shell::base::os. For macOS, it uses 'top' to sort processes by resident size (RSIZE)
   and filters the output to display processes consuming at least 100 MB. For Linux, it uses 'ps' to list processes sorted by memory usage.
   In dry-run mode, the constructed command is printed using shell::logger::command_clip; otherwise, it is executed using shell::run_cmd_eval.
 
@@ -1876,7 +1876,7 @@ Parameters:
   - <url>: The URL to open in the default web browser.
 
 Description:
-  This function determines the current operating system using shell::get_os_type. On macOS, it uses the 'open' command;
+  This function determines the current operating system using shell::base::os. On macOS, it uses the 'open' command;
   on Linux, it uses 'xdg-open' (if available). If the required command is missing on Linux, an error is displayed.
   In dry-run mode, the command is printed using shell::logger::command_clip; otherwise, it is executed using shell::run_cmd_eval.
 

@@ -19,7 +19,7 @@
 #
 # Requirements:
 #   - fzf must be installed.
-#   - Helper functions: shell::run_cmd_eval, shell::stdout, and shell::get_os_type.
+#   - Helper functions: shell::run_cmd_eval, shell::stdout, and shell::base::os.
 shell::fzf_copy() {
 	# Check for the help flag (-h)
 	if [ "$1" = "-h" ]; then
@@ -84,7 +84,7 @@ shell::fzf_copy() {
 #
 # Requirements:
 #   - fzf must be installed.
-#   - Helper functions: shell::run_cmd_eval, shell::stdout, shell::get_os_type, shell::install_package, and shell::clip_value.
+#   - Helper functions: shell::run_cmd_eval, shell::stdout, shell::base::os, shell::install_package, and shell::clip_value.
 shell::fzf_move() {
 	# Check for the help flag (-h)
 	if [ "$1" = "-h" ]; then
@@ -148,7 +148,7 @@ shell::fzf_move() {
 #
 # Requirements:
 #   - fzf must be installed.
-#   - Helper functions: shell::run_cmd_eval, shell::stdout, shell::get_os_type, shell::install_package, and shell::clip_value.
+#   - Helper functions: shell::run_cmd_eval, shell::stdout, shell::base::os, shell::install_package, and shell::clip_value.
 shell::fzf_remove() {
 	# Check for the help flag (-h)
 	if [ "$1" = "-h" ]; then

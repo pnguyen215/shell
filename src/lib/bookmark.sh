@@ -164,7 +164,7 @@ shell::remove_bookmark_linux() {
 
 	# Determine the OS and construct the appropriate sed command.
 	local os
-	os=$(shell::get_os_type)
+	os=$(shell::base::os)
 	local sed_cmd
 	if [[ "$os" == "macos" ]]; then
 		# On macOS, sed -i requires an empty string argument.
@@ -635,7 +635,7 @@ shell::fzf_remove_bookmark() {
 		return 1
 	fi
 
-	local os_type=$(shell::get_os_type)
+	local os_type=$(shell::base::os)
 	# Check if the dry-run is enabled
 	# If dry-run is true, we prepare the command to remove the bookmark without executing it.
 	if [ "$dry_run" = "true" ]; then
@@ -671,7 +671,7 @@ shell::fzf_remove_bookmark() {
 #
 # Requirements:
 #   - The 'bookmarks_file' variable must be set.
-#   - Helper functions: shell::stdout, shell::logger::command_clip, shell::run_cmd_eval, shell::get_os_type.
+#   - Helper functions: shell::stdout, shell::logger::command_clip, shell::run_cmd_eval, shell::base::os.
 #
 # Example usage:
 #   shell::rename_bookmark old_name new_name
@@ -737,7 +737,7 @@ shell::rename_bookmark() {
 		return 1
 	fi
 
-	local os_type=$(shell::get_os_type)
+	local os_type=$(shell::base::os)
 	local sed_cmd=""
 	if [[ "$os_type" == "macos" ]]; then
 		sed_cmd="sed -i '' 's/^\(.*|\)$old_name$/\1$new_name/' \"$bookmarks_file\""
@@ -927,7 +927,7 @@ shell::rename_dir_base_bookmark() {
 	# Prepare the command to rename the directory
 	# This uses sed to update the bookmarks file with the new directory name.
 	# The sed command is constructed differently for macOS and Linux due to differences in the in-place edit flag.
-	local os_type=$(shell::get_os_type)
+	local os_type=$(shell::base::os)
 	local update_cmd
 	if [[ "$os_type" == "macos" ]]; then
 		update_cmd="sed -i '' 's|^$old_path|$new_path|' \"$bookmarks_file\""
