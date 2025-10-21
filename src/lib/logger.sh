@@ -628,12 +628,12 @@ shell::logger::exec_safe() {
 	bash -c "$command"
 }
 
-# shell::logger::exec_safe_check function
+# shell::logger::evaluate function
 # Logs and executes a command safely, then reports success or failure.
 #
 # Usage:
-#   shell::logger::exec_safe_check <command>
-#   shell::logger::exec_safe_check <command> <success_message> <failure_message>
+#   shell::logger::evaluate <command>
+#   shell::logger::evaluate <command> <success_message> <failure_message>
 #
 # Parameters:
 #   - <command>         : The command to execute
@@ -649,7 +649,7 @@ shell::logger::exec_safe() {
 #   This is a safer replacement for shell::logger::assert that avoids command
 #   injection vulnerabilities by using bash -c instead of eval.
 #   Compatible with Linux and macOS.
-shell::logger::exec_safe_check() {
+shell::logger::evaluate() {
 	local command="$1"
 	local success_msg="${2:-Success}"
 	local failure_msg="${3:-Aborted}"
