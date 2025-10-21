@@ -1909,7 +1909,7 @@ shell::async() {
 		return $RETURN_SUCCESS
 	else
 		# Execute the command asynchronously (in the background)
-		shell::logger::exec_check "$cmd &"
+		shell::logger::assert "$cmd &"
 		local pid=$!
 		shell::logger::info "Async process started with PID: $pid"
 		return $RETURN_SUCCESS
@@ -1952,7 +1952,7 @@ shell::execute_or_evict() {
 		shell::logger::copy "$command"
 		return $RETURN_SUCCESS
 	else
-		shell::logger::exec_check "$command"
+		shell::logger::assert "$command"
 		local exit_code=$?
 		return $exit_code
 	fi

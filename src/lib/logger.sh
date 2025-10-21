@@ -544,12 +544,12 @@ shell::logger::exec() {
 	eval "$command"
 }
 
-# shell::logger::exec_check function
+# shell::logger::assert function
 # Logs and executes a command, then reports success or failure.
 #
 # Usage:
-#   shell::logger::exec_check <command>
-#   shell::logger::exec_check <command> <success_message> <failure_message>
+#   shell::logger::assert <command>
+#   shell::logger::assert <command> <success_message> <failure_message>
 #
 # Parameters:
 #   - <command>         : The command to execute
@@ -563,7 +563,7 @@ shell::logger::exec() {
 #   Executes a command and automatically logs success (green) or failure (red)
 #   based on the exit code. Preserves the original command's exit code.
 #   Compatible with Linux and macOS.
-shell::logger::exec_check() {
+shell::logger::assert() {
 	local command="$1"
 	local success_msg="${2:-Success}"
 	local failure_msg="${3:-Aborted}"
@@ -646,7 +646,7 @@ shell::logger::exec_safe() {
 # Description:
 #   Executes a command safely and automatically logs success (green) or failure (red)
 #   based on the exit code. Preserves the original command's exit code.
-#   This is a safer replacement for shell::logger::exec_check that avoids command
+#   This is a safer replacement for shell::logger::assert that avoids command
 #   injection vulnerabilities by using bash -c instead of eval.
 #   Compatible with Linux and macOS.
 shell::logger::exec_safe_check() {

@@ -53,7 +53,7 @@ shell::go::env::get_private() {
 		return $RETURN_SUCCESS
 	fi
 
-	shell::logger::exec_check "$cmd"
+	shell::logger::assert "$cmd"
 }
 
 # shell::go::env::set_private function
@@ -137,7 +137,7 @@ shell::go::env::set_private() {
 		return $RETURN_SUCCESS
 	fi
 
-	shell::logger::exec_check "$cmd"
+	shell::logger::assert "$cmd"
 }
 
 # shell::go::env::remove_private_fzf function
@@ -229,7 +229,7 @@ shell::go::env::remove_private_fzf() {
 		return $RETURN_SUCCESS
 	fi
 
-	shell::logger::exec_check "$cmd"
+	shell::logger::assert "$cmd"
 }
 
 # shell::go::module::create function
@@ -331,17 +331,17 @@ shell::go::module::create() {
 	# If a target folder is specified, create it and change directory
 	if [ -n "$target_folder" ] && [ "$target_folder" != "$PWD" ]; then
 		shell::mkdir "$target_folder"
-		shell::logger::exec_check "cd \"$target_folder\""
+		shell::logger::assert "cd \"$target_folder\""
 	fi
 
 	shell::logger::debug "Initializing Go module: $module_name"
-	shell::logger::exec_check "$init_cmd"
+	shell::logger::assert "$init_cmd"
 	shell::logger::debug "Tidying Go dependencies"
-	shell::logger::exec_check "$tidy_cmd"
+	shell::logger::assert "$tidy_cmd"
 
 	# Change back to the original directory if a target folder was used
 	if [ -n "$target_folder" ]; then
-		shell::logger::exec_check "cd \"$original_dir\""
+		shell::logger::assert "cd \"$original_dir\""
 	fi
 	shell::logger::info "Go '$module_name' application initialized successfully in '$target_folder'"
 	return $RETURN_SUCCESS

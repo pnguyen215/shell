@@ -65,7 +65,7 @@ shell::telegram::send() {
 		shell::logger::copy "$cmd"
 	else
 		local cmd="curl -s -X POST \"https://api.telegram.org/bot${token}/sendMessage\" -d \"chat_id=${chatID}\" -d \"parse_mode=markdown\" -d \"text=${message}\" >/dev/null"
-		shell::logger::exec_check "$cmd"
+		shell::logger::assert "$cmd"
 	fi
 
 	return $RETURN_SUCCESS

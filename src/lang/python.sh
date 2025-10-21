@@ -78,7 +78,7 @@ shell::python::install() {
 		return $RETURN_NOT_IMPLEMENTED
 	fi
 
-	shell::logger::exec_check "$cmd"
+	shell::logger::assert "$cmd"
 }
 
 # shell::python::is_installed function
@@ -210,7 +210,7 @@ shell::python::uninstall() {
 		return $RETURN_SUCCESS
 	fi
 
-	shell::logger::exec_check "$cmd"
+	shell::logger::assert "$cmd"
 }
 
 # shell::python::pip::uninstall function
@@ -283,11 +283,11 @@ shell::python::pip::uninstall() {
 		return $RETURN_NOT_IMPLEMENTED
 	fi
 
-	shell::logger::exec_check "$freeze_cmd"
+	shell::logger::assert "$freeze_cmd"
 	if [ -s "$pkg_files" ]; then
-		shell::logger::exec_check "$uninstall_cmd"
+		shell::logger::assert "$uninstall_cmd"
 	fi
-	shell::logger::exec_check "$clean_up_cmd"
+	shell::logger::assert "$clean_up_cmd"
 }
 
 # shell::python::pip::uninstall_all function
@@ -468,7 +468,7 @@ shell::python::venv::create() {
 		fi
 		shell::logger::debug "Creating virtual environment at '$venv_path' with $python_version..."
 		local cmd="$python_version -m venv \"$venv_path\""
-		shell::logger::exec_check "$cmd"
+		shell::logger::assert "$cmd"
 		if [ -d "$venv_path" ]; then
 			shell::logger::info "Virtual environment created successfully at '$venv_path'."
 		else
@@ -479,7 +479,7 @@ shell::python::venv::create() {
 		if shell::is_command_available "$pip_cmd"; then
 			shell::logger::debug "Upgrading pip in the virtual environment at '$venv_path'..."
 			local upgrade_cmd="$pip_cmd install --upgrade pip wheel setuptools"
-			shell::logger::exec_check "$upgrade_cmd"
+			shell::logger::assert "$upgrade_cmd"
 			if [ $? -eq 0 ]; then
 				shell::logger::info "Pip upgraded successfully at '$venv_path'."
 			else
@@ -606,7 +606,7 @@ shell::python::venv::pkg::install() {
 		return $RETURN_SUCCESS
 	fi
 
-	shell::logger::exec_check "$install_cmd"
+	shell::logger::assert "$install_cmd"
 }
 
 # shell::python::venv::pkg::uninstall function
@@ -714,7 +714,7 @@ shell::python::venv::pkg::uninstall() {
 		return $RETURN_SUCCESS
 	fi
 
-	shell::logger::exec_check "$uninstall_cmd"
+	shell::logger::assert "$uninstall_cmd"
 }
 
 # shell::python::venv::pkg::uninstall_fzf function
@@ -940,10 +940,10 @@ shell::python::venv::activate_fzf() {
 	fi
 
 	if [ -n "$deactivate_cmd" ]; then
-		shell::logger::exec_check "$deactivate_cmd"
+		shell::logger::assert "$deactivate_cmd"
 	fi
 
-	shell::logger::exec_check "$activate_cmd"
+	shell::logger::assert "$activate_cmd"
 }
 
 # shell::python::venv::pkg::upgrade function
@@ -1040,7 +1040,7 @@ shell::python::venv::pkg::upgrade() {
 		return $RETURN_SUCCESS
 	fi
 
-	shell::logger::exec_check "$upgrade_cmd"
+	shell::logger::assert "$upgrade_cmd"
 }
 
 # shell::python::venv::pkg::upgrade_fzf function
@@ -1157,7 +1157,7 @@ shell::python::venv::pkg::upgrade_fzf() {
 	fi
 	
 	for cmd in "${upgrade_commands[@]}"; do
-		shell::logger::exec_check "$cmd"
+		shell::logger::assert "$cmd"
 	done
 }
 
@@ -1240,7 +1240,7 @@ shell::python::venv::pkg::freeze() {
 		return $RETURN_SUCCESS
 	fi
 
-	shell::logger::exec_check "$freeze_cmd"
+	shell::logger::assert "$freeze_cmd"
 }
 
 # shell::python::venv::pkg::install_requirements function
@@ -1328,7 +1328,7 @@ shell::python::venv::pkg::install_requirements() {
 		return $RETURN_SUCCESS
 	fi
 
-	shell::logger::exec_check "$install_cmd"
+	shell::logger::assert "$install_cmd"
 }
 
 # shell::python::gitignore::add function
