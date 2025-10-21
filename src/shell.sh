@@ -105,7 +105,7 @@ shell::upgrade() {
 
 	# Download and install the latest version of the shell
 	bash -c "$(curl -fsSL https://raw.githubusercontent.com/pnguyen215/shell/master/install.sh)"
-	
+
 	if [ -f "$HOME/.zshrc" ] && grep -q "source $shell_pkg/src/shell.sh" "$HOME/.zshrc"; then
 		shell::logger::assert "source ~/.zshrc" "shell upgraded" "shell upgrade aborted"
 	elif [ -f "$HOME/.bashrc" ] && grep -q "source $shell_pkg/src/shell.sh" "$HOME/.bashrc"; then

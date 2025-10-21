@@ -1942,7 +1942,7 @@ shell::execute_or_evict() {
 	fi
 
 	if [ "$#" -lt 2 ]; then
-		shell::logger::error "No command provided" 
+		shell::logger::error "No command provided"
 		return $RETURN_FAILURE
 	fi
 
