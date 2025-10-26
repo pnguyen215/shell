@@ -4607,12 +4607,12 @@ Example:
 "
 
 USAGE_SHELL_MULTISELECT_KEY="
-shell::multiselect_key function
+shell::options::multiselect_key function
 Prompts the user to select multiple options from a list of labels using fzf,
 and returns the corresponding keys.
 
 Usage:
-  shell::multiselect_key [-h] \"Label1:Key1\" \"Label2:Key2\" ...
+  shell::options::multiselect_key [-h] \"Label1:Key1\" \"Label2:Key2\" ...
 
 Parameters:
   - -h        	: Optional. Displays this help message.
@@ -4632,10 +4632,10 @@ Description:
 
 Example:
   options=(\"Development:dev\" \"Staging:staging\" \"Production:prod\")
-  environments=\$(shell::multiselect_key \"\${options[@]}\")
+  environments=\$(shell::options::multiselect_key \"\${options[@]}\")
   echo \"Selected environments: \$environments\"
 
   services=(\"Web Server:nginx\" \"Database:postgresql\" \"Cache:redis\")
-  selected=\$(shell::multiselect_key \"\${services[@]}\")
+  selected=\$(shell::options::multiselect_key \"\${services[@]}\")
   echo \"Selected services: \$selected\"
 "

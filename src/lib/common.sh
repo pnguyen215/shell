@@ -3291,12 +3291,12 @@ shell::multiselect() {
 	fi
 }
 
-# shell::multiselect_key function
+# shell::options::multiselect_key function
 # Prompts the user to select multiple options from a list of labels using fzf,
 # and returns the corresponding keys.
 #
 # Usage:
-#   shell::multiselect_key [-h] "Label1:Key1" "Label2:Key2" ...
+#   shell::options::multiselect_key [-h] "Label1:Key1" "Label2:Key2" ...
 #
 # Parameters:
 #   - -h        	: Optional. Displays this help message.
@@ -3316,21 +3316,23 @@ shell::multiselect() {
 #
 # Example:
 #   options=("Development:dev" "Staging:staging" "Production:prod")
-#   environments=$(shell::multiselect_key "${options[@]}")
+#   environments=$(shell::options::multiselect_key "${options[@]}")
 #   echo "Selected environments: $environments"
 #
 #   services=("Web Server:nginx" "Database:postgresql" "Cache:redis")
-#   selected=$(shell::multiselect_key "${services[@]}")
+#   selected=$(shell::options::multiselect_key "${services[@]}")
 #   echo "Selected services: $selected"
-shell::multiselect_key() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_MULTISELECT_KEY"
-		return 0
+shell::options::multiselect_key() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Select multiple options from a list of labels using fzf."
+		shell::logger::usage "shell::options::multiselect_key \"Label1:Key1\" \"Label2:Key2\" ..."
+		return $RETURN_SUCCESS
 	fi
 
 	if [ "$#" -eq 0 ]; then
-		shell::logger::error "No options provided to shell::multiselect_key."
-		return 0
+		shell::logger::error "No options provided to shell::options::multiselect_key."
+		return $RETURN_FAILURE
 	fi
 
 	shell::install_package fzf >/dev/null 2>&1
