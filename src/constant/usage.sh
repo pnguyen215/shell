@@ -4461,12 +4461,12 @@ Description:
 "
 
 USAGE_SHELL_ENTER="
-shell::enter function
+shell::out::ask function
 Prompts the user with a question and returns the entered value.
 The function will keep prompting until a non-empty value is entered.
 
 Usage:
-  shell::enter [-h] <question>
+  shell::out::ask [-h] <question>
 
 Parameters:
   - -h          : Optional. Displays this help message.
@@ -4484,9 +4484,9 @@ Description:
   but requires it to be non-empty.
 
 Example:
-  name=(shell::enter \"What is your name?\")
+  name=(shell::out::ask \"What is your name?\")
   echo \"Hello, $name\"
-  email=(shell::enter \"Enter your email address?\")
+  email=(shell::out::ask \"Enter your email address?\")
   echo \"Email: $email\"
 "
 

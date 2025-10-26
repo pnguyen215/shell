@@ -3246,14 +3246,14 @@ shell::fzf_edit_ini_viz() {
 	if [ "$selected_key" = "add_key" ]; then
 		local new_key_name
 		local new_key_value
-		new_key_name=$(shell::enter "Enter new key name to add in section [$section]:")
-		new_key_value=$(shell::enter "Enter value for new key '$new_key_name':")
+		new_key_name=$(shell::out::ask "Enter new key name to add in section [$section]:")
+		new_key_value=$(shell::out::ask "Enter value for new key '$new_key_name':")
 		shell::write_ini "$file" "$section" "$new_key_name" "$new_key_value"
 		return $?
 	fi
 	if [ "$selected_key" = "edit_key" ]; then
 		local new_value
-		new_value=$(shell::enter "Enter new value for '$key':")
+		new_value=$(shell::out::ask "Enter new value for '$key':")
 		shell::write_ini "$file" "$section" "$key" "$new_value"
 		return $?
 	fi
@@ -3269,7 +3269,7 @@ shell::fzf_edit_ini_viz() {
 	fi
 	if [ "$selected_key" = "add_section" ]; then
 		local new_section_name
-		new_section_name=$(shell::enter "Enter new section name to add:")
+		new_section_name=$(shell::out::ask "Enter new section name to add:")
 		shell::add_ini_section "$file" "$new_section_name"
 		return $?
 	fi
@@ -3288,7 +3288,7 @@ shell::fzf_edit_ini_viz() {
 		asked=$(shell::ask "Are you sure you want to rename the section [$section]?")
 		if [ "$asked" = "yes" ]; then
 			local new_section_name
-			new_section_name=$(shell::enter "Enter new name for section [$section]:")
+			new_section_name=$(shell::out::ask "Enter new name for section [$section]:")
 			shell::rename_ini_section "$file" "$section" "$new_section_name"
 			return $?
 		fi

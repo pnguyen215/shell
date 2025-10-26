@@ -3039,12 +3039,12 @@ shell::ask() {
 	# done
 }
 
-# shell::enter function
+# shell::out::ask function
 # Prompts the user with a question and returns the entered value.
 # The function will keep prompting until a non-empty value is entered.
 #
 # Usage:
-#   shell::enter <question>
+#   shell::out::ask <question>
 #
 # Parameters:
 #   - <question> : The question/prompt to display to the user.
@@ -3061,18 +3061,22 @@ shell::ask() {
 #   but requires it to be non-empty.
 #
 # Example:
-#   name=$(shell::enter "What is your name?")
+#   name=$(shell::out::ask "What is your name?")
 #   echo "Hello, $name"
-#   email=$(shell::enter "Enter your email address:")
+#   email=$(shell::out::ask "Enter your email address:")
 #   echo "Email: $email"
-shell::enter() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_ENTER"
-		return 0
+shell::out::ask() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Prompts the user with a question and returns the entered value."
+		shell::logger::usage "shell::out::ask [-h | --help] <question>"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::out::ask \"What is your name?\""
+		return $RETURN_SUCCESS
 	fi
 	if [ -z "$1" ]; then
 		shell::logger::error "Question cannot be empty."
-		return 0
+		return $RETURN_FAILURE
 	fi
 
 	local question="$1"
