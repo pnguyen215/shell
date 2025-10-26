@@ -1155,7 +1155,7 @@ shell::python::venv::pkg::upgrade_fzf() {
 		done
 		return $RETURN_SUCCESS
 	fi
-	
+
 	for cmd in "${upgrade_commands[@]}"; do
 		shell::logger::assert "$cmd"
 	done
