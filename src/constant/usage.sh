@@ -4576,11 +4576,11 @@ Example:
 "
 
 USAGE_SHELL_MULTISELECT="
-shell::multiselect function
+shell::options::multiselect function
 Prompts the user to select multiple options from a list of choices using fzf.
 
 Usage:
-  shell::multiselect [-h] <option1> <option2> ... <optionN>
+  shell::options::multiselect [-h] <option1> <option2> ... <optionN>
 
 Parameters:
   - -h        	: Optional. Displays this help message.
@@ -4599,10 +4599,10 @@ Description:
 
 Example:
   options=(\"Development\" \"Staging\" \"Production\")
-  selected=\$(shell::multiselect \"\${options[@]}\")
+  selected=\$(shell::options::multiselect \"\${options[@]}\")
   echo \"Selected environments: \$selected\"
 
-  features=\$(shell::multiselect \"Feature A\" \"Feature B\" \"Feature C\")
+  features=\$(shell::options::multiselect \"Feature A\" \"Feature B\" \"Feature C\")
   echo \"Selected features: \$features\"
 "
 

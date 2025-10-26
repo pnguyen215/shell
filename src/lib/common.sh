@@ -3230,11 +3230,11 @@ shell::select_key() {
 	echo "$selected_key"
 }
 
-# shell::multiselect function
+# shell::options::multiselect function
 # Prompts the user to select multiple options from a list of choices using fzf.
 #
 # Usage:
-#   shell::multiselect [-h] <option1> <option2> ... <optionN>
+#   shell::options::multiselect [-h] <option1> <option2> ... <optionN>
 #
 # Parameters:
 #   - -h        	: Optional. Displays this help message.
@@ -3253,20 +3253,24 @@ shell::select_key() {
 #
 # Example:
 #   options=("Development" "Staging" "Production")
-#   selected=$(shell::multiselect "${options[@]}")
+#   selected=$(shell::options::multiselect "${options[@]}")
 #   echo "Selected environments: $selected"
 #
-#   features=$(shell::multiselect "Feature A" "Feature B" "Feature C")
+#   features=$(shell::options::multiselect "Feature A" "Feature B" "Feature C")
 #   echo "Selected features: $features"
-shell::multiselect() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_MULTISELECT"
-		return 0
+shell::options::multiselect() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Select multiple options from a list of choices using fzf."
+		shell::logger::usage "shell::options::multiselect [-h | --help] <option1> <option2> ... <optionN>"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::options::multiselect \"Development\" \"Staging\" \"Production\""
+		return $RETURN_SUCCESS
 	fi
 
 	if [ "$#" -eq 0 ]; then
-		shell::logger::error "No options provided to shell::multiselect."
-		return 0
+		shell::logger::error "No options provided to shell::options::multiselect."
+		return $RETURN_FAILURE
 	fi
 
 	shell::install_package fzf >/dev/null 2>&1
