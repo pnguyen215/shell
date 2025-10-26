@@ -336,7 +336,7 @@ shell::python::pip::uninstall_all() {
 	fi
 
 	if [ "$dry_run" = "false" ]; then
-		local asked=$(shell::ask "Are you absolutely sure you want to proceed?")
+		local asked=$(shell::out::confirm "Are you absolutely sure you want to proceed?")
 		if [ "$asked" = "no" ]; then
 			shell::logger::warn "Uninstallation cancelled."
 			return $RETURN_NOT_IMPLEMENTED
@@ -457,7 +457,7 @@ shell::python::venv::create() {
 	if [ "$dry_run" = "false" ]; then
 		if [ -d "$venv_path" ]; then
 			shell::logger::warn "Virtual environment already exists at '$venv_path'. Skipping creation."
-			local ask=$(shell::ask "Do you want to overwrite the existing virtual environment?")
+			local ask=$(shell::out::confirm "Do you want to overwrite the existing virtual environment?")
 			if [ "$ask" = "yes" ]; then
 				shell::logger::debug "Overwriting existing virtual environment at '$venv_path'..."
 				shell::remove_files "$venv_path"
@@ -917,7 +917,7 @@ shell::python::venv::activate_fzf() {
 
 	# Handle deactivation if already in a virtual environment
 	if [ -n "$VIRTUAL_ENV" ]; then
-		local ask=$(shell::ask "Do you want to deactivate it first?")
+		local ask=$(shell::out::confirm "Do you want to deactivate it first?")
 		if [ "$ask" = "yes" ]; then
 			deactivate_cmd="deactivate"
 		fi

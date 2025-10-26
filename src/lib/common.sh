@@ -1497,7 +1497,7 @@ shell::download_dataset() {
 	local base="$filename"
 	if [ -e "$base" ]; then
 		local asked
-		asked=$(shell::ask "Do you want to overwrite the existing file? $base")
+		asked=$(shell::out::confirm "Do you want to overwrite the existing file? $base")
 		if [ "$asked" = "yes" ]; then
 			if [ "$dry_run" = "true" ]; then
 				shell::logger::command_clip "sudo rm \"$base\""
@@ -2968,11 +2968,11 @@ shell::encode_base64_file() {
 	fi
 }
 
-# shell::ask function
+# shell::out::confirm function
 # Interactively asks a yes/no question and returns 1 for yes, 0 for no.
 #
 # Usage:
-#   shell::ask <question>
+#   shell::out::confirm <question>
 #
 # Parameters:
 #   - <question> : The question to ask the user.
@@ -2985,21 +2985,26 @@ shell::encode_base64_file() {
 #   The function supports a help flag (-h) to display usage information.
 #
 # Example:
-#   shell::ask "Do you want to continue?"
-#   if shell::ask "Do you want to proceed?"; then
+#   shell::out::confirm "Do you want to continue?"
+#   if shell::out::confirm "Do you want to proceed?"; then
 #       echo "User answered yes."
 #   else
 #       echo "User answered no."
-shell::ask() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_ASK"
-		return 0
+shell::out::confirm() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Prompts the user with a yes/no question and returns 1 for yes, 0 for no."
+		shell::logger::usage "shell::out::confirm [-h | --help] <question>"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::out::confirm \"Are you sure you want to continue?\""
+		return $RETURN_SUCCESS
 	fi
 
 	if [ $# -ne 1 ]; then
-		echo "Usage: shell::ask <question>"
-		return 0
+		shell::logger::error "Question cannot be empty."
+		return $RETURN_FAILURE
 	fi
+	
 	shell::install_package fzf >/dev/null 2>&1
 	local question="$1"
 	local options=("yes" "no")
@@ -3057,7 +3062,7 @@ shell::ask() {
 #   It validates that the user enters a non-empty value and will continue
 #   prompting until a valid value is provided.
 #   The function supports a help flag (-h) to display usage information.
-#   Unlike shell::ask which expects yes/no answers, this function accepts any text input
+#   Unlike shell::out::confirm which expects yes/no answers, this function accepts any text input
 #   but requires it to be non-empty.
 #
 # Example:

@@ -558,7 +558,7 @@ shell::remove_workspace() {
 		return 0
 	fi
 	local asked
-	asked=$(shell::ask "Are you sure you want to delete workspace '$name'?")
+	asked=$(shell::out::confirm "Are you sure you want to delete workspace '$name'?")
 	if [ "$asked" = "yes" ]; then
 		shell::run_cmd_eval "sudo rm -rf \"$dir\""
 		shell::stdout "INFO: Workspace '$name' removed." 46

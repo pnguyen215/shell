@@ -438,7 +438,7 @@ shell::fzf_kill_ssh_tunnels() {
 
 	# Ask for confirmation before killing.
 	local asked
-	asked=$(shell::ask "Are you sure you want to kill the following PID(s)? $pids_to_kill")
+	asked=$(shell::out::confirm "Are you sure you want to kill the following PID(s)? $pids_to_kill")
 	if [ "$asked" = "yes" ]; then
 		shell::stdout "DEBUG: Killing PID(s): $pids_to_kill" 244
 		# Kill the selected processes.
@@ -545,7 +545,7 @@ shell::kill_ssh_tunnels() {
 		return 0
 	fi
 	local asked
-	asked=$(shell::ask "Do you want to kill these processes? ${pids_to_kill[*]}")
+	asked=$(shell::out::confirm "Do you want to kill these processes? ${pids_to_kill[*]}")
 	if [ "$asked" = "yes" ]; then
 		local kill_count=0
 		for pid in "${pids_to_kill[@]}"; do
