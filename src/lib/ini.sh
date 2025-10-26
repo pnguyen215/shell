@@ -3236,7 +3236,7 @@ shell::fzf_edit_ini_viz() {
 		"Remove Section:remove_section"
 		"Rename Section:rename_section"
 	)
-	selected_key=$(shell::select_key "${menu_options[@]}")
+	selected_key=$(shell::options::select_key "${menu_options[@]}")
 	shell::logger::debug "You have selected the '$selected_key'."
 	if [ -z "$selected_key" ]; then
 		shell::logger::error "No action selected."

@@ -3163,12 +3163,12 @@ shell::select() {
 	echo "$choice"
 }
 
-# shell::select_key function
+# shell::options::select_key function
 # Prompts the user to select an option from a list of labels using fzf,
 # and returns the corresponding key.
 #
 # Usage:
-#   shell::select_key [-h] "Label1:Key1" "Label2:Key2" ...
+#   shell::options::select_key [-h] "Label1:Key1" "Label2:Key2" ...
 #
 # Parameters:
 #   - -h        	: Optional. Displays this help message.
@@ -3181,17 +3181,21 @@ shell::select() {
 #
 # Example:
 #   options=("User-Friendly Name:machine_name_1" "Production Server:prod_srv")
-#   chosen_key=$(shell::select_key "${options[@]}")
+#   chosen_key=$(shell::options::select_key "${options[@]}")
 #   echo "The script will now use the key: $chosen_key"
-shell::select_key() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_SELECT_KEY"
-		return 0
+shell::options::select_key() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Select multiple options from a list of labels using fzf."
+		shell::logger::usage "shell::options::select_key [-h | --help] \"Label1:Key1\" \"Label2:Key2\" ..."
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::options::select_key \"User-Friendly Name:machine_name_1\" \"Production Server:prod_srv\""
+		return $RETURN_SUCCESS
 	fi
 
 	if [ "$#" -eq 0 ]; then
-		shell::logger::error "No options provided to shell::select_key."
-		return 0
+		shell::logger::error "No options provided to shell::options::select_key."
+		return $RETURN_FAILURE
 	fi
 
 	shell::install_package fzf >/dev/null 2>&1

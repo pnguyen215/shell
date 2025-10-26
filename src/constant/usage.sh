@@ -4547,12 +4547,12 @@ Example:
 "
 
 USAGE_SHELL_SELECT_KEY="
-shell::select_key function
+shell::options::select_key function
 Prompts the user to select an option from a list of labels using fzf,
 and returns the corresponding key.
 
 Usage:
-  shell::select_key [-h] \"Label1:Key1\" \"Label2:Key2\" ...
+  shell::options::select_key [-h] \"Label1:Key1\" \"Label2:Key2\" ...
 
 Parameters:
   - -h        	: Optional. Displays this help message.
@@ -4571,7 +4571,7 @@ Description:
 
 Example:
   options=(\"User-Friendly Name:machine_name_1\" \"Production Server:prod_srv\")
-  chosen_key=\$(shell::select_key \"\${options[@]}\")
+  chosen_key=\$(shell::options::select_key \"\${options[@]}\")
   echo \"The script will now use the key: \$chosen_key\"
 "
 
