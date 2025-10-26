@@ -3004,7 +3004,7 @@ shell::out::confirm() {
 		shell::logger::error "Question cannot be empty."
 		return $RETURN_FAILURE
 	fi
-	
+
 	shell::install_package fzf >/dev/null 2>&1
 	local question="$1"
 	local options=("yes" "no")
@@ -3027,21 +3027,53 @@ shell::out::confirm() {
 
 	# Echo the final, confirmed choice to stdout
 	echo "$choice"
-	# while true; do
-	# 	shell::stdout "[q] $question (y/n) " 208
-	# 	read -r reply
-	# 	case "$reply" in
-	# 	[Yy] | [Yy][Ee][Ss])
-	# 		return 1
-	# 		;;
-	# 	[Nn] | [Nn][Oo])
-	# 		return 0
-	# 		;;
-	# 	*)
-	# 		shell::logger::warn "Please answer y/yes or n/no."
-	# 		;;
-	# 	esac
-	# done
+}
+
+# shell::out::confirmz function
+# Interactively asks a yes/no question and returns 1 for yes, 0 for no.
+#
+# Usage:
+#   shell::out::confirmz <question>
+#
+# Parameters:
+#   - <question> : The question to ask the user.
+#
+# Description:
+#   This function prompts the user with a yes/no question and waits for input.
+#   It returns 1 if the user answers "yes" (or "y"), and 0 for "no" (or "n").
+#   The function loops until a valid response is received.
+#   If the user provides an invalid response, it will continue to prompt.
+#   The function supports a help flag (-h) to display usage information.
+#
+# Example:
+#   shell::out::confirmz "Do you want to continue?"
+#   if shell::out::confirmz "Do you want to proceed?"; then
+#       echo "User answered yes."
+#   else
+#       echo "User answered no."
+shell::out::confirmz() {
+	local question="$1"
+
+	if [ -z "$question" ]; then
+		shell::logger::error "Question cannot be empty."
+		return $RETURN_FAILURE
+	fi
+
+	while true; do
+		shell::stdout "[q] $question (y/n) " 208
+		read -r reply
+		case "$reply" in
+		[Yy] | [Yy][Ee][Ss])
+			return 1
+			;;
+		[Nn] | [Nn][Oo])
+			return 0
+			;;
+		*)
+			shell::logger::warn "Please answer y/yes or n/no."
+			;;
+		esac
+	done
 }
 
 # shell::out::ask function
