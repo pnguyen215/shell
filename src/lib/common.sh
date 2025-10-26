@@ -3098,11 +3098,11 @@ shell::enter() {
 	echo "$entered_value"
 }
 
-# shell::select function
+# shell::options::select function
 # Prompts the user to select an option from a list of choices.
 #
 # Usage:
-#   shell::select [-h] <option1> <option2> ... <optionN>
+#   shell::options::select [-h] <option1> <option2> ... <optionN>
 #
 # Parameters:
 #   - -h        	: Optional. Displays this help message.
@@ -3120,20 +3120,24 @@ shell::enter() {
 #
 # Example:
 #   options=("Apple" "Banana" "Cherry")
-#   fruit=$(shell::select "${options[@]}")
+#   fruit=$(shell::options::select "${options[@]}")
 #   echo "You selected: $fruit"
 #
-#   theme=$(shell::select "Dark" "Light" "System")
+#   theme=$(shell::options::select "Dark" "Light" "System")
 #   echo "Chosen theme: $theme"
-shell::select() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_SELECT"
-		return 0
+shell::options::select() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Select multiple options from a list of choices using fzf."
+		shell::logger::usage "shell::options::select [-h | --help] <option1> <option2> ... <optionN>"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::options::select \"Development\" \"Staging\" \"Production\""
+		return $RETURN_SUCCESS
 	fi
 
 	if [ "$#" -eq 0 ]; then
-		shell::logger::error "No options provided to shell::select."
-		return 0
+		shell::logger::error "No options provided to shell::options::select."
+		return $RETURN_FAILURE
 	fi
 
 	shell::install_package fzf >/dev/null 2>&1

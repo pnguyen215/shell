@@ -4517,11 +4517,11 @@ Example:
 "
 
 USAGE_SHELL_SELECT="
-shell::select function
+shell::options::select function
 Prompts the user to select an option from a list of choices.
 
 Usage:
-  shell::select [-h] <option1> <option2> ... <optionN>
+  shell::options::select [-h] <option1> <option2> ... <optionN>
 
 Parameters:
   - -h        	: Optional. Displays this help message.
@@ -4539,10 +4539,10 @@ Description:
 
 Example:
   options=(\"Apple\" \"Banana\" \"Cherry\")
-  fruit=&(shell::select \"&{options[@]}\")
+  fruit=&(shell::options::select \"&{options[@]}\")
   echo \"You selected: $fruit\"
 
-  theme=&(shell::select \"Dark\" \"Light\" \"System\")
+  theme=&(shell::options::select \"Dark\" \"Light\" \"System\")
   echo \"Chosen theme: $theme\"
 "
 

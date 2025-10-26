@@ -139,7 +139,7 @@ shell::logger::level() {
 		"ERROR"
 		"FATAL"
 	)
-	selected_value=$(shell::select "${menu_options[@]}")
+	selected_value=$(shell::options::select "${menu_options[@]}")
 	SHELL_LOGGER_LEVEL="${selected_value:-DEBUG}"
 }
 
