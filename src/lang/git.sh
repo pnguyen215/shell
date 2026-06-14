@@ -220,8 +220,19 @@ shell::git::branch::checkout() {
 		return $RETURN_SUCCESS
 	fi
 
-	shell::logger::assert "$cmd_fetch" "Branch '${branch}' fetched from origin" "Branch fetch from origin aborted" || return $?
-	shell::logger::assert "$cmd_checkout" "Checked out branch '${branch}'" "Branch checkout aborted" || return $?
+	# Detect if the target branch is already checked out.
+	# git fetch origin <branch>:<branch> is rejected by Git when the branch is
+	# currently checked out — use plain git fetch origin in that case.
+	local current_branch
+	current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+
+	if [ "$current_branch" = "$branch" ]; then
+		shell::logger::info "Already on branch '${branch}' — using git fetch origin instead of refspec fetch"
+		shell::logger::assert "git fetch origin" "Fetched origin" "Fetch origin aborted" || return $?
+	else
+		shell::logger::assert "$cmd_fetch" "Branch '${branch}' fetched from origin" "Branch fetch from origin aborted" || return $?
+		shell::logger::assert "$cmd_checkout" "Checked out branch '${branch}'" "Branch checkout aborted" || return $?
+	fi
 	shell::logger::assert "$cmd_fetch_all" "All remotes and tags fetched" "Fetch all aborted" || return $?
 
 	# Detect divergence between local HEAD and remote tracking branch.
