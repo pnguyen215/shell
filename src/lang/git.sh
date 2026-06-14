@@ -352,6 +352,48 @@ shell::git::branch::checkout() {
 	return $RETURN_SUCCESS
 }
 
+# shell::git::branch::checkout::current function
+# Checks out the currently active branch by name, effectively re-checking it out.
+# This is useful for triggering branch-specific hooks or refreshing the working tree
+# without switching to a different branch. If not inside a Git repository, an error
+# is logged and the function returns with failure.
+# 
+# Usage:
+#   shell::git::branch::checkout::current [-n] [-h]
+# 
+# Parameters:
+#   - -n, --dry-run : Optional. Print the command via shell::logger::command_clip instead of executing it.
+#   - -h, --help    : Show this help message.
+# 
+# Returns:
+#   $RETURN_SUCCESS (0) on success.
+#   $RETURN_FAILURE (non-zero) if not inside a Git repository or if the checkout command fails.
+# 
+# Example:
+#   shell::git::branch::checkout::current
+#   shell::git::branch::checkout::current -n
+shell::git::branch::checkout::current() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Re-checkout the currently active Git branch"
+		shell::logger::usage "shell::git::branch::checkout::current [-n] [-h]"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
+		shell::logger::example "shell::git::branch::checkout::current"
+		shell::logger::example "shell::git::branch::checkout::current -n"
+		return $RETURN_SUCCESS
+	fi
+	local current_branch
+	current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+	if [ -z "$current_branch" ]; then
+		shell::logger::error "Not inside a Git repository"
+		return $RETURN_FAILURE
+	fi
+	echo "$current_branch"
+	shell::logger::info "Current branch: ${current_branch}"
+	shell::git::branch::checkout "$current_branch"
+}
+
 # shell::git::branch::create function
 # Creates one or more local Git branches, pushes each to origin with upstream
 # tracking, then restores the original branch.
