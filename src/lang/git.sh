@@ -1462,10 +1462,133 @@ shell::git::commit::create() {
 	local telegram_message="username: ${git_username} | repository: ${repository_name} (${server_remote_url}) | branch: ${current_branch} | hash: ${commit_hash} | message: ${commit_message} | timestamp: ${timestamp}"
 	shell::git::telegram::send_activity "${telegram_message}"
 
-	# Step 8 — push current branch to origin.
-	local cmd_push="git push origin \"${current_branch}\""
-	shell::logger::assert "$cmd_push" \
-		"Branch '${current_branch}' pushed to origin" "Push aborted" || return $?
+	# Step 8 — push current branch to origin via interactive push command picker.
+	shell::git::branch::push "${current_branch}"
+
+	return $RETURN_SUCCESS
+}
+
+# shell::git::branch::push function
+# Presents an interactive fzf picker of git push strategies for a given branch,
+# confirms with the user, then executes the selected command.
+#
+# Usage:
+#   shell::git::branch::push [-n] [-h] <branch>
+#
+# Parameters:
+#   - -n, --dry-run : Optional. After selection and confirmation, print the
+#                     selected command via shell::logger::command_clip instead
+#                     of executing it.
+#   - -h, --help    : Show this help message.
+#   - <branch>      : Branch name to substitute into push commands.
+#
+# Description:
+#   Builds a set of labelled push strategies (label:command pairs), presents
+#   them via shell::options::select_key (fzf), prompts for confirmation, then
+#   runs the selected git command via shell::logger::assert.
+#   Available strategies:
+#     - Set upstream tracking        git push -u origin <branch>
+#     - Push all branches            git push --all origin
+#     - Push all tags                git push --tags origin
+#     - Force-push (unsafe)          git push --force origin <branch>
+#     - Force-push with lease (safe) git push --force-with-lease origin <branch>
+#     - Delete branch from remote    git push --delete origin <branch>
+#     - Mirror local repo            git push --mirror origin
+#     - Simulate push (dry-run)      git push --dry-run origin <branch>
+#     - Push with CI skip            git push -o ci.skip origin <branch>
+#     - Prune deleted remote refs    git push --prune origin
+#     - Push with GPG signing        git push --signed origin <branch>
+#     - Simple push                  git push
+#
+# Returns:
+#   $RETURN_SUCCESS (0) on success or user-initiated abort.
+#   $RETURN_INVALID (1) when <branch> is omitted.
+#   $RETURN_FAILURE (non-zero) when not inside a Git repository.
+#   Non-zero exit code of the failing git command otherwise.
+#
+# Example:
+#   shell::git::branch::push "main"
+#   shell::git::branch::push -n "feature/my-branch"
+shell::git::branch::push() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Interactively select and execute a git push command for a branch"
+		shell::logger::usage "shell::git::branch::push [-n] [-h] <branch>"
+		shell::logger::item "branch" "Branch name to use in push commands"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the selected command instead of executing it"
+		shell::logger::example "shell::git::branch::push \"main\""
+		shell::logger::example "shell::git::branch::push -n \"feature/my-branch\""
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	local branch="$1"
+
+	if [ -z "$branch" ]; then
+		shell::logger::error "Branch name is required"
+		return $RETURN_INVALID
+	fi
+
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return $RETURN_FAILURE
+	fi
+
+	# ---------------------------------------------------------------------------
+	# Push command options — Label:command pairs for shell::options::select_key.
+	# Labels are human-readable (no colons); keys are the git commands to run.
+	# ---------------------------------------------------------------------------
+	local -a push_options=(
+		"Push and set upstream tracking:git push -u origin \"${branch}\""
+		"Push all branches to remote:git push --all origin"
+		"Push all tags to remote:git push --tags origin"
+		"Force-push the branch (unsafe):git push --force origin \"${branch}\""
+		"Force-push with lease (safe):git push --force-with-lease origin \"${branch}\""
+		"Delete branch from remote:git push --delete origin \"${branch}\""
+		"Mirror local repo to remote:git push --mirror origin"
+		"Simulate push without changes:git push --dry-run origin \"${branch}\""
+		"Push with CI skip option:git push -o ci.skip origin \"${branch}\""
+		"Prune deleted remote branches:git push --prune origin"
+		"Push with GPG signing:git push --signed origin \"${branch}\""
+		"Simple push to remote:git push"
+	)
+
+	local selected_cmd
+	selected_cmd=$(shell::options::select_key "${push_options[@]}")
+
+	if [ -z "$selected_cmd" ]; then
+		shell::logger::warn "No push command selected — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	shell::logger::info "Selected command: ${selected_cmd}"
+	shell::logger::info "Execute this push command? (y/n)"
+
+	local confirm
+	read -r confirm
+	while [[ ! "$confirm" =~ ^(y|yes|Yes|YES|n|no|No|NO)$ ]]; do
+		shell::logger::warn "Invalid input — please enter y or n"
+		read -r confirm
+	done
+
+	if [[ ! "$confirm" =~ ^(y|yes|Yes|YES)$ ]]; then
+		shell::logger::info "Push aborted"
+		return $RETURN_SUCCESS
+	fi
+
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::command_clip "$selected_cmd"
+		return $RETURN_SUCCESS
+	fi
+
+	shell::logger::assert "$selected_cmd" \
+		"Push executed successfully" "Push failed" || return $?
 
 	return $RETURN_SUCCESS
 }
