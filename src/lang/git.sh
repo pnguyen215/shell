@@ -496,3 +496,78 @@ shell::git::branch::create() {
 
 	return $RETURN_SUCCESS
 }
+
+# shell::git::repos::fetch function
+# Clones a remote Git repository as a shallow clone (depth 1) into a specified
+# local folder name.
+#
+# Usage:
+#   shell::git::repos::fetch [-n] [-h] <repo_uri> <folder_name>
+#
+# Parameters:
+#   - -n, --dry-run    : Optional. Print the command via shell::logger::command_clip
+#                        instead of executing it.
+#   - -h, --help       : Show this help message.
+#   - <repo_uri>       : The URI of the remote Git repository to clone.
+#   - <folder_name>    : The local directory name to clone into.
+#
+# Description:
+#   Runs:
+#     git clone --depth 1 <repo_uri> <folder_name>
+#   The --depth 1 flag creates a shallow clone with only the latest commit,
+#   minimising download size and clone time. The command is logged via
+#   shell::logger::assert.
+#
+# Returns:
+#   $RETURN_SUCCESS (0) on full success.
+#   $RETURN_INVALID (1) when either argument is missing.
+#   Non-zero exit code of the failing git command otherwise.
+#
+# Example:
+#   shell::git::repos::fetch "https://github.com/org/repo.git" "my-repo"
+#   shell::git::repos::fetch -n "https://github.com/org/repo.git" "my-repo"
+shell::git::repos::fetch() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Shallow-clone a remote Git repository into a local folder"
+		shell::logger::usage "shell::git::repos::fetch [-n] [-h] <repo_uri> <folder_name>"
+		shell::logger::item "repo_uri" "URI of the remote Git repository"
+		shell::logger::item "folder_name" "Local directory name to clone into"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
+		shell::logger::example "shell::git::repos::fetch \"https://github.com/org/repo.git\" \"my-repo\""
+		shell::logger::example "shell::git::repos::fetch -n \"https://github.com/org/repo.git\" \"my-repo\""
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	local repo_uri="$1"
+	local folder_name="$2"
+
+	if [ -z "$repo_uri" ]; then
+		shell::logger::error "Repository URI is required"
+		return $RETURN_INVALID
+	fi
+
+	if [ -z "$folder_name" ]; then
+		shell::logger::error "Folder name is required"
+		return $RETURN_INVALID
+	fi
+
+	local cmd_clone="git clone --depth 1 \"${repo_uri}\" \"${folder_name}\""
+
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::command_clip "$cmd_clone"
+		return $RETURN_SUCCESS
+	fi
+
+	shell::logger::assert "$cmd_clone" \
+		"Repository cloned into '${folder_name}'" "Repository clone aborted" || return $?
+
+	return $RETURN_SUCCESS
+}

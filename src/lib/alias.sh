@@ -30,6 +30,8 @@ alias sgfbc="shell::git::branch::checkout::current"
 alias sgfbc-n="shell::git::branch::checkout::current -n"
 alias sgcb="shell::git::branch::create"
 alias sgcb-n="shell::git::branch::create -n"
+alias sgreposf="shell::git::repos::fetch"
+alias sgreposf-n="shell::git::repos::fetch -n"
 
 # Shell kernel aliases
 alias c="clear"
