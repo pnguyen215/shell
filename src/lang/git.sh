@@ -146,8 +146,9 @@ shell::git::release::version::get() {
 }
 
 # shell::git::branch::checkout function
-# Fetches a specific remote branch locally, checks it out, syncs all remotes and
-# tags, then auto-detects divergence and prompts for a sync strategy.
+# Fetches a specific remote branch, checks it out, and syncs local state to the
+# remote tip. Detects uncommitted changes and unpushed local commits, then shows
+# an fzf strategy picker only when the local state requires a decision.
 #
 # Usage:
 #   shell::git::branch::checkout [-n] [-h] <branch>
@@ -159,19 +160,18 @@ shell::git::release::version::get() {
 #   - <branch>      : Name of the remote branch to fetch and check out.
 #
 # Description:
-#   Runs the following sequence against the current Git repository:
-#     1. git fetch origin <branch>:<branch>  — create/update the local tracking branch
-#     2. git checkout <branch>               — switch to the branch
-#     3. git fetch --all --tags              — sync all remotes and tags
-#     4. Detects divergence (local commits ahead vs remote commits ahead), then
-#        prompts via shell::options::select_key to choose one of two strategies:
-#          - git pull --rebase              — replay local commits onto the remote tip
-#                                             (recommended when local commits exist)
-#          - git reset --hard origin/<branch> — discard all local commits, match remote
-#                                             exactly (recommended when local is clean)
-#        The recommended option is placed first in the fzf picker (default selection).
-#   Each step is logged via shell::logger::assert. The function stops and
-#   propagates the exit code on the first failure.
+#   Step 1 — Switch to the target branch (skipped when already on it):
+#     git fetch origin <branch>:<branch>   (blocked when already checked out — detected)
+#     git checkout <branch>
+#   Step 2 — Targeted fetch (guarantees refs/remotes/origin/<branch> exists):
+#     git fetch origin <branch>
+#   Step 3 — Sync all remotes and tags:
+#     git fetch --all --tags
+#   Step 4 — Detect local state and act:
+#     clean (no uncommitted, no local commits) → auto git reset --hard origin/<branch>
+#     local commits only                       → fzf: rebase (recommended) | reset --hard
+#     uncommitted changes only                 → fzf: stash+reset+pop (recommended) | reset --hard
+#     both uncommitted + local commits         → fzf: stash+rebase+pop (recommended) | reset --hard
 #
 # Returns:
 #   $RETURN_SUCCESS (0) on full success.
@@ -184,7 +184,7 @@ shell::git::release::version::get() {
 shell::git::branch::checkout() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
-		shell::logger::info "Fetch a remote branch, check it out, then choose a sync strategy"
+		shell::logger::info "Fetch a remote branch, check it out, then sync to remote tip"
 		shell::logger::usage "shell::git::branch::checkout [-n] [-h] <branch>"
 		shell::logger::item "branch" "Name of the remote branch to fetch and check out"
 		shell::logger::option "-h, --help" "Show this help message"
@@ -207,65 +207,133 @@ shell::git::branch::checkout() {
 		return $RETURN_INVALID
 	fi
 
-	local cmd_fetch="git fetch origin \"${branch}\":\"${branch}\""
+	# ---------------------------------------------------------------------------
+	# Command variables — all git commands declared upfront for easy review.
+	# ---------------------------------------------------------------------------
+	local remote_ref="origin/${branch}"
+
+	local cmd_fetch_refspec="git fetch origin \"${branch}\":\"${branch}\""
 	local cmd_checkout="git checkout \"${branch}\""
+	local cmd_fetch_targeted="git fetch origin \"${branch}\""
 	local cmd_fetch_all="git fetch --all --tags"
+	local cmd_reset="git reset --hard \"${remote_ref}\""
+	local cmd_rebase="git rebase \"${remote_ref}\""
+	local cmd_stash="git stash"
+	local cmd_stash_pop="git stash pop"
 
 	if [ "$dry_run" = "true" ]; then
-		shell::logger::command_clip "$cmd_fetch"
+		shell::logger::command_clip "$cmd_fetch_refspec"
 		shell::logger::command_clip "$cmd_checkout"
+		shell::logger::command_clip "$cmd_fetch_targeted"
 		shell::logger::command_clip "$cmd_fetch_all"
-		shell::logger::command_clip "git pull --rebase"
-		shell::logger::command_clip "git reset --hard \"origin/${branch}\""
+		shell::logger::command_clip "$cmd_reset"
+		shell::logger::command_clip "$cmd_stash && $cmd_reset && $cmd_stash_pop"
+		shell::logger::command_clip "$cmd_rebase"
+		shell::logger::command_clip "$cmd_stash && $cmd_rebase && $cmd_stash_pop"
 		return $RETURN_SUCCESS
 	fi
 
-	# Detect if the target branch is already checked out.
-	# git fetch origin <branch>:<branch> is rejected by Git when the branch is
-	# currently checked out — use plain git fetch origin in that case.
+	# Step 1 — switch to target branch.
+	# git fetch origin <b>:<b> is refused when <b> is already checked out.
 	local current_branch
 	current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
 
 	if [ "$current_branch" = "$branch" ]; then
-		shell::logger::info "Already on branch '${branch}' — using git fetch origin instead of refspec fetch"
-		shell::logger::assert "git fetch origin" "Fetched origin" "Fetch origin aborted" || return $?
+		shell::logger::info "Already on branch '${branch}' — skipping refspec fetch and checkout"
 	else
-		shell::logger::assert "$cmd_fetch" "Branch '${branch}' fetched from origin" "Branch fetch from origin aborted" || return $?
-		shell::logger::assert "$cmd_checkout" "Checked out branch '${branch}'" "Branch checkout aborted" || return $?
+		shell::logger::assert "$cmd_fetch_refspec" \
+			"Branch '${branch}' fetched from origin" "Branch fetch from origin aborted" || return $?
+		shell::logger::assert "$cmd_checkout" \
+			"Checked out branch '${branch}'" "Branch checkout aborted" || return $?
 	fi
-	shell::logger::assert "$cmd_fetch_all" "All remotes and tags fetched" "Fetch all aborted" || return $?
 
-	# Detect divergence between local HEAD and remote tracking branch.
+	# Step 2 — targeted fetch: guarantees refs/remotes/origin/<branch> is created/updated.
+	# A refspec fetch (origin <b>:<b>) only moves refs/heads/<b>; it never touches
+	# refs/remotes/origin/<b>, so git reset --hard origin/<b> would fail without this step.
+	shell::logger::assert "$cmd_fetch_targeted" \
+		"Remote tracking ref for '${branch}' updated" "Targeted fetch aborted" || return $?
+
+	# Step 3 — sync all remotes and tags.
+	shell::logger::assert "$cmd_fetch_all" \
+		"All remotes and tags fetched" "Fetch all aborted" || return $?
+
+	# Step 4 — detect local state and choose sync strategy.
+	local has_uncommitted="false"
+	if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
+		has_uncommitted="true"
+	fi
+
 	local local_ahead=0
 	local remote_ahead=0
-	local_ahead=$(git rev-list "origin/${branch}..HEAD" --count 2>/dev/null || echo "0")
-	remote_ahead=$(git rev-list "HEAD..origin/${branch}" --count 2>/dev/null || echo "0")
+	local_ahead=$(git rev-list "${remote_ref}..HEAD" --count 2>/dev/null || echo "0")
+	remote_ahead=$(git rev-list "HEAD..${remote_ref}" --count 2>/dev/null || echo "0")
 
-	shell::logger::info "Divergence — local: ${local_ahead} commit(s) ahead, remote: ${remote_ahead} commit(s) ahead"
+	shell::logger::info "Local state — uncommitted: ${has_uncommitted}, local commits ahead: ${local_ahead}, remote commits ahead: ${remote_ahead}"
 
-	# Build fzf option labels — no colons allowed inside labels (used as delimiter).
-	local label_rebase="git pull --rebase  (preserve ${local_ahead} local commit(s), replay onto remote)"
-	local label_reset="git reset --hard origin/${branch}  (discard local commits, match remote exactly)"
+	# Case 1: clean — auto-reset, no prompt needed.
+	if [ "$has_uncommitted" = "false" ] && [ "${local_ahead}" -eq 0 ]; then
+		shell::logger::info "Local branch is clean — auto-resetting to '${remote_ref}'"
+		shell::logger::assert "$cmd_reset" \
+			"Branch reset to ${remote_ref}" "Hard reset aborted" || return $?
+		return $RETURN_SUCCESS
+	fi
 
-	# Place the recommended strategy first so fzf pre-selects it.
+	# ---------------------------------------------------------------------------
+	# fzf option labels — no colons inside labels (used as delimiter by select_key).
+	# ---------------------------------------------------------------------------
+	local opt_rebase="git rebase ${remote_ref}  (preserve ${local_ahead} local commit(s), replay onto remote) (recommended):rebase"
+	local opt_reset="git reset --hard ${remote_ref}  (discard local commits and changes, match remote exactly):reset"
+	local opt_stash_reset="stash + reset + stash pop  (save uncommitted changes, sync to remote, then restore) (recommended):stash_reset"
+	local opt_stash_rebase="stash + rebase + stash pop  (save changes, replay ${local_ahead} local commit(s) onto remote, restore) (recommended):stash_rebase"
+
+	# Cases -4: local changes detected — prompt via fzf.
 	local strategy
-	if [ "${local_ahead}" -gt 0 ]; then
-		shell::logger::info "Local commits detected — rebase recommended"
+
+	if [ "$has_uncommitted" = "false" ] && [ "${local_ahead}" -gt 0 ]; then
+		# Case 2: local commits only, working tree clean.
 		strategy=$(shell::options::select_key \
-			"${label_rebase} (recommended):rebase" \
-			"${label_reset}:reset")
+			"$opt_rebase" \
+			"$opt_reset")
+
+	elif [ "$has_uncommitted" = "true" ] && [ "${local_ahead}" -eq 0 ]; then
+		# Case 3: uncommitted changes only, no local commits.
+		strategy=$(shell::options::select_key \
+			"$opt_stash_reset" \
+			"$opt_reset")
+
 	else
-		shell::logger::info "No local commits ahead — hard reset recommended"
+		# Case 4: both uncommitted changes and local commits.
 		strategy=$(shell::options::select_key \
-			"${label_reset} (recommended):reset" \
-			"${label_rebase}:rebase")
+			"$opt_stash_rebase" \
+			"$opt_reset")
 	fi
 
-	if [ "$strategy" = "rebase" ]; then
-		shell::logger::assert "git pull --rebase" "Branch synced via rebase" "Rebase pull aborted" || return $?
-	elif [ "$strategy" = "reset" ]; then
-		shell::logger::assert "git reset --hard \"origin/${branch}\"" "Branch reset to origin/${branch}" "Hard reset aborted" || return $?
-	fi
+	case "$strategy" in
+		rebase)
+			shell::logger::assert "$cmd_rebase" \
+				"Branch rebased onto ${remote_ref}" "Rebase aborted" || return $?
+			;;
+		reset)
+			shell::logger::assert "$cmd_reset" \
+				"Branch reset to ${remote_ref}" "Hard reset aborted" || return $?
+			;;
+		stash_reset)
+			shell::logger::assert "$cmd_stash" \
+				"Uncommitted changes stashed" "Stash failed" || return $?
+			shell::logger::assert "$cmd_reset" \
+				"Branch reset to ${remote_ref}" "Hard reset aborted" || return $?
+			shell::logger::assert "$cmd_stash_pop" \
+				"Stashed changes restored" "Stash pop failed — run 'git stash pop' manually"
+			;;
+		stash_rebase)
+			shell::logger::assert "$cmd_stash" \
+				"Uncommitted changes stashed" "Stash failed" || return $?
+			shell::logger::assert "$cmd_rebase" \
+				"Branch rebased onto ${remote_ref}" "Rebase aborted" || return $?
+			shell::logger::assert "$cmd_stash_pop" \
+				"Stashed changes restored" "Stash pop failed — run 'git stash pop' manually"
+			;;
+	esac
 
 	return $RETURN_SUCCESS
 }
