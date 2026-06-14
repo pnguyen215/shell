@@ -144,3 +144,78 @@ shell::git::release::version::get() {
 	fi
 	return $RETURN_SUCCESS
 }
+
+# shell::git::branch::checkout function
+# Fetches a specific remote branch locally, checks it out, syncs all remotes and
+# tags, then force-pulls the latest commits.
+#
+# Usage:
+#   shell::git::branch::checkout [-n] [-h] <branch>
+#
+# Parameters:
+#   - -n, --dry-run : Optional. Print each command via shell::logger::command_clip
+#                     instead of executing it.
+#   - -h, --help    : Show this help message.
+#   - <branch>      : Name of the remote branch to fetch and check out.
+#
+# Description:
+#   Runs the following sequence against the current Git repository:
+#     1. git fetch origin <branch>:<branch>  — create/update the local tracking branch
+#     2. git checkout <branch>               — switch to the branch
+#     3. git fetch --all --tags              — sync all remotes and tags
+#     4. git pull -f                         — force-pull latest commits
+#   Each step is logged via shell::logger::assert. The function stops and
+#   propagates the exit code on the first failure.
+#
+# Returns:
+#   $RETURN_SUCCESS (0) on full success.
+#   $RETURN_INVALID (1) when <branch> is omitted.
+#   Non-zero exit code of the first failing git command otherwise.
+#
+# Example:
+#   shell::git::branch::checkout "feature/my-branch"
+#   shell::git::branch::checkout -n "feature/my-branch"
+shell::git::branch::checkout() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Fetch a remote branch, check it out, and pull the latest changes"
+		shell::logger::usage "shell::git::branch::checkout [-n] [-h] <branch>"
+		shell::logger::item "branch" "Name of the remote branch to fetch and check out"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the commands instead of executing them"
+		shell::logger::example "shell::git::branch::checkout \"feature/my-branch\""
+		shell::logger::example "shell::git::branch::checkout -n \"feature/my-branch\""
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	local branch="$1"
+
+	if [ -z "$branch" ]; then
+		shell::logger::error "Branch name is required"
+		return $RETURN_INVALID
+	fi
+
+	local cmd_fetch="git fetch origin \"${branch}\":\"${branch}\""
+	local cmd_checkout="git checkout \"${branch}\""
+	local cmd_fetch_all="git fetch --all --tags"
+	local cmd_pull="git pull -f"
+
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::command_clip "$cmd_fetch"
+		shell::logger::command_clip "$cmd_checkout"
+		shell::logger::command_clip "$cmd_fetch_all"
+		shell::logger::command_clip "$cmd_pull"
+	else
+		shell::logger::assert "$cmd_fetch" "Branch '${branch}' fetched from origin" "Branch fetch from origin aborted" || return $?
+		shell::logger::assert "$cmd_checkout" "Checked out branch '${branch}'" "Branch checkout aborted" || return $?
+		shell::logger::assert "$cmd_fetch_all" "All remotes and tags fetched" "Fetch all aborted" || return $?
+		shell::logger::assert "$cmd_pull" "Branch pulled successfully" "Branch pull aborted" || return $?
+	fi
+	return $RETURN_SUCCESS
+}

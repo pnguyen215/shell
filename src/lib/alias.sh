@@ -1,7 +1,7 @@
 #!/bin/bash
 # alias.sh
 
-# Shell aliases
+# Shell basic aliases
 alias sve="shell::version"
 alias sup="shell::upgrade"
 alias sac="shell::add_key_conf"
@@ -23,5 +23,9 @@ alias segvi='shell::eval_gemini_vi_en'               # convert vietnamese to eng
 alias ser="shell::editor"                            # edit file with default editor
 alias ser-n="shell::editor -n"                       # edit file with default editor in dry mode
 
-# Kernel alias
+# Shell git aliases
+alias sgfb="shell::git::branch::checkout"
+alias sgfb-n="shell::git::branch::checkout -n"
+
+# Shell kernel aliases
 alias c="clear"

@@ -52,6 +52,7 @@
     "setuptools",
     "sgemcheck",
     "sgemviconv",
+    "sgfb",
     "sgrammarai",
     "shell::opent",
     "shfmt",
