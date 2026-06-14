@@ -972,3 +972,126 @@ shell::git::branch::remove() {
 
 	return $RETURN_SUCCESS
 }
+
+# shell::git::tag::create function
+# Checks out a specified branch, creates an annotated Git tag on the latest
+# commit, pushes the tag to origin, restores the original branch, and sends a
+# Telegram activity notification via shell::git::telegram::send_activity.
+#
+# Usage:
+#   shell::git::tag::create [-n] [-h] <branch> <tag>
+#
+# Parameters:
+#   - -n, --dry-run : Optional. Print each command via shell::logger::command_clip
+#                     instead of executing it.
+#   - -h, --help    : Show this help message.
+#   - <branch>      : Branch name to check out before tagging.
+#   - <tag>         : Annotated tag name/version to create (e.g. v1.2.3).
+#
+# Description:
+#   1. git checkout <branch>                — switch to target branch
+#   2. Collect commit metadata              — short hash, author, date
+#   3. git tag -a <tag> -m <message>        — create annotated tag with metadata
+#   4. git push origin <tag>                — push tag to origin
+#   5. git checkout <original_branch>       — restore original branch
+#   6. shell::git::telegram::send_activity  — send Telegram notification
+#
+# Returns:
+#   $RETURN_SUCCESS (0) on full success.
+#   $RETURN_INVALID (1) when <branch> or <tag> is omitted.
+#   $RETURN_FAILURE (non-zero) when not inside a Git repository.
+#   Non-zero exit code of the first failing git command otherwise.
+#
+# Example:
+#   shell::git::tag::create "main" "v1.0.0"
+#   shell::git::tag::create -n "release/1.0" "v1.0.0"
+shell::git::tag::create() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Checkout a branch, create and push an annotated tag, restore original branch, then notify via Telegram"
+		shell::logger::usage "shell::git::tag::create [-n] [-h] <branch> <tag>"
+		shell::logger::item "branch" "Branch name to check out before tagging"
+		shell::logger::item "tag" "Annotated tag name/version to create (e.g. v1.2.3)"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the commands instead of executing them"
+		shell::logger::example "shell::git::tag::create \"main\" \"v1.0.0\""
+		shell::logger::example "shell::git::tag::create -n \"release/1.0\" \"v1.0.0\""
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	local branch="$1"
+	local tag="$2"
+
+	if [ -z "$branch" ]; then
+		shell::logger::error "Branch name is required"
+		return $RETURN_INVALID
+	fi
+
+	if [ -z "$tag" ]; then
+		shell::logger::error "Tag version is required"
+		return $RETURN_INVALID
+	fi
+
+	local current_branch
+	current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+
+	if [ -z "$current_branch" ]; then
+		shell::logger::error "Not inside a Git repository"
+		return $RETURN_FAILURE
+	fi
+
+	# ---------------------------------------------------------------------------
+	# Command variables — all git commands declared upfront for easy review.
+	# ---------------------------------------------------------------------------
+	local cmd_checkout="git checkout \"${branch}\""
+	local cmd_tag_push="git push origin \"${tag}\""
+	local cmd_tag_restore="git checkout \"${current_branch}\""
+
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::command_clip "$cmd_checkout"
+		shell::logger::command_clip "git tag -a \"${tag}\" -m \"<release_message>\""
+		shell::logger::command_clip "$cmd_tag_push"
+		shell::logger::command_clip "$cmd_tag_restore"
+		return $RETURN_SUCCESS
+	fi
+
+	# Step 1 — switch to target branch.
+	shell::logger::assert "$cmd_checkout" \
+		"Checked out branch '${branch}'" "Branch checkout aborted" || return $?
+
+	# Step 2 — collect commit metadata for the tag annotation.
+	local current_commit
+	local commit_author
+	local commit_date
+
+	current_commit=$(git rev-parse --short HEAD 2>/dev/null)
+	commit_author=$(git log -1 --format='%an' 2>/dev/null)
+	commit_date=$(git log -1 --format='%ad' --date=format:'%Y-%m-%d %H:%M:%S' 2>/dev/null)
+
+	# Step 3 — build release message and create annotated tag.
+	local release_message="Release ${tag} | Branch: ${branch} | Commit: ${current_commit} | Author: ${commit_author} | Date: ${commit_date}"
+	local cmd_tag="git tag -a \"${tag}\" -m \"${release_message}\""
+
+	shell::logger::assert "$cmd_tag" \
+		"Tag '${tag}' created on '${branch}' at ${current_commit}" "Tag creation aborted" || return $?
+
+	# Step 4 — push tag to origin.
+	shell::logger::assert "$cmd_tag_push" \
+		"Tag '${tag}' pushed to origin" "Tag push aborted" || return $?
+
+	# Step 5 — restore original branch.
+	shell::logger::assert "$cmd_tag_restore" \
+		"Restored original branch '${current_branch}'" "Branch restore aborted" || return $?
+
+	# Step 6 — send Telegram activity notification.
+	local telegram_message="Branch: ${branch} | Commit: ${current_commit} | Author: ${commit_author} | Date: ${commit_date} | Tag ${tag} has been successfully created and pushed."
+	shell::git::telegram::send_activity "${telegram_message}"
+
+	return $RETURN_SUCCESS
+}

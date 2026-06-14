@@ -66,5 +66,9 @@ alias sgca-n="shell::git::commit::all -n"
 alias sgcsf="shell::git::commit::spec::fzf"
 alias sgcsf-n="shell::git::commit::spec::fzf -n"
 
+# shell::git::tag::create
+alias sgtc="shell::git::tag::create"
+alias sgtc-n="shell::git::tag::create -n"
+
 # Shell kernel aliases
 alias c="clear"
