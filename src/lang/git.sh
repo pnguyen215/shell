@@ -1179,3 +1179,293 @@ shell::git::tag::remove() {
 
 	return $RETURN_SUCCESS
 }
+
+# shell::git::commit::create function
+# Interactively builds and commits a formatted Git commit message. In default
+# mode, prompts for commit type (with emoji), description, and issue number,
+# then commits, sends a Telegram activity notification, and pushes to origin.
+# In --empty mode, presents pre-defined empty commit messages grouped by
+# category for selection via fzf, then runs git commit --allow-empty.
+#
+# Usage:
+#   shell::git::commit::create [-n] [-h] [-e]
+#
+# Parameters:
+#   - -n, --dry-run : Optional. Print the git commit command via
+#                     shell::logger::command_clip instead of executing it.
+#   - -h, --help    : Show this help message.
+#   - -e, --empty   : Optional. Switch to empty-commit mode — select a
+#                     pre-defined message and run git commit --allow-empty.
+#
+# Description:
+#   Default mode:
+#     1. Select commit type (feat, fix, chore, …) via shell::options::select
+#     2. Map type → emoji code via case lookup
+#     3. Read commit description (loops until non-empty)
+#     4. Read issue number (loops until non-empty)
+#     5. Build message: <emoji> <type>: <description> <issue>
+#     6. Confirm → git commit -m "<message>"
+#     7. Send Telegram notification via shell::git::telegram::send_activity
+#     8. git push origin <current_branch>
+#   Empty mode (--empty):
+#     1. Select category via shell::options::select
+#     2. Select pre-defined message from category via shell::options::select
+#     3. Confirm → git commit --allow-empty -m "<message>"
+#
+# Returns:
+#   $RETURN_SUCCESS (0) on success or user-initiated abort.
+#   $RETURN_FAILURE (non-zero) when not inside a Git repository.
+#   Non-zero exit code of the first failing git command otherwise.
+#
+# Example:
+#   shell::git::commit::create
+#   shell::git::commit::create --empty
+#   shell::git::commit::create -n
+shell::git::commit::create() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Interactively build and commit a formatted Git commit message"
+		shell::logger::usage "shell::git::commit::create [-n] [-h] [-e]"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the git commit command instead of executing it"
+		shell::logger::option "-e, --empty" "Use a pre-defined empty commit message (--allow-empty)"
+		shell::logger::example "shell::git::commit::create"
+		shell::logger::example "shell::git::commit::create --empty"
+		shell::logger::example "shell::git::commit::create -n"
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	local empty_mode="false"
+	if [ "$1" = "-e" ] || [ "$1" = "--empty" ]; then
+		empty_mode="true"
+		shift
+	fi
+
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return $RETURN_FAILURE
+	fi
+
+	# ===========================================================================
+	# Empty commit mode — select a pre-defined message from a category.
+	# ===========================================================================
+	if [ "$empty_mode" = "true" ]; then
+
+		local -a ci_cd_messages=(
+			":rocket: chore: trigger CI build to test configuration changes"
+			":rocket: chore: deploy latest version to production environment"
+			":white_check_mark: test: force re-run of test suite for validation purposes"
+		)
+		local -a docs_non_code_messages=(
+			":books: docs: document recent architectural decisions and trade-offs"
+			":books: docs: add notes from the latest team meeting"
+			":package: dependency: document dependency updates in README.md"
+		)
+		local -a workflow_maintenance_messages=(
+			":recycle: chore: refresh stale pull request to resolve merge conflicts"
+			":recycle: chore: sync with main branch to keep feature branch up-to-date"
+			":sparkles: feat: initialize new feature branch setup"
+		)
+		local -a team_communication_messages=(
+			":tada: chore: announce upcoming team building event"
+			":warning: chore: notify team about planned server maintenance downtime"
+			":bookmark: docs: share details about achieving a key project milestone"
+		)
+		local -a experimental_research_messages=(
+			":alien: experimental: start working on experimental feature for research purposes"
+			":chart_with_upwards_trend: perf: log results of recent performance testing"
+			":books: docs: document feedback from recent user testing session"
+		)
+		local -a miscellaneous_messages=(
+			":busts_in_silhouette: chore: add new contributor to the project"
+			":memo: docs: record internal decision about project direction"
+			":bookmark: docs: mark completion of project milestone"
+		)
+
+		local selected_category
+		selected_category=$(shell::options::select \
+			"CI/CD Pipeline Triggers" \
+			"Documentation and Non-Code Changes" \
+			"Workflow and Repository Maintenance" \
+			"Project and Team Communication" \
+			"Experimental and Research Purposes" \
+			"Miscellaneous")
+
+		if [ -z "$selected_category" ]; then
+			shell::logger::warn "No category selected — aborting"
+			return $RETURN_SUCCESS
+		fi
+
+		local -a messages
+		case "$selected_category" in
+			"CI/CD Pipeline Triggers")             messages=("${ci_cd_messages[@]}") ;;
+			"Documentation and Non-Code Changes")  messages=("${docs_non_code_messages[@]}") ;;
+			"Workflow and Repository Maintenance")  messages=("${workflow_maintenance_messages[@]}") ;;
+			"Project and Team Communication")      messages=("${team_communication_messages[@]}") ;;
+			"Experimental and Research Purposes")  messages=("${experimental_research_messages[@]}") ;;
+			"Miscellaneous")                       messages=("${miscellaneous_messages[@]}") ;;
+		esac
+
+		local selected_message
+		selected_message=$(shell::options::select "${messages[@]}")
+
+		if [ -z "$selected_message" ]; then
+			shell::logger::warn "No message selected — aborting"
+			return $RETURN_SUCCESS
+		fi
+
+		shell::logger::info "Selected commit message: ${selected_message}"
+		shell::logger::info "Proceed with this empty commit? (y/n)"
+
+		local confirm
+		read -r confirm
+		while [[ ! "$confirm" =~ ^(y|yes|Yes|YES|n|no|No|NO)$ ]]; do
+			shell::logger::warn "Invalid input — please enter y or n"
+			read -r confirm
+		done
+
+		if [[ "$confirm" =~ ^(y|yes|Yes|YES)$ ]]; then
+			local cmd_commit_empty="git commit --allow-empty -m \"${selected_message}\""
+			if [ "$dry_run" = "true" ]; then
+				shell::logger::command_clip "$cmd_commit_empty"
+			else
+				shell::logger::assert "$cmd_commit_empty" \
+					"Empty commit created successfully" "Empty commit aborted" || return $?
+			fi
+		else
+			shell::logger::info "Commit aborted"
+		fi
+
+		return $RETURN_SUCCESS
+	fi
+
+	# ===========================================================================
+	# Default mode — formatted commit: type + emoji + description + issue.
+	# ===========================================================================
+
+	# Step 1 — select commit type via fzf.
+	local selected_type
+	selected_type=$(shell::options::select \
+		"feat" "fix" "chore" "docs" "style" "refactor" "test" "perf" \
+		"WIP" "improvement" "revert" "security" "remove" "initial source" \
+		"logs" "config" "build" "dependency" "deployment" "localization" \
+		"search" "experimental" "version tag" "silent changes" "deprecation" "release")
+
+	if [ -z "$selected_type" ]; then
+		shell::logger::warn "No commit type selected — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	# Step 2 — map commit type → emoji code.
+	local emoji
+	case "$selected_type" in
+		feat)              emoji=":sparkles:" ;;
+		fix)               emoji=":bug:" ;;
+		chore)             emoji=":wrench:" ;;
+		docs)              emoji=":books:" ;;
+		style)             emoji=":art:" ;;
+		refactor)          emoji=":recycle:" ;;
+		test)              emoji=":white_check_mark:" ;;
+		perf)              emoji=":chart_with_upwards_trend:" ;;
+		WIP)               emoji=":construction:" ;;
+		improvement)       emoji=":zap:" ;;
+		revert)            emoji=":rewind:" ;;
+		security)          emoji=":lock:" ;;
+		remove)            emoji=":fire:" ;;
+		"initial source")  emoji=":tada:" ;;
+		logs)              emoji=":loud_sound:" ;;
+		config)            emoji=":gear:" ;;
+		build)             emoji=":hammer:" ;;
+		dependency)        emoji=":package:" ;;
+		deployment)        emoji=":rocket:" ;;
+		localization)      emoji=":earth_americas:" ;;
+		search)            emoji=":mag:" ;;
+		experimental)      emoji=":alien:" ;;
+		"version tag")     emoji=":bookmark:" ;;
+		"silent changes")  emoji=":mute:" ;;
+		deprecation)       emoji=":warning:" ;;
+		release)           emoji=":gem:" ;;
+		*)                 emoji="" ;;
+	esac
+
+	# Step 3 — read commit description (non-empty, looped).
+	local commit_description=""
+	while [ -z "$commit_description" ]; do
+		shell::logger::info "Enter a concise and clear commit description:"
+		read -r commit_description
+		if [ -z "$commit_description" ]; then
+			shell::logger::warn "Commit description cannot be empty — please try again"
+		fi
+	done
+
+	# Step 4 — read issue number (non-empty, looped).
+	local issue_number=""
+	while [ -z "$issue_number" ]; do
+		shell::logger::info "Enter issue number (e.g. #1):"
+		read -r issue_number
+		if [ -z "$issue_number" ]; then
+			shell::logger::warn "Issue number cannot be empty — please try again"
+		fi
+	done
+
+	# Step 5 — build and display commit message.
+	local commit_message="${emoji} ${selected_type}: ${commit_description} ${issue_number}"
+	shell::logger::info "Commit message: ${commit_message}"
+	shell::logger::info "Proceed with this commit? (y/n)"
+
+	local confirm
+	read -r confirm
+	while [[ ! "$confirm" =~ ^(y|yes|Yes|YES|n|no|No|NO)$ ]]; do
+		shell::logger::warn "Invalid input — please enter y or n"
+		read -r confirm
+	done
+
+	if [[ ! "$confirm" =~ ^(y|yes|Yes|YES)$ ]]; then
+		shell::logger::info "Commit aborted"
+		return $RETURN_SUCCESS
+	fi
+
+	# Step 6 — commit.
+	local cmd_commit="git commit -m \"${commit_message}\""
+
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::command_clip "$cmd_commit"
+		return $RETURN_SUCCESS
+	fi
+
+	shell::logger::assert "$cmd_commit" \
+		"Commit created: ${commit_message}" "Commit aborted" || return $?
+
+	# Step 7 — collect metadata and send Telegram notification.
+	local git_username
+	local current_branch
+	local commit_hash
+	local repository_path
+	local repository_name
+	local server_remote_url
+	local timestamp
+
+	git_username=$(git config user.name 2>/dev/null)
+	current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+	commit_hash=$(git rev-parse HEAD 2>/dev/null)
+	repository_path=$(git rev-parse --show-toplevel 2>/dev/null)
+	repository_name=$(basename "${repository_path}")
+	server_remote_url=$(git config --get remote.origin.url 2>/dev/null)
+	timestamp=$(date "+%Y-%m-%d %H:%M:%S")
+
+	local telegram_message="username: ${git_username} | repository: ${repository_name} (${server_remote_url}) | branch: ${current_branch} | hash: ${commit_hash} | message: ${commit_message} | timestamp: ${timestamp}"
+	shell::git::telegram::send_activity "${telegram_message}"
+
+	# Step 8 — push current branch to origin.
+	local cmd_push="git push origin \"${current_branch}\""
+	shell::logger::assert "$cmd_push" \
+		"Branch '${current_branch}' pushed to origin" "Push aborted" || return $?
+
+	return $RETURN_SUCCESS
+}
