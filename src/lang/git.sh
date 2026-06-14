@@ -147,7 +147,7 @@ shell::git::release::version::get() {
 
 # shell::git::branch::checkout function
 # Fetches a specific remote branch locally, checks it out, syncs all remotes and
-# tags, then force-pulls the latest commits.
+# tags, then auto-detects divergence and prompts for a sync strategy.
 #
 # Usage:
 #   shell::git::branch::checkout [-n] [-h] <branch>
@@ -163,7 +163,13 @@ shell::git::release::version::get() {
 #     1. git fetch origin <branch>:<branch>  — create/update the local tracking branch
 #     2. git checkout <branch>               — switch to the branch
 #     3. git fetch --all --tags              — sync all remotes and tags
-#     4. git pull -f                         — force-pull latest commits
+#     4. Detects divergence (local commits ahead vs remote commits ahead), then
+#        prompts via shell::options::select_key to choose one of two strategies:
+#          - git pull --rebase              — replay local commits onto the remote tip
+#                                             (recommended when local commits exist)
+#          - git reset --hard origin/<branch> — discard all local commits, match remote
+#                                             exactly (recommended when local is clean)
+#        The recommended option is placed first in the fzf picker (default selection).
 #   Each step is logged via shell::logger::assert. The function stops and
 #   propagates the exit code on the first failure.
 #
@@ -178,7 +184,7 @@ shell::git::release::version::get() {
 shell::git::branch::checkout() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
-		shell::logger::info "Fetch a remote branch, check it out, and pull the latest changes"
+		shell::logger::info "Fetch a remote branch, check it out, then choose a sync strategy"
 		shell::logger::usage "shell::git::branch::checkout [-n] [-h] <branch>"
 		shell::logger::item "branch" "Name of the remote branch to fetch and check out"
 		shell::logger::option "-h, --help" "Show this help message"
@@ -204,18 +210,51 @@ shell::git::branch::checkout() {
 	local cmd_fetch="git fetch origin \"${branch}\":\"${branch}\""
 	local cmd_checkout="git checkout \"${branch}\""
 	local cmd_fetch_all="git fetch --all --tags"
-	local cmd_pull="git pull -f"
 
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::command_clip "$cmd_fetch"
 		shell::logger::command_clip "$cmd_checkout"
 		shell::logger::command_clip "$cmd_fetch_all"
-		shell::logger::command_clip "$cmd_pull"
-	else
-		shell::logger::assert "$cmd_fetch" "Branch '${branch}' fetched from origin" "Branch fetch from origin aborted" || return $?
-		shell::logger::assert "$cmd_checkout" "Checked out branch '${branch}'" "Branch checkout aborted" || return $?
-		shell::logger::assert "$cmd_fetch_all" "All remotes and tags fetched" "Fetch all aborted" || return $?
-		shell::logger::assert "$cmd_pull" "Branch pulled successfully" "Branch pull aborted" || return $?
+		shell::logger::command_clip "git pull --rebase"
+		shell::logger::command_clip "git reset --hard \"origin/${branch}\""
+		return $RETURN_SUCCESS
 	fi
+
+	shell::logger::assert "$cmd_fetch" "Branch '${branch}' fetched from origin" "Branch fetch from origin aborted" || return $?
+	shell::logger::assert "$cmd_checkout" "Checked out branch '${branch}'" "Branch checkout aborted" || return $?
+	shell::logger::assert "$cmd_fetch_all" "All remotes and tags fetched" "Fetch all aborted" || return $?
+
+	# Detect divergence between local HEAD and remote tracking branch.
+	local local_ahead=0
+	local remote_ahead=0
+	local_ahead=$(git rev-list "origin/${branch}..HEAD" --count 2>/dev/null || echo "0")
+	remote_ahead=$(git rev-list "HEAD..origin/${branch}" --count 2>/dev/null || echo "0")
+
+	shell::logger::info "Divergence — local: ${local_ahead} commit(s) ahead, remote: ${remote_ahead} commit(s) ahead"
+
+	# Build fzf option labels — no colons allowed inside labels (used as delimiter).
+	local label_rebase="git pull --rebase  (preserve ${local_ahead} local commit(s), replay onto remote)"
+	local label_reset="git reset --hard origin/${branch}  (discard local commits, match remote exactly)"
+
+	# Place the recommended strategy first so fzf pre-selects it.
+	local strategy
+	if [ "${local_ahead}" -gt 0 ]; then
+		shell::logger::info "Local commits detected — rebase recommended"
+		strategy=$(shell::options::select_key \
+			"${label_rebase} (recommended):rebase" \
+			"${label_reset}:reset")
+	else
+		shell::logger::info "No local commits ahead — hard reset recommended"
+		strategy=$(shell::options::select_key \
+			"${label_reset} (recommended):reset" \
+			"${label_rebase}:rebase")
+	fi
+
+	if [ "$strategy" = "rebase" ]; then
+		shell::logger::assert "git pull --rebase" "Branch synced via rebase" "Rebase pull aborted" || return $?
+	elif [ "$strategy" = "reset" ]; then
+		shell::logger::assert "git reset --hard \"origin/${branch}\"" "Branch reset to origin/${branch}" "Hard reset aborted" || return $?
+	fi
+
 	return $RETURN_SUCCESS
 }
