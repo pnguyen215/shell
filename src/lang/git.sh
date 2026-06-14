@@ -1321,16 +1321,10 @@ shell::git::commit::create() {
 		fi
 
 		shell::logger::info "Selected commit message: ${selected_message}"
-		shell::logger::info "Proceed with this empty commit? (y/n)"
 
-		local confirm
-		read -r confirm
-		while [[ ! "$confirm" =~ ^(y|yes|Yes|YES|n|no|No|NO)$ ]]; do
-			shell::logger::warn "Invalid input — please enter y or n"
-			read -r confirm
-		done
-
-		if [[ "$confirm" =~ ^(y|yes|Yes|YES)$ ]]; then
+		if shell::out::confirmz "Proceed with this empty commit?"; then
+			shell::logger::info "Commit aborted"
+		else
 			local cmd_commit_empty="git commit --allow-empty -m \"${selected_message}\""
 			if [ "$dry_run" = "true" ]; then
 				shell::logger::command_clip "$cmd_commit_empty"
@@ -1343,8 +1337,6 @@ shell::git::commit::create() {
 				empty_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
 				shell::git::branch::push "${empty_branch}"
 			fi
-		else
-			shell::logger::info "Commit aborted"
 		fi
 
 		return $RETURN_SUCCESS
@@ -1422,16 +1414,8 @@ shell::git::commit::create() {
 	# Step 5 — build and display commit message.
 	local commit_message="${emoji} ${selected_type}: ${commit_description} ${issue_number}"
 	shell::logger::info "Commit message: ${commit_message}"
-	shell::logger::info "Proceed with this commit? (y/n)"
 
-	local confirm
-	read -r confirm
-	while [[ ! "$confirm" =~ ^(y|yes|Yes|YES|n|no|No|NO)$ ]]; do
-		shell::logger::warn "Invalid input — please enter y or n"
-		read -r confirm
-	done
-
-	if [[ ! "$confirm" =~ ^(y|yes|Yes|YES)$ ]]; then
+	if shell::out::confirmz "Proceed with this commit?"; then
 		shell::logger::info "Commit aborted"
 		return $RETURN_SUCCESS
 	fi
@@ -1573,16 +1557,8 @@ shell::git::branch::push() {
 	fi
 
 	shell::logger::info "Selected command: ${selected_cmd}"
-	shell::logger::info "Execute this push command? (y/n)"
 
-	local confirm
-	read -r confirm
-	while [[ ! "$confirm" =~ ^(y|yes|Yes|YES|n|no|No|NO)$ ]]; do
-		shell::logger::warn "Invalid input — please enter y or n"
-		read -r confirm
-	done
-
-	if [[ ! "$confirm" =~ ^(y|yes|Yes|YES)$ ]]; then
+	if shell::out::confirmz "Execute this push command?"; then
 		shell::logger::info "Push aborted"
 		return $RETURN_SUCCESS
 	fi
