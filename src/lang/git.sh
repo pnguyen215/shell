@@ -571,3 +571,100 @@ shell::git::repos::fetch() {
 
 	return $RETURN_SUCCESS
 }
+
+# shell::git::branch::remove function
+# Deletes one or more Git branches both locally (force-delete) and on the remote
+# origin, then restores the originally checked-out branch.
+#
+# Usage:
+#   shell::git::branch::remove [-n] [-h] <branch> [<branch> ...]
+#
+# Parameters:
+#   - -n, --dry-run : Optional. Print each command via shell::logger::command_clip
+#                     instead of executing it.
+#   - -h, --help    : Show this help message.
+#   - <branch>...   : One or more branch names to delete.
+#
+# Description:
+#   Captures the currently checked-out branch at function entry, then for each
+#   provided branch name runs:
+#     1. git branch -D <branch>            — force-delete the local branch
+#     2. git push origin --delete <branch> — delete the branch on origin
+#   After all branches are processed, restores the original branch via
+#   git checkout. Each step is logged via shell::logger::assert and stops
+#   the per-branch iteration on the first failure for that branch.
+#
+# Returns:
+#   $RETURN_SUCCESS (0) on full success.
+#   $RETURN_INVALID (1) when no branch arguments are provided.
+#   $RETURN_FAILURE (non-zero) when not inside a Git repository.
+#   Non-zero exit code of the first failing git command otherwise.
+#
+# Example:
+#   shell::git::branch::remove feature_a feature_b
+#   shell::git::branch::remove -n feature_a
+shell::git::branch::remove() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Force-delete local and remote Git branches, then restore current branch"
+		shell::logger::usage "shell::git::branch::remove [-n] [-h] <branch> [<branch> ...]"
+		shell::logger::item "branch" "One or more branch names to delete"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the commands instead of executing them"
+		shell::logger::example "shell::git::branch::remove feature_a feature_b"
+		shell::logger::example "shell::git::branch::remove -n feature_a"
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	if [ "$#" -eq 0 ]; then
+		shell::logger::error "At least one branch name is required"
+		return $RETURN_INVALID
+	fi
+
+	# Capture the currently checked-out branch so we can restore it at the end.
+	local current_branch
+	current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+
+	if [ -z "$current_branch" ]; then
+		shell::logger::error "Not inside a Git repository"
+		return $RETURN_FAILURE
+	fi
+
+	local branch
+	local cmd_delete_local
+	local cmd_delete_remote
+
+	for branch in "$@"; do
+		cmd_delete_local="git branch -D \"${branch}\""
+		cmd_delete_remote="git push origin --delete \"${branch}\""
+
+		if [ "$dry_run" = "true" ]; then
+			shell::logger::command_clip "$cmd_delete_local"
+			shell::logger::command_clip "$cmd_delete_remote"
+			continue
+		fi
+
+		shell::logger::assert "$cmd_delete_local" \
+			"Branch '${branch}' deleted locally" "Local branch delete aborted" || return $?
+		shell::logger::assert "$cmd_delete_remote" \
+			"Branch '${branch}' deleted on origin" "Remote branch delete aborted" || return $?
+	done
+
+	# Restore the original branch.
+	local cmd_restore="git checkout \"${current_branch}\""
+
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::command_clip "$cmd_restore"
+	else
+		shell::logger::assert "$cmd_restore" \
+			"Restored original branch '${current_branch}'" "Branch restore aborted" || return $?
+	fi
+
+	return $RETURN_SUCCESS
+}
