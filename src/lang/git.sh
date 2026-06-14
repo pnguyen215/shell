@@ -1095,3 +1095,87 @@ shell::git::tag::create() {
 
 	return $RETURN_SUCCESS
 }
+
+# shell::git::tag::remove function
+# Deletes an annotated or lightweight Git tag both locally and on the remote
+# origin, then sends a Telegram activity notification.
+#
+# Usage:
+#   shell::git::tag::remove [-n] [-h] <tag>
+#
+# Parameters:
+#   - -n, --dry-run : Optional. Print each command via shell::logger::command_clip
+#                     instead of executing it.
+#   - -h, --help    : Show this help message.
+#   - <tag>         : The tag name/version to delete (e.g. v1.2.3).
+#
+# Description:
+#   1. git tag -d <tag>                    — delete the tag locally
+#   2. git push origin :refs/tags/<tag>    — delete the tag on origin
+#   3. shell::git::telegram::send_activity — send Telegram notification
+#
+# Returns:
+#   $RETURN_SUCCESS (0) on full success.
+#   $RETURN_INVALID (1) when <tag> is omitted.
+#   $RETURN_FAILURE (non-zero) when not inside a Git repository.
+#   Non-zero exit code of the first failing git command otherwise.
+#
+# Example:
+#   shell::git::tag::remove "v1.0.0"
+#   shell::git::tag::remove -n "v1.0.0"
+shell::git::tag::remove() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Delete a Git tag locally and on origin, then notify via Telegram"
+		shell::logger::usage "shell::git::tag::remove [-n] [-h] <tag>"
+		shell::logger::item "tag" "Tag name/version to delete (e.g. v1.2.3)"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the commands instead of executing them"
+		shell::logger::example "shell::git::tag::remove \"v1.0.0\""
+		shell::logger::example "shell::git::tag::remove -n \"v1.0.0\""
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	local tag="$1"
+
+	if [ -z "$tag" ]; then
+		shell::logger::error "Tag name is required"
+		return $RETURN_INVALID
+	fi
+
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return $RETURN_FAILURE
+	fi
+
+	# ---------------------------------------------------------------------------
+	# Command variables — all git commands declared upfront for easy review.
+	# ---------------------------------------------------------------------------
+	local cmd_delete_local="git tag -d \"${tag}\""
+	local cmd_delete_remote="git push origin \":refs/tags/${tag}\""
+
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::command_clip "$cmd_delete_local"
+		shell::logger::command_clip "$cmd_delete_remote"
+		return $RETURN_SUCCESS
+	fi
+
+	# Step 1 — delete the tag locally.
+	shell::logger::assert "$cmd_delete_local" \
+		"Tag '${tag}' deleted locally" "Local tag delete aborted" || return $?
+
+	# Step 2 — delete the tag on origin.
+	shell::logger::assert "$cmd_delete_remote" \
+		"Tag '${tag}' deleted on origin" "Remote tag delete aborted" || return $?
+
+	# Step 3 — send Telegram activity notification.
+	shell::git::telegram::send_activity "Tag ${tag} has been removed from local and origin."
+
+	return $RETURN_SUCCESS
+}

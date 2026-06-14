@@ -70,5 +70,9 @@ alias sgcsf-n="shell::git::commit::spec::fzf -n"
 alias sgtc="shell::git::tag::create"
 alias sgtc-n="shell::git::tag::create -n"
 
+# shell::git::tag::remove
+alias sgrmt="shell::git::tag::remove"
+alias sgrmt-n="shell::git::tag::remove -n"
+
 # Shell kernel aliases
 alias c="clear"
