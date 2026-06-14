@@ -1337,6 +1337,11 @@ shell::git::commit::create() {
 			else
 				shell::logger::assert "$cmd_commit_empty" \
 					"Empty commit created successfully" "Empty commit aborted" || return $?
+
+				# Push the commit via interactive push command picker.
+				local empty_branch
+				empty_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+				shell::git::branch::push "${empty_branch}"
 			fi
 		else
 			shell::logger::info "Commit aborted"
