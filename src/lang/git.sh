@@ -214,7 +214,11 @@ shell::git::branch::checkout() {
 
 	local cmd_fetch_refspec="git fetch origin \"${branch}\":\"${branch}\""
 	local cmd_checkout="git checkout \"${branch}\""
-	local cmd_fetch_targeted="git fetch origin \"${branch}\""
+	# Explicit refspec — forces refs/remotes/origin/<branch> to update even when
+	# the remote has no default fetch refspec configured. Without this, a plain
+	# 'git fetch origin <branch>' only writes FETCH_HEAD, leaving origin/<branch>
+	# stale or missing, which breaks 'git reset --hard origin/<branch>'.
+	local cmd_fetch_targeted="git fetch origin \"+refs/heads/${branch}:refs/remotes/origin/${branch}\""
 	local cmd_fetch_all="git fetch --all --tags"
 	local cmd_reset="git reset --hard \"${remote_ref}\""
 	local cmd_rebase="git rebase \"${remote_ref}\""
@@ -252,6 +256,16 @@ shell::git::branch::checkout() {
 	# refs/remotes/origin/<b>, so git reset --hard origin/<b> would fail without this step.
 	shell::logger::assert "$cmd_fetch_targeted" \
 		"Remote tracking ref for '${branch}' updated" "Targeted fetch aborted" || return $?
+
+	# Verify the tracking ref now exists; bail out with a clear message if not.
+	# Without this guard, 'git rev-list origin/<b>..HEAD --count 2>/dev/null || echo 0'
+	# would silently return 0, falsely classifying the branch as clean and
+	# triggering an immediate 'git reset --hard origin/<b>' that fails with
+	# 'fatal: ambiguous argument'.
+	if ! git rev-parse --verify --quiet "refs/remotes/${remote_ref}" >/dev/null; then
+		shell::logger::error "Remote tracking ref 'refs/remotes/${remote_ref}' is missing after fetch — cannot continue"
+		return $RETURN_FAILURE
+	fi
 
 	# Step 3 — sync all remotes and tags.
 	shell::logger::assert "$cmd_fetch_all" \
