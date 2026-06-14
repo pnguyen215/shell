@@ -497,7 +497,311 @@ shell::git::branch::create() {
 	return $RETURN_SUCCESS
 }
 
-# shell::git::repos::fetch function
+# shell::git::branch::sync function
+# Syncs all remote branches to local: fetches and prunes all remotes, creates
+# local tracking branches for new remote branches, and fast-forwards local
+# branches that have no local-only commits ahead of origin.
+#
+# Usage:
+#   shell::git::branch::sync [-n] [-h]
+#
+# Parameters:
+#   - -n, --dry-run : Optional. Print each command via shell::logger::command_clip
+#                     instead of executing it.
+#   - -h, --help    : Show this help message.
+#
+# Description:
+#   1. git fetch --all --prune         — update all remote-tracking refs, remove stale ones
+#   2. For each remote branch in origin (excluding HEAD):
+#        - Not present locally  → git branch --track <branch> origin/<branch>
+#        - Currently checked out → skip with info (use shell::git::branch::checkout)
+#        - local_ahead == 0     → git branch -f <branch> origin/<branch>  (fast-forward)
+#        - local_ahead  > 0     → warn and skip
+#
+# Returns:
+#   $RETURN_SUCCESS (0) on full success.
+#   $RETURN_FAILURE (non-zero) when not inside a Git repository.
+#   Non-zero exit code of the first failing git command otherwise.
+#
+# Example:
+#   shell::git::branch::sync
+#   shell::git::branch::sync -n
+shell::git::branch::sync() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Sync all remote branches to local — fetch, prune, create, and fast-forward"
+		shell::logger::usage "shell::git::branch::sync [-n] [-h]"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the commands instead of executing them"
+		shell::logger::example "shell::git::branch::sync"
+		shell::logger::example "shell::git::branch::sync -n"
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	local current_branch
+	current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+
+	if [ -z "$current_branch" ]; then
+		shell::logger::error "Not inside a Git repository"
+		return $RETURN_FAILURE
+	fi
+
+	local cmd_fetch_prune="git fetch --all --prune"
+
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::command_clip "$cmd_fetch_prune"
+		shell::logger::command_clip "git branch --track <branch> origin/<branch>  # per new remote branch"
+		shell::logger::command_clip "git branch -f <branch> origin/<branch>       # per clean local branch"
+		return $RETURN_SUCCESS
+	fi
+
+	shell::logger::assert "$cmd_fetch_prune" \
+		"All remotes fetched and stale tracking refs pruned" "Fetch all aborted" || return $?
+
+	local remote_branch
+	local branch
+	local local_ahead
+	local cmd_create
+	local cmd_update
+
+	while IFS= read -r remote_branch; do
+		# Strip leading whitespace and "origin/" prefix.
+		branch=$(echo "$remote_branch" | sed 's|^[[:space:]]*origin/||')
+
+		if ! git rev-parse --verify --quiet "refs/heads/${branch}" >/dev/null 2>&1; then
+			# Local branch does not exist — create a local tracking branch.
+			cmd_create="git branch --track \"${branch}\" \"origin/${branch}\""
+			shell::logger::assert "$cmd_create" \
+				"Local tracking branch '${branch}' created" "Failed to create local branch '${branch}'"
+
+		elif [ "$branch" = "$current_branch" ]; then
+			# Currently checked out — divergence must be resolved by the user.
+			shell::logger::info "Branch '${branch}' is currently checked out — skipping (use shell::git::branch::checkout to sync)"
+
+		else
+			# Local branch exists and is not checked out — fast-forward if clean.
+			local_ahead=$(git rev-list "origin/${branch}..refs/heads/${branch}" --count 2>/dev/null || echo "0")
+			if [ "${local_ahead}" -eq 0 ]; then
+				cmd_update="git branch -f \"${branch}\" \"origin/${branch}\""
+				shell::logger::assert "$cmd_update" \
+					"Branch '${branch}' fast-forwarded to origin/${branch}" "Failed to fast-forward branch '${branch}'"
+			else
+				shell::logger::warn "Branch '${branch}' has ${local_ahead} local commit(s) ahead of origin — skipping"
+			fi
+		fi
+	done < <(git branch -r | grep 'origin/' | grep -v 'HEAD')
+
+	return $RETURN_SUCCESS
+}
+
+# shell::git::commit::spec function
+# Displays a decorated commit graph for a specific branch.
+#
+# Usage:
+#   shell::git::commit::spec [-n] [-h] <branch>
+#
+# Parameters:
+#   - -n, --dry-run : Optional. Print the command via shell::logger::command_clip
+#                     instead of executing it.
+#   - -h, --help    : Show this help message.
+#   - <branch>      : The branch whose commit history to display.
+#
+# Description:
+#   Runs git log with a coloured, decorated graph format scoped to the given
+#   branch. Format: full hash (short hash) — relative time  author  refs  subject.
+#
+# Returns:
+#   $RETURN_SUCCESS (0) on success.
+#   $RETURN_INVALID (1) when <branch> is omitted.
+#   Non-zero exit code of the failing git command otherwise.
+#
+# Example:
+#   shell::git::commit::spec "main"
+#   shell::git::commit::spec -n "feature/my-branch"
+shell::git::commit::spec() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Show decorated commit graph history for a specific branch"
+		shell::logger::usage "shell::git::commit::spec [-n] [-h] <branch>"
+		shell::logger::item "branch" "Branch whose commit history to display"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
+		shell::logger::example "shell::git::commit::spec \"main\""
+		shell::logger::example "shell::git::commit::spec -n \"feature/my-branch\""
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	local branch="$1"
+
+	if [ -z "$branch" ]; then
+		shell::logger::error "Branch name is required"
+		return $RETURN_INVALID
+	fi
+
+	# ---------------------------------------------------------------------------
+	# Log format — coloured graph: hash, relative time, author, refs, subject.
+	# ---------------------------------------------------------------------------
+	local log_format="%C(bold blue)%H (%h)%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%an%C(reset)%C(bold yellow)%d%C(reset) %C(dim white)- %s%C(reset)"
+	local cmd_log="git log --graph --decorate --format=format:\"${log_format}\" \"${branch}\""
+
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::command_clip "$cmd_log"
+		return $RETURN_SUCCESS
+	fi
+
+	shell::logger::assert "$cmd_log" \
+		"Commit history for branch '${branch}' displayed" "Git log aborted" || return $?
+
+	return $RETURN_SUCCESS
+}
+
+# shell::git::commit::all function
+# Displays a decorated commit graph across all refs in the current repository.
+#
+# Usage:
+#   shell::git::commit::all [-n] [-h]
+#
+# Parameters:
+#   - -n, --dry-run : Optional. Print the command via shell::logger::command_clip
+#                     instead of executing it.
+#   - -h, --help    : Show this help message.
+#
+# Description:
+#   Runs git log --all with a coloured, decorated graph format, covering all
+#   local branches, remote-tracking branches, and tags in the repository.
+#
+# Returns:
+#   $RETURN_SUCCESS (0) on success.
+#   Non-zero exit code of the failing git command otherwise.
+#
+# Example:
+#   shell::git::commit::all
+#   shell::git::commit::all -n
+shell::git::commit::all() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Show decorated commit graph history across all refs in the repository"
+		shell::logger::usage "shell::git::commit::all [-n] [-h]"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
+		shell::logger::example "shell::git::commit::all"
+		shell::logger::example "shell::git::commit::all -n"
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	# ---------------------------------------------------------------------------
+	# Log format — coloured graph: hash, relative time, author, refs, subject.
+	# ---------------------------------------------------------------------------
+	local log_format="%C(bold blue)%H (%h)%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%an%C(reset)%C(bold yellow)%d%C(reset) %C(dim white)- %s%C(reset)"
+	local cmd_log="git log --graph --decorate --all --format=format:\"${log_format}\""
+
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::command_clip "$cmd_log"
+		return $RETURN_SUCCESS
+	fi
+
+	shell::logger::assert "$cmd_log" \
+		"Full repository commit history displayed" "Git log aborted" || return $?
+
+	return $RETURN_SUCCESS
+}
+
+# shell::git::commit::spec::fzf function
+# Interactively selects a branch via fzf, then displays its commit history.
+#
+# Usage:
+#   shell::git::commit::spec::fzf [-n] [-h]
+#
+# Parameters:
+#   - -n, --dry-run : Optional. After branch selection, print the git log command
+#                     via shell::logger::command_clip instead of executing it.
+#   - -h, --help    : Show this help message.
+#
+# Description:
+#   Collects all local and remote branches from the current repository,
+#   deduplicates them, and presents them in an fzf picker. The selected branch
+#   is forwarded to shell::git::commit::spec to display its commit graph.
+#
+# Returns:
+#   $RETURN_SUCCESS (0) on success.
+#   $RETURN_FAILURE (non-zero) when not inside a Git repository or no branch
+#                   is selected from fzf.
+#
+# Example:
+#   shell::git::commit::spec::fzf
+#   shell::git::commit::spec::fzf -n
+shell::git::commit::spec::fzf() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Select a branch via fzf and display its commit history"
+		shell::logger::usage "shell::git::commit::spec::fzf [-n] [-h]"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the git log command instead of executing it"
+		shell::logger::example "shell::git::commit::spec::fzf"
+		shell::logger::example "shell::git::commit::spec::fzf -n"
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return $RETURN_FAILURE
+	fi
+
+	# Collect all local and remote branch names, strip prefixes, deduplicate.
+	local -a branch_list
+	while IFS= read -r _b; do
+		branch_list+=("$_b")
+	done < <(
+		{
+			git branch | sed 's|^[* ]*||'
+			git branch -r | grep 'origin/' | grep -v 'HEAD' | sed 's|^[[:space:]]*origin/||'
+		} | sort -u
+	)
+
+	if [ "${#branch_list[@]}" -eq 0 ]; then
+		shell::logger::warn "No branches found — aborting"
+		return $RETURN_FAILURE
+	fi
+
+	local selected_branch
+	selected_branch=$(shell::options::select "${branch_list[@]}")
+
+	if [ -z "$selected_branch" ]; then
+		shell::logger::warn "No branch selected — aborting"
+		return $RETURN_FAILURE
+	fi
+
+	if [ "$dry_run" = "true" ]; then
+		shell::git::commit::spec -n "$selected_branch"
+	else
+		shell::git::commit::spec "$selected_branch"
+	fi
+}
+
 # Clones a remote Git repository as a shallow clone (depth 1) into a specified
 # local folder name.
 #
