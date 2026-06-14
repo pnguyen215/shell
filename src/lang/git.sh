@@ -351,3 +351,106 @@ shell::git::branch::checkout() {
 
 	return $RETURN_SUCCESS
 }
+
+# shell::git::branch::create function
+# Creates one or more local Git branches, pushes each to origin with upstream
+# tracking, then restores the original branch.
+#
+# Usage:
+#   shell::git::branch::create [-n] [-h] <branch> [<branch> ...]
+#
+# Parameters:
+#   - -n, --dry-run : Optional. Print each command via shell::logger::command_clip
+#                     instead of executing it.
+#   - -h, --help    : Show this help message.
+#   - <branch>...   : One or more branch names to create. Each name must match
+#                     the regex ^[a-zA-Z0-9_-]+$ (letters, digits, hyphen,
+#                     underscore). Invalid names are skipped with a warning.
+#
+# Description:
+#   For each valid branch name, runs:
+#     1. git checkout -b <branch>          — create and switch to the new branch
+#     2. git push -u origin <branch>       — push and set upstream tracking
+#   After all branches are processed, returns to the originally checked-out branch
+#   captured at function entry. Each step is logged via shell::logger::assert
+#   and stops the per-branch loop on the first failure for that branch.
+#
+# Returns:
+#   $RETURN_SUCCESS (0) on full success.
+#   $RETURN_INVALID (1) when no branch arguments are provided.
+#   Non-zero exit code of the first failing git command otherwise.
+#
+# Example:
+#   shell::git::branch::create feature_a feature_b
+#   shell::git::branch::create -n feature_a feature_b
+shell::git::branch::create() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Create local branches, push them to origin with upstream tracking, then restore current branch"
+		shell::logger::usage "shell::git::branch::create [-n] [-h] <branch> [<branch> ...]"
+		shell::logger::item "branch" "Branch name(s) matching ^[a-zA-Z0-9_-]+$"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the commands instead of executing them"
+		shell::logger::example "shell::git::branch::create feature_a feature_b"
+		shell::logger::example "shell::git::branch::create -n feature_a"
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	if [ "$#" -eq 0 ]; then
+		shell::logger::error "At least one branch name is required"
+		return $RETURN_INVALID
+	fi
+
+	# Capture the currently checked-out branch so we can restore it at the end.
+	local current_branch
+	current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+
+	if [ -z "$current_branch" ]; then
+		shell::logger::error "Not inside a Git repository"
+		return $RETURN_FAILURE
+	fi
+
+	local branch_regex='^[a-zA-Z0-9_-]+$'
+	local branch
+	local cmd_checkout_new
+	local cmd_push_upstream
+
+	for branch in "$@"; do
+		if ! [[ "$branch" =~ $branch_regex ]]; then
+			shell::logger::warn "Invalid branch name '${branch}' — only letters, digits, hyphens, and underscores allowed; skipping"
+			continue
+		fi
+
+		cmd_checkout_new="git checkout -b \"${branch}\""
+		cmd_push_upstream="git push -u origin \"${branch}\""
+
+		if [ "$dry_run" = "true" ]; then
+			shell::logger::command_clip "$cmd_checkout_new"
+			shell::logger::command_clip "$cmd_push_upstream"
+			continue
+		fi
+
+		shell::logger::assert "$cmd_checkout_new" \
+			"Branch '${branch}' created and checked out" "Branch checkout aborted" || return $?
+		shell::logger::assert "$cmd_push_upstream" \
+			"Branch '${branch}' pushed to origin with upstream tracking" "Branch push aborted" || return $?
+	done
+
+	# Restore the original branch.
+	local cmd_restore="git checkout \"${current_branch}\""
+
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::command_clip "$cmd_restore"
+	else
+		shell::logger::assert "$cmd_restore" \
+			"Restored original branch '${current_branch}'" "Branch restore aborted" || return $?
+	fi
+
+	return $RETURN_SUCCESS
+}

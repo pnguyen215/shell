@@ -26,6 +26,8 @@ alias ser-n="shell::editor -n"                       # edit file with default ed
 # Shell git aliases
 alias sgfb="shell::git::branch::checkout"
 alias sgfb-n="shell::git::branch::checkout -n"
+alias sgcb="shell::git::branch::create"
+alias sgcb-n="shell::git::branch::create -n"
 
 # Shell kernel aliases
 alias c="clear"
