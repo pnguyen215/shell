@@ -825,6 +825,104 @@ shell::git::commit::spec::fzf() {
 	fi
 }
 
+# shell::git::commit::spec::search function
+# Presents a multi-select picker of all commits on a given branch, then prints
+# each selected commit's info to the console and copies it to the clipboard.
+#
+# Usage:
+#   shell::git::commit::spec::search [-h] <branch>
+#
+# Parameters:
+#   - -h, --help : Show this help message.
+#   - <branch>   : Required. Branch name whose commits to browse and select from.
+#
+# Description:
+#   Builds a coloured commit list via git log for the specified branch, then
+#   delegates to shell::options::multiselect (TAB to select multiple entries).
+#   For each selected commit, logs the message via shell::logger::info and copies
+#   it to the clipboard via shell::clip_value.
+#
+#   Hash extraction is ANSI-safe: uses grep -oE to locate every 40-char hex hash
+#   in the multiselect output — no sed ANSI stripping required.
+#
+# Returns:
+#   $RETURN_SUCCESS (0) on success or when no commits are selected.
+#   $RETURN_INVALID (1) when <branch> is omitted.
+#   $RETURN_FAILURE (non-zero) when not inside a Git repository.
+#
+# Example:
+#   shell::git::commit::spec::search "main"
+#   shell::git::commit::spec::search "feature/my-branch"
+shell::git::commit::spec::search() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Multi-select commits on a branch via fzf and copy their info to the clipboard"
+		shell::logger::usage "shell::git::commit::spec::search [-h] <branch>"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::item "branch" "Branch name whose commits to browse and select from"
+		shell::logger::example "shell::git::commit::spec::search \"main\""
+		shell::logger::example "shell::git::commit::spec::search \"feature/my-branch\""
+		return $RETURN_SUCCESS
+	fi
+
+	local branch="$1"
+
+	if [ -z "$branch" ]; then
+		shell::logger::error "Branch name is required"
+		return $RETURN_INVALID
+	fi
+
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return $RETURN_FAILURE
+	fi
+
+	local repository
+	repository=$(git rev-parse --show-toplevel 2>/dev/null)
+
+	# ---------------------------------------------------------------------------
+	# Log format — coloured: full hash, short hash, relative time, author, refs, subject.
+	# Matches the format used by shell::git::commit::spec and shell::git::commit::all.
+	# ---------------------------------------------------------------------------
+	local log_format="%C(bold blue)%H (%h)%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%an%C(reset)%C(bold yellow)%d%C(reset) %C(dim white)- %s%C(reset)"
+
+	# Build per-line array — one element per commit — for shell::options::multiselect.
+	local -a commit_lines
+	while IFS= read -r line; do
+		commit_lines+=("$line")
+	done < <(git log --format=format:"${log_format}" --color=always "${branch}" 2>/dev/null)
+
+	if [ "${#commit_lines[@]}" -eq 0 ]; then
+		shell::logger::warn "No commits found on branch '${branch}' — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	# Present multi-select picker via codebase helper (TAB to select multiple).
+	local selected_output
+	selected_output=$(shell::options::multiselect "${commit_lines[@]}")
+
+	if [ -z "$selected_output" ]; then
+		shell::logger::warn "No commits selected — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	# Extract every 40-char hex hash from the (ANSI-coded, space-joined) output.
+	# grep -oE is robust against ANSI escape sequences and works on GNU + BSD grep.
+	local commit_hash
+	local commit_subject
+	local notify_message
+
+	while IFS= read -r commit_hash; do
+		# Retrieve the clean subject from git to avoid parsing ANSI-coded output.
+		commit_subject=$(git log -1 --format='%s' "$commit_hash" 2>/dev/null)
+		notify_message="Hash: ${commit_hash} | Subject: ${commit_subject} | Repository: ${repository}"
+		shell::logger::info "${notify_message}"
+		shell::clip_value "${notify_message}"
+	done < <(printf '%s' "$selected_output" | grep -oE '[0-9a-f]{40}')
+
+	return $RETURN_SUCCESS
+}
+
 # Clones a remote Git repository as a shallow clone (depth 1) into a specified
 # local folder name.
 #

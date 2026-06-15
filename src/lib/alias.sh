@@ -80,6 +80,15 @@ alias sgca-n="shell::git::commit::all -n"
 alias sgcsf="shell::git::commit::spec::fzf"
 alias sgcsf-n="shell::git::commit::spec::fzf -n"
 
+# shell::git::commit::spec::search
+alias sgcss="shell::git::commit::spec::search"
+alias sgcss-n="shell::git::commit::spec::search -n"
+alias sgcp="shell::git::commit::spec::search"
+alias sgcp-n="shell::git::commit::spec::search -n"
+alias sgcmp="shell::git::commit::spec::search"
+alias sgcmp-n="shell::git::commit::spec::search -n"
+alias sgcommitpick="shell::git::commit::spec::search"
+
 # shell::git::tag::create
 alias sgtc="shell::git::tag::create"
 alias sgtc-n="shell::git::tag::create -n"
