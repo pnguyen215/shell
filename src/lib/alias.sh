@@ -99,6 +99,10 @@ alias sgcpick-n="shell::git::commit::spec::search::current -n"
 alias sgcas="shell::git::commit::all::search"
 alias sgcas-n="shell::git::commit::all::search -n"
 
+# shell::git::commit::pick::local
+alias sgcpickl="shell::git::commit::pick::local"
+alias sgcpickl-n="shell::git::commit::pick::local -n"
+
 # shell::git::tag::create
 alias sgtc="shell::git::tag::create"
 alias sgtc-n="shell::git::tag::create -n"
