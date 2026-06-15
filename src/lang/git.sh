@@ -667,6 +667,39 @@ shell::git::commit::spec() {
 	return $RETURN_SUCCESS
 }
 
+# shell::git::commit::spec::current function
+# Displays a decorated commit graph for the currently active branch.
+#
+# Usage:
+#   shell::git::commit::spec::current [-n] [-h]
+#
+# Parameters:
+#   - -n, --dry-run : Optional. Print the command via shell::logger::command_clip
+#                     instead of executing it.
+#   - -h, --help    : Show this help message.
+#
+# Description:
+#   Detects the currently active branch and forwards it to shell::git::commit::spec
+#   to display its commit graph. If not inside a Git repository, an error is logged
+#   and the function returns with failure.
+#
+# Returns:
+#   $RETURN_SUCCESS (0) on success.
+#   $RETURN_FAILURE (non-zero) if not inside a Git repository or if the git log command fails.
+#
+# Example:
+#   shell::git::commit::spec::current
+#   shell::git::commit::spec::current -n
+shell::git::commit::spec::current() {
+	local current_branch
+	current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+	if [ -z "$current_branch" ]; then
+		shell::logger::error "Not inside a Git repository"
+		return $RETURN_FAILURE
+	fi
+	shell::git::commit::spec "$current_branch"
+}
+
 # shell::git::commit::all function
 # Displays a decorated commit graph across all refs in the current repository.
 #

@@ -58,6 +58,20 @@ alias sgbs-n="shell::git::branch::sync -n"
 alias sgcs="shell::git::commit::spec"
 alias sgcs-n="shell::git::commit::spec -n"
 
+# shell::git::commit::spec::current
+alias sgcsc="shell::git::commit::spec::current"
+alias sgcsc-n="shell::git::commit::spec::current -n"
+alias sgchc="shell::git::commit::spec::current"
+alias sgchc-n="shell::git::commit::spec::current -n"
+alias sgbcc="shell::git::commit::spec::current"
+alias sgbcc-n="shell::git::commit::spec::current -n"
+alias sgh="shell::git::commit::spec::current"
+alias sgh-n="shell::git::commit::spec::current -n"
+alias sgbh="shell::git::commit::spec::current"
+alias sgbh-n="shell::git::commit::spec::current -n"
+alias sglog="shell::git::commit::spec::current"
+alias sglog-n="shell::git::commit::spec::current -n"
+
 # shell::git::commit::all
 alias sgca="shell::git::commit::all"
 alias sgca-n="shell::git::commit::all -n"
