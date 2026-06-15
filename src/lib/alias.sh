@@ -89,6 +89,10 @@ alias sgcmp="shell::git::commit::spec::search"
 alias sgcmp-n="shell::git::commit::spec::search -n"
 alias sgcommitpick="shell::git::commit::spec::search"
 
+# shell::git::commit::all::search
+alias sgcas="shell::git::commit::all::search"
+alias sgcas-n="shell::git::commit::all::search -n"
+
 # shell::git::tag::create
 alias sgtc="shell::git::tag::create"
 alias sgtc-n="shell::git::tag::create -n"
