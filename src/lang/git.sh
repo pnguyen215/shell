@@ -1192,6 +1192,173 @@ shell::git::commit::pick::local() {
 	return $RETURN_SUCCESS
 }
 
+# shell::git::commit::pick::remote function
+# Multi-selects commits from a source branch (or across all refs) via fzf,
+# cherry-picks them onto the current branch in chronological order, then
+# pushes the current branch to the remote via an interactive push strategy picker.
+#
+# Usage:
+#   shell::git::commit::pick::remote [-n] [-h] [<source_branch>]
+#
+# Parameters:
+#   - -n, --dry-run     : Optional. Print the cherry-pick and push commands via
+#                         shell::logger::command_clip instead of executing them.
+#   - -h, --help        : Show this help message.
+#   - <source_branch>   : Optional. Branch whose commits to browse and pick from.
+#                         When omitted, commits from ALL refs are shown (--all).
+#
+# Description:
+#   Identical to shell::git::commit::pick::local with one additional step:
+#   Step 7 — After a successful cherry-pick, delegates to shell::git::branch::push
+#             to present an interactive fzf push strategy picker and push the
+#             current branch to origin.
+#
+#   Step 1 — Verify the git repository and capture the current (target) branch.
+#   Step 2 — Build a coloured commit list:
+#               • With <source_branch>: git log <source_branch>
+#               • Without            : git log --all
+#   Step 3 — Present a multi-select picker (TAB to select multiple commits).
+#   Step 4 — Extract 40-char hex hashes, reverse to chronological order
+#             (oldest first) — the required replay order for cherry-pick.
+#   Step 5 — Display the ordered cherry-pick plan and confirm with the user.
+#   Step 6 — Execute: git cherry-pick <hash1> <hash2> ...
+#   Step 7 — Push the current branch via shell::git::branch::push (interactive).
+#
+# Returns:
+#   $RETURN_SUCCESS (0) on success or user-initiated abort.
+#   $RETURN_FAILURE (non-zero) when not inside a Git repository or cherry-pick fails.
+#
+# Example:
+#   shell::git::commit::pick::remote
+#   shell::git::commit::pick::remote "feature/my-branch"
+#   shell::git::commit::pick::remote -n "main"
+shell::git::commit::pick::remote() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Multi-select commits, cherry-pick them onto the current branch, then push to remote"
+		shell::logger::usage "shell::git::commit::pick::remote [-n] [-h] [<source_branch>]"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the cherry-pick and push commands instead of executing them"
+		shell::logger::item "source_branch" "Branch whose commits to browse; omit to browse all refs"
+		shell::logger::example "shell::git::commit::pick::remote"
+		shell::logger::example "shell::git::commit::pick::remote \"feature/my-branch\""
+		shell::logger::example "shell::git::commit::pick::remote -n \"main\""
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return $RETURN_FAILURE
+	fi
+
+	# Step 1 — capture the current (target) branch that will receive the commits.
+	local current_branch
+	current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+
+	local source_branch="$1"
+
+	# ---------------------------------------------------------------------------
+	# Log format — coloured: full hash, short hash, relative time, author, refs, subject.
+	# Matches the format used by all other shell::git::commit::* functions.
+	# ---------------------------------------------------------------------------
+	local log_format="%C(bold blue)%H (%h)%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%an%C(reset)%C(bold yellow)%d%C(reset) %C(dim white)- %s%C(reset)"
+
+	# Step 2 — build commit list; scope to source_branch when provided.
+	local -a commit_lines
+
+	if [ -n "$source_branch" ]; then
+		shell::logger::info "Browsing commits on branch '${source_branch}' → cherry-pick target: '${current_branch}'"
+		while IFS= read -r line; do
+			commit_lines+=("$line")
+		done < <(git log --format=format:"${log_format}" --color=always "${source_branch}" 2>/dev/null)
+
+		if [ "${#commit_lines[@]}" -eq 0 ]; then
+			shell::logger::warn "No commits found on branch '${source_branch}' — aborting"
+			return $RETURN_SUCCESS
+		fi
+	else
+		shell::logger::info "Browsing commits across all refs → cherry-pick target: '${current_branch}'"
+		while IFS= read -r line; do
+			commit_lines+=("$line")
+		done < <(git log --format=format:"${log_format}" --all --color=always 2>/dev/null)
+
+		if [ "${#commit_lines[@]}" -eq 0 ]; then
+			shell::logger::warn "No commits found in repository — aborting"
+			return $RETURN_SUCCESS
+		fi
+	fi
+
+	# Step 3 — present multi-select picker (TAB to mark commits).
+	local selected_output
+	selected_output=$(shell::options::multiselect "${commit_lines[@]}")
+
+	if [ -z "$selected_output" ]; then
+		shell::logger::warn "No commits selected — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	# Step 4 — extract hashes (newest-first per git log) then reverse to oldest-first.
+	# cherry-pick must replay commits in chronological order so each commit builds
+	# on top of the previous one without unnecessary conflicts.
+	local -a hashes_newest_first
+	while IFS= read -r h; do
+		hashes_newest_first+=("$h")
+	done < <(printf '%s' "$selected_output" | grep -oE '[0-9a-f]{40}')
+
+	if [ "${#hashes_newest_first[@]}" -eq 0 ]; then
+		shell::logger::warn "No valid commit hashes extracted — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	# Reverse array: index from last to first.
+	local -a hashes_oldest_first
+	local i
+	for (( i=${#hashes_newest_first[@]}-1; i>=0; i-- )); do
+		hashes_oldest_first+=("${hashes_newest_first[$i]}")
+	done
+
+	# Step 5 — display cherry-pick plan and confirm.
+	shell::logger::info "Cherry-pick target branch: ${current_branch}"
+	shell::logger::info "Commits to apply (oldest → newest):"
+	local h
+	local subj
+	for h in "${hashes_oldest_first[@]}"; do
+		subj=$(git log -1 --format='%s' "$h" 2>/dev/null)
+		shell::logger::info "  ${h:0:8}  ${subj}"
+	done
+
+	# Build the command string (hashes space-joined for display / dry-run).
+	local cmd_cherry_pick="git cherry-pick ${hashes_oldest_first[*]}"
+
+	if shell::out::confirmz "Cherry-pick ${#hashes_oldest_first[@]} commit(s) onto '${current_branch}' and push to remote?"; then
+		shell::logger::info "Cherry-pick aborted"
+		return $RETURN_SUCCESS
+	fi
+
+	# Step 6 — execute cherry-pick.
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::command_clip "$cmd_cherry_pick"
+		# Show push dry-run without executing.
+		shell::git::branch::push -n "${current_branch}"
+		return $RETURN_SUCCESS
+	fi
+
+	shell::logger::assert "$cmd_cherry_pick" \
+		"${#hashes_oldest_first[@]} commit(s) cherry-picked onto '${current_branch}'" \
+		"Cherry-pick failed — resolve conflicts then run 'git cherry-pick --continue', or abort with 'git cherry-pick --abort'" || return $?
+
+	# Step 7 — push current branch via interactive push strategy picker.
+	shell::git::branch::push "${current_branch}"
+
+	return $RETURN_SUCCESS
+}
+
 # Clones a remote Git repository as a shallow clone (depth 1) into a specified
 # local folder name.
 #
