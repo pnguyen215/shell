@@ -1154,11 +1154,14 @@ shell::git::commit::pick::local() {
 		return $RETURN_SUCCESS
 	fi
 
-	# Reverse array: index from last to first.
+	# Reverse array: prepend each element so the last becomes the first.
+	# Prepend-based reversal is index-free and works in both bash (0-based arrays)
+	# and zsh (1-based arrays), avoiding the off-by-one that a C-style index loop
+	# (i = count-1 down to 0) produces in zsh where index 0 returns empty string.
 	local -a hashes_oldest_first
-	local i
-	for (( i=${#hashes_newest_first[@]}-1; i>=0; i-- )); do
-		hashes_oldest_first+=("${hashes_newest_first[$i]}")
+	local _h
+	for _h in "${hashes_newest_first[@]}"; do
+		hashes_oldest_first=("$_h" "${hashes_oldest_first[@]}")
 	done
 
 	# Step 5 — display cherry-pick plan and confirm.
@@ -1316,11 +1319,14 @@ shell::git::commit::pick::remote() {
 		return $RETURN_SUCCESS
 	fi
 
-	# Reverse array: index from last to first.
+	# Reverse array: prepend each element so the last becomes the first.
+	# Prepend-based reversal is index-free and works in both bash (0-based arrays)
+	# and zsh (1-based arrays), avoiding the off-by-one that a C-style index loop
+	# (i = count-1 down to 0) produces in zsh where index 0 returns empty string.
 	local -a hashes_oldest_first
-	local i
-	for (( i=${#hashes_newest_first[@]}-1; i>=0; i-- )); do
-		hashes_oldest_first+=("${hashes_newest_first[$i]}")
+	local _h
+	for _h in "${hashes_newest_first[@]}"; do
+		hashes_oldest_first=("$_h" "${hashes_oldest_first[@]}")
 	done
 
 	# Step 5 — display cherry-pick plan and confirm.
