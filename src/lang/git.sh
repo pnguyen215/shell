@@ -430,7 +430,7 @@ shell::git::branch::create() {
 		shell::logger::reset_options
 		shell::logger::info "Create local branches, push them to origin with upstream tracking, then restore current branch"
 		shell::logger::usage "shell::git::branch::create [-n] [-h] <branch> [<branch> ...]"
-		shell::logger::item "branch" "Branch name(s) matching ^[a-zA-Z0-9_-]+$"
+		shell::logger::item "branch" "Branch name(s) matching ^[a-zA-Z0-9_./-]+$"
 		shell::logger::option "-h, --help" "Show this help message"
 		shell::logger::option "-n, --dry-run" "Print the commands instead of executing them"
 		shell::logger::example "shell::git::branch::create feature_a feature_b"
@@ -458,14 +458,14 @@ shell::git::branch::create() {
 		return $RETURN_FAILURE
 	fi
 
-	local branch_regex='^[a-zA-Z0-9_-]+$'
+	local branch_regex='^[a-zA-Z0-9_./-]+$'
 	local branch
 	local cmd_checkout_new
 	local cmd_push_upstream
 
 	for branch in "$@"; do
 		if ! [[ "$branch" =~ $branch_regex ]]; then
-			shell::logger::warn "Invalid branch name '${branch}' — only letters, digits, hyphens, and underscores allowed; skipping"
+			shell::logger::warn "Invalid branch name '${branch}' — only letters, digits, hyphens, underscores, dots, and slashes allowed; skipping"
 			continue
 		fi
 
@@ -483,16 +483,6 @@ shell::git::branch::create() {
 		shell::logger::assert "$cmd_push_upstream" \
 			"Branch '${branch}' pushed to origin with upstream tracking" "Branch push aborted" || return $?
 	done
-
-	# Restore the original branch.
-	local cmd_restore="git checkout \"${current_branch}\""
-
-	if [ "$dry_run" = "true" ]; then
-		shell::logger::command_clip "$cmd_restore"
-	else
-		shell::logger::assert "$cmd_restore" \
-			"Restored original branch '${current_branch}'" "Branch restore aborted" || return $?
-	fi
 
 	return $RETURN_SUCCESS
 }
