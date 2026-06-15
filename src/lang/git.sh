@@ -923,6 +923,29 @@ shell::git::commit::spec::search() {
 	return $RETURN_SUCCESS
 }
 
+# shell::git::commit::spec::search::current function
+# Presents a multi-select picker of all commits on the currently active branch,
+# then prints each selected commit's info to the console and copies it to the clipboard.
+#
+# Usage:
+#   shell::git::commit::spec::search::current [-h]
+#
+# Parameters:
+#   - -h, --help : Show this help message.
+#
+# Description:
+#   Detects the currently active branch and forwards it to shell::git::commit::spec::search
+#   to present the commit multi-select for that branch. If not inside a Git repository, an error is logged and the function returns with failure.
+shell::git::commit::spec::search::current() {
+	local current_branch
+	current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+	if [ -z "$current_branch" ]; then
+		shell::logger::error "Not inside a Git repository"
+		return $RETURN_FAILURE
+	fi
+	shell::git::commit::spec::search "$current_branch"
+}
+
 # shell::git::commit::all::search function
 # Presents a multi-select picker of all commits across all refs in the repository,
 # then prints each selected commit's info to the console and copies it to the clipboard.

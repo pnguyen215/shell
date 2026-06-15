@@ -89,6 +89,12 @@ alias sgcmp="shell::git::commit::spec::search"
 alias sgcmp-n="shell::git::commit::spec::search -n"
 alias sgcommitpick="shell::git::commit::spec::search"
 
+# shell::git::commit::spec::search::current
+alias sgcssc="shell::git::commit::spec::search::current"
+alias sgcssc-n="shell::git::commit::spec::search::current -n"
+alias sgcpick="shell::git::commit::spec::search::current"
+alias sgcpick-n="shell::git::commit::spec::search::current -n"
+
 # shell::git::commit::all::search
 alias sgcas="shell::git::commit::all::search"
 alias sgcas-n="shell::git::commit::all::search -n"
