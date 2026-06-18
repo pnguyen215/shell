@@ -30,6 +30,16 @@ alias ser-n="shell::editor -n"                       # edit file with default ed
 # Shell git aliases
 # //////////////////
 
+# shell::git::repos::fetch
+alias sgreposf="shell::git::repos::fetch"
+alias sgreposf-n="shell::git::repos::fetch -n"
+alias sgrf="shell::git::repos::fetch"
+alias sgrf-n="shell::git::repos::fetch -n"
+
+# shell::git::repos::version::latest
+alias sgrvl="shell::git::repos::version::latest"
+alias sgrvl-n="shell::git::repos::version::latest -n"
+
 # shell::git::branch::all::fzf
 alias sgbaf="shell::git::branch::all::fzf"
 alias sgbx="shell::git::branch::all::fzf"
@@ -57,10 +67,6 @@ alias sgbb-n="shell::git::branch::backup -n"
 # shell::git::branch::backup::current
 alias sgbbc="shell::git::branch::backup::current"
 alias sgbbc-n="shell::git::branch::backup::current -n"
-
-# shell::git::repos::fetch
-alias sgreposf="shell::git::repos::fetch"
-alias sgreposf-n="shell::git::repos::fetch -n"
 
 # shell::git::branch::sync
 alias sgbs="shell::git::branch::sync"
@@ -119,6 +125,12 @@ alias sgcpickl-n="shell::git::commit::pick::local -n"
 alias sgcpickr="shell::git::commit::pick::remote"
 alias sgcpickr-n="shell::git::commit::pick::remote -n"
 
+# shell::git::commit::create
+alias sgcc="shell::git::commit::create"
+alias sgcc-n="shell::git::commit::create -n"
+alias sgcf="shell::git::commit::create"
+alias sgcf-n="shell::git::commit::create -n"
+
 # shell::git::tag::create
 alias sgtc="shell::git::tag::create"
 alias sgtc-n="shell::git::tag::create -n"
@@ -126,12 +138,6 @@ alias sgtc-n="shell::git::tag::create -n"
 # shell::git::tag::remove
 alias sgrmt="shell::git::tag::remove"
 alias sgrmt-n="shell::git::tag::remove -n"
-
-# shell::git::commit::create
-alias sgcc="shell::git::commit::create"
-alias sgcc-n="shell::git::commit::create -n"
-alias sgcf="shell::git::commit::create"
-alias sgcf-n="shell::git::commit::create -n"
 
 # Shell kernel aliases
 alias c="clear"
