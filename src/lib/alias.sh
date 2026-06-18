@@ -30,6 +30,10 @@ alias ser-n="shell::editor -n"                       # edit file with default ed
 # Shell git aliases
 # //////////////////
 
+# shell::git::branch::all::fzf
+alias sgbaf="shell::git::branch::all::fzf"
+alias sgbx="shell::git::branch::all::fzf"
+
 # shell::git::branch::checkout
 alias sgfb="shell::git::branch::checkout"
 alias sgfb-n="shell::git::branch::checkout -n"

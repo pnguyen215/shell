@@ -2332,3 +2332,284 @@ shell::git::branch::backup::current() {
 
 	shell::git::branch::backup "${current_branch}"
 }
+
+# shell::git::branch::all::fzf function
+# Lists all local and remote branches with sync-state labels, presents a
+# multi-select picker, then shows an action menu to act on the selected
+# branches using existing shell::git::* functions.
+#
+# Usage:
+#   shell::git::branch::all::fzf [-h]
+#
+# Parameters:
+#   - -h, --help : Show this help message.
+#
+# Branch label format (columns are fixed-width for alignment in fzf):
+#   * [LOCAL | synced    ] : <branch>  — currently checked-out, in sync with origin
+#     [LOCAL | synced    ] : <branch>  — local, in sync with origin
+#     [LOCAL | +N/-M     ] : <branch>  — N local commits ahead, M remote commits behind
+#     [LOCAL | no-remote ] : <branch>  — local-only, no remote tracking ref
+#     [REMOTE            ] : <branch>  — exists only on origin, not present locally
+#
+#   The ' : ' separator uses ':' which is prohibited in git branch names,
+#   making it a reliable extraction anchor in the space-joined multiselect output.
+#
+# Action menu (presented after branch selection via shell::options::select_key):
+#   • Checkout                              → shell::git::branch::checkout      (first selected)
+#   • View commit history                   → shell::git::commit::spec           (first selected)
+#   • Browse commits and copy info          → shell::git::commit::spec::search   (first selected)
+#   • Cherry-pick commits onto current      → shell::git::commit::pick::local    (first selected)
+#   • Cherry-pick commits then push         → shell::git::commit::pick::remote   (first selected)
+#   • Backup selected branch(es)            → shell::git::branch::backup         (each selected)
+#   • Push selected branch(es) to remote    → shell::git::branch::push           (each selected)
+#   • Remove selected branch(es)            → shell::git::branch::remove         (all selected)
+#   • Sync all remote branches to local     → shell::git::branch::sync           (ignores selection)
+#   • Exit — noop                           → return immediately
+#
+# Returns:
+#   $RETURN_SUCCESS (0) on success or when no branches/action are selected.
+#   $RETURN_FAILURE (non-zero) when not inside a Git repository or an action fails.
+#
+# Example:
+#   shell::git::branch::all::fzf
+shell::git::branch::all::fzf() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "List all branches with sync labels, multi-select, then run an action"
+		shell::logger::usage "shell::git::branch::all::fzf [-h]"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::git::branch::all::fzf"
+		return $RETURN_SUCCESS
+	fi
+
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return $RETURN_FAILURE
+	fi
+
+	# Refresh remote-tracking refs so sync status reflects the current remote state.
+	shell::logger::info "Fetching remote refs to determine sync status..."
+	git fetch --all --quiet 2>/dev/null
+
+	# Capture the currently checked-out branch for the '*' active marker.
+	local current_branch
+	current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+
+	# ---------------------------------------------------------------------------
+	# Collect local and remote branch names.
+	# ---------------------------------------------------------------------------
+	local -a local_branches
+	while IFS= read -r b; do
+		local_branches+=("$b")
+	done < <(git branch | sed 's|^[* ]*||')
+
+	local -a remote_branches
+	while IFS= read -r b; do
+		remote_branches+=("$b")
+	done < <(git branch -r | grep 'origin/' | grep -v 'HEAD' | sed 's|^[[:space:]]*origin/||')
+
+	# ---------------------------------------------------------------------------
+	# Build display lines.
+	#
+	# Format: "M [LABEL              ] : branch_name"
+	#   M     — '*' for the checked-out branch, ' ' otherwise
+	#   LABEL — printf-padded to 20 chars for alignment:
+	#             [LOCAL | %-10s]  (9 + 10 + 1 = 20)
+	#             [%-18s]          (1 + 18 + 1 = 20)
+	#   ' : ' — field separator; ':' is prohibited in git branch names so this
+	#             token is a safe extraction anchor in the space-joined multiselect output
+	# ---------------------------------------------------------------------------
+	local -a branch_lines
+	local b
+	local label
+	local status_str
+	local local_ahead
+	local remote_ahead
+	local marker
+
+	for b in "${local_branches[@]}"; do
+		if git rev-parse --verify --quiet "refs/remotes/origin/${b}" >/dev/null 2>&1; then
+			local_ahead=$(git rev-list "origin/${b}..refs/heads/${b}" --count 2>/dev/null || echo "0")
+			remote_ahead=$(git rev-list "refs/heads/${b}..origin/${b}" --count 2>/dev/null || echo "0")
+			if [ "${local_ahead}" -eq 0 ] && [ "${remote_ahead}" -eq 0 ]; then
+				status_str="synced"
+			else
+				status_str="+${local_ahead}/-${remote_ahead}"
+			fi
+		else
+			status_str="no-remote"
+		fi
+
+		label=$(printf "[LOCAL | %-10s]" "$status_str")
+		marker=" "
+		[ "$b" = "$current_branch" ] && marker="*"
+
+		branch_lines+=("${marker} ${label} : ${b}")
+	done
+
+	# Add remote-only branches (branches on origin that have no local counterpart).
+	local rb
+	local is_local
+	local remote_label
+	remote_label=$(printf "[%-18s]" "REMOTE")
+
+	for rb in "${remote_branches[@]}"; do
+		is_local="false"
+		for b in "${local_branches[@]}"; do
+			[ "$b" = "$rb" ] && { is_local="true"; break; }
+		done
+		if [ "$is_local" = "false" ]; then
+			branch_lines+=("  ${remote_label} : ${rb}")
+		fi
+	done
+
+	if [ "${#branch_lines[@]}" -eq 0 ]; then
+		shell::logger::warn "No branches found in this repository — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	# ---------------------------------------------------------------------------
+	# Step 1 — multi-select branch picker (TAB to mark multiple entries, Enter to confirm).
+	# ---------------------------------------------------------------------------
+	local selected_output
+	selected_output=$(shell::options::multiselect "${branch_lines[@]}")
+
+	if [ -z "$selected_output" ]; then
+		shell::logger::warn "No branches selected — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	# ---------------------------------------------------------------------------
+	# Step 2 — extract branch names from the space-joined multiselect output.
+	#
+	# shell::options::multiselect joins selected lines with spaces (newlines → spaces).
+	# The ' : ' separator (colon is prohibited in git ref names) followed by
+	# non-space chars uniquely identifies each branch name in the joined string.
+	#
+	# Example joined output:
+	#   "* [LOCAL | synced    ] : main   [LOCAL | +2/-0     ] : feature/TM-1234"
+	# grep -oE ': [^ ]+' → [": main", ": feature/TM-1234"]
+	# sed 's/: //'        → ["main", "feature/TM-1234"]
+	# ---------------------------------------------------------------------------
+	local -a selected_branches
+	while IFS= read -r bname; do
+		[ -n "$bname" ] && selected_branches+=("$bname")
+	done < <(printf '%s' "$selected_output" | grep -oE ': [^ ]+' | sed 's/: //')
+
+	if [ "${#selected_branches[@]}" -eq 0 ]; then
+		shell::logger::warn "Could not parse branch names from selection — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	# Resolve first selected branch in a cross-shell way.
+	# bash uses 0-based array indexing; zsh uses 1-based indexing, so
+	# ${array[0]} returns empty in zsh. Iterating and breaking after the
+	# first element is index-free and works in both shells.
+	local first_branch
+	for first_branch in "${selected_branches[@]}"; do break; done
+
+	local count="${#selected_branches[@]}"
+	local branch_word="branch"
+	[ "${count}" -gt 1 ] && branch_word="branches"
+
+	# Log the selection for visibility.
+	shell::logger::info "Selected ${count} ${branch_word}:"
+	local _b
+	for _b in "${selected_branches[@]}"; do
+		shell::logger::info "  • ${_b}"
+	done
+
+	# ---------------------------------------------------------------------------
+	# Step 3 — action menu.
+	#
+	# Uses shell::options::select_key which splits each entry on the first ':'
+	# to separate the display label from the key. Labels must not contain ':'.
+	# Single-branch actions warn and apply to the first selected branch only.
+	# Multi-branch actions iterate over (or pass) all selected branches.
+	# ---------------------------------------------------------------------------
+	local -a action_options=(
+		"Checkout — first selected branch:checkout"
+		"View commit history — first selected branch:view_commits"
+		"Browse commits and copy info — first selected branch:search_commits"
+		"Cherry-pick commits onto current branch — first selected branch:pick_local"
+		"Cherry-pick commits onto current branch then push — first selected branch:pick_remote"
+		"Backup ${count} selected ${branch_word} — local and remote:backup"
+		"Push ${count} selected ${branch_word} to remote:push"
+		"Remove ${count} selected ${branch_word} from local and remote:remove"
+		"Sync all remote branches to local — ignores selection:sync"
+		"Exit — noop:noop"
+	)
+
+	local action
+	action=$(shell::options::select_key "${action_options[@]}")
+
+	if [ -z "$action" ] || [ "$action" = "noop" ]; then
+		shell::logger::info "No action taken — exiting"
+		return $RETURN_SUCCESS
+	fi
+
+	# ---------------------------------------------------------------------------
+	# Step 4 — execute the selected action.
+	# ---------------------------------------------------------------------------
+	case "$action" in
+		checkout)
+			[ "${count}" -gt 1 ] && shell::logger::warn "Multiple branches selected — checkout applies to first: ${first_branch}"
+			shell::git::branch::checkout "${first_branch}"
+			;;
+
+		view_commits)
+			[ "${count}" -gt 1 ] && shell::logger::warn "Multiple branches selected — commit history applies to first: ${first_branch}"
+			shell::git::commit::spec "${first_branch}"
+			;;
+
+		search_commits)
+			[ "${count}" -gt 1 ] && shell::logger::warn "Multiple branches selected — commit browse applies to first: ${first_branch}"
+			shell::git::commit::spec::search "${first_branch}"
+			;;
+
+		pick_local)
+			[ "${count}" -gt 1 ] && shell::logger::warn "Multiple branches selected — cherry-pick source is first: ${first_branch}"
+			shell::git::commit::pick::local "${first_branch}"
+			;;
+
+		pick_remote)
+			[ "${count}" -gt 1 ] && shell::logger::warn "Multiple branches selected — cherry-pick source is first: ${first_branch}"
+			shell::git::commit::pick::remote "${first_branch}"
+			;;
+
+		backup)
+			shell::logger::info "Backing up ${count} ${branch_word}..."
+			for _b in "${selected_branches[@]}"; do
+				shell::logger::info "Backing up: ${_b}"
+				shell::git::branch::backup "${_b}" || shell::logger::warn "Backup failed for '${_b}' — continuing with remaining branches"
+			done
+			;;
+
+		push)
+			shell::logger::info "Pushing ${count} ${branch_word} to remote..."
+			for _b in "${selected_branches[@]}"; do
+				shell::logger::info "Pushing: ${_b}"
+				shell::git::branch::push "${_b}"
+			done
+			;;
+
+		remove)
+			# Extra confirmation before destructive removal.
+			shell::logger::warn "This will permanently remove ${count} ${branch_word} from local and origin"
+			for _b in "${selected_branches[@]}"; do
+				shell::logger::warn "  • ${_b}"
+			done
+			if shell::out::confirmz "Proceed with removal?"; then
+				shell::logger::info "Remove aborted"
+				return $RETURN_SUCCESS
+			fi
+			shell::git::branch::remove "${selected_branches[@]}"
+			;;
+
+		sync)
+			shell::git::branch::sync
+			;;
+	esac
+
+	return $RETURN_SUCCESS
+}
