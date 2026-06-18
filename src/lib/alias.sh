@@ -30,6 +30,18 @@ alias ser-n="shell::editor -n"                       # edit file with default ed
 # Shell git aliases
 # //////////////////
 
+# shell::git::repos::stats
+alias sgrs="shell::git::repos::stats"
+alias sgrs-n="shell::git::repos::stats -n"
+alias sgrst="shell::git::repos::stats"
+alias sgrst-n="shell::git::repos::stats -n"
+alias sgrstat="shell::git::repos::stats"
+alias sgrstat-n="shell::git::repos::stats -n"
+alias sgrstats="shell::git::repos::stats"
+alias sgrstats-n="shell::git::repos::stats -n"
+alias sgrepostats="shell::git::repos::stats"
+alias sgrepostats-n="shell::git::repos::stats -n"
+
 # shell::git::repos::fetch
 alias sgreposf="shell::git::repos::fetch"
 alias sgreposf-n="shell::git::repos::fetch -n"
