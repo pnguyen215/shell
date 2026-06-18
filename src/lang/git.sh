@@ -2294,7 +2294,7 @@ shell::git::branch::backup() {
 	server_remote_url=$(git config --get remote.origin.url 2>/dev/null)
 	notify_timestamp=$(date "+%Y-%m-%d %H:%M:%S")
 
-	local telegram_message="Branch Backup Successfully (Local + Remote) | source: ${branch} | backup: ${backup_name} | repository: ${repository_name} (${server_remote_url}) | username: ${git_username} | timestamp: ${notify_timestamp}"
+	local telegram_message="Branch Backup Successfully (Local & Remote) | source: ${branch} | backup: ${backup_name} | repository: ${repository_name} (${server_remote_url}) | username: ${git_username} | timestamp: ${notify_timestamp}"
 	shell::git::telegram::send_activity "${telegram_message}"
 
 	return $RETURN_SUCCESS
