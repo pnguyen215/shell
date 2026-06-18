@@ -2170,12 +2170,14 @@ shell::git::branch::push() {
 #   Step 3 — Run: git branch <backup_name> <source_branch>
 #             This creates the backup branch at the same commit as the source
 #             WITHOUT switching HEAD — the working tree is never disturbed.
-#   Step 4 — Log the backup name, copy it to the clipboard via shell::clip_value,
+#   Step 4 — Push the backup branch to origin with upstream tracking:
+#             git push -u origin <backup_name>
+#   Step 5 — Log the backup name, copy it to the clipboard via shell::clip_value,
 #             and send a Telegram activity notification.
 #
 # Safety notes:
 #   • No checkout / restore cycle: HEAD never moves, so in-progress work is safe.
-#   • The backup branch is local-only; push it manually if remote storage is needed.
+#   • The backup branch is pushed to origin immediately for remote storage.
 #   • Backup names are collision-resistant: timestamp precision is 1 second.
 #
 # Returns:
@@ -2252,15 +2254,17 @@ shell::git::branch::backup() {
 	local backup_name="backup/${sanitized_branch}/${timestamp}"
 
 	# ---------------------------------------------------------------------------
-	# Command — git branch (not checkout) so HEAD is never moved.
+	# Commands — git branch (not checkout) so HEAD is never moved, then push.
 	# ---------------------------------------------------------------------------
 	local cmd_backup="git branch \"${backup_name}\" \"${branch}\""
+	local cmd_push="git push -u origin \"${backup_name}\""
 
 	shell::logger::info "Source branch  : ${branch}"
 	shell::logger::info "Backup branch  : ${backup_name}"
 
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::command_clip "$cmd_backup"
+		shell::logger::command_clip "$cmd_push"
 		return $RETURN_SUCCESS
 	fi
 
@@ -2269,7 +2273,12 @@ shell::git::branch::backup() {
 		"Backup branch '${backup_name}' created from '${branch}'" \
 		"Backup failed — branch creation aborted" || return $?
 
-	# Step 4 — copy the backup branch name to the clipboard for easy reference.
+	# Step 4 — push backup branch to origin with upstream tracking.
+	shell::logger::assert "$cmd_push" \
+		"Backup branch '${backup_name}' pushed to origin" \
+		"Backup push failed — run 'git push -u origin ${backup_name}' manually" || return $?
+
+	# Step 5 — copy the backup branch name to the clipboard for easy reference.
 	shell::clip_value "${backup_name}"
 
 	# Collect metadata for the Telegram notification.
@@ -2285,7 +2294,7 @@ shell::git::branch::backup() {
 	server_remote_url=$(git config --get remote.origin.url 2>/dev/null)
 	notify_timestamp=$(date "+%Y-%m-%d %H:%M:%S")
 
-	local telegram_message="Branch Backup Successfully (Locally) | source: ${branch} | backup: ${backup_name} | repository: ${repository_name} (${server_remote_url}) | username: ${git_username} | timestamp: ${notify_timestamp}"
+	local telegram_message="Branch Backup Successfully (Local + Remote) | source: ${branch} | backup: ${backup_name} | repository: ${repository_name} (${server_remote_url}) | username: ${git_username} | timestamp: ${notify_timestamp}"
 	shell::git::telegram::send_activity "${telegram_message}"
 
 	return $RETURN_SUCCESS
