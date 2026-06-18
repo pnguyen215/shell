@@ -2136,3 +2136,190 @@ shell::git::branch::push() {
 
 	return $RETURN_SUCCESS
 }
+
+# shell::git::branch::backup function
+# Creates a local backup branch pointing to the same commit as the given source
+# branch, without switching HEAD. Sends a Telegram activity notification on success.
+#
+# Usage:
+#   shell::git::branch::backup [-n] [-h] <branch>
+#
+# Parameters:
+#   - -n, --dry-run : Optional. Print the git branch command via
+#                     shell::logger::command_clip instead of executing it.
+#   - -h, --help    : Show this help message.
+#   - <branch>      : Source branch name to back up.
+#
+# Backup name pattern:
+#   backup/<sanitized-branch>/<YYYYMMDD.HHMMSS>
+#
+#   <sanitized-branch> is the source branch name with every '/' replaced by '--'
+#   (double-dash) so that the backup hierarchy is always exactly two levels deep
+#   and single dashes inside branch names remain unambiguous.
+#
+#   Examples:
+#     main                 → backup/main/20260618.215830
+#     feature/TM-1234      → backup/feature--TM-1234/20260618.215830
+#     release/v2.0/hotfix  → backup/release--v2.0--hotfix/20260618.215830
+#
+# Description:
+#   Step 1 — Validate that the source branch exists locally.
+#             If it is only on origin, offers a clear error message.
+#   Step 2 — Build the backup branch name from the sanitized source name
+#             and a timestamp (YYYYMMDD.HHMMSS).
+#   Step 3 — Run: git branch <backup_name> <source_branch>
+#             This creates the backup branch at the same commit as the source
+#             WITHOUT switching HEAD — the working tree is never disturbed.
+#   Step 4 — Log the backup name, copy it to the clipboard via shell::clip_value,
+#             and send a Telegram activity notification.
+#
+# Safety notes:
+#   • No checkout / restore cycle: HEAD never moves, so in-progress work is safe.
+#   • The backup branch is local-only; push it manually if remote storage is needed.
+#   • Backup names are collision-resistant: timestamp precision is 1 second.
+#
+# Returns:
+#   $RETURN_SUCCESS (0) on success.
+#   $RETURN_INVALID (1) when <branch> is omitted.
+#   $RETURN_FAILURE (non-zero) when not inside a Git repository or the source
+#                   branch does not exist locally.
+#
+# Example:
+#   shell::git::branch::backup "main"
+#   shell::git::branch::backup "feature/TM-1234"
+#   shell::git::branch::backup -n "release/v2.0"
+shell::git::branch::backup() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Create a local backup branch from a source branch without switching HEAD"
+		shell::logger::usage "shell::git::branch::backup [-n] [-h] <branch>"
+		shell::logger::item "branch" "Source branch name to back up"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the git branch command instead of executing it"
+		shell::logger::example "shell::git::branch::backup \"main\""
+		shell::logger::example "shell::git::branch::backup \"feature/TM-1234\""
+		shell::logger::example "shell::git::branch::backup -n \"release/v2.0\""
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	local branch="$1"
+
+	if [ -z "$branch" ]; then
+		shell::logger::error "Branch name is required"
+		return $RETURN_INVALID
+	fi
+
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return $RETURN_FAILURE
+	fi
+
+	# Step 1 — verify the source branch exists locally.
+	# git branch -f requires a local ref; refuse early with a helpful hint when
+	# the branch lives only on the remote.
+	if ! git rev-parse --verify --quiet "refs/heads/${branch}" >/dev/null 2>&1; then
+		# Check whether it exists on origin so the error message is actionable.
+		if git rev-parse --verify --quiet "refs/remotes/origin/${branch}" >/dev/null 2>&1; then
+			shell::logger::error "Branch '${branch}' exists on origin but not locally — run 'git checkout ${branch}' first, then backup"
+		else
+			shell::logger::error "Branch '${branch}' does not exist locally or on origin"
+		fi
+		return $RETURN_FAILURE
+	fi
+
+	# Step 2 — build the backup branch name.
+	# Replace every '/' in the source branch name with '--' (double-dash) so the
+	# backup hierarchy is always exactly two levels deep:
+	#   backup/<sanitized-branch>/<YYYYMMDD.HHMMSS>
+	# Double-dash is chosen over single-dash to keep single dashes inside the
+	# original branch name (e.g. "TM-1234") visually unambiguous.
+	local sanitized_branch
+	sanitized_branch=$(printf '%s' "${branch}" | tr '/' '-' | sed 's/-/-/g; s|/|--|g')
+	# tr '/' replaces each '/' with '-'; for multi-segment names like
+	# "feature/scope/detail", we want '--' not '-'. Re-process with parameter
+	# substitution for portability:
+	sanitized_branch=$(printf '%s' "${branch}" | sed 's|/|--|g')
+
+	local timestamp
+	timestamp=$(date +"%Y%m%d.%H%M%S")
+
+	local backup_name="backup/${sanitized_branch}/${timestamp}"
+
+	# ---------------------------------------------------------------------------
+	# Command — git branch (not checkout) so HEAD is never moved.
+	# ---------------------------------------------------------------------------
+	local cmd_backup="git branch \"${backup_name}\" \"${branch}\""
+
+	shell::logger::info "Source branch  : ${branch}"
+	shell::logger::info "Backup branch  : ${backup_name}"
+
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::command_clip "$cmd_backup"
+		return $RETURN_SUCCESS
+	fi
+
+	# Step 3 — create backup branch (no HEAD movement).
+	shell::logger::assert "$cmd_backup" \
+		"Backup branch '${backup_name}' created from '${branch}'" \
+		"Backup failed — branch creation aborted" || return $?
+
+	# Step 4 — copy the backup branch name to the clipboard for easy reference.
+	shell::clip_value "${backup_name}"
+
+	# Collect metadata for the Telegram notification.
+	local repository_path
+	local repository_name
+	local git_username
+	local server_remote_url
+	local notify_timestamp
+
+	repository_path=$(git rev-parse --show-toplevel 2>/dev/null)
+	repository_name=$(basename "${repository_path}")
+	git_username=$(git config user.name 2>/dev/null)
+	server_remote_url=$(git config --get remote.origin.url 2>/dev/null)
+	notify_timestamp=$(date "+%Y-%m-%d %H:%M:%S")
+
+	local telegram_message="Branch Backup Successfully (Locally) | source: ${branch} | backup: ${backup_name} | repository: ${repository_name} (${server_remote_url}) | username: ${git_username} | timestamp: ${notify_timestamp}"
+	shell::git::telegram::send_activity "${telegram_message}"
+
+	return $RETURN_SUCCESS
+}
+
+# shell::git::branch::backup::current function
+# Creates a local backup branch of the currently checked-out branch without switching HEAD. Sends a Telegram activity notification on success.
+#
+# Usage:
+#   shell::git::branch::backup::current [-n] [-h]
+#
+# Parameters:
+#   - -n, --dry-run : Optional. Print the git branch command via
+#                     shell::logger::command_clip instead of executing it.
+#   - -h, --help    : Show this help message.
+# 
+# Description:
+#   1. Determine the currently checked-out branch.
+#   2. Call shell::git::branch::backup with the current branch name.
+# 
+# Returns:
+#   $RETURN_SUCCESS (0) on success.
+#   $RETURN_FAILURE (non-zero) when not inside a Git repository.
+# 
+# Example:
+#   shell::git::branch::backup::current
+shell::git::branch::backup::current() {
+	local current_branch
+	current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+
+	if [ -z "$current_branch" ]; then
+		shell::logger::error "Not inside a Git repository"
+		return $RETURN_FAILURE
+	fi
+
+	shell::git::branch::backup "${current_branch}"
+}

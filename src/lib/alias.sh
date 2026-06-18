@@ -46,6 +46,14 @@ alias sgcb-n="shell::git::branch::create -n"
 alias sgrmb="shell::git::branch::remove"
 alias sgrmb-n="shell::git::branch::remove -n"
 
+# shell::git::branch::backup
+alias sgbb="shell::git::branch::backup"
+alias sgbb-n="shell::git::branch::backup -n"
+
+# shell::git::branch::backup::current
+alias sgbbc="shell::git::branch::backup::current"
+alias sgbbc-n="shell::git::branch::backup::current -n"
+
 # shell::git::repos::fetch
 alias sgreposf="shell::git::repos::fetch"
 alias sgreposf-n="shell::git::repos::fetch -n"
