@@ -1088,6 +1088,300 @@ shell::git::branch::backup::current() {
 	shell::git::branch::backup "${current_branch}"
 }
 
+# shell::git::branch::rename function
+# Renames a local Git branch both locally and on the remote origin, then
+# restores the originally checked-out branch and sends a Telegram notification.
+#
+# Usage:
+#   shell::git::branch::rename [-n] [-h] <old_name> <new_name>
+#
+# Parameters:
+#   - -n, --dry-run : Optional. Print each command via shell::logger::command_clip
+#                     instead of executing it.
+#   - -h, --help    : Show this help message.
+#   - <old_name>    : Current branch name.
+#   - <new_name>    : Desired new branch name.
+#
+# Description:
+#   Step 1 — git branch -m <old_name> <new_name>      — rename locally
+#   Step 2 — git push -u origin <new_name>            — push new name with upstream tracking
+#   Step 3 — git push origin --delete <old_name>      — remove old name from origin
+#             (failure is logged and warned but does not abort — the old name
+#              may not exist on origin if it was never pushed)
+#   Step 4 — git checkout <original_branch>           — restore originally checked-out branch
+#   Step 5 — shell::git::telegram::send_activity      — Telegram notification
+#
+# Returns:
+#   $RETURN_SUCCESS (0) on full success.
+#   $RETURN_INVALID (1) when either argument is missing.
+#   $RETURN_FAILURE (non-zero) when not inside a Git repository or a critical step fails.
+#
+# Example:
+#   shell::git::branch::rename "feature/old-name" "feature/new-name"
+#   shell::git::branch::rename -n "main" "mainline"
+shell::git::branch::rename() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Rename a Git branch locally and on remote origin, then restore current branch"
+		shell::logger::usage "shell::git::branch::rename [-n] [-h] <old_name> <new_name>"
+		shell::logger::item "old_name" "Current branch name"
+		shell::logger::item "new_name" "Desired new branch name"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the commands instead of executing them"
+		shell::logger::example "shell::git::branch::rename \"feature/old-name\" \"feature/new-name\""
+		shell::logger::example "shell::git::branch::rename -n \"main\" \"mainline\""
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	local old_name="$1"
+	local new_name="$2"
+
+	if [ -z "$old_name" ]; then
+		shell::logger::error "Old branch name is required"
+		return $RETURN_INVALID
+	fi
+
+	if [ -z "$new_name" ]; then
+		shell::logger::error "New branch name is required"
+		return $RETURN_INVALID
+	fi
+
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return $RETURN_FAILURE
+	fi
+
+	# Capture current branch so we can restore it after renaming.
+	local current_branch
+	current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+
+	# ---------------------------------------------------------------------------
+	# Commands — declared upfront for dry-run printing and execution.
+	# ---------------------------------------------------------------------------
+	local cmd_rename="git branch -m \"${old_name}\" \"${new_name}\""
+	local cmd_push_new="git push -u origin \"${new_name}\""
+	local cmd_delete_old="git push origin --delete \"${old_name}\""
+	local cmd_restore="git checkout \"${current_branch}\""
+
+	shell::logger::info "Renaming branch  : '${old_name}' → '${new_name}'"
+
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::command_clip "$cmd_rename"
+		shell::logger::command_clip "$cmd_push_new"
+		shell::logger::command_clip "$cmd_delete_old"
+		shell::logger::command_clip "$cmd_restore"
+		return $RETURN_SUCCESS
+	fi
+
+	# Step 1 — rename locally.
+	shell::logger::assert "$cmd_rename" \
+		"Branch '${old_name}' renamed to '${new_name}' locally" \
+		"Local branch rename aborted" || return $?
+
+	# Step 2 — push new name to origin with upstream tracking.
+	shell::logger::assert "$cmd_push_new" \
+		"Branch '${new_name}' pushed to origin with upstream tracking" \
+		"Push of renamed branch aborted" || return $?
+
+	# Step 3 — delete old name on origin.
+	# Non-fatal: the old name may never have been pushed to origin.
+	if ! shell::logger::assert "$cmd_delete_old" \
+		"Old branch '${old_name}' deleted on origin" \
+		"Failed to delete '${old_name}' on origin — it may not exist remotely; continuing"; then
+		shell::logger::warn "Run 'git push origin --delete ${old_name}' manually if the old remote branch still exists"
+	fi
+
+	# Step 4 — restore originally checked-out branch.
+	# When the renamed branch was checked out, git branch -m already moved HEAD
+	# to the new name, so we only need to restore if we were on a different branch.
+	if [ "$current_branch" != "$old_name" ]; then
+		shell::logger::assert "$cmd_restore" \
+			"Restored original branch '${current_branch}'" \
+			"Branch restore aborted" || return $?
+	fi
+
+	# Step 5 — Telegram notification.
+	local repository_path
+	local repository_name
+	local git_username
+	local server_remote_url
+	local notify_timestamp
+
+	repository_path=$(git rev-parse --show-toplevel 2>/dev/null)
+	repository_name=$(basename "${repository_path}")
+	git_username=$(git config user.name 2>/dev/null)
+	server_remote_url=$(git config --get remote.origin.url 2>/dev/null)
+	notify_timestamp=$(date "+%Y-%m-%d %H:%M:%S")
+
+	local telegram_message="Branch Renamed Successfully | old: ${old_name} | new: ${new_name} | repository: ${repository_name} (${server_remote_url}) | username: ${git_username} | timestamp: ${notify_timestamp}"
+	shell::git::telegram::send_activity "${telegram_message}"
+
+	return $RETURN_SUCCESS
+}
+
+# shell::git::branch::rename::current function
+# Renames the currently checked-out branch to a new name, both locally and on
+# the remote origin. Delegates entirely to shell::git::branch::rename.
+#
+# Usage:
+#   shell::git::branch::rename::current [-n] [-h] <new_name>
+#
+# Parameters:
+#   - -n, --dry-run : Optional. Print the commands instead of executing them.
+#   - -h, --help    : Show this help message.
+#   - <new_name>    : Desired new branch name.
+#
+# Returns:
+#   $RETURN_SUCCESS (0) on success.
+#   $RETURN_INVALID (1) when <new_name> is omitted.
+#   $RETURN_FAILURE (non-zero) when not inside a Git repository or rename fails.
+#
+# Example:
+#   shell::git::branch::rename::current "feature/new-name"
+#   shell::git::branch::rename::current -n "feature/new-name"
+shell::git::branch::rename::current() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Rename the currently checked-out branch locally and on remote origin"
+		shell::logger::usage "shell::git::branch::rename::current [-n] [-h] <new_name>"
+		shell::logger::item "new_name" "Desired new branch name"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the commands instead of executing them"
+		shell::logger::example "shell::git::branch::rename::current \"feature/new-name\""
+		shell::logger::example "shell::git::branch::rename::current -n \"feature/new-name\""
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	local new_name="$1"
+
+	if [ -z "$new_name" ]; then
+		shell::logger::error "New branch name is required"
+		return $RETURN_INVALID
+	fi
+
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return $RETURN_FAILURE
+	fi
+
+	local current_branch
+	current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+
+	if [ -z "$current_branch" ]; then
+		shell::logger::error "Could not determine current branch"
+		return $RETURN_FAILURE
+	fi
+
+	if [ "$dry_run" = "true" ]; then
+		shell::git::branch::rename -n "${current_branch}" "${new_name}"
+	else
+		shell::git::branch::rename "${current_branch}" "${new_name}"
+	fi
+}
+
+# shell::git::branch::rename::fzf function
+# Presents an fzf picker of all local branches, prompts for a new name via
+# stdin, then delegates to shell::git::branch::rename.
+#
+# Usage:
+#   shell::git::branch::rename::fzf [-n] [-h]
+#
+# Parameters:
+#   - -n, --dry-run : Optional. Print the commands instead of executing them.
+#   - -h, --help    : Show this help message.
+#
+# Description:
+#   Step 1 — Collect all local branch names and present via shell::options::select.
+#   Step 2 — Prompt for the desired new branch name (loops until non-empty).
+#   Step 3 — Confirm and delegate to shell::git::branch::rename.
+#
+# Returns:
+#   $RETURN_SUCCESS (0) on success or user-initiated abort.
+#   $RETURN_FAILURE (non-zero) when not inside a Git repository or rename fails.
+#
+# Example:
+#   shell::git::branch::rename::fzf
+#   shell::git::branch::rename::fzf -n
+shell::git::branch::rename::fzf() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Select a local branch via fzf and rename it locally and on remote origin"
+		shell::logger::usage "shell::git::branch::rename::fzf [-n] [-h]"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the commands instead of executing them"
+		shell::logger::example "shell::git::branch::rename::fzf"
+		shell::logger::example "shell::git::branch::rename::fzf -n"
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return $RETURN_FAILURE
+	fi
+
+	# Step 1 — collect local branch names.
+	local -a local_branches
+	while IFS= read -r b; do
+		local_branches+=("$b")
+	done < <(git branch | sed 's|^[* ]*||')
+
+	if [ "${#local_branches[@]}" -eq 0 ]; then
+		shell::logger::warn "No local branches found — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	local old_name
+	old_name=$(shell::options::select "${local_branches[@]}")
+
+	if [ -z "$old_name" ]; then
+		shell::logger::warn "No branch selected — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	# Step 2 — prompt for new name (loops until non-empty input).
+	local new_name=""
+	while [ -z "$new_name" ]; do
+		shell::logger::info "Selected branch: ${old_name}"
+		shell::logger::info "Enter new branch name:"
+		read -r new_name
+		if [ -z "$new_name" ]; then
+			shell::logger::warn "New branch name cannot be empty — please try again"
+		fi
+	done
+
+	# Step 3 — confirm and execute.
+	shell::logger::info "Rename '${old_name}' → '${new_name}'"
+
+	if shell::out::confirmz "Proceed with rename?"; then
+		shell::logger::info "Rename aborted"
+		return $RETURN_SUCCESS
+	fi
+
+	if [ "$dry_run" = "true" ]; then
+		shell::git::branch::rename -n "${old_name}" "${new_name}"
+	else
+		shell::git::branch::rename "${old_name}" "${new_name}"
+	fi
+}
+
 # shell::git::branch::all::fzf function
 # Lists all local and remote branches with sync-state labels, presents a
 # multi-select picker, then shows an action menu to act on the selected

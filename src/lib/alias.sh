@@ -68,6 +68,18 @@ alias sgbb-n="shell::git::branch::backup -n"
 alias sgbbc="shell::git::branch::backup::current"
 alias sgbbc-n="shell::git::branch::backup::current -n"
 
+# shell::git::branch::rename
+alias sgbr="shell::git::branch::rename"
+alias sgbr-n="shell::git::branch::rename -n"
+
+# shell::git::branch::rename::current
+alias sgbrc="shell::git::branch::rename::current"
+alias sgbrc-n="shell::git::branch::rename::current -n"
+
+# shell::git::branch::rename::fzf
+alias sgbrf="shell::git::branch::rename::fzf"
+alias sgbrf-n="shell::git::branch::rename::fzf -n"
+
 # shell::git::branch::sync
 alias sgbs="shell::git::branch::sync"
 alias sgbs-n="shell::git::branch::sync -n"
