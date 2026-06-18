@@ -1506,6 +1506,7 @@ shell::git::branch::remove() {
 	local branch
 	local cmd_delete_local
 	local cmd_delete_remote
+	local remote_failed="false"
 
 	for branch in "$@"; do
 		cmd_delete_local="git branch -D \"${branch}\""
@@ -1517,11 +1518,24 @@ shell::git::branch::remove() {
 			continue
 		fi
 
+		# Local delete: hard stop on failure — if the local branch is gone
+		# already (or another local error), there is nothing safe to continue with.
 		shell::logger::assert "$cmd_delete_local" \
 			"Branch '${branch}' deleted locally" "Local branch delete aborted" || return $?
-		shell::logger::assert "$cmd_delete_remote" \
-			"Branch '${branch}' deleted on origin" "Remote branch delete aborted" || return $?
+
+		# Remote delete: log the error but continue so remaining branches in the
+		# list are still processed (common case: branch never pushed to origin).
+		if ! shell::logger::assert "$cmd_delete_remote" \
+			"Branch '${branch}' deleted on origin" \
+			"Remote delete failed for '${branch}' — branch may not exist on origin; continuing"; then
+			remote_failed="true"
+		fi
 	done
+
+	# Surface a summary warning when at least one remote delete was skipped.
+	if [ "$remote_failed" = "true" ]; then
+		shell::logger::warn "One or more remote branch deletes failed — run 'git push origin --delete <branch>' manually for those branches"
+	fi
 
 	# Restore the original branch.
 	local cmd_restore="git checkout \"${current_branch}\""
