@@ -641,10 +641,10 @@ shell::git::commit::spec() {
 	fi
 
 	# ---------------------------------------------------------------------------
-	# Log format — coloured graph: hash, relative time, author, refs, subject.
+	# Log format — coloured graph: hash, relative time, absolute time, author, refs, subject.
 	# ---------------------------------------------------------------------------
-	local log_format="%C(bold blue)%H (%h)%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%an%C(reset)%C(bold yellow)%d%C(reset) %C(dim white)- %s%C(reset)"
-	local cmd_log="git log --graph --decorate --format=format:\"${log_format}\" \"${branch}\""
+	local log_format="%C(bold blue)%H (%h)%C(reset) - %C(bold green)(%ar at %ad)%C(reset) %C(white)%an%C(reset)%C(bold yellow)%d%C(reset) %C(dim white)- %s%C(reset)"
+	local cmd_log="git log --graph --decorate --date=format:'%Y-%m-%d %H:%M:%S' --format=format:\"${log_format}\" \"${branch}\""
 
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::command_clip "$cmd_log"
@@ -731,10 +731,10 @@ shell::git::commit::all() {
 	fi
 
 	# ---------------------------------------------------------------------------
-	# Log format — coloured graph: hash, relative time, author, refs, subject.
+	# Log format — coloured graph: hash, relative time, absolute time, author, refs, subject.
 	# ---------------------------------------------------------------------------
-	local log_format="%C(bold blue)%H (%h)%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%an%C(reset)%C(bold yellow)%d%C(reset) %C(dim white)- %s%C(reset)"
-	local cmd_log="git log --graph --decorate --all --format=format:\"${log_format}\""
+	local log_format="%C(bold blue)%H (%h)%C(reset) - %C(bold green)(%ar at %ad)%C(reset) %C(white)%an%C(reset)%C(bold yellow)%d%C(reset) %C(dim white)- %s%C(reset)"
+	local cmd_log="git log --graph --decorate --all --date=format:'%Y-%m-%d %H:%M:%S' --format=format:\"${log_format}\""
 
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::command_clip "$cmd_log"
@@ -881,16 +881,16 @@ shell::git::commit::spec::search() {
 	repository=$(git rev-parse --show-toplevel 2>/dev/null)
 
 	# ---------------------------------------------------------------------------
-	# Log format — coloured: full hash, short hash, relative time, author, refs, subject.
+	# Log format — coloured: full hash, short hash, relative time, absolute time, author, refs, subject.
 	# Matches the format used by shell::git::commit::spec and shell::git::commit::all.
 	# ---------------------------------------------------------------------------
-	local log_format="%C(bold blue)%H (%h)%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%an%C(reset)%C(bold yellow)%d%C(reset) %C(dim white)- %s%C(reset)"
+	local log_format="%C(bold blue)%H (%h)%C(reset) - %C(bold green)(%ar at %ad)%C(reset) %C(white)%an%C(reset)%C(bold yellow)%d%C(reset) %C(dim white)- %s%C(reset)"
 
 	# Build per-line array — one element per commit — for shell::options::multiselect.
 	local -a commit_lines
 	while IFS= read -r line; do
 		commit_lines+=("$line")
-	done < <(git log --format=format:"${log_format}" --color=always "${branch}" 2>/dev/null)
+	done < <(git log --format=format:"${log_format}" --date=format:'%Y-%m-%d %H:%M:%S' --color=always "${branch}" 2>/dev/null)
 
 	if [ "${#commit_lines[@]}" -eq 0 ]; then
 		shell::logger::warn "No commits found on branch '${branch}' — aborting"
