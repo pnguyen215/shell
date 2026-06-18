@@ -78,6 +78,476 @@ shell::git::telegram::history::send() {
 	fi
 }
 
+# shell::git::repos::stats function
+# Displays comprehensive statistics for a Git repository — works both for a
+# local clone and for a remote URL (public or private with access). When a URL
+# is supplied the repository is cloned to a temporary directory, stats are
+# gathered, then the directory is removed.
+#
+# Usage:
+#   shell::git::repos::stats [-n] [-h] [<path_or_url>]
+#
+# Parameters:
+#   - -n, --dry-run     : Optional. Print planned git commands instead of executing.
+#   - -h, --help        : Show this help message.
+#   - <path_or_url>     : Optional. Local repo path OR remote URL
+#                         (https://, http://, git@, ssh://). Defaults to CWD.
+#
+# Stat sections (v1 metric set):
+#   A. Repository Identity      — name, URL, branches, age, first/last commit
+#   B. Repository Size          — commits, branches, tags, contributors, files, LOC
+#   C. Commit Activity          — windows (24h/7d/30d/90d/1y), velocity, trends
+#   D. Contributors             — totals, active windows, top-10 leaderboard
+#   E. Code Growth              — added/deleted/net lines, avg commit size
+#   F. Code Churn               — churn rate, top modified files & directories
+#   G. Commit Quality           — conventional breakdown, merge/revert/fixup counts
+#   H. Branch Metrics           — local count, active vs stale (90-day threshold)
+#   I. Tag Metrics              — total, latest, first
+#   J. Time Distribution        — by weekday, top hours, working pattern %
+#   K. Language Distribution    — file count by extension (top-15)
+#   L. Repository Health Score  — 0-100 composite score
+#
+# Note: Section E (code growth) runs git log --numstat over the full history.
+#       This can take several minutes on large repositories.
+#
+# Returns:
+#   $RETURN_SUCCESS (0) on success.
+#   $RETURN_FAILURE (non-zero) when the repository cannot be accessed or cloned.
+#
+# Example:
+#   shell::git::repos::stats
+#   shell::git::repos::stats /path/to/local/repo
+#   shell::git::repos::stats https://github.com/owner/repo.git
+#   shell::git::repos::stats git@github.com:owner/private-repo.git
+shell::git::repos::stats() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Display comprehensive statistics for a Git repository (local or URL)"
+		shell::logger::usage "shell::git::repos::stats [-n] [-h] [<path_or_url>]"
+		shell::logger::item "path_or_url" "Local path or remote URL (https://, git@, ssh://). Defaults to CWD."
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print planned commands instead of executing"
+		shell::logger::example "shell::git::repos::stats"
+		shell::logger::example "shell::git::repos::stats /path/to/repo"
+		shell::logger::example "shell::git::repos::stats https://github.com/owner/repo.git"
+		shell::logger::example "shell::git::repos::stats git@github.com:owner/repo.git"
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	local target="${1:-}"
+	local _repo_dir=""
+	local _tmp_dir=""
+
+	# ---------------------------------------------------------------------------
+	# Determine repo location — URL clone vs local path vs CWD.
+	# ---------------------------------------------------------------------------
+	if echo "$target" | grep -qE '^(https?://|git@|ssh://)'; then
+		_tmp_dir=$(mktemp -d 2>/dev/null || mktemp -d -t 'git_stats')
+		shell::logger::info "Cloning '${target}' into temp directory (full history required)..."
+		if ! git clone --quiet "$target" "$_tmp_dir" 2>&1; then
+			shell::logger::error "Failed to clone: ${target}"
+			rm -rf "$_tmp_dir" 2>/dev/null
+			return $RETURN_FAILURE
+		fi
+		_repo_dir="$_tmp_dir"
+	elif [ -n "$target" ]; then
+		_repo_dir="$target"
+	else
+		_repo_dir="$PWD"
+	fi
+
+	if ! git -C "$_repo_dir" rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not a Git repository: ${_repo_dir}"
+		[ -n "$_tmp_dir" ] && rm -rf "$_tmp_dir" 2>/dev/null
+		return $RETURN_FAILURE
+	fi
+
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::command_clip "git -C \"${_repo_dir}\" log --numstat --format=''  # gather code growth"
+		shell::logger::command_clip "git -C \"${_repo_dir}\" log --format='%ad %aN ...' # gather activity / contributor data"
+		shell::logger::command_clip "find \"${_repo_dir}\" -type f -not -path '*/.git/*' | xargs wc -l  # compute LOC"
+		[ -n "$_tmp_dir" ] && rm -rf "$_tmp_dir" 2>/dev/null
+		return $RETURN_SUCCESS
+	fi
+
+	# Change into repo for the duration of stats gathering so all git / find
+	# commands work without an explicit -C / path prefix.
+	local _orig_dir="$PWD"
+	cd "$_repo_dir" 2>/dev/null || {
+		shell::logger::error "Cannot access directory: ${_repo_dir}"
+		[ -n "$_tmp_dir" ] && rm -rf "$_tmp_dir" 2>/dev/null
+		return $RETURN_FAILURE
+	}
+
+	shell::logger::info "Gathering repository statistics…"
+	shell::logger::info "(Section E — code growth — may be slow on large repositories)"
+
+	# ── A. REPOSITORY IDENTITY ───────────────────────────────────────────────
+	local repo_name repo_url default_branch current_branch
+	local first_commit_date last_commit_date first_commit_ts now_ts
+	local repo_age_days repo_age_years repo_age_str
+
+	repo_name=$(basename "$(git rev-parse --show-toplevel 2>/dev/null)")
+	repo_url=$(git config --get remote.origin.url 2>/dev/null || echo "(no remote)")
+	default_branch=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's|.*/||')
+	[ -z "$default_branch" ] && default_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+	current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+	first_commit_date=$(git log --reverse --format='%ad' --date=format:'%Y-%m-%d' 2>/dev/null | head -1)
+	last_commit_date=$(git log -1 --format='%ad' --date=format:'%Y-%m-%d' 2>/dev/null)
+	first_commit_ts=$(git log --reverse --format='%ct' 2>/dev/null | head -1)
+	now_ts=$(date +%s)
+	repo_age_days=$(( (now_ts - ${first_commit_ts:-$now_ts}) / 86400 ))
+	repo_age_years=$(awk "BEGIN{printf \"%.1f\", ${repo_age_days}/365}")
+	repo_age_str="${repo_age_years} years (${repo_age_days} days)"
+
+	# ── B. OBJECT COUNTS ─────────────────────────────────────────────────────
+	local total_commits total_branches total_tags total_contributors
+	local total_files total_dirs total_loc
+
+	total_commits=$(git rev-list --count HEAD 2>/dev/null || echo "0")
+	total_branches=$(git branch -r 2>/dev/null | grep -v 'HEAD' | wc -l | tr -d ' ')
+	total_tags=$(git tag 2>/dev/null | wc -l | tr -d ' ')
+	total_contributors=$(git log --format='%aN' 2>/dev/null | sort -u | wc -l | tr -d ' ')
+	total_files=$(find . -type f -not -path './.git/*' 2>/dev/null | wc -l | tr -d ' ')
+	total_dirs=$(find . -mindepth 1 -type d -not -path './.git/*' -not -name '.git' 2>/dev/null | wc -l | tr -d ' ')
+	total_loc=$(find . -type f -not -path './.git/*' 2>/dev/null | xargs wc -l 2>/dev/null | tail -1 | awk '{print $1}')
+	[ -z "$total_loc" ] && total_loc="0"
+
+	# ── C. COMMIT ACTIVITY ───────────────────────────────────────────────────
+	local since_24h since_7d since_30d since_90d since_1y
+	local avg_per_day avg_per_week avg_per_month
+	local most_active_month least_active_month peak_day peak_hour
+
+	since_24h=$(git log --oneline --since="1 day ago"   2>/dev/null | wc -l | tr -d ' ')
+	since_7d=$( git log --oneline --since="7 days ago"  2>/dev/null | wc -l | tr -d ' ')
+	since_30d=$(git log --oneline --since="30 days ago" 2>/dev/null | wc -l | tr -d ' ')
+	since_90d=$(git log --oneline --since="90 days ago" 2>/dev/null | wc -l | tr -d ' ')
+	since_1y=$( git log --oneline --since="1 year ago"  2>/dev/null | wc -l | tr -d ' ')
+
+	avg_per_day=$(  awk "BEGIN{if(${repo_age_days}>0) printf \"%.2f\", ${total_commits}/${repo_age_days}; else print \"0.00\"}")
+	avg_per_week=$( awk "BEGIN{if(${repo_age_days}>0) printf \"%.1f\",  ${total_commits}/(${repo_age_days}/7);  else print \"0.0\"}")
+	avg_per_month=$(awk "BEGIN{if(${repo_age_days}>0) printf \"%.1f\",  ${total_commits}/(${repo_age_days}/30); else print \"0.0\"}")
+
+	most_active_month=$( git log --format='%ad' --date=format:'%Y-%m' 2>/dev/null | sort | uniq -c | sort -rn | head -1 | awk '{print $2}')
+	least_active_month=$(git log --format='%ad' --date=format:'%Y-%m' 2>/dev/null | sort | uniq -c | sort -n  | head -1 | awk '{print $2}')
+	peak_day=$( git log --format='%ad' --date=format:'%A' 2>/dev/null | sort | uniq -c | sort -rn | head -1 | awk '{print $2}')
+	peak_hour=$(git log --format='%ad' --date=format:'%H' 2>/dev/null | sort | uniq -c | sort -rn | head -1 | awk '{print $2":00"}')
+
+	# ── D. CONTRIBUTORS ──────────────────────────────────────────────────────
+	local active_7d active_30d active_90d top_contributors_raw contributor_commit_total
+
+	active_7d=$( git log --since="7 days ago"  --format='%aN' 2>/dev/null | sort -u | wc -l | tr -d ' ')
+	active_30d=$(git log --since="30 days ago" --format='%aN' 2>/dev/null | sort -u | wc -l | tr -d ' ')
+	active_90d=$(git log --since="90 days ago" --format='%aN' 2>/dev/null | sort -u | wc -l | tr -d ' ')
+	top_contributors_raw=$(git log --format='%aN' 2>/dev/null | sort | uniq -c | sort -rn | head -10)
+	contributor_commit_total=$(echo "$top_contributors_raw" | awk '{s+=$1} END{print s+0}')
+
+	# ── E. CODE GROWTH (slow — full --numstat scan) ───────────────────────────
+	local total_added total_deleted net_growth avg_commit_size
+
+	local _growth_raw
+	_growth_raw=$(git log --numstat --format='' 2>/dev/null | awk '/^[0-9]/{a+=$1; d+=$2} END{print a+0, d+0}')
+	total_added=$(  echo "$_growth_raw" | awk '{print $1}')
+	total_deleted=$(echo "$_growth_raw" | awk '{print $2}')
+	[ -z "$total_added" ]   && total_added=0
+	[ -z "$total_deleted" ] && total_deleted=0
+	net_growth=$(( total_added - total_deleted ))
+	avg_commit_size=$(awk "BEGIN{if(${total_commits}>0) printf \"%.1f\", (${total_added}+${total_deleted})/${total_commits}; else print \"0.0\"}")
+
+	# ── F. CODE CHURN ────────────────────────────────────────────────────────
+	local churn_rate hotspot_files_raw hotspot_dirs_raw
+
+	churn_rate=$(awk "BEGIN{if(${total_added}>0) printf \"%.2f\", ${total_deleted}/${total_added}; else print \"0.00\"}")
+	hotspot_files_raw=$(git log --name-only --format='' 2>/dev/null | grep -v '^$' | sort | uniq -c | sort -rn | head -10)
+	hotspot_dirs_raw=$( git log --name-only --format='' 2>/dev/null | grep -v '^$' | \
+		sed 's|/[^/]*$||' | grep -v '^$' | sort | uniq -c | sort -rn | head -10)
+
+	# ── G. COMMIT QUALITY ────────────────────────────────────────────────────
+	local merge_commits revert_commits fixup_commits avg_msg_length conv_raw conv_total
+
+	merge_commits=$( git log --merges --oneline 2>/dev/null | wc -l | tr -d ' ')
+	revert_commits=$(git log --oneline --grep='^[Rr]evert' 2>/dev/null | wc -l | tr -d ' ')
+	fixup_commits=$( git log --oneline --grep='^fixup!'    2>/dev/null | wc -l | tr -d ' ')
+	avg_msg_length=$(git log --format='%s' 2>/dev/null | \
+		awk '{t+=length($0); c++} END{if(c>0) printf "%.0f", t/c; else print "0"}')
+	conv_raw=$(git log --format='%s' 2>/dev/null | \
+		grep -oE '^(feat|fix|chore|docs|test|refactor|style|ci|build|perf)(\([^)]*\))?:' | \
+		sed 's/([^)]*)//g; s/://' | sort | uniq -c | sort -rn)
+	conv_total=$(echo "$conv_raw" | awk '{s+=$1} END{print s+0}')
+
+	# ── H. BRANCH METRICS ────────────────────────────────────────────────────
+	local local_branch_count=0 active_branch_count=0 stale_branch_count=0
+	local oldest_branch oldest_branch_date stale_threshold_ts
+
+	# Cross-platform: macOS date -v, Linux date -d
+	stale_threshold_ts=$(date -v-90d +%s 2>/dev/null || date -d "90 days ago" +%s 2>/dev/null || echo "0")
+
+	local _bname _bts
+	while IFS= read -r _bname; do
+		[ -z "$_bname" ] && continue
+		local_branch_count=$(( local_branch_count + 1 ))
+		_bts=$(git log -1 --format='%ct' "${_bname}" 2>/dev/null || echo "0")
+		[ -z "$_bts" ] && _bts=0
+		if [ "${_bts}" -ge "${stale_threshold_ts}" ] 2>/dev/null; then
+			active_branch_count=$(( active_branch_count + 1 ))
+		else
+			stale_branch_count=$(( stale_branch_count + 1 ))
+		fi
+	done < <(git branch | sed 's|^[* ]*||')
+
+	oldest_branch=$(git for-each-ref --sort=committerdate refs/heads/ --format='%(refname:short)' 2>/dev/null | head -1)
+	[ -n "$oldest_branch" ] && \
+		oldest_branch_date=$(git log -1 --format='%ad' --date=format:'%Y-%m-%d' "${oldest_branch}" 2>/dev/null)
+
+	# ── I. TAG METRICS ───────────────────────────────────────────────────────
+	local latest_tag first_tag
+
+	latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "(none)")
+	first_tag=$(git tag --sort=version:refname 2>/dev/null | head -1)
+	[ -z "$first_tag" ] && first_tag="(none)"
+
+	# ── J. TIME DISTRIBUTION ─────────────────────────────────────────────────
+	local by_weekday_raw by_hour_top5_raw office_pct after_hours_pct weekend_pct
+
+	by_weekday_raw=$(  git log --format='%ad' --date=format:'%A' 2>/dev/null | sort | uniq -c | sort -rn)
+	by_hour_top5_raw=$(git log --format='%ad' --date=format:'%H' 2>/dev/null | sort | uniq -c | sort -rn | head -5)
+
+	# %u → ISO day number: 1=Mon … 7=Sun; h = hour (0-23)
+	local _time_data office_c after_c weekend_c
+	_time_data=$(git log --format='%ad' --date=format:'%H %u' 2>/dev/null)
+	office_c=$( echo "$_time_data" | awk '{h=$1+0; d=$2+0; if(d<=5 && h>=9 && h<18) c++} END{print c+0}')
+	after_c=$(  echo "$_time_data" | awk '{h=$1+0; d=$2+0; if(d<=5 && (h<9||h>=18)) c++} END{print c+0}')
+	weekend_c=$(echo "$_time_data" | awk '{d=$2+0; if(d>=6) c++} END{print c+0}')
+
+	office_pct=$(     awk "BEGIN{if(${total_commits}>0) printf \"%.1f\", ${office_c}*100/${total_commits};  else print \"0.0\"}")
+	after_hours_pct=$(awk "BEGIN{if(${total_commits}>0) printf \"%.1f\", ${after_c}*100/${total_commits};   else print \"0.0\"}")
+	weekend_pct=$(    awk "BEGIN{if(${total_commits}>0) printf \"%.1f\", ${weekend_c}*100/${total_commits}; else print \"0.0\"}")
+
+	# ── K. LANGUAGE DISTRIBUTION ─────────────────────────────────────────────
+	local lang_raw
+
+	lang_raw=$(find . -type f -not -path './.git/*' 2>/dev/null | \
+		grep -oE '\.[^./]+$' | tr '[:upper:]' '[:lower:]' | sort | uniq -c | sort -rn | head -15)
+
+	# ── L. HEALTH SCORE ──────────────────────────────────────────────────────
+	local score_activity score_contributors score_growth score_maintenance total_score
+
+	# Activity  (0-25): commits_30d ≥ 10 → full score; linear below
+	score_activity=$(    awk "BEGIN{s=(${since_30d}>=10)?25:int(${since_30d}*2.5); print s}")
+	# Contributors (0-25): ≥3 active in 30d → full; linear below
+	score_contributors=$(awk "BEGIN{s=(${active_30d}>=3)?25:int(${active_30d}*8); if(s>25)s=25; print s}")
+	# Growth (0-25): net positive → 25, zero → 15, negative → 5
+	if   [ "${net_growth}" -gt 0 ]; then score_growth=25
+	elif [ "${net_growth}" -eq 0 ]; then score_growth=15
+	else                                  score_growth=5; fi
+	# Maintenance (0-25): conventional commit ratio × 25, capped
+	score_maintenance=$(awk "BEGIN{if(${total_commits}>0 && ${conv_total}>0){s=int(${conv_total}*25/${total_commits}); if(s>25)s=25; print s}else print 0}")
+	total_score=$(( score_activity + score_contributors + score_growth + score_maintenance ))
+
+	# ── PRINT REPORT ─────────────────────────────────────────────────────────
+	local _lw=28   # label column width for printf alignment
+	local _hr="  ══════════════════════════════════════════════════════════"
+	local _sr="  ──────────────────────────────────────────────────────────"
+
+	shell::logger::info ""
+	shell::logger::info "${_hr}"
+	shell::logger::info "  GIT REPOSITORY STATS  ·  ${repo_name}"
+	shell::logger::info "${_hr}"
+
+	# ── A ──
+	shell::logger::info ""
+	shell::logger::info "  A. REPOSITORY IDENTITY"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Name"              "${repo_name}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "URL"               "${repo_url}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Default Branch"    "${default_branch}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Current Branch"    "${current_branch}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Repository Age"    "${repo_age_str}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "First Commit"      "${first_commit_date}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Last Commit"       "${last_commit_date}")"
+
+	# ── B ──
+	shell::logger::info ""
+	shell::logger::info "  B. REPOSITORY SIZE"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total Commits"      "${total_commits}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total Branches (remote)" "${total_branches}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total Tags"         "${total_tags}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total Contributors" "${total_contributors}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total Files"        "${total_files}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total Directories"  "${total_dirs}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Current LOC"        "${total_loc}")"
+
+	# ── C ──
+	shell::logger::info ""
+	shell::logger::info "  C. COMMIT ACTIVITY"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Last 24 hours"      "${since_24h}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Last 7 days"        "${since_7d}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Last 30 days"       "${since_30d}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Last 90 days"       "${since_90d}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Last year"          "${since_1y}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Avg per day"        "${avg_per_day}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Avg per week"       "${avg_per_week}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Avg per month"      "${avg_per_month}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Most active month"  "${most_active_month}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Least active month" "${least_active_month}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Peak day"           "${peak_day}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Peak hour"          "${peak_hour}")"
+
+	# ── D ──
+	shell::logger::info ""
+	shell::logger::info "  D. CONTRIBUTORS"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total"              "${total_contributors}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Active (7d)"        "${active_7d}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Active (30d)"       "${active_30d}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Active (90d)"       "${active_90d}")"
+	shell::logger::info ""
+	shell::logger::info "  Top Contributors (by commits):"
+	echo "$top_contributors_raw" | while IFS= read -r _line; do
+		[ -z "$_line" ] && continue
+		local _cnt _name _share
+		_cnt=$(  echo "$_line" | awk '{print $1}')
+		_name=$( echo "$_line" | awk '{$1=""; sub(/^ /,""); print}')
+		_share=$(awk "BEGIN{if(${contributor_commit_total}>0) printf \"%.1f\", ${_cnt}*100/${contributor_commit_total}; else print \"0.0\"}")
+		shell::logger::info "$(printf '    %-6s %-28s %s%%' "${_cnt}" "${_name}" "${_share}")"
+	done
+
+	# ── E ──
+	shell::logger::info ""
+	shell::logger::info "  E. CODE GROWTH"
+	local _net_sign=""
+	[ "${net_growth}" -ge 0 ] && _net_sign="+"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total Added Lines"    "${total_added}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total Deleted Lines"  "${total_deleted}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Net Growth"           "${_net_sign}${net_growth} lines")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Avg Commit Size"      "${avg_commit_size} lines (added+deleted)")"
+
+	# ── F ──
+	shell::logger::info ""
+	shell::logger::info "  F. CODE CHURN"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Churn Rate"           "${churn_rate}  (deleted ÷ added)")"
+	shell::logger::info ""
+	shell::logger::info "  Top 10 Most Modified Files:"
+	echo "$hotspot_files_raw" | while IFS= read -r _line; do
+		[ -n "$_line" ] && shell::logger::info "    ${_line}"
+	done
+	shell::logger::info ""
+	shell::logger::info "  Top 10 Most Modified Directories:"
+	echo "$hotspot_dirs_raw" | while IFS= read -r _line; do
+		[ -n "$_line" ] && shell::logger::info "    ${_line}"
+	done
+
+	# ── G ──
+	shell::logger::info ""
+	shell::logger::info "  G. COMMIT QUALITY"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Merge Commits"        "${merge_commits}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Revert Commits"       "${revert_commits}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Fixup Commits"        "${fixup_commits}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Avg Message Length"   "${avg_msg_length} chars")"
+	shell::logger::info ""
+	shell::logger::info "  Conventional Commit Breakdown:"
+	if [ -n "$conv_raw" ] && [ "${conv_total}" -gt 0 ]; then
+		echo "$conv_raw" | while IFS= read -r _line; do
+			[ -z "$_line" ] && continue
+			local _cnt _type _pct
+			_cnt=$( echo "$_line" | awk '{print $1}')
+			_type=$(echo "$_line" | awk '{print $2}')
+			_pct=$( awk "BEGIN{if(${total_commits}>0) printf \"%.1f\", ${_cnt}*100/${total_commits}; else print \"0.0\"}")
+			shell::logger::info "$(printf '    %-12s %6s commits  %s%%' "${_type}" "${_cnt}" "${_pct}")"
+		done
+		shell::logger::info "$(printf '    %-12s %6s commits' "(conventional)" "${conv_total}")"
+		shell::logger::info "$(printf '    %-12s %6s commits' "(total)" "${total_commits}")"
+	else
+		shell::logger::info "    (no conventional commits detected)"
+	fi
+
+	# ── H ──
+	shell::logger::info ""
+	shell::logger::info "  H. BRANCH METRICS"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total Local Branches"  "${local_branch_count}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total Remote Branches" "${total_branches}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Active (<= 90 days)"   "${active_branch_count}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Stale (> 90 days)"     "${stale_branch_count}")"
+	if [ -n "$oldest_branch" ]; then
+		shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Oldest Branch"      "${oldest_branch}  (${oldest_branch_date})")"
+	fi
+
+	# ── I ──
+	shell::logger::info ""
+	shell::logger::info "  I. TAG METRICS"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total Tags"            "${total_tags}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Latest Tag"            "${latest_tag}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "First Tag"             "${first_tag}")"
+
+	# ── J ──
+	shell::logger::info ""
+	shell::logger::info "  J. TIME DISTRIBUTION"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Peak Day"              "${peak_day}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Peak Hour"             "${peak_hour}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Office Hours (9-18 M-F)" "${office_pct}%")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "After Hours"           "${after_hours_pct}%")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Weekend"               "${weekend_pct}%")"
+	shell::logger::info ""
+	shell::logger::info "  Commits by Weekday:"
+	echo "$by_weekday_raw" | while IFS= read -r _line; do
+		[ -z "$_line" ] && continue
+		local _cnt _day _pct
+		_cnt=$(echo "$_line" | awk '{print $1}')
+		_day=$(echo "$_line" | awk '{print $2}')
+		_pct=$(awk "BEGIN{if(${total_commits}>0) printf \"%.1f\", ${_cnt}*100/${total_commits}; else print \"0.0\"}")
+		shell::logger::info "$(printf '    %-12s %6s commits  %s%%' "${_day}" "${_cnt}" "${_pct}")"
+	done
+	shell::logger::info ""
+	shell::logger::info "  Top 5 Busiest Hours (UTC):"
+	echo "$by_hour_top5_raw" | while IFS= read -r _line; do
+		[ -z "$_line" ] && continue
+		local _cnt _hr
+		_cnt=$(echo "$_line" | awk '{print $1}')
+		_hr=$(echo  "$_line" | awk '{print $2}')
+		shell::logger::info "$(printf '    %s:00        %6s commits' "${_hr}" "${_cnt}")"
+	done
+
+	# ── K ──
+	shell::logger::info ""
+	shell::logger::info "  K. LANGUAGE DISTRIBUTION"
+	if [ -n "$lang_raw" ]; then
+		echo "$lang_raw" | while IFS= read -r _line; do
+			[ -z "$_line" ] && continue
+			local _cnt _ext _pct
+			_cnt=$(echo "$_line" | awk '{print $1}')
+			_ext=$(echo "$_line" | awk '{print $2}')
+			_pct=$(awk "BEGIN{if(${total_files}>0) printf \"%.1f\", ${_cnt}*100/${total_files}; else print \"0.0\"}")
+			shell::logger::info "$(printf '    %-12s %6s files    %s%%' "${_ext}" "${_cnt}" "${_pct}")"
+		done
+	else
+		shell::logger::info "    (no files found)"
+	fi
+
+	# ── L ──
+	shell::logger::info ""
+	shell::logger::info "  L. REPOSITORY HEALTH SCORE"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Activity (commits 30d)"     "${score_activity}/25")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Contributors (active 30d)"  "${score_contributors}/25")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Growth (net LOC)"           "${score_growth}/25")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Maintenance (conv. commits)" "${score_maintenance}/25")"
+	shell::logger::info "  ${_sr}"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Health Score"               "${total_score}/100")"
+
+	shell::logger::info ""
+	shell::logger::info "${_hr}"
+	shell::logger::info ""
+
+	# Return to original directory and remove temp clone if any.
+	cd "$_orig_dir" 2>/dev/null
+	[ -n "$_tmp_dir" ] && rm -rf "$_tmp_dir" 2>/dev/null
+
+	return $RETURN_SUCCESS
+}
+
 # Clones a remote Git repository as a shallow clone (depth 1) into a specified
 # local folder name.
 #
@@ -2918,476 +3388,6 @@ shell::git::tag::remove() {
 
 	# Step 3 — send Telegram activity notification.
 	shell::git::telegram::history::send "Tag ${tag} has been removed from local and origin."
-
-	return $RETURN_SUCCESS
-}
-
-# shell::git::repos::stats function
-# Displays comprehensive statistics for a Git repository — works both for a
-# local clone and for a remote URL (public or private with access). When a URL
-# is supplied the repository is cloned to a temporary directory, stats are
-# gathered, then the directory is removed.
-#
-# Usage:
-#   shell::git::repos::stats [-n] [-h] [<path_or_url>]
-#
-# Parameters:
-#   - -n, --dry-run     : Optional. Print planned git commands instead of executing.
-#   - -h, --help        : Show this help message.
-#   - <path_or_url>     : Optional. Local repo path OR remote URL
-#                         (https://, http://, git@, ssh://). Defaults to CWD.
-#
-# Stat sections (v1 metric set):
-#   A. Repository Identity      — name, URL, branches, age, first/last commit
-#   B. Repository Size          — commits, branches, tags, contributors, files, LOC
-#   C. Commit Activity          — windows (24h/7d/30d/90d/1y), velocity, trends
-#   D. Contributors             — totals, active windows, top-10 leaderboard
-#   E. Code Growth              — added/deleted/net lines, avg commit size
-#   F. Code Churn               — churn rate, top modified files & directories
-#   G. Commit Quality           — conventional breakdown, merge/revert/fixup counts
-#   H. Branch Metrics           — local count, active vs stale (90-day threshold)
-#   I. Tag Metrics              — total, latest, first
-#   J. Time Distribution        — by weekday, top hours, working pattern %
-#   K. Language Distribution    — file count by extension (top-15)
-#   L. Repository Health Score  — 0-100 composite score
-#
-# Note: Section E (code growth) runs git log --numstat over the full history.
-#       This can take several minutes on large repositories.
-#
-# Returns:
-#   $RETURN_SUCCESS (0) on success.
-#   $RETURN_FAILURE (non-zero) when the repository cannot be accessed or cloned.
-#
-# Example:
-#   shell::git::repos::stats
-#   shell::git::repos::stats /path/to/local/repo
-#   shell::git::repos::stats https://github.com/owner/repo.git
-#   shell::git::repos::stats git@github.com:owner/private-repo.git
-shell::git::repos::stats() {
-	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
-		shell::logger::reset_options
-		shell::logger::info "Display comprehensive statistics for a Git repository (local or URL)"
-		shell::logger::usage "shell::git::repos::stats [-n] [-h] [<path_or_url>]"
-		shell::logger::item "path_or_url" "Local path or remote URL (https://, git@, ssh://). Defaults to CWD."
-		shell::logger::option "-h, --help" "Show this help message"
-		shell::logger::option "-n, --dry-run" "Print planned commands instead of executing"
-		shell::logger::example "shell::git::repos::stats"
-		shell::logger::example "shell::git::repos::stats /path/to/repo"
-		shell::logger::example "shell::git::repos::stats https://github.com/owner/repo.git"
-		shell::logger::example "shell::git::repos::stats git@github.com:owner/repo.git"
-		return $RETURN_SUCCESS
-	fi
-
-	local dry_run="false"
-	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
-		dry_run="true"
-		shift
-	fi
-
-	local target="${1:-}"
-	local _repo_dir=""
-	local _tmp_dir=""
-
-	# ---------------------------------------------------------------------------
-	# Determine repo location — URL clone vs local path vs CWD.
-	# ---------------------------------------------------------------------------
-	if echo "$target" | grep -qE '^(https?://|git@|ssh://)'; then
-		_tmp_dir=$(mktemp -d 2>/dev/null || mktemp -d -t 'git_stats')
-		shell::logger::info "Cloning '${target}' into temp directory (full history required)..."
-		if ! git clone --quiet "$target" "$_tmp_dir" 2>&1; then
-			shell::logger::error "Failed to clone: ${target}"
-			rm -rf "$_tmp_dir" 2>/dev/null
-			return $RETURN_FAILURE
-		fi
-		_repo_dir="$_tmp_dir"
-	elif [ -n "$target" ]; then
-		_repo_dir="$target"
-	else
-		_repo_dir="$PWD"
-	fi
-
-	if ! git -C "$_repo_dir" rev-parse --git-dir >/dev/null 2>&1; then
-		shell::logger::error "Not a Git repository: ${_repo_dir}"
-		[ -n "$_tmp_dir" ] && rm -rf "$_tmp_dir" 2>/dev/null
-		return $RETURN_FAILURE
-	fi
-
-	if [ "$dry_run" = "true" ]; then
-		shell::logger::command_clip "git -C \"${_repo_dir}\" log --numstat --format=''  # gather code growth"
-		shell::logger::command_clip "git -C \"${_repo_dir}\" log --format='%ad %aN ...' # gather activity / contributor data"
-		shell::logger::command_clip "find \"${_repo_dir}\" -type f -not -path '*/.git/*' | xargs wc -l  # compute LOC"
-		[ -n "$_tmp_dir" ] && rm -rf "$_tmp_dir" 2>/dev/null
-		return $RETURN_SUCCESS
-	fi
-
-	# Change into repo for the duration of stats gathering so all git / find
-	# commands work without an explicit -C / path prefix.
-	local _orig_dir="$PWD"
-	cd "$_repo_dir" 2>/dev/null || {
-		shell::logger::error "Cannot access directory: ${_repo_dir}"
-		[ -n "$_tmp_dir" ] && rm -rf "$_tmp_dir" 2>/dev/null
-		return $RETURN_FAILURE
-	}
-
-	shell::logger::info "Gathering repository statistics…"
-	shell::logger::info "(Section E — code growth — may be slow on large repositories)"
-
-	# ── A. REPOSITORY IDENTITY ───────────────────────────────────────────────
-	local repo_name repo_url default_branch current_branch
-	local first_commit_date last_commit_date first_commit_ts now_ts
-	local repo_age_days repo_age_years repo_age_str
-
-	repo_name=$(basename "$(git rev-parse --show-toplevel 2>/dev/null)")
-	repo_url=$(git config --get remote.origin.url 2>/dev/null || echo "(no remote)")
-	default_branch=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's|.*/||')
-	[ -z "$default_branch" ] && default_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
-	current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
-	first_commit_date=$(git log --reverse --format='%ad' --date=format:'%Y-%m-%d' 2>/dev/null | head -1)
-	last_commit_date=$(git log -1 --format='%ad' --date=format:'%Y-%m-%d' 2>/dev/null)
-	first_commit_ts=$(git log --reverse --format='%ct' 2>/dev/null | head -1)
-	now_ts=$(date +%s)
-	repo_age_days=$(( (now_ts - ${first_commit_ts:-$now_ts}) / 86400 ))
-	repo_age_years=$(awk "BEGIN{printf \"%.1f\", ${repo_age_days}/365}")
-	repo_age_str="${repo_age_years} years (${repo_age_days} days)"
-
-	# ── B. OBJECT COUNTS ─────────────────────────────────────────────────────
-	local total_commits total_branches total_tags total_contributors
-	local total_files total_dirs total_loc
-
-	total_commits=$(git rev-list --count HEAD 2>/dev/null || echo "0")
-	total_branches=$(git branch -r 2>/dev/null | grep -v 'HEAD' | wc -l | tr -d ' ')
-	total_tags=$(git tag 2>/dev/null | wc -l | tr -d ' ')
-	total_contributors=$(git log --format='%aN' 2>/dev/null | sort -u | wc -l | tr -d ' ')
-	total_files=$(find . -type f -not -path './.git/*' 2>/dev/null | wc -l | tr -d ' ')
-	total_dirs=$(find . -mindepth 1 -type d -not -path './.git/*' -not -name '.git' 2>/dev/null | wc -l | tr -d ' ')
-	total_loc=$(find . -type f -not -path './.git/*' 2>/dev/null | xargs wc -l 2>/dev/null | tail -1 | awk '{print $1}')
-	[ -z "$total_loc" ] && total_loc="0"
-
-	# ── C. COMMIT ACTIVITY ───────────────────────────────────────────────────
-	local since_24h since_7d since_30d since_90d since_1y
-	local avg_per_day avg_per_week avg_per_month
-	local most_active_month least_active_month peak_day peak_hour
-
-	since_24h=$(git log --oneline --since="1 day ago"   2>/dev/null | wc -l | tr -d ' ')
-	since_7d=$( git log --oneline --since="7 days ago"  2>/dev/null | wc -l | tr -d ' ')
-	since_30d=$(git log --oneline --since="30 days ago" 2>/dev/null | wc -l | tr -d ' ')
-	since_90d=$(git log --oneline --since="90 days ago" 2>/dev/null | wc -l | tr -d ' ')
-	since_1y=$( git log --oneline --since="1 year ago"  2>/dev/null | wc -l | tr -d ' ')
-
-	avg_per_day=$(  awk "BEGIN{if(${repo_age_days}>0) printf \"%.2f\", ${total_commits}/${repo_age_days}; else print \"0.00\"}")
-	avg_per_week=$( awk "BEGIN{if(${repo_age_days}>0) printf \"%.1f\",  ${total_commits}/(${repo_age_days}/7);  else print \"0.0\"}")
-	avg_per_month=$(awk "BEGIN{if(${repo_age_days}>0) printf \"%.1f\",  ${total_commits}/(${repo_age_days}/30); else print \"0.0\"}")
-
-	most_active_month=$( git log --format='%ad' --date=format:'%Y-%m' 2>/dev/null | sort | uniq -c | sort -rn | head -1 | awk '{print $2}')
-	least_active_month=$(git log --format='%ad' --date=format:'%Y-%m' 2>/dev/null | sort | uniq -c | sort -n  | head -1 | awk '{print $2}')
-	peak_day=$( git log --format='%ad' --date=format:'%A' 2>/dev/null | sort | uniq -c | sort -rn | head -1 | awk '{print $2}')
-	peak_hour=$(git log --format='%ad' --date=format:'%H' 2>/dev/null | sort | uniq -c | sort -rn | head -1 | awk '{print $2":00"}')
-
-	# ── D. CONTRIBUTORS ──────────────────────────────────────────────────────
-	local active_7d active_30d active_90d top_contributors_raw contributor_commit_total
-
-	active_7d=$( git log --since="7 days ago"  --format='%aN' 2>/dev/null | sort -u | wc -l | tr -d ' ')
-	active_30d=$(git log --since="30 days ago" --format='%aN' 2>/dev/null | sort -u | wc -l | tr -d ' ')
-	active_90d=$(git log --since="90 days ago" --format='%aN' 2>/dev/null | sort -u | wc -l | tr -d ' ')
-	top_contributors_raw=$(git log --format='%aN' 2>/dev/null | sort | uniq -c | sort -rn | head -10)
-	contributor_commit_total=$(echo "$top_contributors_raw" | awk '{s+=$1} END{print s+0}')
-
-	# ── E. CODE GROWTH (slow — full --numstat scan) ───────────────────────────
-	local total_added total_deleted net_growth avg_commit_size
-
-	local _growth_raw
-	_growth_raw=$(git log --numstat --format='' 2>/dev/null | awk '/^[0-9]/{a+=$1; d+=$2} END{print a+0, d+0}')
-	total_added=$(  echo "$_growth_raw" | awk '{print $1}')
-	total_deleted=$(echo "$_growth_raw" | awk '{print $2}')
-	[ -z "$total_added" ]   && total_added=0
-	[ -z "$total_deleted" ] && total_deleted=0
-	net_growth=$(( total_added - total_deleted ))
-	avg_commit_size=$(awk "BEGIN{if(${total_commits}>0) printf \"%.1f\", (${total_added}+${total_deleted})/${total_commits}; else print \"0.0\"}")
-
-	# ── F. CODE CHURN ────────────────────────────────────────────────────────
-	local churn_rate hotspot_files_raw hotspot_dirs_raw
-
-	churn_rate=$(awk "BEGIN{if(${total_added}>0) printf \"%.2f\", ${total_deleted}/${total_added}; else print \"0.00\"}")
-	hotspot_files_raw=$(git log --name-only --format='' 2>/dev/null | grep -v '^$' | sort | uniq -c | sort -rn | head -10)
-	hotspot_dirs_raw=$( git log --name-only --format='' 2>/dev/null | grep -v '^$' | \
-		sed 's|/[^/]*$||' | grep -v '^$' | sort | uniq -c | sort -rn | head -10)
-
-	# ── G. COMMIT QUALITY ────────────────────────────────────────────────────
-	local merge_commits revert_commits fixup_commits avg_msg_length conv_raw conv_total
-
-	merge_commits=$( git log --merges --oneline 2>/dev/null | wc -l | tr -d ' ')
-	revert_commits=$(git log --oneline --grep='^[Rr]evert' 2>/dev/null | wc -l | tr -d ' ')
-	fixup_commits=$( git log --oneline --grep='^fixup!'    2>/dev/null | wc -l | tr -d ' ')
-	avg_msg_length=$(git log --format='%s' 2>/dev/null | \
-		awk '{t+=length($0); c++} END{if(c>0) printf "%.0f", t/c; else print "0"}')
-	conv_raw=$(git log --format='%s' 2>/dev/null | \
-		grep -oE '^(feat|fix|chore|docs|test|refactor|style|ci|build|perf)(\([^)]*\))?:' | \
-		sed 's/([^)]*)//g; s/://' | sort | uniq -c | sort -rn)
-	conv_total=$(echo "$conv_raw" | awk '{s+=$1} END{print s+0}')
-
-	# ── H. BRANCH METRICS ────────────────────────────────────────────────────
-	local local_branch_count=0 active_branch_count=0 stale_branch_count=0
-	local oldest_branch oldest_branch_date stale_threshold_ts
-
-	# Cross-platform: macOS date -v, Linux date -d
-	stale_threshold_ts=$(date -v-90d +%s 2>/dev/null || date -d "90 days ago" +%s 2>/dev/null || echo "0")
-
-	local _bname _bts
-	while IFS= read -r _bname; do
-		[ -z "$_bname" ] && continue
-		local_branch_count=$(( local_branch_count + 1 ))
-		_bts=$(git log -1 --format='%ct' "${_bname}" 2>/dev/null || echo "0")
-		[ -z "$_bts" ] && _bts=0
-		if [ "${_bts}" -ge "${stale_threshold_ts}" ] 2>/dev/null; then
-			active_branch_count=$(( active_branch_count + 1 ))
-		else
-			stale_branch_count=$(( stale_branch_count + 1 ))
-		fi
-	done < <(git branch | sed 's|^[* ]*||')
-
-	oldest_branch=$(git for-each-ref --sort=committerdate refs/heads/ --format='%(refname:short)' 2>/dev/null | head -1)
-	[ -n "$oldest_branch" ] && \
-		oldest_branch_date=$(git log -1 --format='%ad' --date=format:'%Y-%m-%d' "${oldest_branch}" 2>/dev/null)
-
-	# ── I. TAG METRICS ───────────────────────────────────────────────────────
-	local latest_tag first_tag
-
-	latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "(none)")
-	first_tag=$(git tag --sort=version:refname 2>/dev/null | head -1)
-	[ -z "$first_tag" ] && first_tag="(none)"
-
-	# ── J. TIME DISTRIBUTION ─────────────────────────────────────────────────
-	local by_weekday_raw by_hour_top5_raw office_pct after_hours_pct weekend_pct
-
-	by_weekday_raw=$(  git log --format='%ad' --date=format:'%A' 2>/dev/null | sort | uniq -c | sort -rn)
-	by_hour_top5_raw=$(git log --format='%ad' --date=format:'%H' 2>/dev/null | sort | uniq -c | sort -rn | head -5)
-
-	# %u → ISO day number: 1=Mon … 7=Sun; h = hour (0-23)
-	local _time_data office_c after_c weekend_c
-	_time_data=$(git log --format='%ad' --date=format:'%H %u' 2>/dev/null)
-	office_c=$( echo "$_time_data" | awk '{h=$1+0; d=$2+0; if(d<=5 && h>=9 && h<18) c++} END{print c+0}')
-	after_c=$(  echo "$_time_data" | awk '{h=$1+0; d=$2+0; if(d<=5 && (h<9||h>=18)) c++} END{print c+0}')
-	weekend_c=$(echo "$_time_data" | awk '{d=$2+0; if(d>=6) c++} END{print c+0}')
-
-	office_pct=$(     awk "BEGIN{if(${total_commits}>0) printf \"%.1f\", ${office_c}*100/${total_commits};  else print \"0.0\"}")
-	after_hours_pct=$(awk "BEGIN{if(${total_commits}>0) printf \"%.1f\", ${after_c}*100/${total_commits};   else print \"0.0\"}")
-	weekend_pct=$(    awk "BEGIN{if(${total_commits}>0) printf \"%.1f\", ${weekend_c}*100/${total_commits}; else print \"0.0\"}")
-
-	# ── K. LANGUAGE DISTRIBUTION ─────────────────────────────────────────────
-	local lang_raw
-
-	lang_raw=$(find . -type f -not -path './.git/*' 2>/dev/null | \
-		grep -oE '\.[^./]+$' | tr '[:upper:]' '[:lower:]' | sort | uniq -c | sort -rn | head -15)
-
-	# ── L. HEALTH SCORE ──────────────────────────────────────────────────────
-	local score_activity score_contributors score_growth score_maintenance total_score
-
-	# Activity  (0-25): commits_30d ≥ 10 → full score; linear below
-	score_activity=$(    awk "BEGIN{s=(${since_30d}>=10)?25:int(${since_30d}*2.5); print s}")
-	# Contributors (0-25): ≥3 active in 30d → full; linear below
-	score_contributors=$(awk "BEGIN{s=(${active_30d}>=3)?25:int(${active_30d}*8); if(s>25)s=25; print s}")
-	# Growth (0-25): net positive → 25, zero → 15, negative → 5
-	if   [ "${net_growth}" -gt 0 ]; then score_growth=25
-	elif [ "${net_growth}" -eq 0 ]; then score_growth=15
-	else                                  score_growth=5; fi
-	# Maintenance (0-25): conventional commit ratio × 25, capped
-	score_maintenance=$(awk "BEGIN{if(${total_commits}>0 && ${conv_total}>0){s=int(${conv_total}*25/${total_commits}); if(s>25)s=25; print s}else print 0}")
-	total_score=$(( score_activity + score_contributors + score_growth + score_maintenance ))
-
-	# ── PRINT REPORT ─────────────────────────────────────────────────────────
-	local _lw=28   # label column width for printf alignment
-	local _hr="  ══════════════════════════════════════════════════════════"
-	local _sr="  ──────────────────────────────────────────────────────────"
-
-	shell::logger::info ""
-	shell::logger::info "${_hr}"
-	shell::logger::info "  GIT REPOSITORY STATS  ·  ${repo_name}"
-	shell::logger::info "${_hr}"
-
-	# ── A ──
-	shell::logger::info ""
-	shell::logger::info "  A. REPOSITORY IDENTITY"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Name"              "${repo_name}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "URL"               "${repo_url}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Default Branch"    "${default_branch}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Current Branch"    "${current_branch}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Repository Age"    "${repo_age_str}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "First Commit"      "${first_commit_date}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Last Commit"       "${last_commit_date}")"
-
-	# ── B ──
-	shell::logger::info ""
-	shell::logger::info "  B. REPOSITORY SIZE"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total Commits"      "${total_commits}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total Branches (remote)" "${total_branches}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total Tags"         "${total_tags}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total Contributors" "${total_contributors}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total Files"        "${total_files}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total Directories"  "${total_dirs}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Current LOC"        "${total_loc}")"
-
-	# ── C ──
-	shell::logger::info ""
-	shell::logger::info "  C. COMMIT ACTIVITY"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Last 24 hours"      "${since_24h}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Last 7 days"        "${since_7d}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Last 30 days"       "${since_30d}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Last 90 days"       "${since_90d}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Last year"          "${since_1y}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Avg per day"        "${avg_per_day}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Avg per week"       "${avg_per_week}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Avg per month"      "${avg_per_month}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Most active month"  "${most_active_month}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Least active month" "${least_active_month}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Peak day"           "${peak_day}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Peak hour"          "${peak_hour}")"
-
-	# ── D ──
-	shell::logger::info ""
-	shell::logger::info "  D. CONTRIBUTORS"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total"              "${total_contributors}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Active (7d)"        "${active_7d}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Active (30d)"       "${active_30d}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Active (90d)"       "${active_90d}")"
-	shell::logger::info ""
-	shell::logger::info "  Top Contributors (by commits):"
-	echo "$top_contributors_raw" | while IFS= read -r _line; do
-		[ -z "$_line" ] && continue
-		local _cnt _name _share
-		_cnt=$(  echo "$_line" | awk '{print $1}')
-		_name=$( echo "$_line" | awk '{$1=""; sub(/^ /,""); print}')
-		_share=$(awk "BEGIN{if(${contributor_commit_total}>0) printf \"%.1f\", ${_cnt}*100/${contributor_commit_total}; else print \"0.0\"}")
-		shell::logger::info "$(printf '    %-6s %-28s %s%%' "${_cnt}" "${_name}" "${_share}")"
-	done
-
-	# ── E ──
-	shell::logger::info ""
-	shell::logger::info "  E. CODE GROWTH"
-	local _net_sign=""
-	[ "${net_growth}" -ge 0 ] && _net_sign="+"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total Added Lines"    "${total_added}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total Deleted Lines"  "${total_deleted}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Net Growth"           "${_net_sign}${net_growth} lines")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Avg Commit Size"      "${avg_commit_size} lines (added+deleted)")"
-
-	# ── F ──
-	shell::logger::info ""
-	shell::logger::info "  F. CODE CHURN"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Churn Rate"           "${churn_rate}  (deleted ÷ added)")"
-	shell::logger::info ""
-	shell::logger::info "  Top 10 Most Modified Files:"
-	echo "$hotspot_files_raw" | while IFS= read -r _line; do
-		[ -n "$_line" ] && shell::logger::info "    ${_line}"
-	done
-	shell::logger::info ""
-	shell::logger::info "  Top 10 Most Modified Directories:"
-	echo "$hotspot_dirs_raw" | while IFS= read -r _line; do
-		[ -n "$_line" ] && shell::logger::info "    ${_line}"
-	done
-
-	# ── G ──
-	shell::logger::info ""
-	shell::logger::info "  G. COMMIT QUALITY"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Merge Commits"        "${merge_commits}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Revert Commits"       "${revert_commits}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Fixup Commits"        "${fixup_commits}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Avg Message Length"   "${avg_msg_length} chars")"
-	shell::logger::info ""
-	shell::logger::info "  Conventional Commit Breakdown:"
-	if [ -n "$conv_raw" ] && [ "${conv_total}" -gt 0 ]; then
-		echo "$conv_raw" | while IFS= read -r _line; do
-			[ -z "$_line" ] && continue
-			local _cnt _type _pct
-			_cnt=$( echo "$_line" | awk '{print $1}')
-			_type=$(echo "$_line" | awk '{print $2}')
-			_pct=$( awk "BEGIN{if(${total_commits}>0) printf \"%.1f\", ${_cnt}*100/${total_commits}; else print \"0.0\"}")
-			shell::logger::info "$(printf '    %-12s %6s commits  %s%%' "${_type}" "${_cnt}" "${_pct}")"
-		done
-		shell::logger::info "$(printf '    %-12s %6s commits' "(conventional)" "${conv_total}")"
-		shell::logger::info "$(printf '    %-12s %6s commits' "(total)" "${total_commits}")"
-	else
-		shell::logger::info "    (no conventional commits detected)"
-	fi
-
-	# ── H ──
-	shell::logger::info ""
-	shell::logger::info "  H. BRANCH METRICS"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total Local Branches"  "${local_branch_count}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total Remote Branches" "${total_branches}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Active (<= 90 days)"   "${active_branch_count}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Stale (> 90 days)"     "${stale_branch_count}")"
-	if [ -n "$oldest_branch" ]; then
-		shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Oldest Branch"      "${oldest_branch}  (${oldest_branch_date})")"
-	fi
-
-	# ── I ──
-	shell::logger::info ""
-	shell::logger::info "  I. TAG METRICS"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total Tags"            "${total_tags}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Latest Tag"            "${latest_tag}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "First Tag"             "${first_tag}")"
-
-	# ── J ──
-	shell::logger::info ""
-	shell::logger::info "  J. TIME DISTRIBUTION"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Peak Day"              "${peak_day}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Peak Hour"             "${peak_hour}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Office Hours (9-18 M-F)" "${office_pct}%")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "After Hours"           "${after_hours_pct}%")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Weekend"               "${weekend_pct}%")"
-	shell::logger::info ""
-	shell::logger::info "  Commits by Weekday:"
-	echo "$by_weekday_raw" | while IFS= read -r _line; do
-		[ -z "$_line" ] && continue
-		local _cnt _day _pct
-		_cnt=$(echo "$_line" | awk '{print $1}')
-		_day=$(echo "$_line" | awk '{print $2}')
-		_pct=$(awk "BEGIN{if(${total_commits}>0) printf \"%.1f\", ${_cnt}*100/${total_commits}; else print \"0.0\"}")
-		shell::logger::info "$(printf '    %-12s %6s commits  %s%%' "${_day}" "${_cnt}" "${_pct}")"
-	done
-	shell::logger::info ""
-	shell::logger::info "  Top 5 Busiest Hours (UTC):"
-	echo "$by_hour_top5_raw" | while IFS= read -r _line; do
-		[ -z "$_line" ] && continue
-		local _cnt _hr
-		_cnt=$(echo "$_line" | awk '{print $1}')
-		_hr=$(echo  "$_line" | awk '{print $2}')
-		shell::logger::info "$(printf '    %s:00        %6s commits' "${_hr}" "${_cnt}")"
-	done
-
-	# ── K ──
-	shell::logger::info ""
-	shell::logger::info "  K. LANGUAGE DISTRIBUTION"
-	if [ -n "$lang_raw" ]; then
-		echo "$lang_raw" | while IFS= read -r _line; do
-			[ -z "$_line" ] && continue
-			local _cnt _ext _pct
-			_cnt=$(echo "$_line" | awk '{print $1}')
-			_ext=$(echo "$_line" | awk '{print $2}')
-			_pct=$(awk "BEGIN{if(${total_files}>0) printf \"%.1f\", ${_cnt}*100/${total_files}; else print \"0.0\"}")
-			shell::logger::info "$(printf '    %-12s %6s files    %s%%' "${_ext}" "${_cnt}" "${_pct}")"
-		done
-	else
-		shell::logger::info "    (no files found)"
-	fi
-
-	# ── L ──
-	shell::logger::info ""
-	shell::logger::info "  L. REPOSITORY HEALTH SCORE"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Activity (commits 30d)"     "${score_activity}/25")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Contributors (active 30d)"  "${score_contributors}/25")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Growth (net LOC)"           "${score_growth}/25")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Maintenance (conv. commits)" "${score_maintenance}/25")"
-	shell::logger::info "  ${_sr}"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Health Score"               "${total_score}/100")"
-
-	shell::logger::info ""
-	shell::logger::info "${_hr}"
-	shell::logger::info ""
-
-	# Return to original directory and remove temp clone if any.
-	cd "$_orig_dir" 2>/dev/null
-	[ -n "$_tmp_dir" ] && rm -rf "$_tmp_dir" 2>/dev/null
 
 	return $RETURN_SUCCESS
 }
