@@ -1,11 +1,11 @@
 #!/bin/bash
 # git.sh
 
-# shell::git::telegram::send_activity function
+# shell::git::telegram::history::send function
 # Sends a historical GitHub-related message via Telegram using stored configuration keys.
 #
 # Usage:
-#   shell::git::telegram::send_activity [-n] <message>
+#   shell::git::telegram::history::send [-n] <message>
 #
 # Parameters:
 #   - -n         : Optional dry-run flag. If provided, the command will be printed using shell::logger::command_clip instead of executed.
@@ -19,18 +19,18 @@
 #   calls shell::telegram::send (with the dry-run flag, if enabled) to send the message.
 #
 # Example:
-#   shell::git::telegram::send_activity "Historical message text"
-#   shell::git::telegram::send_activity -n "Dry-run historical message text"
-shell::git::telegram::send_activity() {
+#   shell::git::telegram::history::send "Historical message text"
+#   shell::git::telegram::history::send -n "Dry-run historical message text"
+shell::git::telegram::history::send() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Send historical GitHub message via Telegram"
-		shell::logger::usage "shell::git::telegram::send_activity [-n] [-h] <message>"
+		shell::logger::usage "shell::git::telegram::history::send [-n] [-h] <message>"
 		shell::logger::item "message" "The message text to send"
 		shell::logger::option "-h, --help" "Show this help message"
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
-		shell::logger::example "shell::git::telegram::send_activity \"Hello, World!\""
-		shell::logger::example "shell::git::telegram::send_activity -n \"Hello, World!\""
+		shell::logger::example "shell::git::telegram::history::send \"Hello, World!\""
+		shell::logger::example "shell::git::telegram::history::send -n \"Hello, World!\""
 		return $RETURN_SUCCESS
 	fi
 
@@ -1050,7 +1050,7 @@ shell::git::branch::backup() {
 	notify_timestamp=$(date "+%Y-%m-%d %H:%M:%S")
 
 	local telegram_message="Branch Backup Successfully (Local & Remote) | source: ${branch} | backup: ${backup_name} | repository: ${repository_name} (${server_remote_url}) | username: ${git_username} | timestamp: ${notify_timestamp}"
-	shell::git::telegram::send_activity "${telegram_message}"
+	shell::git::telegram::history::send "${telegram_message}"
 
 	return $RETURN_SUCCESS
 }
@@ -2169,7 +2169,7 @@ shell::git::commit::pick::remote() {
 #     4. Read issue number (loops until non-empty)
 #     5. Build message: <emoji> <type>: <description> <issue>
 #     6. Confirm → git commit -m "<message>"
-#     7. Send Telegram notification via shell::git::telegram::send_activity
+#     7. Send Telegram notification via shell::git::telegram::history::send
 #     8. git push origin <current_branch>
 #   Empty mode (--empty):
 #     1. Select category via shell::options::select
@@ -2413,7 +2413,7 @@ shell::git::commit::create() {
 	timestamp=$(date "+%Y-%m-%d %H:%M:%S")
 
 	local telegram_message="username: ${git_username} | repository: ${repository_name} (${server_remote_url}) | branch: ${current_branch} | hash: ${commit_hash} | message: ${commit_message} | timestamp: ${timestamp}"
-	shell::git::telegram::send_activity "${telegram_message}"
+	shell::git::telegram::history::send "${telegram_message}"
 
 	# Step 8 — push current branch to origin via interactive push command picker.
 	shell::git::branch::push "${current_branch}"
@@ -2424,7 +2424,7 @@ shell::git::commit::create() {
 # shell::git::tag::create function
 # Checks out a specified branch, creates an annotated Git tag on the latest
 # commit, pushes the tag to origin, restores the original branch, and sends a
-# Telegram activity notification via shell::git::telegram::send_activity.
+# Telegram activity notification via shell::git::telegram::history::send.
 #
 # Usage:
 #   shell::git::tag::create [-n] [-h] <branch> <tag>
@@ -2442,7 +2442,7 @@ shell::git::commit::create() {
 #   3. git tag -a <tag> -m <message>        — create annotated tag with metadata
 #   4. git push origin <tag>                — push tag to origin
 #   5. git checkout <original_branch>       — restore original branch
-#   6. shell::git::telegram::send_activity  — send Telegram notification
+#   6. shell::git::telegram::history::send  — send Telegram notification
 #
 # Returns:
 #   $RETURN_SUCCESS (0) on full success.
@@ -2539,7 +2539,7 @@ shell::git::tag::create() {
 
 	# Step 6 — send Telegram activity notification.
 	local telegram_message="Branch: ${branch} | Commit: ${current_commit} | Author: ${commit_author} | Date: ${commit_date} | Tag ${tag} has been successfully created and pushed."
-	shell::git::telegram::send_activity "${telegram_message}"
+	shell::git::telegram::history::send "${telegram_message}"
 
 	return $RETURN_SUCCESS
 }
@@ -2560,7 +2560,7 @@ shell::git::tag::create() {
 # Description:
 #   1. git tag -d <tag>                    — delete the tag locally
 #   2. git push origin :refs/tags/<tag>    — delete the tag on origin
-#   3. shell::git::telegram::send_activity — send Telegram notification
+#   3. shell::git::telegram::history::send — send Telegram notification
 #
 # Returns:
 #   $RETURN_SUCCESS (0) on full success.
@@ -2623,7 +2623,7 @@ shell::git::tag::remove() {
 		"Tag '${tag}' deleted on origin" "Remote tag delete aborted" || return $?
 
 	# Step 3 — send Telegram activity notification.
-	shell::git::telegram::send_activity "Tag ${tag} has been removed from local and origin."
+	shell::git::telegram::history::send "Tag ${tag} has been removed from local and origin."
 
 	return $RETURN_SUCCESS
 }

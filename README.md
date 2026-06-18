@@ -402,13 +402,13 @@ Core functions for system management, version control, and basic operations.
 
   - `shell::telegram::send [-n] <token> <chat_id> <message>`
 
-- **`shell::git::telegram::send_activity`**
+- **`shell::git::telegram::history::send`**
   Sends a historical GitHub-related message via Telegram using stored configuration keys.
   - _Parameters_:
     - -n : Optional dry-run flag. If provided, the command is printed using shell::logger::command_clip instead of executed.
     - message : The message text to send.
 
-  - `shell::git::telegram::send_activity [-n] <message>`
+  - `shell::git::telegram::history::send [-n] <message>`
 
 - **`shell::telegram::send_document`**
   Sends one or more attachments (files) via Telegram using the Bot API asynchronously.
@@ -782,9 +782,9 @@ Telegram Bot API integration for notifications and file sharing.
   Sends one or more attachments (files) via Telegram using the Bot API asynchronously.
   _Example:_ `shell::telegram::send_document <token> <chat_id> "Files" file1.txt file2.txt`
 
-- **`shell::git::telegram::send_activity`**
+- **`shell::git::telegram::history::send`**
   Sends a historical GitHub-related message via Telegram using stored configuration keys.
-  _Example:_ `shell::git::telegram::send_activity "Deployment completed"`
+  _Example:_ `shell::git::telegram::history::send "Deployment completed"`
 
 ### AI & LLM Integration
 
@@ -1050,7 +1050,7 @@ shell::gh::workflow::news::add          # Notification workflow
 shell::gh::workflow::bash::add_format     # Shell script formatting
 
 # Send deployment notifications
-shell::git::telegram::send_activity "Deployment to production completed successfully"
+shell::git::telegram::history::send "Deployment to production completed successfully"
 ```
 
 ### Encryption Utilities

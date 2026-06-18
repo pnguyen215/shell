@@ -616,11 +616,11 @@ Parameters:
 "
 
 USAGE_SHELL_SEND_TELEGRAM_HISTORICAL_GH_MESSAGE="
-shell::git::telegram::send_activity function
+shell::git::telegram::history::send function
 Sends a historical GitHub-related message via Telegram using stored configuration keys.
 
 Usage:
-  shell::git::telegram::send_activity [-n] [-h] <message>
+  shell::git::telegram::history::send [-n] [-h] <message>
 
 Parameters:
   - -n              : Optional dry-run flag. If provided, the command will be printed using shell::logger::command_clip instead of executed.
@@ -635,8 +635,8 @@ Description:
   calls shell::telegram::send (with the dry-run flag, if enabled) to send the message.
 
 Example:
-  shell::git::telegram::send_activity \"Historical message text\"
-  shell::git::telegram::send_activity -n \"Dry-run historical message text\"
+  shell::git::telegram::history::send \"Historical message text\"
+  shell::git::telegram::history::send -n \"Dry-run historical message text\"
 "
 
 USAGE_SHELL_RETRIEVE_GH_LATEST_RELEASE="
