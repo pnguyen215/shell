@@ -162,14 +162,12 @@ Core functions for system management, version control, and basic operations.
 - **`shell::check_port`**  
   Checks if a TCP port is in use (listening). Use `-n` to suppress output and return a status only.  
   _Examples:_
-
   - `shell::check_port 8080`
   - `shell::check_port 8080 -n`
 
 - **`shell::kill_port`**  
   Terminates all processes listening on a specified TCP port. Use `-n` for silent operation.  
   _Examples:_
-
   - `shell::kill_port 8080`
   - `shell::kill_port 8080 -n`
 
@@ -188,7 +186,6 @@ Core functions for system management, version control, and basic operations.
 - **`shell::editor`**  
   Opens a file from a specified directory in a chosen text editor. Use `-n` to open in a new instance (if supported).  
   _Examples:_
-
   - `shell::editor ~/documents`
   - `shell::editor -n ~/documents`
 
@@ -199,7 +196,6 @@ Core functions for system management, version control, and basic operations.
 - **`shell::unarchive`**  
   Extracts a compressed file based on its extension (e.g., `.zip`, `.tar.gz`). Use `-n` for no-overwrite mode.  
   _Examples:_
-
   - `shell::unarchive archive.zip`
   - `shell::unarchive -n archive.tar.gz`
 
@@ -210,14 +206,12 @@ Core functions for system management, version control, and basic operations.
 - **`shell::open_link`**  
   Opens a URL in the default web browser. Use `-n` for silent operation (no output).  
   _Examples:_
-
   - `shell::open_link https://example.com`
   - `shell::open_link -n https://example.com`
 
 - **`shell::loading_spinner`**  
   Displays a console loading spinner for a specified duration (in seconds). Use `-n` to run indefinitely until stopped.  
   _Examples:_
-
   - `shell::loading_spinner 10`
   - `shell::loading_spinner -n 10`
 
@@ -228,7 +222,6 @@ Core functions for system management, version control, and basic operations.
 - **`shell::async`**  
   Runs a command or function asynchronously in the background. Use `-n` for no output.  
   _Examples:_
-
   - `shell::async my_function arg1 arg2`
   - `shell::async -n ls`
 
@@ -247,19 +240,16 @@ Core functions for system management, version control, and basic operations.
 - **`shell::add_bookmark`**
   Adds a bookmark for the current directory with the specified name.
   _Example:_
-
   - `shell::add_bookmark <bookmark name>`
 
 - **`shell::remove_bookmark`**
   Deletes a bookmark with the specified name from the bookmarks file.
   _Example:_
-
   - `shell::remove_bookmark <bookmark_name>`
 
 - **`shell::remove_bookmark_linux`**
   Deletes a bookmark with the specified name from the bookmarks file.
   _Example:_
-
   - `shell::remove_bookmark_linux <bookmark_name>`
 
 - **`shell::list_bookmark`**
@@ -269,7 +259,6 @@ Core functions for system management, version control, and basic operations.
 - **`shell::go_bookmark`**
   Navigates to the directory associated with the specified bookmark name.
   _Example:_
-
   - `shell::go_bookmark <bookmark name>`
 
 - **`shell::go_back`**
@@ -281,7 +270,6 @@ Core functions for system management, version control, and basic operations.
 - **`shell::goto`**
   Main function to handle user commands and navigate directories.
   _Example:_
-
   - `shell::goto [command]`
   - `shell::goto_usage`
 
@@ -294,21 +282,18 @@ Core functions for system management, version control, and basic operations.
 - **`shell::install_oh_my_zsh`**
   Installs Oh My Zsh if it is not already present on the system.
   _Example:_
-
   - `shell::install_oh_my_zsh`
   - `shell::install_oh_my_zsh -n`
 
 - **`shell::removal_oh_my_zsh`**
   Uninstalls Oh My Zsh by removing its directory and restoring the original .zshrc backup if available.
   _Example:_
-
   - `shell::removal_oh_my_zsh`
   - `shell::removal_oh_my_zsh -n`
 
 - **`shell::read_conf`**
   Sources a configuration file, allowing its variables and functions to be loaded into the current shell.
   _Example:_
-
   - `shell::read_conf [-n] <filename>`
   - `shell::read_conf ~/.my-config`
   - `shell::read_conf -n ~/.my-config `
@@ -317,7 +302,6 @@ Core functions for system management, version control, and basic operations.
   Adds a configuration entry (key=value) to a constant configuration file.
   The value is encoded using Base64 before being saved.
   _Example:_
-
   - `shell::add_key_conf [-n] <key> <value>`
   - `shell::add_key_conf my_setting "some secret value" `
   - `shell::add_key_conf -n my_setting "some secret value"`
@@ -329,14 +313,12 @@ Core functions for system management, version control, and basic operations.
 - **`shell::get_key_conf_value`**
   Retrieves and outputs the decoded value for a given configuration key from the key configuration file.
   _Example:_
-
   - `shell::get_key_conf_value my_setting`
 
 - **`shell::fzf_remove_key_conf`**
   Interactively selects a configuration key from a constant configuration file using fzf,
   then removes the corresponding entry from the configuration file.
   _Example:_
-
   - `shell::fzf_remove_key_conf`
   - `shell::fzf_remove_key_conf -n`
 
@@ -344,39 +326,33 @@ Core functions for system management, version control, and basic operations.
   Interactively updates the value for a configuration key in a constant configuration file.
   The new value is encoded using Base64 before updating the file.
   _Example:_
-
   - `shell::fzf_update_key_conf`
   - `shell::fzf_update_key_conf -n`
 
 - **`shell::exist_key_conf`**
   Checks if a configuration key exists in the key configuration file.
   _Example:_
-
   - `shell::exist_key_conf <key>`
   - `shell::exist_key_conf my_setting`
 
 - **`shell::fzf_rename_key_conf`**
   Renames an existing configuration key in the key configuration file.
   _Example:_
-
   - `shell::fzf_rename_key_conf [-n]`
 
 - **`shell::is_protected_key_conf`**
   Checks if the specified configuration key is protected.
   _Example:_
-
   - `shell::is_protected_key_conf <key>`
 
 - **`shell::fzf_add_group_key_conf`**
   Groups selected configuration keys under a specified group name.
   _Example:_
-
   - `shell::fzf_add_group_key_conf [-n]`
 
 - **`shell::read_group_key_conf`**
   Reads and displays the configurations for a given group by group name.
   _Example:_
-
   - `shell::read_group_key_conf <group_name>`
   - `shell::read_group_key_conf my_group`
 
@@ -384,19 +360,16 @@ Core functions for system management, version control, and basic operations.
   Interactively selects a group name from the group configuration file using fzf,
   then removes the corresponding group entry.
   _Example:_
-
   - `shell::fzf_remove_group_key_conf [-n]`
 
 - **`shell::fzf_update_group_key_conf`**
   Interactively updates an existing group by letting you select new keys for that group.
   _Example:_
-
   - `shell::fzf_update_group_key_conf [-n]`
 
 - **`shell::fzf_rename_group_key_conf`**
   Renames an existing group in the group configuration file.
   _Example:_
-
   - `shell::fzf_rename_group_key_conf [-n]`
 
 - **`shell::list_group_key_conf`**
@@ -410,7 +383,6 @@ Core functions for system management, version control, and basic operations.
 - **`shell::fzf_clone_group_key_conf`**
   Clones an existing group by creating a new group with the same keys.
   _Example:_
-
   - `shell::fzf_clone_group_key_conf [-n]`
 
 - **`shell::sync_group_key_conf`**
@@ -418,14 +390,11 @@ Core functions for system management, version control, and basic operations.
   If a key listed in a group does not exist, it is removed from that group.
   If a group ends up with no valid keys, that group entry is removed.
   _Example:_
-
   - `shell::sync_group_key_conf [-n]`
 
 - **`shell::telegram::send`**
   Sends a message via the Telegram Bot API.
-
   - _Parameters_:
-
     - -n : Optional dry-run flag. If provided, the command is printed using shell::logger::command_clip instead of executed.
     - token : The Telegram Bot API token.
     - chat_id : The chat identifier where the message should be sent.
@@ -435,9 +404,7 @@ Core functions for system management, version control, and basic operations.
 
 - **`shell::git::telegram::send_activity`**
   Sends a historical GitHub-related message via Telegram using stored configuration keys.
-
   - _Parameters_:
-
     - -n : Optional dry-run flag. If provided, the command is printed using shell::logger::command_clip instead of executed.
     - message : The message text to send.
 
@@ -445,9 +412,7 @@ Core functions for system management, version control, and basic operations.
 
 - **`shell::telegram::send_document`**
   Sends one or more attachments (files) via Telegram using the Bot API asynchronously.
-
   - _Parameters_:
-
     - -n : Optional dry-run flag. If provided, the command is printed using shell::logger::command_clip instead of executed.
     - token : The Telegram Bot API token.
     - chat_id : The chat identifier where the message should be sent.
@@ -458,9 +423,7 @@ Core functions for system management, version control, and basic operations.
 
 - **`shell::fzf_zip_attachment`**
   Zips selected files from a specified folder and outputs the absolute path of the created zip file.
-
   - _Parameters_:
-
     - -n : Optional dry-run flag. If provided, the command is printed using shell::logger::command_clip instead of executed.
     - folder_path : The folder (directory) from which to select files for zipping.
 
@@ -468,18 +431,14 @@ Core functions for system management, version control, and basic operations.
 
 - **`shell::fzf_current_zip_attachment`**
   Reuses shell::fzf_zip_attachment to zip selected files from the current directory, then renames the resulting zip file to use the current directory's basename and places it inside the current directory.
-
   - _Parameters_:
-
     - -n : Optional dry-run flag. If provided, the command is printed using shell::logger::command_clip instead of executed.
 
   - `shell::fzf_current_zip_attachment [-n]`
 
 - **`shell::fzf_send_telegram_attachment`**
   Uses fzf to interactively select one or more files from a folder (default: current directory), and sends them as attachments via the Telegram Bot API by reusing shell::telegram::send_document.
-
   - _Parameters_:
-
     - -n : Optional dry-run flag. If provided, the command is printed using shell::logger::command_clip instead of executed.
     - token: The Telegram Bot API token.
     - chat_id: The chat identifier where the attachments are sent.
@@ -515,7 +474,6 @@ Interactive file operations powered by FZF (fuzzy finder) for enhanced user expe
 - **`shell::unarchive`**  
   Extracts a compressed file based on its extension (e.g., `.zip`, `.tar.gz`). Use `-n` for no-overwrite mode.  
   _Examples:_
-
   - `shell::unarchive archive.zip`
   - `shell::unarchive -n archive.tar.gz`
 
@@ -554,13 +512,11 @@ Persistent bookmark system for quick directory navigation.
 - **`shell::add_bookmark`**
   Adds a bookmark for the current directory with the specified name.
   _Example:_
-
   - `shell::add_bookmark project1`
 
 - **`shell::remove_bookmark`**
   Deletes a bookmark with the specified name from the bookmarks file.
   _Example:_
-
   - `shell::remove_bookmark project1`
 
 - **`shell::list_bookmark`**
@@ -570,7 +526,6 @@ Persistent bookmark system for quick directory navigation.
 - **`shell::go_bookmark`**
   Navigates to the directory associated with the specified bookmark name.
   _Example:_
-
   - `shell::go_bookmark project1`
 
 - **`shell::fzf_list_bookmark`**
@@ -602,7 +557,6 @@ Secure key-value storage system with Base64 encoding and group management.
 - **`shell::read_conf`**
   Sources a configuration file, allowing its variables and functions to be loaded into the current shell.
   _Example:_
-
   - `shell::read_conf ~/.my-config`
   - `shell::read_conf -n ~/.my-config`
 
@@ -610,14 +564,12 @@ Secure key-value storage system with Base64 encoding and group management.
   Adds a configuration entry (key=value) to a constant configuration file.
   The value is encoded using Base64 before being saved.
   _Example:_
-
   - `shell::add_key_conf my_setting "some secret value"`
   - `shell::add_key_conf -n my_setting "some secret value"`
 
 - **`shell::get_key_conf_value`**
   Retrieves and outputs the decoded value for a given configuration key from the key configuration file.
   _Example:_
-
   - `shell::get_key_conf_value my_setting`
 
 - **`shell::fzf_get_key_conf`**
@@ -820,7 +772,6 @@ Telegram Bot API integration for notifications and file sharing.
 - **`shell::telegram::send`**
   Sends a message via the Telegram Bot API.
   _Parameters_:
-
   - -n : Optional dry-run flag
   - token : The Telegram Bot API token
   - chat_id : The chat identifier where the message should be sent
@@ -863,9 +814,9 @@ Google Gemini AI agent integration for translation and AI tasks.
 
 GitHub API integration and repository utilities.
 
-- **`shell::git::release::version::get`**
+- **`shell::git::repos::version::latest`**
   Retrieves the latest release information from a GitHub repository.
-  _Example:_ `shell::git::release::version::get pnguyen215/shell`
+  _Example:_ `shell::git::repos::version::latest pnguyen215/shell`
 
 - **`shell::retrieve_gh_repository_info`**
   Retrieves repository information from GitHub.
@@ -978,14 +929,12 @@ Process management, port checking, and system analysis tools.
 - **`shell::check_port`**  
   Checks if a TCP port is in use (listening). Use `-n` to suppress output and return a status only.  
   _Examples:_
-
   - `shell::check_port 8080`
   - `shell::check_port 8080 -n`
 
 - **`shell::kill_port`**  
   Terminates all processes listening on a specified TCP port. Use `-n` for silent operation.  
   _Examples:_
-
   - `shell::kill_port 8080`
   - `shell::kill_port 8080 -n`
 
@@ -996,14 +945,12 @@ Process management, port checking, and system analysis tools.
 - **`shell::open_link`**  
   Opens a URL in the default web browser. Use `-n` for silent operation (no output).  
   _Examples:_
-
   - `shell::open_link https://example.com`
   - `shell::open_link -n https://example.com`
 
 - **`shell::loading_spinner`**  
   Displays a console loading spinner for a specified duration (in seconds). Use `-n` to run indefinitely until stopped.  
   _Examples:_
-
   - `shell::loading_spinner 10`
   - `shell::loading_spinner -n 10`
 
@@ -1014,14 +961,12 @@ Process management, port checking, and system analysis tools.
 - **`shell::async`**  
   Runs a command or function asynchronously in the background. Use `-n` for no output.  
   _Examples:_
-
   - `shell::async my_function arg1 arg2`
   - `shell::async -n ls`
 
 - **`shell::editor`**  
   Opens a file from a specified directory in a chosen text editor. Use `-n` to open in a new instance (if supported).  
   _Examples:_
-
   - `shell::editor ~/documents`
   - `shell::editor -n ~/documents`
 
