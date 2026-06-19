@@ -3629,3 +3629,292 @@ shell::git::tag::remove() {
 	return $RETURN_SUCCESS
 }
 
+# shell::git::tag::checkout function
+# Checks out a specific Git tag into a detached HEAD state. Optionally creates
+# a new branch from the tag. Supports dry-run mode.
+#
+# Usage:
+#   shell::git::tag::checkout [-n] [-h] [-b <branch_name>] <tag>
+#
+# Parameters:
+#   - -n, --dry-run     : Optional. Print the command via shell::logger::command_clip
+#                         instead of executing it.
+#   - -h, --help        : Show this help message.
+#   - -b, --branch      : Optional. Create and checkout a new branch from the
+#                         tag instead of detached HEAD.
+#   - <tag>             : Required. The tag name/version to checkout (e.g. v1.2.3).
+#
+# Description:
+#   Step 1 — Verify the tag exists locally or on origin.
+#   Step 2 — If -b is provided, run: git checkout -b <branch_name> <tag>
+#            Otherwise, run: git checkout <tag>
+#   Step 3 — Log the result via shell::logger::assert.
+#
+# Safety notes:
+#   • When -b is omitted, HEAD enters detached state at the tag commit.
+#     Run 'git checkout <branch>' or 'git switch -' to return to a branch.
+#   • When -b is provided, the new branch is created at the tag commit and
+#     checked out immediately (no detached HEAD).
+#   • Tags are immutable references; checking out a tag directly is read-only.
+#
+# Returns:
+#   $RETURN_SUCCESS (0) on success.
+#   $RETURN_INVALID (1) when <tag> is omitted.
+#   $RETURN_FAILURE (non-zero) when not inside a Git repository or tag
+#                   does not exist.
+#   Non-zero exit code of the failing git command otherwise.
+#
+# Example:
+#   shell::git::tag::checkout "v1.0.0"
+#   shell::git::tag::checkout -b "release-1.0" "v1.0.0"
+#   shell::git::tag::checkout -n "v1.0.0"
+shell::git::tag::checkout() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Checkout a specific Git tag (detached HEAD or new branch)"
+		shell::logger::usage "shell::git::tag::checkout [-n] [-h] [-b <branch_name>] <tag>"
+		shell::logger::item "tag" "Tag name/version to checkout (e.g. v1.2.3)"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
+		shell::logger::option "-b, --branch <name>" "Create and checkout a new branch from the tag"
+		shell::logger::example "shell::git::tag::checkout "v1.0.0""
+		shell::logger::example "shell::git::tag::checkout -b "release-1.0" "v1.0.0""
+		shell::logger::example "shell::git::tag::checkout -n "v1.0.0""
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	local branch_name=""
+	if [ "$1" = "-b" ] || [ "$1" = "--branch" ]; then
+		branch_name="$2"
+		shift 2
+	fi
+
+	local tag="$1"
+
+	if [ -z "$tag" ]; then
+		shell::logger::error "Tag name is required"
+		return $RETURN_INVALID
+	fi
+
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return $RETURN_FAILURE
+	fi
+
+	# Step 1 — verify the tag exists locally or on origin.
+	local tag_exists="false"
+	if git rev-parse --verify --quiet "refs/tags/${tag}" >/dev/null 2>&1; then
+		tag_exists="true"
+	elif git ls-remote --tags origin "refs/tags/${tag}" >/dev/null 2>&1; then
+		tag_exists="true"
+	fi
+
+	if [ "$tag_exists" = "false" ]; then
+		shell::logger::error "Tag '${tag}' does not exist locally or on origin"
+		return $RETURN_FAILURE
+	fi
+
+	# Resolve the commit hash for logging.
+	local commit_hash
+	commit_hash=$(git rev-list -n 1 "${tag}" 2>/dev/null)
+
+	# Build the checkout command.
+	local cmd_checkout
+	if [ -n "$branch_name" ]; then
+		cmd_checkout="git checkout -b "${branch_name}" "${tag}""
+	else
+		cmd_checkout="git checkout "${tag}""
+	fi
+
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::command_clip "$cmd_checkout"
+		return $RETURN_SUCCESS
+	fi
+
+	# Execute checkout.
+	if [ -n "$branch_name" ]; then
+		shell::logger::assert "$cmd_checkout" 			"Created and checked out branch '${branch_name}' from tag ${tag} (${commit_hash:0:8})" 			"Tag checkout aborted" || return $?
+	else
+		shell::logger::assert "$cmd_checkout" 			"Checked out tag ${tag} (${commit_hash:0:8}) — detached HEAD" 			"Tag checkout aborted" || return $?
+	fi
+
+	return $RETURN_SUCCESS
+}
+
+# shell::git::tag::checkout::fzf function
+# Presents a picker of all Git tags (local + remote) with origin markers,
+# then checks out the selected tag via shell::git::tag::checkout.
+# Optionally creates a new branch from the selected tag.
+#
+# Usage:
+#   shell::git::tag::checkout::fzf [-n] [-h] [-b <branch_name>]
+#
+# Parameters:
+#   - -n, --dry-run     : Optional. After selection, print the checkout command
+#                         via shell::logger::command_clip instead of executing it.
+#   - -h, --help        : Show this help message.
+#   - -b, --branch      : Optional. Create and checkout a new branch from the
+#                         selected tag instead of detached HEAD.
+#
+# Description:
+#   Step 1 — Verify the git repository.
+#   Step 2 — Collect all local tags and remote tags from origin.
+#   Step 3 — Build display lines with origin markers:
+#              [LOCAL  ] : <tag>  — exists only locally
+#              [REMOTE ] : <tag>  — exists only on origin
+#              [BOTH   ] : <tag>  — exists on both local and origin
+#   Step 4 — Present a single-select picker via shell::options::select.
+#   Step 5 — Extract the tag name from the selection using the ' : ' separator.
+#   Step 6 — Forward to shell::git::tag::checkout with the extracted tag name.
+#            If -b was provided, the branch name is forwarded as well.
+#
+# Returns:
+#   $RETURN_SUCCESS (0) on success or user-initiated abort.
+#   $RETURN_FAILURE (non-zero) when not inside a Git repository or checkout fails.
+#
+# Example:
+#   shell::git::tag::checkout::fzf
+#   shell::git::tag::checkout::fzf -b "release-1.0"
+#   shell::git::tag::checkout::fzf -n
+shell::git::tag::checkout::fzf() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Select a tag via fzf and check it out"
+		shell::logger::usage "shell::git::tag::checkout::fzf [-n] [-h] [-b <branch_name>]"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the checkout command instead of executing it"
+		shell::logger::option "-b, --branch <name>" "Create and checkout a new branch from the selected tag"
+		shell::logger::example "shell::git::tag::checkout::fzf"
+		shell::logger::example "shell::git::tag::checkout::fzf -b "release-1.0""
+		shell::logger::example "shell::git::tag::checkout::fzf -n"
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	local branch_name=""
+	if [ "$1" = "-b" ] || [ "$1" = "--branch" ]; then
+		branch_name="$2"
+		shift 2
+	fi
+
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return $RETURN_FAILURE
+	fi
+
+	# ---------------------------------------------------------------------------
+	# Collect local and remote tags.
+	# ---------------------------------------------------------------------------
+	local -a local_tags
+	while IFS= read -r t; do
+		[ -n "$t" ] && local_tags+=("$t")
+	done < <(git tag -l 2>/dev/null | sort -u)
+
+	local -a remote_tags
+	while IFS= read -r t; do
+		[ -n "$t" ] && remote_tags+=("$t")
+	done < <(git ls-remote --tags origin 2>/dev/null | awk '{print $2}' | sed 's|refs/tags/||' | sort -u)
+
+	# ---------------------------------------------------------------------------
+	# Build display lines with origin markers.
+	#
+	# Format: "[LABEL     ] : tag_name"
+	#   LABEL — printf-padded to 9 chars:
+	#             [%-9s]  (1 + 9 + 1 = 11)
+	#   ' : ' — field separator; ':' is prohibited in git tag names so this
+	#             token is a safe extraction anchor.
+	# ---------------------------------------------------------------------------
+	local -a tag_lines
+	local t
+	local label
+	local is_local
+	local is_remote
+	local local_label="$(printf "[%-9s]" "LOCAL")"
+	local remote_label="$(printf "[%-9s]" "REMOTE")"
+	local both_label="$(printf "[%-9s]" "BOTH")"
+
+	# Process local tags first.
+	for t in "${local_tags[@]}"; do
+		is_remote="false"
+		for rt in "${remote_tags[@]}"; do
+			[ "$t" = "$rt" ] && { is_remote="true"; break; }
+		done
+		if [ "$is_remote" = "true" ]; then
+			label="$both_label"
+		else
+			label="$local_label"
+		fi
+		tag_lines+=("${label} : ${t}")
+	done
+
+	# Add remote-only tags (tags on origin with no local counterpart).
+	for rt in "${remote_tags[@]}"; do
+		is_local="false"
+		for t in "${local_tags[@]}"; do
+			[ "$t" = "$rt" ] && { is_local="true"; break; }
+		done
+		if [ "$is_local" = "false" ]; then
+			tag_lines+=("${remote_label} : ${rt}")
+		fi
+	done
+
+	if [ "${#tag_lines[@]}" -eq 0 ]; then
+		shell::logger::warn "No tags found in this repository — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	# ---------------------------------------------------------------------------
+	# Step 4 — single-select tag picker.
+	# ---------------------------------------------------------------------------
+	local selected_output
+	selected_output=$(shell::options::select "${tag_lines[@]}")
+
+	if [ -z "$selected_output" ]; then
+		shell::logger::warn "No tag selected — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	# ---------------------------------------------------------------------------
+	# Step 5 — extract tag name from the selection.
+	#
+	# The ' : ' separator (colon is prohibited in git ref names) followed by
+	# non-space chars uniquely identifies the tag name.
+	# ---------------------------------------------------------------------------
+	local selected_tag
+	selected_tag=$(printf '%s' "$selected_output" | grep -oE ': [^ ]+' | sed 's/: //')
+
+	if [ -z "$selected_tag" ]; then
+		shell::logger::warn "Could not extract tag name from selection — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	shell::logger::info "Selected tag: ${selected_tag}"
+
+	# Step 6 — forward to shell::git::tag::checkout with the extracted tag.
+	if [ "$dry_run" = "true" ]; then
+		if [ -n "$branch_name" ]; then
+			shell::git::tag::checkout -n -b "$branch_name" "$selected_tag"
+		else
+			shell::git::tag::checkout -n "$selected_tag"
+		fi
+	else
+		if [ -n "$branch_name" ]; then
+			shell::git::tag::checkout -b "$branch_name" "$selected_tag"
+		else
+			shell::git::tag::checkout "$selected_tag"
+		fi
+	fi
+
+	return $RETURN_SUCCESS
+}

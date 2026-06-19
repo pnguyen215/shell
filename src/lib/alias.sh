@@ -171,6 +171,14 @@ alias sgtc-n="shell::git::tag::create -n"
 alias sgrmt="shell::git::tag::remove"
 alias sgrmt-n="shell::git::tag::remove -n"
 
+# shell::git::tag::checkout
+alias sgtco="shell::git::tag::checkout"
+alias sgtco-n="shell::git::tag::checkout -n"
+
+# shell::git::tag::checkout::fzf
+alias sgtcof="shell::git::tag::checkout::fzf"
+alias sgtcof-n="shell::git::tag::checkout::fzf -n"
+
 # ////////////////////
 # Shell git basic aliases
 # ///////////////////

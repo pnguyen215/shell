@@ -106,6 +106,8 @@
     "sgsst",
     "sgst",
     "sgtc",
+    "sgtco",
+    "sgtcof",
     "shell::opent",
     "shfmt",
     "snapcraft",
