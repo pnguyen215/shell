@@ -4239,3 +4239,363 @@ shell::git::tag::remove::fzf() {
 
 	return $RETURN_SUCCESS
 }
+
+# shell::git::commit::revert::fzf function
+# Presents a multi-select picker of all commits across all refs in the repository,
+# then shows an action menu to revert the selected commits with various strategies.
+# Supports creating a new revert branch, handling conflicts, and pushing to remote.
+#
+# Usage:
+#   shell::git::commit::revert::fzf [-n] [-h]
+#
+# Parameters:
+#   - -n, --dry-run : Optional. Print the commands via shell::logger::command_clip
+#                     instead of executing them.
+#   - -h, --help    : Show this help message.
+#
+# Description:
+#   Step 1 — Verify the git repository.
+#   Step 2 — Build a coloured commit list via git log --all covering all local
+#            branches, remote-tracking branches, and tags.
+#   Step 3 — Present a multi-select picker (TAB to mark multiple commits).
+#   Step 4 — Extract 40-char hex hashes from the selection.
+#   Step 5 — Build a revert branch name: rev/<YYYYMMDD.HHMMSS>.<sanitized-source>
+#   Step 6 — Present an action menu with revert strategies:
+#            • Revert commits (auto-commit)         — git revert <hash1> <hash2> ...
+#            • Revert commits (no-commit)           — git revert -n <hash1> <hash2> ...
+#            • Revert merge commit (-m 1)           — git revert -m 1 <merge-hash>
+#            • Revert range (oldest..newest)        — git revert <old>..<new>
+#            • Revert with custom message           — git revert --edit <hash1> ...
+#            • Revert quietly (no editor)           — git revert --no-edit <hash1> ...
+#   Step 7 — Create revert branch, execute revert, handle conflicts.
+#   Step 8 — Prompt: commit to local / push to remote / both.
+#   Step 9 — Execute chosen action and send Telegram notification.
+#
+# Branch naming pattern:
+#   rev/<YYYYMMDD.HHMMSS>.<sanitized-source>
+#   <sanitized-source> is derived from current branch or first commit hash.
+#
+# Returns:
+#   $RETURN_SUCCESS (0) on success or user-initiated abort.
+#   $RETURN_FAILURE (non-zero) when not inside a Git repository or revert fails.
+#
+# Example:
+#   shell::git::commit::revert::fzf
+#   shell::git::commit::revert::fzf -n
+shell::git::commit::revert::fzf() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Multi-select commits via fzf and revert them with professional strategies"
+		shell::logger::usage "shell::git::commit::revert::fzf [-n] [-h]"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the commands instead of executing them"
+		shell::logger::example "shell::git::commit::revert::fzf"
+		shell::logger::example "shell::git::commit::revert::fzf -n"
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return $RETURN_FAILURE
+	fi
+
+	local current_branch
+	current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+
+	local repository_path
+	local repository_name
+	local git_username
+	local server_remote_url
+	local notify_timestamp
+
+	repository_path=$(git rev-parse --show-toplevel 2>/dev/null)
+	repository_name=$(basename "${repository_path}")
+	git_username=$(git config user.name 2>/dev/null)
+	server_remote_url=$(git config --get remote.origin.url 2>/dev/null)
+	notify_timestamp=$(date "+%Y-%m-%d %H:%M:%S")
+
+	# ---------------------------------------------------------------------------
+	# Step 1 — Build coloured commit list via git log --all.
+	# ---------------------------------------------------------------------------
+	local log_format="%C(bold blue)%H (%h)%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%an%C(reset)%C(bold yellow)%d%C(reset) %C(dim white)- %s%C(reset)"
+
+	local -a commit_lines
+	while IFS= read -r line; do
+		commit_lines+=("$line")
+	done < <(git log --format=format:"${log_format}" --all --color=always 2>/dev/null)
+
+	if [ "${#commit_lines[@]}" -eq 0 ]; then
+		shell::logger::warn "No commits found in repository — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	# ---------------------------------------------------------------------------
+	# Step 2 — Multi-select commit picker (TAB to mark multiple entries).
+	# ---------------------------------------------------------------------------
+	local selected_output
+	selected_output=$(shell::options::multiselect "${commit_lines[@]}")
+
+	if [ -z "$selected_output" ]; then
+		shell::logger::warn "No commits selected — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	# ---------------------------------------------------------------------------
+	# Step 3 — Extract 40-char hex hashes from selection.
+	# ---------------------------------------------------------------------------
+	local -a selected_hashes
+	while IFS= read -r h; do
+		[ -n "$h" ] && selected_hashes+=("$h")
+	done < <(printf '%s' "$selected_output" | grep -oE '[0-9a-f]{40}')
+
+	if [ "${#selected_hashes[@]}" -eq 0 ]; then
+		shell::logger::warn "No valid commit hashes extracted — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	local count="${#selected_hashes[@]}"
+	local hash_word="commit"
+	[ "${count}" -gt 1 ] && hash_word="commits"
+
+	shell::logger::info "Selected ${count} ${hash_word}:"
+	local h subj
+	for h in "${selected_hashes[@]}"; do
+		subj=$(git log -1 --format='%s' "$h" 2>/dev/null)
+		shell::logger::info "  • ${h:0:8}  ${subj}"
+	done
+
+	# ---------------------------------------------------------------------------
+	# Step 4 — Build revert branch name.
+	# Pattern: rev/<YYYYMMDD.HHMMSS>.<sanitized-source>
+	# ---------------------------------------------------------------------------
+	local timestamp
+	timestamp=$(date +"%Y%m%d.%H%M%S")
+
+	local sanitized_source
+	if [ -n "$current_branch" ] && [ "$current_branch" != "HEAD" ]; then
+		sanitized_source=$(printf '%s' "${current_branch}" | sed 's|/|--|g')
+	else
+		# Fallback to first selected commit short hash
+		# Cross-shell: iterate and break after first element
+		local first_hash
+		for first_hash in "${selected_hashes[@]}"; do break; done
+		sanitized_source=$(printf '%s' "${first_hash}" | cut -c1-7)
+	fi
+
+	local revert_branch="rev/${timestamp}.${sanitized_source}"
+
+	shell::logger::info "Revert branch will be: ${revert_branch}"
+
+	# ---------------------------------------------------------------------------
+	# Step 5 — Detect if any selected commit is a merge commit.
+	# A merge commit has more than one parent (format '%P' outputs space-separated parents).
+	# ---------------------------------------------------------------------------
+	local has_merge="false"
+	local merge_hashes=""
+	for h in "${selected_hashes[@]}"; do
+		local parents
+		parents=$(git log -1 --format='%P' "$h" 2>/dev/null)
+		if [ -n "$parents" ] && echo "$parents" | grep -q ' '; then
+			has_merge="true"
+			merge_hashes="${merge_hashes}${h} "
+		fi
+	done
+
+	if [ "$has_merge" = "true" ]; then
+		shell::logger::warn "Merge commits detected in selection — merge revert requires -m flag"
+	fi
+
+	# ---------------------------------------------------------------------------
+	# Step 6 — Build revert action menu.
+	#
+	# Action keys:
+	#   revert_auto       — git revert <hash1> <hash2> ... (auto-commit, may open editor)
+	#   revert_no_commit  — git revert -n <hash1> <hash2> ... (apply changes, no commit)
+	#   revert_no_edit    — git revert --no-edit <hash1> ... (auto-commit, skip editor)
+	#   revert_edit       — git revert --edit <hash1> ... (force open editor)
+	#   revert_merge_m1   — git revert -m 1 <merge-hash> (mainline parent = 1)
+	#   revert_range      — git revert <oldest>..<newest> (range revert)
+	#   revert_quiet      — git revert -q <hash1> ... (silent mode)
+	# ---------------------------------------------------------------------------
+	local -a action_options=(
+		"Revert selected commits (auto-commit, default):revert_auto"
+		"Revert selected commits without creating commit (stage only):revert_no_commit"
+		"Revert selected commits quietly — skip editor prompt:revert_no_edit"
+		"Revert selected commits with custom message — open editor:revert_edit"
+		"Revert merge commit using mainline parent 1 (-m 1):revert_merge_m1"
+		"Revert as a range (oldest..newest, single commit):revert_range"
+		"Revert in silent mode (reduce output):revert_quiet"
+	)
+
+	local action
+	action=$(shell::options::select_key "${action_options[@]}")
+
+	if [ -z "$action" ]; then
+		shell::logger::info "No revert action selected — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	# ---------------------------------------------------------------------------
+	# Step 7 — Build the revert command based on selected action.
+	# ---------------------------------------------------------------------------
+	local cmd_revert=""
+	local revert_description=""
+
+	case "$action" in
+		revert_auto)
+			cmd_revert="git revert ${selected_hashes[*]}"
+			revert_description="Reverted ${count} ${hash_word} (auto-commit)"
+			;;
+		revert_no_commit)
+			cmd_revert="git revert -n ${selected_hashes[*]}"
+			revert_description="Reverted ${count} ${hash_word} (staged, no commit)"
+			;;
+		revert_no_edit)
+			cmd_revert="git revert --no-edit ${selected_hashes[*]}"
+			revert_description="Reverted ${count} ${hash_word} (auto-commit, no editor)"
+			;;
+		revert_edit)
+			cmd_revert="git revert --edit ${selected_hashes[*]}"
+			revert_description="Reverted ${count} ${hash_word} (custom message via editor)"
+			;;
+		revert_merge_m1)
+			if [ "$has_merge" = "false" ]; then
+				shell::logger::warn "No merge commits in selection — falling back to standard revert"
+				cmd_revert="git revert ${selected_hashes[*]}"
+				revert_description="Reverted ${count} ${hash_word} (auto-commit, fallback from merge)"
+			else
+				# Use the first merge hash for -m 1 revert
+				local first_merge
+				first_merge=$(printf '%s' "$merge_hashes" | awk '{print $1}')
+				cmd_revert="git revert -m 1 ${first_merge}"
+				revert_description="Reverted merge commit ${first_merge:0:8} (mainline parent 1)"
+			fi
+			;;
+		revert_range)
+			if [ "${count}" -lt 2 ]; then
+				shell::logger::warn "Range revert requires at least 2 commits — falling back to standard revert"
+				cmd_revert="git revert ${selected_hashes[*]}"
+				revert_description="Reverted ${count} ${hash_word} (auto-commit, fallback from range)"
+			else
+				# Hashes are newest-first from git log; range needs oldest..newest
+				# Cross-shell: iterate to find first and last elements
+				local first_h last_h tmp_h
+				first_h=""
+				last_h=""
+				for tmp_h in "${selected_hashes[@]}"; do
+					if [ -z "$first_h" ]; then
+						first_h="${tmp_h}"
+					fi
+					last_h="${tmp_h}"
+				done
+				# first_h = newest (first in git log order), last_h = oldest (last in git log order)
+				# Range syntax: git revert <oldest>..<newest> reverts everything AFTER oldest up to newest
+				cmd_revert="git revert ${last_h}..${first_h}"
+				revert_description="Reverted range ${last_h:0:8}..${first_h:0:8}"
+			fi
+			;;
+		revert_quiet)
+			cmd_revert="git revert -q ${selected_hashes[*]}"
+			revert_description="Reverted ${count} ${hash_word} (quiet mode)"
+			;;
+	esac
+
+	# ---------------------------------------------------------------------------
+	# Step 8 — Confirm and execute.
+	# ---------------------------------------------------------------------------
+	shell::logger::info "Revert strategy: ${action}"
+	shell::logger::info "Command: ${cmd_revert}"
+
+	# shell::out::confirmz returns 1 for YES, 0 for NO
+	# So: if confirmz; then → true (0) = NO chosen → abort
+	#     if confirmz; then → false (1) = YES chosen → continue
+	if shell::out::confirmz "Proceed with revert on new branch '${revert_branch}'?"; then
+		shell::logger::info "Revert aborted"
+		return $RETURN_SUCCESS
+	fi
+
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::command_clip "git checkout -b \"${revert_branch}\""
+		shell::logger::command_clip "$cmd_revert"
+		shell::logger::command_clip "git status  # check for conflicts"
+		shell::logger::command_clip "git revert --abort  # if needed"
+		shell::logger::command_clip "git revert --continue  # after resolving conflicts"
+		return $RETURN_SUCCESS
+	fi
+
+	# Create revert branch from current branch.
+	local cmd_create_branch="git checkout -b \"${revert_branch}\""
+	shell::logger::assert "$cmd_create_branch" \
+		"Created revert branch '${revert_branch}'" \
+		"Failed to create revert branch" || return $?
+
+	# Execute revert.
+	shell::logger::info "Executing revert..."
+	if ! eval "$cmd_revert"; then
+		shell::logger::error "Revert failed — conflicts may have occurred"
+		shell::logger::info "Options:"
+		shell::logger::info "  • Resolve conflicts, then run: git revert --continue"
+		shell::logger::info "  • Abort the revert and return to original state: git revert --abort"
+		shell::logger::info "  • Skip the conflicting commit: git revert --skip"
+		shell::logger::info "Current branch: ${revert_branch}"
+		return $RETURN_FAILURE
+	fi
+
+	shell::logger::success "${revert_description}"
+
+	# ---------------------------------------------------------------------------
+	# Step 9 — Prompt where to apply: local / remote / both.
+	# ---------------------------------------------------------------------------
+	local -a apply_options=(
+		"Commit to local only (no push):local"
+		"Push to remote origin (with upstream):remote"
+		"Commit locally AND push to remote:both"
+	)
+
+	local apply_action
+	apply_action=$(shell::options::select_key "${apply_options[@]}")
+
+	if [ -z "$apply_action" ] || [ "$apply_action" = "local" ]; then
+		shell::logger::info "Revert committed locally on branch '${revert_branch}'"
+		shell::clip_value "${revert_branch}"
+	elif [ "$apply_action" = "remote" ] || [ "$apply_action" = "both" ]; then
+		local cmd_push="git push -u origin \"${revert_branch}\""
+		shell::logger::assert "$cmd_push" \
+			"Revert branch '${revert_branch}' pushed to origin" \
+			"Push failed — run 'git push -u origin ${revert_branch}' manually" || return $?
+	fi
+
+	if [ "$apply_action" = "both" ]; then
+		shell::clip_value "${revert_branch}"
+	fi
+
+	# ---------------------------------------------------------------------------
+	# Step 10 — Send Telegram notification.
+	# ---------------------------------------------------------------------------
+	local telegram_message="Revert Executed | branch: ${revert_branch} | strategy: ${action} | ${revert_description} | repository: ${repository_name} (${server_remote_url}) | username: ${git_username} | timestamp: ${notify_timestamp}"
+	shell::git::telegram::history::send "${telegram_message}"
+
+	# ---------------------------------------------------------------------------
+	# Step 11 — Offer to return to original branch.
+	# ---------------------------------------------------------------------------
+	if [ "$current_branch" != "$revert_branch" ] && [ -n "$current_branch" ]; then
+		if shell::out::confirmz "Return to original branch '${current_branch}'?"; then
+			# User answered NO (return 0) → stay on revert branch
+			:
+		else
+			# User answered YES (return 1) → return to original branch
+			local cmd_return="git checkout \"${current_branch}\""
+			shell::logger::assert "$cmd_return" \
+				"Returned to original branch '${current_branch}'" \
+				"Failed to return to original branch" || return $?
+		fi
+	fi
+
+	return $RETURN_SUCCESS
+}

@@ -187,6 +187,14 @@ alias sgta-n="shell::git::tag::all -n"
 alias sgrmtf="shell::git::tag::remove::fzf"
 alias sgrmtf-n="shell::git::tag::remove::fzf -n"
 
+# shell::git::commit::revert::fzf
+alias sgcrf="shell::git::commit::revert::fzf"
+alias sgcrf-n="shell::git::commit::revert::fzf -n"
+alias sgcrevertf="shell::git::commit::revert::fzf"
+alias sgcrevertf-n="shell::git::commit::revert::fzf -n"
+alias sgcrevert="shell::git::commit::revert::fzf"
+alias sgcrevert-n="shell::git::commit::revert::fzf -n"
+
 # ////////////////////
 # Shell git basic aliases
 # ///////////////////
