@@ -3185,6 +3185,243 @@ shell::git::commit::create() {
 	return $RETURN_SUCCESS
 }
 
+# shell::git::commit::checkout function
+# Checks out a specific commit hash (detached HEAD). Optionally creates a new
+# branch from that commit. Supports dry-run mode.
+#
+# Usage:
+#   shell::git::commit::checkout [-n] [-h] [-b <branch_name>] <commit_hash>
+#
+# Parameters:
+#   - -n, --dry-run     : Optional. Print the command via shell::logger::command_clip
+#                         instead of executing it.
+#   - -h, --help        : Show this help message.
+#   - -b, --branch      : Optional. Create and checkout a new branch from the
+#                         commit instead of detached HEAD.
+#   - <commit_hash>      : Required. Full or short commit hash to checkout.
+#
+# Description:
+#   Step 1 — Verify the commit hash exists in the repository.
+#   Step 2 — If -b is provided, run: git checkout -b <branch_name> <commit_hash>
+#            Otherwise, run: git checkout <commit_hash>
+#   Step 3 — Log the result via shell::logger::assert.
+#
+# Safety notes:
+#   • When -b is omitted, HEAD enters detached state. Run 'git checkout <branch>'
+#     or 'git switch -' to return to a branch.
+#   • When -b is provided, the new branch is created at the commit and checked
+#     out immediately (no detached HEAD).
+#
+# Returns:
+#   $RETURN_SUCCESS (0) on success.
+#   $RETURN_INVALID (1) when <commit_hash> is omitted.
+#   $RETURN_FAILURE (non-zero) when not inside a Git repository or commit
+#                   does not exist.
+#   Non-zero exit code of the failing git command otherwise.
+#
+# Example:
+#   shell::git::commit::checkout "abc1234"
+#   shell::git::commit::checkout -b "hotfix-legacy" "abc1234"
+#   shell::git::commit::checkout -n "abc1234"
+shell::git::commit::checkout() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Checkout a specific commit hash (detached HEAD or new branch)"
+		shell::logger::usage "shell::git::commit::checkout [-n] [-h] [-b <branch_name>] <commit_hash>"
+		shell::logger::item "commit_hash" "Full or short commit hash to checkout"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
+		shell::logger::option "-b, --branch <name>" "Create and checkout a new branch from the commit"
+		shell::logger::example "shell::git::commit::checkout \"abc1234\""
+		shell::logger::example "shell::git::commit::checkout -b \"hotfix-legacy\" \"abc1234\""
+		shell::logger::example "shell::git::commit::checkout -n \"abc1234\""
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	local branch_name=""
+	if [ "$1" = "-b" ] || [ "$1" = "--branch" ]; then
+		branch_name="$2"
+		shift 2
+	fi
+
+	local commit_hash="$1"
+
+	if [ -z "$commit_hash" ]; then
+		shell::logger::error "Commit hash is required"
+		return $RETURN_INVALID
+	fi
+
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return $RETURN_FAILURE
+	fi
+
+	# Verify the commit hash exists.
+	if ! git rev-parse --verify --quiet "${commit_hash}" >/dev/null 2>&1; then
+		shell::logger::error "Commit '${commit_hash}' does not exist in this repository"
+		return $RETURN_FAILURE
+	fi
+
+	# Resolve the full hash for logging.
+	local full_hash
+	full_hash=$(git rev-parse "${commit_hash}" 2>/dev/null)
+
+	# Build the checkout command.
+	local cmd_checkout
+	if [ -n "$branch_name" ]; then
+		cmd_checkout="git checkout -b \"${branch_name}\" \"${commit_hash}\""
+	else
+		cmd_checkout="git checkout \"${commit_hash}\""
+	fi
+
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::command_clip "$cmd_checkout"
+		return $RETURN_SUCCESS
+	fi
+
+	# Execute checkout.
+	if [ -n "$branch_name" ]; then
+		shell::logger::assert "$cmd_checkout" \
+			"Created and checked out branch '${branch_name}' from commit ${full_hash:0:8}" \
+			"Checkout aborted" || return $?
+	else
+		shell::logger::assert "$cmd_checkout" \
+			"Checked out commit ${full_hash:0:8} (detached HEAD)" \
+			"Checkout aborted" || return $?
+	fi
+
+	return $RETURN_SUCCESS
+}
+
+# shell::git::commit::checkout::fzf function
+# Presents a multi-select picker of all commits across all refs via fzf,
+# then checks out the first selected commit via shell::git::commit::checkout.
+# Optionally creates a new branch from the selected commit.
+#
+# Usage:
+#   shell::git::commit::checkout::fzf [-n] [-h] [-b <branch_name>]
+#
+# Parameters:
+#   - -n, --dry-run     : Optional. After selection, print the checkout command
+#                         via shell::logger::command_clip instead of executing it.
+#   - -h, --help        : Show this help message.
+#   - -b, --branch      : Optional. Create and checkout a new branch from the
+#                         selected commit instead of detached HEAD.
+#
+# Description:
+#   Step 1 — Verify the git repository.
+#   Step 2 — Build a coloured commit list via git log --all covering all local
+#            branches, remote-tracking branches, and tags.
+#   Step 3 — Present a multi-select picker (TAB to mark multiple entries).
+#   Step 4 — Extract the first 40-char hex hash from the selection.
+#   Step 5 — Forward to shell::git::commit::checkout with the extracted hash.
+#            If -b was provided, the branch name is forwarded as well.
+#
+# Returns:
+#   $RETURN_SUCCESS (0) on success or user-initiated abort.
+#   $RETURN_FAILURE (non-zero) when not inside a Git repository or checkout fails.
+#
+# Example:
+#   shell::git::commit::checkout::fzf
+#   shell::git::commit::checkout::fzf -b "legacy-fix"
+#   shell::git::commit::checkout::fzf -n
+shell::git::commit::checkout::fzf() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Select a commit via fzf and check it out"
+		shell::logger::usage "shell::git::commit::checkout::fzf [-n] [-h] [-b <branch_name>]"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the checkout command instead of executing it"
+		shell::logger::option "-b, --branch <name>" "Create and checkout a new branch from the selected commit"
+		shell::logger::example "shell::git::commit::checkout::fzf"
+		shell::logger::example "shell::git::commit::checkout::fzf -b \"legacy-fix\""
+		shell::logger::example "shell::git::commit::checkout::fzf -n"
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	local branch_name=""
+	if [ "$1" = "-b" ] || [ "$1" = "--branch" ]; then
+		branch_name="$2"
+		shift 2
+	fi
+
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return $RETURN_FAILURE
+	fi
+
+	# ---------------------------------------------------------------------------
+	# Log format — coloured: full hash, short hash, relative time, author, refs, subject.
+	# Matches the format used by all other shell::git::commit::* functions.
+	# ---------------------------------------------------------------------------
+	local log_format="%C(bold blue)%H (%h)%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%an%C(reset)%C(bold yellow)%d%C(reset) %C(dim white)- %s%C(reset)"
+
+	# Build per-line array — one element per commit — for shell::options::multiselect.
+	local -a commit_lines
+	while IFS= read -r line; do
+		commit_lines+=("$line")
+	done < <(git log --format=format:"${log_format}" --all --color=always 2>/dev/null)
+
+	if [ "${#commit_lines[@]}" -eq 0 ]; then
+		shell::logger::warn "No commits found in repository — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	# Present multi-select picker via codebase helper (TAB to select multiple).
+	local selected_output
+	selected_output=$(shell::options::multiselect "${commit_lines[@]}")
+
+	if [ -z "$selected_output" ]; then
+		shell::logger::warn "No commit selected — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	# Extract the first 40-char hex hash from the (ANSI-coded, space-joined) output.
+	# grep -oE is robust against ANSI escape sequences and works on GNU + BSD grep.
+	local commit_hash
+	commit_hash=$(printf '%s' "$selected_output" | grep -oE '[0-9a-f]{40}' | head -1)
+
+	if [ -z "$commit_hash" ]; then
+		shell::logger::warn "Could not extract commit hash from selection — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	# Retrieve subject for logging.
+	local commit_subject
+	commit_subject=$(git log -1 --format='%s' "$commit_hash" 2>/dev/null)
+
+	shell::logger::info "Selected commit: ${commit_hash:0:8}  ${commit_subject}"
+
+	# Forward to shell::git::commit::checkout with the extracted hash.
+	if [ "$dry_run" = "true" ]; then
+		if [ -n "$branch_name" ]; then
+			shell::git::commit::checkout -n -b "$branch_name" "$commit_hash"
+		else
+			shell::git::commit::checkout -n "$commit_hash"
+		fi
+	else
+		if [ -n "$branch_name" ]; then
+			shell::git::commit::checkout -b "$branch_name" "$commit_hash"
+		else
+			shell::git::commit::checkout "$commit_hash"
+		fi
+	fi
+
+	return $RETURN_SUCCESS
+}
+
 # shell::git::tag::create function
 # Checks out a specified branch, creates an annotated Git tag on the latest
 # commit, pushes the tag to origin, restores the original branch, and sends a

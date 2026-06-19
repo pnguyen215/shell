@@ -155,6 +155,14 @@ alias sgcc-n="shell::git::commit::create -n"
 alias sgcf="shell::git::commit::create"
 alias sgcf-n="shell::git::commit::create -n"
 
+# shell::git::commit::checkout
+alias sgco="shell::git::commit::checkout"
+alias sgco-n="shell::git::commit::checkout -n"
+
+# shell::git::commit::checkout::fzf
+alias sgcof="shell::git::commit::checkout::fzf"
+alias sgcof-n="shell::git::commit::checkout::fzf -n"
+
 # shell::git::tag::create
 alias sgtc="shell::git::tag::create"
 alias sgtc-n="shell::git::tag::create -n"
