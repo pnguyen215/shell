@@ -3918,3 +3918,324 @@ shell::git::tag::checkout::fzf() {
 
 	return $RETURN_SUCCESS
 }
+
+# shell::git::tag::all function
+# Displays all Git tags in the repository, both local and remote, with origin
+# markers and associated commit metadata.
+#
+# Usage:
+#   shell::git::tag::all [-n] [-h]
+#
+# Parameters:
+#   - -n, --dry-run : Optional. Print the git commands via
+#                     shell::logger::command_clip instead of executing them.
+#   - -h, --help    : Show this help message.
+#
+# Description:
+#   Collects all local tags and remote tags from origin, deduplicates them,
+#   and prints a formatted table showing:
+#     • Tag name
+#     • Origin marker: [LOCAL] | [REMOTE] | [BOTH]
+#     • Commit hash (short)
+#     • Commit date
+#     • Commit message (first line)
+#     • Tagger name (for annotated tags) or author (for lightweight tags)
+#
+# Returns:
+#   $RETURN_SUCCESS (0) on success.
+#   $RETURN_FAILURE (non-zero) when not inside a Git repository.
+#
+# Example:
+#   shell::git::tag::all
+#   shell::git::tag::all -n
+shell::git::tag::all() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Display all local and remote tags with metadata"
+		shell::logger::usage "shell::git::tag::all [-n] [-h]"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the commands instead of executing them"
+		shell::logger::example "shell::git::tag::all"
+		shell::logger::example "shell::git::tag::all -n"
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return $RETURN_FAILURE
+	fi
+
+	# ---------------------------------------------------------------------------
+	# Command variables — declared upfront for dry-run printing.
+	# ---------------------------------------------------------------------------
+	local cmd_local_tags="git tag -l"
+	local cmd_remote_tags="git ls-remote --tags origin"
+
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::command_clip "$cmd_local_tags"
+		shell::logger::command_clip "$cmd_remote_tags"
+		return $RETURN_SUCCESS
+	fi
+
+	# ---------------------------------------------------------------------------
+	# Collect local and remote tags.
+	# ---------------------------------------------------------------------------
+	local -a local_tags
+	while IFS= read -r t; do
+		[ -n "$t" ] && local_tags+=("$t")
+	done < <(git tag -l 2>/dev/null | sort -u)
+
+	local -a remote_tags
+	while IFS= read -r t; do
+		[ -n "$t" ] && remote_tags+=("$t")
+	done < <(git ls-remote --tags origin 2>/dev/null | awk '{print $2}' | sed 's|refs/tags/||' | sort -u)
+
+	# ---------------------------------------------------------------------------
+	# Build a unified tag list with origin markers.
+	# ---------------------------------------------------------------------------
+	local -a all_tags
+	local t
+	local is_remote
+	local origin_marker
+	local commit_hash
+	local commit_date
+	local commit_msg
+	local tagger_name
+
+	# Process local tags.
+	for t in "${local_tags[@]}"; do
+		is_remote="false"
+		for rt in "${remote_tags[@]}"; do
+			[ "$t" = "$rt" ] && { is_remote="true"; break; }
+		done
+		if [ "$is_remote" = "true" ]; then
+			origin_marker="BOTH"
+		else
+			origin_marker="LOCAL"
+		fi
+		all_tags+=("${t}:${origin_marker}")
+	done
+
+	# Add remote-only tags.
+	for rt in "${remote_tags[@]}"; do
+		is_local="false"
+		for t in "${local_tags[@]}"; do
+			[ "$t" = "$rt" ] && { is_local="true"; break; }
+		done
+		if [ "$is_local" = "false" ]; then
+			all_tags+=("${rt}:REMOTE")
+		fi
+	done
+
+	if [ "${#all_tags[@]}" -eq 0 ]; then
+		shell::logger::warn "No tags found in this repository"
+		return $RETURN_SUCCESS
+	fi
+
+	# ---------------------------------------------------------------------------
+	# Print formatted table.
+	# ---------------------------------------------------------------------------
+	local _lw=14   # label column width for printf alignment
+	local _hr="  ════════════════════════════════════════════════════════════════════════════════════════"
+
+	shell::logger::info ""
+	shell::logger::info "${_hr}"
+	shell::logger::info "  GIT TAGS  ·  $(basename "$(git rev-parse --show-toplevel 2>/dev/null)")"
+	shell::logger::info "${_hr}"
+	shell::logger::info ""
+	shell::logger::info "  $(printf '%-20s %-10s %-12s %-20s %-30s %s' "Tag" "Origin" "Commit" "Date" "Message" "Tagger")"
+	shell::logger::info "  $(printf '%-20s %-10s %-12s %-20s %-30s %s' "----" "------" "------" "----" "-------" "------")"
+
+	local entry
+	local tag_name
+	local marker
+	for entry in "${all_tags[@]}"; do
+		tag_name="${entry%%:*}"
+		marker="${entry##*:}"
+
+		# Get commit metadata for the tag.
+		commit_hash=$(git rev-list -n 1 "${tag_name}" 2>/dev/null | cut -c1-12)
+		commit_date=$(git log -1 --format='%ad' --date=format:'%Y-%m-%d %H:%M' "${tag_name}" 2>/dev/null)
+		commit_msg=$(git log -1 --format='%s' "${tag_name}" 2>/dev/null)
+
+		# Truncate commit message to 30 chars for alignment.
+		if [ "${#commit_msg}" -gt 30 ]; then
+			commit_msg="${commit_msg:0:27}..."
+		fi
+
+		# Try to get tagger for annotated tags, fallback to author for lightweight tags.
+		tagger_name=$(git for-each-ref --format='%(taggername)' "refs/tags/${tag_name}" 2>/dev/null)
+		if [ -z "$tagger_name" ]; then
+			tagger_name=$(git log -1 --format='%an' "${tag_name}" 2>/dev/null)
+		fi
+		# Truncate tagger name to 20 chars.
+		if [ "${#tagger_name}" -gt 20 ]; then
+			tagger_name="${tagger_name:0:17}..."
+		fi
+
+		shell::logger::info "  $(printf '%-20s %-10s %-12s %-20s %-30s %s' "${tag_name}" "${marker}" "${commit_hash}" "${commit_date}" "${commit_msg}" "${tagger_name}")"
+	done
+
+	shell::logger::info ""
+	shell::logger::info "${_hr}"
+	shell::logger::info "  Total: ${#all_tags[@]} tags"
+	shell::logger::info "${_hr}"
+	shell::logger::info ""
+
+	return $RETURN_SUCCESS
+}
+
+# shell::git::tag::remove::fzf function
+# Presents a picker of all Git tags (local + remote) with origin markers,
+# then removes the selected tag via shell::git::tag::remove.
+#
+# Usage:
+#   shell::git::tag::remove::fzf [-n] [-h]
+#
+# Parameters:
+#   - -n, --dry-run : Optional. After selection, print the remove commands
+#                     via shell::logger::command_clip instead of executing them.
+#   - -h, --help    : Show this help message.
+#
+# Description:
+#   Step 1 — Verify the git repository.
+#   Step 2 — Collect all local tags and remote tags from origin.
+#   Step 3 — Build display lines with origin markers:
+#              [LOCAL  ] : <tag>  — exists only locally
+#              [REMOTE ] : <tag>  — exists only on origin
+#              [BOTH   ] : <tag>  — exists on both local and origin
+#   Step 4 — Present a single-select picker via shell::options::select.
+#   Step 5 — Extract the tag name from the selection using the ' : ' separator.
+#   Step 6 — Confirm removal with the user.
+#   Step 7 — Forward to shell::git::tag::remove with the extracted tag name.
+#
+# Returns:
+#   $RETURN_SUCCESS (0) on success or user-initiated abort.
+#   $RETURN_FAILURE (non-zero) when not inside a Git repository or removal fails.
+#
+# Example:
+#   shell::git::tag::remove::fzf
+#   shell::git::tag::remove::fzf -n
+shell::git::tag::remove::fzf() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Select a tag via fzf and remove it from local and origin"
+		shell::logger::usage "shell::git::tag::remove::fzf [-n] [-h]"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the remove commands instead of executing them"
+		shell::logger::example "shell::git::tag::remove::fzf"
+		shell::logger::example "shell::git::tag::remove::fzf -n"
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return $RETURN_FAILURE
+	fi
+
+	# ---------------------------------------------------------------------------
+	# Collect local and remote tags.
+	# ---------------------------------------------------------------------------
+	local -a local_tags
+	while IFS= read -r t; do
+		[ -n "$t" ] && local_tags+=("$t")
+	done < <(git tag -l 2>/dev/null | sort -u)
+
+	local -a remote_tags
+	while IFS= read -r t; do
+		[ -n "$t" ] && remote_tags+=("$t")
+	done < <(git ls-remote --tags origin 2>/dev/null | awk '{print $2}' | sed 's|refs/tags/||' | sort -u)
+
+	# ---------------------------------------------------------------------------
+	# Build display lines with origin markers.
+	# ---------------------------------------------------------------------------
+	local -a tag_lines
+	local t
+	local label
+	local is_local
+	local is_remote
+	local local_label="$(printf "[%-9s]" "LOCAL")"
+	local remote_label="$(printf "[%-9s]" "REMOTE")"
+	local both_label="$(printf "[%-9s]" "BOTH")"
+
+	# Process local tags.
+	for t in "${local_tags[@]}"; do
+		is_remote="false"
+		for rt in "${remote_tags[@]}"; do
+			[ "$t" = "$rt" ] && { is_remote="true"; break; }
+		done
+		if [ "$is_remote" = "true" ]; then
+			label="$both_label"
+		else
+			label="$local_label"
+		fi
+		tag_lines+=("${label} : ${t}")
+	done
+
+	# Add remote-only tags.
+	for rt in "${remote_tags[@]}"; do
+		is_local="false"
+		for t in "${local_tags[@]}"; do
+			[ "$t" = "$rt" ] && { is_local="true"; break; }
+		done
+		if [ "$is_local" = "false" ]; then
+			tag_lines+=("${remote_label} : ${rt}")
+		fi
+	done
+
+	if [ "${#tag_lines[@]}" -eq 0 ]; then
+		shell::logger::warn "No tags found in this repository — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	# ---------------------------------------------------------------------------
+	# Step 4 — single-select tag picker.
+	# ---------------------------------------------------------------------------
+	local selected_output
+	selected_output=$(shell::options::select "${tag_lines[@]}")
+
+	if [ -z "$selected_output" ]; then
+		shell::logger::warn "No tag selected — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	# ---------------------------------------------------------------------------
+	# Step 5 — extract tag name from the selection.
+	# ---------------------------------------------------------------------------
+	local selected_tag
+	selected_tag=$(printf '%s' "$selected_output" | grep -oE ': [^ ]+' | sed 's/: //')
+
+	if [ -z "$selected_tag" ]; then
+		shell::logger::warn "Could not extract tag name from selection — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	shell::logger::warn "Selected tag for removal: ${selected_tag}"
+
+	# Step 6 — confirm removal.
+	if shell::out::confirmz "Remove tag '${selected_tag}' from local and origin?"; then
+		shell::logger::info "Tag removal aborted"
+		return $RETURN_SUCCESS
+	fi
+
+	# Step 7 — forward to shell::git::tag::remove with the extracted tag.
+	if [ "$dry_run" = "true" ]; then
+		shell::git::tag::remove -n "$selected_tag"
+	else
+		shell::git::tag::remove "$selected_tag"
+	fi
+
+	return $RETURN_SUCCESS
+}

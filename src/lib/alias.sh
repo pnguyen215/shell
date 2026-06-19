@@ -179,6 +179,14 @@ alias sgtco-n="shell::git::tag::checkout -n"
 alias sgtcof="shell::git::tag::checkout::fzf"
 alias sgtcof-n="shell::git::tag::checkout::fzf -n"
 
+# shell::git::tag::all
+alias sgta="shell::git::tag::all"
+alias sgta-n="shell::git::tag::all -n"
+
+# shell::git::tag::remove::fzf
+alias sgrmtf="shell::git::tag::remove::fzf"
+alias sgrmtf-n="shell::git::tag::remove::fzf -n"
+
 # ////////////////////
 # Shell git basic aliases
 # ///////////////////
