@@ -171,5 +171,23 @@ alias sgtc-n="shell::git::tag::create -n"
 alias sgrmt="shell::git::tag::remove"
 alias sgrmt-n="shell::git::tag::remove -n"
 
+# ////////////////////
+# Shell git basic aliases
+# ///////////////////
+
+# git add
+alias sga="git add"
+# git add all
+alias sgaa="git add ."
+# git status
+alias sgs="git status"
+alias sgst="sgs"
+# git status -s
+alias sgsst="git status -s"
+
+# ////////////////////
 # Shell kernel aliases
+# ///////////////////
+
+# clear
 alias c="clear"
