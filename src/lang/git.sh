@@ -4794,7 +4794,6 @@ shell::git::commit::spec::history::fzf() {
 
 	local has_tmux="false"
 	local has_delta="false"
-	local has_bat="false"
 	local popup_support="false"
 
 	if shell::is_command_available tmux; then
@@ -4802,9 +4801,6 @@ shell::git::commit::spec::history::fzf() {
 	fi
 	if shell::is_command_available delta; then
 		has_delta="true"
-	fi
-	if shell::is_command_available bat; then
-		has_bat="true"
 	fi
 
 	# Enable popup support only when inside tmux (TMUX env var is set)
@@ -4831,23 +4827,22 @@ shell::git::commit::spec::history::fzf() {
 	# ---------------------------------------------------------------------------
 	# Step 4 -- Build preview command (fast, lightweight, lazy-loaded)
 	#
-	# Performance design:
-	#   * No blame in preview -- blame is O(lines) per file, too slow
-	#   * Stat only -- O(1) to get file list and change counts
-	#   * Diff capped -- max 30 lines per file, max 2 files shown in preview
-	#   * No external tools in preview -- pure git for speed
-	#   * Lazy diff loading -- actual full diff loaded only on demand via popup
+	# FIXED: Removed 'local' keywords (invalid outside functions in bash).
+	# FIXED: Added empty-hash guard to prevent 'fatal: ambiguous argument'.
+	# FIXED: Replaced 'for f in $files' with 'while IFS= read' for files with spaces.
 	# ---------------------------------------------------------------------------
 	local preview_script
 	read -r -d '' preview_script <<'PREVIEW_SCRIPT'
 #!/usr/bin/env bash
-set -e
 
 hash=$(echo "$1" | grep -oE '[a-f0-9]{40}' | head -1)
 [ -z "$hash" ] && { printf "No commit hash found\n"; exit 0; }
 
 # -- Commit Metadata (fast, single git call) --
-read -r author email date subject < <(git log -1 --format='%an %ae %ad %s' --date=format:'%Y-%m-%d %H:%M:%S' "$hash" 2>/dev/null)
+meta=$(git log -1 --format='%an %ae %ad %s' --date=format:'%Y-%m-%d %H:%M:%S' "$hash" 2>/dev/null)
+[ -z "$meta" ] && { printf "Commit not found: %s\n" "$hash"; exit 0; }
+
+read -r author email date subject <<< "$meta"
 
 printf "\n\033[1;36m==============================================\033[0m\n"
 printf "\033[1;36m|\033[0m \033[1;33mCommit:\033[0m  %s\n" "${hash:0:12} -- $subject"
@@ -4861,15 +4856,14 @@ git show --stat --format='' "$hash" 2>/dev/null
 
 # -- Quick Diff Preview (capped for performance) --
 printf "\n\033[1;35m> Diff Preview (first 2 files, max 30 lines each)\033[0m\n"
-local files
-files=$(git diff-tree --no-commit-id --name-only -r "$hash" 2>/dev/null | head -2)
-local file_count=0
-for f in $files; do
-	file_count=$((file_count + 1))
-	printf "\n\033[1;33m--- %s ---\033[0m\n" "$f"
-	git show "$hash" --format='' -- "$f" 2>/dev/null | head -30
-	printf "\n"
-done
+file_count=0
+while IFS= read -r f && [ "$file_count" -lt 2 ]; do
+    [ -z "$f" ] && continue
+    printf "\n\033[1;33m--- %s ---\033[0m\n" "$f"
+    git show "$hash" --format='' -- "$f" 2>/dev/null | head -30
+    printf "\n"
+    file_count=$((file_count + 1))
+done < <(git diff-tree --no-commit-id --name-only -r "$hash" 2>/dev/null | head -2)
 
 # -- Help hint --
 printf "\033[90mCtrl-Enter: full diff | Ctrl-F: file diff | Enter: file browser\033[0m\n"
@@ -4883,44 +4877,45 @@ PREVIEW_SCRIPT
 	# ---------------------------------------------------------------------------
 	# Step 5 -- Build popup scripts (tmux display-popup)
 	#
-	# These scripts are executed on-demand when user presses hotkeys.
-	# They create centered popups sized 80-90% of terminal dimensions.
-	# No persistent tmux sessions are created -- popups auto-close on exit.
-	# Temp files are cleaned up immediately after popup closes.
+	# FIXED: Removed all 'local' declarations (standalone scripts).
+	# FIXED: Added empty-hash guard in every popup script.
+	# FIXED: Added trap EXIT to clean up temp files safely.
+	# FIXED: Quoted temp file paths with hash to avoid collisions.
 	# ---------------------------------------------------------------------------
 
 	# --- Popup script: Full commit diff ---
 	local popup_diff_script
 	read -r -d '' popup_diff_script <<'POPUP_DIFF'
 #!/usr/bin/env bash
-# Full commit diff popup with syntax highlighting and navigation
 hash="$1"
 repo_name="$2"
 has_delta="$3"
 
-# Build the diff content with optional syntax highlighting
+[ -z "$hash" ] && { echo "Error: empty commit hash"; exit 1; }
+
+tmpfile="/tmp/git_diff_${hash}.txt"
+trap 'rm -f "$tmpfile"' EXIT
+
 {
-	printf "\033[1;36m============================================================\033[0m\n"
-	printf "\033[1;33mCommit: %s\033[0m\n" "${hash:0:12}"
-	printf "\033[1;33mRepo:   %s\033[0m\n" "$repo_name"
-	printf "\033[1;36m============================================================\033[0m\n\n"
+    printf "\033[1;36m============================================================\033[0m\n"
+    printf "\033[1;33mCommit: %s\033[0m\n" "${hash:0:12}"
+    printf "\033[1;33mRepo:   %s\033[0m\n" "$repo_name"
+    printf "\033[1;36m============================================================\033[0m\n\n"
 
-	if [ "$has_delta" = "true" ]; then
-		# Delta with navigation, line numbers, and dark mode
-		git show --color=always "$hash" 2>/dev/null | delta --no-gitconfig --line-numbers --navigate --dark 2>/dev/null || \
-			git show --color=always "$hash" 2>/dev/null
-	else
-		git show --color=always "$hash" 2>/dev/null
-	fi
-} > "/tmp/git_diff_${hash}.txt"
+    if [ "$has_delta" = "true" ]; then
+        git show --color=always "$hash" 2>/dev/null | delta --no-gitconfig --line-numbers --navigate --dark 2>/dev/null || \
+            git show --color=always "$hash" 2>/dev/null
+    else
+        git show --color=always "$hash" 2>/dev/null
+    fi
+} > "$tmpfile"
 
-# Open in tmux popup with less for scrolling and searching
-# Popup auto-closes when less exits (-E flag on tmux)
 if [ -n "$TMUX" ]; then
-	tmux display-popup -E -d "#{pane_current_path}" -w "85%" -h "85%" -xC -yC \
-		"less -R +G '/tmp/git_diff_${hash}.txt'"
+    tmux display-popup -E -d "#{pane_current_path}" -w "85%" -h "85%" -xC -yC \
+        "less -R +G '$tmpfile'"
+else
+    less -R +G "$tmpfile"
 fi
-rm -f "/tmp/git_diff_${hash}.txt"
 POPUP_DIFF
 
 	local popup_diff_file
@@ -4929,39 +4924,51 @@ POPUP_DIFF
 	chmod +x "$popup_diff_file"
 
 	# --- Popup script: File-level diff browser ---
-	# This opens an fzf inside a tmux popup to browse files changed in a commit
+	# FIXED: Replaced 'readarray' with 'while IFS= read' for bash 3.x compatibility.
+	# FIXED: Fixed file name parsing for files containing spaces.
+	# FIXED: Quoted '{1}' placeholder in fzf execute/preview bindings.
 	local popup_file_browser_script
 	read -r -d '' popup_file_browser_script <<'POPUP_FILE_BROWSER'
 #!/usr/bin/env bash
-# File-level diff browser inside tmux popup
 hash="$1"
 repo_name="$2"
 has_delta="$3"
 
+[ -z "$hash" ] && { echo "Error: empty commit hash"; exit 1; }
+
 # Get all changed files with stats
-readarray -t file_stats < <(git show --stat --format='' "$hash" 2>/dev/null | grep '|' | sed 's/^[[:space:]]*//' | awk '{print $1 " | " $3}')
-[ "${#file_stats[@]}" -eq 0 ] && { echo "No files changed"; exit 0; }
+file_stats=""
+while IFS= read -r line; do
+    [ -z "$line" ] && continue
+    # Extract filename and change count from "file.txt | 10 +++--"
+    fname="${line%% | *}"
+    rest="${line#* | }"
+    fstat="${rest%% *}"
+    [ -n "$fname" ] && file_stats="${file_stats}${fname}"$'\t'"${fstat}"$'\n'
+done < <(git show --stat --format='' "$hash" 2>/dev/null | grep '|' | sed 's/^[[:space:]]*//')
+
+[ -z "$file_stats" ] && { echo "No files changed in this commit"; exit 0; }
 
 # Build the file list for fzf with preview
-# Preview shows the diff for the selected file
-local preview_cmd
 if [ "$has_delta" = "true" ]; then
-	preview_cmd="git show --color=always '$hash' -- {1} | delta --no-gitconfig --line-numbers --dark 2>/dev/null || git show --color=always '$hash' -- {1}"
+    preview_cmd="git show --color=always '$hash' -- '{1}' | delta --no-gitconfig --line-numbers --dark 2>/dev/null || git show --color=always '$hash' -- '{1}'"
 else
-	preview_cmd="git show --color=always '$hash' -- {1}"
+    preview_cmd="git show --color=always '$hash' -- '{1}'"
 fi
 
 # Run fzf inside the popup for file selection
-printf '%s\n' "${file_stats[@]}" | fzf \
-	--ansi \
-	--no-sort \
-	--prompt="File > " \
-	--header="Commit: ${hash:0:12} | Repo: $repo_name | Enter: view diff | ESC: close" \
-	--preview="$preview_cmd" \
-	--preview-window="right:65%:wrap" \
-	--bind="enter:execute(git show --color=always '$hash' -- {1} | less -R > /dev/tty)+abort" \
-	--bind="ctrl-d:execute($preview_cmd | less -R > /dev/tty)+abort" \
-	--bind="esc:abort"
+printf '%s' "$file_stats" | fzf \
+    --ansi \
+    --no-sort \
+    --delimiter='\t' \
+    --with-nth=1 \
+    --prompt="File > " \
+    --header="Commit: ${hash:0:12} | Repo: $repo_name | Enter: view diff | ESC: close" \
+    --preview="$preview_cmd" \
+    --preview-window="right:65%:wrap" \
+    --bind="enter:execute(git show --color=always '$hash' -- '{1}' | less -R > /dev/tty)+abort" \
+    --bind="ctrl-d:execute($preview_cmd | less -R > /dev/tty)+abort" \
+    --bind="esc:abort"
 POPUP_FILE_BROWSER
 
 	local popup_file_browser_file
@@ -4970,48 +4977,65 @@ POPUP_FILE_BROWSER
 	chmod +x "$popup_file_browser_file"
 
 	# --- Popup script: Single file diff (Ctrl-F) ---
-	# Opens the first changed file in a popup, with navigation between files
+	# FIXED: Replaced 'readarray' and 'local' with portable while-loop + array.
+	# FIXED: Added empty-hash guard.
 	local popup_file_diff_script
 	read -r -d '' popup_file_diff_script <<'POPUP_FILE_DIFF'
 #!/usr/bin/env bash
-# Single file diff popup with file navigation
 hash="$1"
 repo_name="$2"
 has_delta="$3"
 
+[ -z "$hash" ] && { echo "Error: empty commit hash"; exit 1; }
+
 # Get all changed files
-readarray -t files < <(git diff-tree --no-commit-id --name-only -r "$hash" 2>/dev/null)
-[ "${#files[@]}" -eq 0 ] && { echo "No files changed"; exit 0; }
+files=""
+while IFS= read -r f; do
+    [ -n "$f" ] && files="${files}${f}"$'\n'
+done < <(git diff-tree --no-commit-id --name-only -r "$hash" 2>/dev/null)
+
+[ -z "$files" ] && { echo "No files changed"; exit 0; }
+
+# Build array of files
+file_array=()
+while IFS= read -r f; do
+    [ -n "$f" ] && file_array+=("$f")
+done < <(printf '%s' "$files")
+
+total=${#file_array[@]}
+[ "$total" -eq 0 ] && { echo "No files changed"; exit 0; }
 
 # Current file index (stored in temp file for persistence)
-local idx_file="/tmp/git_file_idx_${hash}"
-local current_idx=0
+idx_file="/tmp/git_file_idx_${hash}"
+current_idx=0
 [ -f "$idx_file" ] && current_idx=$(cat "$idx_file" 2>/dev/null || echo 0)
-[ "$current_idx" -ge "${#files[@]}" ] && current_idx=0
+[ "$current_idx" -ge "$total" ] && current_idx=0
 
-# Show current file diff in popup
-local f="${files[$current_idx]}"
-local total="${#files[@]}"
+f="${file_array[$current_idx]}"
+
+tmpfile="/tmp/git_file_diff_${hash}.txt"
+trap 'rm -f "$tmpfile"' EXIT
 
 {
-	printf "\033[1;36m============================================================\033[0m\n"
-	printf "\033[1;33mFile %d/%d: %s\033[0m\n" "$((current_idx + 1))" "$total" "$f"
-	printf "\033[1;33mCommit: %s | Repo: %s\033[0m\n" "${hash:0:12}" "$repo_name"
-	printf "\033[1;36m============================================================\033[0m\n\n"
+    printf "\033[1;36m============================================================\033[0m\n"
+    printf "\033[1;33mFile %d/%d: %s\033[0m\n" "$((current_idx + 1))" "$total" "$f"
+    printf "\033[1;33mCommit: %s | Repo: %s\033[0m\n" "${hash:0:12}" "$repo_name"
+    printf "\033[1;36m============================================================\033[0m\n\n"
 
-	if [ "$has_delta" = "true" ]; then
-		git show --color=always "$hash" -- "$f" 2>/dev/null | delta --no-gitconfig --line-numbers --dark 2>/dev/null || \
-			git show --color=always "$hash" -- "$f" 2>/dev/null
-	else
-		git show --color=always "$hash" -- "$f" 2>/dev/null
-	fi
-} > "/tmp/git_file_diff_${hash}.txt"
+    if [ "$has_delta" = "true" ]; then
+        git show --color=always "$hash" -- "$f" 2>/dev/null | delta --no-gitconfig --line-numbers --dark 2>/dev/null || \
+            git show --color=always "$hash" -- "$f" 2>/dev/null
+    else
+        git show --color=always "$hash" -- "$f" 2>/dev/null
+    fi
+} > "$tmpfile"
 
 if [ -n "$TMUX" ]; then
-	tmux display-popup -E -d "#{pane_current_path}" -w "85%" -h "85%" -xC -yC \
-		"less -R +G '/tmp/git_file_diff_${hash}.txt'"
+    tmux display-popup -E -d "#{pane_current_path}" -w "85%" -h "85%" -xC -yC \
+        "less -R +G '$tmpfile'"
+else
+    less -R +G "$tmpfile"
 fi
-rm -f "/tmp/git_file_diff_${hash}.txt"
 
 # Increment index for next invocation
 echo "$(( (current_idx + 1) % total ))" > "$idx_file"
@@ -5046,20 +5070,21 @@ POPUP_FILE_DIFF
 	fzf_cmd="$fzf_cmd --bind='ctrl-/:toggle-preview'"
 	fzf_cmd="$fzf_cmd --bind='ctrl-y:execute-silent(echo {} | grep -oE \"[a-f0-9]{40}\" | head -1 | xclip -selection clipboard 2>/dev/null || echo {} | grep -oE \"[a-f0-9]{40}\" | head -1 | pbcopy 2>/dev/null)'+clear-screen"
 
-	# Add popup-based key bindings only when tmux popup support is available
+	# FIXED: Added '[ -z \"$hash\" ] && exit 0' guard in every execute binding
+	#        to prevent git from receiving an empty revision argument.
 	if [ "$popup_support" = "true" ]; then
 		# Ctrl-Enter: Full commit diff popup
-		fzf_cmd="$fzf_cmd --bind='ctrl-enter:execute(hash=\$(echo {} | grep -oE \"[a-f0-9]{40}\" | head -1); bash ${popup_diff_file} \"\$hash\" \"${repo_name}\" \"${has_delta}\")+clear-screen'"
+		fzf_cmd="$fzf_cmd --bind='ctrl-enter:execute(hash=\$(echo {} | grep -oE \"[a-f0-9]{40}\" | head -1); [ -z \"\$hash\" ] && exit 0; bash \"${popup_diff_file}\" \"\$hash\" \"${repo_name}\" \"${has_delta}\")+clear-screen'"
 		# Ctrl-F: File-level diff popup (cycles through files)
-		fzf_cmd="$fzf_cmd --bind='ctrl-f:execute(hash=\$(echo {} | grep -oE \"[a-f0-9]{40}\" | head -1); bash ${popup_file_diff_file} \"\$hash\" \"${repo_name}\" \"${has_delta}\")+clear-screen'"
+		fzf_cmd="$fzf_cmd --bind='ctrl-f:execute(hash=\$(echo {} | grep -oE \"[a-f0-9]{40}\" | head -1); [ -z \"\$hash\" ] && exit 0; bash \"${popup_file_diff_file}\" \"\$hash\" \"${repo_name}\" \"${has_delta}\")+clear-screen'"
 		# Enter: Interactive file browser popup
-		fzf_cmd="$fzf_cmd --bind='enter:execute(hash=\$(echo {} | grep -oE \"[a-f0-9]{40}\" | head -1); bash ${popup_file_browser_file} \"\$hash\" \"${repo_name}\" \"${has_delta}\")+clear-screen'"
+		fzf_cmd="$fzf_cmd --bind='enter:execute(hash=\$(echo {} | grep -oE \"[a-f0-9]{40}\" | head -1); [ -z \"\$hash\" ] && exit 0; bash \"${popup_file_browser_file}\" \"\$hash\" \"${repo_name}\" \"${has_delta}\")+clear-screen'"
 	else
 		# Fallback when tmux is not available: use less directly
 		# Enter: Open full commit diff in less
-		fzf_cmd="$fzf_cmd --bind='enter:execute(hash=\$(echo {} | grep -oE \"[a-f0-9]{40}\" | head -1); git show --color=always \"\$hash\" | less -R > /dev/tty)+abort'"
+		fzf_cmd="$fzf_cmd --bind='enter:execute(hash=\$(echo {} | grep -oE \"[a-f0-9]{40}\" | head -1); [ -z \"\$hash\" ] && exit 0; git show --color=always \"\$hash\" | less -R > /dev/tty)+abort'"
 		# Ctrl-F: Open file stat in less
-		fzf_cmd="$fzf_cmd --bind='ctrl-f:execute(hash=\$(echo {} | grep -oE \"[a-f0-9]{40}\" | head -1); git show --stat --format=\"\" \"\$hash\" | less -R > /dev/tty)+abort'"
+		fzf_cmd="$fzf_cmd --bind='ctrl-f:execute(hash=\$(echo {} | grep -oE \"[a-f0-9]{40}\" | head -1); [ -z \"\$hash\" ] && exit 0; git show --stat --format=\"\" \"\$hash\" | less -R > /dev/tty)+abort'"
 	fi
 
 	if [ "$dry_run" = "true" ]; then
