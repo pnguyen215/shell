@@ -4733,7 +4733,7 @@ shell::git::commit::revert::fzf() {
 shell::git::commit::spec::history::fzf() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
-		shell::logger::info "Interactive commit history with per-line contributor blame (fzf + tmux)"
+		shell::logger::info "Interactive commit history with detailed diff viewer (fzf + tmux popup)"
 		shell::logger::usage "shell::git::commit::spec::history::fzf [-n] [-h] [<branch>]"
 		shell::logger::item "branch" "Branch to inspect. Defaults to current branch."
 		shell::logger::option "-h, --help" "Show this help message"
@@ -4741,6 +4741,24 @@ shell::git::commit::spec::history::fzf() {
 		shell::logger::example "shell::git::commit::spec::history::fzf"
 		shell::logger::example "shell::git::commit::spec::history::fzf \"feature/my-branch\""
 		shell::logger::example "shell::git::commit::spec::history::fzf -n"
+		shell::logger::info ""
+		shell::logger::info "Key bindings inside fzf:"
+		shell::logger::info "  Up/Down      Navigate commits"
+		shell::logger::info "  Enter        Open interactive file browser for selected commit"
+		shell::logger::info "  Ctrl-Enter   Open full commit diff in tmux popup"
+		shell::logger::info "  Ctrl-F       Open file-level diff browser in tmux popup"
+		shell::logger::info "  Ctrl-/       Toggle preview panel"
+		shell::logger::info "  Ctrl-Y       Copy commit hash to clipboard"
+		shell::logger::info "  ESC/q        Quit"
+		shell::logger::info ""
+		shell::logger::info "Inside diff popup (less pager):"
+		shell::logger::info "  j/k or Up/Down   Scroll line by line"
+		shell::logger::info "  d/u or PgDn/PgUp Scroll half page"
+		shell::logger::info "  /pattern         Search forward"
+		shell::logger::info "  ?pattern         Search backward"
+		shell::logger::info "  n/N              Next/previous search result"
+		shell::logger::info "  g/G              Go to top/bottom"
+		shell::logger::info "  q                Close popup and return to fzf"
 		return $RETURN_SUCCESS
 	fi
 
@@ -4756,7 +4774,7 @@ shell::git::commit::spec::history::fzf() {
 	fi
 
 	# ---------------------------------------------------------------------------
-	# Step 1 — Resolve target branch
+	# Step 1 -- Resolve target branch
 	# ---------------------------------------------------------------------------
 	local target_branch="${1:-}"
 	if [ -z "$target_branch" ]; then
@@ -4770,156 +4788,308 @@ shell::git::commit::spec::history::fzf() {
 	fi
 
 	# ---------------------------------------------------------------------------
-	# Step 2 — Ensure dependencies (fzf, tmux)
+	# Step 2 -- Detect environment capabilities
 	# ---------------------------------------------------------------------------
 	shell::install_package fzf >/dev/null 2>&1
+
 	local has_tmux="false"
+	local has_delta="false"
+	local has_bat="false"
+	local popup_support="false"
+
 	if shell::is_command_available tmux; then
 		has_tmux="true"
 	fi
+	if shell::is_command_available delta; then
+		has_delta="true"
+	fi
+	if shell::is_command_available bat; then
+		has_bat="true"
+	fi
+
+	# Enable popup support only when inside tmux (TMUX env var is set)
+	if [ "$has_tmux" = "true" ] && [ -n "$TMUX" ]; then
+		popup_support="true"
+	fi
 
 	# ---------------------------------------------------------------------------
-	# Step 3 — Build commit list with colored graph format
-	# Matches shell::git::commit::spec format for consistency.
+	# Step 3 -- Build commit list with colored graph format
 	# ---------------------------------------------------------------------------
-	local log_format="%C(bold blue)%H (%h)%C(reset) - %C(bold green)(%ar at %ad)%C(reset) %C(white)%an%C(reset)%C(bold yellow)%d%C(reset) %C(dim white)- %s%C(reset)"
+	local log_format="%C(bold blue)%H (%h)%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%an%C(reset)%C(bold yellow)%d%C(reset) %C(dim white)- %s%C(reset)"
 	local -a commit_lines
 	while IFS= read -r line; do
 		commit_lines+=("$line")
 	done < <(git log --graph --format=format:"${log_format}" --date=format:'%Y-%m-%d %H:%M:%S' --color=always "${target_branch}" 2>/dev/null)
 
 	if [ "${#commit_lines[@]}" -eq 0 ]; then
-		shell::logger::warn "No commits found on branch '${target_branch}' — aborting"
+		shell::logger::warn "No commits found on branch '${target_branch}' -- aborting"
 		return $RETURN_SUCCESS
 	fi
 
 	shell::logger::info "Loaded ${#commit_lines[@]} commits from '${target_branch}'"
 
 	# ---------------------------------------------------------------------------
-	# Step 4 — Build the preview command (embedded script)
-	# The preview extracts the 40-char hash from the selected line, then renders:
-	#   • Commit metadata header
-	#   • Files changed (stat)
-	#   • Per-file blame + diff with contributor timeline
+	# Step 4 -- Build preview command (fast, lightweight, lazy-loaded)
 	#
-	# Algorithm: O(files_changed_per_commit) — bounded by head limits.
-	# Performance: git diff-tree is O(1) for file list; blame is O(lines) per file.
-	# We cap at 5 files × 40 diff lines × 30 blame lines to keep preview snappy.
+	# Performance design:
+	#   * No blame in preview -- blame is O(lines) per file, too slow
+	#   * Stat only -- O(1) to get file list and change counts
+	#   * Diff capped -- max 30 lines per file, max 2 files shown in preview
+	#   * No external tools in preview -- pure git for speed
+	#   * Lazy diff loading -- actual full diff loaded only on demand via popup
 	# ---------------------------------------------------------------------------
 	local preview_script
 	read -r -d '' preview_script <<'PREVIEW_SCRIPT'
+#!/usr/bin/env bash
+set -e
+
 hash=$(echo "$1" | grep -oE '[a-f0-9]{40}' | head -1)
-[ -z "$hash" ] && { printf "No commit hash found in selection\n"; exit 0; }
+[ -z "$hash" ] && { printf "No commit hash found\n"; exit 0; }
 
-# ── Commit Metadata Header ──
-author=$(git log -1 --format='%an' "$hash" 2>/dev/null)
-email=$(git log -1 --format='%ae' "$hash" 2>/dev/null)
-date=$(git log -1 --format='%ad' --date=format:'%Y-%m-%d %H:%M:%S' "$hash" 2>/dev/null)
-subject=$(git log -1 --format='%s' "$hash" 2>/dev/null)
+# -- Commit Metadata (fast, single git call) --
+read -r author email date subject < <(git log -1 --format='%an %ae %ad %s' --date=format:'%Y-%m-%d %H:%M:%S' "$hash" 2>/dev/null)
 
-printf "\n\033[1;36m╔══════════════════════════════════════════════════════════════╗\033[0m\n"
-printf "\033[1;36m║\033[0m \033[1;33mCommit:\033[0m  %s\n" "${hash:0:12} — $subject"
-printf "\033[1;36m║\033[0m \033[1;33mAuthor:\033[0m  %s <%s>\n" "$author" "$email"
-printf "\033[1;36m║\033[0m \033[1;33mDate:\033[0m    %s\n" "$date"
-printf "\033[1;36m╚══════════════════════════════════════════════════════════════╝\033[0m\n\n"
+printf "\n\033[1;36m==============================================\033[0m\n"
+printf "\033[1;36m|\033[0m \033[1;33mCommit:\033[0m  %s\n" "${hash:0:12} -- $subject"
+printf "\033[1;36m|\033[0m \033[1;33mAuthor:\033[0m  %s <%s>\n" "$author" "$email"
+printf "\033[1;36m|\033[0m \033[1;33mDate:\033[0m    %s\n" "$date"
+printf "\033[1;36m==============================================\033[0m\n\n"
 
-# ── Files Changed ──
-printf "\033[1;35m▶ Files Changed\033[0m\n"
+# -- Files Changed (stat only -- O(1)) --
+printf "\033[1;35m> Files Changed\033[0m\n"
 git show --stat --format='' "$hash" 2>/dev/null
-printf "\n"
 
-# ── Per-File Blame + Diff (Contributor Timeline) ──
-printf "\033[1;35m▶ Changes with Line-by-Line Contributors\033[0m\n"
+# -- Quick Diff Preview (capped for performance) --
+printf "\n\033[1;35m> Diff Preview (first 2 files, max 30 lines each)\033[0m\n"
 local files
-files=$(git diff-tree --no-commit-id --name-only -r "$hash" 2>/dev/null | head -20)
+files=$(git diff-tree --no-commit-id --name-only -r "$hash" 2>/dev/null | head -2)
 local file_count=0
 for f in $files; do
 	file_count=$((file_count + 1))
-	[ "$file_count" -gt 5 ] && break
-
-	printf "\n\033[1;33m▓▓▓ %s ▓▓▓\033[0m\n" "$f"
-
-	# Show diff (what changed in this commit) — limited for preview performance
-	printf "\033[90m  --- Diff (first 40 lines) ---\033[0m\n"
-	git show "$hash" --format='' -- "$f" 2>/dev/null | head -40
-	printf "\n"
-
-	# Show blame for this file at this commit — shows who owns each line AFTER commit
-	# Using -c for short hash, --date=short for compact timeline, -s to suppress repeated author
-	printf "\033[90m  --- Contributors (blame at this commit) ---\033[0m\n"
-	git blame -c --date=short -s "$hash" -- "$f" 2>/dev/null | \
-		awk '{
-			if (NF >= 3) {
-				h=$1; d=$2;
-				rest=substr($0, index($0,$3));
-				printf "    \033[1;32m%s\033[0m \033[1;90m[%s]\033[0m %s\n", h, d, rest
-			}
-		}' | head -30
+	printf "\n\033[1;33m--- %s ---\033[0m\n" "$f"
+	git show "$hash" --format='' -- "$f" 2>/dev/null | head -30
 	printf "\n"
 done
+
+# -- Help hint --
+printf "\033[90mCtrl-Enter: full diff | Ctrl-F: file diff | Enter: file browser\033[0m\n"
 PREVIEW_SCRIPT
 
-	# Write the preview script to a temp file so fzf can execute it reliably
 	local preview_file
-	preview_file=$(mktemp 2>/dev/null || mktemp -t 'git_history_preview')
+	preview_file=$(mktemp 2>/dev/null || mktemp -t 'git_hist_preview')
 	printf '%s\n' "$preview_script" > "$preview_file"
 	chmod +x "$preview_file"
 
 	# ---------------------------------------------------------------------------
-	# Step 5 — Build fzf / fzf-tmux command
+	# Step 5 -- Build popup scripts (tmux display-popup)
+	#
+	# These scripts are executed on-demand when user presses hotkeys.
+	# They create centered popups sized 80-90% of terminal dimensions.
+	# No persistent tmux sessions are created -- popups auto-close on exit.
+	# Temp files are cleaned up immediately after popup closes.
 	# ---------------------------------------------------------------------------
-	local fzf_bin
-	local fzf_layout_opts=""
-	if [ "$has_tmux" = "true" ] && [ -n "$TMUX" ]; then
-		# Inside tmux: use fzf-tmux popup for floating window (auto-cleanup, no orphaned sessions)
-		fzf_bin="fzf-tmux"
-		fzf_layout_opts="-p 85%,75%"
+
+	# --- Popup script: Full commit diff ---
+	local popup_diff_script
+	read -r -d '' popup_diff_script <<'POPUP_DIFF'
+#!/usr/bin/env bash
+# Full commit diff popup with syntax highlighting and navigation
+hash="$1"
+repo_name="$2"
+has_delta="$3"
+
+# Build the diff content with optional syntax highlighting
+{
+	printf "\033[1;36m============================================================\033[0m\n"
+	printf "\033[1;33mCommit: %s\033[0m\n" "${hash:0:12}"
+	printf "\033[1;33mRepo:   %s\033[0m\n" "$repo_name"
+	printf "\033[1;36m============================================================\033[0m\n\n"
+
+	if [ "$has_delta" = "true" ]; then
+		# Delta with navigation, line numbers, and dark mode
+		git show --color=always "$hash" 2>/dev/null | delta --no-gitconfig --line-numbers --navigate --dark 2>/dev/null || \
+			git show --color=always "$hash" 2>/dev/null
 	else
-		# Outside tmux: use plain fzf with right-side preview
-		fzf_bin="fzf"
+		git show --color=always "$hash" 2>/dev/null
 	fi
+} > "/tmp/git_diff_${hash}.txt"
 
-	# Build header string
+# Open in tmux popup with less for scrolling and searching
+# Popup auto-closes when less exits (-E flag on tmux)
+if [ -n "$TMUX" ]; then
+	tmux display-popup -E -d "#{pane_current_path}" -w "85%" -h "85%" -xC -yC \
+		"less -R +G '/tmp/git_diff_${hash}.txt'"
+fi
+rm -f "/tmp/git_diff_${hash}.txt"
+POPUP_DIFF
+
+	local popup_diff_file
+	popup_diff_file=$(mktemp 2>/dev/null || mktemp -t 'git_popup_diff')
+	printf '%s\n' "$popup_diff_script" > "$popup_diff_file"
+	chmod +x "$popup_diff_file"
+
+	# --- Popup script: File-level diff browser ---
+	# This opens an fzf inside a tmux popup to browse files changed in a commit
+	local popup_file_browser_script
+	read -r -d '' popup_file_browser_script <<'POPUP_FILE_BROWSER'
+#!/usr/bin/env bash
+# File-level diff browser inside tmux popup
+hash="$1"
+repo_name="$2"
+has_delta="$3"
+
+# Get all changed files with stats
+readarray -t file_stats < <(git show --stat --format='' "$hash" 2>/dev/null | grep '|' | sed 's/^[[:space:]]*//' | awk '{print $1 " | " $3}')
+[ "${#file_stats[@]}" -eq 0 ] && { echo "No files changed"; exit 0; }
+
+# Build the file list for fzf with preview
+# Preview shows the diff for the selected file
+local preview_cmd
+if [ "$has_delta" = "true" ]; then
+	preview_cmd="git show --color=always '$hash' -- {1} | delta --no-gitconfig --line-numbers --dark 2>/dev/null || git show --color=always '$hash' -- {1}"
+else
+	preview_cmd="git show --color=always '$hash' -- {1}"
+fi
+
+# Run fzf inside the popup for file selection
+printf '%s\n' "${file_stats[@]}" | fzf \
+	--ansi \
+	--no-sort \
+	--prompt="File > " \
+	--header="Commit: ${hash:0:12} | Repo: $repo_name | Enter: view diff | ESC: close" \
+	--preview="$preview_cmd" \
+	--preview-window="right:65%:wrap" \
+	--bind="enter:execute(git show --color=always '$hash' -- {1} | less -R > /dev/tty)+abort" \
+	--bind="ctrl-d:execute($preview_cmd | less -R > /dev/tty)+abort" \
+	--bind="esc:abort"
+POPUP_FILE_BROWSER
+
+	local popup_file_browser_file
+	popup_file_browser_file=$(mktemp 2>/dev/null || mktemp -t 'git_popup_file_browser')
+	printf '%s\n' "$popup_file_browser_script" > "$popup_file_browser_file"
+	chmod +x "$popup_file_browser_file"
+
+	# --- Popup script: Single file diff (Ctrl-F) ---
+	# Opens the first changed file in a popup, with navigation between files
+	local popup_file_diff_script
+	read -r -d '' popup_file_diff_script <<'POPUP_FILE_DIFF'
+#!/usr/bin/env bash
+# Single file diff popup with file navigation
+hash="$1"
+repo_name="$2"
+has_delta="$3"
+
+# Get all changed files
+readarray -t files < <(git diff-tree --no-commit-id --name-only -r "$hash" 2>/dev/null)
+[ "${#files[@]}" -eq 0 ] && { echo "No files changed"; exit 0; }
+
+# Current file index (stored in temp file for persistence)
+local idx_file="/tmp/git_file_idx_${hash}"
+local current_idx=0
+[ -f "$idx_file" ] && current_idx=$(cat "$idx_file" 2>/dev/null || echo 0)
+[ "$current_idx" -ge "${#files[@]}" ] && current_idx=0
+
+# Show current file diff in popup
+local f="${files[$current_idx]}"
+local total="${#files[@]}"
+
+{
+	printf "\033[1;36m============================================================\033[0m\n"
+	printf "\033[1;33mFile %d/%d: %s\033[0m\n" "$((current_idx + 1))" "$total" "$f"
+	printf "\033[1;33mCommit: %s | Repo: %s\033[0m\n" "${hash:0:12}" "$repo_name"
+	printf "\033[1;36m============================================================\033[0m\n\n"
+
+	if [ "$has_delta" = "true" ]; then
+		git show --color=always "$hash" -- "$f" 2>/dev/null | delta --no-gitconfig --line-numbers --dark 2>/dev/null || \
+			git show --color=always "$hash" -- "$f" 2>/dev/null
+	else
+		git show --color=always "$hash" -- "$f" 2>/dev/null
+	fi
+} > "/tmp/git_file_diff_${hash}.txt"
+
+if [ -n "$TMUX" ]; then
+	tmux display-popup -E -d "#{pane_current_path}" -w "85%" -h "85%" -xC -yC \
+		"less -R +G '/tmp/git_file_diff_${hash}.txt'"
+fi
+rm -f "/tmp/git_file_diff_${hash}.txt"
+
+# Increment index for next invocation
+echo "$(( (current_idx + 1) % total ))" > "$idx_file"
+POPUP_FILE_DIFF
+
+	local popup_file_diff_file
+	popup_file_diff_file=$(mktemp 2>/dev/null || mktemp -t 'git_popup_file_diff')
+	printf '%s\n' "$popup_file_diff_script" > "$popup_file_diff_file"
+	chmod +x "$popup_file_diff_file"
+
+	# ---------------------------------------------------------------------------
+	# Step 6 -- Build fzf command with enhanced key bindings
+	# ---------------------------------------------------------------------------
+	local fzf_bin="fzf"
+	local repo_name
+	repo_name=$(basename "$(git rev-parse --show-toplevel 2>/dev/null)")
+
+	# Header with all key bindings
 	local header_str
-	header_str=$(printf '\033[1;36m↑↓\033[0m navigate  \033[1;36mEnter\033[0m select  \033[1;36mESC\033[0m quit  \033[1;36mCtrl-/\033[0m toggle-preview  \033[1;36mCtrl-Y\033[0m copy-hash')
+	header_str=$(printf '\033[1;36mUp/Down\033[0m navigate  \033[1;36mEnter\033[0m file-browser  \033[1;36mCtrl-Enter\033[0m full-diff  \033[1;36mCtrl-F\033[0m file-diff  \033[1;36mCtrl-/\033[0m toggle-preview  \033[1;36mCtrl-Y\033[0m copy-hash  \033[1;36mESC\033[0m quit')
 
-	# Build the full command string for dry-run display
-	local cmd_display
-	cmd_display="printf '%s\\n' \"\${commit_lines[@]}\" | ${fzf_bin} ${fzf_layout_opts} --ansi --no-sort --no-multi --prompt='Commits on ${target_branch} > ' --header='${header_str}' --preview='bash ${preview_file} {}' --preview-window='right:55%:wrap' --bind='ctrl-/:toggle-preview' --bind='ctrl-y:execute-silent(echo {} | grep -oE \"[a-f0-9]{40}\" | head -1 | xclip -selection clipboard 2>/dev/null || echo {} | grep -oE \"[a-f0-9]{40}\" | head -1 | pbcopy 2>/dev/null)'"
+	# Build the fzf command with all bindings
+	local fzf_cmd
+	fzf_cmd="$fzf_bin"
+	fzf_cmd="$fzf_cmd --ansi"
+	fzf_cmd="$fzf_cmd --no-sort"
+	fzf_cmd="$fzf_cmd --no-multi"
+	fzf_cmd="$fzf_cmd --prompt='Commits on ${target_branch} > '"
+	fzf_cmd="$fzf_cmd --header='$header_str'"
+	fzf_cmd="$fzf_cmd --preview='bash ${preview_file} {}'"
+	fzf_cmd="$fzf_cmd --preview-window='right:50%:wrap'"
+	fzf_cmd="$fzf_cmd --bind='ctrl-/:toggle-preview'"
+	fzf_cmd="$fzf_cmd --bind='ctrl-y:execute-silent(echo {} | grep -oE \"[a-f0-9]{40}\" | head -1 | xclip -selection clipboard 2>/dev/null || echo {} | grep -oE \"[a-f0-9]{40}\" | head -1 | pbcopy 2>/dev/null)'+clear-screen"
+
+	# Add popup-based key bindings only when tmux popup support is available
+	if [ "$popup_support" = "true" ]; then
+		# Ctrl-Enter: Full commit diff popup
+		fzf_cmd="$fzf_cmd --bind='ctrl-enter:execute(hash=\$(echo {} | grep -oE \"[a-f0-9]{40}\" | head -1); bash ${popup_diff_file} \"\$hash\" \"${repo_name}\" \"${has_delta}\")+clear-screen'"
+		# Ctrl-F: File-level diff popup (cycles through files)
+		fzf_cmd="$fzf_cmd --bind='ctrl-f:execute(hash=\$(echo {} | grep -oE \"[a-f0-9]{40}\" | head -1); bash ${popup_file_diff_file} \"\$hash\" \"${repo_name}\" \"${has_delta}\")+clear-screen'"
+		# Enter: Interactive file browser popup
+		fzf_cmd="$fzf_cmd --bind='enter:execute(hash=\$(echo {} | grep -oE \"[a-f0-9]{40}\" | head -1); bash ${popup_file_browser_file} \"\$hash\" \"${repo_name}\" \"${has_delta}\")+clear-screen'"
+	else
+		# Fallback when tmux is not available: use less directly
+		# Enter: Open full commit diff in less
+		fzf_cmd="$fzf_cmd --bind='enter:execute(hash=\$(echo {} | grep -oE \"[a-f0-9]{40}\" | head -1); git show --color=always \"\$hash\" | less -R > /dev/tty)+abort'"
+		# Ctrl-F: Open file stat in less
+		fzf_cmd="$fzf_cmd --bind='ctrl-f:execute(hash=\$(echo {} | grep -oE \"[a-f0-9]{40}\" | head -1); git show --stat --format=\"\" \"\$hash\" | less -R > /dev/tty)+abort'"
+	fi
 
 	if [ "$dry_run" = "true" ]; then
+		local cmd_display
+		cmd_display="printf '%s\\n' \"\${commit_lines[@]}\" | $fzf_cmd"
 		shell::logger::command_clip "$cmd_display"
-		rm -f "$preview_file" 2>/dev/null
+		# Cleanup temp files
+		rm -f "$preview_file" "$popup_diff_file" "$popup_file_browser_file" "$popup_file_diff_file" 2>/dev/null
 		return $RETURN_SUCCESS
 	fi
 
 	# ---------------------------------------------------------------------------
-	# Step 6 — Execute fzf and capture selection
+	# Step 7 -- Execute fzf and capture selection
 	# ---------------------------------------------------------------------------
 	local selected_output
-	selected_output=$(printf '%s\n' "${commit_lines[@]}" | \
-		"$fzf_bin" $fzf_layout_opts \
-			--ansi \
-			--no-sort \
-			--no-multi \
-			--prompt="Commits on ${target_branch} > " \
-			--header="$header_str" \
-			--preview="bash ${preview_file} {}" \
-			--preview-window="right:55%:wrap" \
-			--bind="ctrl-/:toggle-preview" \
-			--bind="ctrl-y:execute-silent(echo {} | grep -oE '[a-f0-9]{40}' | head -1 | xclip -selection clipboard 2>/dev/null || echo {} | grep -oE '[a-f0-9]{40}' | head -1 | pbcopy 2>/dev/null)")
+	selected_output=$(printf '%s\n' "${commit_lines[@]}" | eval "$fzf_cmd")
 	local fzf_exit=$?
 
-	# Cleanup preview temp file immediately (no resource leak)
-	rm -f "$preview_file" 2>/dev/null
+	# Cleanup all temp files immediately
+	rm -f "$preview_file" "$popup_diff_file" "$popup_file_browser_file" "$popup_file_diff_file" 2>/dev/null
+	# Cleanup any leftover diff temp files
+	rm -f "/tmp/git_diff_"* "/tmp/git_file_diff_"* "/tmp/git_file_idx_"* 2>/dev/null
 
-	if [ -z "$selected_output" ] || [ "$fzf_exit" -ne 0 ]; then
-		shell::logger::info "No commit selected — exiting"
+	if [ -z "$selected_output" ] && [ "$fzf_exit" -ne 0 ]; then
+		shell::logger::info "No commit selected -- exiting"
 		return $RETURN_SUCCESS
 	fi
 
 	# ---------------------------------------------------------------------------
-	# Step 7 — Extract hash and output details
+	# Step 8 -- Extract hash and output details
 	# ---------------------------------------------------------------------------
 	local commit_hash
 	commit_hash=$(printf '%s' "$selected_output" | grep -oE '[a-f0-9]{40}' | head -1)
