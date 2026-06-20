@@ -96,6 +96,12 @@ alias sgbrf-n="shell::git::branch::rename::fzf -n"
 alias sgbs="shell::git::branch::sync"
 alias sgbs-n="shell::git::branch::sync -n"
 
+# shell::git::branch::push
+alias sgpush="shell::git::branch::push"
+alias sgpush-n="shell::git::branch::push -n"
+alias sgpb="shell::git::branch::push"
+alias sgpb-n="shell::git::branch::push -n"
+
 # shell::git::branch::push::current
 alias sgbpc="shell::git::branch::push::current"
 alias sgbpc-n="shell::git::branch::push::current -n"
