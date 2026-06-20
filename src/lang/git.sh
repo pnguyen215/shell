@@ -1393,6 +1393,56 @@ shell::git::branch::push::current() {
 	shell::git::branch::push "$current_branch"
 }
 
+# shell::git::branch::push::current::force function
+# Convenience wrapper around shell::git::branch::push that automatically detects
+# the currently checked-out branch and invokes a force-push command for it.
+# This is a specialized function for the common case of needing to force-push the
+# current branch to origin. It prompts for confirmation before executing the force-push.
+# 
+# Usage:
+#   shell::git::branch::push::current::force [-h]
+#
+# Parameters:
+#   - -h, --help : Show this help message.
+#
+# Returns:
+#   $RETURN_SUCCESS (0) on success or user-initiated abort.
+#   $RETURN_FAILURE (non-zero) when not inside a Git repository.
+#   Non-zero exit code of the git push command if the force-push fails.
+#
+# Example:
+#   shell::git::branch::push::current::force
+shell::git::branch::push::current::force() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Force-push the currently active Git branch to origin"
+		shell::logger::usage "shell::git::branch::push::current::force [-h]"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::git::branch::push::current::force"
+		return $RETURN_SUCCESS
+	fi
+
+	local current_branch
+	current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+
+	if [ -z "$current_branch" ]; then
+		shell::logger::error "Not inside a Git repository"
+		return $RETURN_FAILURE
+	fi
+
+	local force_cmd="git push --force origin \"${current_branch}\""
+
+	if shell::out::confirmz "Force-push the current branch '${current_branch}' to origin?"; then
+		shell::logger::info "Force-push aborted"
+		return $RETURN_SUCCESS
+	fi
+
+	shell::logger::assert "$force_cmd" \
+		"Force-push executed successfully" "Force-push failed" || return $?
+
+	return $RETURN_SUCCESS
+}
+
 # shell::git::branch::backup function
 # Creates a local backup branch pointing to the same commit as the given source
 # branch, without switching HEAD. Sends a Telegram activity notification on success.

@@ -102,6 +102,13 @@ alias sgbpc-n="shell::git::branch::push::current -n"
 alias sgpushc="shell::git::branch::push::current"
 alias sgpushc-n="shell::git::branch::push::current -n"
 
+# shell::git::branch::push::current::force
+alias sgbpcf="shell::git::branch::push::current::force"
+alias sgbpcf-n="shell::git::branch::push::current::force -n"
+alias sgpushcf="shell::git::branch::push::current::force"
+alias sgpushcf-n="shell::git::branch::push::current::force -n"
+alias sgpf="shell::git::branch::push::current::force"
+
 # shell::git::commit::spec
 alias sgcs="shell::git::commit::spec"
 alias sgcs-n="shell::git::commit::spec -n"
