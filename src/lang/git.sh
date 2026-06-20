@@ -4745,7 +4745,7 @@ shell::git::commit::spec::history::fzf() {
 		shell::logger::info "Key bindings inside fzf:"
 		shell::logger::info "  Up/Down      Navigate commits"
 		shell::logger::info "  Enter        Open interactive file browser for selected commit"
-		shell::logger::info "  Ctrl-Enter   Open full commit diff in tmux popup"
+		shell::logger::info "  Ctrl-O       Open full commit diff in tmux popup"
 		shell::logger::info "  Ctrl-F       Open file-level diff browser in tmux popup"
 		shell::logger::info "  Ctrl-/       Toggle preview panel"
 		shell::logger::info "  Ctrl-Y       Copy commit hash to clipboard"
@@ -4861,7 +4861,7 @@ while IFS= read -r f && [ "$file_count" -lt 2 ]; do
 done < <(git diff-tree --no-commit-id --name-only -r "$hash" 2>/dev/null | head -2)
 
 # -- Help hint --
-printf "\033[90mCtrl-Enter: full diff | Ctrl-F: file diff | Enter: file browser\033[0m\n"
+printf "\033[90mCtrl-O: full diff | Ctrl-F: file diff | Enter: file browser\033[0m\n"
 PREVIEW_SCRIPT
 
 	local preview_file
@@ -4873,8 +4873,7 @@ PREVIEW_SCRIPT
 	# Step 5 -- Build popup scripts (tmux display-popup)
 	# ---------------------------------------------------------------------------
 
-	# --- Popup script: Full commit diff ---
-	# FIX: Use mktemp instead of hardcoded /tmp path
+	# --- Popup script: Full commit diff (Ctrl-O) ---
 	local popup_diff_script
 	read -r -d '' popup_diff_script <<'POPUP_DIFF'
 #!/usr/bin/env bash
@@ -4903,9 +4902,9 @@ trap 'rm -f "$tmpfile"' EXIT
 
 if [ -n "$TMUX" ]; then
     tmux display-popup -E -d "#{pane_current_path}" -w "85%" -h "85%" -xC -yC \
-        "less -R +G '$tmpfile'"
+        "less -R '$tmpfile'"
 else
-    less -R +G "$tmpfile"
+    less -R "$tmpfile"
 fi
 POPUP_DIFF
 
@@ -4914,8 +4913,8 @@ POPUP_DIFF
 	printf '%s\n' "$popup_diff_script" > "$popup_diff_file"
 	chmod +x "$popup_diff_file"
 
-	# --- Popup script: File-level diff browser ---
-	# FIX: Use separate preview script files instead of inline commands to avoid quoting hell
+	# --- Popup script: File browser (Enter) ---
+	# Opens a tmux popup with fzf listing changed files + preview
 	local popup_file_browser_script
 	read -r -d '' popup_file_browser_script <<'POPUP_FILE_BROWSER'
 #!/usr/bin/env bash
@@ -4937,51 +4936,39 @@ done < <(git show --stat --format='' "$hash" 2>/dev/null | grep '|' | sed 's/^[[
 
 [ -z "$file_stats" ] && { echo "No files changed in this commit"; exit 0; }
 
-# FIX: Build preview script file to avoid inline quoting issues
-preview_script=$(mktemp 2>/dev/null || mktemp -t 'git_fbrowser_preview')
+# Build preview command inline (avoid temp file issues)
 if [ "$has_delta" = "true" ]; then
-    cat > "$preview_script" <<'PREVIEW'
-#!/usr/bin/env bash
-file="$1"
-hash="$2"
-git show --color=always "$hash" -- "$file" | delta --no-gitconfig --line-numbers --dark 2>/dev/null || git show --color=always "$hash" -- "$file"
-PREVIEW
+    preview_cmd='git show --color=always "'"$hash"'" -- {1} | delta --no-gitconfig --line-numbers --dark 2>/dev/null || git show --color=always "'"$hash"'" -- {1}'
 else
-    cat > "$preview_script" <<'PREVIEW'
-#!/usr/bin/env bash
-file="$1"
-hash="$2"
-git show --color=always "$hash" -- "$file"
-PREVIEW
+    preview_cmd='git show --color=always "'"$hash"'" -- {1}'
 fi
-chmod +x "$preview_script"
 
-# FIX: Build enter script file to avoid inline quoting issues
-enter_script=$(mktemp 2>/dev/null || mktemp -t 'git_fbrowser_enter')
-cat > "$enter_script" <<ENTER
-#!/usr/bin/env bash
-file="\$1"
-hash="\$2"
-git show --color=always "\$hash" -- "\$file" | less -R > /dev/tty
-ENTER
-chmod +x "$enter_script"
+# Run fzf for file selection inside popup
+# Use tmux display-popup if available, otherwise direct fzf
+run_file_browser() {
+    printf '%s' "$file_stats" | fzf \
+        --ansi \
+        --no-sort \
+        --delimiter='\t' \
+        --with-nth=1 \
+        --prompt="File > " \
+        --header="Commit: ${hash:0:12} | Repo: $repo_name | Enter: view diff | ESC: close" \
+        --preview="$preview_cmd" \
+        --preview-window="right:65%:wrap" \
+        --bind="enter:execute(git show --color=always '$hash' -- {1} | less -R > /dev/tty)+abort" \
+        --bind="ctrl-d:execute($preview_cmd | less -R > /dev/tty)+abort" \
+        --bind="esc:abort"
+}
 
-# Run fzf inside the popup for file selection
-printf '%s' "$file_stats" | fzf \
-    --ansi \
-    --no-sort \
-    --delimiter='\t' \
-    --with-nth=1 \
-    --prompt="File > " \
-    --header="Commit: ${hash:0:12} | Repo: $repo_name | Enter: view diff | ESC: close" \
-    --preview="bash '$preview_script' {1} '$hash'" \
-    --preview-window="right:65%:wrap" \
-    --bind="enter:execute(bash '$enter_script' {1} '$hash' > /dev/tty)+abort" \
-    --bind="ctrl-d:execute(bash '$preview_script' {1} '$hash' | less -R > /dev/tty)+abort" \
-    --bind="esc:abort"
-
-# FIX: Clean up temp scripts
-rm -f "$preview_script" "$enter_script"
+if [ -n "$TMUX" ]; then
+    # Run fzf inside tmux popup to avoid nested TTY issues
+    tmpfile=$(mktemp 2>/dev/null || mktemp -t 'git_fbrowser')
+    trap 'rm -f "$tmpfile"' EXIT
+    run_file_browser > "$tmpfile" 2>&1
+    cat "$tmpfile"
+else
+    run_file_browser
+fi
 POPUP_FILE_BROWSER
 
 	local popup_file_browser_file
@@ -4990,7 +4977,7 @@ POPUP_FILE_BROWSER
 	chmod +x "$popup_file_browser_file"
 
 	# --- Popup script: Single file diff (Ctrl-F) ---
-	# FIX: Use mktemp instead of hardcoded /tmp path, add idx_file to trap cleanup
+	# Cycles through changed files, one per invocation
 	local popup_file_diff_script
 	read -r -d '' popup_file_diff_script <<'POPUP_FILE_DIFF'
 #!/usr/bin/env bash
@@ -5017,18 +5004,20 @@ done < <(printf '%s' "$files")
 total=${#file_array[@]}
 [ "$total" -eq 0 ] && { echo "No files changed"; exit 0; }
 
-# FIX: Use mktemp for idx_file instead of hardcoded /tmp path
-idx_file=$(mktemp 2>/dev/null || mktemp -t 'git_file_idx')
+# Use a deterministic idx_file path based on hash for persistence across invocations
+idx_dir="${TMPDIR:-/tmp}"
+idx_file="${idx_dir}/git_file_idx_${hash:0:8}"
+
 current_idx=0
-[ -f "$idx_file" ] && current_idx=$(cat "$idx_file" 2>/dev/null || echo 0)
+if [ -f "$idx_file" ]; then
+    current_idx=$(cat "$idx_file" 2>/dev/null || echo 0)
+fi
 [ "$current_idx" -ge "$total" ] && current_idx=0
 
 f="${file_array[$current_idx]}"
 
-# FIX: Use mktemp instead of hardcoded /tmp path
 tmpfile=$(mktemp 2>/dev/null || mktemp -t 'git_file_diff')
-# FIX: Add idx_file to trap cleanup
-trap 'rm -f "$tmpfile" "$idx_file"' EXIT
+trap 'rm -f "$tmpfile"' EXIT
 
 {
     printf "\033[1;36m============================================================\033[0m\n"
@@ -5046,12 +5035,12 @@ trap 'rm -f "$tmpfile" "$idx_file"' EXIT
 
 if [ -n "$TMUX" ]; then
     tmux display-popup -E -d "#{pane_current_path}" -w "85%" -h "85%" -xC -yC \
-        "less -R +G '$tmpfile'"
+        "less -R '$tmpfile'"
 else
-    less -R +G "$tmpfile"
+    less -R "$tmpfile"
 fi
 
-# Increment index for next invocation
+# Increment index for next invocation and persist
 echo "$(( (current_idx + 1) % total ))" > "$idx_file"
 POPUP_FILE_DIFF
 
@@ -5069,7 +5058,7 @@ POPUP_FILE_DIFF
 
 	# Header with all key bindings
 	local header_str
-	header_str=$(printf '\033[1;36mUp/Down\033[0m navigate  \033[1;36mEnter\033[0m file-browser  \033[1;36mCtrl-Enter\033[0m full-diff  \033[1;36mCtrl-F\033[0m file-diff  \033[1;36mCtrl-/\033[0m toggle-preview  \033[1;36mCtrl-Y\033[0m copy-hash  \033[1;36mESC\033[0m quit')
+	header_str=$(printf '\033[1;36mUp/Down\033[0m navigate  \033[1;36mEnter\033[0m file-browser  \033[1;36mCtrl-O\033[0m full-diff  \033[1;36mCtrl-F\033[0m file-diff  \033[1;36mCtrl-/\033[0m toggle-preview  \033[1;36mCtrl-Y\033[0m copy-hash  \033[1;36mESC\033[0m quit')
 
 	# Build the fzf command with all bindings
 	local fzf_cmd
@@ -5085,12 +5074,13 @@ POPUP_FILE_DIFF
 	fzf_cmd="$fzf_cmd --bind='ctrl-y:execute-silent(echo {} | grep -oE \"[a-f0-9]{40}\" | head -1 | xclip -selection clipboard 2>/dev/null || echo {} | grep -oE \"[a-f0-9]{40}\" | head -1 | pbcopy 2>/dev/null)'+clear-screen"
 
 	if [ "$popup_support" = "true" ]; then
-		# Ctrl-Enter: Full commit diff popup
-		fzf_cmd="$fzf_cmd --bind='ctrl-enter:execute(hash=\$(echo {} | grep -oE \"[a-f0-9]{40}\" | head -1); [ -z \"\$hash\" ] && exit 0; bash \"${popup_diff_file}\" \"\$hash\" \"${repo_name}\" \"${has_delta}\")+clear-screen'"
+		# FIX: Use execute-silent for tmux popup to avoid blocking fzf's TTY
+		# Ctrl-O: Full commit diff popup (replaces unreliable ctrl-enter)
+		fzf_cmd="$fzf_cmd --bind='ctrl-o:execute-silent(hash=\$(echo {} | grep -oE \"[a-f0-9]{40}\" | head -1); [ -n \"\$hash\" ] && bash \"${popup_diff_file}\" \"\$hash\" \"${repo_name}\" \"${has_delta}\")+clear-screen'"
 		# Ctrl-F: File-level diff popup (cycles through files)
-		fzf_cmd="$fzf_cmd --bind='ctrl-f:execute(hash=\$(echo {} | grep -oE \"[a-f0-9]{40}\" | head -1); [ -z \"\$hash\" ] && exit 0; bash \"${popup_file_diff_file}\" \"\$hash\" \"${repo_name}\" \"${has_delta}\")+clear-screen'"
+		fzf_cmd="$fzf_cmd --bind='ctrl-f:execute-silent(hash=\$(echo {} | grep -oE \"[a-f0-9]{40}\" | head -1); [ -n \"\$hash\" ] && bash \"${popup_file_diff_file}\" \"\$hash\" \"${repo_name}\" \"${has_delta}\")+clear-screen'"
 		# Enter: Interactive file browser popup
-		fzf_cmd="$fzf_cmd --bind='enter:execute(hash=\$(echo {} | grep -oE \"[a-f0-9]{40}\" | head -1); [ -z \"\$hash\" ] && exit 0; bash \"${popup_file_browser_file}\" \"\$hash\" \"${repo_name}\" \"${has_delta}\")+clear-screen'"
+		fzf_cmd="$fzf_cmd --bind='enter:execute-silent(hash=\$(echo {} | grep -oE \"[a-f0-9]{40}\" | head -1); [ -n \"\$hash\" ] && bash \"${popup_file_browser_file}\" \"\$hash\" \"${repo_name}\" \"${has_delta}\")+clear-screen'"
 	else
 		# Fallback when tmux is not available: use less directly
 		# Enter: Open full commit diff in less
@@ -5116,13 +5106,9 @@ POPUP_FILE_DIFF
 	local fzf_exit=$?
 
 	# Cleanup all temp files immediately
-	# FIX: Remove explicit temp files first
 	rm -f "$preview_file" "$popup_diff_file" "$popup_file_browser_file" "$popup_file_diff_file" 2>/dev/null
-	# FIX: Use find instead of glob patterns to avoid "no matches found" error in zsh
-	# when no leftover temp files exist. The original code had:
-	#   rm -f "/tmp/git_diff_"* "/tmp/git_file_diff_"* "/tmp/git_file_idx_"* 2>/dev/null
-	# which fails in zsh with "no matches found" when globs don't match.
-	find /tmp -maxdepth 1 -type f \( -name 'git_diff_*' -o -name 'git_file_diff_*' -o -name 'git_file_idx_*' -o -name 'git_fbrowser_preview*' -o -name 'git_fbrowser_enter*' \) -delete 2>/dev/null
+	# Clean up idx files from popup_file_diff_script
+	find "${TMPDIR:-/tmp}" -maxdepth 1 -type f -name 'git_file_idx_*' -mtime +1 -delete 2>/dev/null
 
 	if [ -z "$selected_output" ] && [ "$fzf_exit" -ne 0 ]; then
 		shell::logger::info "No commit selected -- exiting"
