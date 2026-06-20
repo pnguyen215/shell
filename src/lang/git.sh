@@ -4682,8 +4682,8 @@ shell::git::commit::revert::fzf() {
 }
 
 # shell::git::commit::spec::history::fzf function
-# Interactive commit history browser: selects a commit via fzf, then shows
-# detailed blame / diff / file-history in a tmux popup (or less fallback).
+# Interactive commit history browser: selects a commit via fzf, then loops
+# through view-action picks until the user explicitly chooses Exit.
 #
 # Usage:
 #   shell::git::commit::spec::history::fzf [-n] [-h] [<branch>]
@@ -4698,14 +4698,16 @@ shell::git::commit::revert::fzf() {
 #   Step 2 — Build a coloured commit list (full 40-char hash per entry).
 #   Step 3 — Present commit picker via shell::options::select (fzf wrapper).
 #   Step 4 — Extract 40-char commit hash from the selected line.
-#   Step 5 — Show commit metadata (author, date, subject).
-#   Step 6 — Present view-action picker via shell::options::select_key:
+#   Step 5 — Collect commit metadata (author, date, subject).
+#   Step 6–7 (loop) — Repeatedly present view-action picker via
+#             shell::options::select_key, render the selected view in a tmux
+#             display-popup (90 × 90 %) or less, then return to the picker.
+#             Available actions:
 #              • diff          — full git show (what changed in this commit)
 #              • blame         — git blame per file at this commit (who wrote each line)
 #              • file_history  — git log --follow -p per file (full change history)
 #              • stat          — files changed with line-count stats only
-#   Step 7 — Render the chosen view into a tmpfile and display it in a
-#             tmux display-popup (90 × 90 %) or less when outside tmux.
+#              • exit          — leave the view loop and return to the terminal
 #   Step 8 — Log commit info and copy to clipboard via shell::clip_value.
 #
 # Returns:
@@ -4734,6 +4736,7 @@ shell::git::commit::spec::history::fzf() {
 		shell::logger::info "  blame         Per-file blame — who wrote each line at this commit"
 		shell::logger::info "  file_history  Per-file change history with diffs (git log --follow -p)"
 		shell::logger::info "  stat          Files changed with +/- line counts only"
+		shell::logger::info "  exit          Leave the view loop and return to the terminal"
 		shell::logger::info ""
 		shell::logger::info "Inside the tmux popup / less pager:"
 		shell::logger::info "  j / k         Scroll line by line"
@@ -4836,124 +4839,125 @@ shell::git::commit::spec::history::fzf() {
 	shell::logger::info "Date    : ${commit_date}"
 
 	# ---------------------------------------------------------------------------
-	# Step 6 — View-action picker via shell::options::select_key.
+	# Steps 6–7 (loop) — Action picker → render view → repeat until Exit.
 	# ---------------------------------------------------------------------------
 	local -a action_options=(
 		"View full diff — what changed in this commit (git show):diff"
 		"View blame — who wrote each line at this commit (git blame per file):blame"
 		"View file history — full change log with diffs per file (git log --follow -p):file_history"
 		"View stat — files changed with +/- line counts only:stat"
+		"Exit — return to terminal:exit"
 	)
 
-	local action
-	action=$(shell::options::select_key "${action_options[@]}")
+	while true; do
+		local action
+		action=$(shell::options::select_key "${action_options[@]}")
 
-	if [ -z "$action" ]; then
-		shell::logger::info "No action selected — aborting"
-		return $RETURN_SUCCESS
-	fi
+		# Empty selection (ESC) or explicit exit → leave the loop.
+		if [ -z "$action" ] || [ "$action" = "exit" ]; then
+			shell::logger::info "Exiting commit viewer"
+			break
+		fi
 
-	# ---------------------------------------------------------------------------
-	# Step 7 — Build content and show in tmux popup or less.
-	# ---------------------------------------------------------------------------
-	local tmpfile
-	tmpfile=$(mktemp 2>/dev/null || mktemp -t 'git_hist_view')
+		# Build content into a tmpfile.
+		local tmpfile
+		tmpfile=$(mktemp 2>/dev/null || mktemp -t 'git_hist_view')
 
-	# Common header written to tmpfile.
-	{
-		printf "\033[1;36m══════════════════════════════════════════════════════════════\033[0m\n"
-		printf "\033[1;33m  Commit:  \033[0m%s\n" "${commit_hash:0:12}  —  ${commit_subject}"
-		printf "\033[1;33m  Author:  \033[0m%s <%s>\n" "${commit_author}" "${commit_author_email}"
-		printf "\033[1;33m  Date:    \033[0m%s\n" "${commit_date}"
-		printf "\033[1;33m  Branch:  \033[0m%s\n" "${target_branch}"
-		printf "\033[1;33m  Repo:    \033[0m%s\n" "${repo_name}"
-		printf "\033[1;36m══════════════════════════════════════════════════════════════\033[0m\n\n"
-	} > "$tmpfile"
+		# Common header.
+		{
+			printf "\033[1;36m══════════════════════════════════════════════════════════════\033[0m\n"
+			printf "\033[1;33m  Commit:  \033[0m%s\n" "${commit_hash:0:12}  —  ${commit_subject}"
+			printf "\033[1;33m  Author:  \033[0m%s <%s>\n" "${commit_author}" "${commit_author_email}"
+			printf "\033[1;33m  Date:    \033[0m%s\n" "${commit_date}"
+			printf "\033[1;33m  Branch:  \033[0m%s\n" "${target_branch}"
+			printf "\033[1;33m  Repo:    \033[0m%s\n" "${repo_name}"
+			printf "\033[1;36m══════════════════════════════════════════════════════════════\033[0m\n\n"
+		} > "$tmpfile"
 
-	case "$action" in
-		# -----------------------------------------------------------------------
-		diff)
-			if [ "$has_delta" = "true" ]; then
-				git show --color=always "$commit_hash" 2>/dev/null \
-					| delta --no-gitconfig --line-numbers --navigate --dark 2>/dev/null \
-					>> "$tmpfile" \
-					|| git show --color=always "$commit_hash" 2>/dev/null >> "$tmpfile"
-			else
-				git show --color=always "$commit_hash" 2>/dev/null >> "$tmpfile"
-			fi
-			;;
+		case "$action" in
+			# -------------------------------------------------------------------
+			diff)
+				if [ "$has_delta" = "true" ]; then
+					git show --color=always "$commit_hash" 2>/dev/null \
+						| delta --no-gitconfig --line-numbers --navigate --dark 2>/dev/null \
+						>> "$tmpfile" \
+						|| git show --color=always "$commit_hash" 2>/dev/null >> "$tmpfile"
+				else
+					git show --color=always "$commit_hash" 2>/dev/null >> "$tmpfile"
+				fi
+				;;
 
-		# -----------------------------------------------------------------------
-		blame)
-			local -a changed_files_blame
-			while IFS= read -r f; do
-				[ -n "$f" ] && changed_files_blame+=("$f")
-			done < <(git diff-tree --no-commit-id --name-only -r "$commit_hash" 2>/dev/null)
+			# -------------------------------------------------------------------
+			blame)
+				local -a changed_files_blame
+				while IFS= read -r f; do
+					[ -n "$f" ] && changed_files_blame+=("$f")
+				done < <(git diff-tree --no-commit-id --name-only -r "$commit_hash" 2>/dev/null)
 
-			if [ "${#changed_files_blame[@]}" -eq 0 ]; then
-				printf "  (no files changed in this commit)\n" >> "$tmpfile"
-			else
-				printf "\033[1;35m  Files changed: %d\033[0m\n\n" "${#changed_files_blame[@]}" >> "$tmpfile"
-				local f_blame
-				for f_blame in "${changed_files_blame[@]}"; do
-					{
-						printf "\033[1;34m────────────────────────────────────────────────────────────\033[0m\n"
-						printf "\033[1;33m  %-6s %s\033[0m\n" "File:" "$f_blame"
-						printf "\033[1;34m────────────────────────────────────────────────────────────\033[0m\n"
-						# git blame at the specific commit showing hash + author + line content.
-						git blame --date=short -c "${commit_hash}" -- "$f_blame" 2>/dev/null \
-							|| printf "  (blame not available for this file at this commit)\n"
-						printf "\n"
-					} >> "$tmpfile"
-				done
-			fi
-			;;
+				if [ "${#changed_files_blame[@]}" -eq 0 ]; then
+					printf "  (no files changed in this commit)\n" >> "$tmpfile"
+				else
+					printf "\033[1;35m  Files changed: %d\033[0m\n\n" "${#changed_files_blame[@]}" >> "$tmpfile"
+					local f_blame
+					for f_blame in "${changed_files_blame[@]}"; do
+						{
+							printf "\033[1;34m────────────────────────────────────────────────────────────\033[0m\n"
+							printf "\033[1;33m  %-6s %s\033[0m\n" "File:" "$f_blame"
+							printf "\033[1;34m────────────────────────────────────────────────────────────\033[0m\n"
+							git blame --date=short -c "${commit_hash}" -- "$f_blame" 2>/dev/null \
+								|| printf "  (blame not available for this file at this commit)\n"
+							printf "\n"
+						} >> "$tmpfile"
+					done
+				fi
+				;;
 
-		# -----------------------------------------------------------------------
-		file_history)
-			local -a changed_files_hist
-			while IFS= read -r f; do
-				[ -n "$f" ] && changed_files_hist+=("$f")
-			done < <(git diff-tree --no-commit-id --name-only -r "$commit_hash" 2>/dev/null)
+			# -------------------------------------------------------------------
+			file_history)
+				local -a changed_files_hist
+				while IFS= read -r f; do
+					[ -n "$f" ] && changed_files_hist+=("$f")
+				done < <(git diff-tree --no-commit-id --name-only -r "$commit_hash" 2>/dev/null)
 
-			if [ "${#changed_files_hist[@]}" -eq 0 ]; then
-				printf "  (no files changed in this commit)\n" >> "$tmpfile"
-			else
-				printf "\033[1;35m  Files changed: %d\033[0m\n\n" "${#changed_files_hist[@]}" >> "$tmpfile"
-				local f_hist hist_fmt
-				hist_fmt="%C(bold blue)%H (%h)%C(reset) %C(bold green)%ad%C(reset) %C(white)%an%C(reset) - %s"
-				for f_hist in "${changed_files_hist[@]}"; do
-					{
-						printf "\033[1;34m────────────────────────────────────────────────────────────\033[0m\n"
-						printf "\033[1;33m  History: %s\033[0m\n" "$f_hist"
-						printf "\033[1;34m────────────────────────────────────────────────────────────\033[0m\n"
-						git log --color=always --follow -p \
-							--format="${hist_fmt}" \
-							--date=format:'%Y-%m-%d %H:%M:%S' \
-							-- "$f_hist" 2>/dev/null \
-							|| printf "  (history not available for this file)\n"
-						printf "\n"
-					} >> "$tmpfile"
-				done
-			fi
-			;;
+				if [ "${#changed_files_hist[@]}" -eq 0 ]; then
+					printf "  (no files changed in this commit)\n" >> "$tmpfile"
+				else
+					printf "\033[1;35m  Files changed: %d\033[0m\n\n" "${#changed_files_hist[@]}" >> "$tmpfile"
+					local f_hist hist_fmt
+					hist_fmt="%C(bold blue)%H (%h)%C(reset) %C(bold green)%ad%C(reset) %C(white)%an%C(reset) - %s"
+					for f_hist in "${changed_files_hist[@]}"; do
+						{
+							printf "\033[1;34m────────────────────────────────────────────────────────────\033[0m\n"
+							printf "\033[1;33m  History: %s\033[0m\n" "$f_hist"
+							printf "\033[1;34m────────────────────────────────────────────────────────────\033[0m\n"
+							git log --color=always --follow -p \
+								--format="${hist_fmt}" \
+								--date=format:'%Y-%m-%d %H:%M:%S' \
+								-- "$f_hist" 2>/dev/null \
+								|| printf "  (history not available for this file)\n"
+							printf "\n"
+						} >> "$tmpfile"
+					done
+				fi
+				;;
 
-		# -----------------------------------------------------------------------
-		stat)
-			git show --stat --color=always "$commit_hash" 2>/dev/null >> "$tmpfile"
-			;;
-	esac
+			# -------------------------------------------------------------------
+			stat)
+				git show --stat --color=always "$commit_hash" 2>/dev/null >> "$tmpfile"
+				;;
+		esac
 
-	# Show in tmux display-popup (blocking with -E) or fall back to less.
-	if [ -n "${TMUX:-}" ] && shell::is_command_available tmux; then
-		tmux display-popup -E \
-			-d "#{pane_current_path}" \
-			-w "90%" -h "90%" -xC -yC \
-			"less -R '${tmpfile}'"
-	else
-		less -R "$tmpfile"
-	fi
-	rm -f "$tmpfile" 2>/dev/null
+		# Show in tmux display-popup (blocking with -E) or fall back to less.
+		if [ -n "${TMUX:-}" ] && shell::is_command_available tmux; then
+			tmux display-popup -E \
+				-d "#{pane_current_path}" \
+				-w "90%" -h "90%" -xC -yC \
+				"less -R '${tmpfile}'"
+		else
+			less -R "$tmpfile"
+		fi
+		rm -f "$tmpfile" 2>/dev/null
+	done
 
 	# ---------------------------------------------------------------------------
 	# Step 8 — Log summary and copy to clipboard.
