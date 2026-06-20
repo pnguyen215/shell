@@ -1362,6 +1362,37 @@ shell::git::branch::push() {
 	return $RETURN_SUCCESS
 }
 
+# shell::git::branch::push::current function
+# Convenience wrapper around shell::git::branch::push that automatically detects
+# the currently checked-out branch and invokes the push command for it.
+#
+# Usage:
+#   shell::git::branch::push::current [-n] [-h]
+#
+# Parameters:
+#   - -n, --dry-run : Optional. Print the command via shell::logger::command_clip instead of executing it.
+#   - -h, --help    : Show this help message.
+#
+# Returns:
+#   $RETURN_SUCCESS (0) on success or user-initiated abort.
+#   $RETURN_FAILURE (non-zero) when not inside a Git repository.
+#   Non-zero exit code of the failing git command otherwise.
+#
+# Example:
+#   shell::git::branch::push::current
+#   shell::git::branch::push::current -n
+shell::git::branch::push::current() {
+	local current_branch
+	current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+
+	if [ -z "$current_branch" ]; then
+		shell::logger::error "Not inside a Git repository"
+		return $RETURN_FAILURE
+	fi
+
+	shell::git::branch::push "$current_branch"
+}
+
 # shell::git::branch::backup function
 # Creates a local backup branch pointing to the same commit as the given source
 # branch, without switching HEAD. Sends a Telegram activity notification on success.
