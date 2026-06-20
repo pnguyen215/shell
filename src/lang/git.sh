@@ -2214,6 +2214,300 @@ shell::git::branch::all::fzf() {
 	return $RETURN_SUCCESS
 }
 
+# shell::git::branch::merge function
+# Merges a source branch into a target branch with conflict detection and an
+# interactive push step after a successful merge.
+#
+# Usage:
+#   shell::git::branch::merge [-n] [-h] <source_branch> <target_branch>
+#
+# Parameters:
+#   - -n, --dry-run       : Optional. Print each command via
+#                           shell::logger::command_clip instead of executing it.
+#   - -h, --help          : Show this help message.
+#   - <source_branch>     : Branch whose changes will be merged in.
+#   - <target_branch>     : Branch that will receive the changes.
+#
+# Description:
+#   Step 1 — Capture the currently checked-out branch so it can be restored.
+#   Step 2 — Checkout <target_branch>.
+#   Step 3 — Run: git merge --no-commit <source_branch>
+#             (stages changes without auto-creating the merge commit).
+#   Step 4 — If unmerged files are present, list them with conflict counts
+#             and return $RETURN_FAILURE so the user can resolve manually.
+#   Step 5 — Confirm and commit: git commit -m "Merged <source> into <target>"
+#   Step 6 — Delegate push to shell::git::branch::push (interactive strategy).
+#   Step 7 — Restore the original branch.
+#   Step 8 — Send Telegram activity notification.
+#
+# Returns:
+#   $RETURN_SUCCESS (0) on full success or user-initiated abort.
+#   $RETURN_INVALID (1) when <source_branch> or <target_branch> is omitted.
+#   $RETURN_FAILURE (non-zero) when not inside a Git repository or conflicts exist.
+#   Non-zero exit code of the first failing git command otherwise.
+#
+# Example:
+#   shell::git::branch::merge "feature/my-feature" "develop"
+#   shell::git::branch::merge -n "feature/my-feature" "main"
+shell::git::branch::merge() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Merge a source branch into a target branch with conflict detection and push"
+		shell::logger::usage "shell::git::branch::merge [-n] [-h] <source_branch> <target_branch>"
+		shell::logger::item "source_branch" "Branch whose changes will be merged in"
+		shell::logger::item "target_branch" "Branch that will receive the changes"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the commands instead of executing them"
+		shell::logger::example "shell::git::branch::merge \"feature/my-feature\" \"develop\""
+		shell::logger::example "shell::git::branch::merge -n \"feature/my-feature\" \"main\""
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	local source_branch="$1"
+	local target_branch="$2"
+
+	if [ -z "$source_branch" ]; then
+		shell::logger::error "Source branch is required"
+		return $RETURN_INVALID
+	fi
+
+	if [ -z "$target_branch" ]; then
+		shell::logger::error "Target branch is required"
+		return $RETURN_INVALID
+	fi
+
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return $RETURN_FAILURE
+	fi
+
+	# ---------------------------------------------------------------------------
+	# Step 1 — Capture current branch to restore later.
+	# ---------------------------------------------------------------------------
+	local current_branch
+	current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+
+	# ---------------------------------------------------------------------------
+	# Command variables — declared upfront for dry-run printing.
+	# ---------------------------------------------------------------------------
+	local cmd_checkout="git checkout \"${target_branch}\""
+	local cmd_merge="git merge --no-commit \"${source_branch}\""
+	local commit_msg="Merged ${source_branch} into ${target_branch}"
+	local cmd_commit="git commit -m \"${commit_msg}\""
+	local cmd_restore="git checkout \"${current_branch}\""
+
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::command_clip "$cmd_checkout"
+		shell::logger::command_clip "$cmd_merge"
+		shell::logger::command_clip "$cmd_commit"
+		shell::logger::command_clip "git push --force-with-lease origin \"${target_branch}\""
+		shell::logger::command_clip "$cmd_restore"
+		return $RETURN_SUCCESS
+	fi
+
+	# ---------------------------------------------------------------------------
+	# Step 2 — Checkout target branch.
+	# ---------------------------------------------------------------------------
+	shell::logger::assert "$cmd_checkout" \
+		"Checked out '${target_branch}'" "Checkout of '${target_branch}' failed" || return $?
+
+	# ---------------------------------------------------------------------------
+	# Step 3 — Merge source into target (no auto-commit).
+	# ---------------------------------------------------------------------------
+	shell::logger::info "Merging '${source_branch}' into '${target_branch}' (no-commit) ..."
+	if ! eval "$cmd_merge"; then
+		# Merge command itself failed (e.g., invalid branch ref).
+		shell::logger::error "Merge command failed — aborting"
+		git merge --abort 2>/dev/null
+		eval "$cmd_restore" 2>/dev/null
+		return $RETURN_FAILURE
+	fi
+
+	# ---------------------------------------------------------------------------
+	# Step 4 — Detect unmerged (conflict) files.
+	# ---------------------------------------------------------------------------
+	local -a unmerged_files
+	while IFS= read -r f; do
+		[ -n "$f" ] && unmerged_files+=("$f")
+	done < <(git ls-files --unmerged 2>/dev/null | awk '{print $NF}' | sort -u)
+
+	if [ "${#unmerged_files[@]}" -gt 0 ]; then
+		shell::logger::error "Merge conflicts detected in ${#unmerged_files[@]} file(s):"
+		local f conflict_count
+		for f in "${unmerged_files[@]}"; do
+			conflict_count=$(grep -c '<<<<<<< ' "$f" 2>/dev/null || echo 0)
+			shell::logger::error "  • ${f}  (${conflict_count} conflict marker(s))"
+		done
+		shell::logger::info "Resolve the conflicts, then run:"
+		shell::logger::info "  git add <file>..."
+		shell::logger::info "  git commit -m \"${commit_msg}\""
+		shell::logger::info "Or abort the merge with: git merge --abort"
+		return $RETURN_FAILURE
+	fi
+
+	# ---------------------------------------------------------------------------
+	# Step 5 — Confirm and commit.
+	# ---------------------------------------------------------------------------
+	shell::logger::info "No conflicts detected — ready to commit"
+	shell::logger::info "Commit message: ${commit_msg}"
+
+	if shell::out::confirmz "Proceed with this merge commit?"; then
+		shell::logger::info "Merge commit aborted — staged changes remain on '${target_branch}'"
+		shell::logger::info "To discard: git merge --abort"
+		return $RETURN_SUCCESS
+	fi
+
+	shell::logger::assert "$cmd_commit" \
+		"Merge commit created on '${target_branch}'" "Commit failed" || return $?
+
+	# ---------------------------------------------------------------------------
+	# Step 6 — Push target branch via interactive push strategy picker.
+	# ---------------------------------------------------------------------------
+	shell::git::branch::push "${target_branch}"
+
+	# ---------------------------------------------------------------------------
+	# Step 7 — Restore original branch.
+	# ---------------------------------------------------------------------------
+	shell::logger::assert "$cmd_restore" \
+		"Restored original branch '${current_branch}'" "Branch restore aborted" || return $?
+
+	# ---------------------------------------------------------------------------
+	# Step 8 — Send Telegram notification.
+	# ---------------------------------------------------------------------------
+	local git_username repo_path repo_name remote_url timestamp
+	git_username=$(git config user.name 2>/dev/null)
+	repo_path=$(git rev-parse --show-toplevel 2>/dev/null)
+	repo_name=$(basename "${repo_path}")
+	remote_url=$(git config --get remote.origin.url 2>/dev/null)
+	timestamp=$(date "+%Y-%m-%d %H:%M:%S")
+
+	local telegram_message="Merge | source: ${source_branch} → target: ${target_branch} | repository: ${repo_name} (${remote_url}) | username: ${git_username} | timestamp: ${timestamp}"
+	shell::git::telegram::history::send "${telegram_message}"
+
+	return $RETURN_SUCCESS
+}
+
+# shell::git::branch::merge::fzf function
+# Interactively selects source and target branches via fzf, then delegates to
+# shell::git::branch::merge to perform the merge.
+#
+# Usage:
+#   shell::git::branch::merge::fzf [-n] [-h]
+#
+# Parameters:
+#   - -n, --dry-run : Optional. Forward dry-run flag to shell::git::branch::merge.
+#   - -h, --help    : Show this help message.
+#
+# Description:
+#   Step 1 — Collect all local branch names.
+#   Step 2 — Present source branch picker via shell::options::select (fzf).
+#   Step 3 — Present target branch picker via shell::options::select (fzf),
+#             excluding the source branch from the list.
+#   Step 4 — Confirm the merge plan with the user.
+#   Step 5 — Delegate to shell::git::branch::merge [-n] <source> <target>.
+#
+# Returns:
+#   $RETURN_SUCCESS (0) on success or user-initiated abort.
+#   $RETURN_FAILURE (non-zero) when not inside a Git repository.
+#   Return value of shell::git::branch::merge otherwise.
+#
+# Example:
+#   shell::git::branch::merge::fzf
+#   shell::git::branch::merge::fzf -n
+shell::git::branch::merge::fzf() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Interactively select source and target branches for a merge via fzf"
+		shell::logger::usage "shell::git::branch::merge::fzf [-n] [-h]"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the commands instead of executing them"
+		shell::logger::example "shell::git::branch::merge::fzf"
+		shell::logger::example "shell::git::branch::merge::fzf -n"
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return $RETURN_FAILURE
+	fi
+
+	# ---------------------------------------------------------------------------
+	# Step 1 — Collect all local branch names.
+	# ---------------------------------------------------------------------------
+	local -a all_branches
+	while IFS= read -r b; do
+		[ -n "$b" ] && all_branches+=("$b")
+	done < <(git branch 2>/dev/null | sed 's|^[* ]*||')
+
+	if [ "${#all_branches[@]}" -lt 2 ]; then
+		shell::logger::error "At least 2 local branches are required for a merge"
+		return $RETURN_FAILURE
+	fi
+
+	# ---------------------------------------------------------------------------
+	# Step 2 — Pick source branch.
+	# ---------------------------------------------------------------------------
+	shell::logger::info "Select SOURCE branch (the branch to merge FROM):"
+	local source_branch
+	source_branch=$(shell::options::select "${all_branches[@]}")
+
+	if [ -z "$source_branch" ]; then
+		shell::logger::warn "No source branch selected — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	# ---------------------------------------------------------------------------
+	# Step 3 — Pick target branch (source excluded).
+	# ---------------------------------------------------------------------------
+	local -a target_candidates
+	local b
+	for b in "${all_branches[@]}"; do
+		[ "$b" != "$source_branch" ] && target_candidates+=("$b")
+	done
+
+	shell::logger::info "Select TARGET branch (the branch to merge INTO):"
+	local target_branch
+	target_branch=$(shell::options::select "${target_candidates[@]}")
+
+	if [ -z "$target_branch" ]; then
+		shell::logger::warn "No target branch selected — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	# ---------------------------------------------------------------------------
+	# Step 4 — Confirm.
+	# ---------------------------------------------------------------------------
+	shell::logger::info "Merge plan:"
+	shell::logger::info "  Source : ${source_branch}"
+	shell::logger::info "  Target : ${target_branch}"
+
+	if shell::out::confirmz "Proceed with merging '${source_branch}' into '${target_branch}'?"; then
+		shell::logger::info "Merge aborted"
+		return $RETURN_SUCCESS
+	fi
+
+	# ---------------------------------------------------------------------------
+	# Step 5 — Delegate to shell::git::branch::merge.
+	# ---------------------------------------------------------------------------
+	if [ "$dry_run" = "true" ]; then
+		shell::git::branch::merge -n "${source_branch}" "${target_branch}"
+	else
+		shell::git::branch::merge "${source_branch}" "${target_branch}"
+	fi
+}
+
 # shell::git::commit::spec function
 # Displays a decorated commit graph for a specific branch.
 #

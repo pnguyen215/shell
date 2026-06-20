@@ -115,6 +115,18 @@ alias sgpushcf="shell::git::branch::push::current::force"
 alias sgpushcf-n="shell::git::branch::push::current::force -n"
 alias sgpf="shell::git::branch::push::current::force"
 
+# shell::git::branch::merge
+alias sgm="shell::git::branch::merge"
+alias sgm-n="shell::git::branch::merge -n"
+alias sgmerge="shell::git::branch::merge"
+alias sgmerge-n="shell::git::branch::merge -n"
+
+# shell::git::branch::merge::fzf
+alias sgmf="shell::git::branch::merge::fzf"
+alias sgmf-n="shell::git::branch::merge::fzf -n"
+alias sgmergef="shell::git::branch::merge::fzf"
+alias sgmergef-n="shell::git::branch::merge::fzf -n"
+
 # shell::git::commit::spec
 alias sgcs="shell::git::commit::spec"
 alias sgcs-n="shell::git::commit::spec -n"
