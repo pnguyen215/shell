@@ -5074,19 +5074,23 @@ POPUP_FILE_DIFF
 	fzf_cmd="$fzf_cmd --bind='ctrl-y:execute-silent(echo {} | grep -oE \"[a-f0-9]{40}\" | head -1 | xclip -selection clipboard 2>/dev/null || echo {} | grep -oE \"[a-f0-9]{40}\" | head -1 | pbcopy 2>/dev/null)'+clear-screen"
 
 	if [ "$popup_support" = "true" ]; then
-		# FIX: Use execute-silent for tmux popup to avoid blocking fzf's TTY
-		# Ctrl-O: Full commit diff popup (replaces unreliable ctrl-enter)
-		fzf_cmd="$fzf_cmd --bind='ctrl-o:execute-silent(hash=\$(echo {} | grep -oE \"[a-f0-9]{40}\" | head -1); [ -n \"\$hash\" ] && bash \"${popup_diff_file}\" \"\$hash\" \"${repo_name}\" \"${has_delta}\")+clear-screen'"
+		# Use execute (not execute-silent) so tmux display-popup gets proper TTY access.
+		# Use +accept so fzf exits and outputs the selected line after the popup closes.
+		# Ctrl-O: Full commit diff popup
+		fzf_cmd="$fzf_cmd --bind='ctrl-o:execute(hash=\$(echo {} | grep -oE \"[a-f0-9]{40}\" | head -1); [ -n \"\$hash\" ] && bash \"${popup_diff_file}\" \"\$hash\" \"${repo_name}\" \"${has_delta}\")+accept'"
 		# Ctrl-F: File-level diff popup (cycles through files)
-		fzf_cmd="$fzf_cmd --bind='ctrl-f:execute-silent(hash=\$(echo {} | grep -oE \"[a-f0-9]{40}\" | head -1); [ -n \"\$hash\" ] && bash \"${popup_file_diff_file}\" \"\$hash\" \"${repo_name}\" \"${has_delta}\")+clear-screen'"
+		fzf_cmd="$fzf_cmd --bind='ctrl-f:execute(hash=\$(echo {} | grep -oE \"[a-f0-9]{40}\" | head -1); [ -n \"\$hash\" ] && bash \"${popup_file_diff_file}\" \"\$hash\" \"${repo_name}\" \"${has_delta}\")+accept'"
 		# Enter: Interactive file browser popup
-		fzf_cmd="$fzf_cmd --bind='enter:execute-silent(hash=\$(echo {} | grep -oE \"[a-f0-9]{40}\" | head -1); [ -n \"\$hash\" ] && bash \"${popup_file_browser_file}\" \"\$hash\" \"${repo_name}\" \"${has_delta}\")+clear-screen'"
+		fzf_cmd="$fzf_cmd --bind='enter:execute(hash=\$(echo {} | grep -oE \"[a-f0-9]{40}\" | head -1); [ -n \"\$hash\" ] && bash \"${popup_file_browser_file}\" \"\$hash\" \"${repo_name}\" \"${has_delta}\")+accept'"
 	else
-		# Fallback when tmux is not available: use less directly
+		# Fallback when tmux is not available: use less directly.
+		# Use +accept (not +abort) so fzf exits with the selection after less closes.
 		# Enter: Open full commit diff in less
-		fzf_cmd="$fzf_cmd --bind='enter:execute(hash=\$(echo {} | grep -oE \"[a-f0-9]{40}\" | head -1); [ -z \"\$hash\" ] && exit 0; git show --color=always \"\$hash\" | less -R > /dev/tty)+abort'"
+		fzf_cmd="$fzf_cmd --bind='enter:execute(hash=\$(echo {} | grep -oE \"[a-f0-9]{40}\" | head -1); [ -z \"\$hash\" ] && exit 0; git show --color=always \"\$hash\" | less -R > /dev/tty)+accept'"
+		# Ctrl-O: Also open full commit diff in less (same as Enter for non-tmux)
+		fzf_cmd="$fzf_cmd --bind='ctrl-o:execute(hash=\$(echo {} | grep -oE \"[a-f0-9]{40}\" | head -1); [ -z \"\$hash\" ] && exit 0; git show --color=always \"\$hash\" | less -R > /dev/tty)+accept'"
 		# Ctrl-F: Open file stat in less
-		fzf_cmd="$fzf_cmd --bind='ctrl-f:execute(hash=\$(echo {} | grep -oE \"[a-f0-9]{40}\" | head -1); [ -z \"\$hash\" ] && exit 0; git show --stat --format=\"\" \"\$hash\" | less -R > /dev/tty)+abort'"
+		fzf_cmd="$fzf_cmd --bind='ctrl-f:execute(hash=\$(echo {} | grep -oE \"[a-f0-9]{40}\" | head -1); [ -z \"\$hash\" ] && exit 0; git show --stat --format=\"\" \"\$hash\" | less -R > /dev/tty)+accept'"
 	fi
 
 	if [ "$dry_run" = "true" ]; then
