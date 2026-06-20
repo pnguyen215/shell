@@ -4826,15 +4826,10 @@ shell::git::commit::spec::history::fzf() {
 
 	# ---------------------------------------------------------------------------
 	# Step 4 -- Build preview command (fast, lightweight, lazy-loaded)
-	#
-	# FIXED: Removed 'local' keywords (invalid outside functions in bash).
-	# FIXED: Added empty-hash guard to prevent 'fatal: ambiguous argument'.
-	# FIXED: Replaced 'for f in $files' with 'while IFS= read' for files with spaces.
 	# ---------------------------------------------------------------------------
 	local preview_script
 	read -r -d '' preview_script <<'PREVIEW_SCRIPT'
 #!/usr/bin/env bash
-
 hash=$(echo "$1" | grep -oE '[a-f0-9]{40}' | head -1)
 [ -z "$hash" ] && { printf "No commit hash found\n"; exit 0; }
 
@@ -4876,14 +4871,10 @@ PREVIEW_SCRIPT
 
 	# ---------------------------------------------------------------------------
 	# Step 5 -- Build popup scripts (tmux display-popup)
-	#
-	# FIXED: Removed all 'local' declarations (standalone scripts).
-	# FIXED: Added empty-hash guard in every popup script.
-	# FIXED: Added trap EXIT to clean up temp files safely.
-	# FIXED: Quoted temp file paths with hash to avoid collisions.
 	# ---------------------------------------------------------------------------
 
 	# --- Popup script: Full commit diff ---
+	# FIX: Use mktemp instead of hardcoded /tmp path
 	local popup_diff_script
 	read -r -d '' popup_diff_script <<'POPUP_DIFF'
 #!/usr/bin/env bash
@@ -4893,7 +4884,7 @@ has_delta="$3"
 
 [ -z "$hash" ] && { echo "Error: empty commit hash"; exit 1; }
 
-tmpfile="/tmp/git_diff_${hash}.txt"
+tmpfile=$(mktemp 2>/dev/null || mktemp -t 'git_diff')
 trap 'rm -f "$tmpfile"' EXIT
 
 {
@@ -4924,9 +4915,7 @@ POPUP_DIFF
 	chmod +x "$popup_diff_file"
 
 	# --- Popup script: File-level diff browser ---
-	# FIXED: Replaced 'readarray' with 'while IFS= read' for bash 3.x compatibility.
-	# FIXED: Fixed file name parsing for files containing spaces.
-	# FIXED: Quoted '{1}' placeholder in fzf execute/preview bindings.
+	# FIX: Use separate preview script files instead of inline commands to avoid quoting hell
 	local popup_file_browser_script
 	read -r -d '' popup_file_browser_script <<'POPUP_FILE_BROWSER'
 #!/usr/bin/env bash
@@ -4940,7 +4929,6 @@ has_delta="$3"
 file_stats=""
 while IFS= read -r line; do
     [ -z "$line" ] && continue
-    # Extract filename and change count from "file.txt | 10 +++--"
     fname="${line%% | *}"
     rest="${line#* | }"
     fstat="${rest%% *}"
@@ -4949,12 +4937,34 @@ done < <(git show --stat --format='' "$hash" 2>/dev/null | grep '|' | sed 's/^[[
 
 [ -z "$file_stats" ] && { echo "No files changed in this commit"; exit 0; }
 
-# Build the file list for fzf with preview
+# FIX: Build preview script file to avoid inline quoting issues
+preview_script=$(mktemp 2>/dev/null || mktemp -t 'git_fbrowser_preview')
 if [ "$has_delta" = "true" ]; then
-    preview_cmd="git show --color=always '$hash' -- '{1}' | delta --no-gitconfig --line-numbers --dark 2>/dev/null || git show --color=always '$hash' -- '{1}'"
+    cat > "$preview_script" <<'PREVIEW'
+#!/usr/bin/env bash
+file="$1"
+hash="$2"
+git show --color=always "$hash" -- "$file" | delta --no-gitconfig --line-numbers --dark 2>/dev/null || git show --color=always "$hash" -- "$file"
+PREVIEW
 else
-    preview_cmd="git show --color=always '$hash' -- '{1}'"
+    cat > "$preview_script" <<'PREVIEW'
+#!/usr/bin/env bash
+file="$1"
+hash="$2"
+git show --color=always "$hash" -- "$file"
+PREVIEW
 fi
+chmod +x "$preview_script"
+
+# FIX: Build enter script file to avoid inline quoting issues
+enter_script=$(mktemp 2>/dev/null || mktemp -t 'git_fbrowser_enter')
+cat > "$enter_script" <<ENTER
+#!/usr/bin/env bash
+file="\$1"
+hash="\$2"
+git show --color=always "\$hash" -- "\$file" | less -R > /dev/tty
+ENTER
+chmod +x "$enter_script"
 
 # Run fzf inside the popup for file selection
 printf '%s' "$file_stats" | fzf \
@@ -4964,11 +4974,14 @@ printf '%s' "$file_stats" | fzf \
     --with-nth=1 \
     --prompt="File > " \
     --header="Commit: ${hash:0:12} | Repo: $repo_name | Enter: view diff | ESC: close" \
-    --preview="$preview_cmd" \
+    --preview="bash '$preview_script' {1} '$hash'" \
     --preview-window="right:65%:wrap" \
-    --bind="enter:execute(git show --color=always '$hash' -- '{1}' | less -R > /dev/tty)+abort" \
-    --bind="ctrl-d:execute($preview_cmd | less -R > /dev/tty)+abort" \
+    --bind="enter:execute(bash '$enter_script' {1} '$hash' > /dev/tty)+abort" \
+    --bind="ctrl-d:execute(bash '$preview_script' {1} '$hash' | less -R > /dev/tty)+abort" \
     --bind="esc:abort"
+
+# FIX: Clean up temp scripts
+rm -f "$preview_script" "$enter_script"
 POPUP_FILE_BROWSER
 
 	local popup_file_browser_file
@@ -4977,8 +4990,7 @@ POPUP_FILE_BROWSER
 	chmod +x "$popup_file_browser_file"
 
 	# --- Popup script: Single file diff (Ctrl-F) ---
-	# FIXED: Replaced 'readarray' and 'local' with portable while-loop + array.
-	# FIXED: Added empty-hash guard.
+	# FIX: Use mktemp instead of hardcoded /tmp path, add idx_file to trap cleanup
 	local popup_file_diff_script
 	read -r -d '' popup_file_diff_script <<'POPUP_FILE_DIFF'
 #!/usr/bin/env bash
@@ -5005,16 +5017,18 @@ done < <(printf '%s' "$files")
 total=${#file_array[@]}
 [ "$total" -eq 0 ] && { echo "No files changed"; exit 0; }
 
-# Current file index (stored in temp file for persistence)
-idx_file="/tmp/git_file_idx_${hash}"
+# FIX: Use mktemp for idx_file instead of hardcoded /tmp path
+idx_file=$(mktemp 2>/dev/null || mktemp -t 'git_file_idx')
 current_idx=0
 [ -f "$idx_file" ] && current_idx=$(cat "$idx_file" 2>/dev/null || echo 0)
 [ "$current_idx" -ge "$total" ] && current_idx=0
 
 f="${file_array[$current_idx]}"
 
-tmpfile="/tmp/git_file_diff_${hash}.txt"
-trap 'rm -f "$tmpfile"' EXIT
+# FIX: Use mktemp instead of hardcoded /tmp path
+tmpfile=$(mktemp 2>/dev/null || mktemp -t 'git_file_diff')
+# FIX: Add idx_file to trap cleanup
+trap 'rm -f "$tmpfile" "$idx_file"' EXIT
 
 {
     printf "\033[1;36m============================================================\033[0m\n"
@@ -5070,8 +5084,6 @@ POPUP_FILE_DIFF
 	fzf_cmd="$fzf_cmd --bind='ctrl-/:toggle-preview'"
 	fzf_cmd="$fzf_cmd --bind='ctrl-y:execute-silent(echo {} | grep -oE \"[a-f0-9]{40}\" | head -1 | xclip -selection clipboard 2>/dev/null || echo {} | grep -oE \"[a-f0-9]{40}\" | head -1 | pbcopy 2>/dev/null)'+clear-screen"
 
-	# FIXED: Added '[ -z \"$hash\" ] && exit 0' guard in every execute binding
-	#        to prevent git from receiving an empty revision argument.
 	if [ "$popup_support" = "true" ]; then
 		# Ctrl-Enter: Full commit diff popup
 		fzf_cmd="$fzf_cmd --bind='ctrl-enter:execute(hash=\$(echo {} | grep -oE \"[a-f0-9]{40}\" | head -1); [ -z \"\$hash\" ] && exit 0; bash \"${popup_diff_file}\" \"\$hash\" \"${repo_name}\" \"${has_delta}\")+clear-screen'"
@@ -5104,9 +5116,13 @@ POPUP_FILE_DIFF
 	local fzf_exit=$?
 
 	# Cleanup all temp files immediately
+	# FIX: Remove explicit temp files first
 	rm -f "$preview_file" "$popup_diff_file" "$popup_file_browser_file" "$popup_file_diff_file" 2>/dev/null
-	# Cleanup any leftover diff temp files
-	rm -f "/tmp/git_diff_"* "/tmp/git_file_diff_"* "/tmp/git_file_idx_"* 2>/dev/null
+	# FIX: Use find instead of glob patterns to avoid "no matches found" error in zsh
+	# when no leftover temp files exist. The original code had:
+	#   rm -f "/tmp/git_diff_"* "/tmp/git_file_diff_"* "/tmp/git_file_idx_"* 2>/dev/null
+	# which fails in zsh with "no matches found" when globs don't match.
+	find /tmp -maxdepth 1 -type f \( -name 'git_diff_*' -o -name 'git_file_diff_*' -o -name 'git_file_idx_*' -o -name 'git_fbrowser_preview*' -o -name 'git_fbrowser_enter*' \) -delete 2>/dev/null
 
 	if [ -z "$selected_output" ] && [ "$fzf_exit" -ne 0 ]; then
 		shell::logger::info "No commit selected -- exiting"
