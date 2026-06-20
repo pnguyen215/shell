@@ -4680,3 +4680,395 @@ shell::git::commit::revert::fzf() {
 
 	return $RETURN_SUCCESS
 }
+
+# shell::git::commit::spec::history::fzf function
+# Interactive split-screen commit history viewer for a branch.
+# Left pane: coloured git-log graph (fzf list). Right pane: per-commit details
+# with a chronological contributor timeline for every file changed in that commit.
+#
+# The right-pane preview shows three sections:
+#   1. COMMIT DETAILS  — git show --stat (summary of changed files + insertions/deletions)
+#   2. CONTRIBUTOR TIMELINE — for each changed file: last 8 commits touching it,
+#      sorted newest-first, with date and author — revealing who changed each line
+#      and when across the branch history.
+#   3. DIFF (first 80 lines) — the raw unified diff for the commit.
+#
+# Execution mode is chosen automatically based on environment:
+#   • Inside tmux AND tmux ≥ 3.2  → display-popup (floating window, best UX)
+#   • NOT inside tmux, tmux available → new named tmux session (auto-destroyed on exit)
+#   • No tmux at all               → fzf runs inline in the current terminal
+#
+# tmux session management:
+#   • Session name: git-hist-<sanitized-branch>-<PID> (unique per invocation)
+#   • Any stale sessions matching the same branch pattern are cleaned up first.
+#   • The session auto-kills itself the moment fzf exits ('; tmux kill-session').
+#   • A single trap (EXIT/INT/TERM) removes the two temp files unconditionally.
+#   • No orphaned sessions or resource leaks remain after the function returns.
+#
+# Key bindings inside fzf:
+#   ENTER    — select commit (inline mode: opens full diff in $PAGER / less)
+#   CTRL-Y   — copy the 40-char commit hash to the clipboard
+#   CTRL-D/U — scroll preview pane down / up (half-page)
+#   CTRL-F/B — page preview pane forward / back
+#   CTRL-R   — reload the commit list (picks up new commits without restarting)
+#   ESC / q  — quit without selection
+#
+# Usage:
+#   shell::git::commit::spec::history::fzf [-n] [-h] [<branch>]
+#
+# Parameters:
+#   - -n, --dry-run : Optional. Print the fzf+git invocation via
+#                     shell::logger::command_clip instead of executing.
+#   - -h, --help    : Show this help message.
+#   - <branch>      : Optional. Branch to inspect. Defaults to the currently
+#                     checked-out branch.
+#
+# Returns:
+#   $RETURN_SUCCESS (0) on success or when no commit is selected.
+#   $RETURN_INVALID (1) when branch cannot be resolved.
+#   $RETURN_FAILURE (non-zero) when not inside a Git repository.
+#
+# Dependencies:
+#   fzf  — installed automatically via shell::install_package if missing.
+#   tmux — installed automatically via shell::install_package if missing.
+#          (optional; fzf inline mode is used when tmux is unavailable)
+#
+# Example:
+#   shell::git::commit::spec::history::fzf
+#   shell::git::commit::spec::history::fzf main
+#   shell::git::commit::spec::history::fzf feature/my-branch
+#   shell::git::commit::spec::history::fzf -n main
+shell::git::commit::spec::history::fzf() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Interactive split-screen commit history viewer with contributor timeline"
+		shell::logger::usage "shell::git::commit::spec::history::fzf [-n] [-h] [<branch>]"
+		shell::logger::item "branch" "Branch to inspect (defaults to current branch)"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the commands instead of executing them"
+		shell::logger::example "shell::git::commit::spec::history::fzf"
+		shell::logger::example "shell::git::commit::spec::history::fzf main"
+		shell::logger::example "shell::git::commit::spec::history::fzf feature/my-branch"
+		shell::logger::example "shell::git::commit::spec::history::fzf -n main"
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	# ── Validate git repository ───────────────────────────────────────────────
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return $RETURN_FAILURE
+	fi
+
+	# ── Resolve branch ────────────────────────────────────────────────────────
+	local branch="${1:-}"
+	if [ -z "$branch" ]; then
+		branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+	fi
+
+	if [ -z "$branch" ]; then
+		shell::logger::error "Could not determine branch name — pass a branch explicitly"
+		return $RETURN_INVALID
+	fi
+
+	# Accept refs that exist locally, or as remote tracking refs.
+	if ! git rev-parse --verify --quiet "${branch}" >/dev/null 2>&1 &&
+	   ! git rev-parse --verify --quiet "origin/${branch}" >/dev/null 2>&1; then
+		shell::logger::error "Branch '${branch}' does not exist locally or on origin"
+		return $RETURN_FAILURE
+	fi
+
+	local _repo_root
+	_repo_root=$(git rev-parse --show-toplevel 2>/dev/null)
+
+	# ── Ensure dependencies ───────────────────────────────────────────────────
+	shell::install_package fzf >/dev/null 2>&1
+	shell::install_package tmux >/dev/null 2>&1
+
+	# ── Dry-run mode ─────────────────────────────────────────────────────────
+	if [ "$dry_run" = "true" ]; then
+		local _dry_fmt="%C(yellow)%H(%h)%C(reset) %C(bold green)%ar %ad%C(reset) %-16.16an%d %s"
+		shell::logger::command_clip "git log --graph --decorate --date=format:'%Y-%m-%d %H:%M' --format=format:'${_dry_fmt}' --color=always '${branch}' | fzf --no-multi --ansi --no-sort --no-height --preview='<preview_script> {}' --preview-window=right:55%:wrap:border-left"
+		return $RETURN_SUCCESS
+	fi
+
+	# ── Build self-contained preview script ───────────────────────────────────
+	# Written to a temp file; fzf invokes it as an executable for each selected line.
+	# Delimiter is single-quoted ('PREV_EOF') → NO shell expansion inside.
+	# $1 receives the raw fzf line; the script extracts the 40-char hash from it.
+	local _prev_file
+	_prev_file=$(mktemp /tmp/.gh_history_prev_XXXXXX.sh)
+	chmod +x "$_prev_file"
+
+	cat > "$_prev_file" << 'PREV_EOF'
+#!/bin/sh
+# fzf preview: commit details + per-file contributor timeline.
+# Receives the raw fzf-selected line as $1.
+line="$1"
+
+# Extract the first 40-char hex hash (ANSI escape sequences are ignored).
+hash=$(printf '%s' "$line" | grep -oE '[0-9a-f]{40}' | head -1)
+
+if [ -z "$hash" ]; then
+	printf '  \033[2m(navigate to a commit line — graph-only lines have no hash)\033[0m\n'
+	exit 0
+fi
+
+SEP1='\033[1;33m══════════════════════════════════════════════════════\033[0m'
+SEP2='\033[1;33m──────────────────────────────────────────────────────\033[0m'
+
+# ── Section 1: Commit info + file-change summary ─────────────────────────
+printf '%b\n' "$SEP1"
+printf '  \033[1;34m COMMIT DETAILS\033[0m\n'
+printf '%b\n' "$SEP1"
+git show --color=always --stat "$hash" 2>/dev/null | head -50
+
+# ── Section 2: Per-file contributor timeline ──────────────────────────────
+# For each file touched by this commit, show the last 8 commits that
+# changed it — revealing who modified each file and when (timeline popup).
+printf '\n%b\n' "$SEP1"
+printf '  \033[1;34m CONTRIBUTOR TIMELINE  (newest-first, per changed file)\033[0m\n'
+printf '%b\n' "$SEP1"
+
+# diff-tree: files changed vs parent. Falls back for initial commits.
+files=$(git diff-tree --no-commit-id -r --name-only "$hash" 2>/dev/null)
+if [ -z "$files" ]; then
+	# Initial commit — no parent diff available; list tree files instead.
+	files=$(git ls-tree -r --name-only "$hash" 2>/dev/null | head -15)
+	[ -n "$files" ] && printf '  \033[2m(initial commit — listing repository files)\033[0m\n'
+fi
+
+if [ -z "$files" ]; then
+	printf '  \033[2m(no file changes detected for this commit)\033[0m\n'
+else
+	_idx=0
+	_total=$(printf '%s\n' "$files" | grep -c '.')
+	printf '%s\n' "$files" | while IFS= read -r f; do
+		[ -z "$f" ] && continue
+		_idx=$((_idx + 1))
+		if [ "$_idx" -gt 10 ]; then
+			_remaining=$((_total - 10))
+			printf '\n  \033[2m... %d more file(s) — scroll preview to see full list\033[0m\n' "$_remaining"
+			break
+		fi
+		printf '\n  \033[1;36m▶  %s\033[0m\n' "$f"
+		printf '%b\n' "$SEP2"
+		# git log --follow traces renames; shows up to 8 recent contributors.
+		git log \
+			--follow \
+			--format='  %C(yellow)%h%C(reset) %C(green)%ad%C(reset) %C(bold white)%-18.18an%C(reset) %C(dim white)%s%C(reset)' \
+			--date=format:'%Y-%m-%d %H:%M' \
+			--color=always \
+			-- "$f" 2>/dev/null | head -8
+	done
+fi
+
+# ── Section 3: Unified diff (truncated) ──────────────────────────────────
+printf '\n%b\n' "$SEP1"
+printf '  \033[1;34m DIFF  (first 80 lines — press ENTER to page through full diff)\033[0m\n'
+printf '%b\n' "$SEP1"
+git diff-tree -p --color=always "$hash" 2>/dev/null | head -80
+PREV_EOF
+
+	# ── Build fzf runner script ───────────────────────────────────────────────
+	# This script is executed either inline, inside a tmux popup, or in a new
+	# tmux session. Variables are shell-expanded here (RUNNER_EOF is unquoted).
+	# Branch names and mktemp paths never contain single quotes, so the generated
+	# single-quoted shell literals in the script are safe.
+	local _runner_file
+	_runner_file=$(mktemp /tmp/.gh_history_run_XXXXXX.sh)
+	chmod +x "$_runner_file"
+
+	# Commit log format: full hash, short hash, relative age, date, author, refs, subject.
+	# Uses Unicode box-drawing (─) and arrow (❯) for visual clarity.
+	local _log_fmt="%C(yellow)%H%C(reset) %C(bold blue)(%h)%C(reset) %C(dim cyan)\u2500%C(reset) %C(bold green)%ar%C(reset) %C(green)%ad%C(reset) %C(white)%-16.16an%C(reset)%C(bold yellow)%d%C(reset) %C(dim white)%s%C(reset)"
+
+	# Clipboard bind expression — cross-platform (pbcopy / xclip / xsel).
+	local _clip_cmd='_h=$(printf "%s" {} | grep -oE "[0-9a-f]{40}" | head -1); [ -n "$_h" ] && { printf "%s" "$_h" | pbcopy 2>/dev/null || printf "%s" "$_h" | xclip -selection clipboard 2>/dev/null || printf "%s" "$_h" | xsel --clipboard --input 2>/dev/null; }'
+
+	local _fzf_header="Branch: ${branch}  |  ENTER: full diff  CTRL-Y: copy hash  CTRL-F/B: page  CTRL-D/U: scroll  CTRL-R: reload  ESC: quit"
+
+	# The --bind=ctrl-r reload uses nested single-quoting for the date format.
+	# Pattern: '"'"' is the POSIX trick to embed a literal single-quote inside a
+	# single-quoted string: close, append literal ', reopen.
+	cat > "$_runner_file" << RUNNER_EOF
+#!/bin/bash
+# Auto-generated runner — shell::git::commit::spec::history::fzf
+# Branch: ${branch}  Repo: ${_repo_root}
+cd '${_repo_root}' 2>/dev/null || exit 1
+
+_selected=\$(
+	git log \\
+		--graph \\
+		--decorate \\
+		--date=format:'%Y-%m-%d %H:%M' \\
+		--format=format:'${_log_fmt}' \\
+		--color=always \\
+		'${branch}' 2>/dev/null |
+	fzf \\
+		--no-multi \\
+		--ansi \\
+		--no-sort \\
+		--no-height \\
+		--layout=default \\
+		--border=rounded \\
+		--prompt='  \u276f ' \\
+		--header='${_fzf_header}' \\
+		--header-first \\
+		--preview='${_prev_file} {}' \\
+		--preview-window='right:55%:wrap:border-left' \\
+		--pointer='\u25b6' \\
+		--marker='\u25cf' \\
+		--bind='ctrl-y:execute-silent(${_clip_cmd})' \\
+		--bind='ctrl-d:preview-half-page-down' \\
+		--bind='ctrl-u:preview-half-page-up' \\
+		--bind='ctrl-f:preview-page-down' \\
+		--bind='ctrl-b:preview-page-up' \\
+		--bind='ctrl-r:reload(cd ${_repo_root} && git log --graph --decorate --date=format:'"'"'%Y-%m-%d %H:%M'"'"' --format=format:'"'"'${_log_fmt}'"'"' --color=always '"'"'${branch}'"'"' 2>/dev/null)'
+)
+
+# After selection: page through the full diff in the configured pager.
+if [ -n "\$_selected" ]; then
+	_hash=\$(printf '%s' "\$_selected" | grep -oE '[0-9a-f]{40}' | head -1)
+	if [ -n "\$_hash" ]; then
+		_pager="\${PAGER:-less}"
+		git show --stat --patch --color=always "\$_hash" | "\$_pager" -R
+	fi
+fi
+RUNNER_EOF
+
+	# ── Cleanup trap ──────────────────────────────────────────────────────────
+	# Temp files are removed on any exit path (normal, Ctrl-C, signal).
+	# shellcheck disable=SC2064
+	trap "rm -f '${_prev_file}' '${_runner_file}'" EXIT INT TERM
+
+	# ── Choose execution mode ─────────────────────────────────────────────────
+	# Mode A (popup)  : already inside tmux AND tmux ≥ 3.2.
+	# Mode B (session): not in tmux, but tmux is available.
+	# Mode C (inline) : no tmux, or tmux too old.
+	local _mode="inline"
+
+	if command -v tmux >/dev/null 2>&1; then
+		if [ -n "${TMUX:-}" ]; then
+			# Determine tmux version.
+			local _tv _tmaj _tmin
+			_tv=$(tmux -V 2>/dev/null | grep -oE '[0-9]+\.[0-9]+' | head -1)
+			_tmaj=$(printf '%s' "${_tv}" | cut -d. -f1)
+			_tmin=$(printf '%s' "${_tv}" | cut -d. -f2)
+			# display-popup requires tmux ≥ 3.2
+			if [ "${_tmaj:-0}" -ge 3 ] && [ "${_tmin:-0}" -ge 2 ] 2>/dev/null; then
+				_mode="popup"
+			fi
+			# else: inside tmux but no popup support → inline is fine (full terminal)
+		else
+			_mode="session"
+		fi
+	fi
+
+	# ── Execute ───────────────────────────────────────────────────────────────
+	case "$_mode" in
+
+		# Mode A: floating popup inside the current tmux session.
+		popup)
+			shell::logger::info "Launching git history viewer in tmux popup (branch: ${branch})..."
+			tmux display-popup \
+				-E \
+				-w 95% \
+				-h 90% \
+				-d "${_repo_root}" \
+				"bash '${_runner_file}'"
+			;;
+
+		# Mode B: new dedicated tmux session (PID-scoped, auto-killed on exit).
+		session)
+			# Build a safe session name: lowercase alphanums, hyphens, underscores only.
+			local _san_branch
+			_san_branch=$(printf '%s' "${branch}" | \
+				tr '[:upper:]' '[:lower:]' | \
+				tr '/' '-' | \
+				sed 's/[^a-z0-9_-]/-/g' | \
+				cut -c1-30)
+			local _session_branch="git-hist-${_san_branch}-$$"
+
+			shell::logger::info "Launching git history viewer in tmux session '${_session_branch}' (branch: ${branch})..."
+
+			# Remove any stale sessions for the same branch (different PIDs).
+			tmux list-sessions -F '#{session_name}' 2>/dev/null | \
+				grep -E "^git-hist-${_san_branch}-[0-9]+$" | \
+				while IFS= read -r _old; do
+					tmux kill-session -t "$_old" 2>/dev/null
+				done
+
+			# Create a detached session; it self-destructs when the runner exits.
+			tmux new-session \
+				-d \
+				-s "$_session_branch" \
+				-x "${COLUMNS:-220}" \
+				-y "${LINES:-50}" \
+				"bash '${_runner_file}'; tmux kill-session -t '${_session_branch}' 2>/dev/null"
+
+			# Attach and block until the session is gone.
+			tmux attach-session -t "$_session_branch" 2>/dev/null
+			;;
+
+		# Mode C: run fzf directly in the current terminal (no tmux).
+		inline | *)
+			shell::logger::info "Launching git history viewer inline (branch: ${branch})..."
+			bash "$_runner_file"
+			;;
+	esac
+
+	# Temp files are cleaned up by the trap registered above.
+	return $RETURN_SUCCESS
+}
+
+# shell::git::commit::spec::history::fzf::current function
+# Convenience wrapper around shell::git::commit::spec::history::fzf that
+# automatically detects the currently checked-out branch and opens the
+# interactive commit history viewer for it.
+#
+# Usage:
+#   shell::git::commit::spec::history::fzf::current [-n] [-h]
+#
+# Parameters:
+#   - -n, --dry-run : Optional. Print the commands instead of executing them.
+#   - -h, --help    : Show this help message.
+#
+# Returns:
+#   $RETURN_SUCCESS (0) on success.
+#   $RETURN_FAILURE (non-zero) when not inside a Git repository.
+#
+# Example:
+#   shell::git::commit::spec::history::fzf::current
+#   shell::git::commit::spec::history::fzf::current -n
+shell::git::commit::spec::history::fzf::current() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Open interactive commit history viewer for the currently checked-out branch"
+		shell::logger::usage "shell::git::commit::spec::history::fzf::current [-n] [-h]"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the commands instead of executing them"
+		shell::logger::example "shell::git::commit::spec::history::fzf::current"
+		shell::logger::example "shell::git::commit::spec::history::fzf::current -n"
+		return $RETURN_SUCCESS
+	fi
+
+	local current_branch
+	current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+
+	if [ -z "$current_branch" ]; then
+		shell::logger::error "Not inside a Git repository"
+		return $RETURN_FAILURE
+	fi
+
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		shell::git::commit::spec::history::fzf -n "${current_branch}"
+	else
+		shell::git::commit::spec::history::fzf "${current_branch}"
+	fi
+}

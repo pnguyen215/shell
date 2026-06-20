@@ -214,6 +214,22 @@ alias sgcrevertf-n="shell::git::commit::revert::fzf -n"
 alias sgcrevert="shell::git::commit::revert::fzf"
 alias sgcrevert-n="shell::git::commit::revert::fzf -n"
 
+# shell::git::commit::spec::history::fzf
+alias sgchf="shell::git::commit::spec::history::fzf"
+alias sgchf-n="shell::git::commit::spec::history::fzf -n"
+alias sgchistoryf="shell::git::commit::spec::history::fzf"
+alias sgchistoryf-n="shell::git::commit::spec::history::fzf -n"
+alias sgchistory="shell::git::commit::spec::history::fzf"
+alias sgchistory-n="shell::git::commit::spec::history::fzf -n"
+
+# shell::git::commit::spec::history::fzf::current
+alias sgchfc="shell::git::commit::spec::history::fzf::current"
+alias sgchfc-n="shell::git::commit::spec::history::fzf::current -n"
+alias sgchistoryfc="shell::git::commit::spec::history::fzf::current"
+alias sgchistoryfc-n="shell::git::commit::spec::history::fzf::current -n"
+alias sgchistoryc="shell::git::commit::spec::history::fzf::current"
+alias sgchistoryc-n="shell::git::commit::spec::history::fzf::current -n"
+
 # ////////////////////
 # Shell git basic aliases
 # ///////////////////
