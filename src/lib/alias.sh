@@ -127,11 +127,19 @@ alias sgmf-n="shell::git::branch::merge::fzf -n"
 alias sgmergef="shell::git::branch::merge::fzf"
 alias sgmergef-n="shell::git::branch::merge::fzf -n"
 
-# shell::git::branch::stash function
+# shell::git::branch::stash
 alias sgstsh="shell::git::branch::stash"
 alias sgstsh-n="shell::git::branch::stash -n"
 alias sgstash="shell::git::branch::stash"
 alias sgstash-n="shell::git::branch::stash -n"
+
+# shell::git::branch::stash::remove::fzf
+alias sgrmstshf="shell::git::branch::stash::remove::fzf"
+alias sgrmstshf-n="shell::git::branch::stash::remove::fzf"
+alias sgrmstsh="shell::git::branch::stash::remove::fzf"
+alias sgrmstsh-n="shell::git::branch::stash::remove::fzf -n"
+alias sgrmshf="shell::git::branch::stash::remove::fzf"
+alias sgrmshf-n="shell::git::branch::stash::remove::fzf -n"
 
 # shell::git::commit::spec
 alias sgcs="shell::git::commit::spec"
