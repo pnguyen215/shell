@@ -141,6 +141,14 @@ alias sgrmstsh-n="shell::git::branch::stash::remove::fzf -n"
 alias sgrmshf="shell::git::branch::stash::remove::fzf"
 alias sgrmshf-n="shell::git::branch::stash::remove::fzf -n"
 
+# shell::git::branch::stash::preview::fzf
+alias sgstshpf="shell::git::branch::stash::preview::fzf"
+alias sgstshpf-n="shell::git::branch::stash::preview::fzf -n"
+alias sgstshp="shell::git::branch::stash::preview::fzf"
+alias sgstshp-n="shell::git::branch::stash::preview::fzf -n"
+alias sgstshpreview="shell::git::branch::stash::preview::fzf"
+alias sgstshpreview-n="shell::git::branch::stash::preview::fzf -n"
+
 # shell::git::commit::spec
 alias sgcs="shell::git::commit::spec"
 alias sgcs-n="shell::git::commit::spec -n"

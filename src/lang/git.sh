@@ -2691,6 +2691,115 @@ shell::git::branch::stash::remove::fzf() {
 	return $RETURN_SUCCESS
 }
 
+# shell::git::branch::stash::preview::fzf function
+# Presents an fzf picker of stashes for the current branch for browsing only.
+# No stash is modified — this is a read-only viewer.
+#
+# Usage:
+#   shell::git::branch::stash::preview::fzf [-n] [-h]
+#
+# Parameters:
+#   - -n, --dry-run : Optional. Print the git stash list command via
+#                     shell::logger::command_clip instead of executing it.
+#   - -h, --help    : Show this help message.
+#
+# Description:
+#   Step 1 — Verify the git repository and capture the current branch.
+#   Step 2 — Build a list of stashes filtered to the current branch.
+#   Step 3 — Present a single-select picker via shell::options::select.
+#   Step 4 — Show the diff of the selected stash via git stash show -p.
+#   Step 5 — Copy the stash reference to clipboard for convenience.
+#
+# Returns:
+#   $RETURN_SUCCESS (0) on success or user-initiated abort.
+#   $RETURN_FAILURE (non-zero) when not inside a Git repository.
+#
+# Example:
+#   shell::git::branch::stash::preview::fzf
+#   shell::git::branch::stash::preview::fzf -n
+shell::git::branch::stash::preview::fzf() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Browse stashes via fzf and view their contents"
+		shell::logger::usage "shell::git::branch::stash::preview::fzf [-n] [-h]"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the git stash list command instead of executing it"
+		shell::logger::example "shell::git::branch::stash::preview::fzf"
+		shell::logger::example "shell::git::branch::stash::preview::fzf -n"
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return $RETURN_FAILURE
+	fi
+
+	# Step 1 — capture current branch for filtering.
+	local current_branch
+	current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+
+	# Step 2 — build stash list filtered to current branch.
+	local -a stash_lines
+	while IFS= read -r line; do
+		[ -n "$line" ] && stash_lines+=("$line")
+	done < <(git stash list 2>/dev/null | grep "WIP on ${current_branch}:")
+
+	if [ "${#stash_lines[@]}" -eq 0 ]; then
+		shell::logger::warn "No stashes found for branch '${current_branch}' — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	shell::logger::info "Found ${#stash_lines[@]} stash(es) for branch '${current_branch}'"
+
+	# Step 3 — present single-select picker.
+	local selected_output
+	selected_output=$(shell::options::select "${stash_lines[@]}")
+
+	if [ -z "$selected_output" ]; then
+		shell::logger::warn "No stash selected — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	# Step 4 — extract stash reference and show its diff.
+	local stash_ref
+	stash_ref=$(printf '%s' "$selected_output" | grep -oE 'stash@\{[0-9]+\}')
+
+	if [ -z "$stash_ref" ]; then
+		shell::logger::warn "Could not extract stash reference from selection — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	shell::logger::info "Selected: ${stash_ref}"
+
+	local cmd_show="git stash show -p \"${stash_ref}\""
+
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::command_clip "$cmd_show"
+		return $RETURN_SUCCESS
+	fi
+
+	# Display the stash diff.
+	shell::logger::info "Showing diff for ${stash_ref}:"
+	if shell::is_command_available delta; then
+		eval "$cmd_show" 2>/dev/null | delta --no-gitconfig --line-numbers --navigate --dark 2>/dev/null \
+			|| eval "$cmd_show"
+	else
+		eval "$cmd_show"
+	fi
+
+	# Step 5 — copy stash reference to clipboard.
+	shell::clip_value "${stash_ref}"
+	shell::logger::info "Stash reference copied to clipboard: ${stash_ref}"
+
+	return $RETURN_SUCCESS
+}
+
 # shell::git::commit::spec function
 # Displays a decorated commit graph for a specific branch.
 #
