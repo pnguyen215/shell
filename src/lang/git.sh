@@ -2297,7 +2297,7 @@ shell::git::branch::merge() {
 	# Command variables — declared upfront for dry-run printing.
 	# ---------------------------------------------------------------------------
 	local cmd_checkout="git checkout \"${target_branch}\""
-	local cmd_merge="git merge --no-commit \"${source_branch}\""
+	local cmd_merge="git merge --no-commit --no-ff \"${source_branch}\""
 	local commit_msg="Merged ${source_branch} into ${target_branch}"
 	local cmd_commit="git commit -m \"${commit_msg}\""
 	local cmd_restore="git checkout \"${current_branch}\""
@@ -2318,9 +2318,11 @@ shell::git::branch::merge() {
 		"Checked out '${target_branch}'" "Checkout of '${target_branch}' failed" || return $?
 
 	# ---------------------------------------------------------------------------
-	# Step 3 — Merge source into target (no auto-commit).
+	# Step 3 — Merge source into target (no auto-commit, force merge commit).
+	# --no-ff ensures a merge commit is always created even when the merge is
+	# a fast-forward, guaranteeing staged changes exist for the commit step.
 	# ---------------------------------------------------------------------------
-	shell::logger::info "Merging '${source_branch}' into '${target_branch}' (no-commit) ..."
+	shell::logger::info "Merging '${source_branch}' into '${target_branch}' (no-commit, no-ff) ..."
 	if ! eval "$cmd_merge"; then
 		# Merge command itself failed (e.g., invalid branch ref).
 		shell::logger::error "Merge command failed — aborting"
