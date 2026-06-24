@@ -2508,6 +2508,79 @@ shell::git::branch::merge::fzf() {
 	fi
 }
 
+# shell::git::branch::stash function
+# Stashes all changes (tracked and untracked) in the current Git repository
+# with an optional message. Defaults to a timestamped message including the
+# current branch name.
+#
+# Usage:
+#   shell::git::branch::stash [-n] [-h] [<message>]
+#
+# Parameters:
+#   - -n, --dry-run : Optional. Print the git stash command via
+#                     shell::logger::command_clip instead of executing it.
+#   - -h, --help    : Show this help message.
+#   - <message>      : Optional. Custom stash message. Defaults to current date.
+#
+# Description:
+#   Runs: git stash save --include-untracked "<message>"
+#   The default message format follows the convention: "WIP on <branch>: <date>"
+#   This ensures stashes are traceable to their branch of origin.
+#
+# Returns:
+#   $RETURN_SUCCESS (0) on success.
+#   $RETURN_FAILURE (non-zero) when not inside a Git repository.
+#   Non-zero exit code of the git stash command otherwise.
+#
+# Example:
+#   shell::git::branch::stash
+#   shell::git::branch::stash "Work in progress on feature"
+#   shell::git::branch::stash -n
+shell::git::branch::stash() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Stash all changes including untracked files"
+		shell::logger::usage "shell::git::branch::stash [-n] [-h] [<message>]"
+		shell::logger::item "message" "Optional stash message. Defaults to current date"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
+		shell::logger::example "shell::git::branch::stash"
+		shell::logger::example "shell::git::branch::stash \"WIP: refactoring auth module\""
+		shell::logger::example "shell::git::branch::stash -n"
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return $RETURN_FAILURE
+	fi
+
+	local current_branch
+	current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+
+	local message="${1:-$(date +%Y-%m-%d)}"
+	local stash_message="WIP on ${current_branch}: ${message}"
+
+	local cmd_stash="git stash save --include-untracked \"${stash_message}\""
+
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::command_clip "$cmd_stash"
+		return $RETURN_SUCCESS
+	fi
+
+	shell::logger::assert "$cmd_stash" \
+		"All changes stashed on '${current_branch}': ${stash_message}" \
+		"Stash failed" || return $?
+
+	return $RETURN_SUCCESS
+}
+
 # shell::git::commit::spec function
 # Displays a decorated commit graph for a specific branch.
 #
