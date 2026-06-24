@@ -2584,7 +2584,7 @@ shell::git::branch::stash() {
 }
 
 # shell::git::branch::stash::remove::fzf function
-# Presents an fzf picker of all stashes across every branch, then removes the
+# Presents an fzf picker of stashes for the current branch, then removes the
 # selected stash after confirmation.
 #
 # Usage:
@@ -2596,15 +2596,12 @@ shell::git::branch::stash() {
 #   - -h, --help    : Show this help message.
 #
 # Description:
-#   Step 1 — Verify the git repository.
-#   Step 2 — Build a list of all stashes (every branch) with branch markers.
+#   Step 1 — Verify the git repository and capture the current branch.
+#   Step 2 — Build a list of stashes filtered to the current branch.
 #   Step 3 — Present a single-select picker via shell::options::select.
 #   Step 4 — Extract the stash reference (stash@{N}) from the selection.
 #   Step 5 — Confirm removal with the user.
 #   Step 6 — Execute: git stash drop <stash_ref>
-#
-# Stash display format:
-#   stash@{N}  [branch_name        ]  message
 #
 # Returns:
 #   $RETURN_SUCCESS (0) on success or user-initiated abort.
@@ -2617,7 +2614,7 @@ shell::git::branch::stash() {
 shell::git::branch::stash::remove::fzf() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
-		shell::logger::info "Select a stash via fzf (all branches) and remove it"
+		shell::logger::info "Select a stash via fzf and remove it"
 		shell::logger::usage "shell::git::branch::stash::remove::fzf [-n] [-h]"
 		shell::logger::option "-h, --help" "Show this help message"
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
@@ -2637,39 +2634,25 @@ shell::git::branch::stash::remove::fzf() {
 		return $RETURN_FAILURE
 	fi
 
-	# Step 1 — build stash list for all branches.
+	# Step 1 — capture current branch for filtering.
+	local current_branch
+	current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+
+	# Step 2 — build stash list filtered to current branch.
 	# Stash list format: stash@{N}: WIP on <branch>: <message>
-	# Extract branch name from between "WIP on " and the first ": " after it.
 	local -a stash_lines
-	local _raw_line _stash_ref _branch_name _message _display_line
-	while IFS= read -r _raw_line; do
-		[ -z "$_raw_line" ] && continue
-
-		# Extract stash@{N}
-		_stash_ref=$(printf '%s' "$_raw_line" | grep -oE 'stash@\{[0-9]+\}')
-		[ -z "$_stash_ref" ] && continue
-
-		# Extract branch name: between "WIP on " and first ": " after it
-		# Remove the prefix "stash@{N}: WIP on " then take everything before first ": "
-		_branch_name=$(printf '%s' "$_raw_line" | sed 's/^stash@{[0-9]\+}: WIP on //' | sed 's/: .*//')
-		[ -z "$_branch_name" ] && _branch_name="(unknown)"
-
-		# Extract message: everything after "WIP on <branch>: "
-		_message=$(printf '%s' "$_raw_line" | sed "s/^stash@{[0-9]\+}: WIP on ${_branch_name}: //")
-
-		# Build display line with fixed-width branch column (20 chars, left-aligned)
-		_display_line=$(printf '%s  [%-20s]  %s' "$_stash_ref" "$_branch_name" "$_message")
-		stash_lines+=("$_display_line")
-	done < <(git stash list 2>/dev/null)
+	while IFS= read -r line; do
+		[ -n "$line" ] && stash_lines+=("$line")
+	done < <(git stash list 2>/dev/null | grep "WIP on ${current_branch}:")
 
 	if [ "${#stash_lines[@]}" -eq 0 ]; then
-		shell::logger::warn "No stashes found in this repository — aborting"
+		shell::logger::warn "No stashes found for branch '${current_branch}' — aborting"
 		return $RETURN_SUCCESS
 	fi
 
-	shell::logger::info "Found ${#stash_lines[@]} stash(es) across all branches"
+	shell::logger::info "Found ${#stash_lines[@]} stash(es) for branch '${current_branch}'"
 
-	# Step 2 — present single-select picker.
+	# Step 3 — present single-select picker.
 	local selected_output
 	selected_output=$(shell::options::select "${stash_lines[@]}")
 
@@ -2678,10 +2661,9 @@ shell::git::branch::stash::remove::fzf() {
 		return $RETURN_SUCCESS
 	fi
 
-	# Step 3 — extract stash reference: stash@{N}
-	# Take only the first line in case of multi-line output, then grep for stash ref.
+	# Step 4 — extract stash reference: stash@{N}
 	local stash_ref
-	stash_ref=$(printf '%s' "$selected_output" | head -1 | grep -oE 'stash@\{[0-9]+\}')
+	stash_ref=$(printf '%s' "$selected_output" | grep -oE 'stash@\{[0-9]+\}')
 
 	if [ -z "$stash_ref" ]; then
 		shell::logger::warn "Could not extract stash reference from selection — aborting"
@@ -2690,13 +2672,13 @@ shell::git::branch::stash::remove::fzf() {
 
 	shell::logger::info "Selected: ${stash_ref}"
 
-	# Step 4 — confirm removal.
+	# Step 5 — confirm removal.
 	if shell::out::confirmz "Remove ${stash_ref}?"; then
 		shell::logger::info "Stash removal aborted"
 		return $RETURN_SUCCESS
 	fi
 
-	# Step 5 — execute removal.
+	# Step 6 — execute removal.
 	local cmd_drop="git stash drop \"${stash_ref}\""
 
 	if [ "$dry_run" = "true" ]; then
