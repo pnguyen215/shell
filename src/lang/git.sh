@@ -2800,6 +2800,129 @@ shell::git::branch::stash::preview::fzf() {
 	return $RETURN_SUCCESS
 }
 
+# shell::git::branch::stash::apply::fzf function
+# Presents an fzf multi-select picker of stashes for the current branch,
+# then applies each selected stash in order. Continues on individual failures.
+#
+# Usage:
+#   shell::git::branch::stash::apply::fzf [-n] [-h]
+#
+# Parameters:
+#   - -n, --dry-run : Optional. Print the commands via
+#                     shell::logger::command_clip instead of executing them.
+#   - -h, --help    : Show this help message.
+#
+# Description:
+#   Step 1 — Verify the git repository and capture the current branch.
+#   Step 2 — Build a list of stashes filtered to the current branch.
+#   Step 3 — Present a multi-select picker via shell::options::multiselect.
+#   Step 4 — Extract stash references (stash@{N}) from the selection.
+#   Step 5 — Apply each selected stash in order, continuing on failure.
+#   Step 6 — Summarize success/failure counts.
+#
+# Returns:
+#   $RETURN_SUCCESS (0) on success or user-initiated abort.
+#   $RETURN_FAILURE (non-zero) when not inside a Git repository.
+#
+# Example:
+#   shell::git::branch::stash::apply::fzf
+#   shell::git::branch::stash::apply::fzf -n
+shell::git::branch::stash::apply::fzf() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Multi-select stashes via fzf and apply them to the current branch"
+		shell::logger::usage "shell::git::branch::stash::apply::fzf [-n] [-h]"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the commands instead of executing them"
+		shell::logger::example "shell::git::branch::stash::apply::fzf"
+		shell::logger::example "shell::git::branch::stash::apply::fzf -n"
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return $RETURN_FAILURE
+	fi
+
+	# Step 1 — capture current branch for filtering.
+	local current_branch
+	current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+
+	# Step 2 — build stash list filtered to current branch.
+	local -a stash_lines
+	while IFS= read -r line; do
+		[ -n "$line" ] && stash_lines+=("$line")
+	done < <(git stash list 2>/dev/null | grep "WIP on ${current_branch}:")
+
+	if [ "${#stash_lines[@]}" -eq 0 ]; then
+		shell::logger::warn "No stashes found for branch '${current_branch}' — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	shell::logger::info "Found ${#stash_lines[@]} stash(es) for branch '${current_branch}'"
+
+	# Step 3 — present multi-select picker.
+	local selected_output
+	selected_output=$(shell::options::multiselect "${stash_lines[@]}")
+
+	if [ -z "$selected_output" ]; then
+		shell::logger::warn "No stashes selected — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	# Step 4 — extract stash references.
+	local -a stash_refs
+	while IFS= read -r ref; do
+		[ -n "$ref" ] && stash_refs+=("$ref")
+	done < <(printf '%s' "$selected_output" | grep -oE 'stash@\{[0-9]+\}')
+
+	if [ "${#stash_refs[@]}" -eq 0 ]; then
+		shell::logger::warn "Could not extract stash references from selection — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	shell::logger::info "Selected ${#stash_refs[@]} stash(es) to apply"
+
+	# Step 5 — apply each stash, continuing on failure.
+	local success_count=0
+	local failure_count=0
+	local ref
+	local cmd_apply
+
+	for ref in "${stash_refs[@]}"; do
+		cmd_apply="git stash apply \"${ref}\""
+
+		if [ "$dry_run" = "true" ]; then
+			shell::logger::command_clip "$cmd_apply"
+			continue
+		fi
+
+		if shell::logger::assert "$cmd_apply" \
+			"Applied ${ref} successfully" \
+			"Failed to apply ${ref} — continuing with remaining stashes"; then
+			success_count=$(( success_count + 1 ))
+		else
+			failure_count=$(( failure_count + 1 ))
+		fi
+	done
+
+	# Step 6 — summarize results.
+	if [ "$dry_run" = "false" ]; then
+		shell::logger::info "Apply complete: ${success_count} succeeded, ${failure_count} failed"
+		if [ "${failure_count}" -gt 0 ]; then
+			shell::logger::warn "Resolve conflicts for failed applies, then run 'git stash drop <ref>' manually"
+		fi
+	fi
+
+	return $RETURN_SUCCESS
+}
+
 # shell::git::commit::spec function
 # Displays a decorated commit graph for a specific branch.
 #

@@ -149,6 +149,14 @@ alias sgstshp-n="shell::git::branch::stash::preview::fzf -n"
 alias sgstshpreview="shell::git::branch::stash::preview::fzf"
 alias sgstshpreview-n="shell::git::branch::stash::preview::fzf -n"
 
+# shell::git::branch::stash::apply::fzf
+alias sgstshaf="shell::git::branch::stash::apply::fzf"
+alias sgstshaf-n="shell::git::branch::stash::apply::fzf -n"
+alias sgstshapplyf="shell::git::branch::stash::apply::fzf"
+alias sgstshapplyf-n="shell::git::branch::stash::apply::fzf -n"
+alias sgstshapply="shell::git::branch::stash::apply::fzf"
+alias sgstshapply-n="shell::git::branch::stash::apply::fzf -n"
+
 # shell::git::commit::spec
 alias sgcs="shell::git::commit::spec"
 alias sgcs-n="shell::git::commit::spec -n"
