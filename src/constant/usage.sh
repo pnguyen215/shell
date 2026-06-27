@@ -866,11 +866,11 @@ Example:
 "
 
 USAGE_SHELL_UNINSTALL_PYTHON_PIP_DEPS="
-shell::python::pip::uninstall_all function
+shell::python::pip::uninstall::all function
 Uninstalls all pip and pip3 packages with user confirmation and optional dry-run.
 
 Usage:
-  shell::python::pip::uninstall_all [-n] [-h]
+  shell::python::pip::uninstall::all [-n] [-h]
 
 Parameters:
   - -n  : Optional flag to perform a dry-run (uses shell::logger::command_clip to print commands without executing).
@@ -882,16 +882,16 @@ Description:
   and enhanced logging using shell::run_cmd_eval.
 
 Example usage:
-  shell::python::pip::uninstall_all       # Uninstalls all pip/pip3 packages after confirmation
-  shell::python::pip::uninstall_all -n    # Dry-run to preview commands
+  shell::python::pip::uninstall::all       # Uninstalls all pip/pip3 packages after confirmation
+  shell::python::pip::uninstall::all -n    # Dry-run to preview commands
 "
 
 USAGE_SHELL_UNINSTALL_PYTHON_PIP_DEPS_LATEST="
-shell::python::pip::uninstall_all::latest function
+shell::python::pip::uninstall::all::latest function
 Uninstalls all pip and pip3 packages with user confirmation and optional dry-run.
 
 Usage:
-  shell::python::pip::uninstall_all::latest [-n] [-h]
+  shell::python::pip::uninstall::all::latest [-n] [-h]
 
 Parameters:
   - -n  : Optional flag to perform a dry-run (uses shell::logger::command_clip to print commands without executing).
@@ -904,8 +904,8 @@ Description:
   ensuring that the function returns once the background process completes.
 
 Example usage:
-  shell::python::pip::uninstall_all::latest       # Uninstalls all pip/pip3 packages after confirmation
-  shell::python::pip::uninstall_all::latest -n    # Dry-run to preview commands
+  shell::python::pip::uninstall::all::latest       # Uninstalls all pip/pip3 packages after confirmation
+  shell::python::pip::uninstall::all::latest -n    # Dry-run to preview commands
 "
 
 USAGE_SHELL_CREATE_PYTHON_ENV="
@@ -997,11 +997,11 @@ Example:
 "
 
 USAGE_SHELL_FZF_UNINSTALL_PKG_PYTHON_ENV="
-shell::python::venv::pkg::uninstall_fzf function
+shell::python::venv::pkg::uninstall::fzf function
 Interactively uninstalls Python packages from a virtual environment using fzf for package selection.
 
 Usage:
-  shell::python::venv::pkg::uninstall_fzf [-n] [-h] [-p <path>]
+  shell::python::venv::pkg::uninstall::fzf [-n] [-h] [-p <path>]
 
 Parameters:
   - -n          : Optional dry-run flag.
@@ -1018,16 +1018,16 @@ Description:
   - Supports dry-run and asynchronous execution.
 
 Example:
-  shell::python::venv::pkg::uninstall_fzf          # Uninstalls packages from ./venv after interactive selection.
-  shell::python::venv::pkg::uninstall_fzf -n -p ~/my_env  # Prints uninstallation commands for ~/my_env without executing.
+  shell::python::venv::pkg::uninstall::fzf          # Uninstalls packages from ./venv after interactive selection.
+  shell::python::venv::pkg::uninstall::fzf -n -p ~/my_env  # Prints uninstallation commands for ~/my_env without executing.
 "
 
 USAGE_SHELL_FZF_USE_PYTHON_ENV="
-shell::python::venv::activate_fzf function
+shell::python::venv::activate::fzf function
 Interactively selects a Python virtual environment using fzf and activates/deactivates it.
 
 Usage:
-  shell::python::venv::activate_fzf [-n] [-h] [-p <path>]
+  shell::python::venv::activate::fzf [-n] [-h] [-p <path>]
 
 Parameters:
   - -n          : Optional dry-run flag.
@@ -1045,16 +1045,16 @@ Description:
   - Supports dry-run.
 
 Example:
-  shell::python::venv::activate_fzf          # Select and activate a venv from the current directory.
-  shell::python::venv::activate_fzf -n -p ~/projects  # Prints activation command for a venv in ~/projects without executing.
+  shell::python::venv::activate::fzf          # Select and activate a venv from the current directory.
+  shell::python::venv::activate::fzf -n -p ~/projects  # Prints activation command for a venv in ~/projects without executing.
 "
 
 USAGE_SHELL_FZF_UPGRADE_PKG_PYTHON_ENV="
-shell::python::venv::pkg::upgrade_fzf function
+shell::python::venv::pkg::upgrade::fzf function
 Interactively upgrades Python packages in a virtual environment using fzf for package selection.
 
 Usage:
-  shell::python::venv::pkg::upgrade_fzf [-n] [-h] [-p <path>]
+  shell::python::venv::pkg::upgrade::fzf [-n] [-h] [-p <path>]
 
 Parameters:
   - -n          : Optional dry-run flag.
@@ -1071,8 +1071,8 @@ Description:
   - Supporting dry-run mode to preview commands.
 
 Example:
-  shell::python::venv::pkg::upgrade_fzf          # Upgrades packages in ./venv after interactive selection.
-  shell::python::venv::pkg::upgrade_fzf -n -p ~/my_env  # Prints upgrade commands for ~/my_env without executing.
+  shell::python::venv::pkg::upgrade::fzf          # Upgrades packages in ./venv after interactive selection.
+  shell::python::venv::pkg::upgrade::fzf -n -p ~/my_env  # Prints upgrade commands for ~/my_env without executing.
 "
 
 USAGE_SHELL_UPGRADE_PKG_PYTHON_ENV="

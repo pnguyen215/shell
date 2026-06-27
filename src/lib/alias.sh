@@ -296,3 +296,70 @@ alias sgsst="git status -s"
 
 # clear
 alias c="clear"
+
+# ////////////////////
+# Shell python aliases
+# ///////////////////
+
+# shell::python::install
+alias spi="shell::python::install"
+alias spi-n="shell::python::install -n"
+
+# shell::python::is_installed
+alias spii="shell::python::is_installed"
+alias spii-n="shell::python::is_installed -n"
+
+# shell::python::uninstall
+alias spu="shell::python::uninstall"
+alias spu-n="shell::python::uninstall -n"
+
+# shell::python::pip::uninstall
+alias spipu="shell::python::pip::uninstall"
+alias spipu-n="shell::python::pip::uninstall -n"
+
+# shell::python::pip::uninstall::all
+alias spipua="shell::python::pip::uninstall::all"
+alias spipua-n="shell::python::pip::uninstall::all -n"
+alias sipuall="shell::python::pip::uninstall::all"
+alias sipuall-n="shell::python::pip::uninstall::all -n"
+
+# shell::python::venv::create
+alias spvc="shell::python::venv::create"
+alias spvc-n="shell::python::venv::create -n"
+
+# shell::python::venv::pkg::install
+alias spvpi="shell::python::venv::pkg::install"
+alias spvpi-n="shell::python::venv::pkg::install -n"
+
+# shell::python::venv::pkg::uninstall
+alias spvpu="shell::python::venv::pkg::uninstall"
+alias spvpu-n="shell::python::venv::pkg::uninstall -n"
+
+# shell::python::venv::pkg::uninstall::fzf
+alias spvpuf="shell::python::venv::pkg::uninstall::fzf"
+alias spvpuf-n="shell::python::venv::pkg::uninstall::fzf -n"
+
+# shell::python::venv::activate::fzf
+alias spvaf="shell::python::venv::activate::fzf"
+alias spvaf-n="shell::python::venv::activate::fzf -n"
+
+# shell::python::venv::pkg::upgrade
+alias spvpug="shell::python::venv::pkg::upgrade"
+alias spvpug-n="shell::python::venv::pkg::upgrade -n"
+alias spvupgrade="shell::python::venv::pkg::upgrade"
+alias spvupgrade-n="shell::python::venv::pkg::upgrade -n"
+
+# shell::python::venv::pkg::upgrade::fzf
+alias spvpugf="shell::python::venv::pkg::upgrade::fzf"
+alias spvpugf-n="shell::python::venv::pkg::upgrade::fzf -n"
+alias spvupgradef="shell::python::venv::pkg::upgrade::fzf"
+alias spvupgradef-n="shell::python::venv::pkg::upgrade::fzf -n"
+
+# shell::python::venv::pkg::freeze
+alias spvpfr="shell::python::venv::pkg::freeze"
+alias spvpfr-n="shell::python::venv::pkg::freeze -n"
+alias spvfreeze="shell::python::venv::pkg::freeze"
+alias spvfreeze-n="shell::python::venv::pkg::freeze -n"
+
+
+
