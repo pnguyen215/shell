@@ -5,11 +5,8 @@ name: GH Workflow News
 
 on:
   push:
-    branches: ["master"]
     tags:
       - "v*"
-  pull_request:
-    branches: ["master"]
 
 jobs:
   # This job is responsible for building the project.
@@ -31,9 +28,9 @@ jobs:
         id: check
         run: |
           if [[ -z "${{ secrets.TELEGRAM_CHAT_ID }}" || -z "${{ secrets.TELEGRAM_BOT_TOKEN }}" ]]; then
-            echo "::set-output name=skip::true"
+            echo "skip=true" >> $GITHUB_OUTPUT
           else
-            echo "::set-output name=skip::false"
+            echo "skip=false" >> $GITHUB_OUTPUT
           fi
       - name: Send Telegram Notification
         if: steps.check.outputs.skip == 'false'
@@ -55,7 +52,6 @@ jobs:
   # It checks if the tag exists, generates a changelog, creates a GitHub release, and sends a notification via Telegram.
   deploy:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     needs: build
     steps:
       - name: Checkout repository
@@ -80,17 +76,33 @@ jobs:
         id: check
         run: |
           if [[ -z "${{ secrets.TELEGRAM_CHAT_ID }}" || -z "${{ secrets.TELEGRAM_BOT_TOKEN }}" ]]; then
-            echo "::set-output name=skip::true"
+            echo "skip=true" >> $GITHUB_OUTPUT
           else
-            echo "::set-output name=skip::false"
+            echo "skip=false" >> $GITHUB_OUTPUT
           fi
+
+      - name: Get Previous Tag
+        id: prev_tag
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          echo "prev_tag=${PREV_TAG}" >> $GITHUB_OUTPUT
 
       - name: Generate Changelog
         id: changelog
         run: |
-          # Generate your changelog here and set it as an output variable
-          CHANGELOG=$(git log --pretty=format:"%h - %s" -n 10)
-          echo "::set-output name=changelog::$CHANGELOG"
+          PREV_TAG="${{ steps.prev_tag.outputs.prev_tag }}"
+          RELEASE_DATE=$(date +'%Y-%m-%d')
+          echo "release_date=${RELEASE_DATE}" >> $GITHUB_OUTPUT
+          if [ -n "$PREV_TAG" ]; then
+            CHANGELOG=$(git log --pretty=format:"%h - %s (@%an)" "${PREV_TAG}..HEAD")
+          else
+            CHANGELOG=$(git log --pretty=format:"%h - %s (@%an)" -n 10)
+          fi
+          {
+            echo "changelog<<EOF"
+            echo "$CHANGELOG"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
         id: create_release
@@ -98,7 +110,48 @@ jobs:
         with:
           tag_name: ${{ env.TAG }}
           body: |
-            :gem: released new version ${{ env.TAG }}
+            ## 📦 Release ${{ env.TAG }}
+
+            **Release Date:** ${{ steps.changelog.outputs.release_date }}
+            **Author:** @${{ github.actor }}
+
+            ---
+
+            ### 🚀 Features
+            <!-- List new features introduced in this release -->
+
+            ### 🐛 Bug Fixes
+            <!-- List bugs fixed in this release -->
+
+            ### ⚡ Improvements
+            <!-- Performance optimizations, refactoring, dependency updates -->
+
+            ---
+
+            ### 🔨 Commits in this release
+
+            ${{ steps.changelog.outputs.changelog }}
+
+            ---
+
+            ### 📌 Additional Notes
+            - Breaking changes (if any)
+            - Upgrade instructions
+            - Known issues
+
+            ---
+
+            ### 🔗 Links
+            - Compare: `${{ steps.prev_tag.outputs.prev_tag }}...${{ env.TAG }}`
+            - Repository: `https://github.com/${{ github.repository }}`
+
+            ---
+
+            ### ⚙️ Automation Tip
+            Generate commit list automatically:
+            ```bash
+            git log --pretty=format:"%h - %s (%an)" ${{ steps.prev_tag.outputs.prev_tag }}..${{ env.TAG }}
+            ```
           draft: false
           prerelease: false
         env:
