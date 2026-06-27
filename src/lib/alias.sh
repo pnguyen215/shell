@@ -157,6 +157,10 @@ alias sgstshapplyf-n="shell::git::branch::stash::apply::fzf -n"
 alias sgstshapply="shell::git::branch::stash::apply::fzf"
 alias sgstshapply-n="shell::git::branch::stash::apply::fzf -n"
 
+# shell::git::commit::message::base
+alias sgcmb="shell::git::commit::message::base"
+alias sgcmb-n="shell::git::commit::message::base -n"
+
 # shell::git::commit::spec
 alias sgcs="shell::git::commit::spec"
 alias sgcs-n="shell::git::commit::spec -n"
