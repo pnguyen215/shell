@@ -374,4 +374,3 @@ alias spgiga="shell::python::gitignore::add"
 alias spgiga-n="shell::python::gitignore::add -n"
 alias spgitignoreadd="shell::python::gitignore::add"
 alias spgitignoreadd-n="shell::python::gitignore::add -n"
-
