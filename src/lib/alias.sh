@@ -361,5 +361,17 @@ alias spvpfr-n="shell::python::venv::pkg::freeze -n"
 alias spvfreeze="shell::python::venv::pkg::freeze"
 alias spvfreeze-n="shell::python::venv::pkg::freeze -n"
 
+# shell::python::venv::pkg::install::requirements
+alias spvpir="shell::python::venv::pkg::install::requirements"
+alias spvpir-n="shell::python::venv::pkg::install::requirements -n"
+alias spvinstallr="shell::python::venv::pkg::install::requirements"
+alias spvinstallr-n="shell::python::venv::pkg::install::requirements -n"
+alias spvinstallrequirements="shell::python::venv::pkg::install::requirements"
+alias spvinstallrequirements-n="shell::python::venv::pkg::install::requirements -n"
 
+# shell::python::gitignore::add
+alias spgiga="shell::python::gitignore::add"
+alias spgiga-n="shell::python::gitignore::add -n"
+alias spgitignoreadd="shell::python::gitignore::add"
+alias spgitignoreadd-n="shell::python::gitignore::add -n"
 
