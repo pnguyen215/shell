@@ -1128,11 +1128,11 @@ Example:
 "
 
 USAGE_SHELL_PIP_INSTALL_REQUIREMENTS_ENV="
-shell::python::venv::pkg::install_requirements function
+shell::python::venv::pkg::install::requirements function
 Installs Python packages from a requirements.txt file into a virtual environment.
 
 Usage:
-  shell::python::venv::pkg::install_requirements [-n] [-h] [-p <path>]
+  shell::python::venv::pkg::install::requirements [-n] [-h] [-p <path>]
 
 Parameters:
   - -n          : Optional dry-run flag. If provided, commands are printed using shell::logger::command_clip instead of executed.
@@ -1147,8 +1147,8 @@ Description:
   - It implements asynchronous execution for the installation process.
 
 Example:
-  shell::python::venv::pkg::install_requirements         # Installs from requirements.txt in ./venv.
-  shell::python::venv::pkg::install_requirements -n -p ~/my_env  # Prints the installation command for ~/my_env without executing.
+  shell::python::venv::pkg::install::requirements         # Installs from requirements.txt in ./venv.
+  shell::python::venv::pkg::install::requirements -n -p ~/my_env  # Prints the installation command for ~/my_env without executing.
 "
 
 USAGE_SHELL_UPLINK="
