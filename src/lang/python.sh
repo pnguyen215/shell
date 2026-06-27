@@ -290,11 +290,11 @@ shell::python::pip::uninstall() {
 	shell::logger::assert "$clean_up_cmd"
 }
 
-# shell::python::pip::uninstall_all function
+# shell::python::pip::uninstall::all function
 # Uninstalls all pip and pip3 packages with user confirmation and optional dry-run.
 #
 # Usage:
-#   shell::python::pip::uninstall_all [-n]
+#   shell::python::pip::uninstall::all [-n]
 #
 # Parameters:
 #   -n: Optional flag to perform a dry-run (uses shell::logger::command_clip to print commands without executing).
@@ -305,8 +305,8 @@ shell::python::pip::uninstall() {
 #   and enhanced logging using shell::run_cmd_eval.
 #
 # Example usage:
-#   shell::python::pip::uninstall_all       # Uninstalls all pip/pip3 packages after confirmation
-#   shell::python::pip::uninstall_all -n    # Dry-run to preview commands
+#   shell::python::pip::uninstall::all       # Uninstalls all pip/pip3 packages after confirmation
+#   shell::python::pip::uninstall::all -n    # Dry-run to preview commands
 #
 # Instructions:
 #   1. Run the function with or without the -n flag.
@@ -316,16 +316,16 @@ shell::python::pip::uninstall() {
 #   - Use with caution: Uninstalling system packages may break your Python environment.
 #   - Supports asynchronous execution via shell::async, though kept synchronous for user feedback.
 #   - Temporary files are cleaned up automatically.
-shell::python::pip::uninstall_all() {
+shell::python::pip::uninstall::all() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Uninstall all pip and pip3 packages"
-		shell::logger::usage "shell::python::pip::uninstall_all [-n | --dry-run] [-h | --help]"
+		shell::logger::usage "shell::python::pip::uninstall::all [-n | --dry-run] [-h | --help]"
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
 		shell::logger::option "-h, --help" "Display this help message"
-		shell::logger::example "shell::python::pip::uninstall_all"
-		shell::logger::example "shell::python::pip::uninstall_all -n"
-		shell::logger::example "shell::python::pip::uninstall_all --dry-run"
+		shell::logger::example "shell::python::pip::uninstall::all"
+		shell::logger::example "shell::python::pip::uninstall::all -n"
+		shell::logger::example "shell::python::pip::uninstall::all --dry-run"
 		return $RETURN_SUCCESS
 	fi
 
@@ -717,11 +717,11 @@ shell::python::venv::pkg::uninstall() {
 	shell::logger::assert "$uninstall_cmd"
 }
 
-# shell::python::venv::pkg::uninstall_fzf function
+# shell::python::venv::pkg::uninstall::fzf function
 # Interactively uninstalls Python packages from a virtual environment using fzf for package selection.
 #
 # Usage:
-#   shell::python::venv::pkg::uninstall_fzf [-n] [-p <path>]
+#   shell::python::venv::pkg::uninstall::fzf [-n] [-p <path>]
 #
 # Parameters:
 #   - -n          : Optional dry-run flag.
@@ -737,20 +737,20 @@ shell::python::venv::pkg::uninstall() {
 #   - Supports dry-run and asynchronous execution.
 #
 # Example:
-#   shell::python::venv::pkg::uninstall_fzf          # Uninstalls packages from ./venv after interactive selection.
-#   shell::python::venv::pkg::uninstall_fzf -n -p ~/my_env  # Prints uninstallation commands for ~/my_env without executing.
+#   shell::python::venv::pkg::uninstall::fzf          # Uninstalls packages from ./venv after interactive selection.
+#   shell::python::venv::pkg::uninstall::fzf -n -p ~/my_env  # Prints uninstallation commands for ~/my_env without executing.
 #
 # Notes:
 #   - Requires fzf and an existing virtual environment.
-shell::python::venv::pkg::uninstall_fzf() {
+shell::python::venv::pkg::uninstall::fzf() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Uninstall Python packages from an existing virtual environment using fzf for interactive selection."
-		shell::logger::usage "shell::python::venv::pkg::uninstall_fzf [-n | --dry-run] [-h | --help] [-p <path>]"
+		shell::logger::usage "shell::python::venv::pkg::uninstall::fzf [-n | --dry-run] [-h | --help] [-p <path>]"
 		shell::logger::option "-n | --dry-run" "Preview uninstallation commands without executing."
 		shell::logger::option "-p | --path" "Specify the path to the virtual environment (default: ./venv)."
-		shell::logger::example "shell::python::venv::pkg::uninstall_fzf"
-		shell::logger::example "shell::python::venv::pkg::uninstall_fzf -n -p ~/my_env"
+		shell::logger::example "shell::python::venv::pkg::uninstall::fzf"
+		shell::logger::example "shell::python::venv::pkg::uninstall::fzf -n -p ~/my_env"
 		return $RETURN_SUCCESS
 	fi
 
@@ -837,11 +837,11 @@ shell::python::venv::pkg::uninstall_fzf() {
 	shell::python::venv::pkg::uninstall "${uninstall_args[@]}"
 }
 
-# shell::python::venv::activate_fzf function
+# shell::python::venv::activate::fzf function
 # Interactively selects a Python virtual environment using fzf and activates/deactivates it.
 #
 # Usage:
-#   shell::python::venv::activate_fzf [-n] [-p <path>]
+#   shell::python::venv::activate::fzf [-n] [-p <path>]
 #
 # Parameters:
 #   - -n          : Optional dry-run flag.
@@ -858,20 +858,20 @@ shell::python::venv::pkg::uninstall_fzf() {
 #   - Supports dry-run.
 #
 # Example:
-#   shell::python::venv::activate_fzf          # Select and activate a venv from the current directory.
-#   shell::python::venv::activate_fzf -n -p ~/projects  # Prints activation command for a venv in ~/projects without executing.
+#   shell::python::venv::activate::fzf          # Select and activate a venv from the current directory.
+#   shell::python::venv::activate::fzf -n -p ~/projects  # Prints activation command for a venv in ~/projects without executing.
 #
 # Notes:
 #   - Requires fzf.
-shell::python::venv::activate_fzf() {
+shell::python::venv::activate::fzf() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Interactively selects a Python virtual environment using fzf and activates/deactivates it."
-		shell::logger::usage "shell::python::venv::activate_fzf [-n | --dry-run] [-h | --help] [-p <path>]"
+		shell::logger::usage "shell::python::venv::activate::fzf [-n | --dry-run] [-h | --help] [-p <path>]"
 		shell::logger::option "-n | --dry-run" "Preview activation commands without executing."
 		shell::logger::option "-p | --path" "Specify the parent path to search for virtual environments (default: current directory)."
-		shell::logger::example "shell::python::venv::activate_fzf"
-		shell::logger::example "shell::python::venv::activate_fzf -n -p ~/projects"
+		shell::logger::example "shell::python::venv::activate::fzf"
+		shell::logger::example "shell::python::venv::activate::fzf -n -p ~/projects"
 		return $RETURN_SUCCESS
 	fi
 
@@ -1043,11 +1043,11 @@ shell::python::venv::pkg::upgrade() {
 	shell::logger::assert "$upgrade_cmd"
 }
 
-# shell::python::venv::pkg::upgrade_fzf function
+# shell::python::venv::pkg::upgrade::fzf function
 # Interactively upgrades Python packages in a virtual environment using fzf for package selection.
 #
 # Usage:
-#   shell::python::venv::pkg::upgrade_fzf [-n] [-p <path>]
+#   shell::python::venv::pkg::upgrade::fzf [-n] [-p <path>]
 #
 # Parameters:
 #   - -n          : Optional dry-run flag.
@@ -1063,20 +1063,20 @@ shell::python::venv::pkg::upgrade() {
 #   - Supporting dry-run mode to preview commands.
 #
 # Example:
-#   shell::python::venv::pkg::upgrade_fzf          # Upgrades packages in ./venv after interactive selection.
-#   shell::python::venv::pkg::upgrade_fzf -n -p ~/my_env  # Prints upgrade commands for ~/my_env without executing.
+#   shell::python::venv::pkg::upgrade::fzf          # Upgrades packages in ./venv after interactive selection.
+#   shell::python::venv::pkg::upgrade::fzf -n -p ~/my_env  # Prints upgrade commands for ~/my_env without executing.
 #
 # Notes:
 #   - Requires fzf and an existing virtual environment.
-shell::python::venv::pkg::upgrade_fzf() {
+shell::python::venv::pkg::upgrade::fzf() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Interactively upgrades Python packages in a virtual environment using fzf for package selection."
-		shell::logger::usage "shell::python::venv::pkg::upgrade_fzf [-n | --dry-run] [-h | --help] [-p <path>]"
+		shell::logger::usage "shell::python::venv::pkg::upgrade::fzf [-n | --dry-run] [-h | --help] [-p <path>]"
 		shell::logger::option "-n | --dry-run" "Preview upgrade commands without executing."
 		shell::logger::option "-p | --path" "Specify the path to the virtual environment (default: ./venv)."
-		shell::logger::example "shell::python::venv::pkg::upgrade_fzf"
-		shell::logger::example "shell::python::venv::pkg::upgrade_fzf -n -p ~/my_env"
+		shell::logger::example "shell::python::venv::pkg::upgrade::fzf"
+		shell::logger::example "shell::python::venv::pkg::upgrade::fzf -n -p ~/my_env"
 		return $RETURN_SUCCESS
 	fi
 

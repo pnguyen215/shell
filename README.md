@@ -659,9 +659,9 @@ Utilities for various programming languages and project initialization.
   Creates a new Python virtual environment.
   _Example:_ `shell::python::venv::create myenv`
 
-- **`shell::python::venv::activate_fzf`**
+- **`shell::python::venv::activate::fzf`**
   Interactively activate a Python virtual environment.
-  _Example:_ `shell::python::venv::activate_fzf`
+  _Example:_ `shell::python::venv::activate::fzf`
 
 - **`shell::python::venv::pkg::install`**
   Installs packages in the active Python environment.
@@ -1036,7 +1036,7 @@ shell::go::gitignore::add
 
 # Set up Python environment
 shell::python::venv::create myproject
-shell::python::venv::activate_fzf  # Activate environment
+shell::python::venv::activate::fzf  # Activate environment
 shell::python::venv::pkg::install requests flask pandas
 shell::python::venv::pkg::freeze > requirements.txt
 ```
