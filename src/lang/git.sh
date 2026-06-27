@@ -3700,6 +3700,211 @@ shell::git::commit::pick::remote() {
 	return $RETURN_SUCCESS
 }
 
+# shell::git::commit::message::base function
+# Presents a two-level interactive menu — first a commit message category,
+# then a pre-defined message within that category — and prints the selected
+# message to stdout. Designed as a reusable scaffold for scripted or empty
+# commits, callable independently or from shell::git::commit::create.
+#
+# Usage:
+#   shell::git::commit::message::base [-h]
+#
+# Parameters:
+#   - -h, --help : Show this help message.
+#
+# Output:
+#   Prints the selected commit message string to stdout on success.
+#   Prints nothing if the user aborts at either selection step.
+#
+# Returns:
+#   $RETURN_SUCCESS (0) always.
+#
+# Example:
+#   shell::git::commit::message::base
+#   selected=$(shell::git::commit::message::base)
+shell::git::commit::message::base() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Select a pre-defined commit message from a categorized menu"
+		shell::logger::usage "shell::git::commit::message::base [-h]"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::git::commit::message::base"
+		shell::logger::example "selected=\$(shell::git::commit::message::base)"
+		return $RETURN_SUCCESS
+	fi
+
+	# ===========================================================================
+	# Message catalog — grouped by intent and context.
+	# ===========================================================================
+
+	local -a ci_cd_messages=(
+		":rocket: chore: trigger CI build to test configuration changes"
+		":rocket: chore: deploy latest version to production environment"
+		":white_check_mark: test: force re-run of test suite for validation purposes"
+		":gear: chore: validate GitHub Actions workflow after config update"
+		":rocket: chore: re-trigger deployment after infrastructure provisioning"
+		":wrench: chore: bypass cache and force full rebuild of all pipeline stages"
+	)
+
+	local -a docs_non_code_messages=(
+		":books: docs: document recent architectural decisions and trade-offs"
+		":books: docs: add notes from the latest team meeting"
+		":package: dependency: document dependency updates in README.md"
+		":books: docs: update API reference with new endpoint specifications"
+		":books: docs: clarify setup instructions in CONTRIBUTING.md"
+		":memo: docs: add inline comments for complex business logic sections"
+	)
+
+	local -a workflow_maintenance_messages=(
+		":recycle: chore: refresh stale pull request to resolve merge conflicts"
+		":recycle: chore: sync with main branch to keep feature branch up-to-date"
+		":sparkles: feat: initialize new feature branch setup"
+		":wrench: chore: clean up obsolete branches and outdated references"
+		":recycle: chore: rebase feature branch on top of latest main"
+		":bookmark: chore: tag release candidate for QA testing"
+	)
+
+	local -a team_communication_messages=(
+		":tada: chore: announce upcoming team building event"
+		":warning: chore: notify team about planned server maintenance downtime"
+		":bookmark: docs: share details about achieving a key project milestone"
+		":busts_in_silhouette: chore: onboard new team member with initial access setup"
+		":warning: chore: broadcast breaking API change notice to all consumers"
+		":books: docs: summarize sprint retrospective findings and action items"
+	)
+
+	local -a hotfix_emergency_messages=(
+		":ambulance: fix: apply emergency patch for critical production outage"
+		":bug: fix: hotfix login failure affecting all authenticated users"
+		":lock: security: patch critical vulnerability in authentication layer"
+		":ambulance: fix: restore database connection pool after exhaustion"
+		":rewind: revert: roll back breaking change causing unexpected data loss"
+		":fire: remove: disable malfunctioning feature flag in production"
+	)
+
+	local -a database_migration_messages=(
+		":wrench: chore: seed development database with realistic test data"
+		":wrench: chore: run pending migrations on staging environment"
+		":wrench: chore: verify migration rollback procedure on pre-production"
+		":package: chore: archive legacy records before destructive schema migration"
+		":recycle: refactor: restructure table indexes for improved query performance"
+		":gear: config: update connection pool settings for load testing scenario"
+	)
+
+	local -a infrastructure_devops_messages=(
+		":gear: config: provision new cloud resources for auto-scaling group"
+		":rocket: deployment: update Kubernetes manifests for blue-green deployment"
+		":wrench: chore: rotate expiring SSL certificates across all environments"
+		":gear: config: tune load balancer health check thresholds"
+		":hammer: build: update Dockerfile base image to latest LTS version"
+		":gear: config: configure centralized log aggregation for microservices"
+	)
+
+	local -a code_quality_messages=(
+		":art: style: enforce consistent formatting across entire codebase"
+		":recycle: refactor: eliminate dead code and unused import statements"
+		":wrench: chore: configure pre-commit hooks for automated lint checks"
+		":white_check_mark: test: raise minimum code coverage threshold to 80 percent"
+		":recycle: refactor: resolve all outstanding static analysis warnings"
+		":art: style: apply naming convention updates per team coding standards"
+	)
+
+	local -a security_compliance_messages=(
+		":lock: security: rotate exposed API keys and invalidate compromised tokens"
+		":lock: security: enforce strict Content Security Policy headers"
+		":warning: deprecation: flag dependency with known CVE for immediate review"
+		":lock: security: enable multi-factor authentication for admin accounts"
+		":books: docs: update security disclosure policy and responsible process"
+		":lock: security: audit third-party integrations for data privacy compliance"
+	)
+
+	local -a release_versioning_messages=(
+		":gem: release: cut stable release with full changelog"
+		":bookmark: version tag: mark stable release point for production rollout"
+		":gem: release: prepare hotfix release branch for patch deployment"
+		":package: dependency: bump all packages to latest stable versions"
+		":books: docs: finalize release notes for upcoming minor version"
+		":rocket: deployment: trigger automated release pipeline for major launch"
+	)
+
+	local -a experimental_research_messages=(
+		":alien: experimental: start working on experimental feature for research"
+		":chart_with_upwards_trend: perf: log results of recent performance benchmark"
+		":books: docs: document feedback from recent user testing session"
+		":alien: experimental: prototype new caching strategy for evaluation"
+		":construction: WIP: spike on feasibility of real-time collaboration feature"
+		":alien: experimental: evaluate alternative state management approaches"
+	)
+
+	local -a miscellaneous_messages=(
+		":busts_in_silhouette: chore: add new contributor to the project"
+		":memo: docs: record internal decision about project direction"
+		":bookmark: docs: mark completion of project milestone"
+		":wrench: chore: update .gitignore to exclude new generated file types"
+		":mute: silent changes: apply minor formatting fix with no functional impact"
+		":loud_sound: logs: temporarily enable verbose logging for active debugging"
+	)
+
+	# ===========================================================================
+	# Step 1 — select a category.
+	# ===========================================================================
+
+	local selected_category
+	selected_category=$(shell::options::select \
+		"CI/CD Pipeline Triggers" \
+		"Documentation and Non-Code Changes" \
+		"Workflow and Repository Maintenance" \
+		"Project and Team Communication" \
+		"Hotfix and Emergency Patches" \
+		"Database and Migration" \
+		"Infrastructure and DevOps" \
+		"Code Quality and Cleanup" \
+		"Security and Compliance" \
+		"Release and Versioning" \
+		"Experimental and Research Purposes" \
+		"Miscellaneous")
+
+	if [ -z "$selected_category" ]; then
+		shell::logger::warn "No category selected — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	# ===========================================================================
+	# Step 2 — resolve message list for the selected category.
+	# ===========================================================================
+
+	local -a messages
+	case "$selected_category" in
+		"CI/CD Pipeline Triggers")             messages=("${ci_cd_messages[@]}") ;;
+		"Documentation and Non-Code Changes")  messages=("${docs_non_code_messages[@]}") ;;
+		"Workflow and Repository Maintenance") messages=("${workflow_maintenance_messages[@]}") ;;
+		"Project and Team Communication")      messages=("${team_communication_messages[@]}") ;;
+		"Hotfix and Emergency Patches")        messages=("${hotfix_emergency_messages[@]}") ;;
+		"Database and Migration")              messages=("${database_migration_messages[@]}") ;;
+		"Infrastructure and DevOps")           messages=("${infrastructure_devops_messages[@]}") ;;
+		"Code Quality and Cleanup")            messages=("${code_quality_messages[@]}") ;;
+		"Security and Compliance")             messages=("${security_compliance_messages[@]}") ;;
+		"Release and Versioning")              messages=("${release_versioning_messages[@]}") ;;
+		"Experimental and Research Purposes")  messages=("${experimental_research_messages[@]}") ;;
+		"Miscellaneous")                       messages=("${miscellaneous_messages[@]}") ;;
+	esac
+
+	# ===========================================================================
+	# Step 3 — select a message from the resolved list.
+	# ===========================================================================
+
+	local selected_message
+	selected_message=$(shell::options::select "${messages[@]}")
+
+	if [ -z "$selected_message" ]; then
+		shell::logger::warn "No message selected — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	echo "$selected_message"
+	return $RETURN_SUCCESS
+}
+
 # shell::git::commit::create function
 # Interactively builds and commits a formatted Git commit message. In default
 # mode, prompts for commit type (with emoji), description, and issue number,
