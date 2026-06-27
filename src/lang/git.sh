@@ -202,7 +202,7 @@ shell::git::repos::stats() {
 	last_commit_date=$(git log -1 --format='%ad' --date=format:'%Y-%m-%d' 2>/dev/null)
 	first_commit_ts=$(git log --reverse --format='%ct' 2>/dev/null | head -1)
 	now_ts=$(date +%s)
-	repo_age_days=$(( (now_ts - ${first_commit_ts:-$now_ts}) / 86400 ))
+	repo_age_days=$(((now_ts - ${first_commit_ts:-$now_ts}) / 86400))
 	repo_age_years=$(awk "BEGIN{printf \"%.1f\", ${repo_age_days}/365}")
 	repo_age_str="${repo_age_years} years (${repo_age_days} days)"
 
@@ -224,25 +224,25 @@ shell::git::repos::stats() {
 	local avg_per_day avg_per_week avg_per_month
 	local most_active_month least_active_month peak_day peak_hour
 
-	since_24h=$(git log --oneline --since="1 day ago"   2>/dev/null | wc -l | tr -d ' ')
-	since_7d=$( git log --oneline --since="7 days ago"  2>/dev/null | wc -l | tr -d ' ')
+	since_24h=$(git log --oneline --since="1 day ago" 2>/dev/null | wc -l | tr -d ' ')
+	since_7d=$(git log --oneline --since="7 days ago" 2>/dev/null | wc -l | tr -d ' ')
 	since_30d=$(git log --oneline --since="30 days ago" 2>/dev/null | wc -l | tr -d ' ')
 	since_90d=$(git log --oneline --since="90 days ago" 2>/dev/null | wc -l | tr -d ' ')
-	since_1y=$( git log --oneline --since="1 year ago"  2>/dev/null | wc -l | tr -d ' ')
+	since_1y=$(git log --oneline --since="1 year ago" 2>/dev/null | wc -l | tr -d ' ')
 
-	avg_per_day=$(  awk "BEGIN{if(${repo_age_days}>0) printf \"%.2f\", ${total_commits}/${repo_age_days}; else print \"0.00\"}")
-	avg_per_week=$( awk "BEGIN{if(${repo_age_days}>0) printf \"%.1f\",  ${total_commits}/(${repo_age_days}/7);  else print \"0.0\"}")
+	avg_per_day=$(awk "BEGIN{if(${repo_age_days}>0) printf \"%.2f\", ${total_commits}/${repo_age_days}; else print \"0.00\"}")
+	avg_per_week=$(awk "BEGIN{if(${repo_age_days}>0) printf \"%.1f\",  ${total_commits}/(${repo_age_days}/7);  else print \"0.0\"}")
 	avg_per_month=$(awk "BEGIN{if(${repo_age_days}>0) printf \"%.1f\",  ${total_commits}/(${repo_age_days}/30); else print \"0.0\"}")
 
-	most_active_month=$( git log --format='%ad' --date=format:'%Y-%m' 2>/dev/null | sort | uniq -c | sort -rn | head -1 | awk '{print $2}')
-	least_active_month=$(git log --format='%ad' --date=format:'%Y-%m' 2>/dev/null | sort | uniq -c | sort -n  | head -1 | awk '{print $2}')
-	peak_day=$( git log --format='%ad' --date=format:'%A' 2>/dev/null | sort | uniq -c | sort -rn | head -1 | awk '{print $2}')
+	most_active_month=$(git log --format='%ad' --date=format:'%Y-%m' 2>/dev/null | sort | uniq -c | sort -rn | head -1 | awk '{print $2}')
+	least_active_month=$(git log --format='%ad' --date=format:'%Y-%m' 2>/dev/null | sort | uniq -c | sort -n | head -1 | awk '{print $2}')
+	peak_day=$(git log --format='%ad' --date=format:'%A' 2>/dev/null | sort | uniq -c | sort -rn | head -1 | awk '{print $2}')
 	peak_hour=$(git log --format='%ad' --date=format:'%H' 2>/dev/null | sort | uniq -c | sort -rn | head -1 | awk '{print $2":00"}')
 
 	# ── D. CONTRIBUTORS ──────────────────────────────────────────────────────
 	local active_7d active_30d active_90d top_contributors_raw contributor_commit_total
 
-	active_7d=$( git log --since="7 days ago"  --format='%aN' 2>/dev/null | sort -u | wc -l | tr -d ' ')
+	active_7d=$(git log --since="7 days ago" --format='%aN' 2>/dev/null | sort -u | wc -l | tr -d ' ')
 	active_30d=$(git log --since="30 days ago" --format='%aN' 2>/dev/null | sort -u | wc -l | tr -d ' ')
 	active_90d=$(git log --since="90 days ago" --format='%aN' 2>/dev/null | sort -u | wc -l | tr -d ' ')
 	top_contributors_raw=$(git log --format='%aN' 2>/dev/null | sort | uniq -c | sort -rn | head -10)
@@ -253,11 +253,11 @@ shell::git::repos::stats() {
 
 	local _growth_raw
 	_growth_raw=$(git log --numstat --format='' 2>/dev/null | awk '/^[0-9]/{a+=$1; d+=$2} END{print a+0, d+0}')
-	total_added=$(  echo "$_growth_raw" | awk '{print $1}')
+	total_added=$(echo "$_growth_raw" | awk '{print $1}')
 	total_deleted=$(echo "$_growth_raw" | awk '{print $2}')
-	[ -z "$total_added" ]   && total_added=0
+	[ -z "$total_added" ] && total_added=0
 	[ -z "$total_deleted" ] && total_deleted=0
-	net_growth=$(( total_added - total_deleted ))
+	net_growth=$((total_added - total_deleted))
 	avg_commit_size=$(awk "BEGIN{if(${total_commits}>0) printf \"%.1f\", (${total_added}+${total_deleted})/${total_commits}; else print \"0.0\"}")
 
 	# ── F. CODE CHURN ────────────────────────────────────────────────────────
@@ -265,19 +265,19 @@ shell::git::repos::stats() {
 
 	churn_rate=$(awk "BEGIN{if(${total_added}>0) printf \"%.2f\", ${total_deleted}/${total_added}; else print \"0.00\"}")
 	hotspot_files_raw=$(git log --name-only --format='' 2>/dev/null | grep -v '^$' | sort | uniq -c | sort -rn | head -10)
-	hotspot_dirs_raw=$( git log --name-only --format='' 2>/dev/null | grep -v '^$' | \
+	hotspot_dirs_raw=$(git log --name-only --format='' 2>/dev/null | grep -v '^$' |
 		sed 's|/[^/]*$||' | grep -v '^$' | sort | uniq -c | sort -rn | head -10)
 
 	# ── G. COMMIT QUALITY ────────────────────────────────────────────────────
 	local merge_commits revert_commits fixup_commits avg_msg_length conv_raw conv_total
 
-	merge_commits=$( git log --merges --oneline 2>/dev/null | wc -l | tr -d ' ')
+	merge_commits=$(git log --merges --oneline 2>/dev/null | wc -l | tr -d ' ')
 	revert_commits=$(git log --oneline --grep='^[Rr]evert' 2>/dev/null | wc -l | tr -d ' ')
-	fixup_commits=$( git log --oneline --grep='^fixup!'    2>/dev/null | wc -l | tr -d ' ')
-	avg_msg_length=$(git log --format='%s' 2>/dev/null | \
+	fixup_commits=$(git log --oneline --grep='^fixup!' 2>/dev/null | wc -l | tr -d ' ')
+	avg_msg_length=$(git log --format='%s' 2>/dev/null |
 		awk '{t+=length($0); c++} END{if(c>0) printf "%.0f", t/c; else print "0"}')
-	conv_raw=$(git log --format='%s' 2>/dev/null | \
-		grep -oE '^(feat|fix|chore|docs|test|refactor|style|ci|build|perf)(\([^)]*\))?:' | \
+	conv_raw=$(git log --format='%s' 2>/dev/null |
+		grep -oE '^(feat|fix|chore|docs|test|refactor|style|ci|build|perf)(\([^)]*\))?:' |
 		sed 's/([^)]*)//g; s/://' | sort | uniq -c | sort -rn)
 	conv_total=$(echo "$conv_raw" | awk '{s+=$1} END{print s+0}')
 
@@ -291,18 +291,18 @@ shell::git::repos::stats() {
 	local _bname _bts
 	while IFS= read -r _bname; do
 		[ -z "$_bname" ] && continue
-		local_branch_count=$(( local_branch_count + 1 ))
+		local_branch_count=$((local_branch_count + 1))
 		_bts=$(git log -1 --format='%ct' "${_bname}" 2>/dev/null || echo "0")
 		[ -z "$_bts" ] && _bts=0
 		if [ "${_bts}" -ge "${stale_threshold_ts}" ] 2>/dev/null; then
-			active_branch_count=$(( active_branch_count + 1 ))
+			active_branch_count=$((active_branch_count + 1))
 		else
-			stale_branch_count=$(( stale_branch_count + 1 ))
+			stale_branch_count=$((stale_branch_count + 1))
 		fi
 	done < <(git branch | sed 's|^[* ]*||')
 
 	oldest_branch=$(git for-each-ref --sort=committerdate refs/heads/ --format='%(refname:short)' 2>/dev/null | head -1)
-	[ -n "$oldest_branch" ] && \
+	[ -n "$oldest_branch" ] &&
 		oldest_branch_date=$(git log -1 --format='%ad' --date=format:'%Y-%m-%d' "${oldest_branch}" 2>/dev/null)
 
 	# ── I. TAG METRICS ───────────────────────────────────────────────────────
@@ -315,43 +315,45 @@ shell::git::repos::stats() {
 	# ── J. TIME DISTRIBUTION ─────────────────────────────────────────────────
 	local by_weekday_raw by_hour_top5_raw office_pct after_hours_pct weekend_pct
 
-	by_weekday_raw=$(  git log --format='%ad' --date=format:'%A' 2>/dev/null | sort | uniq -c | sort -rn)
+	by_weekday_raw=$(git log --format='%ad' --date=format:'%A' 2>/dev/null | sort | uniq -c | sort -rn)
 	by_hour_top5_raw=$(git log --format='%ad' --date=format:'%H' 2>/dev/null | sort | uniq -c | sort -rn | head -5)
 
 	# %u → ISO day number: 1=Mon … 7=Sun; h = hour (0-23)
 	local _time_data office_c after_c weekend_c
 	_time_data=$(git log --format='%ad' --date=format:'%H %u' 2>/dev/null)
-	office_c=$( echo "$_time_data" | awk '{h=$1+0; d=$2+0; if(d<=5 && h>=9 && h<18) c++} END{print c+0}')
-	after_c=$(  echo "$_time_data" | awk '{h=$1+0; d=$2+0; if(d<=5 && (h<9||h>=18)) c++} END{print c+0}')
+	office_c=$(echo "$_time_data" | awk '{h=$1+0; d=$2+0; if(d<=5 && h>=9 && h<18) c++} END{print c+0}')
+	after_c=$(echo "$_time_data" | awk '{h=$1+0; d=$2+0; if(d<=5 && (h<9||h>=18)) c++} END{print c+0}')
 	weekend_c=$(echo "$_time_data" | awk '{d=$2+0; if(d>=6) c++} END{print c+0}')
 
-	office_pct=$(     awk "BEGIN{if(${total_commits}>0) printf \"%.1f\", ${office_c}*100/${total_commits};  else print \"0.0\"}")
+	office_pct=$(awk "BEGIN{if(${total_commits}>0) printf \"%.1f\", ${office_c}*100/${total_commits};  else print \"0.0\"}")
 	after_hours_pct=$(awk "BEGIN{if(${total_commits}>0) printf \"%.1f\", ${after_c}*100/${total_commits};   else print \"0.0\"}")
-	weekend_pct=$(    awk "BEGIN{if(${total_commits}>0) printf \"%.1f\", ${weekend_c}*100/${total_commits}; else print \"0.0\"}")
+	weekend_pct=$(awk "BEGIN{if(${total_commits}>0) printf \"%.1f\", ${weekend_c}*100/${total_commits}; else print \"0.0\"}")
 
 	# ── K. LANGUAGE DISTRIBUTION ─────────────────────────────────────────────
 	local lang_raw
 
-	lang_raw=$(find . -type f -not -path './.git/*' 2>/dev/null | \
+	lang_raw=$(find . -type f -not -path './.git/*' 2>/dev/null |
 		grep -oE '\.[^./]+$' | tr '[:upper:]' '[:lower:]' | sort | uniq -c | sort -rn | head -15)
 
 	# ── L. HEALTH SCORE ──────────────────────────────────────────────────────
 	local score_activity score_contributors score_growth score_maintenance total_score
 
 	# Activity  (0-25): commits_30d ≥ 10 → full score; linear below
-	score_activity=$(    awk "BEGIN{s=(${since_30d}>=10)?25:int(${since_30d}*2.5); print s}")
+	score_activity=$(awk "BEGIN{s=(${since_30d}>=10)?25:int(${since_30d}*2.5); print s}")
 	# Contributors (0-25): ≥3 active in 30d → full; linear below
 	score_contributors=$(awk "BEGIN{s=(${active_30d}>=3)?25:int(${active_30d}*8); if(s>25)s=25; print s}")
 	# Growth (0-25): net positive → 25, zero → 15, negative → 5
-	if   [ "${net_growth}" -gt 0 ]; then score_growth=25
-	elif [ "${net_growth}" -eq 0 ]; then score_growth=15
-	else                                  score_growth=5; fi
+	if [ "${net_growth}" -gt 0 ]; then
+		score_growth=25
+	elif [ "${net_growth}" -eq 0 ]; then
+		score_growth=15
+	else score_growth=5; fi
 	# Maintenance (0-25): conventional commit ratio × 25, capped
 	score_maintenance=$(awk "BEGIN{if(${total_commits}>0 && ${conv_total}>0){s=int(${conv_total}*25/${total_commits}); if(s>25)s=25; print s}else print 0}")
-	total_score=$(( score_activity + score_contributors + score_growth + score_maintenance ))
+	total_score=$((score_activity + score_contributors + score_growth + score_maintenance))
 
 	# ── PRINT REPORT ─────────────────────────────────────────────────────────
-	local _lw=28   # label column width for printf alignment
+	local _lw=28 # label column width for printf alignment
 	local _hr="  ══════════════════════════════════════════════════════════"
 	local _sr="  ──────────────────────────────────────────────────────────"
 
@@ -363,55 +365,55 @@ shell::git::repos::stats() {
 	# ── A ──
 	shell::logger::info ""
 	shell::logger::info "  A. REPOSITORY IDENTITY"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Name"              "${repo_name}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "URL"               "${repo_url}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Default Branch"    "${default_branch}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Current Branch"    "${current_branch}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Repository Age"    "${repo_age_str}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "First Commit"      "${first_commit_date}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Last Commit"       "${last_commit_date}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Name" "${repo_name}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "URL" "${repo_url}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Default Branch" "${default_branch}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Current Branch" "${current_branch}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Repository Age" "${repo_age_str}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "First Commit" "${first_commit_date}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Last Commit" "${last_commit_date}")"
 
 	# ── B ──
 	shell::logger::info ""
 	shell::logger::info "  B. REPOSITORY SIZE"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total Commits"      "${total_commits}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total Commits" "${total_commits}")"
 	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total Branches (remote)" "${total_branches}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total Tags"         "${total_tags}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total Tags" "${total_tags}")"
 	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total Contributors" "${total_contributors}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total Files"        "${total_files}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total Directories"  "${total_dirs}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Current LOC"        "${total_loc}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total Files" "${total_files}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total Directories" "${total_dirs}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Current LOC" "${total_loc}")"
 
 	# ── C ──
 	shell::logger::info ""
 	shell::logger::info "  C. COMMIT ACTIVITY"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Last 24 hours"      "${since_24h}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Last 7 days"        "${since_7d}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Last 30 days"       "${since_30d}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Last 90 days"       "${since_90d}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Last year"          "${since_1y}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Avg per day"        "${avg_per_day}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Avg per week"       "${avg_per_week}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Avg per month"      "${avg_per_month}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Most active month"  "${most_active_month}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Last 24 hours" "${since_24h}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Last 7 days" "${since_7d}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Last 30 days" "${since_30d}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Last 90 days" "${since_90d}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Last year" "${since_1y}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Avg per day" "${avg_per_day}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Avg per week" "${avg_per_week}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Avg per month" "${avg_per_month}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Most active month" "${most_active_month}")"
 	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Least active month" "${least_active_month}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Peak day"           "${peak_day}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Peak hour"          "${peak_hour}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Peak day" "${peak_day}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Peak hour" "${peak_hour}")"
 
 	# ── D ──
 	shell::logger::info ""
 	shell::logger::info "  D. CONTRIBUTORS"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total"              "${total_contributors}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Active (7d)"        "${active_7d}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Active (30d)"       "${active_30d}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Active (90d)"       "${active_90d}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total" "${total_contributors}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Active (7d)" "${active_7d}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Active (30d)" "${active_30d}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Active (90d)" "${active_90d}")"
 	shell::logger::info ""
 	shell::logger::info "  Top Contributors (by commits):"
 	echo "$top_contributors_raw" | while IFS= read -r _line; do
 		[ -z "$_line" ] && continue
 		local _cnt _name _share
-		_cnt=$(  echo "$_line" | awk '{print $1}')
-		_name=$( echo "$_line" | awk '{$1=""; sub(/^ /,""); print}')
+		_cnt=$(echo "$_line" | awk '{print $1}')
+		_name=$(echo "$_line" | awk '{$1=""; sub(/^ /,""); print}')
 		_share=$(awk "BEGIN{if(${contributor_commit_total}>0) printf \"%.1f\", ${_cnt}*100/${contributor_commit_total}; else print \"0.0\"}")
 		shell::logger::info "$(printf '    %-6s %-28s %s%%' "${_cnt}" "${_name}" "${_share}")"
 	done
@@ -421,15 +423,15 @@ shell::git::repos::stats() {
 	shell::logger::info "  E. CODE GROWTH"
 	local _net_sign=""
 	[ "${net_growth}" -ge 0 ] && _net_sign="+"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total Added Lines"    "${total_added}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total Deleted Lines"  "${total_deleted}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Net Growth"           "${_net_sign}${net_growth} lines")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Avg Commit Size"      "${avg_commit_size} lines (added+deleted)")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total Added Lines" "${total_added}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total Deleted Lines" "${total_deleted}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Net Growth" "${_net_sign}${net_growth} lines")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Avg Commit Size" "${avg_commit_size} lines (added+deleted)")"
 
 	# ── F ──
 	shell::logger::info ""
 	shell::logger::info "  F. CODE CHURN"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Churn Rate"           "${churn_rate}  (deleted ÷ added)")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Churn Rate" "${churn_rate}  (deleted ÷ added)")"
 	shell::logger::info ""
 	shell::logger::info "  Top 10 Most Modified Files:"
 	echo "$hotspot_files_raw" | while IFS= read -r _line; do
@@ -444,19 +446,19 @@ shell::git::repos::stats() {
 	# ── G ──
 	shell::logger::info ""
 	shell::logger::info "  G. COMMIT QUALITY"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Merge Commits"        "${merge_commits}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Revert Commits"       "${revert_commits}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Fixup Commits"        "${fixup_commits}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Avg Message Length"   "${avg_msg_length} chars")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Merge Commits" "${merge_commits}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Revert Commits" "${revert_commits}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Fixup Commits" "${fixup_commits}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Avg Message Length" "${avg_msg_length} chars")"
 	shell::logger::info ""
 	shell::logger::info "  Conventional Commit Breakdown:"
 	if [ -n "$conv_raw" ] && [ "${conv_total}" -gt 0 ]; then
 		echo "$conv_raw" | while IFS= read -r _line; do
 			[ -z "$_line" ] && continue
 			local _cnt _type _pct
-			_cnt=$( echo "$_line" | awk '{print $1}')
+			_cnt=$(echo "$_line" | awk '{print $1}')
 			_type=$(echo "$_line" | awk '{print $2}')
-			_pct=$( awk "BEGIN{if(${total_commits}>0) printf \"%.1f\", ${_cnt}*100/${total_commits}; else print \"0.0\"}")
+			_pct=$(awk "BEGIN{if(${total_commits}>0) printf \"%.1f\", ${_cnt}*100/${total_commits}; else print \"0.0\"}")
 			shell::logger::info "$(printf '    %-12s %6s commits  %s%%' "${_type}" "${_cnt}" "${_pct}")"
 		done
 		shell::logger::info "$(printf '    %-12s %6s commits' "(conventional)" "${conv_total}")"
@@ -468,29 +470,29 @@ shell::git::repos::stats() {
 	# ── H ──
 	shell::logger::info ""
 	shell::logger::info "  H. BRANCH METRICS"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total Local Branches"  "${local_branch_count}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total Local Branches" "${local_branch_count}")"
 	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total Remote Branches" "${total_branches}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Active (<= 90 days)"   "${active_branch_count}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Stale (> 90 days)"     "${stale_branch_count}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Active (<= 90 days)" "${active_branch_count}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Stale (> 90 days)" "${stale_branch_count}")"
 	if [ -n "$oldest_branch" ]; then
-		shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Oldest Branch"      "${oldest_branch}  (${oldest_branch_date})")"
+		shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Oldest Branch" "${oldest_branch}  (${oldest_branch_date})")"
 	fi
 
 	# ── I ──
 	shell::logger::info ""
 	shell::logger::info "  I. TAG METRICS"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total Tags"            "${total_tags}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Latest Tag"            "${latest_tag}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "First Tag"             "${first_tag}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Total Tags" "${total_tags}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Latest Tag" "${latest_tag}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "First Tag" "${first_tag}")"
 
 	# ── J ──
 	shell::logger::info ""
 	shell::logger::info "  J. TIME DISTRIBUTION"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Peak Day"              "${peak_day}")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Peak Hour"             "${peak_hour}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Peak Day" "${peak_day}")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Peak Hour" "${peak_hour}")"
 	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Office Hours (9-18 M-F)" "${office_pct}%")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "After Hours"           "${after_hours_pct}%")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Weekend"               "${weekend_pct}%")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "After Hours" "${after_hours_pct}%")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Weekend" "${weekend_pct}%")"
 	shell::logger::info ""
 	shell::logger::info "  Commits by Weekday:"
 	echo "$by_weekday_raw" | while IFS= read -r _line; do
@@ -507,7 +509,7 @@ shell::git::repos::stats() {
 		[ -z "$_line" ] && continue
 		local _cnt _hr
 		_cnt=$(echo "$_line" | awk '{print $1}')
-		_hr=$(echo  "$_line" | awk '{print $2}')
+		_hr=$(echo "$_line" | awk '{print $2}')
 		shell::logger::info "$(printf '    %s:00        %6s commits' "${_hr}" "${_cnt}")"
 	done
 
@@ -530,12 +532,12 @@ shell::git::repos::stats() {
 	# ── L ──
 	shell::logger::info ""
 	shell::logger::info "  L. REPOSITORY HEALTH SCORE"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Activity (commits 30d)"     "${score_activity}/25")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Contributors (active 30d)"  "${score_contributors}/25")"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Growth (net LOC)"           "${score_growth}/25")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Activity (commits 30d)" "${score_activity}/25")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Contributors (active 30d)" "${score_contributors}/25")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Growth (net LOC)" "${score_growth}/25")"
 	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Maintenance (conv. commits)" "${score_maintenance}/25")"
 	shell::logger::info "  ${_sr}"
-	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Health Score"               "${total_score}/100")"
+	shell::logger::info "$(printf '  %-'"${_lw}"'s: %s' "Health Score" "${total_score}/100")"
 
 	shell::logger::info ""
 	shell::logger::info "${_hr}"
@@ -867,30 +869,30 @@ shell::git::branch::checkout() {
 	fi
 
 	case "$strategy" in
-		rebase)
-			shell::logger::assert "$cmd_rebase" \
-				"Branch rebased onto ${remote_ref}" "Rebase aborted" || return $?
-			;;
-		reset)
-			shell::logger::assert "$cmd_reset" \
-				"Branch reset to ${remote_ref}" "Hard reset aborted" || return $?
-			;;
-		stash_reset)
-			shell::logger::assert "$cmd_stash" \
-				"Uncommitted changes stashed" "Stash failed" || return $?
-			shell::logger::assert "$cmd_reset" \
-				"Branch reset to ${remote_ref}" "Hard reset aborted" || return $?
-			shell::logger::assert "$cmd_stash_pop" \
-				"Stashed changes restored" "Stash pop failed — run 'git stash pop' manually"
-			;;
-		stash_rebase)
-			shell::logger::assert "$cmd_stash" \
-				"Uncommitted changes stashed" "Stash failed" || return $?
-			shell::logger::assert "$cmd_rebase" \
-				"Branch rebased onto ${remote_ref}" "Rebase aborted" || return $?
-			shell::logger::assert "$cmd_stash_pop" \
-				"Stashed changes restored" "Stash pop failed — run 'git stash pop' manually"
-			;;
+	rebase)
+		shell::logger::assert "$cmd_rebase" \
+			"Branch rebased onto ${remote_ref}" "Rebase aborted" || return $?
+		;;
+	reset)
+		shell::logger::assert "$cmd_reset" \
+			"Branch reset to ${remote_ref}" "Hard reset aborted" || return $?
+		;;
+	stash_reset)
+		shell::logger::assert "$cmd_stash" \
+			"Uncommitted changes stashed" "Stash failed" || return $?
+		shell::logger::assert "$cmd_reset" \
+			"Branch reset to ${remote_ref}" "Hard reset aborted" || return $?
+		shell::logger::assert "$cmd_stash_pop" \
+			"Stashed changes restored" "Stash pop failed — run 'git stash pop' manually"
+		;;
+	stash_rebase)
+		shell::logger::assert "$cmd_stash" \
+			"Uncommitted changes stashed" "Stash failed" || return $?
+		shell::logger::assert "$cmd_rebase" \
+			"Branch rebased onto ${remote_ref}" "Rebase aborted" || return $?
+		shell::logger::assert "$cmd_stash_pop" \
+			"Stashed changes restored" "Stash pop failed — run 'git stash pop' manually"
+		;;
 	esac
 
 	return $RETURN_SUCCESS
@@ -901,18 +903,18 @@ shell::git::branch::checkout() {
 # This is useful for triggering branch-specific hooks or refreshing the working tree
 # without switching to a different branch. If not inside a Git repository, an error
 # is logged and the function returns with failure.
-# 
+#
 # Usage:
 #   shell::git::branch::checkout::current [-n] [-h]
-# 
+#
 # Parameters:
 #   - -n, --dry-run : Optional. Print the command via shell::logger::command_clip instead of executing it.
 #   - -h, --help    : Show this help message.
-# 
+#
 # Returns:
 #   $RETURN_SUCCESS (0) on success.
 #   $RETURN_FAILURE (non-zero) if not inside a Git repository or if the checkout command fails.
-# 
+#
 # Example:
 #   shell::git::branch::checkout::current
 #   shell::git::branch::checkout::current -n
@@ -1398,7 +1400,7 @@ shell::git::branch::push::current() {
 # the currently checked-out branch and invokes a force-push command for it.
 # This is a specialized function for the common case of needing to force-push the
 # current branch to origin. It prompts for confirmation before executing the force-push.
-# 
+#
 # Usage:
 #   shell::git::branch::push::current::force [-h]
 #
@@ -1616,15 +1618,15 @@ shell::git::branch::backup() {
 #   - -n, --dry-run : Optional. Print the git branch command via
 #                     shell::logger::command_clip instead of executing it.
 #   - -h, --help    : Show this help message.
-# 
+#
 # Description:
 #   1. Determine the currently checked-out branch.
 #   2. Call shell::git::branch::backup with the current branch name.
-# 
+#
 # Returns:
 #   $RETURN_SUCCESS (0) on success.
 #   $RETURN_FAILURE (non-zero) when not inside a Git repository.
-# 
+#
 # Example:
 #   shell::git::branch::backup::current
 shell::git::branch::backup::current() {
@@ -2056,7 +2058,10 @@ shell::git::branch::all::fzf() {
 	for rb in "${remote_branches[@]}"; do
 		is_local="false"
 		for b in "${local_branches[@]}"; do
-			[ "$b" = "$rb" ] && { is_local="true"; break; }
+			[ "$b" = "$rb" ] && {
+				is_local="true"
+				break
+			}
 		done
 		if [ "$is_local" = "false" ]; then
 			branch_lines+=("  ${remote_label} : ${rb}")
@@ -2152,63 +2157,63 @@ shell::git::branch::all::fzf() {
 	# Step 4 — execute the selected action.
 	# ---------------------------------------------------------------------------
 	case "$action" in
-		checkout)
-			[ "${count}" -gt 1 ] && shell::logger::warn "Multiple branches selected — checkout applies to first: ${first_branch}"
-			shell::git::branch::checkout "${first_branch}"
-			;;
+	checkout)
+		[ "${count}" -gt 1 ] && shell::logger::warn "Multiple branches selected — checkout applies to first: ${first_branch}"
+		shell::git::branch::checkout "${first_branch}"
+		;;
 
-		view_commits)
-			[ "${count}" -gt 1 ] && shell::logger::warn "Multiple branches selected — commit history applies to first: ${first_branch}"
-			shell::git::commit::spec "${first_branch}"
-			;;
+	view_commits)
+		[ "${count}" -gt 1 ] && shell::logger::warn "Multiple branches selected — commit history applies to first: ${first_branch}"
+		shell::git::commit::spec "${first_branch}"
+		;;
 
-		search_commits)
-			[ "${count}" -gt 1 ] && shell::logger::warn "Multiple branches selected — commit browse applies to first: ${first_branch}"
-			shell::git::commit::spec::search "${first_branch}"
-			;;
+	search_commits)
+		[ "${count}" -gt 1 ] && shell::logger::warn "Multiple branches selected — commit browse applies to first: ${first_branch}"
+		shell::git::commit::spec::search "${first_branch}"
+		;;
 
-		pick_local)
-			[ "${count}" -gt 1 ] && shell::logger::warn "Multiple branches selected — cherry-pick source is first: ${first_branch}"
-			shell::git::commit::pick::local "${first_branch}"
-			;;
+	pick_local)
+		[ "${count}" -gt 1 ] && shell::logger::warn "Multiple branches selected — cherry-pick source is first: ${first_branch}"
+		shell::git::commit::pick::local "${first_branch}"
+		;;
 
-		pick_remote)
-			[ "${count}" -gt 1 ] && shell::logger::warn "Multiple branches selected — cherry-pick source is first: ${first_branch}"
-			shell::git::commit::pick::remote "${first_branch}"
-			;;
+	pick_remote)
+		[ "${count}" -gt 1 ] && shell::logger::warn "Multiple branches selected — cherry-pick source is first: ${first_branch}"
+		shell::git::commit::pick::remote "${first_branch}"
+		;;
 
-		backup)
-			shell::logger::info "Backing up ${count} ${branch_word}..."
-			for _b in "${selected_branches[@]}"; do
-				shell::logger::info "Backing up: ${_b}"
-				shell::git::branch::backup "${_b}" || shell::logger::warn "Backup failed for '${_b}' — continuing with remaining branches"
-			done
-			;;
+	backup)
+		shell::logger::info "Backing up ${count} ${branch_word}..."
+		for _b in "${selected_branches[@]}"; do
+			shell::logger::info "Backing up: ${_b}"
+			shell::git::branch::backup "${_b}" || shell::logger::warn "Backup failed for '${_b}' — continuing with remaining branches"
+		done
+		;;
 
-		push)
-			shell::logger::info "Pushing ${count} ${branch_word} to remote..."
-			for _b in "${selected_branches[@]}"; do
-				shell::logger::info "Pushing: ${_b}"
-				shell::git::branch::push "${_b}"
-			done
-			;;
+	push)
+		shell::logger::info "Pushing ${count} ${branch_word} to remote..."
+		for _b in "${selected_branches[@]}"; do
+			shell::logger::info "Pushing: ${_b}"
+			shell::git::branch::push "${_b}"
+		done
+		;;
 
-		remove)
-			# Extra confirmation before destructive removal.
-			shell::logger::warn "This will permanently remove ${count} ${branch_word} from local and origin"
-			for _b in "${selected_branches[@]}"; do
-				shell::logger::warn "  • ${_b}"
-			done
-			if shell::out::confirmz "Proceed with removal?"; then
-				shell::logger::info "Remove aborted"
-				return $RETURN_SUCCESS
-			fi
-			shell::git::branch::remove "${selected_branches[@]}"
-			;;
+	remove)
+		# Extra confirmation before destructive removal.
+		shell::logger::warn "This will permanently remove ${count} ${branch_word} from local and origin"
+		for _b in "${selected_branches[@]}"; do
+			shell::logger::warn "  • ${_b}"
+		done
+		if shell::out::confirmz "Proceed with removal?"; then
+			shell::logger::info "Remove aborted"
+			return $RETURN_SUCCESS
+		fi
+		shell::git::branch::remove "${selected_branches[@]}"
+		;;
 
-		sync)
-			shell::git::branch::sync
-			;;
+	sync)
+		shell::git::branch::sync
+		;;
 	esac
 
 	return $RETURN_SUCCESS
@@ -2789,8 +2794,8 @@ shell::git::branch::stash::preview::fzf() {
 	# Display the stash diff.
 	shell::logger::info "Showing diff for ${stash_ref}:"
 	if shell::is_command_available delta; then
-		eval "$cmd_show" 2>/dev/null | delta --no-gitconfig --line-numbers --navigate --dark 2>/dev/null \
-			|| eval "$cmd_show"
+		eval "$cmd_show" 2>/dev/null | delta --no-gitconfig --line-numbers --navigate --dark 2>/dev/null ||
+			eval "$cmd_show"
 	else
 		eval "$cmd_show"
 	fi
@@ -2908,9 +2913,9 @@ shell::git::branch::stash::apply::fzf() {
 		if shell::logger::assert "$cmd_apply" \
 			"Applied ${ref} successfully" \
 			"Failed to apply ${ref} — continuing with remaining stashes"; then
-			success_count=$(( success_count + 1 ))
+			success_count=$((success_count + 1))
 		else
-			failure_count=$(( failure_count + 1 ))
+			failure_count=$((failure_count + 1))
 		fi
 	done
 
@@ -3875,18 +3880,18 @@ shell::git::commit::message::base() {
 
 	local -a messages
 	case "$selected_category" in
-		"CI/CD Pipeline Triggers")             messages=("${ci_cd_messages[@]}") ;;
-		"Documentation and Non-Code Changes")  messages=("${docs_non_code_messages[@]}") ;;
-		"Workflow and Repository Maintenance") messages=("${workflow_maintenance_messages[@]}") ;;
-		"Project and Team Communication")      messages=("${team_communication_messages[@]}") ;;
-		"Hotfix and Emergency Patches")        messages=("${hotfix_emergency_messages[@]}") ;;
-		"Database and Migration")              messages=("${database_migration_messages[@]}") ;;
-		"Infrastructure and DevOps")           messages=("${infrastructure_devops_messages[@]}") ;;
-		"Code Quality and Cleanup")            messages=("${code_quality_messages[@]}") ;;
-		"Security and Compliance")             messages=("${security_compliance_messages[@]}") ;;
-		"Release and Versioning")              messages=("${release_versioning_messages[@]}") ;;
-		"Experimental and Research Purposes")  messages=("${experimental_research_messages[@]}") ;;
-		"Miscellaneous")                       messages=("${miscellaneous_messages[@]}") ;;
+	"CI/CD Pipeline Triggers") messages=("${ci_cd_messages[@]}") ;;
+	"Documentation and Non-Code Changes") messages=("${docs_non_code_messages[@]}") ;;
+	"Workflow and Repository Maintenance") messages=("${workflow_maintenance_messages[@]}") ;;
+	"Project and Team Communication") messages=("${team_communication_messages[@]}") ;;
+	"Hotfix and Emergency Patches") messages=("${hotfix_emergency_messages[@]}") ;;
+	"Database and Migration") messages=("${database_migration_messages[@]}") ;;
+	"Infrastructure and DevOps") messages=("${infrastructure_devops_messages[@]}") ;;
+	"Code Quality and Cleanup") messages=("${code_quality_messages[@]}") ;;
+	"Security and Compliance") messages=("${security_compliance_messages[@]}") ;;
+	"Release and Versioning") messages=("${release_versioning_messages[@]}") ;;
+	"Experimental and Research Purposes") messages=("${experimental_research_messages[@]}") ;;
+	"Miscellaneous") messages=("${miscellaneous_messages[@]}") ;;
 	esac
 
 	# ===========================================================================
@@ -4030,33 +4035,33 @@ shell::git::commit::create() {
 	# Step 2 — map commit type → emoji code.
 	local emoji
 	case "$selected_type" in
-		feat)              emoji=":sparkles:" ;;
-		fix)               emoji=":bug:" ;;
-		chore)             emoji=":wrench:" ;;
-		docs)              emoji=":books:" ;;
-		style)             emoji=":art:" ;;
-		refactor)          emoji=":recycle:" ;;
-		test)              emoji=":white_check_mark:" ;;
-		perf)              emoji=":chart_with_upwards_trend:" ;;
-		WIP)               emoji=":construction:" ;;
-		improvement)       emoji=":zap:" ;;
-		revert)            emoji=":rewind:" ;;
-		security)          emoji=":lock:" ;;
-		remove)            emoji=":fire:" ;;
-		"initial source")  emoji=":tada:" ;;
-		logs)              emoji=":loud_sound:" ;;
-		config)            emoji=":gear:" ;;
-		build)             emoji=":hammer:" ;;
-		dependency)        emoji=":package:" ;;
-		deployment)        emoji=":rocket:" ;;
-		localization)      emoji=":earth_americas:" ;;
-		search)            emoji=":mag:" ;;
-		experimental)      emoji=":alien:" ;;
-		"version tag")     emoji=":bookmark:" ;;
-		"silent changes")  emoji=":mute:" ;;
-		deprecation)       emoji=":warning:" ;;
-		release)           emoji=":gem:" ;;
-		*)                 emoji="" ;;
+	feat) emoji=":sparkles:" ;;
+	fix) emoji=":bug:" ;;
+	chore) emoji=":wrench:" ;;
+	docs) emoji=":books:" ;;
+	style) emoji=":art:" ;;
+	refactor) emoji=":recycle:" ;;
+	test) emoji=":white_check_mark:" ;;
+	perf) emoji=":chart_with_upwards_trend:" ;;
+	WIP) emoji=":construction:" ;;
+	improvement) emoji=":zap:" ;;
+	revert) emoji=":rewind:" ;;
+	security) emoji=":lock:" ;;
+	remove) emoji=":fire:" ;;
+	"initial source") emoji=":tada:" ;;
+	logs) emoji=":loud_sound:" ;;
+	config) emoji=":gear:" ;;
+	build) emoji=":hammer:" ;;
+	dependency) emoji=":package:" ;;
+	deployment) emoji=":rocket:" ;;
+	localization) emoji=":earth_americas:" ;;
+	search) emoji=":mag:" ;;
+	experimental) emoji=":alien:" ;;
+	"version tag") emoji=":bookmark:" ;;
+	"silent changes") emoji=":mute:" ;;
+	deprecation) emoji=":warning:" ;;
+	release) emoji=":gem:" ;;
+	*) emoji="" ;;
 	esac
 
 	# Step 3 — read commit description (non-empty, looped).
@@ -4679,9 +4684,9 @@ shell::git::tag::checkout() {
 
 	# Execute checkout.
 	if [ -n "$branch_name" ]; then
-		shell::logger::assert "$cmd_checkout" 			"Created and checked out branch '${branch_name}' from tag ${tag} (${commit_hash:0:8})" 			"Tag checkout aborted" || return $?
+		shell::logger::assert "$cmd_checkout" "Created and checked out branch '${branch_name}' from tag ${tag} (${commit_hash:0:8})" "Tag checkout aborted" || return $?
 	else
-		shell::logger::assert "$cmd_checkout" 			"Checked out tag ${tag} (${commit_hash:0:8}) — detached HEAD" 			"Tag checkout aborted" || return $?
+		shell::logger::assert "$cmd_checkout" "Checked out tag ${tag} (${commit_hash:0:8}) — detached HEAD" "Tag checkout aborted" || return $?
 	fi
 
 	return $RETURN_SUCCESS
@@ -4788,7 +4793,10 @@ shell::git::tag::checkout::fzf() {
 	for t in "${local_tags[@]}"; do
 		is_remote="false"
 		for rt in "${remote_tags[@]}"; do
-			[ "$t" = "$rt" ] && { is_remote="true"; break; }
+			[ "$t" = "$rt" ] && {
+				is_remote="true"
+				break
+			}
 		done
 		if [ "$is_remote" = "true" ]; then
 			label="$both_label"
@@ -4802,7 +4810,10 @@ shell::git::tag::checkout::fzf() {
 	for rt in "${remote_tags[@]}"; do
 		is_local="false"
 		for t in "${local_tags[@]}"; do
-			[ "$t" = "$rt" ] && { is_local="true"; break; }
+			[ "$t" = "$rt" ] && {
+				is_local="true"
+				break
+			}
 		done
 		if [ "$is_local" = "false" ]; then
 			tag_lines+=("${remote_label} : ${rt}")
@@ -4952,7 +4963,10 @@ shell::git::tag::all() {
 	for t in "${local_tags[@]}"; do
 		is_remote="false"
 		for rt in "${remote_tags[@]}"; do
-			[ "$t" = "$rt" ] && { is_remote="true"; break; }
+			[ "$t" = "$rt" ] && {
+				is_remote="true"
+				break
+			}
 		done
 		if [ "$is_remote" = "true" ]; then
 			origin_marker="BOTH"
@@ -4966,7 +4980,10 @@ shell::git::tag::all() {
 	for rt in "${remote_tags[@]}"; do
 		is_local="false"
 		for t in "${local_tags[@]}"; do
-			[ "$t" = "$rt" ] && { is_local="true"; break; }
+			[ "$t" = "$rt" ] && {
+				is_local="true"
+				break
+			}
 		done
 		if [ "$is_local" = "false" ]; then
 			all_tags+=("${rt}:REMOTE")
@@ -4981,7 +4998,7 @@ shell::git::tag::all() {
 	# ---------------------------------------------------------------------------
 	# Print formatted table.
 	# ---------------------------------------------------------------------------
-	local _lw=14   # label column width for printf alignment
+	local _lw=14 # label column width for printf alignment
 	local _hr="  ════════════════════════════════════════════════════════════════════════════════════════"
 
 	shell::logger::info ""
@@ -5114,7 +5131,10 @@ shell::git::tag::remove::fzf() {
 	for t in "${local_tags[@]}"; do
 		is_remote="false"
 		for rt in "${remote_tags[@]}"; do
-			[ "$t" = "$rt" ] && { is_remote="true"; break; }
+			[ "$t" = "$rt" ] && {
+				is_remote="true"
+				break
+			}
 		done
 		if [ "$is_remote" = "true" ]; then
 			label="$both_label"
@@ -5128,7 +5148,10 @@ shell::git::tag::remove::fzf() {
 	for rt in "${remote_tags[@]}"; do
 		is_local="false"
 		for t in "${local_tags[@]}"; do
-			[ "$t" = "$rt" ] && { is_local="true"; break; }
+			[ "$t" = "$rt" ] && {
+				is_local="true"
+				break
+			}
 		done
 		if [ "$is_local" = "false" ]; then
 			tag_lines+=("${remote_label} : ${rt}")
@@ -5388,62 +5411,62 @@ shell::git::commit::revert::fzf() {
 	local revert_description=""
 
 	case "$action" in
-		revert_auto)
+	revert_auto)
+		cmd_revert="git revert ${selected_hashes[*]}"
+		revert_description="Reverted ${count} ${hash_word} (auto-commit)"
+		;;
+	revert_no_commit)
+		cmd_revert="git revert -n ${selected_hashes[*]}"
+		revert_description="Reverted ${count} ${hash_word} (staged, no commit)"
+		;;
+	revert_no_edit)
+		cmd_revert="git revert --no-edit ${selected_hashes[*]}"
+		revert_description="Reverted ${count} ${hash_word} (auto-commit, no editor)"
+		;;
+	revert_edit)
+		cmd_revert="git revert --edit ${selected_hashes[*]}"
+		revert_description="Reverted ${count} ${hash_word} (custom message via editor)"
+		;;
+	revert_merge_m1)
+		if [ "$has_merge" = "false" ]; then
+			shell::logger::warn "No merge commits in selection — falling back to standard revert"
 			cmd_revert="git revert ${selected_hashes[*]}"
-			revert_description="Reverted ${count} ${hash_word} (auto-commit)"
-			;;
-		revert_no_commit)
-			cmd_revert="git revert -n ${selected_hashes[*]}"
-			revert_description="Reverted ${count} ${hash_word} (staged, no commit)"
-			;;
-		revert_no_edit)
-			cmd_revert="git revert --no-edit ${selected_hashes[*]}"
-			revert_description="Reverted ${count} ${hash_word} (auto-commit, no editor)"
-			;;
-		revert_edit)
-			cmd_revert="git revert --edit ${selected_hashes[*]}"
-			revert_description="Reverted ${count} ${hash_word} (custom message via editor)"
-			;;
-		revert_merge_m1)
-			if [ "$has_merge" = "false" ]; then
-				shell::logger::warn "No merge commits in selection — falling back to standard revert"
-				cmd_revert="git revert ${selected_hashes[*]}"
-				revert_description="Reverted ${count} ${hash_word} (auto-commit, fallback from merge)"
-			else
-				# Use the first merge hash for -m 1 revert
-				local first_merge
-				first_merge=$(printf '%s' "$merge_hashes" | awk '{print $1}')
-				cmd_revert="git revert -m 1 ${first_merge}"
-				revert_description="Reverted merge commit ${first_merge:0:8} (mainline parent 1)"
-			fi
-			;;
-		revert_range)
-			if [ "${count}" -lt 2 ]; then
-				shell::logger::warn "Range revert requires at least 2 commits — falling back to standard revert"
-				cmd_revert="git revert ${selected_hashes[*]}"
-				revert_description="Reverted ${count} ${hash_word} (auto-commit, fallback from range)"
-			else
-				# Hashes are newest-first from git log; range needs oldest..newest
-				# Cross-shell: iterate to find first and last elements
-				local first_h last_h tmp_h
-				first_h=""
-				last_h=""
-				for tmp_h in "${selected_hashes[@]}"; do
-					if [ -z "$first_h" ]; then
-						first_h="${tmp_h}"
-					fi
-					last_h="${tmp_h}"
-				done
-				# first_h = newest (first in git log order), last_h = oldest (last in git log order)
-				# Range syntax: git revert <oldest>..<newest> reverts everything AFTER oldest up to newest
-				cmd_revert="git revert ${last_h}..${first_h}"
-				revert_description="Reverted range ${last_h:0:8}..${first_h:0:8}"
-			fi
-			;;
-		revert_quiet)
-			cmd_revert="git revert -q ${selected_hashes[*]}"
-			revert_description="Reverted ${count} ${hash_word} (quiet mode)"
-			;;
+			revert_description="Reverted ${count} ${hash_word} (auto-commit, fallback from merge)"
+		else
+			# Use the first merge hash for -m 1 revert
+			local first_merge
+			first_merge=$(printf '%s' "$merge_hashes" | awk '{print $1}')
+			cmd_revert="git revert -m 1 ${first_merge}"
+			revert_description="Reverted merge commit ${first_merge:0:8} (mainline parent 1)"
+		fi
+		;;
+	revert_range)
+		if [ "${count}" -lt 2 ]; then
+			shell::logger::warn "Range revert requires at least 2 commits — falling back to standard revert"
+			cmd_revert="git revert ${selected_hashes[*]}"
+			revert_description="Reverted ${count} ${hash_word} (auto-commit, fallback from range)"
+		else
+			# Hashes are newest-first from git log; range needs oldest..newest
+			# Cross-shell: iterate to find first and last elements
+			local first_h last_h tmp_h
+			first_h=""
+			last_h=""
+			for tmp_h in "${selected_hashes[@]}"; do
+				if [ -z "$first_h" ]; then
+					first_h="${tmp_h}"
+				fi
+				last_h="${tmp_h}"
+			done
+			# first_h = newest (first in git log order), last_h = oldest (last in git log order)
+			# Range syntax: git revert <oldest>..<newest> reverts everything AFTER oldest up to newest
+			cmd_revert="git revert ${last_h}..${first_h}"
+			revert_description="Reverted range ${last_h:0:8}..${first_h:0:8}"
+		fi
+		;;
+	revert_quiet)
+		cmd_revert="git revert -q ${selected_hashes[*]}"
+		revert_description="Reverted ${count} ${hash_word} (quiet mode)"
+		;;
 	esac
 
 	# ---------------------------------------------------------------------------
@@ -5626,8 +5649,8 @@ shell::git::commit::spec::history::fzf() {
 		target_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
 	fi
 
-	if ! git rev-parse --verify --quiet "refs/heads/${target_branch}" >/dev/null 2>&1 && \
-	   ! git rev-parse --verify --quiet "refs/remotes/origin/${target_branch}" >/dev/null 2>&1; then
+	if ! git rev-parse --verify --quiet "refs/heads/${target_branch}" >/dev/null 2>&1 &&
+		! git rev-parse --verify --quiet "refs/remotes/origin/${target_branch}" >/dev/null 2>&1; then
 		shell::logger::error "Branch '${target_branch}' does not exist locally or on origin"
 		return $RETURN_INVALID
 	fi
@@ -5731,79 +5754,79 @@ shell::git::commit::spec::history::fzf() {
 			printf "\033[1;33m  Branch:  \033[0m%s\n" "${target_branch}"
 			printf "\033[1;33m  Repo:    \033[0m%s\n" "${repo_name}"
 			printf "\033[1;36m══════════════════════════════════════════════════════════════\033[0m\n\n"
-		} > "$tmpfile"
+		} >"$tmpfile"
 
 		case "$action" in
-			# -------------------------------------------------------------------
-			diff)
-				if [ "$has_delta" = "true" ]; then
-					git show --color=always "$commit_hash" 2>/dev/null \
-						| delta --no-gitconfig --line-numbers --navigate --dark 2>/dev/null \
-						>> "$tmpfile" \
-						|| git show --color=always "$commit_hash" 2>/dev/null >> "$tmpfile"
-				else
-					git show --color=always "$commit_hash" 2>/dev/null >> "$tmpfile"
-				fi
-				;;
+		# -------------------------------------------------------------------
+		diff)
+			if [ "$has_delta" = "true" ]; then
+				git show --color=always "$commit_hash" 2>/dev/null |
+					delta --no-gitconfig --line-numbers --navigate --dark 2>/dev/null \
+						>>"$tmpfile" ||
+					git show --color=always "$commit_hash" 2>/dev/null >>"$tmpfile"
+			else
+				git show --color=always "$commit_hash" 2>/dev/null >>"$tmpfile"
+			fi
+			;;
 
-			# -------------------------------------------------------------------
-			blame)
-				local -a changed_files_blame
-				while IFS= read -r f; do
-					[ -n "$f" ] && changed_files_blame+=("$f")
-				done < <(git diff-tree --no-commit-id --name-only -r "$commit_hash" 2>/dev/null)
+		# -------------------------------------------------------------------
+		blame)
+			local -a changed_files_blame
+			while IFS= read -r f; do
+				[ -n "$f" ] && changed_files_blame+=("$f")
+			done < <(git diff-tree --no-commit-id --name-only -r "$commit_hash" 2>/dev/null)
 
-				if [ "${#changed_files_blame[@]}" -eq 0 ]; then
-					printf "  (no files changed in this commit)\n" >> "$tmpfile"
-				else
-					printf "\033[1;35m  Files changed: %d\033[0m\n\n" "${#changed_files_blame[@]}" >> "$tmpfile"
-					local f_blame
-					for f_blame in "${changed_files_blame[@]}"; do
-						{
-							printf "\033[1;34m────────────────────────────────────────────────────────────\033[0m\n"
-							printf "\033[1;33m  %-6s %s\033[0m\n" "File:" "$f_blame"
-							printf "\033[1;34m────────────────────────────────────────────────────────────\033[0m\n"
-							git blame --date=short -c "${commit_hash}" -- "$f_blame" 2>/dev/null \
-								|| printf "  (blame not available for this file at this commit)\n"
-							printf "\n"
-						} >> "$tmpfile"
-					done
-				fi
-				;;
+			if [ "${#changed_files_blame[@]}" -eq 0 ]; then
+				printf "  (no files changed in this commit)\n" >>"$tmpfile"
+			else
+				printf "\033[1;35m  Files changed: %d\033[0m\n\n" "${#changed_files_blame[@]}" >>"$tmpfile"
+				local f_blame
+				for f_blame in "${changed_files_blame[@]}"; do
+					{
+						printf "\033[1;34m────────────────────────────────────────────────────────────\033[0m\n"
+						printf "\033[1;33m  %-6s %s\033[0m\n" "File:" "$f_blame"
+						printf "\033[1;34m────────────────────────────────────────────────────────────\033[0m\n"
+						git blame --date=short -c "${commit_hash}" -- "$f_blame" 2>/dev/null ||
+							printf "  (blame not available for this file at this commit)\n"
+						printf "\n"
+					} >>"$tmpfile"
+				done
+			fi
+			;;
 
-			# -------------------------------------------------------------------
-			file_history)
-				local -a changed_files_hist
-				while IFS= read -r f; do
-					[ -n "$f" ] && changed_files_hist+=("$f")
-				done < <(git diff-tree --no-commit-id --name-only -r "$commit_hash" 2>/dev/null)
+		# -------------------------------------------------------------------
+		file_history)
+			local -a changed_files_hist
+			while IFS= read -r f; do
+				[ -n "$f" ] && changed_files_hist+=("$f")
+			done < <(git diff-tree --no-commit-id --name-only -r "$commit_hash" 2>/dev/null)
 
-				if [ "${#changed_files_hist[@]}" -eq 0 ]; then
-					printf "  (no files changed in this commit)\n" >> "$tmpfile"
-				else
-					printf "\033[1;35m  Files changed: %d\033[0m\n\n" "${#changed_files_hist[@]}" >> "$tmpfile"
-					local f_hist hist_fmt
-					hist_fmt="%C(bold blue)%H (%h)%C(reset) %C(bold green)%ad%C(reset) %C(white)%an%C(reset) - %s"
-					for f_hist in "${changed_files_hist[@]}"; do
-						{
-							printf "\033[1;34m────────────────────────────────────────────────────────────\033[0m\n"
-							printf "\033[1;33m  History: %s\033[0m\n" "$f_hist"
-							printf "\033[1;34m────────────────────────────────────────────────────────────\033[0m\n"
-							git log --color=always --follow -p \
-								--format="${hist_fmt}" \
-								--date=format:'%Y-%m-%d %H:%M:%S' \
-								-- "$f_hist" 2>/dev/null \
-								|| printf "  (history not available for this file)\n"
-							printf "\n"
-						} >> "$tmpfile"
-					done
-				fi
-				;;
+			if [ "${#changed_files_hist[@]}" -eq 0 ]; then
+				printf "  (no files changed in this commit)\n" >>"$tmpfile"
+			else
+				printf "\033[1;35m  Files changed: %d\033[0m\n\n" "${#changed_files_hist[@]}" >>"$tmpfile"
+				local f_hist hist_fmt
+				hist_fmt="%C(bold blue)%H (%h)%C(reset) %C(bold green)%ad%C(reset) %C(white)%an%C(reset) - %s"
+				for f_hist in "${changed_files_hist[@]}"; do
+					{
+						printf "\033[1;34m────────────────────────────────────────────────────────────\033[0m\n"
+						printf "\033[1;33m  History: %s\033[0m\n" "$f_hist"
+						printf "\033[1;34m────────────────────────────────────────────────────────────\033[0m\n"
+						git log --color=always --follow -p \
+							--format="${hist_fmt}" \
+							--date=format:'%Y-%m-%d %H:%M:%S' \
+							-- "$f_hist" 2>/dev/null ||
+							printf "  (history not available for this file)\n"
+						printf "\n"
+					} >>"$tmpfile"
+				done
+			fi
+			;;
 
-			# -------------------------------------------------------------------
-			stat)
-				git show --stat --color=always "$commit_hash" 2>/dev/null >> "$tmpfile"
-				;;
+		# -------------------------------------------------------------------
+		stat)
+			git show --stat --color=always "$commit_hash" 2>/dev/null >>"$tmpfile"
+			;;
 		esac
 
 		# Show in tmux display-popup (blocking with -E) or fall back to less.
