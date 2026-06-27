@@ -3978,70 +3978,13 @@ shell::git::commit::create() {
 	fi
 
 	# ===========================================================================
-	# Empty commit mode — select a pre-defined message from a category.
+	# Empty commit mode — delegate to shell::git::commit::message::base.
 	# ===========================================================================
 	if [ "$empty_mode" = "true" ]; then
-
-		local -a ci_cd_messages=(
-			":rocket: chore: trigger CI build to test configuration changes"
-			":rocket: chore: deploy latest version to production environment"
-			":white_check_mark: test: force re-run of test suite for validation purposes"
-		)
-		local -a docs_non_code_messages=(
-			":books: docs: document recent architectural decisions and trade-offs"
-			":books: docs: add notes from the latest team meeting"
-			":package: dependency: document dependency updates in README.md"
-		)
-		local -a workflow_maintenance_messages=(
-			":recycle: chore: refresh stale pull request to resolve merge conflicts"
-			":recycle: chore: sync with main branch to keep feature branch up-to-date"
-			":sparkles: feat: initialize new feature branch setup"
-		)
-		local -a team_communication_messages=(
-			":tada: chore: announce upcoming team building event"
-			":warning: chore: notify team about planned server maintenance downtime"
-			":bookmark: docs: share details about achieving a key project milestone"
-		)
-		local -a experimental_research_messages=(
-			":alien: experimental: start working on experimental feature for research purposes"
-			":chart_with_upwards_trend: perf: log results of recent performance testing"
-			":books: docs: document feedback from recent user testing session"
-		)
-		local -a miscellaneous_messages=(
-			":busts_in_silhouette: chore: add new contributor to the project"
-			":memo: docs: record internal decision about project direction"
-			":bookmark: docs: mark completion of project milestone"
-		)
-
-		local selected_category
-		selected_category=$(shell::options::select \
-			"CI/CD Pipeline Triggers" \
-			"Documentation and Non-Code Changes" \
-			"Workflow and Repository Maintenance" \
-			"Project and Team Communication" \
-			"Experimental and Research Purposes" \
-			"Miscellaneous")
-
-		if [ -z "$selected_category" ]; then
-			shell::logger::warn "No category selected — aborting"
-			return $RETURN_SUCCESS
-		fi
-
-		local -a messages
-		case "$selected_category" in
-			"CI/CD Pipeline Triggers")             messages=("${ci_cd_messages[@]}") ;;
-			"Documentation and Non-Code Changes")  messages=("${docs_non_code_messages[@]}") ;;
-			"Workflow and Repository Maintenance")  messages=("${workflow_maintenance_messages[@]}") ;;
-			"Project and Team Communication")      messages=("${team_communication_messages[@]}") ;;
-			"Experimental and Research Purposes")  messages=("${experimental_research_messages[@]}") ;;
-			"Miscellaneous")                       messages=("${miscellaneous_messages[@]}") ;;
-		esac
-
 		local selected_message
-		selected_message=$(shell::options::select "${messages[@]}")
+		selected_message=$(shell::git::commit::message::base)
 
 		if [ -z "$selected_message" ]; then
-			shell::logger::warn "No message selected — aborting"
 			return $RETURN_SUCCESS
 		fi
 
