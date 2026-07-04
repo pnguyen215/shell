@@ -14,7 +14,7 @@
 #   The function checks whether the Oh My Zsh directory ($HOME/.oh-my-zsh) exists.
 #   If it exists, it prints a message indicating that Oh My Zsh is already installed.
 #   Otherwise, it proceeds to install Oh My Zsh by executing the installation script fetched via curl.
-#   In dry-run mode, the command is displayed using shell::logger::command_clip; otherwise, it is executed using shell::run_cmd_eval.
+#   In dry-run mode, the command is displayed using shell::logger::command_clip; otherwise, it is executed using shell::run::shell.
 #
 # Example:
 #   shell::install_oh_my_zsh         # Installs Oh My Zsh if needed.
@@ -46,7 +46,7 @@ shell::install_oh_my_zsh() {
 		if [ "$dry_run" = "true" ]; then
 			shell::logger::command_clip "$install_cmd"
 		else
-			shell::run_cmd_eval "$install_cmd"
+			shell::run::shell "$install_cmd"
 		fi
 
 		# Optionally, customize Zsh theme and plugins after installation:
@@ -70,7 +70,7 @@ shell::install_oh_my_zsh() {
 #   This function checks whether the Oh My Zsh directory ($HOME/.oh-my-zsh) exists.
 #   If it does, the function proceeds to remove it using 'rm -rf'. Additionally, if a backup of the original .zshrc
 #   (stored as $HOME/.zshrc.pre-oh-my-zsh) exists, it restores that backup by moving it back to $HOME/.zshrc.
-#   In dry-run mode, the commands are displayed using shell::logger::command_clip; otherwise, they are executed using shell::run_cmd_eval.
+#   In dry-run mode, the commands are displayed using shell::logger::command_clip; otherwise, they are executed using shell::run::shell.
 #
 # Example:
 #   shell::removal_oh_my_zsh         # Uninstalls Oh My Zsh if installed.
@@ -104,7 +104,7 @@ shell::removal_oh_my_zsh() {
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::command_clip "$remove_cmd"
 	else
-		shell::run_cmd_eval "$remove_cmd"
+		shell::run::shell "$remove_cmd"
 	fi
 
 	# Restore the original .zshrc from backup if available
@@ -116,7 +116,7 @@ shell::removal_oh_my_zsh() {
 			shell::logger::command_clip "$restore_cmd"
 			return 0
 		else
-			shell::run_cmd_eval "$restore_cmd"
+			shell::run::shell "$restore_cmd"
 		fi
 		shell::stdout "INFO: Original .zshrc restored from backup." 46
 	else

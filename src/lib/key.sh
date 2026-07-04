@@ -15,7 +15,7 @@
 #   The function checks that a filename is provided and that the specified file exists.
 #   If the file is not found, an error message is displayed.
 #   In dry-run mode, the command "source <filename>" is printed using shell::logger::command_clip.
-#   Otherwise, the file is sourced using shell::run_cmd to log the execution.
+#   Otherwise, the file is sourced using shell::run::command to log the execution.
 #
 # Example:
 #   shell::read_conf ~/.my-config                # Sources the configuration file.
@@ -52,7 +52,7 @@ shell::read_conf() {
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::command_clip "source \"$filename\""
 	else
-		shell::run_cmd source "$filename"
+		shell::run::command source "$filename"
 	fi
 }
 
@@ -122,7 +122,7 @@ shell::add_key_conf() {
 			shell::stdout "WARN: The key '$key' exists. Please consider updating it by using shell::fzf_update_key_conf" 11
 			return 0
 		fi
-		shell::run_cmd_eval "$cmd"
+		shell::run::shell "$cmd"
 		shell::stdout "INFO: Added configuration: $key (encoded value)" 46
 	fi
 }
@@ -197,7 +197,7 @@ shell::add_key_conf_comment() {
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::command_clip "$cmd"
 	else
-		shell::run_cmd_eval "$cmd"
+		shell::run::shell "$cmd"
 		shell::stdout "INFO: Added configuration: $key (encoded value) with comment" 46
 	fi
 }
@@ -340,7 +340,7 @@ shell::get_key_conf_value() {
 #   It extracts only the keys (before the '=') and uses fzf for interactive selection.
 #   Once a key is selected, it constructs a command to remove the line that starts with "key=" from the configuration file.
 #   The command uses sed with different options depending on the operating system (macOS or Linux).
-#   In dry-run mode, the command is printed using shell::logger::command_clip; otherwise, it is executed using shell::run_cmd_eval.
+#   In dry-run mode, the command is printed using shell::logger::command_clip; otherwise, it is executed using shell::run::shell.
 #
 # Example:
 #   shell::fzf_remove_key_conf         # Interactively select a key and remove its configuration entry.
@@ -403,7 +403,7 @@ shell::fzf_remove_key_conf() {
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::command_clip "$sed_cmd"
 	else
-		shell::run_cmd_eval "$sed_cmd"
+		shell::run::shell "$sed_cmd"
 		shell::stdout "INFO: Removed configuration for key: $selected_key" 46
 	fi
 }
@@ -489,7 +489,7 @@ shell::fzf_update_key_conf() {
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::command_clip "$sed_cmd"
 	else
-		shell::run_cmd_eval "$sed_cmd"
+		shell::run::shell "$sed_cmd"
 		shell::stdout "INFO: Updated configuration for key: $selected_key" 46
 	fi
 }
@@ -572,7 +572,7 @@ shell::exist_key_conf() {
 #   After selection, the function prompts for a new key name and checks if the new key already exists.
 #   If the new key does not exist, it constructs a sed command to replace the old key with the new key in the file.
 #   The sed command uses in-place editing options appropriate for macOS (sed -i '') or Linux (sed -i).
-#   In dry-run mode, the command is printed via shell::logger::command_clip; otherwise, it is executed using shell::run_cmd_eval.
+#   In dry-run mode, the command is printed via shell::logger::command_clip; otherwise, it is executed using shell::run::shell.
 #
 # Example:
 #   shell::fzf_rename_key_conf         # Interactively select a key and rename it.
@@ -645,7 +645,7 @@ shell::fzf_rename_key_conf() {
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::command_clip "$sed_cmd"
 	else
-		shell::run_cmd_eval "$sed_cmd"
+		shell::run::shell "$sed_cmd"
 		shell::stdout "INFO: Renamed key '$old_key' to '$new_key'" 46
 	fi
 }
@@ -795,7 +795,7 @@ shell::fzf_add_group_key_conf() {
 		if [ "$dry_run" = "true" ]; then
 			shell::logger::command_clip "$sed_cmd"
 		else
-			shell::run_cmd_eval "$sed_cmd"
+			shell::run::shell "$sed_cmd"
 			shell::stdout "INFO: Updated group '$group_name' with keys: $keys_csv" 46
 		fi
 	else
@@ -803,7 +803,7 @@ shell::fzf_add_group_key_conf() {
 		if [ "$dry_run" = "true" ]; then
 			shell::logger::command_clip "$cmd"
 		else
-			shell::run_cmd_eval "$cmd"
+			shell::run::shell "$cmd"
 			shell::stdout "INFO: Created group '$group_name' with keys: $keys_csv" 46
 		fi
 	fi
@@ -968,7 +968,7 @@ shell::fzf_remove_group_key_conf() {
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::command_clip "$sed_cmd"
 	else
-		shell::run_cmd_eval "$sed_cmd"
+		shell::run::shell "$sed_cmd"
 		shell::stdout "INFO: Removed group: $selected_group" 46
 	fi
 }
@@ -1051,7 +1051,7 @@ shell::fzf_update_group_key_conf() {
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::command_clip "$sed_cmd"
 	else
-		shell::run_cmd_eval "$sed_cmd"
+		shell::run::shell "$sed_cmd"
 		shell::stdout "INFO: Updated group '$selected_group' with new keys: $new_keys" 46
 	fi
 }
@@ -1072,7 +1072,7 @@ shell::fzf_update_group_key_conf() {
 #   After selection, the function prompts for a new group name.
 #   It then constructs a sed command to replace the old group name with the new one in the configuration file.
 #   The sed command uses in-place editing options appropriate for macOS (sed -i '') or Linux (sed -i).
-#   In dry-run mode, the command is printed using shell::logger::command_clip; otherwise, it is executed using shell::run_cmd_eval.
+#   In dry-run mode, the command is printed using shell::logger::command_clip; otherwise, it is executed using shell::run::shell.
 #
 # Example:
 #   shell::fzf_rename_group_key_conf         # Interactively select a group and rename it.
@@ -1132,7 +1132,7 @@ shell::fzf_rename_group_key_conf() {
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::command_clip "$sed_cmd"
 	else
-		shell::run_cmd_eval "$sed_cmd"
+		shell::run::shell "$sed_cmd"
 		shell::stdout "INFO: Renamed group '$old_group' to '$new_group'" 46
 	fi
 }
@@ -1290,7 +1290,7 @@ shell::fzf_view_group_key_conf() {
 #   After selection, it prompts for a new group name.
 #   The new group entry is then constructed with the new group name and the same comma-separated keys
 #   as the selected group, and appended to SHELL_GROUP_CONF_FILE.
-#   In dry-run mode, the final command is printed using shell::logger::command_clip; otherwise, it is executed using shell::run_cmd_eval.
+#   In dry-run mode, the final command is printed using shell::logger::command_clip; otherwise, it is executed using shell::run::shell.
 #
 # Example:
 #   shell::fzf_clone_group_key_conf         # Interactively select a group and create a clone with a new group name.
@@ -1366,7 +1366,7 @@ shell::fzf_clone_group_key_conf() {
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::command_clip "$cmd"
 	else
-		shell::run_cmd_eval "$cmd"
+		shell::run::shell "$cmd"
 		shell::stdout "INFO: Created new group '$new_group' as a clone of '$selected_group' with keys: $keys_csv" 46
 	fi
 }
@@ -1453,7 +1453,7 @@ shell::sync_group_key_conf() {
 	# Otherwise, replace the original configuration file with the new one.
 	if [ "$dry_run" = "true" ]; then
 		shell::clip_value "$(cat "$temp_file")"
-		shell::run_cmd_eval "sudo rm $temp_file"
+		shell::run::shell "sudo rm $temp_file"
 	else
 		local backup_file="$SHELL_GROUP_CONF_BACKUP_FILE"
 		# Change end of the backup file with YYYYMMDD format.
@@ -1462,8 +1462,8 @@ shell::sync_group_key_conf() {
 		if [ ! -f "$backup_file" ]; then
 			shell::create_file_if_not_exists "$backup_file"
 		fi
-		shell::run_cmd_eval "sudo cp $SHELL_GROUP_CONF_FILE $backup_file"
-		shell::run_cmd_eval "sudo mv $temp_file $SHELL_GROUP_CONF_FILE"
+		shell::run::shell "sudo cp $SHELL_GROUP_CONF_FILE $backup_file"
+		shell::run::shell "sudo mv $temp_file $SHELL_GROUP_CONF_FILE"
 		shell::stdout "INFO: Group configuration synchronized successfully." 46
 	fi
 }
@@ -1644,7 +1644,7 @@ shell::add_protected_key_conf() {
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::command_clip "$cmd"
 	else
-		shell::run_cmd_eval "$cmd"
+		shell::run::shell "$cmd"
 		shell::stdout "INFO: Protected key added: $key" 46
 	fi
 }
@@ -1770,7 +1770,7 @@ shell::fzf_remove_protected_key_conf() {
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::command_clip "$sed_cmd"
 	else
-		shell::run_cmd_eval "$sed_cmd"
+		shell::run::shell "$sed_cmd"
 		shell::stdout "INFO: Removed protected key: $selected_key" 46
 	fi
 }
@@ -1846,9 +1846,9 @@ shell::sync_protected_key_conf() {
 	if [ "$dry_run" = "true" ]; then
 		shell::stdout "DEBUG: Dry-run: Updated protected keys:" 244
 		cat "$temp_file"
-		shell::run_cmd_eval "sudo rm \"$temp_file\""
+		shell::run::shell "sudo rm \"$temp_file\""
 	else
-		shell::run_cmd_eval "sudo mv \"$temp_file\" \"$protected_file\""
+		shell::run::shell "sudo mv \"$temp_file\" \"$protected_file\""
 		shell::stdout "INFO: Protected keys synchronized successfully." 46
 	fi
 }

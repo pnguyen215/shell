@@ -19,7 +19,7 @@
 #
 # Requirements:
 #   - fzf must be installed.
-#   - Helper functions: shell::run_cmd_eval, shell::stdout, and shell::base::os.
+#   - Helper functions: shell::run::shell, shell::stdout, and shell::base::os.
 shell::fzf_copy() {
 	# Check for the help flag (-h)
 	if [ "$1" = "-h" ]; then
@@ -60,8 +60,8 @@ shell::fzf_copy() {
 	# Build the copy command.
 	local cmd="sudo cp \"$source_file\" \"$destination_file\""
 
-	# Execute the command (using shell::run_cmd_eval to log and run it).
-	shell::run_cmd_eval "$cmd"
+	# Execute the command (using shell::run::shell to log and run it).
+	shell::run::shell "$cmd"
 	shell::clip_value "$cmd"
 	shell::stdout "INFO: File copied successfully to $destination_file" 46
 }
@@ -84,7 +84,7 @@ shell::fzf_copy() {
 #
 # Requirements:
 #   - fzf must be installed.
-#   - Helper functions: shell::run_cmd_eval, shell::stdout, shell::base::os, shell::install_package, and shell::clip_value.
+#   - Helper functions: shell::run::shell, shell::stdout, shell::base::os, shell::install_package, and shell::clip_value.
 shell::fzf_move() {
 	# Check for the help flag (-h)
 	if [ "$1" = "-h" ]; then
@@ -125,8 +125,8 @@ shell::fzf_move() {
 	# Build the move command.
 	local cmd="sudo mv \"$source_file\" \"$destination_file\""
 
-	# Execute the command (using shell::run_cmd_eval to log and run it).
-	shell::run_cmd_eval "$cmd"
+	# Execute the command (using shell::run::shell to log and run it).
+	shell::run::shell "$cmd"
 	shell::clip_value "$cmd"
 	shell::stdout "INFO: File moved successfully to $destination_file" 46
 }
@@ -148,7 +148,7 @@ shell::fzf_move() {
 #
 # Requirements:
 #   - fzf must be installed.
-#   - Helper functions: shell::run_cmd_eval, shell::stdout, shell::base::os, shell::install_package, and shell::clip_value.
+#   - Helper functions: shell::run::shell, shell::stdout, shell::base::os, shell::install_package, and shell::clip_value.
 shell::fzf_remove() {
 	# Check for the help flag (-h)
 	if [ "$1" = "-h" ]; then
@@ -170,8 +170,8 @@ shell::fzf_remove() {
 	# Build the removal command.
 	local cmd="sudo rm -rf \"$target\""
 
-	# Execute the command (using shell::run_cmd_eval to log and run it).
-	shell::run_cmd_eval "$cmd"
+	# Execute the command (using shell::run::shell to log and run it).
+	shell::run::shell "$cmd"
 	shell::clip_value "$cmd"
 	shell::stdout "INFO: Removed successfully: $target" 46
 }
@@ -191,7 +191,7 @@ shell::fzf_remove() {
 #   and then launches 'fzf' in multi-select mode to allow interactive file selection.
 #   If one or more files are selected, a zip command is constructed to compress those files.
 #   In dry-run mode (-n), the command is printed (via shell::logger::command_clip) without execution;
-#   otherwise, it is executed using shell::run_cmd_eval.
+#   otherwise, it is executed using shell::run::shell.
 #   Finally, the absolute path of the created zip file is echoed.
 #
 # Example:
@@ -246,7 +246,7 @@ shell::fzf_zip_attachment() {
 		shell::logger::command_clip "$cmd_str"
 		return 0
 	else
-		shell::run_cmd "${cmd[@]}"
+		shell::run::command "${cmd[@]}"
 		shell::stdout "INFO: Zipping selected files from '$folder_path'" 46
 	fi
 

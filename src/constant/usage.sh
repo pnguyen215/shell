@@ -58,7 +58,7 @@ Notes:
   - Requires the 'ps' and 'kill' commands to be available.
   - Works on both macOS and Linux systems.
   - Uses different parsing approaches based on the detected operating system.
-  - Leverages shell::run_cmd for command execution and shell::logger::command_clip for dry-run mode.
+  - Leverages shell::run::command for command execution and shell::logger::command_clip for dry-run mode.
 "
 
 USAGE_SHELL_LIST_SSH_TUNNEL="
@@ -97,7 +97,7 @@ Notes:
   - Requires the 'ps' command to be available
   - Works on both macOS and Linux systems
   - Uses different parsing approaches based on the detected operating system
-  - Leverages shell::run_cmd_eval for command execution and shell::logger::command_clip for dry-run mode
+  - Leverages shell::run::shell for command execution and shell::logger::command_clip for dry-run mode
 "
 
 USAGE_SHELL_FZF_CWD_SSH_KEY="
@@ -149,7 +149,7 @@ Example usage:
 
 Requirements:
   - fzf must be installed.
-  - Assumes the presence of helper functions: shell::install_package, shell::stdout, shell::run_cmd_eval.
+  - Assumes the presence of helper functions: shell::install_package, shell::stdout, shell::run::shell.
 "
 
 USAGE_SHELL_READ_CONF="
@@ -168,7 +168,7 @@ Description:
   The function checks that a filename is provided and that the specified file exists.
   If the file is not found, an error message is displayed.
   In dry-run mode, the command 'source <filename >' is printed using shell::logger::command_clip.
-  Otherwise, the file is sourced using shell::run_cmd to log the execution.
+  Otherwise, the file is sourced using shell::run::command to log the execution.
 
 Example:
   shell::read_conf ~/.my-config                # Sources the configuration file.
@@ -264,7 +264,7 @@ Description:
   It extracts only the keys (before the '=') and uses fzf for interactive selection.
   Once a key is selected, it constructs a command to remove the line that starts with \"key=\" from the configuration file.
   The command uses sed with different options depending on the operating system (macOS or Linux).
-  In dry-run mode, the command is printed using shell::logger::command_clip; otherwise, it is executed using shell::run_cmd_eval.
+  In dry-run mode, the command is printed using shell::logger::command_clip; otherwise, it is executed using shell::run::shell.
 
 Example:
   shell::fzf_remove_key_conf         # Interactively select a key and remove its configuration entry.
@@ -333,7 +333,7 @@ Description:
   After selection, the function prompts for a new key name and checks if the new key already exists.
   If the new key does not exist, it constructs a sed command to replace the old key with the new key in the file.
   The sed command uses in-place editing options appropriate for macOS (sed -i '') or Linux (sed -i).
-  In dry-run mode, the command is printed via shell::logger::command_clip; otherwise, it is executed using shell::run_cmd_eval.
+  In dry-run mode, the command is printed via shell::logger::command_clip; otherwise, it is executed using shell::run::shell.
 
 Example:
   shell::fzf_rename_key_conf         # Interactively select a key and rename it.
@@ -461,7 +461,7 @@ Description:
   After selection, the function prompts for a new group name.
   It then constructs a sed command to replace the old group name with the new one in the configuration file.
   The sed command uses in-place editing options appropriate for macOS (sed -i '') or Linux (sed -i).
-  In dry-run mode, the command is printed using shell::logger::command_clip; otherwise, it is executed using shell::run_cmd_eval.
+  In dry-run mode, the command is printed using shell::logger::command_clip; otherwise, it is executed using shell::run::shell.
 
 Example:
   shell::fzf_rename_group_key_conf         # Interactively select a group and rename it.
@@ -526,7 +526,7 @@ Description:
   After selection, it prompts for a new group name.
   The new group entry is then constructed with the new group name and the same comma-separated keys
   as the selected group, and appended to SHELL_GROUP_CONF_FILE.
-  In dry-run mode, the final command is printed using shell::logger::command_clip; otherwise, it is executed using shell::run_cmd_eval.
+  In dry-run mode, the final command is printed using shell::logger::command_clip; otherwise, it is executed using shell::run::shell.
 "
 
 USAGE_SHELL_SYNC_GROUP_KEY_CONF="
@@ -879,7 +879,7 @@ Parameters:
 Description:
   This function uninstalls all packages installed via pip and pip3, including system packages,
   after user confirmation. It is designed to work on both Linux and macOS, with safety checks
-  and enhanced logging using shell::run_cmd_eval.
+  and enhanced logging using shell::run::shell.
 
 Example usage:
   shell::python::pip::uninstall::all       # Uninstalls all pip/pip3 packages after confirmation
@@ -1366,36 +1366,36 @@ Notes:
 "
 
 USAGE_SHELL_RUN_CMD="
-shell::run_cmd function
+shell::run::command function
 Executes a command and prints it for logging purposes.
 
 Usage:
-  shell::run_cmd [-h] <command>
+  shell::run::command [-h] <command>
 
 Parameters:
     - -h              : Optional. Displays this help message.
     - <command>       : The command to be executed.
 
 Description:
-  The \`shell::run_cmd\` function prints the command for logging before executing it.
+  The \`shell::run::command\` function prints the command for logging before executing it.
 
 Example usage:
-  shell::run_cmd ls -l
+  shell::run::command ls -l
 "
 
 USAGE_SHELL_RUN_CMD_EVAL="
-shell::run_cmd_eval function
+shell::run::shell function
 Execute a command using eval and print it for logging purposes.
 
 Usage:
-  shell::run_cmd_eval [-h] <command>
+  shell::run::shell [-h] <command>
 
 Parameters:
     - -h              : Optional. Displays this help message.
     - <command>       : The command to be executed (as a single string).
 
 Description:
-  The 'shell::run_cmd_eval' function executes a command by passing it to the \`eval\` command.
+  The 'shell::run::shell' function executes a command by passing it to the \`eval\` command.
   This allows the execution of complex commands with arguments, pipes, or redirection
   that are difficult to handle with standard execution.
   It logs the command before execution to provide visibility into what is being run.
@@ -1404,7 +1404,7 @@ Options:
   None
 
 Example usage:
-  shell::run_cmd_eval \"ls -l | grep txt\"
+  shell::run::shell \"ls -l | grep txt\"
 "
 
 USAGE_SHELL_IS_COMMAND_AVAILABLE="
@@ -1666,7 +1666,7 @@ Description:
   The function first checks for a dry-run flag (-n). It then verifies that at least two arguments remain.
   For each destination filename, it checks if the file already exists in the current working directory.
   If not, it builds the command to copy the source file (using sudo) to the destination.
-  In dry-run mode, the command is printed using shell::logger::command_clip; otherwise, it is executed using shell::run_cmd_eval.
+  In dry-run mode, the command is printed using shell::logger::command_clip; otherwise, it is executed using shell::run::shell.
 
 Example:
   shell::copy_files myfile.txt newfile.txt            # Copies myfile.txt to newfile.txt.
@@ -1711,7 +1711,7 @@ Description:
   The function first checks for a dry-run flag (-n). It then verifies that at least two arguments remain.
   For each destination filename, it checks if the file already exists in the current working directory.
   If not, it builds the command to copy the source file (using sudo) to the destination.
-  In dry-run mode, the command is printed using shell::logger::command_clip; otherwise, it is executed using shell::run_cmd_eval.
+  In dry-run mode, the command is printed using shell::logger::command_clip; otherwise, it is executed using shell::run::shell.
 
 Example:
   shell::copy_files myfile.txt newfile.txt                   # Copies myfile.txt to newfile.txt.
@@ -1737,7 +1737,7 @@ Description:
     - It checks whether the source file exists.
     - It verifies that the destination file (using the basename of the source) does not already exist in the destination folder.
     - It builds the command to move the file (using sudo mv).
-  In dry-run mode, the command is printed using shell::logger::command_clip; otherwise, the command is executed using shell::run_cmd.
+  In dry-run mode, the command is printed using shell::logger::command_clip; otherwise, the command is executed using shell::run::command.
   If an error occurs for a particular file (e.g., missing source or destination file conflict), the error is logged and the function continues with the next file.
 
 Example:
@@ -1760,7 +1760,7 @@ Parameters:
 Description:
   The function first checks for an optional dry-run flag (-n). It then verifies that a target argument is provided.
   It builds the command to remove the specified target using \"sudo rm -rf\".
-  In dry-run mode, the command is printed using shell::logger::command_clip; otherwise, it is executed using shell::run_cmd.
+  In dry-run mode, the command is printed using shell::logger::command_clip; otherwise, it is executed using shell::run::command.
 
 Example:
   shell::remove_files my-dir         # Removes the directory 'my-dir'.
@@ -1835,7 +1835,7 @@ Parameters:
 Description:
   The function first checks for an optional dry-run flag (-n) and then verifies that exactly one argument (the filename) is provided.
   It checks if the given file exists and, if so, determines the correct extraction command based on the file extension.
-  In dry-run mode, the command is printed using shell::logger::command_clip; otherwise, it is executed using shell::run_cmd_eval.
+  In dry-run mode, the command is printed using shell::logger::command_clip; otherwise, it is executed using shell::run::shell.
 
 Example:
   shell::unarchive archive.tar.gz           # Extracts archive.tar.gz.
@@ -1856,7 +1856,7 @@ Parameters:
 Description:
   This function retrieves the operating system type using shell::base::os. For macOS, it uses 'top' to sort processes by resident size (RSIZE)
   and filters the output to display processes consuming at least 100 MB. For Linux, it uses 'ps' to list processes sorted by memory usage.
-  In dry-run mode, the constructed command is printed using shell::logger::command_clip; otherwise, it is executed using shell::run_cmd_eval.
+  In dry-run mode, the constructed command is printed using shell::logger::command_clip; otherwise, it is executed using shell::run::shell.
 
 Example:
   shell::list_high_mem_usage       # Displays processes with high memory consumption.
@@ -1878,7 +1878,7 @@ Parameters:
 Description:
   This function determines the current operating system using shell::base::os. On macOS, it uses the 'open' command;
   on Linux, it uses 'xdg-open' (if available). If the required command is missing on Linux, an error is displayed.
-  In dry-run mode, the command is printed using shell::logger::command_clip; otherwise, it is executed using shell::run_cmd_eval.
+  In dry-run mode, the command is printed using shell::logger::command_clip; otherwise, it is executed using shell::run::shell.
 
 Example:
   shell::open_link https://example.com         # Opens the URL in the default browser.
@@ -1953,11 +1953,11 @@ Example:
 "
 
 USAGE_SHELL_EXECUTE_OR_EVICT="
-shell::execute_or_evict function
+shell::exec::safe function
 Executes a command or prints it based on dry-run mode.
 
 Usage:
-  shell::execute_or_evict [-h] <dry_run> <command>
+  shell::exec::safe [-h] <dry_run> <command>
 
 Parameters:
   - -h       : Optional. Displays this help message.
@@ -1965,7 +1965,7 @@ Parameters:
   - <command>: The command to execute or print.
 
 Example:
-  shell::execute_or_evict \"true\" \"echo Hello\"
+  shell::exec::safe \"true\" \"echo Hello\"
 "
 
 USAGE_SHELL_FZF_COPY="
@@ -2038,7 +2038,7 @@ Description:
   and then launches 'fzf' in multi-select mode to allow interactive file selection.
   If one or more files are selected, a zip command is constructed to compress those files.
   In dry-run mode (-n), the command is printed (via shell::logger::command_clip) without execution;
-  otherwise, it is executed using shell::run_cmd_eval.
+  otherwise, it is executed using shell::run::shell.
   Finally, the absolute path of the created zip file is echoed.
 
 Example:
@@ -2108,7 +2108,7 @@ Parameters:
 
 Description:
   This function downloads and executes the official Homebrew installation
-  script via curl. The command is executed using shell::run_cmd_eval, which logs
+  script via curl. The command is executed using shell::run::shell, which logs
   the command before executing it.
 "
 
@@ -2127,7 +2127,7 @@ Description:
   If Homebrew is detected, it uninstalls Homebrew by running the official uninstall
   script. Additionally, it removes Homebrew-related lines from the user's shell
   profile (e.g., $HOME/.zprofile) using sed. The commands are executed via
-  shell::run_cmd_eval to ensure they are logged prior to execution.
+  shell::run::shell to ensure they are logged prior to execution.
 "
 
 USAGE_SHELL_INSTALL_OH_MY_ZSH="
@@ -2145,7 +2145,7 @@ Description:
   The function checks whether the Oh My Zsh directory ($HOME/.oh-my-zsh) exists.
   If it exists, it prints a message indicating that Oh My Zsh is already installed.
   Otherwise, it proceeds to install Oh My Zsh by executing the installation script fetched via curl.
-  In dry-run mode, the command is displayed using shell::logger::command_clip; otherwise, it is executed using shell::run_cmd_eval.
+  In dry-run mode, the command is displayed using shell::logger::command_clip; otherwise, it is executed using shell::run::shell.
 
 Example:
   shell::install_oh_my_zsh         # Installs Oh My Zsh if needed.
@@ -2167,7 +2167,7 @@ Description:
   This function checks whether the Oh My Zsh directory ($HOME/.oh-my-zsh) exists.
   If it does, the function proceeds to remove it using 'rm -rf'. Additionally, if a backup of the original .zshrc
   (stored as $HOME/.zshrc.pre-oh-my-zsh) exists, it restores that backup by moving it back to $HOME/.zshrc.
-  In dry-run mode, the commands are displayed using shell::logger::command_clip; otherwise, they are executed using shell::run_cmd_eval.
+  In dry-run mode, the commands are displayed using shell::logger::command_clip; otherwise, they are executed using shell::run::shell.
 
 Example:
   shell::removal_oh_my_zsh         # Uninstalls Oh My Zsh if installed.
@@ -2191,7 +2191,7 @@ Parameters:
 Description:
   The function first checks for an optional dry-run flag. It then verifies that at least three arguments are provided.
   If the bot token or chat ID is missing, it prints an error message. Otherwise, it constructs a curl command to send
-  the message via Telegram's API. In dry-run mode, the command is printed using shell::logger::command_clip; otherwise, it is executed using shell::run_cmd_eval.
+  the message via Telegram's API. In dry-run mode, the command is printed using shell::logger::command_clip; otherwise, it is executed using shell::run::shell.
 
 Example:
   shell::telegram::send 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 987654321 \"Hello, World!\"
@@ -2469,7 +2469,7 @@ Description:
   and then uses fzf to let the user select a configuration key to remove.
   It builds an OS-specific sed command to delete the line containing the selected key.
   In dry-run mode, the command is printed using shell::logger::command_clip; otherwise, it is executed asynchronously
-  using shell::async with shell::run_cmd_eval.
+  using shell::async with shell::run::shell.
 
 Example:
   shell::remove_profile_conf my_profile
@@ -2536,7 +2536,7 @@ Description:
   It then uses fzf to allow the user to select the existing key to rename.
   After prompting for a new key name and verifying that it does not already exist,
   the function constructs an OS-specific sed command to replace the old key with the new one.
-  In dry-run mode, the command is printed via shell::logger::command_clip; otherwise, it is executed using shell::run_cmd_eval.
+  In dry-run mode, the command is printed via shell::logger::command_clip; otherwise, it is executed using shell::run::shell.
 
 Example:
   shell::rename_profile_conf_key my_profile
@@ -2612,11 +2612,11 @@ Returns:
 "
 
 USAGE_SHELL_RUN_CMD_OUTLET="
-shell::run_cmd_outlet function
+shell::run::silent function
 Executes a given command using the shell's eval function.
 
 Usage:
-  shell::run_cmd_outlet [-h] <command>
+  shell::run::silent [-h] <command>
 
 Parameters:
   - -h        : Optional. Displays this help message.
@@ -2628,7 +2628,7 @@ Description:
   The function also checks for a help flag (-h) and displays usage information if present.
 
 Example usage:
-  shell::run_cmd_outlet \"ls -l\"
+  shell::run::silent \"ls -l\"
 "
 
 USAGE_SHELL_RETRIEVE_CURRENT_GH_DEFAULT_BRANCH="
@@ -2644,7 +2644,7 @@ Parameters:
 Description:
   This function checks if the current directory is a Git repository and, if so,
   determines the default branch by inspecting the 'origin' remote using
-  'git remote show origin'. It utilizes shell::run_cmd_eval for command
+  'git remote show origin'. It utilizes shell::run::shell for command
   execution and logging.
 "
 
@@ -2661,7 +2661,7 @@ Parameters:
 Description:
   This function checks if the current directory is a Git repository and, if so,
   determines the name of the currently active branch.
-  It utilizes shell::run_cmd_outlet for command execution and output capture.
+  It utilizes shell::run::silent for command execution and output capture.
 "
 
 USAGE_SHELL_VALIDATE_INI_SECTION_NAME="
