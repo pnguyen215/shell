@@ -3190,6 +3190,250 @@ shell::ask::text() {
 	echo "$entered_value"
 }
 
+# shell::ask::password function
+# Prompts the user for a password and returns the entered value.
+# The input is hidden (not echoed to the terminal) and the function requires a non-empty password.
+#
+# Usage:
+#   shell::ask::password <question>
+#
+# Parameters:
+#   - <question> : The question/prompt to display to the user.
+#
+# Returns:
+#   The non-empty password entered by the user (as output to stdout)
+#
+# Description:
+#   This function prompts the user with a question and waits for a password input.
+#   The input is hidden from the terminal using `read -s` so it is never echoed.
+#   It validates that the user enters a non-empty value and will continue
+#   prompting until a valid value is provided.
+#   The function supports a help flag (-h) to display usage information.
+#
+# Example:
+#   password=$(shell::ask::password "Enter your password:")
+#   echo "Password length: ${#password}"
+#   token=$(shell::ask::password "Enter your API token:")
+shell::ask::password() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Prompts the user for a password and returns the entered value (input hidden)."
+		shell::logger::usage "shell::ask::password [-h | --help] <question>"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::ask::password \"Enter your password:\""
+		return $RETURN_SUCCESS
+	fi
+
+	if [ -z "$1" ]; then
+		shell::logger::error "Question cannot be empty."
+		return $RETURN_FAILURE
+	fi
+
+	local question="$1"
+	local entered_value
+	local prompt
+	prompt=$(shell::stdout "[p] $question " 208 -n)
+
+	while true; do
+		printf "%s" "$prompt" >&2
+		read -r -s entered_value
+		printf "\n" >&2
+		entered_value="${entered_value#"${entered_value%%[![:space:]]*}"}"
+		entered_value="${entered_value%"${entered_value##*[![:space:]]}"}"
+		if [ -n "$entered_value" ]; then
+			break
+		else
+			shell::logger::error "Password cannot be empty. Please try again."
+		fi
+	done
+	echo "$entered_value"
+}
+
+# shell::ask::number function
+# Prompts the user for a numeric value and returns the entered number.
+# The function requires a valid numeric input (integer or decimal).
+#
+# Usage:
+#   shell::ask::number <question>
+#
+# Parameters:
+#   - <question> : The question/prompt to display to the user.
+#
+# Returns:
+#   The valid numeric value entered by the user (as output to stdout)
+#
+# Description:
+#   This function prompts the user with a question and waits for numeric input.
+#   It validates that the user enters a valid integer or decimal number and will
+#   continue prompting until a valid value is provided.
+#   The function supports a help flag (-h) to display usage information.
+#
+# Example:
+#   age=$(shell::ask::number "Enter your age:")
+#   echo "Age: $age"
+#   price=$(shell::ask::number "Enter the price:")
+#   echo "Price: $price"
+shell::ask::number() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Prompts the user for a numeric value and returns the entered number."
+		shell::logger::usage "shell::ask::number [-h | --help] <question>"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::ask::number \"Enter your age:\""
+		shell::logger::example "shell::ask::number \"Enter the price:\""
+		return $RETURN_SUCCESS
+	fi
+
+	if [ -z "$1" ]; then
+		shell::logger::error "Question cannot be empty."
+		return $RETURN_FAILURE
+	fi
+
+	local question="$1"
+	local entered_value
+	local prompt
+	prompt=$(shell::stdout "[n] $question " 208 -n)
+
+	while true; do
+		printf "%s" "$prompt" >&2
+		read -r entered_value
+		entered_value="${entered_value#"${entered_value%%[![:space:]]*}"}"
+		entered_value="${entered_value%"${entered_value##*[![:space:]]}"}"
+		if [[ "$entered_value" =~ ^-?[0-9]+(\.[0-9]+)?$ ]]; then
+			break
+		else
+			shell::logger::error "Please enter a valid numeric value (e.g., 42 or 3.14)."
+		fi
+	done
+	echo "$entered_value"
+}
+
+# shell::ask::path function
+# Prompts the user for a filesystem path and returns the entered path.
+# The function validates the path according to the specified rules.
+#
+# Usage:
+#   shell::ask::path [--exists] [--dir] [--file] [--writable] [--readable] <question>
+#
+# Parameters:
+#   - <question>   : The question/prompt to display to the user.
+#   - --exists     : Optional. Require the path to exist on the filesystem.
+#   - --dir        : Optional. Require the path to be an existing directory (implies --exists).
+#   - --file       : Optional. Require the path to be an existing regular file (implies --exists).
+#   - --writable   : Optional. Require the path to be writable.
+#   - --readable   : Optional. Require the path to be readable.
+#
+# Returns:
+#   The valid filesystem path entered by the user (as output to stdout)
+#
+# Description:
+#   This function prompts the user with a question and waits for a filesystem path input.
+#   It trims surrounding whitespace, expands a leading tilde (~) to $HOME, and validates
+#   the path according to any flags provided. It will continue prompting until all
+#   constraints are satisfied.
+#   The function supports a help flag (-h) to display usage information.
+#
+# Example:
+#   config=$(shell::ask::path --file --readable "Enter the config file path:")
+#   echo "Config: $config"
+#   output_dir=$(shell::ask::path --dir --writable "Enter the output directory:")
+#   echo "Output: $output_dir"
+#   dest=$(shell::ask::path "Enter the destination path:")
+shell::ask::path() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Prompts the user for a filesystem path and returns the entered path."
+		shell::logger::usage "shell::ask::path [-h | --help] [--exists] [--dir] [--file] [--writable] [--readable] <question>"
+		shell::logger::option "-h, --help"  "Show this help message"
+		shell::logger::option "--exists"    "Require the path to exist on the filesystem"
+		shell::logger::option "--dir"       "Require the path to be an existing directory"
+		shell::logger::option "--file"      "Require the path to be an existing regular file"
+		shell::logger::option "--writable"  "Require the path to be writable"
+		shell::logger::option "--readable"  "Require the path to be readable"
+		shell::logger::example "shell::ask::path \"Enter the destination path:\""
+		shell::logger::example "shell::ask::path --dir \"Enter directory:\""
+		shell::logger::example "shell::ask::path --file --readable \"Enter config file:\""
+		return $RETURN_SUCCESS
+	fi
+
+	local require_exists="false"
+	local require_dir="false"
+	local require_file="false"
+	local require_writable="false"
+	local require_readable="false"
+
+	while [[ "$1" == --* ]]; do
+		case "$1" in
+		--exists)   require_exists="true";  shift ;;
+		--dir)      require_dir="true";     require_exists="true"; shift ;;
+		--file)     require_file="true";    require_exists="true"; shift ;;
+		--writable) require_writable="true"; shift ;;
+		--readable) require_readable="true"; shift ;;
+		*)
+			shell::logger::error "Unknown option: $1"
+			return $RETURN_FAILURE
+			;;
+		esac
+	done
+
+	if [ -z "$1" ]; then
+		shell::logger::error "Question cannot be empty."
+		return $RETURN_FAILURE
+	fi
+
+	local question="$1"
+	local entered_value
+	local prompt
+	prompt=$(shell::stdout "[p] $question " 208 -n)
+
+	while true; do
+		printf "%s" "$prompt" >&2
+		read -r entered_value
+		entered_value="${entered_value#"${entered_value%%[![:space:]]*}"}"
+		entered_value="${entered_value%"${entered_value##*[![:space:]]}"}"
+
+		if [ -z "$entered_value" ]; then
+			shell::logger::error "Path cannot be empty. Please enter a valid path."
+			continue
+		fi
+
+		# Expand leading tilde to $HOME
+		entered_value="${entered_value/#\~/$HOME}"
+
+		local valid="true"
+
+		if [ "$require_exists" = "true" ] && [ ! -e "$entered_value" ]; then
+			shell::logger::error "Path '$entered_value' does not exist."
+			valid="false"
+		fi
+
+		if [ "$valid" = "true" ] && [ "$require_dir" = "true" ] && [ ! -d "$entered_value" ]; then
+			shell::logger::error "Path '$entered_value' is not a directory."
+			valid="false"
+		fi
+
+		if [ "$valid" = "true" ] && [ "$require_file" = "true" ] && [ ! -f "$entered_value" ]; then
+			shell::logger::error "Path '$entered_value' is not a regular file."
+			valid="false"
+		fi
+
+		if [ "$valid" = "true" ] && [ "$require_writable" = "true" ] && [ ! -w "$entered_value" ]; then
+			shell::logger::error "Path '$entered_value' is not writable."
+			valid="false"
+		fi
+
+		if [ "$valid" = "true" ] && [ "$require_readable" = "true" ] && [ ! -r "$entered_value" ]; then
+			shell::logger::error "Path '$entered_value' is not readable."
+			valid="false"
+		fi
+
+		if [ "$valid" = "true" ]; then
+			break
+		fi
+	done
+	echo "$entered_value"
+}
+
 # shell::options::select function
 # Prompts the user to select an option from a list of choices.
 #
