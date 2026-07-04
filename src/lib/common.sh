@@ -3127,12 +3127,12 @@ shell::ask::accept() {
 	done
 }
 
-# shell::out::ask function
+# shell::ask::text function
 # Prompts the user with a question and returns the entered value.
 # The function will keep prompting until a non-empty value is entered.
 #
 # Usage:
-#   shell::out::ask <question>
+#   shell::ask::text <question>
 #
 # Parameters:
 #   - <question> : The question/prompt to display to the user.
@@ -3149,17 +3149,17 @@ shell::ask::accept() {
 #   but requires it to be non-empty.
 #
 # Example:
-#   name=$(shell::out::ask "What is your name?")
+#   name=$(shell::ask::text "What is your name?")
 #   echo "Hello, $name"
-#   email=$(shell::out::ask "Enter your email address:")
+#   email=$(shell::ask::text "Enter your email address:")
 #   echo "Email: $email"
-shell::out::ask() {
+shell::ask::text() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Prompts the user with a question and returns the entered value."
-		shell::logger::usage "shell::out::ask [-h | --help] <question>"
+		shell::logger::usage "shell::ask::text [-h | --help] <question>"
 		shell::logger::option "-h, --help" "Show this help message"
-		shell::logger::example "shell::out::ask \"What is your name?\""
+		shell::logger::example "shell::ask::text \"What is your name?\""
 		return $RETURN_SUCCESS
 	fi
 	if [ -z "$1" ]; then
