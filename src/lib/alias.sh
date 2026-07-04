@@ -402,3 +402,23 @@ alias satxt="shell::ask::text"
 alias satxt-n="shell::ask::text -n"
 alias sattext="shell::ask::text"
 alias sattext-n="shell::ask::text -n"
+
+# shell::ask::password
+alias sap="shell::ask::password"
+alias sap-n="shell::ask::password -n"
+alias sapp="shell::ask::password"
+alias sapp-n="shell::ask::password -n"
+alias sappassword="shell::ask::password"
+alias sappassword-n="shell::ask::password -n"
+
+# shell::ask::number
+alias san="shell::ask::number"
+alias san-n="shell::ask::number -n"
+alias sann="shell::ask::number"
+alias sann-n="shell::ask::number -n"
+alias sannumber="shell::ask::number"
+alias sannumber-n="shell::ask::number -n"
+
+# shell::ask::path
+alias sapath="shell::ask::path"
+alias sapath-n="shell::ask::path -n"
