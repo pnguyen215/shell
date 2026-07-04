@@ -4480,7 +4480,7 @@ Description:
   It validates that the user enters a non-empty value and will continue
   prompting until a valid value is provided.
   The function supports a help flag (-h) to display usage information.
-  Unlike shell::out::confirm which expects yes/no answers, this function accepts any text input
+  Unlike shell::ask::reply which expects yes/no answers, this function accepts any text input
   but requires it to be non-empty.
 
 Example:
@@ -4491,11 +4491,11 @@ Example:
 "
 
 USAGE_SHELL_ASK="
-shell::out::confirm function
+shell::ask::reply function
 Interactively asks a yes/no question and returns 1 for yes, 0 for no.
 
 Usage:
-  shell::out::confirm [-h] <question>
+  shell::ask::reply [-h] <question>
 
 Parameters:
   - -h          : Optional help flag. Displays this help message.
@@ -4509,8 +4509,8 @@ Description:
   The function supports a help flag (-h) to display usage information.
 
 Example:
-  shell::out::confirm \"Do you want to continue?\"
-  if shell::out::confirm \"Do you want to proceed?\"; then
+  shell::ask::reply \"Do you want to continue?\"
+  if shell::ask::reply \"Do you want to proceed?\"; then
       echo \"User answered yes.\"
   else
       echo \"User answered no.\"

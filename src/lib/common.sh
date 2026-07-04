@@ -1497,7 +1497,7 @@ shell::download_dataset() {
 	local base="$filename"
 	if [ -e "$base" ]; then
 		local asked
-		asked=$(shell::out::confirm "Do you want to overwrite the existing file? $base")
+		asked=$(shell::ask::reply "Do you want to overwrite the existing file? $base")
 		if [ "$asked" = "yes" ]; then
 			if [ "$dry_run" = "true" ]; then
 				shell::logger::command_clip "sudo rm \"$base\""
@@ -2968,11 +2968,11 @@ shell::encode_base64_file() {
 	fi
 }
 
-# shell::out::confirm function
+# shell::ask::reply function
 # Interactively asks a yes/no question and returns 1 for yes, 0 for no.
 #
 # Usage:
-#   shell::out::confirm <question>
+#   shell::ask::reply <question>
 #
 # Parameters:
 #   - <question> : The question to ask the user.
@@ -2985,18 +2985,18 @@ shell::encode_base64_file() {
 #   The function supports a help flag (-h) to display usage information.
 #
 # Example:
-#   shell::out::confirm "Do you want to continue?"
-#   if shell::out::confirm "Do you want to proceed?"; then
+#   shell::ask::reply "Do you want to continue?"
+#   if shell::ask::reply "Do you want to proceed?"; then
 #       echo "User answered yes."
 #   else
 #       echo "User answered no."
-shell::out::confirm() {
+shell::ask::reply() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Prompts the user with a yes/no question and returns 1 for yes, 0 for no."
-		shell::logger::usage "shell::out::confirm [-h | --help] <question>"
+		shell::logger::usage "shell::ask::reply [-h | --help] <question>"
 		shell::logger::option "-h, --help" "Show this help message"
-		shell::logger::example "shell::out::confirm \"Are you sure you want to continue?\""
+		shell::logger::example "shell::ask::reply \"Are you sure you want to continue?\""
 		return $RETURN_SUCCESS
 	fi
 
@@ -3145,7 +3145,7 @@ shell::ask::accept() {
 #   It validates that the user enters a non-empty value and will continue
 #   prompting until a valid value is provided.
 #   The function supports a help flag (-h) to display usage information.
-#   Unlike shell::out::confirm which expects yes/no answers, this function accepts any text input
+#   Unlike shell::ask::reply which expects yes/no answers, this function accepts any text input
 #   but requires it to be non-empty.
 #
 # Example:
