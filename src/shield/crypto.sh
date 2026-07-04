@@ -352,7 +352,7 @@ shell::cryptography::create_password_hash() {
 #   0 on success, 1 on failure (e.g., file not found, invalid key, or encryption failure).
 #
 # Notes:
-#   - Relies on the shell::stdout, shell::logger::command_clip, and shell::run::shell functions for output and command execution.
+#   - Relies on the shell::stdout, shell::logger::command_clip, and shell::exec::shell functions for output and command execution.
 #   - Requires OpenSSL to be installed.
 #   - The encryption key must be 64 bytes (hex) for AES-256-CBC.
 #   - The initialization vector must be 32 bytes (hex) for AES-256-CBC.
@@ -442,7 +442,7 @@ shell::encode::file::aes256cbc() {
 	fi
 
 	# Encrypt the file using the constructed command
-	if ! shell::run::shell "$cmd" 2>/dev/null; then
+	if ! shell::exec::shell "$cmd" 2>/dev/null; then
 		shell::stdout "ERR: shell::encode::file::aes256cbc: Encryption failed. Please check your key and try again." 196 >&2
 		return 1
 	fi
@@ -481,7 +481,7 @@ shell::encode::file::aes256cbc() {
 #   0 on success, 1 on failure (e.g., file not found, invalid key, or decryption failure).
 #
 # Notes:
-#   - Relies on the shell::stdout, shell::logger::command_clip, and shell::run::shell functions for output and command execution.
+#   - Relies on the shell::stdout, shell::logger::command_clip, and shell::exec::shell functions for output and command execution.
 #   - Requires OpenSSL to be installed.
 #   - The encryption key must be 64 bytes (hex) for AES-256-CBC.
 #   - The initialization vector must be 32 bytes (hex) for AES-256-CBC.
@@ -573,7 +573,7 @@ shell::decode::file::aes256cbc() {
 	fi
 
 	# Decrypt the file using the constructed command
-	if ! shell::run::shell "$cmd" 2>/dev/null; then
+	if ! shell::exec::shell "$cmd" 2>/dev/null; then
 		shell::stdout "ERR: shell::decode::file::aes256cbc: Decryption failed. Please check your key and try again." 196 >&2
 		return 1
 	fi

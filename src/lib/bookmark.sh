@@ -157,8 +157,8 @@ shell::remove_bookmark() {
 	# Using single quotes around the grep pattern helps avoid issues on Linux.
 	local cmd="grep -v '|${bookmark_name}$' \"$bookmarks_file\" > \"$tmp_file\" && mv \"$tmp_file\" \"$bookmarks_file\""
 
-	# Execute the command using shell::run::shell.
-	if shell::run::shell "$cmd"; then
+	# Execute the command using shell::exec::shell.
+	if shell::exec::shell "$cmd"; then
 		shell::stdout "INFO: Bookmark '$bookmark_name' removed" 46
 	else
 		shell::stdout "ERR: Failed to remove bookmark '$bookmark_name'" 196
@@ -217,8 +217,8 @@ shell::remove_bookmark_linux() {
 		sed_cmd="sed -i '/|${bookmark_name}\$/d' \"$bookmarks_file\""
 	fi
 
-	# Execute the sed command using shell::run::shell.
-	if shell::run::shell "$sed_cmd"; then
+	# Execute the sed command using shell::exec::shell.
+	if shell::exec::shell "$sed_cmd"; then
 		shell::stdout "INFO: Bookmark '$bookmark_name' removed" 46
 	else
 		shell::stdout "ERR: Failed to remove bookmark '$bookmark_name'" 196
@@ -494,7 +494,7 @@ shell::fzf_list_bookmark_up() {
 # Requirements:
 #   - fzf must be installed.
 #   - The 'bookmarks_file' variable must be set.
-#   - Helper functions: shell::install_package, shell::stdout, shell::logger::command_clip, shell::run::shell.
+#   - Helper functions: shell::install_package, shell::stdout, shell::logger::command_clip, shell::exec::shell.
 #
 # Example usage:
 #   shell::fzf_remove_bookmark_down         # Interactively select and remove inactive bookmarks.
@@ -614,7 +614,7 @@ shell::fzf_remove_bookmark_down() {
 # Requirements:
 #   - fzf must be installed.
 #   - The 'bookmarks_file' variable must be set.
-#   - Helper functions: shell::install_package, shell::stdout, shell::logger::command_clip, shell::run::shell.
+#   - Helper functions: shell::install_package, shell::stdout, shell::logger::command_clip, shell::exec::shell.
 #
 # Example usage:
 #   shell::fzf_remove_bookmark       # Interactively select and remove a bookmark.
@@ -714,7 +714,7 @@ shell::fzf_remove_bookmark() {
 #
 # Requirements:
 #   - The 'bookmarks_file' variable must be set.
-#   - Helper functions: shell::stdout, shell::logger::command_clip, shell::run::shell, shell::base::os.
+#   - Helper functions: shell::stdout, shell::logger::command_clip, shell::exec::shell, shell::base::os.
 #
 # Example usage:
 #   shell::rename_bookmark old_name new_name
@@ -794,7 +794,7 @@ shell::rename_bookmark() {
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::command_clip "$sed_cmd"
 	else
-		shell::run::shell "$sed_cmd"
+		shell::exec::shell "$sed_cmd"
 		shell::stdout "INFO: Renamed bookmark '$old_name' to '$new_name'" 46
 	fi
 }
@@ -986,7 +986,7 @@ shell::rename_dir_base_bookmark() {
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::command_clip "$rename_cmd && $update_cmd"
 	else
-		shell::run::shell "$rename_cmd && $update_cmd"
+		shell::exec::shell "$rename_cmd && $update_cmd"
 		shell::stdout "INFO: Renamed directory '$old_path' to '$new_path'" 46
 	fi
 }

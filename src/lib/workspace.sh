@@ -22,7 +22,7 @@ shell::ensure_workspace() {
 	# Check if the workspace directory exists
 	# We check if the directory defined by $SHELL_CONF_WORKING_WORKSPACE exists
 	if [ ! -d "$SHELL_CONF_WORKING_WORKSPACE" ]; then
-		shell::run::shell sudo mkdir -p "$SHELL_CONF_WORKING_WORKSPACE"
+		shell::exec::shell sudo mkdir -p "$SHELL_CONF_WORKING_WORKSPACE"
 	fi
 }
 
@@ -283,7 +283,7 @@ shell::add_workspace() {
 	else
 		shell::create_file_if_not_exists "$profile"
 		shell::create_directory_if_not_exists "$ssh_dir"
-		shell::run::shell "$cmd"
+		shell::exec::shell "$cmd"
 		shell::stdout "INFO: Workspace '$name' created at '$dir'" 46
 
 		# Populate profile.conf with default values
@@ -560,7 +560,7 @@ shell::remove_workspace() {
 	local asked
 	asked=$(shell::ask::reply "Are you sure you want to delete workspace '$name'?")
 	if [ "$asked" = "yes" ]; then
-		shell::run::shell "sudo rm -rf \"$dir\""
+		shell::exec::shell "sudo rm -rf \"$dir\""
 		shell::stdout "INFO: Workspace '$name' removed." 46
 		return 1
 	fi
@@ -848,7 +848,7 @@ shell::rename_workspace() {
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::command_clip "$cmd"
 	else
-		shell::run::shell "$cmd"
+		shell::exec::shell "$cmd"
 		shell::stdout "INFO: Workspace renamed from '$old_name' to '$new_name'" 46
 	fi
 }
@@ -1152,7 +1152,7 @@ shell::clone_workspace() {
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::command_clip "$cmd"
 	else
-		shell::run::shell "$cmd"
+		shell::exec::shell "$cmd"
 		shell::unlock_permissions "$destination_dir"
 		shell::stdout "INFO: Workspace cloned from '$source' to '$destination'" 46
 	fi
