@@ -88,7 +88,7 @@ shell::bookmark::add() {
 		return $RETURN_SUCCESS
 	fi
 
-	if shell::out::confirmz "Bookmark '${bookmark_name}' already exists. Replace it?"; then
+	if shell::ask::accept "Bookmark '${bookmark_name}' already exists. Replace it?"; then
 		if [ "$dry_run" = "true" ]; then
 			shell::logger::command_clip "$cmd_replace"
 			return $RETURN_SUCCESS

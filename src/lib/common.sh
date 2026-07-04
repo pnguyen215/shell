@@ -3029,11 +3029,11 @@ shell::out::confirm() {
 	echo "$choice"
 }
 
-# shell::out::confirmz function
+# shell::ask::deny function
 # Interactively asks a yes/no question and returns 1 for yes, 0 for no.
 #
 # Usage:
-#   shell::out::confirmz <question>
+#   shell::ask::deny <question>
 #
 # Parameters:
 #   - <question> : The question to ask the user.
@@ -3046,12 +3046,12 @@ shell::out::confirm() {
 #   The function supports a help flag (-h) to display usage information.
 #
 # Example:
-#   shell::out::confirmz "Do you want to continue?"
-#   if shell::out::confirmz "Do you want to proceed?"; then
-#       echo "User answered yes."
-#   else
+#   shell::ask::deny "Do you want to continue?"
+#   if shell::ask::deny "Do you want to proceed?"; then
 #       echo "User answered no."
-shell::out::confirmz() {
+#   else
+#       echo "User answered yes."
+shell::ask::deny() {
 	local question="$1"
 
 	if [ -z "$question" ]; then
@@ -3071,6 +3071,57 @@ shell::out::confirmz() {
 			;;
 		*)
 			shell::logger::warn "Please answer y/yes or n/no."
+			;;
+		esac
+	done
+}
+
+# shell::ask::accept function
+# Interactively asks the user to accept or reject an action.
+#
+# Usage:
+#   shell::ask::accept <question>
+#
+# Parameters:
+#   - <question> : The question to ask.
+#
+# Description:
+#   Displays a yes/no prompt and waits until the user enters a valid answer.
+#
+# Returns:
+#   $RETURN_SUCCESS (0) if the user accepts (yes/y).
+#   $RETURN_FAILURE (1) if the user rejects (no/n).
+#
+# Example:
+#   if shell::ask::accept "Replace bookmark?"; then
+#       echo "Replacing..."
+#   else
+#       echo "Cancelled."
+#   fi
+shell::ask::accept() {
+	local question="$1"
+	local reply
+
+	if [ -z "$question" ]; then
+		shell::logger::error "Question cannot be empty."
+		return $RETURN_FAILURE
+	fi
+
+	while true; do
+		shell::stdout "[q] $question (y/n) " 208
+		read -r reply
+
+		case "$reply" in
+		[Yy] | [Yy][Ee][Ss])
+			return $RETURN_SUCCESS
+			;;
+
+		[Nn] | [Nn][Oo])
+			return $RETURN_FAILURE
+			;;
+
+		*)
+			shell::logger::warn "Please answer 'y/yes' or 'n/no'."
 			;;
 		esac
 	done

@@ -1346,7 +1346,7 @@ shell::git::branch::push() {
 
 	shell::logger::info "Selected command: ${selected_cmd}"
 
-	if shell::out::confirmz "Execute this push command?"; then
+	if shell::ask::deny "Execute this push command?"; then
 		shell::logger::info "Push aborted"
 		return $RETURN_SUCCESS
 	fi
@@ -1432,7 +1432,7 @@ shell::git::branch::push::current::force() {
 
 	local force_cmd="git push --force origin \"${current_branch}\""
 
-	if shell::out::confirmz "Force-push the current branch '${current_branch}' to origin?"; then
+	if shell::ask::deny "Force-push the current branch '${current_branch}' to origin?"; then
 		shell::logger::info "Force-push aborted"
 		return $RETURN_SUCCESS
 	fi
@@ -1921,7 +1921,7 @@ shell::git::branch::rename::fzf() {
 	# Step 3 — confirm and execute.
 	shell::logger::info "Rename '${old_name}' → '${new_name}'"
 
-	if shell::out::confirmz "Proceed with rename?"; then
+	if shell::ask::deny "Proceed with rename?"; then
 		shell::logger::info "Rename aborted"
 		return $RETURN_SUCCESS
 	fi
@@ -2199,7 +2199,7 @@ shell::git::branch::all::fzf() {
 			for _b in "${selected_branches[@]}"; do
 				shell::logger::warn "  • ${_b}"
 			done
-			if shell::out::confirmz "Proceed with removal?"; then
+			if shell::ask::deny "Proceed with removal?"; then
 				shell::logger::info "Remove aborted"
 				return $RETURN_SUCCESS
 			fi
@@ -2359,7 +2359,7 @@ shell::git::branch::merge() {
 	shell::logger::info "No conflicts detected — ready to commit"
 	shell::logger::info "Commit message: ${commit_msg}"
 
-	if shell::out::confirmz "Proceed with this merge commit?"; then
+	if shell::ask::deny "Proceed with this merge commit?"; then
 		shell::logger::info "Merge commit aborted — staged changes remain on '${target_branch}'"
 		shell::logger::info "To discard: git merge --abort"
 		return $RETURN_SUCCESS
@@ -2495,7 +2495,7 @@ shell::git::branch::merge::fzf() {
 	shell::logger::info "  Source : ${source_branch}"
 	shell::logger::info "  Target : ${target_branch}"
 
-	if shell::out::confirmz "Proceed with merging '${source_branch}' into '${target_branch}'?"; then
+	if shell::ask::deny "Proceed with merging '${source_branch}' into '${target_branch}'?"; then
 		shell::logger::info "Merge aborted"
 		return $RETURN_SUCCESS
 	fi
@@ -2673,7 +2673,7 @@ shell::git::branch::stash::remove::fzf() {
 	shell::logger::info "Selected: ${stash_ref}"
 
 	# Step 5 — confirm removal.
-	if shell::out::confirmz "Remove ${stash_ref}?"; then
+	if shell::ask::deny "Remove ${stash_ref}?"; then
 		shell::logger::info "Stash removal aborted"
 		return $RETURN_SUCCESS
 	fi
@@ -3512,7 +3512,7 @@ shell::git::commit::pick::local() {
 	# Build the command string (hashes space-joined for display / dry-run).
 	local cmd_cherry_pick="git cherry-pick ${hashes_oldest_first[*]}"
 
-	if shell::out::confirmz "Cherry-pick ${#hashes_oldest_first[@]} commit(s) onto '${current_branch}'?"; then
+	if shell::ask::deny "Cherry-pick ${#hashes_oldest_first[@]} commit(s) onto '${current_branch}'?"; then
 		shell::logger::info "Cherry-pick aborted"
 		return $RETURN_SUCCESS
 	fi
@@ -3677,7 +3677,7 @@ shell::git::commit::pick::remote() {
 	# Build the command string (hashes space-joined for display / dry-run).
 	local cmd_cherry_pick="git cherry-pick ${hashes_oldest_first[*]}"
 
-	if shell::out::confirmz "Cherry-pick ${#hashes_oldest_first[@]} commit(s) onto '${current_branch}' and push to remote?"; then
+	if shell::ask::deny "Cherry-pick ${#hashes_oldest_first[@]} commit(s) onto '${current_branch}' and push to remote?"; then
 		shell::logger::info "Cherry-pick aborted"
 		return $RETURN_SUCCESS
 	fi
@@ -3990,7 +3990,7 @@ shell::git::commit::create() {
 
 		shell::logger::info "Selected commit message: ${selected_message}"
 
-		if shell::out::confirmz "Proceed with this empty commit?"; then
+		if shell::ask::deny "Proceed with this empty commit?"; then
 			shell::logger::info "Commit aborted"
 		else
 			local cmd_commit_empty="git commit --allow-empty -m \"${selected_message}\""
@@ -4083,7 +4083,7 @@ shell::git::commit::create() {
 	local commit_message="${emoji} ${selected_type}: ${commit_description} ${issue_number}"
 	shell::logger::info "Commit message: ${commit_message}"
 
-	if shell::out::confirmz "Proceed with this commit?"; then
+	if shell::ask::deny "Proceed with this commit?"; then
 		shell::logger::info "Commit aborted"
 		return $RETURN_SUCCESS
 	fi
@@ -5165,7 +5165,7 @@ shell::git::tag::remove::fzf() {
 	shell::logger::warn "Selected tag for removal: ${selected_tag}"
 
 	# Step 6 — confirm removal.
-	if shell::out::confirmz "Remove tag '${selected_tag}' from local and origin?"; then
+	if shell::ask::deny "Remove tag '${selected_tag}' from local and origin?"; then
 		shell::logger::info "Tag removal aborted"
 		return $RETURN_SUCCESS
 	fi
@@ -5452,10 +5452,10 @@ shell::git::commit::revert::fzf() {
 	shell::logger::info "Revert strategy: ${action}"
 	shell::logger::info "Command: ${cmd_revert}"
 
-	# shell::out::confirmz returns 1 for YES, 0 for NO
+	# shell::ask::deny returns 1 for YES, 0 for NO
 	# So: if confirmz; then → true (0) = NO chosen → abort
 	#     if confirmz; then → false (1) = YES chosen → continue
-	if shell::out::confirmz "Proceed with revert on new branch '${revert_branch}'?"; then
+	if shell::ask::deny "Proceed with revert on new branch '${revert_branch}'?"; then
 		shell::logger::info "Revert aborted"
 		return $RETURN_SUCCESS
 	fi
@@ -5525,7 +5525,7 @@ shell::git::commit::revert::fzf() {
 	# Step 11 — Offer to return to original branch.
 	# ---------------------------------------------------------------------------
 	if [ "$current_branch" != "$revert_branch" ] && [ -n "$current_branch" ]; then
-		if shell::out::confirmz "Return to original branch '${current_branch}'?"; then
+		if shell::ask::deny "Return to original branch '${current_branch}'?"; then
 			# User answered NO (return 0) → stay on revert branch
 			:
 		else
