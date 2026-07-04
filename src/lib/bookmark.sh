@@ -10,57 +10,100 @@ if [[ ! -f $bookmarks_file ]]; then
 	mkdir -p "$SHELL_CONF_WORKING_BOOKMARK" && touch "$SHELL_KEY_CONF_FILE_BOOKMARK"
 fi
 
-# shell::add_bookmark function
-# Adds a bookmark for the current directory with the specified name.
+# shell::bookmark::add function
+# Adds a bookmark for the current working directory.
 #
 # Usage:
-#   shell::add_bookmark <bookmark name>
+#   shell::bookmark::add [-n] [-h] <bookmark_name>
+#
+# Parameters:
+#   - -n, --dry-run   : Print the planned commands instead of executing them.
+#   - -h, --help      : Show this help message.
+#   - <bookmark_name> : Bookmark name.
 #
 # Description:
-#   The 'shell::add_bookmark' function creates a bookmark for the current directory with the given name.
-#   It allows quick navigation to the specified directory using the bookmark name.
-shell::add_bookmark() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_ADD_BOOKMARK"
-		return 0
+#   Sanitizes the bookmark name and stores the current working directory as:
+#
+#       <absolute_path>|<bookmark_name>
+#
+#   If the bookmark already exists, the user is prompted to confirm replacement.
+#
+# Returns:
+#   $RETURN_SUCCESS on success.
+#   $RETURN_INVALID when the bookmark name is missing or invalid.
+#
+# Example:
+#   shell::bookmark::add project
+#   shell::bookmark::add -n project
+shell::bookmark::add() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Create a bookmark for the current working directory"
+		shell::logger::usage "shell::bookmark::add [-n] [-h] <bookmark_name>"
+		shell::logger::item "bookmark_name" "Bookmark name"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the commands instead of executing them"
+		shell::logger::example "shell::bookmark::add project"
+		shell::logger::example "shell::bookmark::add -n project"
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
 	fi
 
 	local bookmark_name="$1"
 
-	if [[ -z "$bookmark_name" ]]; then
-		shell::stdout "ERR: Please type a valid name for your bookmark." 196
-		return 1
+	if [ -z "$bookmark_name" ]; then
+		shell::logger::error "Bookmark name is required"
+		return $RETURN_INVALID
 	fi
 
-	# Sanitize the bookmark name to ensure it is a valid variable name.
-	# This function should be defined in shell::strings::sanitize::lower
-	# It should convert the name to lowercase and replace invalid characters.
 	bookmark_name=$(shell::strings::sanitize::lower "$bookmark_name")
 
-	# Check if the bookmark name is empty after sanitization.
-	local bookmark
-	bookmark="$(pwd)|$bookmark_name" # Store the bookmark as folder|name
-
-	# Check if the bookmark already exists.
-	if [[ -z $(grep "|$bookmark_name" "$bookmarks_file") ]]; then
-		echo "$bookmark" >>"$bookmarks_file"
-		shell::stdout "INFO: Bookmark '$bookmark_name' saved" 46
-	else
-		shell::stdout "WARN: Bookmark '$bookmark_name' already exists. Replace it? (y or n)" 11
-		while read -r replace; do
-			if [[ "$replace" == "y" ]]; then
-				# Delete existing bookmark and save the new one.
-				shell::run_cmd_eval "sed '/.*|$bookmark_name/d' \"$bookmarks_file\" > ~/.tmp && mv ~/.tmp \"$bookmarks_file\""
-				echo "$bookmark" >>"$bookmarks_file"
-				shell::stdout "INFO: Bookmark '$bookmark_name' saved" 46
-				break
-			elif [[ "$replace" == "n" ]]; then
-				break
-			else
-				shell::stdout "WARN: Please type 'y' or 'n':" 11
-			fi
-		done
+	if [ -z "$bookmark_name" ]; then
+		shell::logger::error "Bookmark name is invalid after sanitization"
+		return $RETURN_INVALID
 	fi
+
+	local bookmark
+	bookmark="$(pwd)|${bookmark_name}"
+
+	local cmd_add="echo \"${bookmark}\" >> \"${bookmarks_file}\""
+	local cmd_replace="sed '/.*|${bookmark_name}\$/d' \"${bookmarks_file}\" > ~/.tmp && mv ~/.tmp \"${bookmarks_file}\" && echo \"${bookmark}\" >> \"${bookmarks_file}\""
+
+	if ! grep -q "|${bookmark_name}$" "$bookmarks_file" 2>/dev/null; then
+		if [ "$dry_run" = "true" ]; then
+			shell::logger::command_clip "$cmd_add"
+			return $RETURN_SUCCESS
+		fi
+
+		shell::logger::assert \
+			"$cmd_add" \
+			"Bookmark '${bookmark_name}' saved" \
+			"Failed to save bookmark"
+
+		return $RETURN_SUCCESS
+	fi
+
+	if shell::out::confirmz "Bookmark '${bookmark_name}' already exists. Replace it?"; then
+		if [ "$dry_run" = "true" ]; then
+			shell::logger::command_clip "$cmd_replace"
+			return $RETURN_SUCCESS
+		fi
+
+		shell::logger::assert \
+			"$cmd_replace" \
+			"Bookmark '${bookmark_name}' replaced" \
+			"Failed to replace bookmark"
+
+		return $RETURN_SUCCESS
+	fi
+
+	shell::logger::info "Operation cancelled"
+	return $RETURN_SUCCESS
 }
 
 # shell::remove_bookmark function
