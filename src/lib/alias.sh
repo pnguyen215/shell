@@ -375,3 +375,22 @@ alias spgiga-n="shell::python::gitignore::add -n"
 alias spgitignoreadd="shell::python::gitignore::add"
 alias spgitignoreadd-n="shell::python::gitignore::add -n"
 
+# ////////////////////
+# Shell ask aliases
+# ///////////////////
+
+# shell::ask::reply
+alias sar="shell::ask::reply"
+alias sar-n="shell::ask::reply -n"
+alias sarq="shell::ask::reply"
+alias sarq-n="shell::ask::reply -n"
+alias sarquestion="shell::ask::reply"
+alias sarquestion-n="shell::ask::reply -n"
+
+# shell::ask::deny
+alias sad="shell::ask::deny"
+alias sad-n="shell::ask::deny -n"
+
+# shell::ask::accept
+alias saa="shell::ask::accept"
+alias saa-n="shell::ask::accept -n"
