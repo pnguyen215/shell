@@ -1182,17 +1182,17 @@ Description:
 "
 
 USAGE_SHELL_ADD_BOOKMARK="
-shell::add_bookmark function
+shell::bookmark::add function
 Adds a bookmark for the current directory with the specified name.
 
 Usage:
-  shell::add_bookmark [-h] <bookmark name>
+  shell::bookmark::add [-h] <bookmark name>
 
 Parameters:
   - -h          : Optional. Displays this help message.
 
 Description:
-  The 'shell::add_bookmark' function creates a bookmark for the current directory with the given name.
+  The 'shell::bookmark::add' function creates a bookmark for the current directory with the given name.
   It allows quick navigation to the specified directory using the bookmark name.
 "
 

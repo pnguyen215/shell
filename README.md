@@ -237,10 +237,10 @@ Core functions for system management, version control, and basic operations.
   Interactively selects a file or directory to remove using `fzf`.  
   _Example:_ `shell::fzf_remove`
 
-- **`shell::add_bookmark`**
+- **`shell::bookmark::add`**
   Adds a bookmark for the current directory with the specified name.
   _Example:_
-  - `shell::add_bookmark <bookmark name>`
+  - `shell::bookmark::add <bookmark name>`
 
 - **`shell::remove_bookmark`**
   Deletes a bookmark with the specified name from the bookmarks file.
@@ -509,10 +509,10 @@ Interactive file operations powered by FZF (fuzzy finder) for enhanced user expe
 
 Persistent bookmark system for quick directory navigation.
 
-- **`shell::add_bookmark`**
+- **`shell::bookmark::add`**
   Adds a bookmark for the current directory with the specified name.
   _Example:_
-  - `shell::add_bookmark project1`
+  - `shell::bookmark::add project1`
 
 - **`shell::remove_bookmark`**
   Deletes a bookmark with the specified name from the bookmarks file.
@@ -1012,13 +1012,13 @@ shell::read_group_key_conf development
 ```bash
 # Navigate to project directories and bookmark them
 cd ~/projects/webapp
-shell::add_bookmark webapp
+shell::bookmark::add webapp
 
 cd ~/projects/api-service
-shell::add_bookmark api
+shell::bookmark::add api
 
 cd ~/projects/mobile-app
-shell::add_bookmark mobile
+shell::bookmark::add mobile
 
 # Quick navigation
 shell::go_bookmark webapp        # Direct navigation
