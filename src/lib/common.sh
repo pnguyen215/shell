@@ -203,31 +203,31 @@ shell::stdout() {
 	fi
 }
 
-# shell::run::command function
+# shell::exec::command function
 # Executes a command and prints it for logging purposes.
 #
 # Usage:
-#   shell::run::command <command>
+#   shell::exec::command <command>
 #
 # Parameters:
 #   - <command>: The command to be executed.
 #
 # Description:
-#   The `shell::run::command` function prints the command for logging before executing it.
+#   The `shell::exec::command` function prints the command for logging before executing it.
 #
 # Options:
 #   None
 #
 # Example usage:
-#   shell::run::command ls -l
+#   shell::exec::command ls -l
 #
 # Instructions:
-#   1. Use `shell::run::command` to execute a command.
+#   1. Use `shell::exec::command` to execute a command.
 #   2. The command will be printed before execution for logging.
 #
 # Notes:
 #   - This function is useful for logging commands prior to execution.
-shell::run::command() {
+shell::exec::command() {
 	if [ "$1" = "-h" ]; then
 		echo "$USAGE_SHELL_RUN_CMD"
 		return 0
@@ -261,17 +261,17 @@ shell::run::command() {
 	"$@"
 }
 
-# shell::run::shell function
+# shell::exec::shell function
 # Execute a command using eval and print it for logging purposes.
 #
 # Usage:
-#   shell::run::shell <command>
+#   shell::exec::shell <command>
 #
 # Parameters:
 #   - <command>: The command to be executed (as a single string).
 #
 # Description:
-#   The 'shell::run::shell' function executes a command by passing it to the `eval` command.
+#   The 'shell::exec::shell' function executes a command by passing it to the `eval` command.
 #   This allows the execution of complex commands with arguments, pipes, or redirection
 #   that are difficult to handle with standard execution.
 #   It logs the command before execution to provide visibility into what is being run.
@@ -280,17 +280,17 @@ shell::run::command() {
 #   None
 #
 # Example usage:
-#   shell::run::shell "ls -l | grep txt"
+#   shell::exec::shell "ls -l | grep txt"
 #
 # Instructions:
-#   1. Use 'shell::run::shell' when executing commands that require interpretation by the shell.
+#   1. Use 'shell::exec::shell' when executing commands that require interpretation by the shell.
 #   2. It is particularly useful for running dynamically constructed commands or those with special characters.
 #
 # Notes:
 #   - The use of `eval` can be risky if the input command contains untrusted data, as it can lead to
 #     command injection vulnerabilities. Ensure the command is sanitized before using this function.
 #   - Prefer the 'wsd_exe_cmd' function for simpler commands without special characters or pipes.
-shell::run::shell() {
+shell::exec::shell() {
 	if [ "$1" = "-h" ]; then
 		echo "$USAGE_SHELL_RUN_CMD_EVAL"
 		return 0
@@ -322,11 +322,11 @@ shell::run::shell() {
 	eval "$command"
 }
 
-# shell::run::silent function
+# shell::exec::silent function
 # Executes a given command using the shell's eval function.
 #
 # Usage:
-#   shell::run::silent <command>
+#   shell::exec::silent <command>
 #
 # Parameters:
 #   - <command>: The command to be executed.
@@ -337,13 +337,13 @@ shell::run::shell() {
 #   The function also checks for a help flag (-h) and displays usage information if present.
 #
 # Example usage:
-#   shell::run::silent "ls -l"
+#   shell::exec::silent "ls -l"
 #
 # Notes:
 #   - The use of eval can be risky if the input command contains untrusted data,
 #     as it can lead to command injection vulnerabilities. Ensure the command is
 #     sanitized before using this function.
-shell::run::silent() {
+shell::exec::silent() {
 	if [ "$1" = "-h" ]; then
 		echo "$USAGE_SHELL_RUN_CMD_OUTLET"
 		return 0
@@ -457,7 +457,7 @@ shell::install_package() {
 
 		# Check for snapcraft and try to install via snap first
 		if shell::is_command_available snap; then
-			if shell::run::shell "sudo snap install $package" 2>/dev/null; then
+			if shell::exec::shell "sudo snap install $package" 2>/dev/null; then
 				shell::logger::success "Successfully installed $package via snap."
 				return 1
 			fi
@@ -465,13 +465,13 @@ shell::install_package() {
 
 		# Fallback to traditional package managers
 		if shell::is_command_available apt-get; then
-			shell::run::shell "sudo apt-get update && sudo apt-get install -y $package"
+			shell::exec::shell "sudo apt-get update && sudo apt-get install -y $package"
 			return $?
 		elif shell::is_command_available yum; then
-			shell::run::shell "sudo yum install -y $package"
+			shell::exec::shell "sudo yum install -y $package"
 			return $?
 		elif shell::is_command_available dnf; then
-			shell::run::shell "sudo dnf install -y $package"
+			shell::exec::shell "sudo dnf install -y $package"
 			return $?
 		else
 			shell::logger::error "Unsupported package manager on Linux."
@@ -487,7 +487,7 @@ shell::install_package() {
 			shell::logger::debug "$package is already installed. Skipping."
 			return 0
 		fi
-		shell::run::shell "brew install $package"
+		shell::exec::shell "brew install $package"
 		return $?
 	else
 		shell::logger::error "Unsupported operating system."
@@ -524,7 +524,7 @@ shell::uninstall_package() {
 		# Check if package is installed via snap and remove it
 		if shell::is_command_available snap; then
 			if snap list "$package" >/dev/null 2>&1; then
-				shell::run::shell "sudo snap remove $package"
+				shell::exec::shell "sudo snap remove $package"
 				return $?
 			fi
 		fi
@@ -532,7 +532,7 @@ shell::uninstall_package() {
 		# Check if the package is installed via traditional package managers
 		if shell::is_command_available apt-get; then
 			if shell::is_package_installed_linux "$package"; then
-				shell::run::shell "sudo apt-get remove -y $package"
+				shell::exec::shell "sudo apt-get remove -y $package"
 				return $?
 			else
 				shell::logger::warn "$package is not installed. Skipping uninstallation."
@@ -540,7 +540,7 @@ shell::uninstall_package() {
 			fi
 		elif shell::is_command_available yum; then
 			if rpm -q "$package" >/dev/null 2>&1; then
-				shell::run::shell "sudo yum remove -y $package"
+				shell::exec::shell "sudo yum remove -y $package"
 				return $?
 			else
 				shell::logger::warn "$package is not installed. Skipping uninstallation."
@@ -548,7 +548,7 @@ shell::uninstall_package() {
 			fi
 		elif shell::is_command_available dnf; then
 			if rpm -q "$package" >/dev/null 2>&1; then
-				shell::run::shell "sudo dnf remove -y $package"
+				shell::exec::shell "sudo dnf remove -y $package"
 				return $?
 			else
 				shell::logger::warn "$package is not installed. Skipping uninstallation."
@@ -561,7 +561,7 @@ shell::uninstall_package() {
 	elif [ "$os_type" = "macos" ]; then
 		if shell::is_command_available brew; then
 			if brew list --versions "$package" >/dev/null 2>&1; then
-				shell::run::shell "brew uninstall $package"
+				shell::exec::shell "brew uninstall $package"
 				return $?
 			else
 				shell::logger::warn "$package is not installed. Skipping uninstallation."
@@ -689,7 +689,7 @@ shell::create_directory_if_not_exists() {
 	# Check if the directory exists.
 	if [ ! -d "$dir" ]; then
 		shell::stdout "WARN: Directory '$dir' does not exist. Creating the directory (including nested directories) with admin privileges..." 11
-		shell::run::shell 'sudo mkdir -p "$dir"' # Use sudo to create the directory and its parent directories.
+		shell::exec::shell 'sudo mkdir -p "$dir"' # Use sudo to create the directory and its parent directories.
 		if [ $? -eq 0 ]; then
 			shell::stdout "INFO: Directory created successfully." 46
 			shell::unlock_permissions "$dir"
@@ -771,11 +771,11 @@ shell::create_file_if_not_exists() {
 	# Check if the parent directory exists.
 	if [ ! -d "$directory" ]; then
 		shell::stdout "WARN: Creating directory '$directory'..." 11
-		shell::run::shell "sudo mkdir -p \"$directory\""
+		shell::exec::shell "sudo mkdir -p \"$directory\""
 		if [ $? -eq 0 ]; then
 			shell::stdout "INFO: Directory created successfully." 46
 			# Optionally set directory permissions
-			shell::unlock_permissions "$directory" # # shell::run::shell "sudo chmod 700 \"$directory\""
+			shell::unlock_permissions "$directory" # # shell::exec::shell "sudo chmod 700 \"$directory\""
 		else
 			shell::stdout "ERR: Failed to create the directory." 196
 			return 1
@@ -785,11 +785,11 @@ shell::create_file_if_not_exists() {
 	# Check if the file exists.
 	if [ ! -e "$abs_filename" ]; then
 		shell::stdout "WARN: Creating file '$abs_filename'..." 11
-		shell::run::shell "sudo touch \"$abs_filename\""
+		shell::exec::shell "sudo touch \"$abs_filename\""
 		if [ $? -eq 0 ]; then
 			shell::stdout "INFO: File created successfully." 46
 			# Optionally set file permissions
-			shell::unlock_permissions "$abs_filename" # shell::run::shell "sudo chmod 600 \"$abs_filename\""
+			shell::unlock_permissions "$abs_filename" # shell::exec::shell "sudo chmod 600 \"$abs_filename\""
 			return 0
 		else
 			shell::stdout "ERR: Failed to create the file." 196
@@ -1000,7 +1000,7 @@ shell::check_port() {
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::command_clip "$cmd"
 	else
-		shell::run::shell "$cmd"
+		shell::exec::shell "$cmd"
 	fi
 }
 
@@ -1059,15 +1059,15 @@ shell::kill_port() {
 		if [ -n "$pids" ]; then
 			shell::stdout "INFO: Processing port $port with PIDs: $pids" 46
 			for pid in $pids; do
-				# Construct the kill command as an array to reuse it for both shell::logger::command_clip and shell::run::command.
+				# Construct the kill command as an array to reuse it for both shell::logger::command_clip and shell::exec::command.
 				local cmd=("kill" "-9" "$pid")
 				# local cmd="kill -9 $pid"
 				if [ "$dry_run" = "true" ]; then
 					# shell::logger::command_clip "$cmd"
 					shell::logger::command_clip "${cmd[*]}"
 				else
-					# shell::run::command kill -9 "$pid"
-					shell::run::command "${cmd[@]}"
+					# shell::exec::command kill -9 "$pid"
+					shell::exec::command "${cmd[@]}"
 				fi
 			done
 		else
@@ -1091,7 +1091,7 @@ shell::kill_port() {
 #   The function first checks for a dry-run flag (-n). It then verifies that at least two arguments remain.
 #   For each destination filename, it checks if the file already exists in the current working directory.
 #   If not, it builds the command to copy the source file (using sudo) to the destination.
-#   In dry-run mode, the command is printed using shell::logger::command_clip; otherwise, it is executed using shell::run::shell.
+#   In dry-run mode, the command is printed using shell::logger::command_clip; otherwise, it is executed using shell::exec::shell.
 #
 # Example:
 #   shell::copy_files myfile.txt newfile.txt            # Copies myfile.txt to newfile.txt.
@@ -1139,7 +1139,7 @@ shell::copy_files() {
 		if [ "$dry_run" = "true" ]; then
 			shell::logger::command_clip "$cmd"
 		else
-			shell::run::shell "$cmd"
+			shell::exec::shell "$cmd"
 			shell::stdout "INFO: File copied successfully to $destination_file" 46
 		fi
 	done
@@ -1162,7 +1162,7 @@ shell::copy_files() {
 #     - It checks whether the source file exists.
 #     - It verifies that the destination file (using the basename of the source) does not already exist in the destination folder.
 #     - It builds the command to move the file (using sudo mv).
-#   In dry-run mode, the command is printed using shell::logger::command_clip; otherwise, the command is executed using shell::run::command.
+#   In dry-run mode, the command is printed using shell::logger::command_clip; otherwise, the command is executed using shell::exec::command.
 #   If an error occurs for a particular file (e.g., missing source or destination file conflict), the error is logged and the function continues with the next file.
 #
 # Example:
@@ -1211,7 +1211,7 @@ shell::move_files() {
 		if [ "$dry_run" = "true" ]; then
 			shell::logger::command_clip "$cmd"
 		else
-			shell::run::command sudo mv "$source" "$destination"
+			shell::exec::command sudo mv "$source" "$destination"
 			if [ $? -eq 0 ]; then
 				shell::stdout "INFO: File '$source' moved successfully to $destination" 46
 			else
@@ -1234,7 +1234,7 @@ shell::move_files() {
 # Description:
 #   The function first checks for an optional dry-run flag (-n). It then verifies that a target argument is provided.
 #   It builds the command to remove the specified target using "sudo rm -rf".
-#   In dry-run mode, the command is printed using shell::logger::command_clip; otherwise, it is executed using shell::run::command.
+#   In dry-run mode, the command is printed using shell::logger::command_clip; otherwise, it is executed using shell::exec::command.
 #
 # Example:
 #   shell::remove_files my-dir          # Removes the directory 'my-dir'.
@@ -1264,7 +1264,7 @@ shell::remove_files() {
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::command_clip "$cmd"
 	else
-		shell::run::command sudo rm -rf "$target"
+		shell::exec::command sudo rm -rf "$target"
 	fi
 }
 
@@ -1296,7 +1296,7 @@ shell::remove_files() {
 #
 # Requirements:
 #   - fzf must be installed.
-#   - Helper functions: shell::run::command, shell::logger::command_clip, shell::stdout, and shell::base::os.
+#   - Helper functions: shell::exec::command, shell::logger::command_clip, shell::stdout, and shell::base::os.
 shell::editor() {
 	if [ "$1" = "-h" ]; then
 		echo "$USAGE_SHELL_EDITOR"
@@ -1493,7 +1493,7 @@ shell::editor() {
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::command_clip "$cmd"
 	else
-		shell::run::command $selected_command "$selected_file"
+		shell::exec::command $selected_command "$selected_file"
 	fi
 }
 
@@ -1544,7 +1544,7 @@ shell::download_dataset() {
 			if [ "$dry_run" = "true" ]; then
 				shell::logger::command_clip "sudo rm \"$base\""
 			else
-				shell::run::command sudo rm "$base"
+				shell::exec::command sudo rm "$base"
 			fi
 		fi
 	fi
@@ -1557,7 +1557,7 @@ shell::download_dataset() {
 		shell::logger::command_clip "$download_cmd"
 		return 0
 	else
-		shell::run::command curl -s -LJ "$link" -o "$filename"
+		shell::exec::command curl -s -LJ "$link" -o "$filename"
 		if [ $? -eq 0 ]; then
 			shell::stdout "INFO: Successfully downloaded: $filename" 46
 			return 0
@@ -1581,7 +1581,7 @@ shell::download_dataset() {
 # Description:
 #   The function first checks for an optional dry-run flag (-n) and then verifies that exactly one argument (the filename) is provided.
 #   It checks if the given file exists and, if so, determines the correct extraction command based on the file extension.
-#   In dry-run mode, the command is printed using shell::logger::command_clip; otherwise, it is executed using shell::run::shell.
+#   In dry-run mode, the command is printed using shell::logger::command_clip; otherwise, it is executed using shell::exec::shell.
 #
 # Example:
 #   shell::unarchive archive.tar.gz           # Extracts archive.tar.gz.
@@ -1652,7 +1652,7 @@ shell::unarchive() {
 		if [ "$dry_run" = "true" ]; then
 			shell::logger::command_clip "$cmd"
 		else
-			shell::run::shell "$cmd"
+			shell::exec::shell "$cmd"
 		fi
 	else
 		shell::stdout "ERR: '$file' is not a valid file" 196
@@ -1672,7 +1672,7 @@ shell::unarchive() {
 # Description:
 #   This function retrieves the operating system type using shell::base::os. For macOS, it uses 'top' to sort processes by resident size (RSIZE)
 #   and filters the output to display processes consuming at least 100 MB. For Linux, it uses 'ps' to list processes sorted by memory usage.
-#   In dry-run mode, the constructed command is printed using shell::logger::command_clip; otherwise, it is executed using shell::run::shell.
+#   In dry-run mode, the constructed command is printed using shell::logger::command_clip; otherwise, it is executed using shell::exec::shell.
 #
 # Example:
 #   shell::list_high_mem_usage       # Displays processes with high memory consumption.
@@ -1711,7 +1711,7 @@ shell::list_high_mem_usage() {
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::command_clip "$cmd"
 	else
-		shell::run::shell "$cmd"
+		shell::exec::shell "$cmd"
 	fi
 }
 
@@ -1728,7 +1728,7 @@ shell::list_high_mem_usage() {
 # Description:
 #   This function determines the current operating system using shell::base::os. On macOS, it uses the 'open' command;
 #   on Linux, it uses 'xdg-open' (if available). If the required command is missing on Linux, an error is displayed.
-#   In dry-run mode, the command is printed using shell::logger::command_clip; otherwise, it is executed using shell::run::shell.
+#   In dry-run mode, the command is printed using shell::logger::command_clip; otherwise, it is executed using shell::exec::shell.
 #
 # Example:
 #   shell::open_link https://example.com         # Opens the URL in the default browser.
@@ -1775,7 +1775,7 @@ shell::open_link() {
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::command_clip "$cmd"
 	else
-		shell::run::shell "$cmd"
+		shell::exec::shell "$cmd"
 	fi
 }
 
@@ -2225,7 +2225,7 @@ shell::set_permissions() {
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::command_clip "$cmd"
 	else
-		shell::run::shell "$cmd"
+		shell::exec::shell "$cmd"
 		shell::stdout "INFO: Permissions set to $mode for '$target'" 46
 	fi
 }
@@ -2304,7 +2304,7 @@ shell::unlock_permissions() {
 		if [ "$current_perm" -eq 777 ]; then
 			return 0
 		fi
-		shell::run::shell "$chmod_cmd"
+		shell::exec::shell "$chmod_cmd"
 		shell::stdout "DEBUG: Permissions set to (read,write,execute) for '$target'" 244
 		return 0
 	fi
@@ -2964,7 +2964,7 @@ shell::encode_base64_file() {
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::command_clip "$base64_cmd"
 	else
-		shell::run::shell "$base64_cmd"
+		shell::exec::shell "$base64_cmd"
 	fi
 }
 

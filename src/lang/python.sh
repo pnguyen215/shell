@@ -302,7 +302,7 @@ shell::python::pip::uninstall() {
 # Description:
 #   This function uninstalls all packages installed via pip and pip3, including system packages,
 #   after user confirmation. It is designed to work on both Linux and macOS, with safety checks
-#   and enhanced logging using shell::run::shell.
+#   and enhanced logging using shell::exec::shell.
 #
 # Example usage:
 #   shell::python::pip::uninstall::all       # Uninstalls all pip/pip3 packages after confirmation

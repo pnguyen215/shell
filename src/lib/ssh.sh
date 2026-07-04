@@ -35,7 +35,7 @@
 #   - Requires the 'ps' command to be available
 #   - Works on both macOS and Linux systems
 #   - Uses different parsing approaches based on the detected operating system
-#   - Leverages shell::run::shell for command execution and shell::logger::command_clip for dry-run mode
+#   - Leverages shell::exec::shell for command execution and shell::logger::command_clip for dry-run mode
 shell::list_ssh_tunnels() {
 	if [ "$1" = "-h" ]; then
 		echo "$USAGE_SHELL_LIST_SSH_TUNNEL"
@@ -73,7 +73,7 @@ shell::list_ssh_tunnels() {
 		rm -f "$temp_file"
 		return 0
 	else
-		shell::run::shell "$ps_cmd"
+		shell::exec::shell "$ps_cmd"
 	fi
 
 	# If no SSH tunnels were found, display a message and exit
@@ -203,7 +203,7 @@ shell::list_ssh_tunnels() {
 	fi
 
 	# Clean up
-	shell::run::shell rm -f "$temp_file"
+	shell::exec::shell rm -f "$temp_file"
 	return 1
 }
 
@@ -378,7 +378,7 @@ shell::fzf_copy_ssh_key_value() {
 #
 # Requirements:
 #   - fzf must be installed.
-#   - Assumes the presence of helper functions: shell::install_package, shell::stdout, shell::run::shell.
+#   - Assumes the presence of helper functions: shell::install_package, shell::stdout, shell::exec::shell.
 shell::fzf_kill_ssh_tunnels() {
 	if [ "$1" = "-h" ]; then
 		echo "$USAGE_SHELL_FZF_KILL_SSH_TUNNEL"
@@ -443,7 +443,7 @@ shell::fzf_kill_ssh_tunnels() {
 		shell::stdout "DEBUG: Killing PID(s): $pids_to_kill" 244
 		# Kill the selected processes.
 		# Use command substitution to pass PIDs to kill.
-		# shell::run::shell "kill $pids_to_kill" # Using the helper if preferred
+		# shell::exec::shell "kill $pids_to_kill" # Using the helper if preferred
 		kill $pids_to_kill # Direct kill command
 		shell::stdout "INFO: Kill command sent for PID(s): $pids_to_kill. Verify they are stopped." 46
 		return 1
@@ -475,7 +475,7 @@ shell::fzf_kill_ssh_tunnels() {
 #   - Requires the 'ps' and 'kill' commands to be available.
 #   - Works on both macOS and Linux systems.
 #   - Uses different parsing approaches based on the detected operating system.
-#   - Leverages shell::run::command for command execution and shell::logger::command_clip for dry-run mode.
+#   - Leverages shell::exec::command for command execution and shell::logger::command_clip for dry-run mode.
 shell::kill_ssh_tunnels() {
 	if [ "$1" = "-h" ]; then
 		echo "$USAGE_SHELL_KILL_SSH_TUNNEL"
@@ -549,7 +549,7 @@ shell::kill_ssh_tunnels() {
 	if [ "$asked" = "yes" ]; then
 		local kill_count=0
 		for pid in "${pids_to_kill[@]}"; do
-			if shell::run::command kill "$pid"; then
+			if shell::exec::command kill "$pid"; then
 				shell::stdout "INFO: Killed PID $pid successfully." 46
 				((kill_count++))
 			else
@@ -597,7 +597,7 @@ shell::kill_ssh_tunnels() {
 # Notes:
 #   - Uses 4096-bit keys for rsa; ed25519 uses its default key size.
 #   - Sets key file permissions to 600 (private) and 644 (public) for security.
-#   - Relies on shell::create_directory_if_not_exists, shell::run::shell, and shell::is_command_available.
+#   - Relies on shell::create_directory_if_not_exists, shell::exec::shell, and shell::is_command_available.
 #   - Validates the presence of ssh-keygen in the system's PATH.
 shell::gen_ssh_key() {
 	local dry_run="false"
@@ -690,10 +690,10 @@ shell::gen_ssh_key() {
 		shell::logger::command_clip "$ssh_keygen_cmd"
 	else
 		shell::stdout "Generating SSH key pair: $full_key_path" 33
-		shell::run::shell "$ssh_keygen_cmd"
+		shell::exec::shell "$ssh_keygen_cmd"
 		if [ $? -eq 0 ]; then
-			shell::run::shell chmod 600 "$full_key_path"
-			shell::run::shell chmod 644 "${full_key_path}.pub"
+			shell::exec::shell chmod 600 "$full_key_path"
+			shell::exec::shell chmod 644 "${full_key_path}.pub"
 			shell::stdout "INFO: SSH key pair generated successfully:" 46
 			shell::stdout "  Private key: $full_key_path" 46
 			shell::stdout "  Public key:  ${full_key_path}.pub" 46
@@ -866,7 +866,7 @@ shell::fzf_remove_ssh_keys() {
 		if [ "$dry_run" = "true" ]; then
 			shell::logger::command_clip "$cmd"
 		else
-			shell::run::shell "$cmd"
+			shell::exec::shell "$cmd"
 			shell::stdout "INFO: SSH key file removal process completed." 46
 		fi
 	done <<<"$selected_files"
@@ -1233,7 +1233,7 @@ shell::tune_ssh_tunnel() {
 		shell::stdout "DEBUG: $placeholder" 244
 		shell::logger::command_clip "$cmd"
 	else
-		shell::run::shell "$cmd"
+		shell::exec::shell "$cmd"
 	fi
 }
 
@@ -1405,7 +1405,7 @@ shell::rename_ssh_key() {
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::command_clip "$cmd"
 	else
-		shell::run::shell "$cmd"
+		shell::exec::shell "$cmd"
 		shell::stdout "INFO: Renamed '$old_name' to '$new_name'" 46
 	fi
 }
