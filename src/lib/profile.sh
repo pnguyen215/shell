@@ -77,7 +77,7 @@ shell::add_profile() {
 		shell::logger::command_clip "$cmd"
 	else
 		shell::ensure_workspace
-		shell::run_cmd_eval "$cmd"
+		shell::run::shell "$cmd"
 		shell::stdout "INFO: Created profile '$profile_name'." 46
 	fi
 }
@@ -184,7 +184,7 @@ shell::update_profile() {
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::command_clip "$cmd"
 	else
-		shell::run_cmd_eval "$cmd"
+		shell::run::shell "$cmd"
 	fi
 }
 
@@ -234,7 +234,7 @@ shell::remove_profile() {
 		shell::stdout "Are you sure you want to remove profile '$profile_name'? [y/N]" 33
 		read -r confirm
 		if [[ "$confirm" =~ ^[Yy]$ ]]; then
-			shell::run_cmd_eval sudo rm -rf "$profile_dir"
+			shell::run::shell sudo rm -rf "$profile_dir"
 			shell::stdout "INFO: Removed profile '$profile_name'." 46
 		else
 			shell::stdout "WARN: Removal aborted." 11
@@ -280,7 +280,7 @@ shell::get_profile() {
 		return 1
 	fi
 	shell::stdout "DEBUG: Contents of '$profile_conf':" 244
-	shell::run_cmd_eval cat "$profile_conf"
+	shell::run::shell cat "$profile_conf"
 }
 
 # shell::rename_profile function
@@ -334,7 +334,7 @@ shell::rename_profile() {
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::command_clip "$cmd"
 	else
-		shell::run_cmd_eval "$cmd"
+		shell::run::shell "$cmd"
 		shell::stdout "INFO: Renamed profile '$old_name' to '$new_name'." 46
 	fi
 }
@@ -396,7 +396,7 @@ shell::add_profile_conf() {
 		if [ "$dry_run" = "true" ]; then
 			shell::logger::command_clip "sudo mkdir -p \"$profile_dir\""
 		else
-			shell::run_cmd_eval sudo mkdir -p "$profile_dir"
+			shell::run::shell sudo mkdir -p "$profile_dir"
 		fi
 	fi
 
@@ -423,7 +423,7 @@ shell::add_profile_conf() {
 			return 0
 		fi
 		shell::unlock_permissions "$profile_conf"
-		shell::run_cmd_eval "$cmd"
+		shell::run::shell "$cmd"
 		shell::stdout "INFO: Added configuration to profile '$profile_name': $key (encoded value)" 46
 	fi
 }
@@ -578,7 +578,7 @@ shell::get_profile_conf_value() {
 #   and then uses fzf to let the user select a configuration key to remove.
 #   It builds an OS-specific sed command to delete the line containing the selected key.
 #   In dry-run mode, the command is printed using shell::logger::command_clip; otherwise, it is executed asynchronously
-#   using shell::async with shell::run_cmd_eval.
+#   using shell::async with shell::run::shell.
 #
 # Example:
 #   shell::remove_profile_conf my_profile
@@ -630,7 +630,7 @@ shell::remove_profile_conf() {
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::command_clip "$sed_cmd"
 	else
-		shell::run_cmd_eval "$sed_cmd"
+		shell::run::shell "$sed_cmd"
 		shell::stdout "INFO: Removed configuration for key: $selected_key from profile '$profile_name'" 46
 	fi
 }
@@ -707,7 +707,7 @@ shell::update_profile_conf() {
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::command_clip "$sed_cmd"
 	else
-		shell::run_cmd_eval "$sed_cmd"
+		shell::run::shell "$sed_cmd"
 		shell::stdout "INFO: Updated configuration for key: $selected_key in profile '$profile_name'" 46
 	fi
 }
@@ -779,7 +779,7 @@ shell::exist_profile_conf_key() {
 #   It then uses fzf to allow the user to select the existing key to rename.
 #   After prompting for a new key name and verifying that it does not already exist,
 #   the function constructs an OS-specific sed command to replace the old key with the new one.
-#   In dry-run mode, the command is printed via shell::logger::command_clip; otherwise, it is executed using shell::run_cmd_eval.
+#   In dry-run mode, the command is printed via shell::logger::command_clip; otherwise, it is executed using shell::run::shell.
 #
 # Example:
 #   shell::rename_profile_conf_key my_profile
@@ -843,7 +843,7 @@ shell::rename_profile_conf_key() {
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::command_clip "$sed_cmd"
 	else
-		shell::run_cmd_eval "$sed_cmd"
+		shell::run::shell "$sed_cmd"
 		shell::stdout "INFO: Renamed key '$old_key' to '$new_key' in profile '$profile_name'" 46
 	fi
 }
@@ -907,7 +907,7 @@ shell::clone_profile_conf() {
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::command_clip "$cmd"
 	else
-		shell::run_cmd_eval "$cmd"
+		shell::run::shell "$cmd"
 		shell::stdout "INFO: Cloned profile.conf from '$source_profile' to '$destination_profile'" 46
 	fi
 }

@@ -107,13 +107,13 @@ Core functions for system management, version control, and basic operations.
   Outputs text to the terminal with customizable foreground colors using `tput` and ANSI escape sequences. Requires a message and a color code (e.g., 46 for cyan).  
   _Example:_ `shell::stdout "Task completed" 46`
 
-- **`shell::run_cmd`**  
+- **`shell::run::command`**  
   Executes a specified command and logs it to the terminal for tracking purposes.  
-  _Example:_ `shell::run_cmd ls -l`
+  _Example:_ `shell::run::command ls -l`
 
-- **`shell::run_cmd_eval`**  
+- **`shell::run::shell`**  
   Executes a command using `eval` and logs it, useful for dynamic command construction.  
-  _Example:_ `shell::run_cmd_eval ls -l`
+  _Example:_ `shell::run::shell ls -l`
 
 - **`shell::is_command_available`**  
   Checks if a given command exists in the system's PATH, returning a success or failure status.  
@@ -890,13 +890,13 @@ Process management, port checking, and system analysis tools.
   Outputs text to the terminal with customizable foreground colors using `tput` and ANSI escape sequences. Requires a message and a color code (e.g., 46 for cyan).  
   _Example:_ `shell::stdout "Task completed" 46`
 
-- **`shell::run_cmd`**  
+- **`shell::run::command`**  
   Executes a specified command and logs it to the terminal for tracking purposes.  
-  _Example:_ `shell::run_cmd ls -l`
+  _Example:_ `shell::run::command ls -l`
 
-- **`shell::run_cmd_eval`**  
+- **`shell::run::shell`**  
   Executes a command using `eval` and logs it, useful for dynamic command construction.  
-  _Example:_ `shell::run_cmd_eval ls -l`
+  _Example:_ `shell::run::shell ls -l`
 
 - **`shell::is_command_available`**  
   Checks if a given command exists in the system's PATH, returning a success or failure status.  

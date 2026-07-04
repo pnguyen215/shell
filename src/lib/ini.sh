@@ -1009,7 +1009,7 @@ shell::remove_ini_section() {
 		shell::logger::command_clip "$replace_cmd"
 		shell::stdout "INFO: Dry-run: Would remove section '$section' from '$file'" 46
 	else
-		shell::run_cmd_eval "$replace_cmd"
+		shell::run::shell "$replace_cmd"
 		if [ $? -eq 0 ] && [ $section_removed -eq 1 ]; then
 			shell::stdout "INFO: Successfully removed section '$section'" 46
 		else
@@ -1160,7 +1160,7 @@ shell::fzf_remove_ini_key() {
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::command_clip "$replace_cmd"
 	else
-		shell::run_cmd_eval "$replace_cmd"
+		shell::run::shell "$replace_cmd"
 		if [ $? -eq 0 ]; then
 			if [ $key_removed -eq 1 ]; then
 				shell::stdout "INFO: Successfully removed key '$selected_key' from section '$section'" 46
@@ -1322,7 +1322,7 @@ shell::remove_ini_key() {
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::command_clip "$replace_cmd"
 	else
-		shell::run_cmd_eval "$replace_cmd"
+		shell::run::shell "$replace_cmd"
 		if [ $? -eq 0 ]; then
 			if [ $key_removed -eq 1 ]; then
 				shell::stdout "INFO: Successfully removed key '$key' from section '$section'" 46
@@ -2092,7 +2092,7 @@ shell::get_or_default_ini_value() {
 #
 # Notes:
 #   - Relies on shell::stdout, shell::check_ini_file, shell::exist_ini_section,
-#     shell::ini_escape_for_regex, shell::validate_ini_section_name, and shell::run_cmd_eval.
+#     shell::ini_escape_for_regex, shell::validate_ini_section_name, and shell::run::shell.
 shell::rename_ini_section() {
 	local dry_run="false"
 	local opt_h_found="false"
@@ -2191,7 +2191,7 @@ shell::rename_ini_section() {
 		sed_cmd="sed -i \"s/^\[${escaped_old_section}\]$/\[${new_section}\]/\" \"$file\""
 	fi
 
-	shell::execute_or_evict "$dry_run" "$sed_cmd"
+	shell::exec::safe "$dry_run" "$sed_cmd"
 	if [ "$dry_run" = "false" ]; then
 		shell::stdout "INFO: Successfully renamed section from '$old_section' to '$new_section'." 46
 	fi
@@ -2462,7 +2462,7 @@ shell::clone_ini_section() {
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::command_clip "$replace_cmd"
 	else
-		shell::run_cmd_eval "$replace_cmd"
+		shell::run::shell "$replace_cmd"
 		if [ $? -eq 0 ]; then
 			shell::stdout "INFO: Successfully cloned section '$source_section' to '$destination_section'." 46
 			return 0
@@ -2595,7 +2595,7 @@ shell::fzf_clone_ini_section() {
 #
 # Notes:
 #   - Relies on shell::stdout, shell::install_package, shell::list_ini_sections,
-#     shell::run_cmd_eval, shell::logger::command_clip, and shell::ini_escape_for_regex.
+#     shell::run::shell, shell::logger::command_clip, and shell::ini_escape_for_regex.
 #   - Uses fzf's multi-select feature (TAB key) for selecting multiple sections.
 shell::fzf_remove_ini_sections() {
 	local dry_run="false"
