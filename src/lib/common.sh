@@ -3434,11 +3434,11 @@ shell::ask::path() {
 	echo "$entered_value"
 }
 
-# shell::options::select function
+# shell::ask::option function
 # Prompts the user to select an option from a list of choices.
 #
 # Usage:
-#   shell::options::select [-h] <option1> <option2> ... <optionN>
+#   shell::ask::option [-h] <option1> <option2> ... <optionN>
 #
 # Parameters:
 #   - -h        	: Optional. Displays this help message.
@@ -3456,23 +3456,23 @@ shell::ask::path() {
 #
 # Example:
 #   options=("Apple" "Banana" "Cherry")
-#   fruit=$(shell::options::select "${options[@]}")
+#   fruit=$(shell::ask::option "${options[@]}")
 #   echo "You selected: $fruit"
 #
-#   theme=$(shell::options::select "Dark" "Light" "System")
+#   theme=$(shell::ask::option "Dark" "Light" "System")
 #   echo "Chosen theme: $theme"
-shell::options::select() {
+shell::ask::option() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Select multiple options from a list of choices using fzf."
-		shell::logger::usage "shell::options::select [-h | --help] <option1> <option2> ... <optionN>"
+		shell::logger::usage "shell::ask::option [-h | --help] <option1> <option2> ... <optionN>"
 		shell::logger::option "-h, --help" "Show this help message"
-		shell::logger::example "shell::options::select \"Development\" \"Staging\" \"Production\""
+		shell::logger::example "shell::ask::option \"Development\" \"Staging\" \"Production\""
 		return $RETURN_SUCCESS
 	fi
 
 	if [ "$#" -eq 0 ]; then
-		shell::logger::error "No options provided to shell::options::select."
+		shell::logger::error "No options provided to shell::ask::option."
 		return $RETURN_FAILURE
 	fi
 
@@ -3503,12 +3503,12 @@ shell::options::select() {
 	echo "$choice"
 }
 
-# shell::options::select_key function
+# shell::ask::option::value function
 # Prompts the user to select an option from a list of labels using fzf,
 # and returns the corresponding key.
 #
 # Usage:
-#   shell::options::select_key [-h] "Label1:Key1" "Label2:Key2" ...
+#   shell::ask::option::value [-h] "Label1:Key1" "Label2:Key2" ...
 #
 # Parameters:
 #   - -h        	: Optional. Displays this help message.
@@ -3521,20 +3521,20 @@ shell::options::select() {
 #
 # Example:
 #   options=("User-Friendly Name:machine_name_1" "Production Server:prod_srv")
-#   chosen_key=$(shell::options::select_key "${options[@]}")
+#   chosen_key=$(shell::ask::option::value "${options[@]}")
 #   echo "The script will now use the key: $chosen_key"
-shell::options::select_key() {
+shell::ask::option::value() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Select multiple options from a list of labels using fzf."
-		shell::logger::usage "shell::options::select_key [-h | --help] \"Label1:Key1\" \"Label2:Key2\" ..."
+		shell::logger::usage "shell::ask::option::value [-h | --help] \"Label1:Key1\" \"Label2:Key2\" ..."
 		shell::logger::option "-h, --help" "Show this help message"
-		shell::logger::example "shell::options::select_key \"User-Friendly Name:machine_name_1\" \"Production Server:prod_srv\""
+		shell::logger::example "shell::ask::option::value \"User-Friendly Name:machine_name_1\" \"Production Server:prod_srv\""
 		return $RETURN_SUCCESS
 	fi
 
 	if [ "$#" -eq 0 ]; then
-		shell::logger::error "No options provided to shell::options::select_key."
+		shell::logger::error "No options provided to shell::ask::option::value."
 		return $RETURN_FAILURE
 	fi
 
@@ -3574,11 +3574,11 @@ shell::options::select_key() {
 	echo "$selected_key"
 }
 
-# shell::options::multiselect function
+# shell::ask::options function
 # Prompts the user to select multiple options from a list of choices using fzf.
 #
 # Usage:
-#   shell::options::multiselect [-h] <option1> <option2> ... <optionN>
+#   shell::ask::options [-h] <option1> <option2> ... <optionN>
 #
 # Parameters:
 #   - -h        	: Optional. Displays this help message.
@@ -3597,23 +3597,23 @@ shell::options::select_key() {
 #
 # Example:
 #   options=("Development" "Staging" "Production")
-#   selected=$(shell::options::multiselect "${options[@]}")
+#   selected=$(shell::ask::options "${options[@]}")
 #   echo "Selected environments: $selected"
 #
-#   features=$(shell::options::multiselect "Feature A" "Feature B" "Feature C")
+#   features=$(shell::ask::options "Feature A" "Feature B" "Feature C")
 #   echo "Selected features: $features"
-shell::options::multiselect() {
+shell::ask::options() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Select multiple options from a list of choices using fzf."
-		shell::logger::usage "shell::options::multiselect [-h | --help] <option1> <option2> ... <optionN>"
+		shell::logger::usage "shell::ask::options [-h | --help] <option1> <option2> ... <optionN>"
 		shell::logger::option "-h, --help" "Show this help message"
-		shell::logger::example "shell::options::multiselect \"Development\" \"Staging\" \"Production\""
+		shell::logger::example "shell::ask::options \"Development\" \"Staging\" \"Production\""
 		return $RETURN_SUCCESS
 	fi
 
 	if [ "$#" -eq 0 ]; then
-		shell::logger::error "No options provided to shell::options::multiselect."
+		shell::logger::error "No options provided to shell::ask::options."
 		return $RETURN_FAILURE
 	fi
 
@@ -3639,12 +3639,12 @@ shell::options::multiselect() {
 	fi
 }
 
-# shell::options::multiselect_key function
+# shell::ask::options::values function
 # Prompts the user to select multiple options from a list of labels using fzf,
 # and returns the corresponding keys.
 #
 # Usage:
-#   shell::options::multiselect_key [-h] "Label1:Key1" "Label2:Key2" ...
+#   shell::ask::options::values [-h] "Label1:Key1" "Label2:Key2" ...
 #
 # Parameters:
 #   - -h        	: Optional. Displays this help message.
@@ -3664,22 +3664,22 @@ shell::options::multiselect() {
 #
 # Example:
 #   options=("Development:dev" "Staging:staging" "Production:prod")
-#   environments=$(shell::options::multiselect_key "${options[@]}")
+#   environments=$(shell::ask::options::values "${options[@]}")
 #   echo "Selected environments: $environments"
 #
 #   services=("Web Server:nginx" "Database:postgresql" "Cache:redis")
-#   selected=$(shell::options::multiselect_key "${services[@]}")
+#   selected=$(shell::ask::options::values "${services[@]}")
 #   echo "Selected services: $selected"
-shell::options::multiselect_key() {
+shell::ask::options::values() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Select multiple options from a list of labels using fzf."
-		shell::logger::usage "shell::options::multiselect_key \"Label1:Key1\" \"Label2:Key2\" ..."
+		shell::logger::usage "shell::ask::options::values \"Label1:Key1\" \"Label2:Key2\" ..."
 		return $RETURN_SUCCESS
 	fi
 
 	if [ "$#" -eq 0 ]; then
-		shell::logger::error "No options provided to shell::options::multiselect_key."
+		shell::logger::error "No options provided to shell::ask::options::values."
 		return $RETURN_FAILURE
 	fi
 

@@ -4517,11 +4517,11 @@ Example:
 "
 
 USAGE_SHELL_SELECT="
-shell::options::select function
+shell::ask::option function
 Prompts the user to select an option from a list of choices.
 
 Usage:
-  shell::options::select [-h] <option1> <option2> ... <optionN>
+  shell::ask::option [-h] <option1> <option2> ... <optionN>
 
 Parameters:
   - -h        	: Optional. Displays this help message.
@@ -4539,20 +4539,20 @@ Description:
 
 Example:
   options=(\"Apple\" \"Banana\" \"Cherry\")
-  fruit=&(shell::options::select \"&{options[@]}\")
+  fruit=&(shell::ask::option \"&{options[@]}\")
   echo \"You selected: $fruit\"
 
-  theme=&(shell::options::select \"Dark\" \"Light\" \"System\")
+  theme=&(shell::ask::option \"Dark\" \"Light\" \"System\")
   echo \"Chosen theme: $theme\"
 "
 
 USAGE_SHELL_SELECT_KEY="
-shell::options::select_key function
+shell::ask::option::value function
 Prompts the user to select an option from a list of labels using fzf,
 and returns the corresponding key.
 
 Usage:
-  shell::options::select_key [-h] \"Label1:Key1\" \"Label2:Key2\" ...
+  shell::ask::option::value [-h] \"Label1:Key1\" \"Label2:Key2\" ...
 
 Parameters:
   - -h        	: Optional. Displays this help message.
@@ -4571,16 +4571,16 @@ Description:
 
 Example:
   options=(\"User-Friendly Name:machine_name_1\" \"Production Server:prod_srv\")
-  chosen_key=\$(shell::options::select_key \"\${options[@]}\")
+  chosen_key=\$(shell::ask::option::value \"\${options[@]}\")
   echo \"The script will now use the key: \$chosen_key\"
 "
 
 USAGE_SHELL_MULTISELECT="
-shell::options::multiselect function
+shell::ask::options function
 Prompts the user to select multiple options from a list of choices using fzf.
 
 Usage:
-  shell::options::multiselect [-h] <option1> <option2> ... <optionN>
+  shell::ask::options [-h] <option1> <option2> ... <optionN>
 
 Parameters:
   - -h        	: Optional. Displays this help message.
@@ -4599,20 +4599,20 @@ Description:
 
 Example:
   options=(\"Development\" \"Staging\" \"Production\")
-  selected=\$(shell::options::multiselect \"\${options[@]}\")
+  selected=\$(shell::ask::options \"\${options[@]}\")
   echo \"Selected environments: \$selected\"
 
-  features=\$(shell::options::multiselect \"Feature A\" \"Feature B\" \"Feature C\")
+  features=\$(shell::ask::options \"Feature A\" \"Feature B\" \"Feature C\")
   echo \"Selected features: \$features\"
 "
 
 USAGE_SHELL_MULTISELECT_KEY="
-shell::options::multiselect_key function
+shell::ask::options::values function
 Prompts the user to select multiple options from a list of labels using fzf,
 and returns the corresponding keys.
 
 Usage:
-  shell::options::multiselect_key [-h] \"Label1:Key1\" \"Label2:Key2\" ...
+  shell::ask::options::values [-h] \"Label1:Key1\" \"Label2:Key2\" ...
 
 Parameters:
   - -h        	: Optional. Displays this help message.
@@ -4632,10 +4632,10 @@ Description:
 
 Example:
   options=(\"Development:dev\" \"Staging:staging\" \"Production:prod\")
-  environments=\$(shell::options::multiselect_key \"\${options[@]}\")
+  environments=\$(shell::ask::options::values \"\${options[@]}\")
   echo \"Selected environments: \$environments\"
 
   services=(\"Web Server:nginx\" \"Database:postgresql\" \"Cache:redis\")
-  selected=\$(shell::options::multiselect_key \"\${services[@]}\")
+  selected=\$(shell::ask::options::values \"\${services[@]}\")
   echo \"Selected services: \$selected\"
 "

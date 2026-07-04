@@ -849,19 +849,19 @@ shell::git::branch::checkout() {
 
 	if [ "$has_uncommitted" = "false" ] && [ "${local_ahead}" -gt 0 ]; then
 		# Case 2: local commits only, working tree clean.
-		strategy=$(shell::options::select_key \
+		strategy=$(shell::ask::option::value \
 			"$opt_rebase" \
 			"$opt_reset")
 
 	elif [ "$has_uncommitted" = "true" ] && [ "${local_ahead}" -eq 0 ]; then
 		# Case 3: uncommitted changes only, no local commits.
-		strategy=$(shell::options::select_key \
+		strategy=$(shell::ask::option::value \
 			"$opt_stash_reset" \
 			"$opt_reset")
 
 	else
 		# Case 4: both uncommitted changes and local commits.
-		strategy=$(shell::options::select_key \
+		strategy=$(shell::ask::option::value \
 			"$opt_stash_rebase" \
 			"$opt_reset")
 	fi
@@ -1261,7 +1261,7 @@ shell::git::branch::remove() {
 #
 # Description:
 #   Builds a set of labelled push strategies (label:command pairs), presents
-#   them via shell::options::select_key (fzf), prompts for confirmation, then
+#   them via shell::ask::option::value (fzf), prompts for confirmation, then
 #   runs the selected git command via shell::logger::assert.
 #   Available strategies:
 #     - Set upstream tracking        git push -u origin <branch>
@@ -1318,7 +1318,7 @@ shell::git::branch::push() {
 	fi
 
 	# ---------------------------------------------------------------------------
-	# Push command options — Label:command pairs for shell::options::select_key.
+	# Push command options — Label:command pairs for shell::ask::option::value.
 	# Labels are human-readable (no colons); keys are the git commands to run.
 	# ---------------------------------------------------------------------------
 	local -a push_options=(
@@ -1337,7 +1337,7 @@ shell::git::branch::push() {
 	)
 
 	local selected_cmd
-	selected_cmd=$(shell::options::select_key "${push_options[@]}")
+	selected_cmd=$(shell::ask::option::value "${push_options[@]}")
 
 	if [ -z "$selected_cmd" ]; then
 		shell::logger::warn "No push command selected — aborting"
@@ -1854,7 +1854,7 @@ shell::git::branch::rename::current() {
 #   - -h, --help    : Show this help message.
 #
 # Description:
-#   Step 1 — Collect all local branch names and present via shell::options::select.
+#   Step 1 — Collect all local branch names and present via shell::ask::option.
 #   Step 2 — Prompt for the desired new branch name (loops until non-empty).
 #   Step 3 — Confirm and delegate to shell::git::branch::rename.
 #
@@ -1900,7 +1900,7 @@ shell::git::branch::rename::fzf() {
 	fi
 
 	local old_name
-	old_name=$(shell::options::select "${local_branches[@]}")
+	old_name=$(shell::ask::option "${local_branches[@]}")
 
 	if [ -z "$old_name" ]; then
 		shell::logger::warn "No branch selected — aborting"
@@ -1954,7 +1954,7 @@ shell::git::branch::rename::fzf() {
 #   The ' : ' separator uses ':' which is prohibited in git branch names,
 #   making it a reliable extraction anchor in the space-joined multiselect output.
 #
-# Action menu (presented after branch selection via shell::options::select_key):
+# Action menu (presented after branch selection via shell::ask::option::value):
 #   • Checkout                              → shell::git::branch::checkout      (first selected)
 #   • View commit history                   → shell::git::commit::spec           (first selected)
 #   • Browse commits and copy info          → shell::git::commit::spec::search   (first selected)
@@ -2072,7 +2072,7 @@ shell::git::branch::all::fzf() {
 	# Step 1 — multi-select branch picker (TAB to mark multiple entries, Enter to confirm).
 	# ---------------------------------------------------------------------------
 	local selected_output
-	selected_output=$(shell::options::multiselect "${branch_lines[@]}")
+	selected_output=$(shell::ask::options "${branch_lines[@]}")
 
 	if [ -z "$selected_output" ]; then
 		shell::logger::warn "No branches selected — aborting"
@@ -2082,7 +2082,7 @@ shell::git::branch::all::fzf() {
 	# ---------------------------------------------------------------------------
 	# Step 2 — extract branch names from the space-joined multiselect output.
 	#
-	# shell::options::multiselect joins selected lines with spaces (newlines → spaces).
+	# shell::ask::options joins selected lines with spaces (newlines → spaces).
 	# The ' : ' separator (colon is prohibited in git ref names) followed by
 	# non-space chars uniquely identifies each branch name in the joined string.
 	#
@@ -2122,7 +2122,7 @@ shell::git::branch::all::fzf() {
 	# ---------------------------------------------------------------------------
 	# Step 3 — action menu.
 	#
-	# Uses shell::options::select_key which splits each entry on the first ':'
+	# Uses shell::ask::option::value which splits each entry on the first ':'
 	# to separate the display label from the key. Labels must not contain ':'.
 	# Single-branch actions warn and apply to the first selected branch only.
 	# Multi-branch actions iterate over (or pass) all selected branches.
@@ -2141,7 +2141,7 @@ shell::git::branch::all::fzf() {
 	)
 
 	local action
-	action=$(shell::options::select_key "${action_options[@]}")
+	action=$(shell::ask::option::value "${action_options[@]}")
 
 	if [ -z "$action" ] || [ "$action" = "noop" ]; then
 		shell::logger::info "No action taken — exiting"
@@ -2408,8 +2408,8 @@ shell::git::branch::merge() {
 #
 # Description:
 #   Step 1 — Collect all local branch names.
-#   Step 2 — Present source branch picker via shell::options::select (fzf).
-#   Step 3 — Present target branch picker via shell::options::select (fzf),
+#   Step 2 — Present source branch picker via shell::ask::option (fzf).
+#   Step 3 — Present target branch picker via shell::ask::option (fzf),
 #             excluding the source branch from the list.
 #   Step 4 — Confirm the merge plan with the user.
 #   Step 5 — Delegate to shell::git::branch::merge [-n] <source> <target>.
@@ -2463,7 +2463,7 @@ shell::git::branch::merge::fzf() {
 	# ---------------------------------------------------------------------------
 	shell::logger::info "Select SOURCE branch (the branch to merge FROM):"
 	local source_branch
-	source_branch=$(shell::options::select "${all_branches[@]}")
+	source_branch=$(shell::ask::option "${all_branches[@]}")
 
 	if [ -z "$source_branch" ]; then
 		shell::logger::warn "No source branch selected — aborting"
@@ -2481,7 +2481,7 @@ shell::git::branch::merge::fzf() {
 
 	shell::logger::info "Select TARGET branch (the branch to merge INTO):"
 	local target_branch
-	target_branch=$(shell::options::select "${target_candidates[@]}")
+	target_branch=$(shell::ask::option "${target_candidates[@]}")
 
 	if [ -z "$target_branch" ]; then
 		shell::logger::warn "No target branch selected — aborting"
@@ -2598,7 +2598,7 @@ shell::git::branch::stash() {
 # Description:
 #   Step 1 — Verify the git repository and capture the current branch.
 #   Step 2 — Build a list of stashes filtered to the current branch.
-#   Step 3 — Present a single-select picker via shell::options::select.
+#   Step 3 — Present a single-select picker via shell::ask::option.
 #   Step 4 — Extract the stash reference (stash@{N}) from the selection.
 #   Step 5 — Confirm removal with the user.
 #   Step 6 — Execute: git stash drop <stash_ref>
@@ -2654,7 +2654,7 @@ shell::git::branch::stash::remove::fzf() {
 
 	# Step 3 — present single-select picker.
 	local selected_output
-	selected_output=$(shell::options::select "${stash_lines[@]}")
+	selected_output=$(shell::ask::option "${stash_lines[@]}")
 
 	if [ -z "$selected_output" ]; then
 		shell::logger::warn "No stash selected — aborting"
@@ -2708,7 +2708,7 @@ shell::git::branch::stash::remove::fzf() {
 # Description:
 #   Step 1 — Verify the git repository and capture the current branch.
 #   Step 2 — Build a list of stashes filtered to the current branch.
-#   Step 3 — Present a single-select picker via shell::options::select.
+#   Step 3 — Present a single-select picker via shell::ask::option.
 #   Step 4 — Show the diff of the selected stash via git stash show -p.
 #   Step 5 — Copy the stash reference to clipboard for convenience.
 #
@@ -2761,7 +2761,7 @@ shell::git::branch::stash::preview::fzf() {
 
 	# Step 3 — present single-select picker.
 	local selected_output
-	selected_output=$(shell::options::select "${stash_lines[@]}")
+	selected_output=$(shell::ask::option "${stash_lines[@]}")
 
 	if [ -z "$selected_output" ]; then
 		shell::logger::warn "No stash selected — aborting"
@@ -2817,7 +2817,7 @@ shell::git::branch::stash::preview::fzf() {
 # Description:
 #   Step 1 — Verify the git repository and capture the current branch.
 #   Step 2 — Build a list of stashes filtered to the current branch.
-#   Step 3 — Present a multi-select picker via shell::options::multiselect.
+#   Step 3 — Present a multi-select picker via shell::ask::options.
 #   Step 4 — Extract stash references (stash@{N}) from the selection.
 #   Step 5 — Apply each selected stash in order, continuing on failure.
 #   Step 6 — Summarize success/failure counts.
@@ -2871,7 +2871,7 @@ shell::git::branch::stash::apply::fzf() {
 
 	# Step 3 — present multi-select picker.
 	local selected_output
-	selected_output=$(shell::options::multiselect "${stash_lines[@]}")
+	selected_output=$(shell::ask::options "${stash_lines[@]}")
 
 	if [ -z "$selected_output" ]; then
 		shell::logger::warn "No stashes selected — aborting"
@@ -3146,7 +3146,7 @@ shell::git::commit::spec::fzf() {
 	fi
 
 	local selected_branch
-	selected_branch=$(shell::options::select "${branch_list[@]}")
+	selected_branch=$(shell::ask::option "${branch_list[@]}")
 
 	if [ -z "$selected_branch" ]; then
 		shell::logger::warn "No branch selected — aborting"
@@ -3173,7 +3173,7 @@ shell::git::commit::spec::fzf() {
 #
 # Description:
 #   Builds a coloured commit list via git log for the specified branch, then
-#   delegates to shell::options::multiselect (TAB to select multiple entries).
+#   delegates to shell::ask::options (TAB to select multiple entries).
 #   For each selected commit, logs the message via shell::logger::info and copies
 #   it to the clipboard via shell::clip_value.
 #
@@ -3221,7 +3221,7 @@ shell::git::commit::spec::search() {
 	# ---------------------------------------------------------------------------
 	local log_format="%C(bold blue)%H (%h)%C(reset) - %C(bold green)(%ar at %ad)%C(reset) %C(white)%an%C(reset)%C(bold yellow)%d%C(reset) %C(dim white)- %s%C(reset)"
 
-	# Build per-line array — one element per commit — for shell::options::multiselect.
+	# Build per-line array — one element per commit — for shell::ask::options.
 	local -a commit_lines
 	while IFS= read -r line; do
 		commit_lines+=("$line")
@@ -3234,7 +3234,7 @@ shell::git::commit::spec::search() {
 
 	# Present multi-select picker via codebase helper (TAB to select multiple).
 	local selected_output
-	selected_output=$(shell::options::multiselect "${commit_lines[@]}")
+	selected_output=$(shell::ask::options "${commit_lines[@]}")
 
 	if [ -z "$selected_output" ]; then
 		shell::logger::warn "No commits selected — aborting"
@@ -3294,7 +3294,7 @@ shell::git::commit::spec::search::current() {
 # Description:
 #   Builds a coloured commit list via git log --all covering all local branches,
 #   remote-tracking branches, and tags, then delegates to
-#   shell::options::multiselect (TAB to select multiple entries).
+#   shell::ask::options (TAB to select multiple entries).
 #   For each selected commit, logs the message via shell::logger::info and copies
 #   it to the clipboard via shell::clip_value.
 #
@@ -3331,7 +3331,7 @@ shell::git::commit::all::search() {
 	# ---------------------------------------------------------------------------
 	local log_format="%C(bold blue)%H (%h)%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%an%C(reset)%C(bold yellow)%d%C(reset) %C(dim white)- %s%C(reset)"
 
-	# Build per-line array — one element per commit — for shell::options::multiselect.
+	# Build per-line array — one element per commit — for shell::ask::options.
 	local -a commit_lines
 	while IFS= read -r line; do
 		commit_lines+=("$line")
@@ -3344,7 +3344,7 @@ shell::git::commit::all::search() {
 
 	# Present multi-select picker via codebase helper (TAB to select multiple).
 	local selected_output
-	selected_output=$(shell::options::multiselect "${commit_lines[@]}")
+	selected_output=$(shell::ask::options "${commit_lines[@]}")
 
 	if [ -z "$selected_output" ]; then
 		shell::logger::warn "No commits selected — aborting"
@@ -3469,7 +3469,7 @@ shell::git::commit::pick::local() {
 
 	# Step 3 — present multi-select picker (TAB to mark commits).
 	local selected_output
-	selected_output=$(shell::options::multiselect "${commit_lines[@]}")
+	selected_output=$(shell::ask::options "${commit_lines[@]}")
 
 	if [ -z "$selected_output" ]; then
 		shell::logger::warn "No commits selected — aborting"
@@ -3634,7 +3634,7 @@ shell::git::commit::pick::remote() {
 
 	# Step 3 — present multi-select picker (TAB to mark commits).
 	local selected_output
-	selected_output=$(shell::options::multiselect "${commit_lines[@]}")
+	selected_output=$(shell::ask::options "${commit_lines[@]}")
 
 	if [ -z "$selected_output" ]; then
 		shell::logger::warn "No commits selected — aborting"
@@ -3850,7 +3850,7 @@ shell::git::commit::message::base() {
 	# ===========================================================================
 
 	local selected_category
-	selected_category=$(shell::options::select \
+	selected_category=$(shell::ask::option \
 		"CI/CD Pipeline Triggers" \
 		"Documentation and Non-Code Changes" \
 		"Workflow and Repository Maintenance" \
@@ -3894,7 +3894,7 @@ shell::git::commit::message::base() {
 	# ===========================================================================
 
 	local selected_message
-	selected_message=$(shell::options::select "${messages[@]}")
+	selected_message=$(shell::ask::option "${messages[@]}")
 
 	if [ -z "$selected_message" ]; then
 		shell::logger::warn "No message selected — aborting"
@@ -3924,7 +3924,7 @@ shell::git::commit::message::base() {
 #
 # Description:
 #   Default mode:
-#     1. Select commit type (feat, fix, chore, …) via shell::options::select
+#     1. Select commit type (feat, fix, chore, …) via shell::ask::option
 #     2. Map type → emoji code via case lookup
 #     3. Read commit description (loops until non-empty)
 #     4. Read issue number (loops until non-empty)
@@ -3933,8 +3933,8 @@ shell::git::commit::message::base() {
 #     7. Send Telegram notification via shell::git::telegram::history::send
 #     8. git push origin <current_branch>
 #   Empty mode (--empty):
-#     1. Select category via shell::options::select
-#     2. Select pre-defined message from category via shell::options::select
+#     1. Select category via shell::ask::option
+#     2. Select pre-defined message from category via shell::ask::option
 #     3. Confirm → git commit --allow-empty -m "<message>"
 #
 # Returns:
@@ -4016,7 +4016,7 @@ shell::git::commit::create() {
 
 	# Step 1 — select commit type via fzf.
 	local selected_type
-	selected_type=$(shell::options::select \
+	selected_type=$(shell::ask::option \
 		"feat" "fix" "chore" "docs" "style" "refactor" "test" "perf" \
 		"WIP" "improvement" "revert" "security" "remove" "initial source" \
 		"logs" "config" "build" "dependency" "deployment" "localization" \
@@ -4308,7 +4308,7 @@ shell::git::commit::checkout::fzf() {
 	# ---------------------------------------------------------------------------
 	local log_format="%C(bold blue)%H (%h)%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%an%C(reset)%C(bold yellow)%d%C(reset) %C(dim white)- %s%C(reset)"
 
-	# Build per-line array — one element per commit — for shell::options::multiselect.
+	# Build per-line array — one element per commit — for shell::ask::options.
 	local -a commit_lines
 	while IFS= read -r line; do
 		commit_lines+=("$line")
@@ -4321,7 +4321,7 @@ shell::git::commit::checkout::fzf() {
 
 	# Present multi-select picker via codebase helper (TAB to select multiple).
 	local selected_output
-	selected_output=$(shell::options::multiselect "${commit_lines[@]}")
+	selected_output=$(shell::ask::options "${commit_lines[@]}")
 
 	if [ -z "$selected_output" ]; then
 		shell::logger::warn "No commit selected — aborting"
@@ -4709,7 +4709,7 @@ shell::git::tag::checkout() {
 #              [LOCAL  ] : <tag>  — exists only locally
 #              [REMOTE ] : <tag>  — exists only on origin
 #              [BOTH   ] : <tag>  — exists on both local and origin
-#   Step 4 — Present a single-select picker via shell::options::select.
+#   Step 4 — Present a single-select picker via shell::ask::option.
 #   Step 5 — Extract the tag name from the selection using the ' : ' separator.
 #   Step 6 — Forward to shell::git::tag::checkout with the extracted tag name.
 #            If -b was provided, the branch name is forwarded as well.
@@ -4818,7 +4818,7 @@ shell::git::tag::checkout::fzf() {
 	# Step 4 — single-select tag picker.
 	# ---------------------------------------------------------------------------
 	local selected_output
-	selected_output=$(shell::options::select "${tag_lines[@]}")
+	selected_output=$(shell::ask::option "${tag_lines[@]}")
 
 	if [ -z "$selected_output" ]; then
 		shell::logger::warn "No tag selected — aborting"
@@ -5050,7 +5050,7 @@ shell::git::tag::all() {
 #              [LOCAL  ] : <tag>  — exists only locally
 #              [REMOTE ] : <tag>  — exists only on origin
 #              [BOTH   ] : <tag>  — exists on both local and origin
-#   Step 4 — Present a single-select picker via shell::options::select.
+#   Step 4 — Present a single-select picker via shell::ask::option.
 #   Step 5 — Extract the tag name from the selection using the ' : ' separator.
 #   Step 6 — Confirm removal with the user.
 #   Step 7 — Forward to shell::git::tag::remove with the extracted tag name.
@@ -5144,7 +5144,7 @@ shell::git::tag::remove::fzf() {
 	# Step 4 — single-select tag picker.
 	# ---------------------------------------------------------------------------
 	local selected_output
-	selected_output=$(shell::options::select "${tag_lines[@]}")
+	selected_output=$(shell::ask::option "${tag_lines[@]}")
 
 	if [ -z "$selected_output" ]; then
 		shell::logger::warn "No tag selected — aborting"
@@ -5279,7 +5279,7 @@ shell::git::commit::revert::fzf() {
 	# Step 2 — Multi-select commit picker (TAB to mark multiple entries).
 	# ---------------------------------------------------------------------------
 	local selected_output
-	selected_output=$(shell::options::multiselect "${commit_lines[@]}")
+	selected_output=$(shell::ask::options "${commit_lines[@]}")
 
 	if [ -z "$selected_output" ]; then
 		shell::logger::warn "No commits selected — aborting"
@@ -5374,7 +5374,7 @@ shell::git::commit::revert::fzf() {
 	)
 
 	local action
-	action=$(shell::options::select_key "${action_options[@]}")
+	action=$(shell::ask::option::value "${action_options[@]}")
 
 	if [ -z "$action" ]; then
 		shell::logger::info "No revert action selected — aborting"
@@ -5499,7 +5499,7 @@ shell::git::commit::revert::fzf() {
 	)
 
 	local apply_action
-	apply_action=$(shell::options::select_key "${apply_options[@]}")
+	apply_action=$(shell::ask::option::value "${apply_options[@]}")
 
 	if [ -z "$apply_action" ] || [ "$apply_action" = "local" ]; then
 		shell::logger::info "Revert committed locally on branch '${revert_branch}'"
@@ -5555,11 +5555,11 @@ shell::git::commit::revert::fzf() {
 # Description:
 #   Step 1 — Verify git repository and resolve target branch.
 #   Step 2 — Build a coloured commit list (full 40-char hash per entry).
-#   Step 3 — Present commit picker via shell::options::select (fzf wrapper).
+#   Step 3 — Present commit picker via shell::ask::option (fzf wrapper).
 #   Step 4 — Extract 40-char commit hash from the selected line.
 #   Step 5 — Collect commit metadata (author, date, subject).
 #   Step 6–7 (loop) — Repeatedly present view-action picker via
-#             shell::options::select_key, render the selected view in a tmux
+#             shell::ask::option::value, render the selected view in a tmux
 #             display-popup (90 × 90 %) or less, then return to the picker.
 #             Available actions:
 #              • diff          — full git show (what changed in this commit)
@@ -5656,10 +5656,10 @@ shell::git::commit::spec::history::fzf() {
 	fi
 
 	# ---------------------------------------------------------------------------
-	# Step 3 — Commit picker via shell::options::select (fzf wrapper).
+	# Step 3 — Commit picker via shell::ask::option (fzf wrapper).
 	# ---------------------------------------------------------------------------
 	local selected_line
-	selected_line=$(shell::options::select "${commit_lines[@]}")
+	selected_line=$(shell::ask::option "${commit_lines[@]}")
 
 	if [ -z "$selected_line" ]; then
 		shell::logger::warn "No commit selected — aborting"
@@ -5710,7 +5710,7 @@ shell::git::commit::spec::history::fzf() {
 
 	while true; do
 		local action
-		action=$(shell::options::select_key "${action_options[@]}")
+		action=$(shell::ask::option::value "${action_options[@]}")
 
 		# Empty selection (ESC) or explicit exit → leave the loop.
 		if [ -z "$action" ] || [ "$action" = "exit" ]; then
