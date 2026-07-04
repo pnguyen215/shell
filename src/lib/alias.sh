@@ -394,3 +394,11 @@ alias sad-n="shell::ask::deny -n"
 # shell::ask::accept
 alias saa="shell::ask::accept"
 alias saa-n="shell::ask::accept -n"
+
+# shell::ask::text
+alias sat="shell::ask::text"
+alias sat-n="shell::ask::text -n"
+alias satxt="shell::ask::text"
+alias satxt-n="shell::ask::text -n"
+alias sattext="shell::ask::text"
+alias sattext-n="shell::ask::text -n"
