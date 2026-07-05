@@ -345,34 +345,71 @@ shell::exec::shell() {
 }
 
 # shell::exec::silent function
-# Executes a given command using the shell's eval function.
+# Executes a shell command silently using eval.
 #
 # Usage:
-#   shell::exec::silent <command>
+#   shell::exec::silent [-n] [-h] <command>
 #
 # Parameters:
-#   - <command>: The command to be executed.
+#   - -n, --dry-run      : Optional. Print the command instead of executing it.
+#   - -h, --help         : Show this help message.
+#   - <command>          : Shell command to execute.
 #
 # Description:
-#   This function takes a command as input and executes it using eval.
-#   It is designed to handle commands that may require shell interpretation.
-#   The function also checks for a help flag (-h) and displays usage information if present.
+#   Executes a shell command using Bash's eval builtin without logging the
+#   command before execution. This function is intended for internal commands
+#   where output logging is intentionally suppressed.
 #
-# Example usage:
-#   shell::exec::silent "ls -l"
+#   When dry-run mode is enabled, the command is printed via
+#   shell::logger::command_clip instead of being executed.
 #
 # Notes:
-#   - The use of eval can be risky if the input command contains untrusted data,
-#     as it can lead to command injection vulnerabilities. Ensure the command is
-#     sanitized before using this function.
+#   Because this function uses eval, callers must ensure the supplied command
+#   is trusted to avoid command injection vulnerabilities.
+#
+# Returns:
+#   $RETURN_SUCCESS (0) on success.
+#   $RETURN_INVALID when no command is provided.
+#   Otherwise returns the exit code from eval.
+#
+# Example:
+#   shell::exec::silent "mkdir -p build"
+#   shell::exec::silent "rm -rf tmp/*"
+#   shell::exec::silent -n "git clean -fd"
 shell::exec::silent() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_RUN_CMD_OUTLET"
-		return 0
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Execute a shell command silently using eval"
+		shell::logger::usage "shell::exec::silent [-n] [-h] <command>"
+		shell::logger::item "command" "Shell command to execute"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
+		shell::logger::example "shell::exec::silent \"mkdir -p build\""
+		shell::logger::example "shell::exec::silent \"rm -rf tmp/*\""
+		shell::logger::example "shell::exec::silent -n \"git clean -fd\""
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
 	fi
 
 	local command="$*"
+
+	if [ -z "$command" ]; then
+		shell::logger::error "Command is required"
+		return $RETURN_INVALID
+	fi
+
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::command_clip "$command"
+		return $RETURN_SUCCESS
+	fi
+
 	eval "$command"
+	return $?
 }
 
 # shell::exec::safe function
