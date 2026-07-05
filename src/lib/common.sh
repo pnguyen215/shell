@@ -204,61 +204,71 @@ shell::stdout() {
 }
 
 # shell::exec::command function
-# Executes a command and prints it for logging purposes.
+# Executes a command directly without invoking a shell.
 #
 # Usage:
-#   shell::exec::command <command>
+#   shell::exec::command [-n] [-h] <command> [arguments...]
 #
 # Parameters:
-#   - <command>: The command to be executed.
+#   - -n, --dry-run          : Optional. Print the command instead of executing it.
+#   - -h, --help             : Show this help message.
+#   - <command>              : Executable command.
+#   - [arguments...]         : Arguments passed to the command.
 #
 # Description:
-#   The `shell::exec::command` function prints the command for logging before executing it.
+#   Executes a command directly using Bash argument expansion (without eval),
+#   making it suitable for commands that do not require shell interpretation
+#   such as pipes, redirects, command substitution, or glob expansion.
 #
-# Options:
-#   None
+#   The command is logged before execution. When dry-run mode is enabled,
+#   the command is printed via shell::logger::command_clip without execution.
 #
-# Example usage:
-#   shell::exec::command ls -l
+# Returns:
+#   $RETURN_SUCCESS (0) on success.
+#   $RETURN_INVALID when no command is provided.
+#   Otherwise returns the exit code of the executed command.
 #
-# Instructions:
-#   1. Use `shell::exec::command` to execute a command.
-#   2. The command will be printed before execution for logging.
-#
-# Notes:
-#   - This function is useful for logging commands prior to execution.
+# Example:
+#   shell::exec::command ls -lah
+#   shell::exec::command git status
+#   shell::exec::command -n git pull
 shell::exec::command() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_RUN_CMD"
-		return 0
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Execute a command directly without using the shell"
+		shell::logger::usage "shell::exec::command [-n] [-h] <command> [arguments...]"
+		shell::logger::item "command" "Executable command"
+		shell::logger::item "arguments" "Arguments passed to the command"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
+		shell::logger::example "shell::exec::command ls -lah"
+		shell::logger::example "shell::exec::command git status"
+		shell::logger::example "shell::exec::command -n git pull"
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	if [ "$#" -eq 0 ]; then
+		shell::logger::error "Command is required"
+		return $RETURN_INVALID
 	fi
 
 	local command="$*"
 
-	# Capture the OS type output from shell::base::os
-	local os_type
-	os_type=$(shell::base::os)
-
-	# Set appropriate color based on OS
-	local color_code=36 # Default cyan
-	if [ "$os_type" = "linux" ]; then
-		color_code=34 # Blue for Linux
-	elif [ "$os_type" = "macos" ]; then
-		color_code=51 # Green for macOS
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::command_clip "$command"
+		return $RETURN_SUCCESS
 	fi
 
-	# Print the command with OS-appropriate emoji
-	local emoji="[em]"
-	if [ "$os_type" = "linux" ]; then
-		emoji="[v]" # Penguin for Linux
-	elif [ "$os_type" = "macos" ]; then
-		emoji="[v]" # Apple for macOS
-	fi
-
-	# shell::stdout "$emoji $command" $color_code
 	shell::logger::command "$command"
-	# Execute the command without using eval
+
 	"$@"
+	return $?
 }
 
 # shell::exec::shell function
