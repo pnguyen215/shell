@@ -272,64 +272,76 @@ shell::exec::command() {
 }
 
 # shell::exec::shell function
-# Execute a command using eval and print it for logging purposes.
+# Executes a command using the shell (eval).
 #
 # Usage:
-#   shell::exec::shell <command>
+#   shell::exec::shell [-n] [-h] <command>
 #
 # Parameters:
-#   - <command>: The command to be executed (as a single string).
+#   - -n, --dry-run      : Optional. Print the command instead of executing it.
+#   - -h, --help         : Show this help message.
+#   - <command>          : Shell command to execute.
 #
 # Description:
-#   The 'shell::exec::shell' function executes a command by passing it to the `eval` command.
-#   This allows the execution of complex commands with arguments, pipes, or redirection
-#   that are difficult to handle with standard execution.
-#   It logs the command before execution to provide visibility into what is being run.
+#   Executes a command using Bash's eval builtin, allowing shell parsing of
+#   pipes, redirections, variables, command substitutions, logical operators,
+#   and other shell syntax.
 #
-# Options:
-#   None
+#   This function should only be used when shell interpretation is required.
+#   For ordinary executable commands, prefer shell::exec::command.
 #
-# Example usage:
-#   shell::exec::shell "ls -l | grep txt"
-#
-# Instructions:
-#   1. Use 'shell::exec::shell' when executing commands that require interpretation by the shell.
-#   2. It is particularly useful for running dynamically constructed commands or those with special characters.
+#   The command is logged before execution. When dry-run mode is enabled,
+#   the command is printed via shell::logger::command_clip without execution.
 #
 # Notes:
-#   - The use of `eval` can be risky if the input command contains untrusted data, as it can lead to
-#     command injection vulnerabilities. Ensure the command is sanitized before using this function.
-#   - Prefer the 'wsd_exe_cmd' function for simpler commands without special characters or pipes.
+#   Since eval executes arbitrary shell syntax, callers should ensure the
+#   supplied command is trusted to avoid command injection vulnerabilities.
+#
+# Returns:
+#   $RETURN_SUCCESS (0) on success.
+#   $RETURN_INVALID when no command is provided.
+#   Otherwise returns the exit code from eval.
+#
+# Example:
+#   shell::exec::shell "ls -lah | grep txt"
+#   shell::exec::shell "cat file.txt > output.txt"
+#   shell::exec::shell -n "git log | head"
 shell::exec::shell() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_RUN_CMD_EVAL"
-		return 0
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Execute a command through the shell using eval"
+		shell::logger::usage "shell::exec::shell [-n] [-h] <command>"
+		shell::logger::item "command" "Shell command to execute"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
+		shell::logger::example "shell::exec::shell \"ls -lah | grep txt\""
+		shell::logger::example "shell::exec::shell \"echo hello > file.txt\""
+		shell::logger::example "shell::exec::shell -n \"git log | head\""
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
 	fi
 
 	local command="$*"
-	# Capture the OS type output from shell::base::os
-	local os_type
-	os_type=$(shell::base::os)
 
-	# Set appropriate color based on OS
-	local color_code=36 # Default cyan
-	if [ "$os_type" = "linux" ]; then
-		color_code=34 # Blue for Linux
-	elif [ "$os_type" = "macos" ]; then
-		color_code=51 # Green for macOS
+	if [ -z "$command" ]; then
+		shell::logger::error "Command is required"
+		return $RETURN_INVALID
 	fi
 
-	# Print the command with OS-appropriate emoji
-	local emoji="[em]"
-	if [ "$os_type" = "linux" ]; then
-		emoji="[v]" # Penguin for Linux
-	elif [ "$os_type" = "macos" ]; then
-		emoji="[v]" # Apple for macOS
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::command_clip "$command"
+		return $RETURN_SUCCESS
 	fi
 
-	# shell::stdout "$emoji $command" $color_code
 	shell::logger::command "$command"
+
 	eval "$command"
+	return $?
 }
 
 # shell::exec::silent function
