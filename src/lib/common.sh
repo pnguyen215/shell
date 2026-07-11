@@ -2851,121 +2851,114 @@ shell::validate_hostname() {
 	fi
 }
 
-# shell::get_mime_type function
-# Determines the MIME type of a file.
+# shell::file::mime function
+# Returns the MIME type associated with a file based on its extension.
 #
 # Usage:
-#   shell::get_mime_type [-h] <file_path>
+#   shell::file::mime [-h] <file>
 #
 # Parameters:
-#   - -h         : Optional. Displays this help message.
-#   - <file_path>: The path to the file.
+#   - -h, --help : Show this help message.
+#   - <file>     : Path to the target file.
 #
 # Description:
-#   Returns the appropriate MIME type based on file extension.
+#   Validates that the supplied file exists, extracts its extension, and
+#   returns the corresponding MIME type. If the extension is unknown,
+#   "application/octet-stream" is returned.
+#
+# Returns:
+#   Outputs the detected MIME type to stdout.
+#   $RETURN_SUCCESS (0) on success.
+#   $RETURN_INVALID when the file argument is missing.
+#   $RETURN_FAILURE when the file does not exist.
 #
 # Example:
-#   mime_type=$(shell::get_mime_type "document.pdf")
-shell::get_mime_type() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_GET_MIME_TYPE"
-		return 0
-	fi
+#   shell::file::mime "README.md"
+#   shell::file::mime "./assets/image.png"
+shell::file::mime() {
+    if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+        shell::logger::reset_options
+        shell::logger::info "Return the MIME type for a file."
+        shell::logger::usage "shell::file::mime [-h] <file>"
+        shell::logger::item "file" "Path to the target file."
+        shell::logger::option "-h, --help" "Show this help message."
+        shell::logger::example "shell::file::mime \"README.md\""
+        shell::logger::example "shell::file::mime \"./assets/image.png\""
 
-	if [ $# -ne 1 ]; then
-		echo "Usage: shell::get_mime_type <file_path>"
-		return 1
-	fi
+        return $RETURN_SUCCESS
+    fi
 
-	if [ -z "$1" ]; then
-		shell::stdout "ERR: File path is required" 196
-		return 1
-	fi
+    local file="$1"
 
-	# Check if the file exists
-	if [ ! -f "$1" ]; then
-		shell::stdout "ERR: File '$1' does not exist." 196
-		return 1
-	fi
+    if [ -z "$file" ]; then
+        shell::logger::error "File path is required."
 
-	local file_path="$1"
-	local extension="${file_path##*.}"
+        return $RETURN_INVALID
+    fi
 
-	case "$extension" in
-	txt | log) echo "text/plain" ;;
-	json) echo "application/json" ;;
-	csv) echo "text/csv" ;;
-	md) echo "text/markdown" ;;
-	html) echo "text/html" ;;
-	xml) echo "application/xml" ;;
-	jpg | jpeg) echo "image/jpeg" ;;
-	png) echo "image/png" ;;
-	webp) echo "image/webp" ;;
-	gif) echo "image/gif" ;;
-	pdf) echo "application/pdf" ;;
-	docx) echo "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ;;
-	xlsx) echo "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ;;
-	pptx) echo "application/vnd.openxmlformats-officedocument.presentationml.presentation" ;;
-	zip) echo "application/zip" ;;
-	tar) echo "application/x-tar" ;;
-	gz) echo "application/gzip" ;;
-	bz2) echo "application/x-bzip2" ;;
-	xz) echo "application/x-xz" ;;
-	mp3) echo "audio/mpeg" ;;
-	wav) echo "audio/wav" ;;
-	ogg) echo "audio/ogg" ;;
-	mp4) echo "video/mp4" ;;
-	avi) echo "video/x-msvideo" ;;
-	mkv) echo "video/x-matroska" ;;
-	flv) echo "video/x-flv" ;;
-	webm) echo "video/webm" ;;
-	svg) echo "image/svg+xml" ;;
-	ico) echo "image/x-icon" ;;
-	json5) echo "application/json5" ;;
-	yaml | yml) echo "application/x-yaml" ;;
-	sh) echo "application/x-sh" ;;
-	py) echo "text/x-python" ;;
-	js) echo "application/javascript" ;;
-	css) echo "text/css" ;;
-	sql) echo "application/sql" ;;
-	mdx) echo "text/markdown" ;;
-	rs) echo "text/x-rust" ;;
-	go) echo "text/x-go" ;;
-	ts) echo "application/typescript" ;;
-	cpp | cxx | cc) echo "text/x-c++src" ;;
-	c) echo "text/x-csrc" ;;
-	h) echo "text/x-chdr" ;;
-	rb) echo "text/x-ruby" ;;
-	pl) echo "text/x-perl" ;;
-	java) echo "text/x-java-source" ;;
-	kotlin) echo "text/x-kotlin" ;;
-	dart) echo "application/dart" ;;
-	scala) echo "text/x-scala" ;;
-	swift) echo "text/x-swift" ;;
-	lua) echo "text/x-lua" ;;
-	rust) echo "text/x-rust" ;;
-	asm | s) echo "text/x-asm" ;;
-	v | vlang) echo "text/x-vlang" ;;
-	nim) echo "text/x-nim" ;;
-	clj | cljs) echo "text/x-clojure" ;;
-	el | elisp) echo "text/x-emacs-lisp" ;;
-	haskell | hs) echo "text/x-haskell" ;;
-	erlang | erl) echo "text/x-erlang" ;;
-	crystal) echo "text/x-crystal" ;;
-	php) echo "application/x-php" ;;
-	asp | aspx) echo "application/x-aspx" ;;
-	jsp) echo "application/x-jsp" ;;
-	cs | cshtml) echo "text/x-csharp" ;;
-	vb | vbs) echo "text/vbscript" ;;
-	tsx) echo "application/typescript" ;;
-	vue) echo "text/x-vue" ;;
-	svelte) echo "text/x-svelte" ;;
-	rsx) echo "text/x-rsx" ;;
-	dart) echo "application/dart" ;;
-	nim) echo "text/x-nim" ;;
-	clojure | clj) echo "text/x-clojure" ;;
-	*) echo "text/plain" ;;
-	esac
+    if [ ! -f "$file" ]; then
+        shell::logger::error "File not found: ${file}"
+
+        return $RETURN_FAILURE
+    fi
+
+    local extension="${file##*.}"
+
+    case "${extension,,}" in
+        txt) echo "text/plain" ;;
+        html | htm) echo "text/html" ;;
+        css) echo "text/css" ;;
+        csv) echo "text/csv" ;;
+        xml) echo "application/xml" ;;
+        json) echo "application/json" ;;
+        js | mjs) echo "application/javascript" ;;
+        pdf) echo "application/pdf" ;;
+        zip) echo "application/zip" ;;
+        gz) echo "application/gzip" ;;
+        tar) echo "application/x-tar" ;;
+        tgz) echo "application/gzip" ;;
+        bz2) echo "application/x-bzip2" ;;
+        7z) echo "application/x-7z-compressed" ;;
+        rar) echo "application/vnd.rar" ;;
+        jar) echo "application/java-archive" ;;
+        exe) echo "application/vnd.microsoft.portable-executable" ;;
+        bin) echo "application/octet-stream" ;;
+        png) echo "image/png" ;;
+        jpg | jpeg) echo "image/jpeg" ;;
+        gif) echo "image/gif" ;;
+        bmp) echo "image/bmp" ;;
+        webp) echo "image/webp" ;;
+        svg) echo "image/svg+xml" ;;
+        ico) echo "image/x-icon" ;;
+        tif | tiff) echo "image/tiff" ;;
+        mp3) echo "audio/mpeg" ;;
+        wav) echo "audio/wav" ;;
+        ogg) echo "audio/ogg" ;;
+        flac) echo "audio/flac" ;;
+        mp4) echo "video/mp4" ;;
+        avi) echo "video/x-msvideo" ;;
+        mov) echo "video/quicktime" ;;
+        mkv) echo "video/x-matroska" ;;
+        webm) echo "video/webm" ;;
+        sh) echo "application/x-sh" ;;
+        py) echo "text/x-python" ;;
+        c) echo "text/x-c" ;;
+        h) echo "text/x-c" ;;
+        cpp | cc | cxx) echo "text/x-c++" ;;
+        hpp | hh | hxx) echo "text/x-c++" ;;
+        java) echo "text/x-java-source" ;;
+        php) echo "application/x-httpd-php" ;;
+        go) echo "text/x-go" ;;
+        rs) echo "text/rust" ;;
+        md) echo "text/markdown" ;;
+        yaml | yml) echo "application/yaml" ;;
+        toml) echo "application/toml" ;;
+        ini) echo "text/plain" ;;
+        sql) echo "application/sql" ;;
+        *) echo "application/octet-stream" ;;
+    esac
+
+    return $RETURN_SUCCESS
 }
 
 # shell::encode_base64_file function
