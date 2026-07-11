@@ -3755,6 +3755,69 @@ shell::git::commit::message::base() {
 		":memo: docs: add inline comments for complex business logic sections"
 	)
 
+	local -a feature_product_messages=(
+		":sparkles: feat: add user-facing support for the requested workflow"
+		":sparkles: feat: implement initial version of the new product capability"
+		":sparkles: feat: add validation and clear feedback to the form flow"
+		":sparkles: feat: introduce configurable behavior for the new integration"
+		":sparkles: feat: add pagination and filtering to the resource listing"
+		":sparkles: feat: support bulk actions for selected records"
+	)
+
+	local -a bugfix_error_handling_messages=(
+		":bug: fix: prevent null reference error when optional data is missing"
+		":bug: fix: handle API timeout and retry transient request failures"
+		":bug: fix: correct edge case in date and timezone conversion"
+		":bug: fix: preserve user input after client-side validation fails"
+		":bug: fix: resolve race condition during concurrent update requests"
+		":bug: fix: return actionable error response for invalid request payload"
+	)
+
+	local -a testing_quality_assurance_messages=(
+		":white_check_mark: test: add regression coverage for reported production issue"
+		":white_check_mark: test: add unit tests for new validation rules"
+		":white_check_mark: test: cover API error responses and authorization paths"
+		":white_check_mark: test: add integration test for end-to-end checkout flow"
+		":white_check_mark: test: stabilize flaky test by waiting for async state"
+		":white_check_mark: test: add fixtures for representative edge-case data"
+	)
+
+	local -a performance_reliability_messages=(
+		":zap: perf: reduce redundant database queries in request path"
+		":zap: perf: cache expensive calculation for repeated lookups"
+		":zap: perf: optimize bundle size by lazy loading non-critical module"
+		":chart_with_upwards_trend: perf: add benchmark for critical query performance"
+		":shield: fix: add graceful fallback when dependent service is unavailable"
+		":card_file_box: perf: add index to improve frequently filtered query"
+	)
+
+	local -a api_data_contract_messages=(
+		":zap: feat: add API endpoint for managing resource settings"
+		":twisted_rightwards_arrows: refactor: align API response with shared contract"
+		":card_file_box: feat: add schema validation for incoming API payloads"
+		":arrows_counterclockwise: fix: make database migration safe to run repeatedly"
+		":card_file_box: feat: add audit fields to persisted domain records"
+		":warning: feat!: remove deprecated API field from public response"
+	)
+
+	local -a dependency_build_messages=(
+		":package: build: upgrade runtime to supported LTS version"
+		":package: dependency: update direct dependencies to compatible versions"
+		":hammer: build: configure reproducible local development build"
+		":construction_worker: ci: cache package dependencies in CI workflow"
+		":wrench: chore: remove unused dependency from project manifest"
+		":green_heart: ci: split test jobs to reduce pipeline duration"
+	)
+
+	local -a architecture_refactoring_messages=(
+		":recycle: refactor: extract shared business rules into dedicated service"
+		":recycle: refactor: separate persistence concerns from application logic"
+		":recycle: refactor: replace duplicated logic with reusable utility"
+		":building_construction: refactor: reorganize module boundaries by domain"
+		":recycle: refactor: simplify conditional flow for easier maintenance"
+		":art: style: standardize error handling conventions across modules"
+	)
+
 	local -a workflow_maintenance_messages=(
 		":recycle: chore: refresh stale pull request to resolve merge conflicts"
 		":recycle: chore: sync with main branch to keep feature branch up-to-date"
@@ -3853,6 +3916,13 @@ shell::git::commit::message::base() {
 	selected_category=$(shell::ask::option \
 		"CI/CD Pipeline Triggers" \
 		"Documentation and Non-Code Changes" \
+		"Feature and Product Development" \
+		"Bug Fixes and Error Handling" \
+		"Testing and Quality Assurance" \
+		"Performance and Reliability" \
+		"API and Data Contracts" \
+		"Dependencies and Build Tooling" \
+		"Architecture and Refactoring" \
 		"Workflow and Repository Maintenance" \
 		"Project and Team Communication" \
 		"Hotfix and Emergency Patches" \
@@ -3877,6 +3947,13 @@ shell::git::commit::message::base() {
 	case "$selected_category" in
 		"CI/CD Pipeline Triggers")             messages=("${ci_cd_messages[@]}") ;;
 		"Documentation and Non-Code Changes")  messages=("${docs_non_code_messages[@]}") ;;
+		"Feature and Product Development")     messages=("${feature_product_messages[@]}") ;;
+		"Bug Fixes and Error Handling")         messages=("${bugfix_error_handling_messages[@]}") ;;
+		"Testing and Quality Assurance")        messages=("${testing_quality_assurance_messages[@]}") ;;
+		"Performance and Reliability")          messages=("${performance_reliability_messages[@]}") ;;
+		"API and Data Contracts")               messages=("${api_data_contract_messages[@]}") ;;
+		"Dependencies and Build Tooling")       messages=("${dependency_build_messages[@]}") ;;
+		"Architecture and Refactoring")         messages=("${architecture_refactoring_messages[@]}") ;;
 		"Workflow and Repository Maintenance") messages=("${workflow_maintenance_messages[@]}") ;;
 		"Project and Team Communication")      messages=("${team_communication_messages[@]}") ;;
 		"Hotfix and Emergency Patches")        messages=("${hotfix_emergency_messages[@]}") ;;
