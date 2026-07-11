@@ -422,3 +422,13 @@ alias sannumber-n="shell::ask::number -n"
 # shell::ask::path
 alias sapath="shell::ask::path"
 alias sapath-n="shell::ask::path -n"
+
+# ////////////////////
+# Shell file aliases
+# ///////////////////
+
+# shell::file::mime
+alias sfm="shell::file::mime"
+alias sfm-n="shell::file::mime -n"
+alias sfmime="shell::file::mime"
+alias sfmime-n="shell::file::mime -n"
