@@ -1263,17 +1263,17 @@ Description:
 "
 
 USAGE_SHELL_GO_BACK="
-shell::go_back function
-Navigates to the previous working directory.
+shell::directory::back function
+Changes the current shell to the previously visited directory.
 
 Usage:
-  shell::go_back [-h]
+  shell::directory::back [-h]
 
 Parameters:
   - -h              : Optional. Displays this help message.
 
 Description:
-  The 'shell::go_back' function changes the current working directory to the previous directory in the history.
+  Uses the standard OLDPWD environment variable and returns an error when no previous directory is available.
 "
 
 USAGE_SHELL_GET_OS_TYPE="

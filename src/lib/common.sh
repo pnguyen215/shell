@@ -2731,21 +2731,51 @@ shell::opent() {
 	shell::stdout "DEBUG: Opening \"$name\" ..." 244
 }
 
-# shell::go_back function
-# Navigates to the previous working directory.
+# shell::directory::back function
+# Changes the current shell to the directory visited immediately before the
+# current one, using the standard OLDPWD environment variable.
 #
 # Usage:
-#   shell::go_back
+#   shell::directory::back [-h]
 #
-# Description:
-#   The 'shell::go_back' function changes the current working directory to the previous directory in the history.
-shell::go_back() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_GO_BACK"
-		return 0
+# Parameters:
+#   - -h, --help : Show this help message.
+#
+# Returns:
+#   $RETURN_SUCCESS (0) when the directory is changed successfully.
+#   $RETURN_FAILURE (non-zero) when no previous directory is available or it
+#   can no longer be accessed.
+#
+# Example:
+#   shell::directory::back
+shell::directory::back() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Change to the previously visited directory"
+		shell::logger::usage "shell::directory::back [-h]"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::directory::back"
+		return $RETURN_SUCCESS
 	fi
 
-	cd $OLDPWD
+	if [ "$#" -ne 0 ]; then
+		shell::logger::error "This function does not accept arguments"
+		shell::logger::usage "shell::directory::back [-h]"
+		return $RETURN_INVALID
+	fi
+
+	if [ -z "${OLDPWD:-}" ]; then
+		shell::logger::error "No previous directory is available"
+		return $RETURN_FAILURE
+	fi
+
+	if ! cd -- "$OLDPWD"; then
+		shell::logger::error "Cannot access previous directory: ${OLDPWD}"
+		return $RETURN_FAILURE
+	fi
+
+	shell::logger::info "Changed directory to: ${PWD}"
+	return $RETURN_SUCCESS
 }
 
 # shell::validate::ip::address function

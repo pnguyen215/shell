@@ -64,7 +64,7 @@ shell::goto() {
 			;;
 
 		"back" | "-b")
-			shell::go_back
+			shell::directory::back
 			break
 			;;
 		*)
