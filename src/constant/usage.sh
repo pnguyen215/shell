@@ -1152,18 +1152,19 @@ Example:
 "
 
 USAGE_SHELL_UPLINK="
-shell::uplink function
-Creates a hard link between the specified source and destination.
+shell::link::hard function
+Creates hard links from source/destination arguments or a .link file.
 
 Usage:
-  shell::uplink [-h] <source name> <destination name>
+  shell::link::hard [-n] [-h] [<source> <destination>]
 
 Parameters:
+  - -n          : Optional. Prints link commands without executing them.
   - -h          : Optional. Displays this help message.
 
 Description:
-  The 'shell::uplink' function creates a hard link between the specified source file and destination file.
-  This allows multiple file names to refer to the same file content.
+  With no paths, reads entries in the format source → destination from .link.
+  Hard links share the same file content and permissions; this function does not modify permissions.
 "
 
 USAGE_SHELL_OPENT="
