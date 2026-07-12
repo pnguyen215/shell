@@ -2677,58 +2677,82 @@ shell::uplink() {
 	done <"$link_file"
 }
 
-# shell::opent function
-# Opens the specified directory in a new Finder tab (Mac OS only).
+# shell::directory::open function
+# Opens a directory in the operating system's file manager. On macOS it opens
+# the directory in a new Finder tab; on Linux it delegates to xdg-open.
 #
 # Usage:
-#   shell::opent [directory]
+#   shell::directory::open [-h] [<directory>]
 #
-# Description:
-#   The 'shell::opent' function opens the specified directory in a new Finder tab on Mac OS.
-#   If no directory is specified, it opens the current directory.
+# Parameters:
+#   - -h, --help   : Show this help message.
+#   - <directory>  : Directory to open. Defaults to the current directory.
 #
-# Dependencies:
-#   - The 'osascript' command for AppleScript support.
-shell::opent() {
-	# Check for the help flag (-h)
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_OPENT"
-		return 0
+# Returns:
+#   $RETURN_SUCCESS (0) when the file manager is opened successfully.
+#   $RETURN_FAILURE (non-zero) when the directory is invalid, the operating
+#   system is unsupported, or the file manager cannot be opened.
+#
+# Example:
+#   shell::directory::open
+#   shell::directory::open ~/Projects
+shell::directory::open() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Open a directory in the system file manager"
+		shell::logger::usage "shell::directory::open [-h] [<directory>]"
+		shell::logger::item "directory" "Directory to open; defaults to the current directory"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::directory::open"
+		shell::logger::example "shell::directory::open ~/Projects"
+		return $RETURN_SUCCESS
+	fi
+
+	if [ "$#" -gt 1 ]; then
+		shell::logger::error "At most one directory path is allowed"
+		shell::logger::usage "shell::directory::open [-h] [<directory>]"
+		return $RETURN_INVALID
+	fi
+
+	local dir="${1:-$PWD}"
+	if [ ! -d "$dir" ]; then
+		shell::logger::error "Directory not found: ${dir}"
+		return $RETURN_FAILURE
 	fi
 
 	local os
 	os=$(shell::base::os)
-
-	local dir
-	local name
-
-	# If no directory is provided, use the current directory.
-	if [ "$#" -eq 0 ]; then
-		dir=$(pwd)
-		name=$(basename "$dir")
-	else
-		dir="$1"
-		name=$(basename "$dir")
-	fi
-
-	if [ "$os" = "macos" ]; then
-		osascript -e 'tell application "Finder"' \
+	case "$os" in
+	macos)
+		if ! osascript \
+			-e 'on run argv' \
+			-e 'tell application "Finder"' \
 			-e 'activate' \
 			-e 'tell application "System Events"' \
 			-e 'keystroke "t" using command down' \
 			-e 'end tell' \
-			-e 'set target of front Finder window to ("'"$dir"'" as POSIX file)' \
+			-e 'set target of front Finder window to (item 1 of argv as POSIX file)' \
 			-e 'end tell' \
-			-e '--say "'"$name"'"'
-	elif [ "$os" = "linux" ]; then
-		# Use xdg-open to open the directory in the default file manager.
-		xdg-open "$dir"
-	else
-		shell::stdout "ERR: Unsupported operating system for shell::opent function." 196
-		return 1
-	fi
+			-e 'end run' \
+			"$dir"; then
+			shell::logger::error "Failed to open Finder for: ${dir}"
+			return $RETURN_FAILURE
+		fi
+		;;
+	linux)
+		if ! xdg-open "$dir"; then
+			shell::logger::error "Failed to open file manager for: ${dir}"
+			return $RETURN_FAILURE
+		fi
+		;;
+	*)
+		shell::logger::error "Unsupported operating system: ${os}"
+		return $RETURN_FAILURE
+		;;
+	esac
 
-	shell::stdout "DEBUG: Opening \"$name\" ..." 244
+	shell::logger::info "Opened directory: ${dir}"
+	return $RETURN_SUCCESS
 }
 
 # shell::directory::back function
