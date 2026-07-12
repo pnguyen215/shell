@@ -433,9 +433,20 @@ alias sfm-n="shell::file::mime -n"
 alias sfmime="shell::file::mime"
 alias sfmime-n="shell::file::mime -n"
 
+# //////////////////////
+# Shell validate aliases
+# /////////////////////
+
 # shell::validate::hostname
 alias svh="shell::validate::hostname"
 
 # shell::validate::ip::address
 alias svip="shell::validate::ip::address"
 alias svipaddr="shell::validate::ip::address"
+
+# ///////////////////////
+# Shell directory aliases
+# //////////////////////
+
+# shell::directory::back
+alias sdb="shell::directory::back"
