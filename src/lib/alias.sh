@@ -432,3 +432,6 @@ alias sfm="shell::file::mime"
 alias sfm-n="shell::file::mime -n"
 alias sfmime="shell::file::mime"
 alias sfmime-n="shell::file::mime -n"
+
+# shell::validate::hostname
+alias svh="shell::validate::hostname"

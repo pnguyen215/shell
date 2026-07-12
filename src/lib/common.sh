@@ -2801,53 +2801,64 @@ shell::validate_ip_addr() {
 	return 1
 }
 
-# shell::validate_hostname function
-# Validates whether a given string is a valid hostname using regex and DNS resolution.
+# shell::validate::hostname function
+# Validates the syntax of a DNS hostname. DNS resolution is checked only for
+# informational feedback: a syntactically valid hostname remains valid even
+# when it has no DNS record.
 #
 # Usage:
-# shell::validate_hostname <hostname>
+#   shell::validate::hostname [-h] <hostname>
 #
-# Description:
-# A valid hostname:
-# - Contains only letters, digits, and hyphens.
-# - Labels are separated by dots.
-# - Each label is 1-63 characters long.
-# - The full hostname is up to 253 characters.
-# - Labels cannot start or end with a hyphen.
-# Also checks if the hostname resolves via DNS.
-shell::validate_hostname() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_VALIDATE_HOSTNAME"
-		return 0
+# Parameters:
+#   - -h, --help : Show this help message.
+#   - <hostname> : DNS hostname to validate.
+#
+# Returns:
+#   $RETURN_SUCCESS (0) when the hostname has a valid format.
+#   $RETURN_FAILURE (non-zero) when the hostname is missing or invalid.
+#
+# Example:
+#   shell::validate::hostname api.example.com
+#   shell::validate::hostname -invalid-hostname
+shell::validate::hostname() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Validate the syntax of a DNS hostname"
+		shell::logger::usage "shell::validate::hostname [-h] <hostname>"
+		shell::logger::item "hostname" "DNS hostname with labels of up to 63 characters"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::validate::hostname api.example.com"
+		return $RETURN_SUCCESS
 	fi
 
 	if [ $# -ne 1 ]; then
-		echo "Usage: shell::validate_hostname <hostname>"
-		return 1
+		shell::logger::error "A hostname is required"
+		shell::logger::usage "shell::validate::hostname [-h] <hostname>"
+		return $RETURN_FAILURE
 	fi
 
 	local hostname="$1"
 
 	# Check total length
 	if [ "${#hostname}" -gt 253 ]; then
-		shell::stdout "ERR: Hostname exceeds 253 characters." 196
-		return 1
+		shell::logger::error "Hostname exceeds 253 characters."
+		return $RETURN_FAILURE
 	fi
 
 	# Regex for full hostname validation
 	# Allows single or multiple labels, each 1-63 characters, no leading/trailing hyphen
 	if ! [[ "$hostname" =~ ^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$ ]]; then
-		shell::stdout "ERR: '$hostname' is not a valid hostname format." 196
-		return 1
+		shell::logger::error "'$hostname' is not a valid hostname format."
+		return $RETURN_FAILURE
 	fi
 
 	# DNS resolution check
 	if nslookup "$hostname" >/dev/null 2>&1; then
-		shell::stdout "INFO: '$hostname' is a valid hostname and resolves via DNS." 46
-		return 0
+		shell::logger::info "'$hostname' is a valid hostname and resolves via DNS."
+		return $RETURN_SUCCESS
 	else
-		shell::stdout "WARN: '$hostname' is valid but does not resolve via DNS." 11
-		return 0
+		shell::logger::warn "'$hostname' is valid but does not resolve via DNS."
+		return $RETURN_SUCCESS
 	fi
 }
 
