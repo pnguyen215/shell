@@ -2748,32 +2748,41 @@ shell::go_back() {
 	cd $OLDPWD
 }
 
-# shell::validate_ip_addr function
-# Validates whether a given string is a valid IPv4 or IPv6 address.
+# shell::validate::ip::address function
+# Validates an IPv4 address or an uncompressed IPv6 address. IPv4 octets are
+# checked for their valid 0-255 range; IPv6 labels must contain one to four
+# hexadecimal characters.
 #
 # Usage:
-# shell::validate_ip_addr <ip_address>
+#   shell::validate::ip::address [-h] <ip_address>
 #
 # Parameters:
-# - <ip_address> : The IP address string to validate.
+#   - -h, --help    : Show this help message.
+#   - <ip_address>  : IPv4 or uncompressed IPv6 address to validate.
 #
-# Description:
-# This function checks if the input string is a valid IPv4 or IPv6 address.
-# IPv4 format: X.X.X.X where each X is 0-255.
-# IPv6 format: eight groups of four hexadecimal digits separated by colons.
+# Returns:
+#   $RETURN_SUCCESS (0) when the address is valid.
+#   $RETURN_FAILURE (non-zero) when the address is missing or invalid.
 #
 # Example:
-# shell::validate_ip_addr 192.168.1.1       # Valid IPv4
-# shell::validate_ip_addr fe80::1ff:fe23::1 # Valid IPv6
-shell::validate_ip_addr() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_VALIDATE_IP_ADDR"
-		return 0
+#   shell::validate::ip::address 192.168.1.1
+#   shell::validate::ip::address 2001:0db8:0000:0000:0000:0000:0000:0001
+shell::validate::ip::address() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Validate an IPv4 or uncompressed IPv6 address"
+		shell::logger::usage "shell::validate::ip::address [-h] <ip_address>"
+		shell::logger::item "ip_address" "IPv4 address or IPv6 address without :: compression"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::validate::ip::address 192.168.1.1"
+		shell::logger::example "shell::validate::ip::address 2001:0db8:0000:0000:0000:0000:0000:0001"
+		return $RETURN_SUCCESS
 	fi
 
 	if [ $# -ne 1 ]; then
-		echo "Usage: shell::validate_ip_addr <ip_address>"
-		return 1
+		shell::logger::error "An IP address is required"
+		shell::logger::usage "shell::validate::ip::address [-h] <ip_address>"
+		return $RETURN_FAILURE
 	fi
 
 	local ip="$1"
@@ -2783,23 +2792,23 @@ shell::validate_ip_addr() {
 		IFS='.' read -r o1 o2 o3 o4 <<<"$ip"
 		for octet in "$o1" "$o2" "$o3" "$o4"; do
 			if ((octet < 0 || octet > 255)); then
-				shell::stdout "ERR: IPv4 octet '$octet' out of range (0-255)." 196
-				return 1
+				shell::logger::error "IPv4 octet '$octet' out of range (0-255)."
+				return $RETURN_FAILURE
 			fi
 		done
-		shell::stdout "INFO: '$ip' is a valid IPv4 address." 46
-		return 0
+		shell::logger::info "'$ip' is a valid IPv4 address."
+		return $RETURN_SUCCESS
 	fi
 
 	# Validate IPv6
 	if [[ "$ip" =~ ^([0-9a-fA-F]{1,4}:){1,7}[0-9a-fA-F]{1,4}$ ]]; then
-		shell::stdout "INFO: '$ip' is a valid IPv6 address." 46
-		return 0
+		shell::logger::info "'$ip' is a valid IPv6 address."
+		return $RETURN_SUCCESS
 	fi
 
-	shell::stdout "ERR: '$ip' is not a valid IPv4 or IPv6 address." 196
-	return 1
-}
+	shell::logger::error "'$ip' is not a valid IPv4 or IPv6 address."
+	return $RETURN_FAILURE
+} 
 
 # shell::validate::hostname function
 # Validates the syntax of a DNS hostname. DNS resolution is checked only for
