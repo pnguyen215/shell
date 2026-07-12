@@ -4444,11 +4444,11 @@ Description:
 "
 
 USAGE_SHELL_ENCODE_BASE64_FILE="
-shell::encode_base64_file function
-Encodes a file to base64 for API submission.
+shell::encode::file::base64 function
+Encodes a file as a single-line Base64 value for API submission.
 
 Usage:
-  shell::encode_base64_file [-n] [-h] <file_path>
+  shell::encode::file::base64 [-n] [-h] <file_path>
 
 Parameters:
   - -n         : Optional dry-run flag. If provided, commands are printed using shell::logger::command_clip instead of executed.
@@ -4456,8 +4456,7 @@ Parameters:
   - <file_path>: The path to the file to encode.
 
 Description:
-  Encodes the specified file to base64 format for API consumption.
-  Handles platform differences between macOS and Linux.
+  Encodes the specified file without Base64 line breaks, using syntax that works on macOS and Linux.
 "
 
 USAGE_SHELL_ENTER="

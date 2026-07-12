@@ -453,3 +453,10 @@ alias sdb="shell::directory::back"
 
 # shell::directory::open
 alias sdo="shell::directory::open"
+
+# //////////////////////
+# Shell encode aliases
+# /////////////////////
+
+# shell::encode::file::base64
+alias sefb="shell::encode::file::base64"

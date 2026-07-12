@@ -1436,9 +1436,9 @@ shell::editor() {
 	# Check if the selected command is 'base64'.
 	if [ "$selected_command" = "base64" ]; then
 		if [ "$dry_run" = "true" ]; then
-			shell::encode_base64_file -n "$selected_file"
+			shell::encode::file::base64 -n "$selected_file"
 		else
-			shell::encode_base64_file "$selected_file"
+			shell::encode::file::base64 "$selected_file"
 		fi
 		if [ $? -eq 0 ]; then
 			shell::stdout "INFO: File '$selected_file' encoded base64 successfully." 46
@@ -3046,63 +3046,85 @@ shell::file::mime() {
     return $RETURN_SUCCESS
 }
 
-# shell::encode_base64_file function
-# Encodes a file to base64 for API submission.
+# shell::encode::file::base64 function
+# Encodes a file as a single-line Base64 value suitable for API payloads,
+# environment variables, or other text-based transport.
 #
 # Usage:
-#   shell::encode_base64_file [-n] [-h] <file_path>
+#   shell::encode::file::base64 [-n] [-h] <file_path>
 #
 # Parameters:
-#   - -n         : Optional dry-run flag. If provided, commands are printed using shell::logger::command_clip instead of executed.
-#   - -h         : Optional. Displays this help message.
-#   - <file_path>: The path to the file to encode.
+#   - -n, --dry-run : Print the encoding command instead of executing it.
+#   - -h, --help    : Show this help message.
+#   - <file_path>   : File to encode.
 #
-# Description:
-#   Encodes the specified file to base64 format for API consumption.
-#   Handles platform differences between macOS and Linux.
+# Output:
+#   Writes the Base64-encoded file content to stdout without line breaks.
+#
+# Returns:
+#   $RETURN_SUCCESS (0) on success.
+#   $RETURN_FAILURE (non-zero) when the file is missing or cannot be encoded.
 #
 # Example:
-#   shell::encode_base64_file "document.pdf"
-#   shell::encode_base64_file -n "image.jpg"
-shell::encode_base64_file() {
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_ENCODE_BASE64_FILE"
-		return 0
+#   shell::encode::file::base64 "document.pdf"
+#   shell::encode::file::base64 -n "image.jpg"
+shell::encode::file::base64() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Encode a file as a single-line Base64 value"
+		shell::logger::usage "shell::encode::file::base64 [-n] [-h] <file_path>"
+		shell::logger::item "file_path" "File to encode"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
+		shell::logger::example "shell::encode::file::base64 document.pdf"
+		shell::logger::example "shell::encode::file::base64 -n image.jpg"
+		return $RETURN_SUCCESS
 	fi
 
 	local dry_run="false"
-	if [ "$1" = "-n" ]; then
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
 		dry_run="true"
 		shift
 	fi
 
 	if [ $# -ne 1 ]; then
-		echo "Usage: shell::encode_base64_file [-n] [-h] <file_path>"
-		return 1
+		shell::logger::error "Exactly one file path is required"
+		shell::logger::usage "shell::encode::file::base64 [-n] [-h] <file_path>"
+		return $RETURN_INVALID
 	fi
 
-	# Check if the file exists
-	# If the file does not exist, print an error message and exit.
 	local file_path="$1"
 	if [ ! -f "$file_path" ]; then
-		shell::stdout "ERR: File not found: $file_path" 196
-		return 1
+		shell::logger::error "File not found: ${file_path}"
+		return $RETURN_FAILURE
 	fi
 
-	local os_type=$(shell::base::os)
-	local base64_cmd=""
-
-	if [ "$os_type" = "macos" ]; then
-		base64_cmd="base64 -i \"$file_path\""
-	else
-		base64_cmd="base64 -w 0 \"$file_path\""
-	fi
+	# Redirection works with both BSD and GNU base64; tr normalizes output to a
+	# single line regardless of the platform's default wrapping behavior. The
+	# command writes to a temporary file so logger output never pollutes stdout.
+	local encoded_file
+	encoded_file=$(mktemp "${TMPDIR:-/tmp}/shell-base64.XXXXXX") || {
+		shell::logger::error "Failed to create temporary output file"
+		return $RETURN_FAILURE
+	}
+	local base64_cmd="base64 < \"${file_path}\" | tr -d '\\n' > \"${encoded_file}\""
 
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::command_clip "$base64_cmd"
-	else
-		shell::exec::shell "$base64_cmd"
+		rm -f "$encoded_file"
+		return $RETURN_SUCCESS
 	fi
+
+	if ! shell::logger::assert "$base64_cmd" \
+		"File '${file_path}' encoded as Base64" "Base64 encoding aborted" >&2; then
+		rm -f "$encoded_file"
+		return $RETURN_FAILURE
+	fi
+
+	cat "$encoded_file"
+	local output_status=$?
+	rm -f "$encoded_file"
+	return $output_status
 }
 
 # shell::ask::reply function
