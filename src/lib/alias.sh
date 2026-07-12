@@ -450,3 +450,6 @@ alias svipaddr="shell::validate::ip::address"
 
 # shell::directory::back
 alias sdb="shell::directory::back"
+
+# shell::directory::open
+alias sdo="shell::directory::open"

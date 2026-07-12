@@ -93,8 +93,8 @@ shell::goto_usage() {
 	echo
 	echo "  COMMANDS:"
 	echo
-	echo "    shell::opent                             # (Mac Only) Open current directory in new Finder Tab."
-	echo "    shell::opent <location>                  # (Mac Only) Open location in new Finder Tab."
+	echo "    shell::directory::open                   # Open current directory in the file manager."
+	echo "    shell::directory::open <location>        # Open location in the file manager."
 	echo
 	echo "    shell::goto                              # Shows help."
 	echo "    shell::goto /User/ ./Home ~/help         # Goes to directory."

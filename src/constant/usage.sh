@@ -1167,17 +1167,17 @@ Description:
 "
 
 USAGE_SHELL_OPENT="
-shell::opent function
-Opens the specified directory in a new Finder tab (Mac OS only).
+shell::directory::open function
+Opens a directory in the operating system's file manager.
 
 Usage:
-  shell::opent [-h] [directory]
+  shell::directory::open [-h] [directory]
 
 Parameters:
   - -h          : Optional. Displays this help message.
 
 Description:
-  The 'shell::opent' function opens the specified directory in a new Finder tab on Mac OS.
+  Opens a new Finder tab on macOS and uses xdg-open on Linux.
   If no directory is specified, it opens the current directory.
 "
 
