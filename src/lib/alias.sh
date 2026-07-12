@@ -460,3 +460,11 @@ alias sdo="shell::directory::open"
 
 # shell::encode::file::base64
 alias sefb="shell::encode::file::base64"
+
+# /////////////////////
+# Shell link aliases
+# ////////////////////
+
+# shell::link::hard
+alias slh="shell::link::hard"
+alias slh-n="shell::link::hard -n"
