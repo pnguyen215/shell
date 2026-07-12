@@ -2625,56 +2625,110 @@ shell::analyze_permissions() {
 	return 0
 }
 
-# shell::uplink function
-# Creates a hard link between the specified source and destination.
+# shell::link::hard function
+# Creates hard links from explicit source/destination arguments or from a
+# .link file in the current directory. Each .link entry must use the format:
+#   source → destination
 #
 # Usage:
-#   shell::uplink <source name> <destination name>
+#   shell::link::hard [-n] [-h] [<source> <destination>]
 #
-# Description:
-#   The 'shell::uplink' function creates a hard link between the specified source file and destination file.
-#   This allows multiple file names to refer to the same file content.
+# Parameters:
+#   - -n, --dry-run          : Print link commands instead of executing them.
+#   - -h, --help             : Show this help message.
+#   - <source> <destination> : File to link and the new hard-link path.
 #
-# Dependencies:
-#   - The 'ln' command for creating hard links.
-#   - The 'chmod' command to modify file permissions.
-shell::uplink() {
-	# Check for the help flag (-h)
-	if [ "$1" = "-h" ]; then
-		echo "$USAGE_SHELL_UPLINK"
-		return 0
+# Returns:
+#   $RETURN_SUCCESS (0) when every requested hard link is created.
+#   $RETURN_INVALID (non-zero) when arguments or a .link entry are invalid.
+#   $RETURN_FAILURE (non-zero) when a link cannot be created.
+#
+# Example:
+#   shell::link::hard ./bin/tool ./bin/tool-cli
+#   shell::link::hard -n
+shell::link::hard() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Create hard links from arguments or a .link file"
+		shell::logger::usage "shell::link::hard [-n] [-h] [<source> <destination>]"
+		shell::logger::item "source" "Existing regular file to link"
+		shell::logger::item "destination" "New hard-link path; it must not already exist"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print commands instead of executing them"
+		shell::logger::example "shell::link::hard ./bin/tool ./bin/tool-cli"
+		shell::logger::example "shell::link::hard -n"
+		return $RETURN_SUCCESS
 	fi
 
-	# If two arguments are provided, use them as source and destination.
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	if [ "$#" -ne 0 ] && [ "$#" -ne 2 ]; then
+		shell::logger::error "Provide both source and destination, or no paths to use .link"
+		shell::logger::usage "shell::link::hard [-n] [-h] [<source> <destination>]"
+		return $RETURN_INVALID
+	fi
+
+	local -a links
 	if [ "$#" -eq 2 ]; then
-		local src="$1"
-		local dest="$2"
-		ln -vif "$src" "$dest" && chmod +x "$dest"
-		return $?
-	fi
-
-	# Otherwise, expect a .link file containing link pairs separated by "→".
-	local link_file=".link"
-	if [[ ! -f $link_file ]]; then
-		shell::stdout "No link file found" 196
-		return 1
-	fi
-
-	# Process each line in the .link file that contains the delimiter "→".
-	while IFS= read -r line; do
-		if echo "$line" | grep -q "→"; then
-			# Extract the source and destination, trimming any extra whitespace.
-			local src
-			local dest
-			src=$(echo "$line" | cut -d'→' -f1 | xargs)
-			dest=$(echo "$line" | cut -d'→' -f2 | xargs)
-			if [ -n "$src" ] && [ -n "$dest" ]; then
-				ln -vif "$src" "$dest" && chmod +x "$dest"
-			else
-				shell::stdout "ERR: Invalid link specification in .link: $line" 196
-			fi
+		links+=("$1"$'\034'"$2")
+	else
+		local link_file=".link"
+		if [ ! -f "$link_file" ]; then
+			shell::logger::error "Link specification file not found: ${link_file}"
+			return $RETURN_FAILURE
 		fi
-	done <"$link_file"
+
+		local line source destination
+		while IFS= read -r line || [ -n "$line" ]; do
+			[ -z "$line" ] && continue
+			[[ "$line" =~ ^[[:space:]]*# ]] && continue
+			if [[ "$line" != *"→"* ]]; then
+				shell::logger::error "Invalid .link entry: ${line}"
+				return $RETURN_INVALID
+			fi
+
+			source="${line%%→*}"
+			destination="${line#*→}"
+			source=$(echo "$source" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+			destination=$(echo "$destination" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+			if [ -z "$source" ] || [ -z "$destination" ]; then
+				shell::logger::error "Invalid .link entry: ${line}"
+				return $RETURN_INVALID
+			fi
+
+			links+=("$source"$'\034'"$destination")
+		done <"$link_file"
+	fi
+
+	local link source destination cmd_link
+	for link in "${links[@]}"; do
+		source="${link%%$'\034'*}"
+		destination="${link#*$'\034'}"
+
+		if [ ! -f "$source" ]; then
+			shell::logger::error "Source file not found: ${source}"
+			return $RETURN_FAILURE
+		fi
+		if [ -e "$destination" ]; then
+			shell::logger::error "Destination already exists: ${destination}"
+			return $RETURN_INVALID
+		fi
+
+		cmd_link="ln \"${source}\" \"${destination}\""
+		if [ "$dry_run" = "true" ]; then
+			shell::logger::command_clip "$cmd_link"
+			continue
+		fi
+
+		shell::logger::assert "$cmd_link" \
+			"Hard link created: ${destination}" "Hard link creation aborted" || return $?
+	done
+
+	return $RETURN_SUCCESS
 }
 
 # shell::directory::open function
