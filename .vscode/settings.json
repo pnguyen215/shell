@@ -181,6 +181,8 @@
     "spvupgrade",
     "spvupgradef",
     "srand",
+    "svip",
+    "svipaddr",
     "taggername",
     "tmpbak",
     "toplevel",

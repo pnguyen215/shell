@@ -1049,14 +1049,14 @@ shell::open_ssh_tunnel_builder() {
 	done
 
 	# Prompt for target service address and port.
-		# Validate the address format using shell::validate_ip_addr and shell::validate::hostname.
+		# Validate the address format using shell::validate::ip::address and shell::validate::hostname.
 	# Ensure the port is a valid integer between 1 and 65535.
 	local target_addr=""
 	while true; do
 		shell::stdout "[q] Enter server target service address:" 208
 		read -r target_addr
 		target_addr=$(echo "$target_addr" | tr -d '[:space:]')
-		if shell::validate_ip_addr "$target_addr" || shell::validate::hostname "$target_addr"; then
+		if shell::validate::ip::address "$target_addr" || shell::validate::hostname "$target_addr"; then
 			break
 		fi
 		shell::stdout "ERR: Invalid server target address format." 196
@@ -1080,14 +1080,14 @@ shell::open_ssh_tunnel_builder() {
 	done
 
 	# Prompt for SSH server address.
-	# Validate the address format using shell::validate_ip_addr and shell::validate::hostname.
+	# Validate the address format using shell::validate::ip::address and shell::validate::hostname.
 	# Ensure the port is a valid integer between 1 and 65535.
 	local server_addr=""
 	while true; do
 		shell::stdout "[q] Enter SSH server address:" 208
 		read -r server_addr
 		server_addr=$(echo "$server_addr" | tr -d '[:space:]')
-		if shell::validate_ip_addr "$server_addr" || shell::validate::hostname "$server_addr"; then
+		if shell::validate::ip::address "$server_addr" || shell::validate::hostname "$server_addr"; then
 			break
 		fi
 		shell::stdout "ERR: Invalid SSH server address format." 196
@@ -1298,7 +1298,7 @@ shell::tune_ssh_tunnel_builder() {
 		shell::stdout "[q] Enter SSH server address:" 208
 		read -r host
 		host=$(echo "$host" | tr -d '[:space:]')
-		if shell::validate_ip_addr "$host" || shell::validate::hostname "$host"; then
+		if shell::validate::ip::address "$host" || shell::validate::hostname "$host"; then
 			break
 		fi
 		shell::stdout "ERR: Invalid SSH server address format." 196

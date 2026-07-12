@@ -435,3 +435,7 @@ alias sfmime-n="shell::file::mime -n"
 
 # shell::validate::hostname
 alias svh="shell::validate::hostname"
+
+# shell::validate::ip::address
+alias svip="shell::validate::ip::address"
+alias svipaddr="shell::validate::ip::address"
