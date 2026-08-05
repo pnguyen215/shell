@@ -438,7 +438,7 @@ shell::exec::safe() {
 	fi
 
 	if [ "$#" -lt 2 ]; then
-		shell::logger::error "No command provided" 
+		shell::logger::error "No command provided"
 		return $RETURN_FAILURE
 	fi
 
@@ -2916,7 +2916,7 @@ shell::validate::ip::address() {
 
 	shell::logger::error "'$ip' is not a valid IPv4 or IPv6 address."
 	return $RETURN_FAILURE
-} 
+}
 
 # shell::validate::hostname function
 # Validates the syntax of a DNS hostname. DNS resolution is checked only for
@@ -2990,8 +2990,8 @@ shell::validate::hostname() {
 #   - <file_path>: The path to the file.
 #
 # Description:
-#   Extracts the file extension from the provided file path and maps it to its 
-#   corresponding standard MIME type. If the extension is unknown or missing, 
+#   Extracts the file extension from the provided file path and maps it to its
+#   corresponding standard MIME type. If the extension is unknown or missing,
 #   it defaults to 'text/plain'.
 #
 # Returns:
@@ -3002,102 +3002,102 @@ shell::validate::hostname() {
 # Example:
 #   mime_type=$(shell::file::mime "document.pdf")
 shell::file::mime() {
-    if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
-        shell::logger::reset_options
-        shell::logger::info "Determine the MIME type of a file based on its extension"
-        shell::logger::usage "shell::file::mime [-h] [--help] <file_path>"
-        shell::logger::item "file_path" "The path to the file"
-        shell::logger::option "-h, --help" "Show this help message"
-        shell::logger::example "shell::file::mime \"document.pdf\""
-        return $RETURN_SUCCESS
-    fi
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Determine the MIME type of a file based on its extension"
+		shell::logger::usage "shell::file::mime [-h] [--help] <file_path>"
+		shell::logger::item "file_path" "The path to the file"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::file::mime \"document.pdf\""
+		return $RETURN_SUCCESS
+	fi
 
-    local file_path="$1"
+	local file_path="$1"
 
-    if [ -z "$file_path" ]; then
-        shell::logger::error "File path is required"
-        return $RETURN_INVALID
-    fi
+	if [ -z "$file_path" ]; then
+		shell::logger::error "File path is required"
+		return $RETURN_INVALID
+	fi
 
-    # Check if the file exists
-    if [ ! -f "$file_path" ]; then
-        shell::logger::error "File '${file_path}' does not exist"
-        return $RETURN_FAILURE
-    fi
+	# Check if the file exists
+	if [ ! -f "$file_path" ]; then
+		shell::logger::error "File '${file_path}' does not exist"
+		return $RETURN_FAILURE
+	fi
 
-    local extension="${file_path##*.}"
+	local extension="${file_path##*.}"
 
-    case "$extension" in
-        txt | log) echo "text/plain" ;;
-        json) echo "application/json" ;;
-        csv) echo "text/csv" ;;
-        md | mdx) echo "text/markdown" ;;
-        html) echo "text/html" ;;
-        xml) echo "application/xml" ;;
-        jpg | jpeg) echo "image/jpeg" ;;
-        png) echo "image/png" ;;
-        webp) echo "image/webp" ;;
-        gif) echo "image/gif" ;;
-        pdf) echo "application/pdf" ;;
-        docx) echo "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ;;
-        xlsx) echo "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ;;
-        pptx) echo "application/vnd.openxmlformats-officedocument.presentationml.presentation" ;;
-        zip) echo "application/zip" ;;
-        tar) echo "application/x-tar" ;;
-        gz) echo "application/gzip" ;;
-        bz2) echo "application/x-bzip2" ;;
-        xz) echo "application/x-xz" ;;
-        mp3) echo "audio/mpeg" ;;
-        wav) echo "audio/wav" ;;
-        ogg) echo "audio/ogg" ;;
-        mp4) echo "video/mp4" ;;
-        avi) echo "video/x-msvideo" ;;
-        mkv) echo "video/x-matroska" ;;
-        flv) echo "video/x-flv" ;;
-        webm) echo "video/webm" ;;
-        svg) echo "image/svg+xml" ;;
-        ico) echo "image/x-icon" ;;
-        json5) echo "application/json5" ;;
-        yaml | yml) echo "application/x-yaml" ;;
-        sh) echo "application/x-sh" ;;
-        py) echo "text/x-python" ;;
-        js) echo "application/javascript" ;;
-        css) echo "text/css" ;;
-        sql) echo "application/sql" ;;
-        rs | rust) echo "text/x-rust" ;;
-        go) echo "text/x-go" ;;
-        ts | tsx) echo "application/typescript" ;;
-        cpp | cxx | cc) echo "text/x-c++src" ;;
-        c) echo "text/x-csrc" ;;
-        h) echo "text/x-chdr" ;;
-        rb) echo "text/x-ruby" ;;
-        pl) echo "text/x-perl" ;;
-        java) echo "text/x-java-source" ;;
-        kotlin) echo "text/x-kotlin" ;;
-        dart) echo "application/dart" ;;
-        scala) echo "text/x-scala" ;;
-        swift) echo "text/x-swift" ;;
-        lua) echo "text/x-lua" ;;
-        asm | s) echo "text/x-asm" ;;
-        v | vlang) echo "text/x-vlang" ;;
-        nim) echo "text/x-nim" ;;
-        clj | cljs | clojure) echo "text/x-clojure" ;;
-        el | elisp) echo "text/x-emacs-lisp" ;;
-        haskell | hs) echo "text/x-haskell" ;;
-        erlang | erl) echo "text/x-erlang" ;;
-        crystal) echo "text/x-crystal" ;;
-        php) echo "application/x-php" ;;
-        asp | aspx) echo "application/x-aspx" ;;
-        jsp) echo "application/x-jsp" ;;
-        cs | cshtml) echo "text/x-csharp" ;;
-        vb | vbs) echo "text/vbscript" ;;
-        vue) echo "text/x-vue" ;;
-        svelte) echo "text/x-svelte" ;;
-        rsx) echo "text/x-rsx" ;;
-        *) echo "text/plain" ;;
-    esac
+	case "$extension" in
+	txt | log) echo "text/plain" ;;
+	json) echo "application/json" ;;
+	csv) echo "text/csv" ;;
+	md | mdx) echo "text/markdown" ;;
+	html) echo "text/html" ;;
+	xml) echo "application/xml" ;;
+	jpg | jpeg) echo "image/jpeg" ;;
+	png) echo "image/png" ;;
+	webp) echo "image/webp" ;;
+	gif) echo "image/gif" ;;
+	pdf) echo "application/pdf" ;;
+	docx) echo "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ;;
+	xlsx) echo "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ;;
+	pptx) echo "application/vnd.openxmlformats-officedocument.presentationml.presentation" ;;
+	zip) echo "application/zip" ;;
+	tar) echo "application/x-tar" ;;
+	gz) echo "application/gzip" ;;
+	bz2) echo "application/x-bzip2" ;;
+	xz) echo "application/x-xz" ;;
+	mp3) echo "audio/mpeg" ;;
+	wav) echo "audio/wav" ;;
+	ogg) echo "audio/ogg" ;;
+	mp4) echo "video/mp4" ;;
+	avi) echo "video/x-msvideo" ;;
+	mkv) echo "video/x-matroska" ;;
+	flv) echo "video/x-flv" ;;
+	webm) echo "video/webm" ;;
+	svg) echo "image/svg+xml" ;;
+	ico) echo "image/x-icon" ;;
+	json5) echo "application/json5" ;;
+	yaml | yml) echo "application/x-yaml" ;;
+	sh) echo "application/x-sh" ;;
+	py) echo "text/x-python" ;;
+	js) echo "application/javascript" ;;
+	css) echo "text/css" ;;
+	sql) echo "application/sql" ;;
+	rs | rust) echo "text/x-rust" ;;
+	go) echo "text/x-go" ;;
+	ts | tsx) echo "application/typescript" ;;
+	cpp | cxx | cc) echo "text/x-c++src" ;;
+	c) echo "text/x-csrc" ;;
+	h) echo "text/x-chdr" ;;
+	rb) echo "text/x-ruby" ;;
+	pl) echo "text/x-perl" ;;
+	java) echo "text/x-java-source" ;;
+	kotlin) echo "text/x-kotlin" ;;
+	dart) echo "application/dart" ;;
+	scala) echo "text/x-scala" ;;
+	swift) echo "text/x-swift" ;;
+	lua) echo "text/x-lua" ;;
+	asm | s) echo "text/x-asm" ;;
+	v | vlang) echo "text/x-vlang" ;;
+	nim) echo "text/x-nim" ;;
+	clj | cljs | clojure) echo "text/x-clojure" ;;
+	el | elisp) echo "text/x-emacs-lisp" ;;
+	haskell | hs) echo "text/x-haskell" ;;
+	erlang | erl) echo "text/x-erlang" ;;
+	crystal) echo "text/x-crystal" ;;
+	php) echo "application/x-php" ;;
+	asp | aspx) echo "application/x-aspx" ;;
+	jsp) echo "application/x-jsp" ;;
+	cs | cshtml) echo "text/x-csharp" ;;
+	vb | vbs) echo "text/vbscript" ;;
+	vue) echo "text/x-vue" ;;
+	svelte) echo "text/x-svelte" ;;
+	rsx) echo "text/x-rsx" ;;
+	*) echo "text/plain" ;;
+	esac
 
-    return $RETURN_SUCCESS
+	return $RETURN_SUCCESS
 }
 
 # shell::encode::file::base64 function
@@ -3557,12 +3557,12 @@ shell::ask::path() {
 		shell::logger::reset_options
 		shell::logger::info "Prompts the user for a filesystem path and returns the entered path."
 		shell::logger::usage "shell::ask::path [-h | --help] [--exists] [--dir] [--file] [--writable] [--readable] <question>"
-		shell::logger::option "-h, --help"  "Show this help message"
-		shell::logger::option "--exists"    "Require the path to exist on the filesystem"
-		shell::logger::option "--dir"       "Require the path to be an existing directory"
-		shell::logger::option "--file"      "Require the path to be an existing regular file"
-		shell::logger::option "--writable"  "Require the path to be writable"
-		shell::logger::option "--readable"  "Require the path to be readable"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "--exists" "Require the path to exist on the filesystem"
+		shell::logger::option "--dir" "Require the path to be an existing directory"
+		shell::logger::option "--file" "Require the path to be an existing regular file"
+		shell::logger::option "--writable" "Require the path to be writable"
+		shell::logger::option "--readable" "Require the path to be readable"
 		shell::logger::example "shell::ask::path \"Enter the destination path:\""
 		shell::logger::example "shell::ask::path --dir \"Enter directory:\""
 		shell::logger::example "shell::ask::path --file --readable \"Enter config file:\""
@@ -3577,11 +3577,28 @@ shell::ask::path() {
 
 	while [[ "$1" == --* ]]; do
 		case "$1" in
-		--exists)   require_exists="true";  shift ;;
-		--dir)      require_dir="true";     require_exists="true"; shift ;;
-		--file)     require_file="true";    require_exists="true"; shift ;;
-		--writable) require_writable="true"; shift ;;
-		--readable) require_readable="true"; shift ;;
+		--exists)
+			require_exists="true"
+			shift
+			;;
+		--dir)
+			require_dir="true"
+			require_exists="true"
+			shift
+			;;
+		--file)
+			require_file="true"
+			require_exists="true"
+			shift
+			;;
+		--writable)
+			require_writable="true"
+			shift
+			;;
+		--readable)
+			require_readable="true"
+			shift
+			;;
 		*)
 			shell::logger::error "Unknown option: $1"
 			return $RETURN_FAILURE

@@ -1049,7 +1049,7 @@ shell::open_ssh_tunnel_builder() {
 	done
 
 	# Prompt for target service address and port.
-		# Validate the address format using shell::validate::ip::address and shell::validate::hostname.
+	# Validate the address format using shell::validate::ip::address and shell::validate::hostname.
 	# Ensure the port is a valid integer between 1 and 65535.
 	local target_addr=""
 	while true; do
