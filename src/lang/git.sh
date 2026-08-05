@@ -548,6 +548,7 @@ shell::git::repos::stats() {
 	return $RETURN_SUCCESS
 }
 
+# shell::git::repos::fetch function
 # Clones a remote Git repository as a shallow clone (depth 1) into a specified
 # local folder name.
 #
