@@ -1,40 +1,118 @@
 # shell
 
-A lightweight shell library that streamlines your development environment on **Linux** (Ubuntu 22.04 / 24.04 and other mainstream distributions) and **macOS**. About 330 documented functions for files, bookmarks, a key/value config store, INI files, SSH tunnels, workspaces, Git/GitHub, Python/Go project helpers, AES encryption and Telegram notifications — all with dry-run (`-n`) support.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Shell: bash >= 3.2, zsh](https://img.shields.io/badge/Shell-bash%20%3E%3D%203.2%20%7C%20zsh-blue.svg)](https://github.com/pnguyen215/shell)
+[![Platform: Linux, macOS](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS-green.svg)](https://github.com/pnguyen215/shell)
 
-Works when sourced from **bash ≥ 3.2** (the macOS system bash) and **zsh**.
+A lightweight shell library that streamlines your development environment on **Linux** (Ubuntu 22.04/24.04 and other mainstream distributions) and **macOS**. It provides ~330 documented functions for files, bookmarks, a key/value config store, INI files, SSH tunnels, workspaces, Git/GitHub, Python/Go project helpers, AES encryption, and Telegram notifications — all with dry-run (`-n`) support.
 
-## Install
+Works when sourced from **bash ≥ 3.2** (including the macOS system bash) and **zsh**.
+
+## Prerequisites
+
+- `curl` and `tar` (preinstalled on macOS and most Linux distributions)
+- `bash ≥ 3.2` or `zsh`
+- Optional: `git`, `fzf` (required for many interactive workflows). Others are installed on demand.
+
+## Installation
+
+Download and run the installer. This installs to `~/shell` by default and sources it from your shell profile.
 
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/pnguyen215/shell/master/install.sh)"
 ```
 
-The installer needs only `curl` and `tar`. It downloads to a staging directory, verifies the archive, swaps it into `~/shell` (keeping the previous version as `~/shell.bak`) and adds one `source` line to the profile your login shell reads. Re-running it is safe.
-
-| Task | Command |
-|---|---|
-| Upgrade | `shell::upgrade` or `/bin/bash -c "$(curl -fsSL .../upgrade.sh)"` |
-| Uninstall | `shell::uninstall` (keeps `~/.shell-config`; add `--purge` to delete it) |
-| Check dependencies | `shell::dependency::doctor` |
-
-Overrides: `SHELL_INSTALL_DIR`, `SHELL_REPO_BRANCH`, `SHELL_NO_PROFILE=1`.
-
-## Quick start
+After installation, restart your terminal or source your profile:
 
 ```bash
-shell::bookmark::add webapp            # remember the current directory
-shell::goto::run webapp                # ...and jump back to it later
-shell::conf::key::add API_KEY "s3cr3t" # Base64-encoded key/value store (files are mode 600)
-shell::conf::key::get API_KEY
-shell::git::branch::create -n feature_x   # -n = dry run: print the commands
-shell::net::port::kill 3000            # SIGTERM whatever LISTENS on :3000
-shell::fs::browse ~/docs               # pick a file with fzf, then act on it
+# For zsh
+source ~/.zshrc
+
+# For bash (macOS login shell)
+source ~/.bash_profile
+
+# For bash (Linux)
+source ~/.bashrc
 ```
 
-Every function supports `-h / --help`. Most destructive or state-changing ones support `-n / --dry-run`, which prints the command (and copies it to the clipboard when a clipboard tool exists) instead of running it.
+### Customization
 
-Short aliases live in [`src/alias/alias.sh`](src/alias/alias.sh) (e.g. `sgbb` = backup branch).
+| Environment Variable | Default            | Description                       |
+| -------------------- | ------------------ | --------------------------------- |
+| `SHELL_INSTALL_DIR`  | `~/shell`          | Override the install directory    |
+| `SHELL_REPO_SLUG`    | `pnguyen215/shell` | Override the GitHub repository    |
+| `SHELL_REPO_BRANCH`  | `master`           | Install from a specific branch    |
+| `SHELL_NO_PROFILE=1` | `0`                | Skip modifying your shell profile |
+
+## Upgrade
+
+### Via curl script (works even if shell is not currently sourced)
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/pnguyen215/shell/master/upgrade.sh)"
+```
+
+### From a sourced shell
+
+```bash
+shell::upgrade
+```
+
+The upgrader stages the new version, verifies it, and only then swaps it in (keeping the previous version as `~/shell.bak`).
+
+## Uninstall
+
+### Via curl script
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/pnguyen215/shell/master/uninstall.sh)"
+```
+
+### From a sourced shell
+
+```bash
+shell::uninstall
+```
+
+### Remove all data too
+
+By default, user data in `~/.shell-config/` (keys, bookmarks, workspaces) is preserved. To delete it:
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/pnguyen215/shell/master/uninstall.sh)" -- --purge
+# or
+shell::uninstall --purge
+```
+
+The uninstaller removes the installation directory, deletes `~/shell.bak` if present, and strips the `source` hook from `~/.zshrc`, `~/.bashrc`, and `~/.bash_profile` (backing up each profile as `*.shell-bak`).
+
+## Check Dependencies
+
+```bash
+shell::dependency::doctor
+```
+
+To report only (without auto-installing):
+
+```bash
+SHELL_AUTO_INSTALL_DEPS=0 shell::dependency::doctor
+```
+
+## Quick Start
+
+```bash
+shell::bookmark::add webapp              # remember the current directory
+shell::goto::run webapp                  # jump back to it later
+shell::conf::key::add API_KEY "s3cr3t"   # store a key (Base64, written with mode 600)
+shell::conf::key::get API_KEY
+shell::git::branch::create -n feature_x # -n = dry run: print commands without executing
+shell::net::port::kill 3000              # SIGTERM whatever is listening on :3000
+shell::fs::browse ~/docs                 # pick a file with fzf, then act on it
+```
+
+- Every function supports `-h` / `--help`.
+- Most destructive or state-changing functions support `-n` / `--dry-run` (prints the command and copies it to the clipboard if available).
+- Short aliases are defined in [`src/alias/alias.sh`](src/alias/alias.sh) (e.g., `sgbb` = backup branch).
 
 ## Naming
 
@@ -90,16 +168,27 @@ User data (keys, bookmarks, workspaces) lives under `SHELL_CONFIG_DIR` with mode
 
 Required: `git`, `curl`, `fzf`. Optional (installed on demand): `jq`, `openssl`, `lsof`, `column`, `ssh-keygen`. Installation uses the native package manager (apt, dnf, yum, pacman, zypper, apk, Homebrew) — see [`src/dependency/`](src/dependency). Run `make doctor` for a report.
 
+## Troubleshooting
+
+- **"curl/tar not found"**: Install `curl` and `tar` via your package manager (e.g., `apt install curl tar` or `brew install curl`).
+- **Profile not updated**: Set `SHELL_NO_PROFILE=1` and manually add `source "$HOME/shell/src/shell.sh"` to your shell profile.
+- **Functions not available after upgrade**: Restart your terminal or run `source "$HOME/shell/src/shell.sh"`.
+- **Missing dependencies**: Run `shell::dependency::doctor` to see what's missing. Many can be auto-installed if `SHELL_AUTO_INSTALL_DEPS=1` (default).
+- **Permission issues**: Config files are written with restrictive modes (`~/.shell-config` 700, `key.conf` 600). Ensure your home directory permissions are correct.
+
 ## Development
 
 ```bash
-make test    # bash + zsh test suites
+make test    # run bash + zsh test suites
 make lint    # naming, shdoc coverage, portability, shellcheck, shfmt
-make docs    # regenerate docs/api (needs shdoc: https://github.com/reconquest/shdoc)
+make docs    # regenerate docs/api (requires shdoc: https://github.com/reconquest/shdoc)
+make doctor  # report installed dependencies
 ```
 
-Read [docs/CONVENTIONS.md](docs/CONVENTIONS.md) before adding a function.
+Read [docs/CONVENTIONS.md](docs/CONVENTIONS.md) before adding a function. For architecture details, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## License
 
-MIT
+This project is licensed under the [MIT License](LICENSE).
+
+Copyright © 2026 [pnguyen215](https://github.com/pnguyen215).
