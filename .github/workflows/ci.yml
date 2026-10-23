@@ -1,0 +1,58 @@
+# Continuous Integration workflow for the repository
+name: CI
+
+# This workflow runs on pushes and pull requests to the master branch.
+# It includes jobs for linting shell scripts, running tests, and building documentation.
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+# Continuous Integration workflow for linting, testing, and building documentation
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck zsh
+          curl -sSLo shfmt https://github.com/mvdan/sh/releases/download/v3.7.0/shfmt_v3.7.0_linux_amd64
+          chmod +x shfmt && sudo mv shfmt /usr/local/bin/
+      - name: Lint
+        run: make lint
+
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-22.04, macos-latest, macos-13]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install zsh (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y zsh
+      - name: Test (bash + zsh)
+        run: bash test/run_tests.sh
+      # macOS ships bash 3.2 as /bin/bash: the library promises to support it.
+      - name: Test under the system bash (macOS bash 3.2)
+        if: runner.os == 'macOS'
+        run: /bin/bash test/run_tests.sh
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install shdoc
+        run: |
+          sudo apt-get update && sudo apt-get install -y gawk
+          git clone --depth 1 https://github.com/reconquest/shdoc /tmp/shdoc
+          sudo install /tmp/shdoc/shdoc /usr/local/bin/shdoc
+      - name: Build API docs
+        run: make docs
