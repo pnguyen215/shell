@@ -1,0 +1,3360 @@
+#!/usr/bin/env bash
+# @file lib/ini.sh
+# @brief INI file parser/editor with interactive viewers.
+
+# @description Reads the value of a specified key from a given section in an INI file.
+#
+#   This function reads an INI file and retrieves the value associated with a
+#   specified key within a given section. It validates the presence of the file,
+#   section, and key, and applies strict validation rules if SHELL_INI_STRICT is set.
+#   The function handles comments, empty lines, and quoted values within the INI file.
+#
+#   Notes:
+#   - Relies on the shell::console::print function for output.
+#   - The behavior is controlled by the SHELL_INI_STRICT environment variable.
+# @arg $1 string file: The path to the INI file.
+# @arg $2 string section: The section within the INI file to search.
+# @arg $3 string key: The key within the section whose value is to be retrieved.
+# @exitcode 0 Success.
+# @exitcode 1 The operation failed.
+# @example
+#   shell::ini::read config.ini MySection MyKey  # Retrieves the value of MyKey in MySection.
+#
+shell::ini::read() {
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Reads the value of a specified key from a given section in an INI file"
+		shell::logger::usage "shell::ini::read [-h] <file> <section> <key>"
+		shell::logger::option "-h" "Optional. Displays this help message."
+		shell::logger::item "file" "The path to the INI file."
+		shell::logger::item "section" "The section within the INI file to search."
+		shell::logger::item "key" "The key within the section whose value is to be retrieved."
+		shell::logger::example "shell::ini::read config.ini MySection MyKey"
+		return $RETURN_SUCCESS
+	fi
+
+	local file="$1"
+	local section="$2"
+	local key="$3"
+
+	# Validate parameters
+	if [ -z "$file" ] || [ -z "$section" ] || [ -z "$key" ]; then
+		echo "Usage: shell::ini::read [-h] <file> <section> <key>"
+		return 1
+	fi
+
+	# Validate section and key names only if strict mode is enabled
+	if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
+		shell::ini::validate::section "$section" || return 1
+		shell::ini::validate::key "$key" || return 1
+	fi
+
+	# Check if file exists
+	if [ ! -f "$file" ]; then
+		shell::logger::error "File not found: $file"
+		return 1
+	fi
+
+	# Escape section and key for regex pattern
+	local escaped_section
+	escaped_section=$(shell::ini::escape_regex "$section")
+	local escaped_key
+	escaped_key=$(shell::ini::escape_regex "$key")
+
+	local section_pattern="^\[$escaped_section\]"
+	local any_section_pattern="^\[[^]]+\]" # Regex for any section header
+	local in_target_section=0
+	local os_type=$(shell::os::type)
+	local decoded_value
+
+	while IFS= read -r line || [ -n "$line" ]; do
+		# Skip comments and empty lines
+		if [[ -z "$line" || "$line" =~ ^[[:space:]]*[#\;] ]]; then
+			continue
+		fi
+
+		# Check if the line is a section header
+		if [[ "$line" =~ $any_section_pattern ]]; then
+			if [ "$in_target_section" -eq 1 ] && ! [[ "$line" =~ $section_pattern ]]; then
+				# We were in the target section, but now we've moved to a *different* section.
+				# Key was not found in the target section. Exit the loop.
+				shell::logger::warn "Reached end of target section '$section' without finding key '$key'."
+				return 1 # Key not found in specified section.
+			fi
+
+			if [[ "$line" =~ $section_pattern ]]; then
+				# This is the target section.
+				in_target_section=1
+			else
+				# This is a different section (not the target one, and not the one we just exited from).
+				# Ensure we are no longer searching within the target section's scope.
+				in_target_section=0
+			fi
+			continue # Move to the next line, as this line is a section header.
+		fi
+
+		# Only proceed to check for key if we are currently inside the target section
+		if [ "$in_target_section" -eq 1 ]; then
+			local key_pattern="^[[:space:]]*${escaped_key}[[:space:]]*="
+			if [[ "$line" =~ $key_pattern ]]; then
+				local value="${line#*=}"
+				# Trim whitespace
+				value=$(shell::ini::trim "$value")
+
+				# Check for quoted values
+				if [ "${#value}" -ge 2 ] && [ "${value#\"}" != "$value" ] && [ "${value%\"}" != "$value" ]; then
+					# Remove the quotes
+					value="${value#\"}"
+					value="${value%\"}"
+					# Handle escaped quotes within the value
+					value="${value//\\\"/\"}"
+				fi
+
+				# shell::logger::success "Found value for key '$key'."
+				if [ "$os_type" = "macos" ]; then
+					decoded_value=$(echo "$value" | base64 -D)
+				else
+					decoded_value=$(echo "$value" | base64 -d)
+				fi
+				echo "$decoded_value"
+				return 0
+			fi
+		fi
+	done <"$file"
+
+	shell::logger::warn "Key not found: '$key' in section: '$section'."
+	return 1
+}
+
+# @description Validates an INI section name based on defined strictness levels.
+#   It checks for empty names and disallowed characters or spaces according to
+#   SHELL_INI_STRICT and SHELL_INI_ALLOW_SPACES_IN_NAMES variables.
+#
+#   This function takes a section name as input and applies validation rules.
+#   An empty section name is always considered invalid.
+#   If SHELL_INI_STRICT is set to 1, the function checks for the presence of
+#   illegal characters: square brackets (`[` and `]`) and the equals sign (`=`).
+#   If SHELL_INI_ALLOW_SPACES_IN_NAMES is set to 0, the function checks for
+#   the presence of spaces within the section name.
+#   Error messages are displayed using the shell::console::print function.
+#
+#   Notes:
+#   - Relies on the shell::console::print function for output.
+#   - The behavior is controlled by the SHELL_INI_STRICT and
+#   SHELL_INI_ALLOW_SPACES_IN_NAMES environment variables or constants.
+# @arg $1 string section_name: The name of the INI section to validate.
+# @exitcode 0 Success.
+# @exitcode 1 The operation failed.
+# @example
+#   # Assuming SHELL_INI_STRICT=1 and SHELL_INI_ALLOW_SPACES_IN_NAMES=0
+#   shell::ini::validate::section "MySection"   # Valid
+#   shell::ini::validate::section "My Section"  # Invalid (contains space)
+#   shell::ini::validate::section "My[Section]" # Invalid (contains illegal character)
+#   shell::ini::validate::section ""            # Invalid (empty)
+#
+shell::ini::validate::section() {
+	# Check for the help flag (-h)
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Validates an INI section name based on defined strictness levels"
+		shell::logger::usage "shell::ini::validate::section [-h] <section_name>"
+		shell::logger::option "-h" "Optional. Displays this help message."
+		shell::logger::item "section_name" "The name of the INI section to validate."
+		shell::logger::example "shell::ini::validate::section \"MySection\""
+		shell::logger::example "shell::ini::validate::section \"My Section\""
+		shell::logger::example "shell::ini::validate::section \"My[Section]\""
+		shell::logger::example "shell::ini::validate::section \"\""
+		return $RETURN_SUCCESS
+	fi
+
+	local section="$1"
+
+	if [ -z "$section" ]; then
+		shell::logger::error "Section name cannot be empty"
+		return 1
+	fi
+
+	# Check for illegal characters if strict mode is enabled.
+	if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
+		# Check for illegal characters in section name: [, ], = using case for portability
+		case "$section" in
+		*\[* | *\]* | *=*)
+			# If the section contains [, ], or =, it's illegal
+			shell::logger::error "Section name contains illegal characters: $section"
+			return 1
+			;;
+		*)
+			# No illegal characters found
+			;;
+		esac
+	fi
+
+	# Check for spaces in section name if spaces are not allowed.
+	# The [[ ... =~ ... ]] for spaces works in Zsh too with [[:space:]]
+	# Alternatively, could use case: *[[:space:]]*)
+	if [ "${SHELL_INI_ALLOW_SPACES_IN_NAMES}" -eq 0 ] && [[ "$section" =~ [[:space:]] ]]; then
+		shell::logger::error "Section name contains spaces: $section"
+		return 1
+	fi
+
+	return 0
+}
+
+# shell::ini::validate::key function
+# Validates an INI key name based on defined strictness levels.
+# It checks for empty names and disallowed characters or spaces according to
+# SHELL_INI_STRICT and SHELL_INI_ALLOW_SPACES_IN_NAMES variables.
+
+# Usage:
+#   shell::ini::validate::key [-h] <key_name>
+
+# Parameters:
+#   - -h         : Optional. Displays this help message.
+#   - <key_name> : The name of the INI key to validate.
+
+# Returns:
+#   0 if the key name is valid, 1 otherwise.
+
+# @description Validates an INI key name based on defined strictness levels.
+#
+#   Notes:
+#   - Relies on the shell::console::print function for output.
+#   - The behavior is controlled by the SHELL_INI_STRICT and
+#   SHELL_INI_ALLOW_SPACES_IN_NAMES environment variables or constants.
+# @option -h Optional. Displays this help message.
+# @arg $1 string key_name: The name of the INI key to validate.
+# @exitcode 0 Success.
+# @exitcode 1 The operation failed.
+# @example
+#   shell::ini::validate::key
+#
+shell::ini::validate::key() {
+	# Check for the help flag (-h)
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Validates an INI key name based on defined strictness levels"
+		shell::logger::usage "shell::ini::validate::key [-h] <key_name>"
+		shell::logger::option "-h" "Optional. Displays this help message."
+		shell::logger::item "key_name" "The name of the INI key to validate."
+		return $RETURN_SUCCESS
+	fi
+
+	local key="$1"
+
+	if [ -z "$key" ]; then
+		shell::logger::error "Key name cannot be empty"
+		return 1
+	fi
+
+	# Check for illegal characters if strict mode is enabled.
+	if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
+		# Check for illegal characters in key name: [, ], = using case for portability
+		case "$key" in
+		*\[* | *\]* | *=*)
+			# If the key contains [, ], or =, it's illegal
+			shell::logger::error "Key name contains illegal characters: $key"
+			return 1
+			;;
+		*)
+			# No illegal characters found
+			;;
+		esac
+	fi
+
+	# Check for spaces in key name if spaces are not allowed.
+	# The [[ ... =~ ... ]] for spaces works in Zsh too with [[:space:]]
+	# Alternatively, could use case: *[[:space:]]*)
+	if [ "${SHELL_INI_ALLOW_SPACES_IN_NAMES}" -eq 0 ] && [[ "$key" =~ [[:space:]] ]]; then
+		shell::logger::error "Key name contains spaces: $key"
+		return 1
+	fi
+
+	return 0
+}
+
+# @description Creates a temporary file with a unique name in the system's temporary directory.
+#
+#   This function generates a temporary file using the mktemp command.
+#   The file is created in the directory specified by the TMPDIR environment variable,
+#   or in /tmp if TMPDIR is not set. The filename is prefixed with 'shell_ini_' and
+#   followed by a series of random characters to ensure uniqueness.
+# @noargs
+# @exitcode 0 Success.
+# @example
+#   temp_file=$(shell::ini::temp_file)  # Creates a temporary file and stores its path in temp_file.
+#
+shell::ini::temp_file() {
+	mktemp "${TMPDIR:-/tmp}/shell_ini_XXXXXXXXXX"
+}
+
+# @description Trims leading and trailing whitespace from a given string.
+#
+#   This function takes a string as input and removes any leading and trailing
+#   whitespace characters. It uses parameter expansion to efficiently trim
+#   the whitespace and then outputs the cleaned string.
+# @arg $1 string string: The string from which to remove leading and trailing whitespace.
+# @exitcode 0 Success.
+# @example
+#   trimmed_string=$(shell::ini::trim "  example string  ")  # Outputs "example string"
+#
+shell::ini::trim() {
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Trims leading and trailing whitespace from a given string"
+		shell::logger::usage "shell::ini::trim [-h] <string>"
+		shell::logger::option "-h" "Optional. Displays this help message."
+		shell::logger::item "string" "The string from which to remove leading and trailing whitespace."
+		return $RETURN_SUCCESS
+	fi
+
+	local var="$*"
+	# Remove leading whitespace
+	var="${var#"${var%%[![:space:]]*}"}"
+	# Remove trailing whitespace
+	var="${var%"${var##*[![:space:]]}"}"
+	echo "$var"
+}
+
+# @description Escapes special characters in a string for regex matching.
+#
+#   This function takes a string as input and escapes special characters
+#   that are used in regular expressions. It uses the sed command to
+#   prepend a backslash to each special character, ensuring the string
+#   can be safely used in regex operations.
+# @arg $1 string string: The string in which to escape special regex characters.
+# @exitcode 0 Success.
+# @example
+#   escaped_string=$(shell::ini::escape_regex "example(string)")  # Outputs "example\(string\)"
+#
+shell::ini::escape_regex() {
+	# Check for the help flag (-h)
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Escapes special characters in a string for regex matching"
+		shell::logger::usage "shell::ini::escape_regex [-h] <string>"
+		shell::logger::option "-h" "Optional. Displays this help message."
+		shell::logger::item "string" "The string in which to escape special regex characters."
+		shell::logger::example "escaped_string=(shell::ini::escape_regex \"example(string)\")"
+		return $RETURN_SUCCESS
+	fi
+
+	echo "$1" | sed -e 's/[]\/()$*.^|[]/\\&/g'
+}
+
+# @description Validates the existence and write ability of a specified file, creating it if necessary.
+#
+#   This function checks if a specified file exists and is writable. If the file does not exist,
+#   it attempts to create the file and its parent directory if necessary. It ensures the file
+#   is writable before returning success. If any step fails, it outputs an error message and
+#   returns a non-zero status.
+# @arg $1 string file: The path to the file to check or create.
+# @exitcode 0 Success.
+# @exitcode 1 The operation failed.
+# @example
+#   shell::ini::check /path/to/config.ini  # Checks or creates the file at the specified path.
+#
+shell::ini::check() {
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "shell::ini::check"
+		shell::logger::usage "shell::ini::check"
+		shell::logger::option "-h, --help" "Display this help message"
+		return $RETURN_SUCCESS
+	fi
+
+	local file="$1"
+
+	# Check if file parameter is provided
+	if [ -z "$file" ]; then
+		shell::logger::error "File path is required"
+		return 1
+	fi
+
+	# Check if file exists
+	if [ ! -f "$file" ]; then
+		shell::logger::warn "File does not exist, attempting to create: $file"
+		# Create directory if it doesn't exist
+		local dir
+		dir=$(dirname "$file")
+		if [ ! -d "$dir" ]; then
+			mkdir -p "$dir" 2>/dev/null || {
+				shell::logger::error "Could not create directory: $dir"
+				return 1
+			}
+		fi
+
+		# Create the file
+		if ! touch "$file" 2>/dev/null; then
+			shell::logger::error "Could not create file: $file"
+			return 1
+		fi
+		shell::logger::success "File created successfully: $file"
+	fi
+
+	# Check if file is writable
+	if [ ! -w "$file" ]; then
+		shell::logger::error "File is not writable: $file"
+		return 1
+	fi
+
+	return 0
+}
+
+# @description Lists all section names from a given INI file.
+#
+#   This function reads an INI file and extracts all section names.
+#   It validates the presence of the file and outputs the section names
+#   without the enclosing square brackets.
+#
+#   Notes:
+#   - Relies on the shell::console::print function for output.
+# @option -h Optional. Displays this help message.
+# @arg $1 string file: The path to the INI file.
+# @exitcode 0 Success.
+# @exitcode 1 The operation failed.
+# @example
+#   shell::ini::section::list config.ini  # Lists all sections in config.ini.
+#
+shell::ini::section::list() {
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Lists all section names from a given INI file"
+		shell::logger::usage "shell::ini::section::list [-h] <file>"
+		shell::logger::option "-h" "Optional. Displays this help message."
+		shell::logger::item "file" "The path to the INI file."
+		shell::logger::example "shell::ini::section::list config.ini"
+		return $RETURN_SUCCESS
+	fi
+
+	local file="$1"
+
+	# Validate parameters
+	if [ -z "$file" ]; then
+		shell::logger::error "File path is required"
+		return 1
+	fi
+
+	# Check if file exists
+	if [ ! -f "$file" ]; then
+		shell::logger::error "File not found: $file"
+		return 1
+	fi
+
+	# Extract section names
+	grep -o '^\[[^]]*\]' "$file" 2>/dev/null | sed 's/^\[\(.*\)\]$/\1/'
+	return 0
+}
+
+# @description Lists all key names from a specified section in a given INI file.
+#
+#   This function reads an INI file and extracts all key names from a specified section.
+#   It validates the presence of the file and section, and applies strict validation rules
+#   if SHELL_INI_STRICT is set. The function handles comments and empty lines within the INI file.
+#
+#   Notes:
+#   - Relies on the shell::console::print function for output.
+# @option -h Optional. Displays this help message.
+# @arg $1 string file: The path to the INI file.
+# @arg $2 string section: The section within the INI file to search for keys.
+# @exitcode 0 Success.
+# @exitcode 1 The operation failed.
+# @example
+#   shell::ini::key::list config.ini MySection  # Lists all keys in MySection.
+#
+shell::ini::key::list() {
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Lists all key names from a specified section in a given INI file"
+		shell::logger::usage "shell::ini::key::list [-h] <file> <section>"
+		shell::logger::option "-h" "Optional. Displays this help message."
+		shell::logger::item "file" "The path to the INI file."
+		shell::logger::item "section" "The section within the INI file to search for keys."
+		shell::logger::example "shell::ini::key::list config.ini MySection"
+		return $RETURN_SUCCESS
+	fi
+
+	local file="$1"
+	if [ -z "$file" ]; then
+		shell::logger::error "File path is required"
+		return 1
+	fi
+	local section="$2"
+	if [ -z "$section" ]; then
+		shell::logger::error "Section name is required"
+		return 1
+	fi
+
+	# Validate section name only if strict mode is enabled
+	if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
+		shell::ini::validate::section "$section" || return 1
+	fi
+
+	# Check if file exists
+	if [ ! -f "$file" ]; then
+		shell::logger::error "File not found: $file"
+		return 1
+	fi
+
+	# Escape section for regex pattern
+	local escaped_section
+	escaped_section=$(shell::ini::escape_regex "$section")
+	local section_pattern="^\[$escaped_section\]"
+	local any_section_pattern="^\[[^]]+\]"
+	local in_section=0
+	local found_keys=0
+
+	# shell::console::print "Listing keys in section '$section' in file: $file" 11
+
+	while IFS= read -r line || [ -n "$line" ]; do
+		# Skip comments and empty lines
+		if [[ -z "$line" || "$line" =~ ^[[:space:]]*[#\;] ]]; then
+			continue
+		fi
+
+		# Check for section headers
+		if [[ "$line" =~ $any_section_pattern ]]; then
+			if [[ "$line" =~ $section_pattern ]]; then
+				in_section=1
+			else
+				in_section=0 # Exit target section when a new section is encountered
+			fi
+			continue
+		fi
+
+		# Extract key name from current section
+		if [ $in_section -eq 1 ] && [[ "$line" =~ ^[[:space:]]*[^=]+= ]]; then
+			local key="${line%%=*}"
+			key=$(shell::ini::trim "$key")
+			echo "$key"
+			found_keys=1
+		fi
+	done <"$file"
+
+	# Return 1 if no keys were found in the section
+	if [ $found_keys -eq 0 ]; then
+		shell::logger::warn "No keys found in section '$section' in file: $file"
+		return 1
+	fi
+
+	return 0
+}
+
+# @description Checks if a specified section exists in a given INI file.
+#
+#   This function checks whether a specified section exists in an INI file.
+#   It validates the presence of the file and section, and applies strict
+#   validation rules if SHELL_INI_STRICT is set. The function uses regex
+#   to search for the section header within the file.
+# @option -h Optional. Displays this help message.
+# @arg $1 string file: The path to the INI file.
+# @arg $2 string section: The section within the INI file to check for existence.
+# @exitcode 0 Success.
+# @exitcode 1 The operation failed.
+# @example
+#   shell::ini::section::exists config.ini MySection  # Checks if MySection exists in config.ini.
+#
+shell::ini::section::exists() {
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Checks if a specified section exists in a given INI file"
+		shell::logger::usage "shell::ini::section::exists [-h] <file> <section>"
+		shell::logger::option "-h" "Optional. Displays this help message."
+		shell::logger::item "file" "The path to the INI file."
+		shell::logger::item "section" "The section within the INI file to check for existence."
+		shell::logger::example "shell::ini::section::exists config.ini MySection"
+		return $RETURN_SUCCESS
+	fi
+
+	local file="$1"
+	if [ -z "$file" ]; then
+		shell::logger::error "File path is required"
+		return 1
+	fi
+	local section="$2"
+	if [ -z "$section" ]; then
+		shell::logger::error "Section name is required"
+		return 1
+	fi
+
+	# Validate section name only if strict mode is enabled
+	if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
+		shell::ini::validate::section "$section" || return 1
+	fi
+
+	# Check if file exists
+	if [ ! -f "$file" ]; then
+		shell::logger::error "File not found: $file"
+		return 1
+	fi
+
+	# Escape section for regex pattern
+	local escaped_section
+	escaped_section=$(shell::ini::escape_regex "$section")
+
+	shell::logger::debug "Checking if section '$section' exists in file: $file"
+
+	# Check if section exists
+	grep -q "^\[$escaped_section\]" "$file"
+	local result=$?
+
+	if [ $result -eq 0 ]; then
+		shell::console::print "Section found: $section" 46
+	else
+		shell::console::print "Section not found: $section" 196
+	fi
+
+	return $result
+}
+
+# @description Adds a new section to a specified INI file if it does not already exist.
+#
+#   This function checks if a specified section exists in an INI file and adds it if not.
+#   It validates the presence of the file and section, and applies strict validation rules
+#   if SHELL_INI_STRICT is set. The function handles the creation of the file if it does not exist.
+# @option -h Optional. Displays this help message.
+# @arg $1 string file: The path to the INI file.
+# @arg $2 string section: The section to be added to the INI file.
+# @exitcode 0 Success.
+# @exitcode 1 The operation failed.
+# @example
+#   shell::ini::section::add config.ini NewSection  # Adds NewSection to config.ini if it doesn't exist.
+#
+shell::ini::section::add() {
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Adds a new section to a specified INI file if it does not already exist"
+		shell::logger::usage "shell::ini::section::add [-h] <file> <section>"
+		shell::logger::option "-h" "Optional. Displays this help message."
+		shell::logger::item "file" "The path to the INI file."
+		shell::logger::item "section" "The section to be added to the INI file."
+		shell::logger::example "shell::ini::section::add config.ini NewSection"
+		return $RETURN_SUCCESS
+	fi
+
+	local file="$1"
+	local section="$2"
+
+	if [ -z "$file" ] || [ -z "$section" ]; then
+		echo "Usage: shell::ini::section::add [-h] <file> <section>"
+		return 1
+	fi
+
+	# Sanitize the section name to ensure it is a valid variable name.
+	section=$(shell::strings::sanitize::lower "$section")
+
+	# Validate section name only if strict mode is enabled
+	if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
+		shell::ini::validate::section "$section" || return 1
+	fi
+
+	# Check and create file if needed
+	shell::fs::touch --private "$file"
+
+	# Check if section already exists
+	if shell::ini::section::exists "$file" "$section"; then
+		# shell::logger::warn "Section already exists: $section"
+		return 0
+	fi
+
+	shell::logger::debug "Adding section '$section' to file: $file"
+
+	# Add a blank line before the new section unless the file is empty.
+	# Use stat in case the file requires elevated permissions to read size.
+	# Use echo for appending in case the file requires elevated permissions to write.
+	if [ -s "$file" ]; then
+		echo "" >>"$file"
+	fi
+
+	# Add the section
+	echo "[$section]" >>"$file"
+	shell::logger::success "Successfully added section: $section"
+	return 0
+}
+
+# @description Writes a key-value pair to a specified section in an INI file.
+#
+#   This function writes a key-value pair to a specified section in an INI file.
+#   It validates the presence of the file, section, and key, and applies strict
+#   validation rules if SHELL_INI_STRICT is set. The function handles the creation
+#   of the file and section if they do not exist. It also manages special characters
+#   in values by quoting them if necessary.
+# @option -h Optional. Displays this help message.
+# @arg $1 string file: The path to the INI file.
+# @arg $2 string section: The section within the INI file to write the key-value pair.
+# @arg $3 string key: The key to be written in the specified section.
+# @arg $4 string value: The value associated with the key.
+# @exitcode 0 Success.
+# @exitcode 1 The operation failed.
+# @example
+#   shell::ini::write config.ini MySection MyKey MyValue  # Writes MyKey=MyValue in MySection.
+#
+shell::ini::write() {
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Writes a key-value pair to a specified section in an INI file"
+		shell::logger::usage "shell::ini::write [-h] <file> <section> <key> <value>"
+		shell::logger::option "-h" "Optional. Displays this help message."
+		shell::logger::item "file" "The path to the INI file."
+		shell::logger::item "section" "The section within the INI file to write the key-value pair."
+		shell::logger::item "key" "The key to be written in the specified section."
+		shell::logger::item "value" "The value associated with the key."
+		shell::logger::example "shell::ini::write config.ini MySection MyKey MyValue"
+		return $RETURN_SUCCESS
+	fi
+
+	local file="$1"
+	local section="$2"
+	local key="$3"
+	local value="$4"
+
+	# Validate parameters
+	if [ -z "$file" ] || [ -z "$section" ] || [ -z "$key" ]; then
+		echo "Usage: shell::ini::write [-h] <file> <section> <key> <value>"
+		return 0
+	fi
+
+	# Sanitize the section names to ensure they are valid variable names.
+	section=$(shell::strings::sanitize::lower "$section")
+
+	# Validate section and key names only if strict mode is enabled
+	# Assumes shell::ini::validate::section and shell::ini::validate::key exist.
+	if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
+		shell::ini::validate::section "$section" || return 1
+		shell::ini::validate::key "$key" || return 1
+	fi
+
+	# Check for empty value if not allowed
+	if [ -z "$value" ] && [ "${SHELL_INI_ALLOW_EMPTY_VALUES}" -eq 0 ]; then
+		shell::console::print "ERR: Empty values are not allowed" 196 >&2
+		return 0
+	fi
+
+	# Check and create file if needed
+	# Assumes shell::fs::touch --private function exists.
+	shell::fs::touch --private "$file"
+
+	# Ensure the target section exists in the file. Add it if it doesn't.
+	# Assumes shell::ini::section::add function exists and handles adding a blank line
+	# before a new section if the file is not empty.
+	shell::ini::section::add "$file" "$section" || return 1
+
+	# Escape section and key for regex pattern
+	# Assumes shell::ini::escape_regex function exists.
+	local escaped_section
+	escaped_section=$(shell::ini::escape_regex "$section")
+	local escaped_key
+	escaped_key=$(shell::ini::escape_regex "$key")
+
+	local section_pattern="^\[$escaped_section\]"                # Regex for the target section header
+	local any_section_pattern="^\[[^]]+\]"                       # Regex for any section header
+	local key_pattern="^[[:space:]]*${escaped_key}[[:space:]]*=" # Regex to match the key at the start of a line (allowing leading spaces)
+
+	local in_target_section=0 # Flag: are we currently inside the target section?
+	local key_handled=0       # Flag: has the key been found and updated, or added?
+	local temp_file
+	temp_file=$(shell::ini::temp_file)
+
+	shell::console::print "DEBUG: Writing key '$key' with value '$value' to section '$section' in file: $file" 244 >&2
+
+	# Special handling for values with quotes or special characters (remains the same)
+	# Assumes SHELL_INI_STRICT is defined.
+	if [ "${SHELL_INI_STRICT}" -eq 1 ] && [[ "$value" =~ [[:space:]\"\'\`\&\|\<\>\;\$] ]]; then
+		value="\"${value//\"/\\\"}\""
+		shell::console::print "WARN: Value contains special characters, quoting: $value" 11 >&2
+	fi
+
+	# Sanitize the key to ensure it is a valid variable name.
+	key=$(shell::strings::sanitize::upper "$key")
+
+	# Process the file line by line
+	# Use `|| [ -n "$line" ]` to ensure the last line is processed even if it doesn't end with a newline.
+	while IFS= read -r line || [ -n "$line" ]; do
+		# Trim leading and trailing whitespace from the line for easier processing.
+		local trimmed_line
+		# trimmed_line="$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+		trimmed_line=$(shell::ini::trim "$line")
+		# trimmed_line=$(awk '{gsub(/^[[:space:]]*/, "", $0); gsub(/[[:space:]]*$/, "", $0); print $0}' <<<"$line")
+
+		# Skip empty lines (after trimming). This removes blank lines within sections.
+		if [ -z "$trimmed_line" ]; then
+			continue
+		fi
+
+		# Check if the trimmed line is a section header
+		if [[ "$trimmed_line" =~ $any_section_pattern ]]; then
+			# If we were in the target section and reached a new section,
+			# and the key hasn't been handled yet, add it now at the end of the target section.
+			if [ $in_target_section -eq 1 ] && [ $key_handled -eq 0 ]; then
+				# Encode the value using Base64 and remove any newlines
+				local encoded_value
+				encoded_value=$(echo -n "$value" | base64 | tr -d '\n')
+				echo "$key=$encoded_value" >>"$temp_file"
+				key_handled=1 # Mark as added
+			fi
+
+			# Add a blank line before this section header unless the temp file is currently empty.
+			# This ensures a blank line before all sections after the first one.
+			if [ -s "$temp_file" ]; then
+				echo "" >>"$temp_file"
+			fi
+
+			# Check if this is the target section header
+			if [[ "$trimmed_line" =~ $section_pattern ]]; then
+				in_target_section=1 # We are now inside the target section
+			else
+				in_target_section=0 # We are in a different section
+			fi
+
+			# Write the original (untrimmed) section header to preserve original spacing if desired.
+			echo "$line" >>"$temp_file"
+			continue # Move to the next line
+		fi
+
+		# If we are currently inside the target section
+		if [ $in_target_section -eq 1 ]; then
+			# Check if this line contains the key we are looking for (using trimmed line for pattern match)
+			if [[ "$trimmed_line" =~ $key_pattern ]]; then
+				# If the key is found, write the updated line with the new value.
+				# No blank line added before the key-value pair.
+				# Encode the value using Base64 and remove any newlines
+				local encoded_value
+				encoded_value=$(echo -n "$value" | base64 | tr -d '\n')
+				echo "$key=$encoded_value" >>"$temp_file"
+				key_handled=1 # Mark as updated
+				continue      # Skip the original line containing the old key-value pair
+			fi
+
+			# If the line is within the target section but is not the key we are handling,
+			# write the original line. This preserves other keys or comments in the section.
+			# Blank lines were already skipped.
+			echo "$line" >>"$temp_file"
+			continue # Move to the next line
+		fi
+
+		# If the trimmed line was not empty, not a section header, and we are not in the target section,
+		# write the original line to the temporary file. This preserves lines outside sections.
+		echo "$line" >>"$temp_file"
+
+	done <"$file" # Read input from the specified file.
+
+	# After the loop, if we were in the target section when the file ended,
+	# and the key was never handled (meaning it didn't exist in the target section),
+	# add the key-value pair at the end of the file (within that last section).
+	if [ $in_target_section -eq 1 ] && [ $key_handled -eq 0 ]; then
+		# No blank line added before the key-value pair at the end of the section.
+		# Encode the value using Base64 and remove any newlines
+		local encoded_value
+		encoded_value=$(echo -n "$value" | base64 | tr -d '\n')
+		echo "$key=$encoded_value" >>"$temp_file"
+		key_handled=1 # Mark as added
+	fi
+
+	# Use atomic operation to replace the original file.
+	# This is safer than removing the original and renaming the temp file,
+	# as it reduces the window where the file might be missing.
+	mv "$temp_file" "$file"
+
+	# Provide feedback based on whether the key was updated or added.
+	if [ $key_handled -eq 1 ]; then
+		shell::logger::success "Successfully wrote key '$key' with value '$value' to section '$section'"
+		return $RETURN_SUCCESS
+	else
+		# This case should ideally not be reached if shell::ini::section::add ensures
+		# the section exists and the logic is correct. It's a safeguard.
+		shell::console::print "WARN: Section '$section' processed, but key '$key' was not added or updated."
+		return $RETURN_FAILURE
+	fi
+
+	return 0
+}
+
+# @description Removes a specified section and its key-value pairs from an INI formatted file.
+#
+#   This function processes an INI file line by line. It identifies the start of the
+#   section to be removed and skips all subsequent lines until another section
+#   header is encountered or the end of the file is reached. The remaining lines
+#   (before the target section and after it) are written to a temporary file,
+#   which then replaces the original file.
+#
+#   Notes:
+#   - Assumes the INI file has sections enclosed in square brackets (e.g., [section]).
+#   - Empty lines and lines outside of sections are preserved.
+#   - Relies on helper functions like shell::console::print, shell::ini::escape_regex,
+#   shell::ini::temp_file, and optionally shell::ini::validate::section
+#   if SHELL_INI_STRICT is enabled. (Note: shell::ini::escape_regex and
+#   shell::ini::temp_file are not provided in this snippet, but are assumed
+#   to exist based on usage.)
+#   - Uses atomic operation (mv) to replace the original file, reducing risk of data loss.
+# @arg $1 string file: The path to the INI file.
+# @arg $2 string section: The name of the section to remove (without the square brackets).
+# @exitcode 0 Success.
+# @exitcode 1 The operation failed.
+# @example
+#   shell::ini::section::remove /path/to/config.ini "database"
+#
+shell::ini::section::remove() {
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Removes a specified section and its key-value pairs from an INI formatted file"
+		shell::logger::usage "shell::ini::section::remove [-h] <file> <section>"
+		shell::logger::option "-h" "Optional. Displays this help message."
+		shell::logger::item "file" "The path to the INI file."
+		shell::logger::item "section" "The name of the section to remove (without the square brackets)."
+		shell::logger::example "shell::ini::section::remove /path/to/config.ini \"database\""
+		return $RETURN_SUCCESS
+	fi
+
+	local file="$1"
+	if [ -z "$file" ]; then
+		shell::logger::error "File is required"
+		return 1
+	fi
+	if [ ! -f "$file" ]; then
+		shell::logger::error "File not found: $file"
+		return 1
+	fi
+	local section="$2"
+	if [ -z "$section" ]; then
+		shell::logger::error "Section is required"
+		return 1
+	fi
+
+	# Validate required parameters: file path and section name.
+	if [ -z "$file" ] || [ -z "$section" ]; then
+		echo "Usage: shell::ini::section::remove [-h] <file> <section>"
+		return 1
+	fi
+
+	# Sanitize the section name to ensure it is a valid variable name.
+	section=$(shell::strings::sanitize::lower "$section")
+
+	# Validate section name only if strict mode is enabled (optional, based on existing code).
+	# Assumes shell::ini::validate::section function exists.
+	if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
+		shell::ini::validate::section "$section" || return 1
+	fi
+
+	# Check if the section exists in the file
+	local escaped_section
+	escaped_section=$(shell::ini::escape_regex "$section")
+	if ! grep -q "^\[$escaped_section\]" "$file"; then
+		shell::console::print "Section '$section' not found in file: $file" 11
+		return 0
+	fi
+
+	shell::logger::debug "Removing section '$section' from file: $file"
+
+	local section_pattern="^\[$escaped_section\]" # Regex for the target section header
+	local any_section_pattern="^\[[^]]+\]"        # Regex for any section header
+	local in_target_section=0                     # Flag: are we in the target section?
+	local section_removed=0                       # Flag: has the section been removed?
+	local temp_file
+	temp_file=$(shell::ini::temp_file)
+	local last_line_was_blank=0 # Flag: was the last written line blank?
+
+	# Process the file line by line
+	while IFS= read -r line || [ -n "$line" ]; do
+		# Trim the line for processing but preserve the original for output
+		local trimmed_line
+		trimmed_line=$(shell::ini::trim "$line")
+
+		# Check if the line is empty
+		if [ -z "$trimmed_line" ]; then
+			# Only write a blank line if the last written line was not blank
+			if [ $last_line_was_blank -eq 0 ] && [ -s "$temp_file" ]; then
+				echo "" >>"$temp_file"
+				last_line_was_blank=1
+			fi
+			continue
+		fi
+
+		# Check if the line is a section header
+		if [[ "$trimmed_line" =~ $any_section_pattern ]]; then
+			if [[ "$trimmed_line" =~ $section_pattern ]]; then
+				# Found the target section header; skip it and enter the section
+				in_target_section=1
+				section_removed=1
+				continue
+			else
+				# Found a different section header; exit the target section
+				in_target_section=0
+				# Only add a blank line if the last written line was not blank and the temp file is not empty
+				if [ $last_line_was_blank -eq 0 ] && [ -s "$temp_file" ]; then
+					echo "" >>"$temp_file"
+					last_line_was_blank=1
+				fi
+				echo "$line" >>"$temp_file"
+				last_line_was_blank=0
+				continue
+			fi
+		fi
+
+		# If not in the target section, write the line to the temp file
+		if [ $in_target_section -eq 0 ]; then
+			# Skip writing if the line is empty and we're at the start of the file
+			if [ ! -s "$temp_file" ] && [ -z "$trimmed_line" ]; then
+				continue
+			fi
+			echo "$line" >>"$temp_file"
+			last_line_was_blank=0
+		fi
+	done <"$file"
+
+	# Construct the command to replace the original file
+	local replace_cmd="mv \"$temp_file\" \"$file\""
+
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::command_clip "$replace_cmd"
+		shell::logger::success "Dry-run: Would remove section '$section' from '$file'"
+	else
+		shell::exec::shell "$replace_cmd"
+		if [ $? -eq 0 ] && [ $section_removed -eq 1 ]; then
+			shell::logger::success "Successfully removed section '$section'"
+		else
+			shell::logger::error "removing section '$section'"
+			return 1
+		fi
+	fi
+
+	return 0
+}
+
+# @description Interactively selects a key from a specific section in an INI file using fzf
+#   and then removes the selected key from that section.
+#
+#   This function validates the input file and section, lists keys within the section
+#   using shell::ini::key::list, presents the keys for interactive selection using fzf,
+#   and then removes the chosen key-value pair from the specified section in the INI file.
+#   It handles cases where the file or section does not exist and provides feedback
+#   using shell::console::print.
+# @option -n Optional dry-run flag. If provided, commands are printed using shell::logger::command_clip instead of executed.
+# @arg $1 string file: The path to the INI file.
+# @arg $2 string section: The section within the INI file from which to remove a key.
+# @exitcode 0 Success.
+# @exitcode 1 The operation failed.
+# @example
+#   shell::ini::key::remove::fzf config.ini "Database"  # Interactively remove a key from the Database section.
+#   shell::ini::key::remove::fzf -n settings.ini "API"  # Dry-run: show commands to remove a key from the API section.
+#
+shell::ini::key::remove::fzf() {
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Interactively selects a key from a specific section in an INI file using fzf and then removes the selected key from that section"
+		shell::logger::usage "shell::ini::key::remove::fzf [-n] <file> <section>"
+		shell::logger::option "-n" "Optional dry-run flag. If provided, commands are printed using shell::logger::command_clip instead of executed."
+		shell::logger::item "file" "The path to the INI file."
+		shell::logger::item "section" "The section within the INI file from which to remove a key."
+		shell::logger::option "-h, --help" "Display this help message"
+		shell::logger::example "shell::ini::key::remove::fzf config.ini \"Database\""
+		shell::logger::example "shell::ini::key::remove::fzf -n settings.ini \"API\""
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	# Validate required parameters: file path and section name.
+	if [ $# -lt 2 ]; then
+		echo "Usage: shell::ini::key::remove::fzf [-n] <file> <section>"
+		return 1
+	fi
+
+	local file="$1"
+	local section="$2"
+
+	# Check if the specified file exists.
+	if ! shell::ini::check "$file"; then
+		# shell::ini::check prints an error if the file is not found
+		return 1
+	fi
+
+	# Check if the section exists in the file.
+	if ! shell::ini::section::exists "$file" "$section"; then
+		# shell::ini::section::exists prints an error if the section is not found
+		return 1
+	fi
+
+	# Ensure fzf is installed.
+	shell::dependency::fzf::ensure || {
+		shell::logger::error "fzf is required but could not be installed."
+		return 1
+	}
+
+	# Get the list of keys in the specified section and use fzf to select one.
+	local selected_key
+	selected_key=$(shell::ini::key::list "$file" "$section" | fzf --prompt="Select key to remove from section '$section': ")
+
+	# Check if a key was selected.
+	if [ -z "$selected_key" ]; then
+		shell::logger::error "No key selected. Aborting removal."
+		return 1
+	fi
+
+	shell::logger::debug "Selected key for removal: '$selected_key'"
+
+	local os_type
+	os_type=$(shell::os::type)
+
+	# Escape section and key for regex pattern
+	local escaped_section
+	escaped_section=$(shell::ini::escape_regex "$section")
+	local escaped_key
+	escaped_key=$(shell::ini::escape_regex "$selected_key")
+
+	local section_pattern="^\[$escaped_section\]"                # Regex for the target section header
+	local any_section_pattern="^\[[^]]+\]"                       # Regex for any section header
+	local key_pattern="^[[:space:]]*${escaped_key}[[:space:]]*=" # Regex to match the key at the start of a line (allowing leading spaces)
+
+	local in_target_section=0 # Flag: are we currently inside the target section?
+	local key_removed=0       # Flag: has the key been found and removed?
+	local temp_file
+	temp_file=$(shell::ini::temp_file)
+
+	shell::logger::debug "Removing key '$selected_key' from section '$section' in file: $file"
+
+	# Process the file line by line
+	# Use `|| [ -n "$line" ]` to ensure the last line is processed even if it doesn't end with a newline.
+	while IFS= read -r line || [ -n "$line" ]; do
+		local trimmed_line
+		trimmed_line="$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+
+		# Check if the trimmed line is a section header
+		if [[ "$trimmed_line" =~ $any_section_pattern ]]; then
+			# Check if this is the target section header
+			if [[ "$trimmed_line" =~ $section_pattern ]]; then
+				in_target_section=1 # We are now inside the target section
+			else
+				in_target_section=0 # We are in a different section
+			fi
+			# Always write section headers to the temporary file
+			echo "$line" >>"$temp_file"
+			continue # Move to the next line
+		fi
+
+		# If we are currently inside the target section
+		if [ $in_target_section -eq 1 ]; then
+			# Check if this line contains the key we are looking for (using trimmed line for pattern match)
+			if [[ "$trimmed_line" =~ $key_pattern ]]; then
+				# Found the key, skip this line to remove it
+				key_removed=1
+				continue # Move to the next line without writing the current line
+			fi
+			# If the line is within the target section but is not the key we are removing,
+			# write the original line to the temporary file.
+			echo "$line" >>"$temp_file"
+			continue # Move to the next line
+		fi
+
+		# If the trimmed line was not empty, not a section header, and we are not in the target section,
+		# write the original line to the temporary file. This preserves lines outside sections.
+		echo "$line" >>"$temp_file"
+
+	done <"$file" # Read input from the specified file.
+
+	# Use atomic operation to replace the original file.
+	# This is safer than removing the original and renaming the temp file.
+	local replace_cmd="mv \"$temp_file\" \"$file\""
+
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::command_clip "$replace_cmd"
+	else
+		shell::exec::shell "$replace_cmd"
+		if [ $? -eq 0 ]; then
+			if [ $key_removed -eq 1 ]; then
+				shell::logger::success "Successfully removed key '$selected_key' from section '$section'"
+			else
+				# This case should not be reached if shell::ini::key::list and fzf worked correctly,
+				# but it's a safeguard.
+				shell::logger::warn "Key '$selected_key' was selected but not found in section '$section' during removal process."
+				return 1
+			fi
+		else
+			shell::logger::error "replacing the original file after key removal."
+			return 1
+		fi
+	fi
+
+	return 0
+}
+
+# @description Removes a specified key from a specific section in an INI formatted file.
+#
+#   This function processes an INI file line by line. It identifies the start of the
+#   target section and then skips the line containing the specified key within that section.
+#   All other lines (before the target section, in the target section but not matching the key,
+#   and after the target section) are written to a temporary file, which then replaces
+#   the original file.
+#
+#   Notes:
+#   - Assumes the INI file has sections enclosed in square brackets (e.g., [section]) and key=value pairs.
+#   - Empty lines and lines outside of sections are preserved.
+#   - Relies on helper functions like shell::console::print, shell::ini::escape_regex,
+#   shell::ini::temp_file, and optionally shell::ini::validate::section,
+#   shell::ini::validate::key if SHELL_INI_STRICT is enabled.
+#   - Uses atomic operation (mv) to replace the original file, reducing risk of data loss.
+# @option -n Optional dry-run flag. If provided, commands are printed using shell::logger::command_clip instead of executed.
+# @arg $1 string file: The path to the INI file.
+# @arg $2 string section: The section within the INI file from which to remove the key.
+# @arg $3 string key: The key to be removed from the specified section.
+# @exitcode 0 Success.
+# @exitcode 1 The operation failed.
+# @example
+#   shell::ini::key::remove /path/to/config.ini "database" "username"
+#   shell::ini::key::remove -n /path/to/config.ini "api" "api_key" # Dry-run mode
+#
+shell::ini::key::remove() {
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Removes a specified key from a specific section in an INI formatted file"
+		shell::logger::usage "shell::ini::key::remove [-n] <file> <section> <key>"
+		shell::logger::option "-n" "Optional dry-run flag. If provided, commands are printed using shell::logger::command_clip instead of executed."
+		shell::logger::item "file" "The path to the INI file."
+		shell::logger::item "section" "The section within the INI file from which to remove the key."
+		shell::logger::item "key" "The key to be removed from the specified section."
+		shell::logger::option "-h, --help" "Display this help message"
+		shell::logger::example "shell::ini::key::remove /path/to/config.ini \"database\" \"username\""
+		shell::logger::example "shell::ini::key::remove -n /path/to/config.ini \"api\" \"api_key\""
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	# Validate required parameters: file path, section name, and key name.
+	if [ $# -lt 3 ]; then
+		echo "Usage: shell::ini::key::remove [-n] <file> <section> <key>"
+		return 1
+	fi
+
+	local file="$1"
+	if [ ! -f "$file" ]; then
+		shell::logger::error "File not found: $file"
+		return 1
+	fi
+	local section="$2"
+	if [ -z "$section" ]; then
+		shell::logger::error "Section name cannot be empty."
+		return 1
+	fi
+	local key="$3"
+	if [ -z "$key" ]; then
+		shell::logger::error "Key name cannot be empty."
+		return 1
+	fi
+
+	# Sanitize the section and key names to ensure they are valid variable names.
+	section=$(shell::strings::sanitize::lower "$section")
+
+	# Validate section and key names only if strict mode is enabled (optional, based on existing code).
+	# Assumes shell::ini::validate::section and shell::ini::validate::key functions exist.
+	if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
+		shell::ini::validate::section "$section" || return 1
+		shell::ini::validate::key "$key" || return 1
+	fi
+
+	# Check if the section exists in the file before attempting removal.
+	if ! shell::ini::section::exists "$file" "$section"; then
+		# shell::ini::section::exists prints an error if the section is not found
+		return 1
+	fi
+
+	shell::logger::debug "Attempting to remove key '$key' from section '$section' in file: $file"
+
+	# Escape section and key for regex pattern
+	local escaped_section
+	escaped_section=$(shell::ini::escape_regex "$section")
+	local escaped_key
+	escaped_key=$(shell::ini::escape_regex "$key")
+
+	local section_pattern="^\[$escaped_section\]"                # Regex for the target section header
+	local any_section_pattern="^\[[^]]+\]"                       # Regex for any section header
+	local key_pattern="^[[:space:]]*${escaped_key}[[:space:]]*=" # Regex to match the key at the start of a line (allowing leading spaces)
+
+	local in_target_section=0 # Flag: are we currently inside the target section?
+	local key_removed=0       # Flag: has the key been found and removed?
+	local temp_file
+	temp_file=$(shell::ini::temp_file)
+
+	# Process the file line by line
+	# Use `|| [ -n "$line" ]` to ensure the last line is processed even if it doesn't end with a newline.
+	while IFS= read -r line || [ -n "$line" ]; do
+		local trimmed_line
+		trimmed_line="$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+
+		# Check if the trimmed line is a section header
+		if [[ "$trimmed_line" =~ $any_section_pattern ]]; then
+			# Check if this is the target section header
+			if [[ "$trimmed_line" =~ $section_pattern ]]; then
+				in_target_section=1 # We are now inside the target section
+			else
+				in_target_section=0 # We are in a different section
+			fi
+			# Always write section headers to the temporary file
+			echo "$line" >>"$temp_file"
+			continue # Move to the next line
+		fi
+
+		# If we are currently inside the target section
+		if [ $in_target_section -eq 1 ]; then
+			# Check if this line contains the key we are looking for (using trimmed line for pattern match)
+			if [[ "$trimmed_line" =~ $key_pattern ]]; then
+				# Found the key, skip this line to remove it
+				key_removed=1
+				continue # Move to the next line without writing the current line
+			fi
+			# If the line is within the target section but is not the key we are removing,
+			# write the original line to the temporary file.
+			echo "$line" >>"$temp_file"
+			continue # Move to the next line
+		fi
+
+		# If the trimmed line was not empty, not a section header, and we are not in the target section,
+		# write the original line to the temporary file. This preserves lines outside sections.
+		echo "$line" >>"$temp_file"
+
+	done <"$file" # Read input from the specified file.
+
+	# Use atomic operation to replace the original file.
+	# This is safer than removing the original and renaming the temp file.
+	local replace_cmd="mv \"$temp_file\" \"$file\""
+
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::command_clip "$replace_cmd"
+	else
+		shell::exec::shell "$replace_cmd"
+		if [ $? -eq 0 ]; then
+			if [ $key_removed -eq 1 ]; then
+				shell::logger::success "Successfully removed key '$key' from section '$section'"
+				return 0
+			else
+				shell::logger::warn "Key '$key' not found in section '$section'."
+				return 1
+			fi
+		else
+			shell::logger::error "replacing the original file after key removal."
+			return 1
+		fi
+	fi
+}
+
+# @description Writes an array of values to a specified key in an INI file.
+#
+#   This function processes a list of values, formats them into a comma-separated
+#   string, and writes this string as the value for a specified key in an INI file.
+#   Values containing spaces, commas, or double quotes are automatically enclosed
+#   in double quotes, and internal double quotes are escaped (e.g., "value with \"quote\"").
+#   The final formatted string is passed to 'shell::ini::write' for atomic writing,
+#   which handles file and section existence, creation, and updates.
+#
+#   Notes:
+#   - Relies on 'shell::console::print' for output and 'shell::ini::write' for file operations.
+#   - Interaction with SHELL_INI_STRICT in 'shell::ini::write': If SHELL_INI_STRICT is set
+#   to 1, 'shell::ini::write' might re-quote the entire array string generated by this
+#   function if it contains spaces or quotes, potentially leading to double-quoting
+#   (e.g., value becoming ""item1\",\"item 2""). This function aims to produce a
+#   standard, internally-quoted INI array value.
+# @option -h Optional. Displays this help message.
+# @arg $1 string file: The path to the INI file.
+# @arg $2 string section: The section within the INI file to write the array to.
+# @arg $3 string key: The key to be associated with the array of values.
+# @arg $@ string valueN: Optional. One or more values to be written as part of the array.
+# @exitcode 0 Success.
+# @exitcode 1 The operation failed.
+# @example
+#   shell::ini::array::set config.ini MySection MyList "alpha" "beta gamma" "delta,epsilon"
+#   # This would result in MyList=alpha,"beta gamma","delta,epsilon" in config.ini
+#
+shell::ini::array::set() {
+	# Check for the help flag (-h)
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Writes an array of values to a specified key in an INI file"
+		shell::logger::usage "shell::ini::array::set [-h] <file> <section> <key> [value1] [value2 ...]"
+		shell::logger::option "-h" "Optional. Displays this help message."
+		shell::logger::item "file" "The path to the INI file."
+		shell::logger::item "section" "The section within the INI file to write the array to."
+		shell::logger::item "key" "The key to be associated with the array of values."
+		shell::logger::item "valueN" "Optional. One or more values to be written as part of the array."
+		shell::logger::example "shell::ini::array::set config.ini MySection MyList \"alpha\" \"beta gamma\" \"delta,epsilon\""
+		return $RETURN_SUCCESS
+	fi
+
+	local file="$1"
+	local section="$2"
+	local key="$3"
+	shift 3
+	local -a raw_array_values=("$@")
+
+	# Validate parameters
+	if [ -z "$file" ] || [ -z "$section" ] || [ -z "$key" ]; then
+		echo "Usage: shell::ini::array::set [-h] <file> <section> <key> [value1] [value2 ...]"
+		return 1
+	fi
+
+	# Sanitize section and key names to ensure they are in lowercase.
+	# This is to ensure consistency with how they are stored in the INI file.
+	section=$(shell::strings::sanitize::lower "$section")
+
+	local -a formatted_values=()
+	local temp_value
+	local array_string
+
+	# Process each raw value, escaping quotes and adding outer quotes if necessary.
+	for val in "${raw_array_values[@]}"; do
+		temp_value="${val//\"/\\\"}" # Escape existing double quotes within the value.
+
+		# Quote the value if it contains spaces, commas, or (after escaping) original quotes.
+		if [[ "$temp_value" =~ [[:space:],\"] ]]; then
+			temp_value="\"$temp_value\"" # Enclose in double quotes.
+		fi
+		formatted_values+=("$temp_value")
+	done
+
+	# Join the formatted values with a comma.
+	# 'printf -v' is used for robust string concatenation, and trailing comma is removed.
+	if [ ${#formatted_values[@]} -gt 0 ]; then
+		printf -v array_string '%s,' "${formatted_values[@]}"
+		array_string="${array_string%,}" # Remove the last comma.
+	else
+		array_string=""
+	fi
+
+	# Write the formatted array string to the INI file using shell::ini::write.
+	shell::ini::write "$file" "$section" "$key" "$array_string"
+	local exit_code=$?
+
+	# Provide feedback based on the operation's success.
+	if [ $status -eq 0 ]; then
+		shell::logger::success "Successfully wrote array value for key '$key' to section '$section'."
+	else
+		shell::logger::error "Failed to write array value for key '$key' to section '$section'."
+	fi
+
+	return $status
+}
+
+# @description Reads and parses an array of values from a specified key in an INI file.
+#
+#   This function first reads the raw string value of a specified key from an INI file
+#   using 'shell::ini::read'. It then meticulously parses this string to extract
+#   individual array elements. The parsing logic correctly handles comma delimiters
+#   and preserves values enclosed in double quotes, including those containing
+#   spaces, commas, or escaped double quotes within the value itself.
+#   Each extracted item is then trimmed of leading/trailing whitespace.
+#   The function outputs each parsed array item on a new line to standard output.
+#
+#   Notes:
+#   - Relies on 'shell::ini::read' to retrieve the raw value.
+#   - Relies on 'shell::ini::trim' for whitespace removal from individual items.
+#   - The parsing logic is custom-built to handle INI-style quoted comma-separated lists.
+#   - Interaction with SHELL_INI_STRICT in 'shell::ini::write': Values formatted by
+#   'shell::ini::array::set' (which are read by this function) are intended to be
+#   interpreted as single strings by 'shell::ini::write'. If 'SHELL_INI_STRICT' is 1
+#   during writing, the entire formatted string might be re-quoted. This function correctly
+#   parses values regardless of outer re-quoting, as it targets the internal array structure.
+# @option -h Optional. Displays this help message.
+# @arg $1 string file: The path to the INI file.
+# @arg $2 string section: The section within the INI file to read the array from.
+# @arg $3 string key: The key whose array of values is to be retrieved.
+# @exitcode 0 Success.
+# @exitcode 1 The operation failed.
+# @example
+#   # Assuming 'my_config.ini' contains:
+#   # [Settings]
+#   # MyArray=item1,\"item with spaces\",\"item,with,commas\",\"item with \\\"escaped\\\" quotes\"
+#   shell::ini::array::get my_config.ini Settings MyArray
+#   # Expected output:
+#   # item1
+#   # item with spaces
+#   # item,with,commas
+#   # item with "escaped" quotes
+#
+shell::ini::array::get() {
+	# Check for the help flag (-h)
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Reads and parses an array of values from a specified key in an INI file"
+		shell::logger::usage "shell::ini::array::get [-h] <file> <section> <key>"
+		shell::logger::option "-h" "Optional. Displays this help message."
+		shell::logger::item "file" "The path to the INI file."
+		shell::logger::item "section" "The section within the INI file to read the array from."
+		shell::logger::item "key" "The key whose array of values is to be retrieved."
+		shell::logger::example "shell::ini::array::get my_config.ini Settings MyArray"
+		return $RETURN_SUCCESS
+	fi
+
+	local file="$1"
+	local section="$2"
+	local key="$3"
+
+	# Validate required parameters.
+	if [ -z "$file" ] || [ -z "$section" ] || [ -z "$key" ]; then
+		shell::logger::error "shell::ini::array::get: Missing required parameters."
+		echo "Usage: shell::ini::array::get [-h] <file> <section> <key>"
+		return 1
+	fi
+
+	# Sanitize section and key names to ensure they are in lowercase.
+	# This is to ensure consistency with how they are stored in the INI file.
+	section=$(shell::strings::sanitize::lower "$section")
+
+	# Read the raw string value from the INI file.
+	local value
+	# Capture stderr from shell::ini::read to prevent its error messages from appearing if not desired,
+	# but still allow it to return status.
+	value=$(shell::ini::read "$file" "$section" "$key")
+	local ini_read_status=$?
+
+	# Check if shell::ini::read failed (e.g., file/section/key not found).
+	if [ $ini_read_status -ne 0 ]; then
+		# shell::ini::read already prints specific error messages, so just indicate general failure here.
+		shell::logger::error "Failed to read raw value for key '$key' from section '$section'."
+		return 1
+	fi
+
+	local -a result=()
+	local in_quotes=0
+	local current_item=""
+	local char
+
+	# Iterate through the string character by character to parse the array.
+	for ((i = 0; i < ${#value}; i++)); do
+		char="${value:$i:1}"
+
+		if [ "$char" = '"' ]; then
+			# Handle escaped quotes: if the previous character was a backslash,
+			# it's an escaped quote, so remove the backslash and add the literal quote.
+			if [ $i -gt 0 ] && [ "${value:$((i - 1)):1}" = "\\" ]; then
+				current_item="${current_item:0:-1}\"" # Remove trailing backslash, add literal quote.
+			else
+				# Toggle the 'in_quotes' state for unescaped double quotes.
+				in_quotes=$((1 - in_quotes))
+			fi
+		elif [ "$char" = ',' ] && [ "$in_quotes" -eq 0 ]; then
+			# If a comma is encountered outside of quotes, it signifies the end of an item.
+			result+=("$(shell::ini::trim "$current_item")") # Add the trimmed item to the result array.
+			current_item=""                                 # Reset current_item for the next element.
+		else
+			# Append the current character to the current item being built.
+			current_item="$current_item$char"
+		fi
+	done
+
+	# After the loop, add the last accumulated item.
+	# This conditional ensures that:
+	# 1. A non-empty 'current_item' is always added.
+	# 2. An empty 'current_item' is added if it implies a trailing comma (result already has items).
+	# 3. Nothing is added if the initial 'value' was entirely empty (no items parsed, current_item is empty).
+	if [ -n "$current_item" ] || [ ${#result[@]} -gt 0 ]; then
+		result+=("$(shell::ini::trim "$current_item")")
+	fi
+
+	# Output each item of the parsed array on a new line.
+	if [ ${#result[@]} -gt 0 ]; then
+		for item in "${result[@]}"; do
+			echo "$item"
+		done
+	else
+		# This case covers scenarios where the key exists but its value is empty or malformed
+		# such that no discernible items were parsed.
+		shell::logger::warn "Key '$key' found in section '$section', but no array items could be parsed. Check format."
+	fi
+
+	return 0
+}
+
+# @description Checks if a specified key exists within a section in an INI file.
+#
+#   This function provides a convenient way to verify the presence of a specific
+#   key within a designated section of an INI configuration file. It acts as a
+#   wrapper around 'shell::ini::read', using its capabilities to determine if
+#   the key can be successfully retrieved.
+#   If strict mode is active (SHELL_INI_STRICT is set to 1), it first
+#   validates the format of the section and key names, returning an error if
+#   they do not conform to the defined naming conventions.
+#   The function ensures its own output is clean by suppressing the internal
+#   logging of 'shell::ini::read', providing clear, colored messages indicating
+#   whether the key was found or not.
+#
+#   Notes:
+#   - This function does not output the value of the key, only its existence status.
+#   - It leverages 'shell::ini::read' and other 'shell::ini_validate_*' functions for its operations.
+#   - For detailed reasons why a key might not be found (e.g., file doesn't exist,
+#   section doesn't exist), 'shell::ini::read' or 'shell::ini::section::exists'
+#   will provide their own specific error messages if called directly.
+# @option -h Optional. Displays this help message.
+# @arg $1 string file: The path to the INI file.
+# @arg $2 string section: The section within the INI file to check.
+# @arg $3 string key: The key to check for existence.
+# @exitcode 0 Success.
+# @exitcode 1 The operation failed.
+# @example
+#   # Check if a 'port' key exists in the 'Network' section of 'settings.ini'
+#   if shell::ini::key::exists settings.ini Network port; then
+#   shell::console::print "Found 'port' setting." 46
+#   else
+#   shell::console::print "The 'port' setting is missing." 196
+#   fi
+#
+shell::ini::key::exists() {
+	# Check for the help flag (-h)
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Checks if a specified key exists within a section in an INI file"
+		shell::logger::usage "shell::ini::key::exists [-h] <file> <section> <key>"
+		shell::logger::option "-h" "Optional. Displays this help message."
+		shell::logger::item "file" "The path to the INI file."
+		shell::logger::item "section" "The section within the INI file to check."
+		shell::logger::item "key" "The key to check for existence."
+		shell::logger::example "shell::console::print \"Found 'port' setting.\" 46"
+		shell::logger::example "shell::console::print \"The 'port' setting is missing.\" 196"
+		return $RETURN_SUCCESS
+	fi
+
+	local file="$1"
+	local section="$2"
+	local key="$3"
+
+	# Validate required parameters.
+	if [ -z "$file" ] || [ -z "$section" ] || [ -z "$key" ]; then
+		echo "Usage: shell::ini::key::exists [-h] <file> <section> <key>"
+		return 1
+	fi
+
+	# Sanitize section and key names to ensure they are in lowercase and valid.
+	# This is to ensure consistency with the validation functions.
+	# shell::strings::sanitize::lower is assumed to be a function that converts
+	# the input to lowercase and replaces invalid characters with underscores.
+	section=$(shell::strings::sanitize::lower "$section")
+
+	# Validate section and key names if strict mode is enabled.
+	# The called validation functions will print their own error messages if validation fails.
+	if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
+		shell::ini::validate::section "$section" || return 1
+		shell::ini::validate::key "$key" || return 1
+	fi
+
+	# Attempt to read the key's value.
+	# Redirect stdout and stderr to /dev/null to prevent shell::ini::read's output/errors
+	# from cluttering the console, as this function provides its own status messages.
+	if shell::ini::read "$file" "$section" "$key" >/dev/null 2>&1; then
+		shell::logger::success "Key found: '$key' in section '$section'."
+		return 0
+	else
+		shell::logger::error "Key not found: '$key' in section '$section'."
+		return 1
+	fi
+}
+
+# @description Exports key-value pairs from an INI file as environment variables.
+#
+#   This function provides a convenient way to load INI configuration into the
+#   current shell's environment. It iterates through the specified INI file,
+#   reading section and key-value pairs, and then uses the 'export' command
+#   to make them available as environment variables.
+#
+#   To ensure compatibility with shell variable naming conventions, all section
+#   and key names used in the environment variable name (e.g., SECTION_KEY) are
+#   automatically sanitized. This involves converting them to uppercase and
+#   replacing any non-alphanumeric or non-underscore characters with underscores.
+#
+#   If a specific section is provided, only the keys within that section are
+#   processed. If no section is given, all readable sections and their keys
+#   across the entire file are exported.
+#
+#   Notes:
+#   - This function does not modify the INI file.
+#   - Variable names in the environment are derived from sanitized section and
+#   key names. For instance, a section '[My Config]' and key 'api-key' would
+#   become 'MY_CONFIG_API_KEY'.
+#   - Values containing special characters are exported as-is; it's the calling
+#   script's responsibility to handle such values.
+#   - This function uses process substitution (`< <(...)`) for portability
+#   when iterating over lists of sections/keys, making it compatible with
+#   older Bash versions (e.g., Bash 3 on macOS) as well as newer ones.
+#   - If a key's value cannot be read (e.g., key not found by ini_read), that
+#   specific key will be skipped in the export process, and a warning will be
+#   logged.
+# @option -h Optional. Displays this help message.
+# @arg $1 string file: The path to the INI file to read.
+# @arg $@ string prefix: Optional. A string prefix to prepend to all environment variable names. If provided, variables will be named like \`PREFIX_SECTION_KEY\`. If omitted, variables will be named like \`SECTION_KEY\`.
+# @arg $@ string section: Optional. If specified, only keys from this specific section will be exported. If omitted, keys from all sections will be exported.
+# @exitcode 0 Success.
+# @exitcode 1 The operation failed.
+# @example
+#   # Export database credentials from 'db.ini' with 'DB_APP' prefix
+#   # assuming db.ini contains:
+#   # [production]
+#   # host=localhost
+#   # user=db.user
+#   # pass=db.pass
+#   shell::ini::env::expose db.ini DB_APP production
+#   echo $DB_APP_PRODUCTION_HOST # Outputs 'localhost'
+#
+shell::ini::env::expose() {
+	# Check for the help flag (-h)
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Exports key-value pairs from an INI file as environment variables"
+		shell::logger::usage "shell::ini::env::expose [-h] <file> [prefix] [section]"
+		shell::logger::option "-h" "Optional. Displays this help message."
+		shell::logger::item "file" "The path to the INI file to read."
+		shell::logger::item "prefix" "Optional. A string prefix to prepend to all environment variable names. If provided, variables will be named like \`PREFIX_SECTION_KEY\`. If omitted, variables will be named like \`SECTION_KEY\`."
+		shell::logger::item "section" "Optional. If specified, only keys from this specific section will be exported. If omitted, keys from all sections will be exported."
+		shell::logger::example "shell::ini::env::expose config.ini"
+		shell::logger::example "shell::ini::env::expose config.ini APP_CONFIG"
+		shell::logger::example "shell::ini::env::expose config.ini DB Database"
+		return $RETURN_SUCCESS
+	fi
+
+	local file="$1"
+	local prefix="$2"
+	local section="$3"
+
+	# Validate required parameters.
+	if [ -z "$file" ]; then
+		shell::logger::error "shell::ini::env::expose: Missing file parameter."
+		echo "Usage: shell::ini::env::expose [-h] <file> [prefix] [section]"
+		return 1
+	fi
+
+	# Check if file exists.
+	if [ ! -f "$file" ]; then
+		shell::logger::error "File not found: $file"
+		return 1
+	fi
+
+	shell::console::print "🔵 Exporting INI values to environment variables from '$file' (prefix: '$prefix', section: '$section')." 11
+
+	# If a specific section is specified, only export keys from that section.
+	if [ -n "$section" ]; then
+		# Validate section name if strict mode is enabled.
+		if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
+			shell::ini::validate::section "$section" || return 1
+		fi
+
+		# Safely read keys line by line using process substitution to handle spaces in names.
+		while IFS= read -r key; do
+			local value
+			# Attempt to read the key's value. Suppress ini_read's output for cleaner logging here.
+			value=$(shell::ini::read "$file" "$section" "$key" 2>/dev/null)
+			local read_status=$? # Capture exit status of shell::ini::read
+
+			# Only export if shell::ini::read was successful (key found and read).
+			if [ $read_status -eq 0 ]; then
+				local sanitized_section
+				sanitized_section=$(shell::strings::sanitize::upper "$section")
+				local sanitized_key
+				sanitized_key=$(shell::strings::sanitize::upper "$key")
+
+				local var_name
+				if [ -n "$prefix" ]; then
+					local sanitized_prefix
+					sanitized_prefix=$(shell::strings::sanitize::upper "$prefix")
+					var_name="${sanitized_prefix}_${sanitized_section}_${sanitized_key}"
+				else
+					var_name="${sanitized_section}_${sanitized_key}"
+				fi
+
+				export "${var_name}=${value}"
+				shell::console::print "  ✅ Exported: ${var_name}=${value}" 46
+			else
+				shell::console::print "  WARN: Failed to read key '$key' from section '$section'. Skipping export." 33
+			fi
+		done < <(shell::ini::key::list "$file" "$section") # Use process substitution for robust key listing
+
+	else # No specific section specified, export keys from all sections.
+		# Safely read sections line by line.
+		while IFS= read -r current_section; do
+			# Validate current section name if strict mode is enabled.
+			if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
+				shell::ini::validate::section "$current_section" || {
+					shell::logger::error "Skipping invalid section name '$current_section' in strict mode."
+					continue # Skip to the next section
+				}
+			fi
+
+			# Safely read keys from the current section.
+			while IFS= read -r key; do
+				local value
+				# Attempt to read the key's value. Suppress ini_read's output for cleaner logging here.
+				value=$(shell::ini::read "$file" "$current_section" "$key" 2>/dev/null)
+				local read_status=$?
+
+				if [ $read_status -eq 0 ]; then
+					local sanitized_section
+					sanitized_section=$(shell::strings::sanitize::upper "$current_section")
+					local sanitized_key
+					sanitized_key=$(shell::strings::sanitize::upper "$key")
+
+					local var_name
+					if [ -n "$prefix" ]; then
+						local sanitized_prefix
+						sanitized_prefix=$(shell::strings::sanitize::upper "$prefix")
+						var_name="${sanitized_prefix}_${sanitized_section}_${sanitized_key}"
+					else
+						var_name="${sanitized_section}_${sanitized_key}"
+					fi
+
+					export "${var_name}=${value}"
+					shell::console::print "  ✅ Exported: ${var_name}=${value}" 46
+				else
+					shell::console::print "  WARN: Failed to read key '$key' from section '$current_section'. Skipping export." 33
+				fi
+			done < <(shell::ini::key::list "$file" "$current_section")
+		done < <(shell::ini::section::list "$file")
+	fi
+
+	shell::logger::success "Environment variables export completed."
+	return 0
+}
+
+# @description Unsets environment variables previously exported from an INI file.
+#
+#   This function serves to clean up environment variables that were previously
+#   populated using 'shell::ini::env::expose'. It reconstructs the expected names of
+#   these environment variables by parsing the provided INI file (or a specified
+#   subset) and applying the same sanitization and prefixing logic as
+#   'shell::ini::env::expose'.
+#
+#   For each potential environment variable name, the function checks if it is
+#   currently set in the shell's environment. If found, the variable is
+#   then unset, effectively removing it from the current session. This helps in
+#   maintaining a clean environment or switching between different configurations.
+#
+#   It's important to use the identical parameters (file, prefix, section) that
+#   were supplied during the initial export to ensure that the correct set of
+#   variables is targeted for destruction.
+#
+#   Notes:
+#   - This function does not report individual errors if a variable was expected
+#   but not found or already unset; it simply proceeds.
+#   - The function's effectiveness relies on matching the naming convention of
+#   'shell::ini::env::expose'.
+#   - This function uses process substitution (`< <(...)`) for portability
+#   when iterating over lists of sections/keys, making it compatible with
+#   older Bash versions (e.g., Bash 3 on macOS) as well as newer ones.
+# @option -h Optional. Displays this help message.
+# @arg $1 string file: The path to the INI file that was used for exporting variables.
+# @arg $@ string prefix: Optional. The same prefix that was used during the export (e.g., 'APP_CONFIG'). If provided, only variables with this prefix will be targeted.
+# @arg $@ string section: Optional. If specified, only variables corresponding to keys from this specific section will be unset. If omitted, keys from all sections (matching the prefix, if given) will be targeted.
+# @exitcode 0 Success.
+# @exitcode 1 The operation failed.
+# @example
+#   # To export variables from 'dev.ini' with prefix 'DEV_APP':
+#   # shell::ini::env::expose dev.ini DEV_APP
+#   # To then destroy these variables:
+#   # shell::ini::env::destroy dev.ini DEV_APP
+#
+shell::ini::env::destroy() {
+	# Check for the help flag (-h)
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Unsets environment variables previously exported from an INI file"
+		shell::logger::usage "shell::ini::env::destroy [-h] <file> [prefix] [section]"
+		shell::logger::option "-h" "Optional. Displays this help message."
+		shell::logger::item "file" "The path to the INI file that was used for exporting variables."
+		shell::logger::item "prefix" "Optional. The same prefix that was used during the export (e.g., 'APP_CONFIG'). If provided, only variables with this prefix will be targeted."
+		shell::logger::item "section" "Optional. If specified, only variables corresponding to keys from this specific section will be unset. If omitted, keys from all sections (matching the prefix, if given) will be targeted."
+		shell::logger::example "shell::ini::env::destroy config.ini"
+		shell::logger::example "shell::ini::env::destroy config.ini APP_CONFIG"
+		shell::logger::example "shell::ini::env::destroy config.ini DB Database"
+		return $RETURN_SUCCESS
+	fi
+
+	local file="$1"
+	local prefix="$2"
+	local section="$3"
+
+	# Validate required parameters.
+	if [ -z "$file" ]; then
+		shell::logger::error "shell::ini::env::destroy: Missing file parameter."
+		echo "Usage: shell::ini::env::destroy [-h] <file> [prefix] [section]"
+		return 1
+	fi
+
+	# Check if file exists.
+	if [ ! -f "$file" ]; then
+		shell::logger::error "File not found: $file"
+		return 1
+	fi
+
+	# If a specific section is specified, only target keys from that section.
+	if [ -n "$section" ]; then
+		# Validate section name if strict mode is enabled.
+		if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
+			shell::ini::validate::section "$section" || {
+				shell::logger::error "Cannot destroy keys: Invalid section name '$section' in strict mode."
+				return 1
+			}
+		fi
+
+		local sanitized_section
+		sanitized_section=$(shell::strings::sanitize::upper "$section")
+
+		# Safely read keys line by line using process substitution.
+		while IFS= read -r key; do
+			local sanitized_key
+			sanitized_key=$(shell::strings::sanitize::upper "$key")
+
+			local var_name
+			if [ -n "$prefix" ]; then
+				local sanitized_prefix
+				sanitized_prefix=$(shell::strings::sanitize::upper "$prefix")
+				var_name="${sanitized_prefix}_${sanitized_section}_${sanitized_key}"
+			else
+				var_name="${sanitized_section}_${sanitized_key}"
+			fi
+
+			# Check if the variable is set before unsetting.
+			# 'declare -p' is used for robust variable existence check across Bash versions.
+			if declare -p "$var_name" &>/dev/null; then
+				unset "$var_name"
+				shell::console::print "📍 Unset: ${var_name}" 208
+			fi
+		done < <(shell::ini::key::list "$file" "$section")
+
+	else # No specific section specified, target keys from all sections.
+		# Safely read sections line by line.
+		while IFS= read -r current_section; do
+			# Validate current section name if strict mode is enabled.
+			if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
+				shell::ini::validate::section "$current_section" || {
+					shell::logger::error "Skipping section with invalid name '$current_section' in strict mode."
+					continue
+				}
+			fi
+
+			local sanitized_section
+			sanitized_section=$(shell::strings::sanitize::upper "$current_section")
+
+			# Safely read keys from the current section.
+			while IFS= read -r key; do
+				local sanitized_key
+				sanitized_key=$(shell::strings::sanitize::upper "$key")
+
+				local var_name
+				if [ -n "$prefix" ]; then
+					local sanitized_prefix
+					sanitized_prefix=$(shell::strings::sanitize::upper "$prefix")
+					var_name="${sanitized_prefix}_${sanitized_section}_${sanitized_key}"
+				else
+					var_name="${sanitized_section}_${sanitized_key}"
+				fi
+
+				if declare -p "$var_name" &>/dev/null; then
+					unset "$var_name"
+					shell::console::print "  🗑️ Unset: ${var_name}" 208
+				fi
+			done < <(shell::ini::key::list "$file" "$current_section")
+		done < <(shell::ini::section::list "$file")
+	fi
+
+	shell::logger::success "Environment variables destruction completed."
+	return 0
+}
+
+# @description Reads a key's value from an INI file or returns a default if not found.
+#
+#   This function attempts to retrieve a configuration value from an INI file.
+#   It takes the file path, section name, and key as mandatory arguments.
+#   An optional 'default_value' can be provided.
+#
+#   The function first tries to read the key's value using 'shell::ini::read'.
+#   If 'shell::ini::read' successfully finds and returns a value (exit status 0),
+#   that value is echoed to standard output.
+#   If 'shell::ini::read' fails to find the key or encounters any other issue
+#   (e.g., file not found, section not found), the 'default_value' is echoed
+#   to standard output instead. If 'default_value' is not provided, an empty
+#   string is used as the default.
+#
+#   This function always returns 0 on completion (indicating that a value,
+#   either read or default, was provided), unless there are missing mandatory
+#   parameters.
+#
+#   Notes:
+#   - 'shell::ini::read' error messages (e.g., "File not found", "Key not found") are
+#   suppressed to avoid clutter when a default value is being returned.
+#   This function provides its own consolidated logging.
+#   - Ensures cross-platform compatibility by relying on standard Bash features
+#   and existing cross-platform helper functions.
+# @option -h Optional. Displays this help message.
+# @arg $1 string file: The path to the INI file.
+# @arg $2 string section: The section within the INI file to search.
+# @arg $3 string key: The key whose value is to be retrieved.
+# @arg $@ string default_value: Optional. The value to return if the key is not found or if reading fails. Defaults to an empty string if omitted.
+# @exitcode 0 Success.
+# @exitcode 1 The operation failed.
+# @example
+#   # Read 'timeout' from 'Network' section, default to '30'
+#   TIMEOUT=$(shell::ini::value::get_or_default app.ini Network timeout 30)
+#   echo "Connection Timeout: $TIMEOUT seconds"
+#   # Read 'feature_flag' or default to empty string
+#   FLAG=$(shell::ini::value::get_or_default settings.ini Features feature_flag)
+#   if [ "$FLAG" = "enabled" ]; then
+#   echo "Feature is ON."
+#   fi
+#
+shell::ini::value::get_or_default() {
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Reads a key's value from an INI file or returns a default if not found"
+		shell::logger::usage "shell::ini::value::get_or_default [-h] <file> <section> <key> [default_value]"
+		shell::logger::option "-h" "Optional. Displays this help message."
+		shell::logger::item "file" "The path to the INI file."
+		shell::logger::item "section" "The section within the INI file to search."
+		shell::logger::item "key" "The key whose value is to be retrieved."
+		shell::logger::item "default_value" "Optional. The value to return if the key is not found or if reading fails. Defaults to an empty string if omitted."
+		shell::logger::example "api_key=(shell::ini::value::get_or_default config.ini Settings api_key \"no_key\")"
+		shell::logger::example "debug_mode=(shell::ini::value::get_or_default app.ini General debug_mode)"
+		return $RETURN_SUCCESS
+	fi
+
+	local file="$1"
+	local section="$2"
+	local key="$3"
+	local default_value="${4:-}"
+
+	# Validate mandatory parameters.
+	if [ -z "$file" ] || [ -z "$section" ] || [ -z "$key" ]; then
+		echo "Usage: shell::ini::value::get_or_default [-h] <file> <section> <key> [default_value]"
+		return 1
+	fi
+
+	# Sanitize section and key names to ensure they are in lowercase and valid.
+	# The shell::strings::sanitize::lower function is assumed to handle this.
+	# It should convert the section and key names to lowercase and replace invalid characters.
+	section=$(shell::strings::sanitize::lower "$section")
+
+	local value
+	# Try to read the value, suppressing shell::ini::read's error output.
+	value=$(shell::ini::read "$file" "$section" "$key" 2>/dev/null)
+	local read_status=$?
+
+	# Return the value if read successfully, otherwise return the default_value.
+	if [ $read_status -eq 0 ]; then
+		echo "$value"
+	else
+		echo "$default_value"
+	fi
+
+	return 0
+}
+
+# @description Renames an existing section in an INI file.
+#
+#   This function renames a section within an INI file by replacing its header.
+#   It performs validation to ensure the file exists, the old section exists,
+#   and the new section name does not already exist. It also applies strict
+#   validation rules for section names if SHELL_INI_STRICT is enabled.
+#   The function uses 'sed' for in-place editing, adapting its syntax for
+#   macOS (BSD sed) and Linux (GNU sed) for cross-platform compatibility.
+#
+#   Notes:
+#   - Relies on shell::console::print, shell::ini::check, shell::ini::section::exists,
+#   shell::ini::escape_regex, shell::ini::validate::section, and shell::exec::shell.
+# @option -n Optional dry-run flag. If provided, commands are printed using shell::logger::command_clip instead of executed.
+# @arg $1 string file: The path to the INI file.
+# @arg $2 string old_section: The current name of the section to be renamed.
+# @arg $3 string new_section: The new name for the section.
+# @exitcode 0 Success.
+# @exitcode 1 The operation failed.
+# @example
+#   shell::ini::section::rename config.ini "OldSection" "NewSection"
+#   shell::ini::section::rename -n settings.ini "Database" "ProductionDB" # Dry-run mode
+#
+shell::ini::section::rename() {
+	local dry_run="false"
+	local opt_h_found="false"
+
+	# Process options: -n and -h
+	while [[ $# -gt 0 ]]; do
+		case "$1" in
+		-n)
+			dry_run="true"
+			shift # Consume -n
+			;;
+		-h)
+			opt_h_found="true"
+			shift # Consume -h
+			;;
+		*)
+			break # End of options
+			;;
+		esac
+	done
+
+	# If -h was found, display usage and exit immediately regardless of other args
+	if [ "$opt_h_found" = "true" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Renames a section in an INI file"
+		shell::logger::usage "shell::ini::section::rename [-n] [-h] <file> <old_section> <new_section>"
+		shell::logger::option "-n" "Optional. Dry-run mode. Prints the command without executing it."
+		shell::logger::option "-h" "Optional. Displays this help message."
+		shell::logger::item "file" "The path to the INI file."
+		shell::logger::item "old_section" "The name of the section to rename."
+		shell::logger::item "new_section" "The new name for the section."
+		return 0
+	fi
+
+	# Validate required parameters: file, old_section, new_section.
+	if [ $# -lt 3 ]; then
+		shell::logger::error "shell::ini::section::rename: Missing required parameters."
+		echo "Usage: shell::ini::section::rename [-n] [-h] <file> <old_section> <new_section>"
+		return 1
+	fi
+
+	local file="$1"
+	if [ ! -f "$file" ]; then
+		shell::logger::error "File not found: $file"
+		return 1
+	fi
+	local old_section="$2"
+	if [ -z "$old_section" ]; then
+		shell::logger::error "Old section name cannot be empty."
+		return 1
+	fi
+	local new_section="$3"
+	if [ -z "$new_section" ]; then
+		shell::logger::error "New section name cannot be empty."
+		return 1
+	fi
+
+	# Sanitize section names to ensure they are in lowercase and valid.
+	# This is to ensure consistency and avoid issues with case sensitivity.
+	# The shell::strings::sanitize::lower function is assumed to handle this.
+	# It should convert the section names to lowercase and replace invalid characters.
+	old_section=$(shell::strings::sanitize::lower "$old_section")
+	new_section=$(shell::strings::sanitize::lower "$new_section")
+
+	# Validate section names if strict mode is enabled.
+	if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
+		shell::ini::validate::section "$old_section" || return 1
+		shell::ini::validate::section "$new_section" || return 1
+	fi
+
+	# Check if the file exists and is writable.
+	if ! shell::ini::check "$file"; then
+		return 1
+	fi
+
+	# Check if the old section exists. Suppress output as shell::ini::section::exists
+	# already provides verbose messages.
+	if ! shell::ini::section::exists "$file" "$old_section" >/dev/null 2>&1; then
+		shell::logger::error "Section to rename ('$old_section') not found in file: $file"
+		return 1
+	fi
+
+	# Check if the new section name already exists.
+	if shell::ini::section::exists "$file" "$new_section" >/dev/null 2>&1; then
+		shell::logger::error "New section name ('$new_section') already exists in file: $file. Aborting rename."
+		return 1
+	fi
+
+	local escaped_old_section
+	escaped_old_section=$(shell::ini::escape_regex "$old_section")
+
+	local os_type
+	os_type=$(shell::os::type)
+	local sed_cmd=""
+
+	# Construct the sed command for in-place editing based on OS type.
+	# The 's' command replaces the matched pattern.
+	if [ "$os_type" = "macos" ]; then
+		# BSD sed on macOS requires an empty string backup extension with -i.
+		sed_cmd="shell::fs::sed_inplace \"s/^\[${escaped_old_section}\]$/\[${new_section}\]/\" \"$file\""
+	else
+		# GNU sed on Linux typically does not require a backup extension with -i.
+		sed_cmd="shell::fs::sed_inplace \"s/^\[${escaped_old_section}\]$/\[${new_section}\]/\" \"$file\""
+	fi
+
+	shell::exec::safe "$dry_run" "$sed_cmd"
+	if [ "$dry_run" = "false" ]; then
+		shell::logger::success "Successfully renamed section from '$old_section' to '$new_section'."
+	fi
+	return 0
+}
+
+# @description Interactively selects a section from an INI file using fzf and renames it.
+#
+#   This function first lists all sections in the specified INI file using
+#   shell::ini::section::list. It then presents these sections to the user
+#   via fzf for interactive selection. Once a section is chosen, the user is
+#   prompted to enter a new name for it. The renaming operation is then
+#   delegated to the shell::ini::section::rename function.
+#   It includes checks for file existence and fzf installation.
+#
+#   Notes:
+#   - Relies on shell::console::print, shell::package::install, shell::ini::section::list,
+#   and shell::ini::section::rename.
+# @option -n Optional dry-run flag. If provided, commands are printed using shell::logger::command_clip instead of executed.
+# @option -h Optional help flag. Displays this help message.
+# @arg $1 string file: The path to the INI file.
+# @exitcode 0 Success.
+# @exitcode 1 The operation failed.
+# @example
+#   shell::ini::section::rename::fzf config.ini  # Interactively rename a section in config.ini.
+#   shell::ini::section::rename::fzf -n settings.ini # Dry-run: show commands to rename a section.
+#
+shell::ini::section::rename::fzf() {
+	local dry_run="false"
+	local opt_h_found="false" # Flag to track if -h was explicitly passed
+	local file_param=""       # To store the actual file parameter after option parsing
+
+	# Process options: -n and -h
+	while [[ $# -gt 0 ]]; do
+		case "$1" in
+		-n)
+			dry_run="true"
+			shift # Consume -n
+			;;
+		-h)
+			opt_h_found="true"
+			shift # Consume -h
+			;;
+		*)
+			# Assuming the first non-option argument is the file
+			file_param="$1"
+			shift # Consume the file parameter
+			break # Stop processing args as options, rest are positional
+			;;
+		esac
+	done
+
+	# If -h was found, display usage and exit immediately regardless of other args
+	if [ "$opt_h_found" = "true" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Interactively renames a section in an INI file using fzf"
+		shell::logger::usage "shell::ini::section::rename::fzf [-n] [-h] <file>"
+		shell::logger::option "-n" "Optional. Dry-run mode. Prints the command without executing it."
+		shell::logger::option "-h" "Optional. Displays this help message."
+		shell::logger::item "file" "The path to the INI file."
+		return 0
+	fi
+
+	# Validate required parameter: file path.
+	if [ -z "$file_param" ]; then
+		shell::logger::error "shell::ini::section::rename::fzf: Missing required file parameter."
+		echo "Usage: shell::ini::section::rename::fzf [-n] [-h] <file>"
+		return 1
+	fi
+
+	local file="$file_param" # Assign to 'file' for consistency
+
+	# Check if the specified file exists.
+	if [ ! -f "$file" ]; then
+		shell::logger::error "File not found: $file"
+		return 1
+	fi
+
+	# Ensure fzf is installed.
+	shell::dependency::fzf::ensure || {
+		shell::logger::error "fzf is required but could not be installed."
+		return 1
+	}
+
+	# Get the list of sections and use fzf to select one.
+	local selected_section
+	selected_section=$(shell::ini::section::list "$file" | fzf --prompt="Select section to rename: ")
+
+	# Check if a section was selected.
+	if [ -z "$selected_section" ]; then
+		shell::logger::error "No section selected. Aborting rename."
+		return 1
+	fi
+
+	shell::console::print "Selected section for renaming: '$selected_section'" 33
+
+	# Prompt for the new section name.
+	shell::console::print ">> Enter new name for section '$selected_section':" 33
+	read -r new_section
+	if [ -z "$new_section" ]; then
+		shell::logger::error "No new section name entered. Aborting rename."
+		return 1
+	fi
+
+	local rename_args=("$file" "$selected_section" "$new_section")
+	if [ "$dry_run" = "true" ]; then
+		rename_args=("-n" "${rename_args[@]}")
+	fi
+	shell::ini::section::rename "${rename_args[@]}"
+}
+
+# @description Clones an existing section to a new section within the same INI file.
+#   All key-value pairs from the source section are copied to the destination section.
+#
+#   This function first validates that the source section exists in the INI file.
+#   It then checks if the destination section already exists, warning the user if it does.
+#   It reads all key-value pairs from the source section and writes them sequentially
+#   to the new destination section. This is achieved by iterating through the file content
+#   between the source section header and the next section header (or end of file).
+#   The function ensures file integrity by writing to a temporary file and then atomically
+#   replacing the original file.
+#
+#   Notes:
+#   - Relies on shell::console::print, shell::ini::section::exists, shell::ini::section::add,
+#   shell::ini::write, shell::ini::temp_file, and shell::ini::escape_regex.
+#   - Honors SHELL_INI_STRICT for section name validation.
+# @option -n Optional dry-run flag. If provided, commands are printed using shell::logger::command_clip instead of executed.
+# @arg $1 string file: The path to the INI file.
+# @arg $2 string source_section: The name of the section to clone.
+# @arg $3 string destination_section: The name of the new section to create and copy keys into.
+# @exitcode 0 Success.
+# @exitcode 1 The operation failed.
+# @example
+#   shell::ini::section::clone config.ini "Development" "Staging"
+#   shell::ini::section::clone -n config.ini "Production" "Backup_Prod"
+#
+shell::ini::section::clone() {
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Clones a section from one INI file to another"
+		shell::logger::usage "shell::ini::section::clone [-n] [-h] <file> <source_section> <destination_section>"
+		shell::logger::option "-n" "Optional. Dry-run mode. Prints the command without executing it."
+		shell::logger::option "-h" "Optional. Displays this help message."
+		shell::logger::item "file" "The path to the INI file."
+		shell::logger::item "source_section" "The name of the section to clone from."
+		shell::logger::item "destination_section" "The name of the section to create."
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	local file="$1"
+	local source_section="$2"
+	local destination_section="$3"
+
+	# Validate parameters
+	if [ -z "$file" ] || [ -z "$source_section" ] || [ -z "$destination_section" ]; then
+		echo "Usage: shell::ini::section::clone [-n] [-h] <file> <source_section> <destination_section>"
+		return 1
+	fi
+
+	# Sanitize section names to ensure they are in lowercase and valid.
+	# This is to ensure consistency and avoid issues with case sensitivity.
+	# The shell::strings::sanitize::lower function is assumed to handle this.
+	source_section=$(shell::strings::sanitize::lower "$source_section")
+	destination_section=$(shell::strings::sanitize::lower "$destination_section")
+
+	# Validate section names if strict mode is enabled
+	if [ "${SHELL_INI_STRICT}" -eq 1 ]; then
+		shell::ini::validate::section "$source_section" || return 1
+		shell::ini::validate::section "$destination_section" || return 1
+	fi
+
+	# Check if file exists
+	if [ ! -f "$file" ]; then
+		shell::logger::error "File not found: $file"
+		return 1
+	fi
+
+	# Check if source section exists
+	if ! shell::ini::section::exists "$file" "$source_section"; then
+		shell::logger::error "Source section '$source_section' not found in file: $file"
+		return 1
+	fi
+
+	# Check if destination section already exists
+	if shell::ini::section::exists "$file" "$destination_section"; then
+		shell::logger::warn "Destination section '$destination_section' already exists. Aborting clone to prevent overwrite."
+		return 1
+	fi
+
+	shell::logger::debug "Cloning section '$source_section' to '$destination_section' in file: $file"
+
+	local escaped_source_section
+	escaped_source_section=$(shell::ini::escape_regex "$source_section")
+	local source_section_start_pattern="^\[$escaped_source_section\]"
+	local any_section_pattern="^\[[^]]+\]"
+
+	local in_source_section_to_clone=0
+	local cloned_section_content=""
+	local temp_file
+	temp_file=$(shell::ini::temp_file)
+
+	# Read original file line by line to capture content and build the new file
+	while IFS= read -r line || [ -n "$line" ]; do
+		local trimmed_line
+		trimmed_line="$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+
+		# Detect start of source section
+		if [[ "$trimmed_line" =~ $source_section_start_pattern ]]; then
+			in_source_section_to_clone=1
+			echo "$line" >>"$temp_file" # Write original section header
+			continue
+		fi
+
+		# Detect end of source section or beginning of new section for content capture
+		if [ "$in_source_section_to_clone" -eq 1 ]; then
+			if [[ "$trimmed_line" =~ $any_section_pattern ]]; then
+				# We hit a new section, so the source section content ended here.
+				in_source_section_to_clone=0
+			else
+				# Still inside the source section, add to cloned content.
+				# Only add non-empty, non-comment lines to the cloned content.
+				if [[ -n "$trimmed_line" && ! "$trimmed_line" =~ ^[[:space:]]*[#\;] ]]; then
+					cloned_section_content+="$line\n"
+				fi
+			fi
+		fi
+		# Always write the original line to the temp file to reconstruct the original content
+		echo "$line" >>"$temp_file"
+	done <"$file"
+
+	# Append the new cloned section at the end of the temp file
+	local append_cloned_section_cmd=""
+	if [ -s "$temp_file" ]; then # Add a blank line only if the file isn't empty already
+		append_cloned_section_cmd+="echo \"\" >>\"$temp_file\" && "
+	fi
+	append_cloned_section_cmd+="echo \"[$destination_section]\" >>\"$temp_file\""
+
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::command_clip "$append_cloned_section_cmd"
+	else
+		eval "$append_cloned_section_cmd"
+	fi
+
+	# Append the accumulated content for the cloned section
+	if [ -n "$cloned_section_content" ]; then
+		local append_cloned_content_cmd="printf '%b\\n' \"${cloned_section_content%\\n}\" >>\"$temp_file\"" # Remove trailing newline
+		if [ "$dry_run" = "true" ]; then
+			shell::logger::command_clip "$append_cloned_content_cmd"
+		else
+			eval "$append_cloned_content_cmd"
+		fi
+	fi
+
+	# Atomically replace the original file with the modified temporary file
+	local replace_cmd="mv \"$temp_file\" \"$file\""
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::command_clip "$replace_cmd"
+	else
+		shell::exec::shell "$replace_cmd"
+		if [ $? -eq 0 ]; then
+			shell::logger::success "Successfully cloned section '$source_section' to '$destination_section'."
+			return 0
+		else
+			shell::logger::error "replacing the original file after section clone."
+			return 1
+		fi
+	fi
+}
+
+# @description Interactively selects a section to clone from an INI file using fzf,
+#   prompts for a new name (with "_clone" prefix), and then clones the section.
+#
+#   This function first ensures fzf is installed. It then lists all sections in the
+#   given INI file and uses fzf to allow the user to interactively select a section.
+#   After selection, it prompts the user for a new section name, appending "_clone"
+#   to the selected section name as a suggestion. Finally, it calls
+#   shell::ini::section::clone to perform the cloning operation.
+#   The function handles dry-run mode, where it only prints the commands that would be executed.
+#
+#   Notes:
+#   - Relies on shell::console::print, shell::package::install, shell::ini::section::list,
+#   shell::ini::section::clone, and shell::logger::command_clip.
+#   - Provides interactive selection and auto-suggestion for the cloned section name.
+# @option -n Optional dry-run flag. If provided, commands are printed using shell::logger::command_clip instead of executed.
+# @arg $1 string file: The path to the INI file.
+# @exitcode 0 Success.
+# @exitcode 1 The operation failed.
+# @example
+#   shell::ini::section::clone::fzf config.ini   # Interactively clone a section.
+#   shell::ini::section::clone::fzf -n config.ini # Dry-run: show commands to clone a section.
+#
+shell::ini::section::clone::fzf() {
+	local dry_run="false"
+
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Interactively clones a section from one INI file to another using fzf"
+		shell::logger::usage "shell::ini::section::clone::fzf [-n] [-h] <file>"
+		shell::logger::option "-n" "Optional. Dry-run mode. Prints the command without executing it."
+		shell::logger::option "-h" "Optional. Displays this help message."
+		shell::logger::item "file" "The path to the INI file."
+		return $RETURN_SUCCESS
+	fi
+
+	# Check for the optional dry-run flag (-n)
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	# Validate required parameters
+	if [ $# -lt 1 ]; then
+		shell::logger::error "shell::ini::section::clone::fzf: Missing file parameter."
+		echo "Usage: shell::ini::section::clone::fzf [-n] [-h] <file>"
+		return 1
+	fi
+
+	local file="$1"
+
+	# Check if file exists
+	if [ ! -f "$file" ]; then
+		shell::logger::error "File not found: $file"
+		return 1
+	fi
+
+	# Ensure fzf is installed.
+	shell::dependency::fzf::ensure || {
+		shell::logger::error "fzf is required but could not be installed."
+		return 1
+	}
+
+	# Get the list of sections and use fzf to select one.
+	local selected_section
+	selected_section=$(shell::ini::section::list "$file" | fzf --prompt="Select section to clone: ")
+
+	# Check if a section was selected.
+	if [ -z "$selected_section" ]; then
+		shell::logger::error "No section selected. Aborting clone."
+		return 1
+	fi
+
+	shell::logger::debug "Selected section for cloning: '$selected_section'"
+
+	# Prompt for the new section name, with "_clone" appended as a suggestion.
+	shell::console::print ">> Enter new section name (e.g., ${selected_section}_clone):" 33
+	read -r new_section_name
+	if [ -z "$new_section_name" ]; then
+		new_section_name="${selected_section}_clone"
+		shell::logger::debug "Using default new section name: '$new_section_name'"
+	fi
+
+	# Perform the clone operation using shell::ini::section::clone
+	if [ "$dry_run" = "true" ]; then
+		shell::ini::section::clone -n "$file" "$selected_section" "$new_section_name"
+	else
+		shell::ini::section::clone "$file" "$selected_section" "$new_section_name"
+	fi
+
+	return $?
+}
+
+# @description Interactively selects multiple sections to remove from an INI file using fzf.
+#
+#   This function first ensures fzf is installed. It then lists all sections in the
+#   given INI file and uses fzf to allow the user to interactively select one or
+#   more sections for removal. After selection, it proceeds to remove the selected
+#   sections and their contents from the INI file.
+#   The function handles dry-run mode, where it only prints the commands that would be executed.
+#
+#   Notes:
+#   - Relies on shell::console::print, shell::package::install, shell::ini::section::list,
+#   shell::exec::shell, shell::logger::command_clip, and shell::ini::escape_regex.
+#   - Uses fzf's multi-select feature (TAB key) for selecting multiple sections.
+# @option -n Optional dry-run flag. If provided, commands are printed using shell::logger::command_clip instead of executed.
+# @option -h Optional help flag. Displays this help message.
+# @arg $1 string file: The path to the INI file.
+# @exitcode 0 Success.
+# @exitcode 1 The operation failed.
+# @example
+#   shell::ini::section::remove::fzf config.ini   # Interactively remove sections.
+#   shell::ini::section::remove::fzf -n config.ini # Dry-run: show commands to remove sections.
+#
+shell::ini::section::remove::fzf() {
+	local dry_run="false"
+
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Interactively removes sections from an INI file using fzf"
+		shell::logger::usage "shell::ini::section::remove::fzf [-n] [-h] <file>"
+		shell::logger::option "-n" "Optional. Dry-run mode. Prints the command without executing it."
+		shell::logger::option "-h" "Optional. Displays this help message."
+		shell::logger::item "file" "The path to the INI file."
+		return $RETURN_SUCCESS
+	fi
+
+	# Check for the optional dry-run flag (-n)
+	if [ "$1" = "-n" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	# Validate required parameters
+	if [ $# -lt 1 ]; then
+		shell::logger::error "shell::ini::section::remove::fzf: Missing file parameter."
+		echo "Usage: shell::ini::section::remove::fzf [-n] [-h] <file>"
+		return 1
+	fi
+
+	local file="$1"
+
+	# Check if file exists
+	if [ ! -f "$file" ]; then
+		shell::logger::error "File not found: $file"
+		return 1
+	fi
+
+	# Ensure fzf is installed.
+	shell::dependency::fzf::ensure || {
+		shell::logger::error "fzf is required but could not be installed."
+		return 1
+	}
+
+	# Get the list of sections in the specified file and use fzf to select multiple
+	local IFS=$'\n'
+	local selected_sections=()
+	local _item
+	while IFS= read -r _item; do
+		[ -n "$_item" ] && selected_sections+=("$_item")
+	done < <(shell::ini::section::list "$file" | fzf --multi --prompt="Select sections to remove from '$file': ")
+
+	# Check if any sections were selected
+	if [ ${#selected_sections[@]} -eq 0 ]; then
+		shell::logger::error "No sections selected. Aborting removal."
+		return 1
+	fi
+
+	shell::logger::debug "Selected sections for removal: ${selected_sections[*]}"
+
+	local success=0
+	# Process each selected section
+	for section in "${selected_sections[@]}"; do
+		if [ "$dry_run" = "true" ]; then
+			# In dry-run mode, pass the -n flag to shell::ini::section::remove
+			shell::ini::section::remove -n "$file" "$section"
+			if [ $? -ne 0 ]; then
+				success=1
+			fi
+		else
+			# Execute the removal of the section
+			shell::ini::section::remove "$file" "$section"
+			if [ $? -ne 0 ]; then
+				success=1
+			fi
+		fi
+	done
+
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::success "Dry-run completed. Commands for removing sections were printed."
+	elif [ $success -eq 0 ]; then
+		shell::logger::success "Successfully removed all selected sections from '$file'"
+	else
+		shell::logger::error "Some sections could not be removed from '$file'"
+		return 1
+	fi
+
+	return $success
+}
+
+# @description Interactively previews all key-value pairs in each section of an INI file using fzf in a real-time wrapped vertical layout.
+#
+#   This function lists all sections in the specified INI file using shell::ini::section::list,
+#   and uses fzf to preview all key-value pairs in each section in real-time.
+#   The preview window wraps lines and simulates a tree-like layout for readability.
+# @arg $1 string file: The path to the INI file.
+# @exitcode 0 Success.
+# @exitcode 1 The operation failed.
+# @example
+#   shell::ini::view::fzf config.ini
+#   shell::ini::view::fzf -n config.ini
+#
+shell::ini::view::fzf() {
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Interactively previews all key-value pairs in each section of an INI file using fzf in a real-time wrapped vertical layout"
+		shell::logger::usage "shell::ini::view::fzf <file>"
+		shell::logger::item "file" "The path to the INI file."
+		shell::logger::option "-h, --help" "Display this help message"
+		return $RETURN_SUCCESS
+	fi
+
+	if [ $# -lt 1 ]; then
+		echo "Usage: shell::ini::view::fzf [-h] <file>"
+		return 1
+	fi
+
+	# Validate the file parameter.
+	# Ensure the file exists and is readable.
+	local file="$1"
+	if [ ! -f "$file" ]; then
+		shell::logger::error "File not found: $file"
+		return 1
+	fi
+
+	# Ensure fzf is installed.
+	shell::dependency::fzf::ensure
+
+	# Set up color variables for fzf preview.
+	# Using tput to set colors for better visibility.
+	# Colors are set to ANSI escape codes for terminal compatibility.
+	local yellow=$(tput setaf 3)
+	local cyan=$(tput setaf 6)
+	local green=$(tput setaf 2)
+	local normal=$(tput sgr0)
+	local os_type
+	os_type=$(shell::os::type)
+
+	# Determine the base64 decode command based on the OS type.
+	# This is used to decode values that might be base64 encoded.
+	# macOS uses 'base64 -D', while Linux typically uses 'base64 -d'.
+	# This ensures compatibility across different operating systems.
+	local decode_cmd
+	[ "$os_type" = "macos" ] && decode_cmd="base64 -D" || decode_cmd="base64 -d"
+
+	# List sections and use fzf to select one.
+	# The preview command uses awk to format the output in a tree-like structure.
+	# It highlights keys and values with colors for better visibility.
+	# The preview window is set to wrap lines and display up to 60 lines.
+	local section
+	# section=$(shell::ini::section::list "$file" |
+	#     awk -v y="$yellow" -v n="$normal" '{print y $0 n}' |
+	#     fzf --ansi \
+	#         --prompt="Select section: " \
+	#         --preview="awk -v s='{}' '
+	#       BEGIN { in_section=0 }
+	#       /^\[.*\]/ {
+	#         in_section = (\$0 == \"[\" s \"]\") ? 1 : 0
+	#         next
+	#       }
+	#       in_section && /^[^#;]/ && /=/ {
+	#         split(\$0, kv, \"=\")
+	#         gsub(/^[ \t]+|[ \t]+$/, \"\", kv[1])
+	#         gsub(/^[ \t]+|[ \t]+$/, \"\", kv[2])
+	#         printf(\" %s%s%s: %s%s%s\\n\", \"\033[36m\", kv[1], \"\033[0m\", \"\033[32m\", kv[2], \"\033[0m\")
+	#       }
+	#     ' \"$file\"" \
+	#         --preview-window=up:wrap:60%)
+
+	section=$(shell::ini::section::list "$file" |
+		awk -v y="$yellow" -v n="$normal" '{print y $0 n}' |
+		fzf --ansi \
+			--prompt="Select section: " \
+			--preview="bash -c '
+        section=\"{}\"; in_section=0
+        while IFS= read -r line; do
+          [[ \"\$line\" =~ ^\\[.*\\]$ ]] && {
+            [[ \"\$line\" == \"[\$section]\" ]] && in_section=1 || in_section=0
+            continue
+          }
+          [[ \$in_section -eq 1 && \"\$line\" =~ = ]] && {
+            key=\${line%%=*}
+            val=\${line#*=}
+            decoded=\$(echo \"\$val\" | $decode_cmd 2>/dev/null)
+            printf \"  \033[36m%s\033[0m: \033[32m%s\033[0m\n\" \"\$key\" \"\$decoded\"
+          }
+        done < \"$file\"
+      '" \
+			--preview-window=up:wrap:60%)
+
+	# Check if a section was selected.
+	# If not, print an error message and return.
+	section=$(echo "$section" | sed "s/$(printf '\033')[0-9;]*m//g")
+	if [ -z "$section" ]; then
+		shell::logger::error "No section selected."
+		return 1
+	fi
+
+	# Read all keys in the selected section and display them using fzf.
+	# The keys are colored for better visibility.
+	local key
+	key=$(shell::ini::key::list "$file" "$section" |
+		awk -v c="$cyan" -v n="$normal" '{print c $0 n}' |
+		fzf --ansi --prompt="Select key in [$section]: ")
+
+	key=$(echo "$key" | sed "s/$(printf '\033')[0-9;]*m//g")
+	if [ -z "$key" ]; then
+		shell::logger::error "No key selected."
+		return 1
+	fi
+
+	# Read the value of the selected key in the specified section.
+	# The value is colored for better visibility.
+	# The value is then passed to shell::clipboard::copy for further processing.
+	local value
+	value=$(shell::ini::read "$file" "$section" "$key")
+	if [ $? -ne 0 ]; then
+		shell::logger::error "Failed to read value for key '$key' in section '$section'."
+		return 1
+	fi
+
+	shell::logger::debug "[s] Section: $section"
+	shell::logger::debug "[k] Key: $key"
+	shell::logger::success "[v] Value: $value"
+	shell::clipboard::copy --best-effort "$value"
+}
+
+# @description Interactively previews all key-value pairs in each section of an INI file using fzf in a real-time wrapped vertical layout.
+#
+#   This function lists all sections in the specified INI file using shell::ini::section::list,
+#   and uses fzf to preview all key-value pairs in each section in real-time.
+#   The preview window wraps lines and simulates a tree-like layout for readability.
+#   It supports exporting the selected section as JSON or YAML, or selecting multiple keys for export.
+# @arg $1 string file: The path to the INI file.
+# @option --json Optional. Export the selected section as JSON.
+# @option --yaml Optional. Export the selected section as YAML.
+# @option --multi Optional. Allow multi-key selection and export.
+# @exitcode 0 Success.
+# @exitcode 1 The operation failed.
+# @example
+#   shell::ini::view::super::fzf config.ini
+#   shell::ini::view::super::fzf config.ini --json
+#   shell::ini::view::super::fzf config.ini --multi
+#
+shell::ini::view::super::fzf() {
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Interactively previews all key-value pairs in each section of an INI file using fzf in a real-time wrapped vertical layout"
+		shell::logger::usage "shell::ini::view::super::fzf <file> [--json|--yaml|--multi]"
+		shell::logger::item "file" "The path to the INI file."
+		shell::logger::option "--json" "Optional. Export the selected section as JSON."
+		shell::logger::option "--yaml" "Optional. Export the selected section as YAML."
+		shell::logger::option "--multi" "Optional. Allow multi-key selection and export."
+		shell::logger::option "-h, --help" "Display this help message"
+		shell::logger::example "shell::ini::view::super::fzf config.ini"
+		shell::logger::example "shell::ini::view::super::fzf config.ini --json"
+		shell::logger::example "shell::ini::view::super::fzf config.ini --multi"
+		return $RETURN_SUCCESS
+	fi
+
+	if [ $# -lt 1 ]; then
+		echo "Usage: shell::ini::view::super::fzf <file> [--json|--yaml|--multi]"
+		return 1
+	fi
+
+	local file="$1"
+	shift
+	local mode=""
+	local multi="false"
+
+	# Process additional options: --json, --yaml, --multi
+	# These options determine how the selected section will be exported.
+	# --json: Export as JSON format.
+	# --yaml: Export as YAML format.
+	# --multi: Allow multi-key selection and export.
+	for arg in "$@"; do
+		case "$arg" in
+		--json | --yaml) mode="$arg" ;;
+		--multi) multi="true" ;;
+		esac
+	done
+
+	# Validate the file parameter.
+	# Ensure the file exists and is readable.
+	if [ ! -f "$file" ]; then
+		shell::logger::error "File not found: $file"
+		return 1
+	fi
+
+	# Ensure fzf is installed.
+	shell::dependency::fzf::ensure
+
+	# Set up color variables for fzf preview.
+	# Using tput to set colors for better visibility.
+	# Colors are set to ANSI escape codes for terminal compatibility.
+	local yellow=$(tput setaf 3)
+	local cyan=$(tput setaf 6)
+	local green=$(tput setaf 2)
+	local normal=$(tput sgr0)
+
+	# List sections and use fzf to select one.
+	# The preview command uses awk to format the output in a tree-like structure.
+	# It highlights keys and values with colors for better visibility.
+	local section
+	section=$(shell::ini::section::list "$file" |
+		awk -v y="$yellow" -v n="$normal" '{print y $0 n}' |
+		fzf --ansi \
+			--prompt="Select section: " \
+			--preview="awk -v s='{}' '
+          BEGIN { in_section=0 }
+          /^\[.*\]/ {
+            in_section = (\$0 == \"[\" s \"]\") ? 1 : 0
+            next
+          }
+          in_section && /^[^#;]/ && /=/ {
+            split(\$0, kv, \"=\")
+            gsub(/^[ \t]+|[ \t]+$/, \"\", kv[1])
+            gsub(/^[ \t]+|[ \t]+$/, \"\", kv[2])
+            printf(\" %s%s%s: %s%s%s\\n\", \"\033[36m\", kv[1], \"\033[0m\", \"\033[32m\", kv[2], \"\033[0m\")
+          }
+        ' \"$file\"" \
+			--preview-window=up:wrap:60%)
+
+	# Check if a section was selected.
+	# If not, print an error message and return.
+	section=$(echo "$section" | sed "s/$(printf '\033')[0-9;]*m//g")
+	if [ -z "$section" ]; then
+		shell::logger::error "No section selected."
+		return 1
+	fi
+
+	# Read all keys in the selected section and display them using fzf.
+	# The keys are colored for better visibility.
+	local keys
+	keys=$(shell::ini::key::list "$file" "$section")
+	if [ -z "$keys" ]; then
+		shell::logger::warn "No keys found in section '$section'."
+		return 1
+	fi
+
+	# If --json mode is specified, format the output as JSON.
+	# --json: Export as JSON format.
+	if [ "$mode" = "--json" ]; then
+		local output="{"
+		local first=1
+		while IFS= read -r key; do
+			local val
+			val=$(shell::ini::read "$file" "$section" "$key")
+			val=$(echo "$val" | sed 's/"/\\"/g') # escape double quotes
+			key=$(shell::strings::sanitize::lower "$key")
+			if [ $first -eq 1 ]; then
+				output="$output\n  \"$key\": \"$val\""
+				first=0
+			else
+				output="$output,\n  \"$key\": \"$val\""
+			fi
+		done <<<"$keys"
+		output="$output\n}"
+		printf '%b\n' "$output"
+		shell::clipboard::copy --best-effort "$output"
+		return 0
+	fi
+
+	# If --yaml mode is specified, format the output as YAML.
+	# --yaml: Export as YAML format.
+	if [ "$mode" = "--yaml" ]; then
+		local output=""
+		while IFS= read -r key; do
+			local val
+			val=$(shell::ini::read "$file" "$section" "$key")
+			key=$(shell::strings::sanitize::lower "$key")
+			output="${output}$key: $val\n"
+		done <<<"$keys"
+		printf '%b\n' "$output"
+		shell::clipboard::copy --best-effort "$output"
+		return 0
+	fi
+
+	# If --multi is specified, allow multi-key selection.
+	# Use fzf to select one or more keys from the section.
+	# The selected keys are then read and their values are displayed.
+	local key_selection
+	if [ "$multi" = "true" ]; then
+		key_selection=$(echo "$keys" | fzf --ansi --multi --prompt="Select key(s) in [$section]: ")
+	else
+		key_selection=$(echo "$keys" | fzf --ansi --prompt="Select key in [$section]: ")
+	fi
+
+	if [ -z "$key_selection" ]; then
+		shell::logger::error "No key selected."
+		return 1
+	fi
+
+	# Process the selected keys and read their values.
+	# The values are colored for better visibility.
+	# The output is formatted as key=value pairs and copied to the clipboard.
+	# Each key-value pair is printed in a debug and info format.
+	local output=""
+	while IFS= read -r key; do
+		key=$(echo "$key" | sed "s/$(printf '\033')[0-9;]*m//g")
+		local value
+		value=$(shell::ini::read "$file" "$section" "$key")
+		shell::logger::debug "[k] $key"
+		shell::logger::success "[v] $value"
+		key=$(shell::strings::sanitize::lower "$key")
+		output="${output}$key=$value\n"
+	done <<<"$key_selection"
+
+	shell::clipboard::copy --best-effort "$output"
+	return 0
+}
+
+# @description Interactively previews all key-value pairs in each section of an INI file using fzf in a real-time wrapped vertical layout.
+#
+#   This function lists all sections in the specified INI file using shell::ini::section::list,
+#   and uses fzf to preview all key-value pairs in each section in real-time.
+#   The preview window wraps lines and simulates a tree-like layout for readability.
+#   It supports exporting the selected section as JSON or YAML, or selecting multiple keys for export.
+#   A [Previous Section] option is included to allow users to return to section selection.
+# @arg $1 string file: The path to the INI file.
+# @option --json Optional. Export the selected section as JSON.
+# @option --yaml Optional. Export the selected section as YAML.
+# @option --multi Optional. Allow multi-key selection and export.
+# @exitcode 0 Success.
+# @exitcode 1 The operation failed.
+# @example
+#   shell::ini::view::control::fzf config.ini
+#   shell::ini::view::control::fzf config.ini --json
+#   shell::ini::view::control::fzf config.ini --multi
+#
+shell::ini::view::control::fzf() {
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Interactively previews all key-value pairs in each section of an INI file using fzf in a real-time wrapped vertical layout"
+		shell::logger::usage "shell::ini::view::super::fzf <file> [--json|--yaml|--multi]"
+		shell::logger::item "file" "The path to the INI file."
+		shell::logger::option "--json" "Optional. Export the selected section as JSON."
+		shell::logger::option "--yaml" "Optional. Export the selected section as YAML."
+		shell::logger::option "--multi" "Optional. Allow multi-key selection and export."
+		shell::logger::option "-h, --help" "Display this help message"
+		shell::logger::example "shell::ini::view::super::fzf config.ini"
+		shell::logger::example "shell::ini::view::super::fzf config.ini --json"
+		shell::logger::example "shell::ini::view::super::fzf config.ini --multi"
+		return $RETURN_SUCCESS
+	fi
+
+	if [ $# -lt 1 ]; then
+		echo "Usage: shell::ini::view::control::fzf <file> [--json|--yaml|--multi]"
+		return 1
+	fi
+
+	local file="$1"
+	shift
+	local mode=""
+	local multi="false"
+
+	# Process additional options: --json, --yaml, --multi
+	# These options determine how the selected section will be exported.
+	for arg in "$@"; do
+		case "$arg" in
+		--json | --yaml) mode="$arg" ;;
+		--multi) multi="true" ;;
+		esac
+	done
+
+	# Validate the file parameter.
+	# Ensure the file exists and is readable.
+	if [ ! -f "$file" ]; then
+		shell::logger::error "File not found: $file"
+		return 1
+	fi
+
+	# Ensure fzf is installed.
+	shell::dependency::fzf::ensure
+
+	# Set up color variables for fzf preview.
+	# Using tput to set colors for better visibility.
+	local yellow=$(tput setaf 3)
+	local cyan=$(tput setaf 6)
+	local green=$(tput setaf 2)
+	local normal=$(tput sgr0)
+
+	# Begin interactive loop to allow returning to section selection.
+	while true; do
+		# List sections and use fzf to select one.
+		# The preview command uses awk to format the output in a tree-like structure.
+		local section
+		section=$(shell::ini::section::list "$file" |
+			awk -v y="$yellow" -v n="$normal" '{print y $0 n}' |
+			fzf --ansi \
+				--prompt="Select section: " \
+				--preview="awk -v s='{}' '
+                  BEGIN { in_section=0 }
+                  /^\[.*\]/ {
+                    in_section = (\$0 == \"[\" s \"]\") ? 1 : 0
+                    next
+                  }
+                  in_section && /^[^#;]/ && /=/ {
+                    split(\$0, kv, \"=\")
+                    gsub(/^[ \t]+|[ \t]+$/, \"\", kv[1])
+                    gsub(/^[ \t]+|[ \t]+$/, \"\", kv[2])
+                    printf(\" %s%s%s: %s%s%s\\n\", \"\033[36m\", kv[1], \"\033[0m\", \"\033[32m\", kv[2], \"\033[0m\")
+                  }
+                ' \"$file\"" \
+				--preview-window=up:wrap)
+
+		# Check if a section was selected.
+		section=$(echo "$section" | sed "s/$(printf '\033')[0-9;]*m//g")
+		if [ -z "$section" ]; then
+			shell::logger::error "No section selected."
+			return 1
+		fi
+
+		# Read all keys in the selected section.
+		local keys
+		keys=$(shell::ini::key::list "$file" "$section")
+		if [ -z "$keys" ]; then
+			shell::logger::warn "No keys found in section '$section'."
+			continue
+		fi
+
+		# If --json mode is specified, format the output as JSON.
+		if [ "$mode" = "--json" ]; then
+			local output="{"
+			local first=1
+			while IFS= read -r key; do
+				local val
+				val=$(shell::ini::read "$file" "$section" "$key")
+				val=$(echo "$val" | sed 's/"/\\"/g')
+				key=$(shell::strings::sanitize::lower "$key")
+				if [ $first -eq 1 ]; then
+					output="$output\n  \"$key\": \"$val\""
+					first=0
+				else
+					output="$output,\n  \"$key\": \"$val\""
+				fi
+			done <<<"$keys"
+			output="$output\n}"
+			printf '%b\n' "$output"
+			shell::clipboard::copy --best-effort "$output"
+			return 0
+		fi
+
+		# If --yaml mode is specified, format the output as YAML.
+		if [ "$mode" = "--yaml" ]; then
+			local output=""
+			while IFS= read -r key; do
+				local val
+				val=$(shell::ini::read "$file" "$section" "$key")
+				key=$(shell::strings::sanitize::lower "$key")
+				output="${output}$key: $val\n"
+			done <<<"$keys"
+			printf '%b\n' "$output"
+			shell::clipboard::copy --best-effort "$output"
+			return 0
+		fi
+
+		# If --multi is specified, allow multi-key selection.
+		# Add [Previous Section] as the first option.
+		local key_selection
+		key_selection=$( (
+			echo "[Previous Section]"
+			echo "$keys"
+		) |
+			fzf --ansi ${multi:+--multi} --prompt="Select key(s) in [$section]: ")
+
+		# Clean ANSI color codes from selection.
+		key_selection=$(echo "$key_selection" | sed "s/$(printf '\033')[0-9;]*m//g")
+
+		# If no key was selected, return with error.
+		if [ -z "$key_selection" ]; then
+			shell::logger::error "No key selected."
+			return 1
+		fi
+
+		# If user selected [Previous Section], restart loop.
+		if [ "$key_selection" = "[Previous Section]" ]; then
+			continue
+		fi
+
+		# Process the selected keys and read their values.
+		# The values are colored for better visibility.
+		local output=""
+		while IFS= read -r key; do
+			key=$(echo "$key" | sed "s/$(printf '\033')[0-9;]*m//g")
+			local value
+			value=$(shell::ini::read "$file" "$section" "$key")
+			shell::logger::debug "[k] $key"
+			shell::logger::success "[v] $value"
+			key=$(shell::strings::sanitize::lower "$key")
+			output="${output}$key=$value\n"
+		done <<<"$key_selection"
+
+		shell::clipboard::copy --best-effort "$output"
+		return 0
+	done
+}
+
+# @description Interactively edits or renames a key in an INI file using fzf.
+#
+#   This function allows the user to select a section and a key from an INI file,
+#   then choose to either edit the value of the key or rename the key.
+#   It uses fzf for interactive selection and sed for in-place editing.
+# @arg $1 string file: The path to the INI file.
+# @exitcode 0 Success.
+# @example
+#   shell::ini::edit::fzf config.ini
+#
+shell::ini::edit::fzf() {
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Interactively edits or renames a key in an INI file using fzf"
+		shell::logger::usage "shell::ini::edit::fzf [-h] <file>"
+		shell::logger::option "-h" "Optional. Displays this help message."
+		shell::logger::item "file" "The path to the INI file."
+		return $RETURN_SUCCESS
+	fi
+
+	if [ $# -lt 1 ]; then
+		echo "Usage: shell::ini::edit::fzf <file>"
+		return 0
+	fi
+
+	local file="$1"
+	if [ ! -f "$file" ]; then
+		shell::logger::error "File not found: $file"
+		return 0
+	fi
+
+	# Ensure fzf is installed.
+	shell::dependency::fzf::ensure
+
+	# Get the list of sections in the specified file and use fzf to select one.
+	local section
+	section=$(shell::ini::section::list "$file" | fzf --border=rounded --ansi --layout=reverse --pointer="▶" --marker="✓" --prompt="Select section to edit: ")
+	if [ -z "$section" ]; then
+		shell::logger::error "No section selected."
+		return 0
+	fi
+
+	# Get the list of keys in the selected section and use fzf to select one.
+	# The keys are colored for better visibility.
+	local key
+	key=$(shell::ini::key::list "$file" "$section" | fzf --border=rounded --ansi --layout=reverse --pointer="▶" --marker="✓" --prompt="Select key to edit/rename: ")
+	if [ -z "$key" ]; then
+		shell::logger::error "No key selected."
+		return 0
+	fi
+
+	local menu_options
+	local selected_key
+	menu_options=(
+		"Add Key:add_key"
+		"Edit Key:edit_key"
+		"Remove Key:remove_key"
+		"Add Section:add_section"
+		"Remove Section:remove_section"
+		"Rename Section:rename_section"
+	)
+	selected_key=$(shell::ask::option::value "${menu_options[@]}")
+	shell::logger::debug "You have selected the '$selected_key'."
+	if [ -z "$selected_key" ]; then
+		shell::logger::error "No action selected."
+		return 0
+	fi
+	# Perform the action based on the selected key.
+	if [ "$selected_key" = "add_key" ]; then
+		local new_key_name
+		local new_key_value
+		new_key_name=$(shell::ask::text "Enter new key name to add in section [$section]:")
+		new_key_value=$(shell::ask::text "Enter value for new key '$new_key_name':")
+		shell::ini::write "$file" "$section" "$new_key_name" "$new_key_value"
+		return $?
+	fi
+	if [ "$selected_key" = "edit_key" ]; then
+		local new_value
+		new_value=$(shell::ask::text "Enter new value for '$key':")
+		shell::ini::write "$file" "$section" "$key" "$new_value"
+		return $?
+	fi
+	if [ "$selected_key" = "remove_key" ]; then
+		local asked
+		asked=$(shell::ask::reply "Are you sure you want to remove the key '$key' from section [$section]?")
+		if [ "$asked" = "yes" ]; then
+			shell::logger::debug "Removing key '$key' from section [$section] in file '$file'..."
+			shell::ini::key::remove "$file" "$section" "$key"
+			return $?
+		fi
+		return 0
+	fi
+	if [ "$selected_key" = "add_section" ]; then
+		local new_section_name
+		new_section_name=$(shell::ask::text "Enter new section name to add:")
+		shell::ini::section::add "$file" "$new_section_name"
+		return $?
+	fi
+	if [ "$selected_key" = "remove_section" ]; then
+		local asked
+		asked=$(shell::ask::reply "Are you sure you want to remove the section [$section] and all its keys?")
+		if [ "$asked" = "yes" ]; then
+			shell::logger::debug "Removing section [$section] from file '$file'..."
+			shell::ini::section::remove "$file" "$section"
+			return $?
+		fi
+		return 0
+	fi
+	if [ "$selected_key" = "rename_section" ]; then
+		local asked
+		asked=$(shell::ask::reply "Are you sure you want to rename the section [$section]?")
+		if [ "$asked" = "yes" ]; then
+			local new_section_name
+			new_section_name=$(shell::ask::text "Enter new name for section [$section]:")
+			shell::ini::section::rename "$file" "$section" "$new_section_name"
+			return $?
+		fi
+		return 0
+	fi
+
+	shell::logger::error "Invalid option."
+	return 0
+}
+
+# @description Dumps all sections and their key-value pairs from an INI file as a JSON object.
+#
+#   This function reads all sections and their keys from the specified INI file,
+#   decodes their values, and outputs them as a structured JSON object.
+# @arg $1 string file: The path to the INI file.
+# @exitcode 0 Success.
+# @exitcode 1 The operation failed.
+# @example
+#   shell::ini::dump::json
+#
+shell::ini::dump::json() {
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Dumps all sections and their key-value pairs from an INI file as a JSON object"
+		shell::logger::usage "shell::ini::dump::json [-h] <file>"
+		shell::logger::option "-h" "Optional. Displays this help message."
+		shell::logger::item "file" "The path to the INI file."
+		return $RETURN_SUCCESS
+	fi
+	if [ $# -lt 1 ]; then
+		echo "Usage: shell::ini::dump::json <file>"
+		return 1
+	fi
+
+	# Check if the file parameter is provided.
+	local file="$1"
+	if [ -z "$file" ]; then
+		echo "Usage: shell::ini::dump::json <file>"
+		return 1
+	fi
+
+	# Ensure the file exists and is readable.
+	if [ ! -f "$file" ]; then
+		shell::logger::error "File not found: $file"
+		return 1
+	fi
+
+	# List all sections in the INI file.
+	# If no sections are found, print a warning and return.
+	local sections
+	sections=$(shell::ini::section::list "$file")
+	if [ -z "$sections" ]; then
+		shell::logger::warn "No sections found in '$file'"
+		return 1
+	fi
+
+	# Initialize the JSON output.
+	# The output will be structured as a JSON object with sections as keys.
+	# Each section will contain its keys and values as key-value pairs.
+	local output="{"
+	local first_section=1
+	while IFS= read -r section; do
+		local keys
+		keys=$(shell::ini::key::list "$file" "$section")
+		if [ -z "$keys" ]; then
+			continue
+		fi
+
+		[ $first_section -eq 0 ] && output+=","
+		output+="\n  \"$section\": {"
+		local first_key=1
+		while IFS= read -r key; do
+			local val
+			val=$(shell::ini::read "$file" "$section" "$key" 2>/dev/null)
+			val=$(echo "$val" | sed 's/"/\\"/g')
+			key=$(shell::strings::sanitize::lower "$key")
+			[ $first_key -eq 0 ] && output+=","
+			output+="\n    \"$key\": \"$val\""
+			first_key=0
+		done <<<"$keys"
+		output+="\n  }"
+		first_section=0
+	done <<<"$sections"
+	output+="\n}"
+	printf '%b\n' "$output"
+	shell::clipboard::copy --best-effort "$output"
+}
