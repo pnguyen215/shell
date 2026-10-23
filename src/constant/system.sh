@@ -43,7 +43,7 @@ SHELL_SRC_DIR="$SHELL_DIR/src"
 # Groups (sub-directories of src/) in the order the loader sources them.
 # Within a group, files are sourced alphabetically. `constant` is always
 # loaded first by the loader itself and is listed here for documentation.
-SHELL_MODULE_GROUPS=(constant core dependency lib lang devops shield bot alias)
+SHELL_MODULE_GROUPS=(constant core dependency lib skill lang devops shield bot alias)
 
 # --- Supported platforms -----------------------------------------------------
 
