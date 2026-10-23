@@ -110,12 +110,14 @@ reported as a successful install. Here the script is saved first, checked
 for being non-empty, then executed.
 
 Environment variables set by the caller (e.g. `RUNZSH=no`) are inherited by
-the script.
+the script. Any arguments after the interpreter are passed to the script
+unchanged (argv style, so spaces and quotes survive).
 
 #### Example
 
 ```bash
 RUNZSH=no shell::net::run_remote_script "$SHELL_URL_OHMYZSH_INSTALL" sh
+shell::net::run_remote_script "$url" bash --yes --tool claude
 ```
 
 #### Options
@@ -132,12 +134,14 @@ RUNZSH=no shell::net::run_remote_script "$SHELL_URL_OHMYZSH_INSTALL" sh
 
 - **$1** (string): Script URL.
 - **$2** (string): Interpreter (default: sh).
+- **...** (string): Arguments passed to the script (everything after the interpreter).
 
 #### Exit codes
 
 - **0**: The script ran successfully (or dry-run printed).
 - **1**: Download failed, the script was empty, or it exited non-zero.
 - **2**: No URL given.
+- N Exit status of the script when it exits non-zero.
 
 ### shell::net::port::check
 
