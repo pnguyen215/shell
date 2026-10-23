@@ -1,22 +1,28 @@
 # dependency/git.sh
 
-Ensure `git` is installed (version control used by shell::git::*).
+Ensure `git` is installed (version control used by shell::git::\*).
 
 ## Overview
 
 Make sure `git` is available, installing it when allowed.
 Thin wrapper around shell::dependency::ensure; see that function for the
-install policy (SHELL_AUTO_INSTALL_DEPS).
+install policy (`SHELL_AUTO_INSTALL_DEPS`).
 
 ## Index
 
-* [shell::dependency::git::ensure](#shelldependencygitensure)
+- [dependency/git.sh](#dependencygitsh)
+  - [Overview](#overview)
+  - [Index](#index)
+    - [shell::dependency::git::ensure](#shelldependencygitensure)
+      - [Example](#example)
+      - [Exit codes](#exit-codes)
+      - [See also](#see-also)
 
 ### shell::dependency::git::ensure
 
 Make sure `git` is available, installing it when allowed.
-Thin wrapper around shell::dependency::ensure; see that function for the
-install policy (SHELL_AUTO_INSTALL_DEPS).
+Thin wrapper around `shell::dependency::ensure`; see that function for the
+install policy (`SHELL_AUTO_INSTALL_DEPS`).
 
 #### Example
 
@@ -28,10 +34,9 @@ _Function has no arguments._
 
 #### Exit codes
 
-* **0**: `git` is available.
-* **3**: `git` is missing and could not be installed.
+- **0**: `git` is available.
+- **3**: `git` is missing and could not be installed.
 
 #### See also
 
-* [shell::dependency::ensure](#shelldependencyensure)
-
+- [shell::dependency::ensure](#shelldependencyensure)

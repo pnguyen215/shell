@@ -5,20 +5,20 @@ Colourised terminal output primitives.
 ## Overview
 
 Lowest-level output layer. Everything that prints (logger, prompts, help
-blocks) funnels through shell::console::print so colour handling, NO_COLOR
+blocks) funnels through shell::console::print so colour handling, `NO_COLOR`
 support and escape-sequence behaviour live in exactly one place.
 
 ## Index
 
-* [shell::console::detect_colors](#shellconsoledetect_colors)
-* [shell::console::print](#shellconsoleprint)
-* [shell::console::spinner](#shellconsolespinner)
+- [shell::console::detect_colors](#shellconsoledetect_colors)
+- [shell::console::print](#shellconsoleprint)
+- [shell::console::spinner](#shellconsolespinner)
 
 ### shell::console::detect_colors
 
 Detect how many colours the terminal supports and cache the result.
 Runs `tput colors` at most once per shell session (the previous
-implementation forked `tput` two or three times for *every* printed line).
+implementation forked `tput` two or three times for _every_ printed line).
 Honours the https://no-color.org convention: when `NO_COLOR` is set and
 non-empty, colours are disabled.
 
@@ -30,11 +30,11 @@ _Function has no arguments._
 
 #### Variables set
 
-* **_SHELL_CONSOLE_COLORS** (integer): Number of supported colours (0, 8, 256 ...).
+- **\_SHELL_CONSOLE_COLORS** (integer): Number of supported colours (0, 8, 256 ...).
 
 #### Exit codes
 
-* **0**: Always.
+- **0**: Always.
 
 ### shell::console::print
 
@@ -55,35 +55,35 @@ shell::console::print 'literal \n text' 33 -E
 
 #### Options
 
-* **-h** | **--help**
+- **-h** | **--help**
 
   Show help and return.
 
-* **-n**
+- **-n**
 
   Do not append a trailing newline.
 
-* **-e**
+- **-e**
 
   Interpret backslash escapes in the message (default).
 
-* **-E**
+- **-E**
 
   Print the message verbatim, without interpreting escapes.
 
 #### Arguments
 
-* **$1** (string): Message to print.
-* **$2** (integer): ANSI 256-colour code, 0-255 (default: 4, blue).
+- **$1** (string): Message to print.
+- **$2** (integer): ANSI 256-colour code, 0-255 (default: 4, blue).
 
 #### Exit codes
 
-* **0**: Message printed.
-* **2**: Colour code is not an integer between 0 and 255.
+- **0**: Message printed.
+- **2**: Colour code is not an integer between 0 and 255.
 
 #### Output on stdout
 
-* The (possibly coloured) message.
+- The (possibly coloured) message.
 
 ### shell::console::spinner
 
@@ -99,24 +99,23 @@ shell::console::spinner -n 5
 
 #### Options
 
-* **-h** | **--help**
+- **-h** | **--help**
 
   Show help and return.
 
-* **-n** | **--dry-run**
+- **-n** | **--dry-run**
 
   Print what would be shown instead of animating.
 
 #### Arguments
 
-* **$1** (integer): Duration in seconds (default: 3).
+- **$1** (integer): Duration in seconds (default: 3).
 
 #### Exit codes
 
-* **0**: Spinner finished (or dry-run printed).
-* **2**: Duration is not a positive integer.
+- **0**: Spinner finished (or dry-run printed).
+- **2**: Duration is not a positive integer.
 
 #### Output on stderr
 
-* The animation frames.
-
+- The animation frames.

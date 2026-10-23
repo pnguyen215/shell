@@ -4,35 +4,60 @@ Go project helpers.
 
 ## Overview
 
-Retrieves and prints the value of the GOPRIVATE environment variable.
-The GOPRIVATE variable is used by Go tools to determine which modules
+Retrieves and prints the value of the `GOPRIVATE` environment variable.
+The `GOPRIVATE` variable is used by Go tools to determine which modules
 should be considered private, affecting how Go commands handle dependencies.
 
 Notes:
--   This function is compatible with both Linux and macOS.
--   It uses `go env GOPRIVATE` to reliably fetch the GOPRIVATE setting.
-1.  Run `shell::go::env::get_private` to display the current GOPRIVATE value.
+
+- This function is compatible with both Linux and macOS.
+- It uses `go env GOPRIVATE` to reliably fetch the `GOPRIVATE` setting.
+
+1.  Run `shell::go::env::get_private` to display the current `GOPRIVATE` value.
 2.  Use `shell::go::env::get_private -n` to preview the command.
 
 ## Index
 
-* [shell::go::env::get_private](#shellgoenvget_private)
-* [shell::go::env::set_private](#shellgoenvset_private)
-* [shell::go::env::remove_private_fzf](#shellgoenvremove_private_fzf)
-* [shell::go::module::create](#shellgomodulecreate)
-* [shell::go::scaffold::add](#shellgoscaffoldadd)
-* [shell::go::gitignore::add](#shellgogitignoreadd)
+- [lang/go.sh](#langgosh)
+  - [Overview](#overview)
+  - [Index](#index)
+    - [shell::go::env::get_private](#shellgoenvget_private)
+      - [Example](#example)
+      - [Options](#options)
+      - [Exit codes](#exit-codes)
+    - [shell::go::env::set_private](#shellgoenvset_private)
+      - [Example](#example-1)
+      - [Options](#options-1)
+      - [Arguments](#arguments)
+      - [Exit codes](#exit-codes-1)
+    - [shell::go::env::remove_private_fzf](#shellgoenvremove_private_fzf)
+      - [Example](#example-2)
+      - [Options](#options-2)
+      - [Exit codes](#exit-codes-2)
+    - [shell::go::module::create](#shellgomodulecreate)
+      - [Example](#example-3)
+      - [Options](#options-3)
+      - [Arguments](#arguments-1)
+      - [Exit codes](#exit-codes-3)
+    - [shell::go::scaffold::add](#shellgoscaffoldadd)
+      - [Example](#example-4)
+      - [Exit codes](#exit-codes-4)
+    - [shell::go::gitignore::add](#shellgogitignoreadd)
+      - [Example](#example-5)
+      - [Exit codes](#exit-codes-5)
 
 ### shell::go::env::get_private
 
-Retrieves and prints the value of the GOPRIVATE environment variable.
-The GOPRIVATE variable is used by Go tools to determine which modules
+Retrieves and prints the value of the `GOPRIVATE` environment variable.
+The `GOPRIVATE` variable is used by Go tools to determine which modules
 should be considered private, affecting how Go commands handle dependencies.
 
 Notes:
--   This function is compatible with both Linux and macOS.
--   It uses `go env GOPRIVATE` to reliably fetch the GOPRIVATE setting.
-1.  Run `shell::go::env::get_private` to display the current GOPRIVATE value.
+
+- This function is compatible with both Linux and macOS.
+- It uses `go env GOPRIVATE` to reliably fetch the `GOPRIVATE` setting.
+
+1.  Run `shell::go::env::get_private` to display the current `GOPRIVATE` value.
 2.  Use `shell::go::env::get_private -n` to preview the command.
 
 #### Example
@@ -44,13 +69,13 @@ shell::go::env::get_private -n
 
 #### Options
 
-* **-n**
+- **-n**
 
-  Optional. If provided, the command is printed using shell::logger::command_clip instead of executed. None
+  Optional. If provided, the command is printed using `shell::logger::command_clip` instead of executed. None
 
 #### Exit codes
 
-* **0**: Success.
+- **0**: Success.
 
 ### shell::go::env::set_private
 
@@ -61,9 +86,11 @@ This variable is used by Go tools to determine which modules
 should be considered private, affecting how Go commands handle dependencies.
 
 Notes:
--   This function is compatible with both Linux and macOS.
--   It uses `go env -w GOPRIVATE=<value>` to set the GOPRIVATE setting.
--   It supports dry-run and asynchronous execution.
+
+- This function is compatible with both Linux and macOS.
+- It uses `go env -w GOPRIVATE=<value>` to set the GOPRIVATE setting.
+- It supports dry-run and asynchronous execution.
+
 1.  Run `shell::go::env::set_private <repository1> [repository2] ...` to set or append to the GOPRIVATE variable.
 2.  Use `shell::go::env::set_private -n <repository1> [repository2] ...` to preview the command.
 
@@ -76,32 +103,34 @@ shell::go::env::set_private -n "example.com/private1" "example.com/internal"
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional. If provided, the command is printed using shell::logger::command_clip instead of executed.
 
 #### Arguments
 
-* **$1** (string): repository1: The first repository to add to GOPRIVATE. [repository2] [repository3] ...: Additional repositories to add to GOPRIVATE. None
+- **$1** (string): repository1: The first repository to add to `GOPRIVATE`. [repository2] [repository3] ...: Additional repositories to add to `GOPRIVATE`. None
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::go::env::remove_private_fzf
 
-Uses fzf to interactively select and remove entries from the GOPRIVATE environment variable.
-The GOPRIVATE variable is used by Go tools to determine which modules should be considered private,
+Uses fzf to interactively select and remove entries from the `GOPRIVATE` environment variable.
+The `GOPRIVATE` variable is used by Go tools to determine which modules should be considered private,
 affecting how Go commands handle authenticated access to dependencies.
 
 Notes:
+
 - Requires fzf and Go to be installed; fzf is installed automatically if missing.
 - Uses `go env GOPRIVATE` to retrieve the current value.
 - Uses `go env -w GOPRIVATE=<new_value>` to set the updated value.
 - Supports dry-run and asynchronous execution via shell::logger::command_clip and shell::exec::async.
 - Compatible with both Linux (Ubuntu 22.04 LTS) and macOS.
-1. Run `shell::go::env::remove_private_fzf` to select and remove GOPRIVATE entries via fzf.
+
+1. Run `shell::go::env::remove_private_fzf` to select and remove `GOPRIVATE` entries via fzf.
 2. Use `shell::go::env::remove_private_fzf -n` to see the command that would be executed.
 
 #### Example
@@ -113,15 +142,15 @@ shell::go::env::remove_private_fzf -n        # Preview the command without execu
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional. If provided, the command is printed using shell::logger::command_clip instead of executed. None
 
 #### Exit codes
 
-* **0**: Success.
-* **5**: Not implemented.
-* **8**: Nothing to process (empty input or result).
+- **0**: Success.
+- **5**: Not implemented.
+- **8**: Nothing to process (empty input or result).
 
 ### shell::go::module::create
 
@@ -148,25 +177,26 @@ shell::go::module::create https://github.com/user/repo /home/user/src # Initiali
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, the commands are printed using shell::logger::command_clip instead of being executed.
 
 #### Arguments
 
-* **$1** (string): app_name|github_url: The name of the application or a GitHub URL to initialize the module.
-* **...** (string): target_folder: Optional. The path to the folder where the Go application should be created. If not provided, the application is created in the current directory.
+- **$1** (string): app_name|github_url: The name of the application or a GitHub URL to initialize the module.
+- **...** (string): target_folder: Optional. The path to the folder where the Go application should be created. If not provided, the application is created in the current directory.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::go::scaffold::add
 
 This function downloads essential configuration files for a Go application.
 
 It retrieves the following files:
+
 - VERSION_RELEASE.md: Contains the version release information for the application.
 - Makefile: A build script that defines how to compile and manage the application.
 - ci.yml: A GitHub Actions workflow configuration for continuous integration.
@@ -185,7 +215,7 @@ _Function has no arguments._
 
 #### Exit codes
 
-* **0**: Success.
+- **0**: Success.
 
 ### shell::go::gitignore::add
 
@@ -207,5 +237,4 @@ _Function has no arguments._
 
 #### Exit codes
 
-* **0**: Success.
-
+- **0**: Success.

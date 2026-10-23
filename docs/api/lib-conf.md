@@ -13,30 +13,105 @@ Otherwise, the file is sourced using shell::exec::command to log the execution.
 
 ## Index
 
-* [shell::conf::read](#shellconfread)
-* [shell::conf::key::add](#shellconfkeyadd)
-* [shell::conf::key::comment](#shellconfkeycomment)
-* [shell::conf::key::get::fzf](#shellconfkeygetfzf)
-* [shell::conf::key::get](#shellconfkeyget)
-* [shell::conf::key::remove::fzf](#shellconfkeyremovefzf)
-* [shell::conf::key::update::fzf](#shellconfkeyupdatefzf)
-* [shell::conf::key::exists](#shellconfkeyexists)
-* [shell::conf::key::rename::fzf](#shellconfkeyrenamefzf)
-* [shell::conf::protected::is](#shellconfprotectedis)
-* [shell::conf::group::add::fzf](#shellconfgroupaddfzf)
-* [shell::conf::group::read](#shellconfgroupread)
-* [shell::conf::group::remove::fzf](#shellconfgroupremovefzf)
-* [shell::conf::group::update::fzf](#shellconfgroupupdatefzf)
-* [shell::conf::group::rename::fzf](#shellconfgrouprenamefzf)
-* [shell::conf::group::list](#shellconfgrouplist)
-* [shell::conf::group::view::fzf](#shellconfgroupviewfzf)
-* [shell::conf::group::clone::fzf](#shellconfgroupclonefzf)
-* [shell::conf::group::sync](#shellconfgroupsync)
-* [shell::conf::key::view::fzf](#shellconfkeyviewfzf)
-* [shell::conf::protected::add](#shellconfprotectedadd)
-* [shell::conf::protected::add::fzf](#shellconfprotectedaddfzf)
-* [shell::conf::protected::remove::fzf](#shellconfprotectedremovefzf)
-* [shell::conf::protected::sync](#shellconfprotectedsync)
+- [lib/conf.sh](#libconfsh)
+  - [Overview](#overview)
+  - [Index](#index)
+    - [shell::conf::read](#shellconfread)
+      - [Example](#example)
+      - [Options](#options)
+      - [Arguments](#arguments)
+      - [Exit codes](#exit-codes)
+    - [shell::conf::key::add](#shellconfkeyadd)
+      - [Example](#example-1)
+      - [Options](#options-1)
+      - [Arguments](#arguments-1)
+      - [Exit codes](#exit-codes-1)
+    - [shell::conf::key::comment](#shellconfkeycomment)
+- [comment (if provided)](#comment-if-provided) - [Example](#example-2) - [Options](#options-2) - [Arguments](#arguments-2) - [Exit codes](#exit-codes-2)
+  - [shell::conf::key::get::fzf](#shellconfkeygetfzf)
+    - [Example](#example-3)
+    - [Options](#options-3)
+    - [Exit codes](#exit-codes-3)
+  - [shell::conf::key::get](#shellconfkeyget)
+    - [Example](#example-4)
+    - [Arguments](#arguments-3)
+    - [Exit codes](#exit-codes-4)
+  - [shell::conf::key::remove::fzf](#shellconfkeyremovefzf)
+    - [Example](#example-5)
+    - [Options](#options-4)
+    - [Exit codes](#exit-codes-5)
+  - [shell::conf::key::update::fzf](#shellconfkeyupdatefzf)
+    - [Example](#example-6)
+    - [Options](#options-5)
+    - [Exit codes](#exit-codes-6)
+  - [shell::conf::key::exists](#shellconfkeyexists)
+- [Using the exit status:](#using-the-exit-status)
+- [Capturing the output:](#capturing-the-output) - [Example](#example-7) - [Arguments](#arguments-4) - [Exit codes](#exit-codes-7)
+  - [shell::conf::key::rename::fzf](#shellconfkeyrenamefzf)
+    - [Example](#example-8)
+    - [Options](#options-6)
+    - [Exit codes](#exit-codes-8)
+  - [shell::conf::protected::is](#shellconfprotectedis)
+    - [Example](#example-9)
+    - [Arguments](#arguments-5)
+    - [Exit codes](#exit-codes-9)
+  - [shell::conf::group::add::fzf](#shellconfgroupaddfzf)
+    - [Example](#example-10)
+    - [Options](#options-7)
+    - [Exit codes](#exit-codes-10)
+  - [shell::conf::group::read](#shellconfgroupread)
+    - [Example](#example-11)
+    - [Options](#options-8)
+    - [Exit codes](#exit-codes-11)
+  - [shell::conf::group::remove::fzf](#shellconfgroupremovefzf)
+    - [Example](#example-12)
+    - [Options](#options-9)
+    - [Exit codes](#exit-codes-12)
+  - [shell::conf::group::update::fzf](#shellconfgroupupdatefzf)
+    - [Example](#example-13)
+    - [Options](#options-10)
+    - [Exit codes](#exit-codes-13)
+  - [shell::conf::group::rename::fzf](#shellconfgrouprenamefzf)
+    - [Example](#example-14)
+    - [Options](#options-11)
+    - [Exit codes](#exit-codes-14)
+  - [shell::conf::group::list](#shellconfgrouplist)
+    - [Example](#example-15)
+    - [Options](#options-12)
+    - [Exit codes](#exit-codes-15)
+  - [shell::conf::group::view::fzf](#shellconfgroupviewfzf)
+    - [Example](#example-16)
+    - [Options](#options-13)
+    - [Exit codes](#exit-codes-16)
+  - [shell::conf::group::clone::fzf](#shellconfgroupclonefzf)
+    - [Example](#example-17)
+    - [Options](#options-14)
+    - [Exit codes](#exit-codes-17)
+  - [shell::conf::group::sync](#shellconfgroupsync)
+    - [Example](#example-18)
+    - [Options](#options-15)
+    - [Exit codes](#exit-codes-18)
+  - [shell::conf::key::view::fzf](#shellconfkeyviewfzf)
+    - [Example](#example-19)
+    - [Options](#options-16)
+    - [Exit codes](#exit-codes-19)
+  - [shell::conf::protected::add](#shellconfprotectedadd)
+    - [Example](#example-20)
+    - [Options](#options-17)
+    - [Arguments](#arguments-6)
+    - [Exit codes](#exit-codes-20)
+  - [shell::conf::protected::add::fzf](#shellconfprotectedaddfzf)
+    - [Example](#example-21)
+    - [Options](#options-18)
+    - [Exit codes](#exit-codes-21)
+  - [shell::conf::protected::remove::fzf](#shellconfprotectedremovefzf)
+    - [Example](#example-22)
+    - [Options](#options-19)
+    - [Exit codes](#exit-codes-22)
+  - [shell::conf::protected::sync](#shellconfprotectedsync)
+    - [Example](#example-23)
+    - [Options](#options-20)
+    - [Exit codes](#exit-codes-23)
 
 ### shell::conf::read
 
@@ -56,18 +131,18 @@ shell::conf::read -n ~/.my-config             # Prints the sourcing command with
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, the command is printed using shell::logger::command_clip instead of executed.
 
 #### Arguments
 
-* **$1** (string): filename: The configuration file to source.
+- **$1** (string): filename: The configuration file to source.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::conf::key::add
 
@@ -88,19 +163,19 @@ shell::conf::key::add -n my_setting "some secret value"      # Prints the comman
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, the command is printed using shell::logger::command_clip instead of executed.
 
 #### Arguments
 
-* **$1** (string): key: The configuration key.
-* **$2** (string): value: The configuration value to be encoded and saved.
+- **$1** (string): key: The configuration key.
+- **$2** (string): value: The configuration value to be encoded and saved.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::conf::key::comment
 
@@ -108,7 +183,9 @@ Adds a configuration entry (key=value) with an optional comment to the constant 
 The value is encoded using Base64 before being saved.
 
 This function encodes the value using Base64 (with newline characters removed) and appends a line in the format:
+
 # comment (if provided)
+
 key=encoded_value
 to the configuration file defined by SHELL_KEY_FILE.
 If the key already exists, a warning is shown and the function exits.
@@ -122,20 +199,20 @@ shell::conf::key::comment -n my_key "my secret" "Dry-run with comment"
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, the command is printed using shell::logger::command_clip instead of executed.
 
 #### Arguments
 
-* **$1** (string): key: The configuration key.
-* **$2** (string): value: The configuration value to be encoded and saved.
-* **...** (string): comment: Optional comment to be added above the key-value pair.
+- **$1** (string): key: The configuration key.
+- **$2** (string): value: The configuration value to be encoded and saved.
+- **...** (string): comment: Optional comment to be added above the key-value pair.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::conf::key::get::fzf
 
@@ -158,14 +235,14 @@ shell::conf::key::get::fzf      # Interactively select a key and display its dec
 
 #### Options
 
-* **-h**
+- **-h**
 
   Optional. Displays this help message.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::conf::key::get
 
@@ -185,12 +262,12 @@ shell::conf::key::get my_setting   # Outputs the decoded value for the key 'my_s
 
 #### Arguments
 
-* **$1** (string): key: The configuration key whose value should be retrieved.
+- **$1** (string): key: The configuration key whose value should be retrieved.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::conf::key::remove::fzf
 
@@ -213,14 +290,14 @@ shell::conf::key::remove::fzf -n      # Prints the removal command without execu
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, the removal command is printed using shell::logger::command_clip instead of executed.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::conf::key::update::fzf
 
@@ -243,14 +320,14 @@ shell::conf::key::update::fzf -n    # Prints the update command without executin
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, the update command is printed using shell::logger::command_clip instead of executed.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::conf::key::exists
 
@@ -263,7 +340,9 @@ If a line starting with "key=" is found, the function echoes "true" and returns 
 Otherwise, it echoes "false" and returns 1.
 
 Sample Usage:
+
 # Using the exit status:
+
 if shell::conf::key::exists my_setting; then
 echo "Key 'my_setting' exists."
 else
@@ -271,6 +350,7 @@ echo "Key 'my_setting' does not exist."
 fi
 
 # Capturing the output:
+
 result=$(shell::conf::key::exists my_setting)
 if [ "$result" = "true" ]; then
 echo "Key 'my_setting' exists."
@@ -286,12 +366,12 @@ shell::conf::key::exists my_setting   # Echoes "true" and returns 0 if 'my_setti
 
 #### Arguments
 
-* **$1** (string): key: The configuration key to check.
+- **$1** (string): key: The configuration key to check.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::conf::key::rename::fzf
 
@@ -314,14 +394,14 @@ shell::conf::key::rename::fzf -n      # Prints the renaming command without exec
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, the renaming command is printed using shell::logger::command_clip instead of executed.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::conf::protected::is
 
@@ -342,12 +422,12 @@ fi
 
 #### Arguments
 
-* **$1** (string): key: The configuration key to check.
+- **$1** (string): key: The configuration key to check.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::conf::group::add::fzf
 
@@ -368,14 +448,14 @@ shell::conf::group::add::fzf -n      # Prints the command for creating/updating 
 
 #### Options
 
-* **-h**
+- **-h**
 
   Optional. Displays this help message.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::conf::group::read
 
@@ -396,14 +476,14 @@ shell::conf::group::read my_group   # Displays the configurations for the keys i
 
 #### Options
 
-* **-h**
+- **-h**
 
   Optional. Displays this help message.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::conf::group::remove::fzf
 
@@ -424,14 +504,14 @@ shell::conf::group::remove::fzf -n      # Prints the removal command without exe
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, the removal command is printed using shell::logger::command_clip instead of executed.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::conf::group::update::fzf
 
@@ -451,14 +531,14 @@ shell::conf::group::update::fzf -n      # Prints the update command without exec
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, the update command is printed using shell::logger::command_clip instead of executed.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::conf::group::rename::fzf
 
@@ -481,14 +561,14 @@ shell::conf::group::rename::fzf -n      # Prints the renaming command without ex
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, the renaming command is printed using shell::logger::command_clip instead of executed.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::conf::group::list
 
@@ -508,14 +588,14 @@ shell::conf::group::list       # Displays all group names.
 
 #### Options
 
-* **-h**
+- **-h**
 
   Optional. Displays this help message.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::conf::group::view::fzf
 
@@ -539,14 +619,14 @@ shell::conf::group::view::fzf   # Prompts to select a group, then a key within t
 
 #### Options
 
-* **-h**
+- **-h**
 
   Optional. Displays this help message.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::conf::group::clone::fzf
 
@@ -569,14 +649,14 @@ shell::conf::group::clone::fzf -n      # Prints the cloning command without exec
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, the cloning command is printed using shell::logger::command_clip instead of executed.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::conf::group::sync
 
@@ -599,14 +679,14 @@ shell::conf::group::sync -n      # Displays the updated group configuration with
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, the new group configuration is printed using shell::logger::command_clip instead of being applied.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::conf::key::view::fzf
 
@@ -619,6 +699,7 @@ with the key in yellow and the value in cyan. Once a key is selected, its decode
 is copied to the clipboard unless in dry-run mode, where the copy command is printed.
 
 Notes:
+
 - Compatible with both macOS and Linux.
 - Uses ANSI color codes for formatting (yellow for key, cyan for value).
 - The configuration file is expected to contain key=value pairs with Base64-encoded values.
@@ -632,18 +713,18 @@ shell::conf::key::view::fzf -n      # Dry-run: print the clipboard copy command.
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, the clipboard copy command is printed instead of executed.
 
-* **-h**
+- **-h**
 
   Optional help flag. Displays this help message.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::conf::protected::add
 
@@ -660,18 +741,18 @@ shell::conf::protected::add
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, the command is printed using shell::logger::command_clip instead of executed.
 
 #### Arguments
 
-* **$1** (string): key: The key to mark as protected.
+- **$1** (string): key: The key to mark as protected.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::conf::protected::add::fzf
 
@@ -688,18 +769,18 @@ shell::conf::protected::add::fzf
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional. Dry-run mode. Prints the command without executing it.
 
-* **-h**
+- **-h**
 
   Optional. Displays this help message.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::conf::protected::remove::fzf
 
@@ -716,14 +797,14 @@ shell::conf::protected::remove::fzf
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, the removal command is printed using shell::logger::command_clip instead of executed.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::conf::protected::sync
 
@@ -741,12 +822,11 @@ shell::conf::protected::sync
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, the updated protected.conf is printed using shell::logger::command_clip instead of being applied.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
-
+- **0**: Success.
+- **1**: The operation failed.

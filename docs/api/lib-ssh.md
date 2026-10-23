@@ -12,6 +12,7 @@ start time, elapsed time, command, and specific forwarding details (local port, 
 remote port, remote host). The function works cross-platform on both macOS and Linux systems.
 
 Output Fields:
+
 - PID: Process ID of the SSH tunnel
 - USER: Username running the SSH tunnel
 - START: Start time of the process
@@ -23,6 +24,7 @@ Output Fields:
 - REMOTE_HOST: The remote host
 
 Notes:
+
 - Requires the 'ps' command to be available
 - Works on both macOS and Linux systems
 - Uses different parsing approaches based on the detected operating system
@@ -30,20 +32,69 @@ Notes:
 
 ## Index
 
-* [shell::ssh::tunnel::list](#shellsshtunnellist)
-* [shell::ssh::key::cwd::fzf](#shellsshkeycwdfzf)
-* [shell::ssh::key::copy::fzf](#shellsshkeycopyfzf)
-* [shell::ssh::tunnel::kill::fzf](#shellsshtunnelkillfzf)
-* [shell::ssh::tunnel::kill](#shellsshtunnelkill)
-* [shell::ssh::key::generate](#shellsshkeygenerate)
-* [shell::ssh::key::view::fzf](#shellsshkeyviewfzf)
-* [shell::ssh::key::remove::fzf](#shellsshkeyremovefzf)
-* [shell::ssh::tunnel::open](#shellsshtunnelopen)
-* [shell::ssh::tunnel::open::builder](#shellsshtunnelopenbuilder)
-* [shell::ssh::tunnel::tune](#shellsshtunneltune)
-* [shell::ssh::tunnel::tune::builder](#shellsshtunneltunebuilder)
-* [shell::ssh::key::rename](#shellsshkeyrename)
-* [shell::ssh::key::rename::fzf](#shellsshkeyrenamefzf)
+- [lib/ssh.sh](#libsshsh)
+  - [Overview](#overview)
+  - [Index](#index)
+    - [shell::ssh::tunnel::list](#shellsshtunnellist)
+      - [Example](#example)
+      - [Options](#options)
+      - [Exit codes](#exit-codes)
+    - [shell::ssh::key::cwd::fzf](#shellsshkeycwdfzf)
+      - [Example](#example-1)
+      - [Options](#options-1)
+      - [Exit codes](#exit-codes-1)
+    - [shell::ssh::key::copy::fzf](#shellsshkeycopyfzf)
+      - [Example](#example-2)
+      - [Options](#options-2)
+      - [Exit codes](#exit-codes-2)
+    - [shell::ssh::tunnel::kill::fzf](#shellsshtunnelkillfzf)
+      - [Example](#example-3)
+      - [Options](#options-3)
+      - [Exit codes](#exit-codes-3)
+    - [shell::ssh::tunnel::kill](#shellsshtunnelkill)
+      - [Example](#example-4)
+      - [Options](#options-4)
+      - [Exit codes](#exit-codes-4)
+    - [shell::ssh::key::generate](#shellsshkeygenerate)
+      - [Example](#example-5)
+      - [Options](#options-5)
+      - [Arguments](#arguments)
+      - [Exit codes](#exit-codes-5)
+    - [shell::ssh::key::view::fzf](#shellsshkeyviewfzf)
+      - [Example](#example-6)
+      - [Options](#options-6)
+      - [Exit codes](#exit-codes-6)
+    - [shell::ssh::key::remove::fzf](#shellsshkeyremovefzf)
+      - [Example](#example-7)
+      - [Options](#options-7)
+      - [Exit codes](#exit-codes-7)
+    - [shell::ssh::tunnel::open](#shellsshtunnelopen)
+      - [Example](#example-8)
+      - [Options](#options-8)
+      - [Arguments](#arguments-1)
+      - [Exit codes](#exit-codes-8)
+    - [shell::ssh::tunnel::open::builder](#shellsshtunnelopenbuilder)
+      - [Example](#example-9)
+      - [Options](#options-9)
+      - [Exit codes](#exit-codes-9)
+    - [shell::ssh::tunnel::tune](#shellsshtunneltune)
+      - [Example](#example-10)
+      - [Options](#options-10)
+      - [Arguments](#arguments-2)
+      - [Exit codes](#exit-codes-10)
+    - [shell::ssh::tunnel::tune::builder](#shellsshtunneltunebuilder)
+      - [Example](#example-11)
+      - [Options](#options-11)
+      - [Exit codes](#exit-codes-11)
+    - [shell::ssh::key::rename](#shellsshkeyrename)
+      - [Example](#example-12)
+      - [Options](#options-12)
+      - [Arguments](#arguments-3)
+      - [Exit codes](#exit-codes-12)
+    - [shell::ssh::key::rename::fzf](#shellsshkeyrenamefzf)
+      - [Example](#example-13)
+      - [Options](#options-13)
+      - [Exit codes](#exit-codes-13)
 
 ### shell::ssh::tunnel::list
 
@@ -55,6 +106,7 @@ start time, elapsed time, command, and specific forwarding details (local port, 
 remote port, remote host). The function works cross-platform on both macOS and Linux systems.
 
 Output Fields:
+
 - PID: Process ID of the SSH tunnel
 - USER: Username running the SSH tunnel
 - START: Start time of the process
@@ -66,6 +118,7 @@ Output Fields:
 - REMOTE_HOST: The remote host
 
 Notes:
+
 - Requires the 'ps' command to be available
 - Works on both macOS and Linux systems
 - Uses different parsing approaches based on the detected operating system
@@ -80,14 +133,14 @@ shell::ssh::tunnel::list -n        # Show commands that would be executed (dry-r
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, commands are printed using shell::logger::command_clip instead of executed.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::ssh::key::cwd::fzf
 
@@ -107,14 +160,14 @@ shell::ssh::key::cwd::fzf # Launch fzf to select an SSH key and copy its path.
 
 #### Options
 
-* **-h**
+- **-h**
 
   Optional. Displays this help message.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::ssh::key::copy::fzf
 
@@ -132,14 +185,14 @@ shell::ssh::key::copy::fzf
 
 #### Options
 
-* **-h**
+- **-h**
 
   Optional help flag. Displays this help message.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::ssh::tunnel::kill::fzf
 
@@ -160,14 +213,14 @@ shell::ssh::tunnel::kill::fzf # Launch fzf to select and kill SSH tunnels.
 
 #### Options
 
-* **-h**
+- **-h**
 
   Optional. Displays this help message.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::ssh::tunnel::kill
 
@@ -179,6 +232,7 @@ It works cross-platform on both macOS and Linux systems.
 Confirmation is requested before killing processes unless the dry-run flag is used.
 
 Notes:
+
 - Requires the 'ps' and 'kill' commands to be available.
 - Works on both macOS and Linux systems.
 - Uses different parsing approaches based on the detected operating system.
@@ -193,14 +247,14 @@ shell::ssh::tunnel::kill -n    # Shows kill commands that would be executed (dry
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, kill commands are printed using shell::logger::command_clip instead of executed.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::ssh::key::generate
 
@@ -212,6 +266,7 @@ passphrase, email comment, and filename. The function ensures the ssh-keygen com
 checks for existing keys, and sets appropriate permissions on generated files.
 
 Notes:
+
 - Uses 4096-bit keys for rsa; ed25519 uses its default key size.
 - Sets key file permissions to 600 (private) and 644 (public) for security.
 - Relies on shell::fs::mkdir, shell::exec::shell, and shell::command::exists.
@@ -230,22 +285,22 @@ shell::ssh::key::generate -h                              # Displays this help m
 
 #### Options
 
-* **-n**
+- **-n**
 
-  Optional dry-run flag. If provided, the command is printed using shell::logger::command_clip instead of executed. - -t key_type     : Optional. Specifies the key type (e.g., rsa, ed25519). Defaults to rsa. - -p passphrase   : Optional. Specifies the passphrase for the key. Defaults to empty (no passphrase).
+  Optional dry-run flag. If provided, the command is printed using shell::logger::command_clip instead of executed. - -t key_type : Optional. Specifies the key type (e.g., rsa, ed25519). Defaults to rsa. - -p passphrase : Optional. Specifies the passphrase for the key. Defaults to empty (no passphrase).
 
-* **-h**
+- **-h**
 
   Optional. Displays this help message.
 
 #### Arguments
 
-* **...** (string): key_filename: Optional. The name of the key file to generate within the SSH directory. Defaults to 'id_rsa' if not provided.
+- **...** (string): key_filename: Optional. The name of the key file to generate within the SSH directory. Defaults to 'id_rsa' if not provided.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::ssh::key::view::fzf
 
@@ -266,14 +321,14 @@ shell::ssh::key::view::fzf -n    # Dry-run: show the preview command without exe
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, the preview command is printed using shell::logger::command_clip instead of executed.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::ssh::key::remove::fzf
 
@@ -293,14 +348,14 @@ shell::ssh::key::remove::fzf -n    # Dry-run: show the removal commands without 
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, the removal command is printed using shell::logger::command_clip instead of executed.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::ssh::tunnel::open
 
@@ -316,25 +371,25 @@ shell::ssh::tunnel::open ~/.ssh/id_rsa 8080 127.0.0.1 80 sysadmin 192.168.1.10 2
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag.
 
 #### Arguments
 
-* **$1** (string): key_file: Path to the SSH private key.
-* **$2** (string): local_port: Local port to bind.
-* **$3** (string): target_addr: Target service address on the server.
-* **$4** (string): target_port: Target service port on the server.
-* **$5** (string): user: SSH username.
-* **$6** (string): server_addr: SSH server address.
-* **$7** (string): server_port: SSH server port.
-* **...** (string): timeout: Optional. ConnectTimeout (default: 10).
+- **$1** (string): key_file: Path to the SSH private key.
+- **$2** (string): local_port: Local port to bind.
+- **$3** (string): target_addr: Target service address on the server.
+- **$4** (string): target_port: Target service port on the server.
+- **$5** (string): user: SSH username.
+- **$6** (string): server_addr: SSH server address.
+- **$7** (string): server_port: SSH server port.
+- **...** (string): timeout: Optional. ConnectTimeout (default: 10).
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::ssh::tunnel::open::builder
 
@@ -352,14 +407,14 @@ shell::ssh::tunnel::open::builder -n
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, the command is printed using shell::logger::command_clip.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::ssh::tunnel::tune
 
@@ -377,21 +432,21 @@ shell::ssh::tunnel::tune -n ~/.ssh/id_rsa sysadmin example.com 2222
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, the SSH command is printed using shell::logger::command_clip instead of executed.
 
 #### Arguments
 
-* **$1** (string): private_key: Path to the SSH private key file.
-* **$2** (string): user: SSH username.
-* **$3** (string): host: SSH server address.
-* **$4** (string): port: SSH server port.
+- **$1** (string): private_key: Path to the SSH private key file.
+- **$2** (string): user: SSH username.
+- **$3** (string): host: SSH server address.
+- **$4** (string): port: SSH server port.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::ssh::tunnel::tune::builder
 
@@ -409,14 +464,14 @@ shell::ssh::tunnel::tune::builder -n
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, the command is printed using shell::logger::command_clip.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::ssh::key::rename
 
@@ -435,19 +490,19 @@ shell::ssh::key::rename old_key_name new_key_name
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, the rename command is printed using shell::logger::command_clip.
 
 #### Arguments
 
-* **$1** (string): old_name: The current name of the SSH key file.
-* **$2** (string): new_name: The new name for the SSH key file.
+- **$1** (string): old_name: The current name of the SSH key file.
+- **$2** (string): new_name: The new name for the SSH key file.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::ssh::key::rename::fzf
 
@@ -466,12 +521,11 @@ shell::ssh::key::rename::fzf
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, the rename command is printed using shell::logger::command_clip.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
-
+- **0**: Success.
+- **1**: The operation failed.

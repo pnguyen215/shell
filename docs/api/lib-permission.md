@@ -10,11 +10,11 @@ the safe replacement for the old habit of `chmod 777` on config files.
 
 ## Index
 
-* [shell::permission::secure](#shellpermissionsecure)
-* [shell::permission::unlock](#shellpermissionunlock)
-* [shell::permission::set](#shellpermissionset)
-* [shell::permission::set::fzf](#shellpermissionsetfzf)
-* [shell::permission::analyze](#shellpermissionanalyze)
+- [shell::permission::secure](#shellpermissionsecure)
+- [shell::permission::unlock](#shellpermissionunlock)
+- [shell::permission::set](#shellpermissionset)
+- [shell::permission::set::fzf](#shellpermissionsetfzf)
+- [shell::permission::analyze](#shellpermissionanalyze)
 
 ### shell::permission::secure
 
@@ -30,24 +30,24 @@ shell::permission::secure "$SHELL_KEY_FILE"
 
 #### Options
 
-* **-h** | **--help**
+- **-h** | **--help**
 
   Show help and return.
 
-* **-n** | **--dry-run**
+- **-n** | **--dry-run**
 
   Print the command instead of running it.
 
 #### Arguments
 
-* **$1** (string): File or directory.
+- **$1** (string): File or directory.
 
 #### Exit codes
 
-* **0**: Permissions were applied (or already correct, or dry-run printed).
-* **1**: chmod failed.
-* **2**: No path given.
-* **3**: The path does not exist.
+- **0**: Permissions were applied (or already correct, or dry-run printed).
+- **1**: chmod failed.
+- **2**: No path given.
+- **3**: The path does not exist.
 
 ### shell::permission::unlock
 
@@ -64,28 +64,28 @@ shell::permission::unlock ./shared-scratch
 
 #### Options
 
-* **-h** | **--help**
+- **-h** | **--help**
 
   Show help and return.
 
-* **-n** | **--dry-run**
+- **-n** | **--dry-run**
 
   Print the command instead of running it.
 
-* **--sudo**
+- **--sudo**
 
   Run chmod through sudo.
 
 #### Arguments
 
-* **$1** (string): File or directory.
+- **$1** (string): File or directory.
 
 #### Exit codes
 
-* **0**: Permissions applied, already 777, or dry-run printed.
-* **1**: chmod failed.
-* **2**: No path given.
-* **3**: The path does not exist.
+- **0**: Permissions applied, already 777, or dry-run printed.
+- **1**: chmod failed.
+- **2**: No path given.
+- **3**: The path does not exist.
 
 ### shell::permission::set
 
@@ -101,25 +101,25 @@ shell::permission::set ./run.sh owner=read,write,execute group=read,execute othe
 
 #### Options
 
-* **-h** | **--help**
+- **-h** | **--help**
 
   Show help and return.
 
-* **-n** | **--dry-run**
+- **-n** | **--dry-run**
 
   Print the command instead of running it.
 
 #### Arguments
 
-* **$1** (string): File or directory.
-* **...** (string): One or more of owner=<perms> group=<perms> others=<perms>.
+- **$1** (string): File or directory.
+- **...** (string): One or more of owner=<perms> group=<perms> others=<perms>.
 
 #### Exit codes
 
-* **0**: Permissions applied (or dry-run printed).
-* **1**: chmod failed.
-* **2**: Wrong arguments or an unknown class.
-* **3**: The target does not exist.
+- **0**: Permissions applied (or dry-run printed).
+- **1**: chmod failed.
+- **2**: Wrong arguments or an unknown class.
+- **3**: The target does not exist.
 
 ### shell::permission::set::fzf
 
@@ -127,28 +127,28 @@ Pick owner/group/others permissions with fzf and apply them.
 
 #### Options
 
-* **-h** | **--help**
+- **-h** | **--help**
 
   Show help and return.
 
-* **-n** | **--dry-run**
+- **-n** | **--dry-run**
 
   Print the command instead of running it.
 
 #### Arguments
 
-* **$1** (string): File or directory.
+- **$1** (string): File or directory.
 
 #### Exit codes
 
-* **0**: Permissions applied (or dry-run printed).
-* **2**: No target given.
-* **3**: The target does not exist.
-* **9**: The user cancelled a selection.
+- **0**: Permissions applied (or dry-run printed).
+- **2**: No target given.
+- **3**: The target does not exist.
+- **9**: The user cancelled a selection.
 
 #### See also
 
-* [shell::permission::set](#shellpermissionset)
+- [shell::permission::set](#shellpermissionset)
 
 ### shell::permission::analyze
 
@@ -166,30 +166,29 @@ shell::permission::analyze --file ./deploy.sh
 
 #### Options
 
-* **-h** | **--help**
+- **-h** | **--help**
 
   Show help and return.
 
-* **--file \<path\>**
+- **--file \<path\>**
 
   Use the permissions of this file.
 
-* **--debug**
+- **--debug**
 
   Print the parsed components to stderr.
 
 #### Arguments
 
-* **$1** (string): Permission string like -rwxr-xr-x (default: -rw-r--r--).
+- **$1** (string): Permission string like -rwxr-xr-x (default: -rw-r--r--).
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The permissions could not be read.
-* **2**: Bad arguments or malformed permission string.
-* **3**: The file does not exist.
+- **0**: Success.
+- **1**: The permissions could not be read.
+- **2**: Bad arguments or malformed permission string.
+- **3**: The file does not exist.
 
 #### Output on stdout
 
-* The explanation.
-
+- The explanation.

@@ -16,7 +16,7 @@ project structure.
 
 ## Index
 
-* [shell::java::gitignore::add](#shelljavagitignoreadd)
+- [shell::java::gitignore::add](#shelljavagitignoreadd)
 
 ### shell::java::gitignore::add
 
@@ -40,5 +40,4 @@ _Function has no arguments._
 
 #### Exit codes
 
-* **0**: Success.
-
+- **0**: Success.

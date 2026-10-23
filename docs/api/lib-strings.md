@@ -11,14 +11,14 @@ backslashes (and behaves differently in bash, zsh and sh).
 
 ## Index
 
-* [shell::strings::trim](#shellstringstrim)
-* [shell::strings::sanitize::upper](#shellstringssanitizeupper)
-* [shell::strings::sanitize::lower](#shellstringssanitizelower)
-* [shell::strings::sanitize::capitalize](#shellstringssanitizecapitalize)
-* [shell::strings::sanitize::lower_preserve](#shellstringssanitizelower_preserve)
-* [shell::strings::format::camel](#shellstringsformatcamel)
-* [shell::strings::format::title](#shellstringsformattitle)
-* [shell::strings::sanitize::escape](#shellstringssanitizeescape)
+- [shell::strings::trim](#shellstringstrim)
+- [shell::strings::sanitize::upper](#shellstringssanitizeupper)
+- [shell::strings::sanitize::lower](#shellstringssanitizelower)
+- [shell::strings::sanitize::capitalize](#shellstringssanitizecapitalize)
+- [shell::strings::sanitize::lower_preserve](#shellstringssanitizelower_preserve)
+- [shell::strings::format::camel](#shellstringsformatcamel)
+- [shell::strings::format::title](#shellstringsformattitle)
+- [shell::strings::sanitize::escape](#shellstringssanitizeescape)
 
 ### shell::strings::trim
 
@@ -33,15 +33,15 @@ shell::strings::trim "   hello  "    # -> hello
 
 #### Arguments
 
-* **$1** (string): Text to trim.
+- **$1** (string): Text to trim.
 
 #### Exit codes
 
-* **0**: Always.
+- **0**: Always.
 
 #### Output on stdout
 
-* The trimmed text.
+- The trimmed text.
 
 ### shell::strings::sanitize::upper
 
@@ -56,15 +56,15 @@ shell::strings::sanitize::upper "my var-name"   # -> MY_VAR_NAME
 
 #### Arguments
 
-* **$1** (string): Text to convert.
+- **$1** (string): Text to convert.
 
 #### Exit codes
 
-* **0**: Always.
+- **0**: Always.
 
 #### Output on stdout
 
-* The sanitised, upper-case text.
+- The sanitised, upper-case text.
 
 ### shell::strings::sanitize::lower
 
@@ -78,15 +78,15 @@ shell::strings::sanitize::lower "My Var-Name"   # -> my_var_name
 
 #### Arguments
 
-* **$1** (string): Text to convert.
+- **$1** (string): Text to convert.
 
 #### Exit codes
 
-* **0**: Always.
+- **0**: Always.
 
 #### Output on stdout
 
-* The sanitised, lower-case text.
+- The sanitised, lower-case text.
 
 ### shell::strings::sanitize::capitalize
 
@@ -101,15 +101,15 @@ shell::strings::sanitize::capitalize "hello world"   # -> Hello_world
 
 #### Arguments
 
-* **$1** (string): Text to convert.
+- **$1** (string): Text to convert.
 
 #### Exit codes
 
-* **0**: Always.
+- **0**: Always.
 
 #### Output on stdout
 
-* The sanitised text (empty for empty input).
+- The sanitised text (empty for empty input).
 
 ### shell::strings::sanitize::lower_preserve
 
@@ -123,15 +123,15 @@ shell::strings::sanitize::lower_preserve "Hello, World"   # -> hello_world
 
 #### Arguments
 
-* **$1** (string): Text to convert.
+- **$1** (string): Text to convert.
 
 #### Exit codes
 
-* **0**: Always.
+- **0**: Always.
 
 #### Output on stdout
 
-* The sanitised, lower-case text (empty for empty input).
+- The sanitised, lower-case text (empty for empty input).
 
 ### shell::strings::format::camel
 
@@ -146,15 +146,15 @@ shell::strings::format::camel "my_var name"   # -> MyVarName
 
 #### Arguments
 
-* **$1** (string): Text to convert.
+- **$1** (string): Text to convert.
 
 #### Exit codes
 
-* **0**: Always.
+- **0**: Always.
 
 #### Output on stdout
 
-* The PascalCase text.
+- The PascalCase text.
 
 ### shell::strings::format::title
 
@@ -168,22 +168,22 @@ shell::strings::format::title "hello big world"   # -> Hello Big World
 
 #### Options
 
-* **-h** | **--help**
+- **-h** | **--help**
 
   Show help and return.
 
 #### Arguments
 
-* **$1** (string): Text to convert.
+- **$1** (string): Text to convert.
 
 #### Exit codes
 
-* **0**: Success.
-* **2**: Not exactly one argument was given.
+- **0**: Success.
+- **2**: Not exactly one argument was given.
 
 #### Output on stdout
 
-* The title-cased text.
+- The title-cased text.
 
 ### shell::strings::sanitize::escape
 
@@ -199,13 +199,12 @@ shell::strings::sanitize::escape 'say "hi" / there'
 
 #### Arguments
 
-* **$1** (string): Text to escape.
+- **$1** (string): Text to escape.
 
 #### Exit codes
 
-* **0**: Always.
+- **0**: Always.
 
 #### Output on stdout
 
-* The escaped single-line text (no trailing newline).
-
+- The escaped single-line text (no trailing newline).

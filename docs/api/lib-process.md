@@ -12,7 +12,7 @@ fragile `top | grep | awk` pipeline on macOS.
 
 ## Index
 
-* [shell::process::top_memory](#shellprocesstop_memory)
+- [shell::process::top_memory](#shellprocesstop_memory)
 
 ### shell::process::top_memory
 
@@ -30,24 +30,23 @@ shell::process::top_memory 5
 
 #### Options
 
-* **-h** | **--help**
+- **-h** | **--help**
 
   Show help and return.
 
-* **-n** | **--dry-run**
+- **-n** | **--dry-run**
 
   Print the command instead of running it.
 
 #### Arguments
 
-* **$1** (integer): How many processes to show (default: 10).
+- **$1** (integer): How many processes to show (default: 10).
 
 #### Exit codes
 
-* **0**: Success.
-* **2**: The count is not a positive integer.
+- **0**: Success.
+- **2**: The count is not a positive integer.
 
 #### Output on stdout
 
-* One line per process: PID, user, %MEM, command.
-
+- One line per process: PID, user, %MEM, command.

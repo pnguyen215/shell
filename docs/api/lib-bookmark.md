@@ -9,19 +9,62 @@ Replaces the code that used to run every time the library was sourced.
 
 ## Index
 
-* [shell::bookmark::ensure](#shellbookmarkensure)
-* [shell::bookmark::add](#shellbookmarkadd)
-* [shell::bookmark::remove](#shellbookmarkremove)
-* [shell::bookmark::go](#shellbookmarkgo)
-* [shell::bookmark::list](#shellbookmarklist)
-* [shell::bookmark::list::fzf](#shellbookmarklistfzf)
-* [shell::bookmark::list::up::fzf](#shellbookmarklistupfzf)
-* [shell::bookmark::remove::down::fzf](#shellbookmarkremovedownfzf)
-* [shell::bookmark::remove::fzf](#shellbookmarkremovefzf)
-* [shell::bookmark::rename](#shellbookmarkrename)
-* [shell::bookmark::rename::fzf](#shellbookmarkrenamefzf)
-* [shell::bookmark::rename_dir](#shellbookmarkrename_dir)
-* [shell::bookmark::rename_dir::fzf](#shellbookmarkrename_dirfzf)
+- [lib/bookmark.sh](#libbookmarksh)
+  - [Overview](#overview)
+  - [Index](#index)
+    - [shell::bookmark::ensure](#shellbookmarkensure)
+      - [Exit codes](#exit-codes)
+    - [shell::bookmark::add](#shellbookmarkadd)
+      - [Example](#example)
+      - [Options](#options)
+      - [Arguments](#arguments)
+      - [Exit codes](#exit-codes-1)
+    - [shell::bookmark::remove](#shellbookmarkremove)
+      - [Example](#example-1)
+      - [Arguments](#arguments-1)
+      - [Exit codes](#exit-codes-2)
+    - [shell::bookmark::go](#shellbookmarkgo)
+      - [Example](#example-2)
+      - [Options](#options-1)
+      - [Exit codes](#exit-codes-3)
+    - [shell::bookmark::list](#shellbookmarklist)
+      - [Example](#example-3)
+      - [Options](#options-2)
+      - [Exit codes](#exit-codes-4)
+    - [shell::bookmark::list::fzf](#shellbookmarklistfzf)
+      - [Example](#example-4)
+      - [Options](#options-3)
+      - [Exit codes](#exit-codes-5)
+    - [shell::bookmark::list::up::fzf](#shellbookmarklistupfzf)
+      - [Example](#example-5)
+      - [Options](#options-4)
+      - [Exit codes](#exit-codes-6)
+    - [shell::bookmark::remove::down::fzf](#shellbookmarkremovedownfzf)
+      - [Example](#example-6)
+      - [Options](#options-5)
+      - [Exit codes](#exit-codes-7)
+    - [shell::bookmark::remove::fzf](#shellbookmarkremovefzf)
+      - [Example](#example-7)
+      - [Options](#options-6)
+      - [Exit codes](#exit-codes-8)
+    - [shell::bookmark::rename](#shellbookmarkrename)
+      - [Example](#example-8)
+      - [Options](#options-7)
+      - [Arguments](#arguments-2)
+      - [Exit codes](#exit-codes-9)
+    - [shell::bookmark::rename::fzf](#shellbookmarkrenamefzf)
+      - [Example](#example-9)
+      - [Options](#options-8)
+      - [Exit codes](#exit-codes-10)
+    - [shell::bookmark::rename_dir](#shellbookmarkrename_dir)
+      - [Example](#example-10)
+      - [Options](#options-9)
+      - [Arguments](#arguments-3)
+      - [Exit codes](#exit-codes-11)
+    - [shell::bookmark::rename_dir::fzf](#shellbookmarkrename_dirfzf)
+      - [Example](#example-11)
+      - [Options](#options-10)
+      - [Exit codes](#exit-codes-12)
 
 ### shell::bookmark::ensure
 
@@ -32,8 +75,8 @@ _Function has no arguments._
 
 #### Exit codes
 
-* **0**: The bookmark file exists.
-* **1**: It could not be created.
+- **0**: The bookmark file exists.
+- **1**: It could not be created.
 
 ### shell::bookmark::add
 
@@ -54,22 +97,22 @@ shell::bookmark::add -n project
 
 #### Options
 
-* **-n** | **--dry-run**
+- **-n** | **--dry-run**
 
   Print the planned commands instead of executing them.
 
-* **-h** | **--help**
+- **-h** | **--help**
 
   Show this help message.
 
 #### Arguments
 
-* **$1** (string): bookmark_name: Bookmark name.
+- **$1** (string): bookmark_name: Bookmark name.
 
 #### Exit codes
 
-* **0**: Success.
-* **2**: Invalid or missing arguments.
+- **0**: Success.
+- **2**: Invalid or missing arguments.
 
 ### shell::bookmark::remove
 
@@ -81,6 +124,7 @@ and then replaces the original bookmarks file with the filtered version.
 If the bookmark is not found or removal fails, an error message is displayed.
 
 Notes:
+
 - The bookmarks file is specified by the global variable 'bookmarks_file'.
 
 #### Example
@@ -91,12 +135,12 @@ shell::bookmark::remove
 
 #### Arguments
 
-* **$1** (string): bookmark_name: The name of the bookmark to remove.
+- **$1** (string): bookmark_name: The name of the bookmark to remove.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::bookmark::go
 
@@ -114,14 +158,14 @@ shell::bookmark::go
 
 #### Options
 
-* **-h**
+- **-h**
 
   Optional. Displays this help message.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::bookmark::list
 
@@ -138,13 +182,13 @@ shell::bookmark::list
 
 #### Options
 
-* **-h**
+- **-h**
 
   Optional. Displays this help message.
 
 #### Exit codes
 
-* **0**: Success.
+- **0**: Success.
 
 ### shell::bookmark::list::fzf
 
@@ -166,18 +210,18 @@ shell::bookmark::list::fzf -n      # Dry-run: print the navigation command witho
 
 #### Options
 
-* **-h**
+- **-h**
 
   Optional help flag. Displays this help message.
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, the navigation command is printed instead of executed.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::bookmark::list::up::fzf
 
@@ -199,14 +243,14 @@ shell::bookmark::list::up::fzf -n      # Dry-run: print verification commands wi
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, the verification commands are printed instead of executing checks.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::bookmark::remove::down::fzf
 
@@ -219,6 +263,7 @@ Selected bookmarks are removed from the bookmarks file using a secure temporary 
 In dry-run mode, it prints the commands that would be used to update the bookmarks file.
 
 Notes:
+
 - Uses a secure temporary file created with mktemp to safely update the bookmarks file.
 - Compatible with both macOS and Linux.
 - Inactive bookmarks are those whose associated directories do not exist.
@@ -232,18 +277,18 @@ shell::bookmark::remove::down::fzf -n      # Dry-run: print removal commands wit
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, the removal commands are printed instead of executed.
 
-* **-h**
+- **-h**
 
   Optional help flag. Displays this help message.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::bookmark::remove::fzf
 
@@ -263,18 +308,18 @@ shell::bookmark::remove::fzf -n    # Dry-run: print removal command without exec
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, the removal command is printed instead of executed.
 
-* **-h**
+- **-h**
 
   Optional help flag. Displays this help message.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::bookmark::rename
 
@@ -293,19 +338,19 @@ shell::bookmark::rename -n old_name new_name
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, the rename command is printed instead of executed.
 
 #### Arguments
 
-* **$1** (string): old_name: The current name of the bookmark.
-* **$2** (string): new_name: The new name to assign to the bookmark.
+- **$1** (string): old_name: The current name of the bookmark.
+- **$2** (string): new_name: The new name to assign to the bookmark.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::bookmark::rename::fzf
 
@@ -325,18 +370,18 @@ shell::bookmark::rename::fzf -n    # Dry-run: print rename command without execu
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, the rename command is printed instead of executed.
 
-* **-h**
+- **-h**
 
   Optional help flag. Displays this help message.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::bookmark::rename_dir
 
@@ -355,19 +400,19 @@ shell::bookmark::rename_dir -n my-bookmark new-dir-name
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, the rename command is printed instead of executed.
 
 #### Arguments
 
-* **$1** (string): bookmark_name: The name of the bookmark whose directory should be renamed.
-* **$2** (string): new_dir_name: The new name for the directory.
+- **$1** (string): bookmark_name: The name of the bookmark whose directory should be renamed.
+- **$2** (string): new_dir_name: The new name for the directory.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::bookmark::rename_dir::fzf
 
@@ -387,16 +432,15 @@ shell::bookmark::rename_dir::fzf -n    # Dry-run: print rename command without e
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, the rename command is printed instead of executed.
 
-* **-h**
+- **-h**
 
   Optional help flag. Displays this help message.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
-
+- **0**: Success.
+- **1**: The operation failed.

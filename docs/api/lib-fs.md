@@ -5,30 +5,31 @@ Portable filesystem helpers (create, copy, move, remove, extract, list, browse).
 ## Overview
 
 Differences from the previous common.sh implementation:
-* No implicit `sudo`. Privilege escalation is opt-in (`--sudo`), because
-creating files under $HOME with sudo leaves them root-owned.
-* No implicit `chmod 777`. New files/dirs use the caller's umask, or 600/700
-with `--private` (used for anything holding secrets).
-* Destructive operations refuse obviously dangerous targets (`/`, `$HOME`...).
-* GNU/BSD (Linux/macOS) differences (`sed -i`, `stat`) are hidden here.
+
+- No implicit `sudo`. Privilege escalation is opt-in (`--sudo`), because
+  creating files under $HOME with sudo leaves them root-owned.
+- No implicit `chmod 777`. New files/dirs use the caller's umask, or 600/700
+  with `--private` (used for anything holding secrets).
+- Destructive operations refuse obviously dangerous targets (`/`, `$HOME`...).
+- GNU/BSD (Linux/macOS) differences (`sed -i`, `stat`) are hidden here.
 
 ## Index
 
-* [shell::fs::sed_inplace](#shellfssed_inplace)
-* [shell::fs::stat](#shellfsstat)
-* [shell::fs::mkdir](#shellfsmkdir)
-* [shell::fs::touch](#shellfstouch)
-* [shell::fs::copy](#shellfscopy)
-* [shell::fs::move](#shellfsmove)
-* [shell::fs::remove](#shellfsremove)
-* [shell::fs::unarchive](#shellfsunarchive)
-* [shell::fs::ls](#shellfsls)
-* [shell::link::hard](#shelllinkhard)
-* [shell::directory::open](#shelldirectoryopen)
-* [shell::directory::back](#shelldirectoryback)
-* [shell::file::mime](#shellfilemime)
-* [shell::encode::file::base64](#shellencodefilebase64)
-* [shell::fs::browse](#shellfsbrowse)
+- [shell::fs::sed_inplace](#shellfssed_inplace)
+- [shell::fs::stat](#shellfsstat)
+- [shell::fs::mkdir](#shellfsmkdir)
+- [shell::fs::touch](#shellfstouch)
+- [shell::fs::copy](#shellfscopy)
+- [shell::fs::move](#shellfsmove)
+- [shell::fs::remove](#shellfsremove)
+- [shell::fs::unarchive](#shellfsunarchive)
+- [shell::fs::ls](#shellfsls)
+- [shell::link::hard](#shelllinkhard)
+- [shell::directory::open](#shelldirectoryopen)
+- [shell::directory::back](#shelldirectoryback)
+- [shell::file::mime](#shellfilemime)
+- [shell::encode::file::base64](#shellencodefilebase64)
+- [shell::fs::browse](#shellfsbrowse)
 
 ### shell::fs::sed_inplace
 
@@ -46,14 +47,14 @@ shell::fs::sed_inplace -e '/^#/d' -e 's/ *$//' config.txt
 
 #### Arguments
 
-* **...** (string): sed arguments (scripts/options) followed by the file as the LAST argument.
+- **...** (string): sed arguments (scripts/options) followed by the file as the LAST argument.
 
 #### Exit codes
 
-* **0**: The file was edited.
-* **2**: Fewer than two arguments were given.
-* **3**: The target file does not exist.
-* N sed's exit status on failure.
+- **0**: The file was edited.
+- **2**: Fewer than two arguments were given.
+- **3**: The target file does not exist.
+- N sed's exit status on failure.
 
 ### shell::fs::stat
 
@@ -69,18 +70,18 @@ shell::fs::stat mode ~/.ssh/id_rsa    # -> 600
 
 #### Arguments
 
-* **$1** (string): Attribute: mode (octal, e.g. 644), perms (e.g. -rw-r--r--), size (bytes), mtime (YYYY-MM-DD HH:MM).
-* **$2** (string): File path.
+- **$1** (string): Attribute: mode (octal, e.g. 644), perms (e.g. -rw-r--r--), size (bytes), mtime (YYYY-MM-DD HH:MM).
+- **$2** (string): File path.
 
 #### Exit codes
 
-* **0**: Success.
-* **2**: Unknown attribute or missing path.
-* **3**: The file does not exist.
+- **0**: Success.
+- **2**: Unknown attribute or missing path.
+- **3**: The file does not exist.
 
 #### Output on stdout
 
-* The attribute value.
+- The attribute value.
 
 ### shell::fs::mkdir
 
@@ -97,31 +98,31 @@ shell::fs::mkdir --private "$HOME/.shell-config"
 
 #### Options
 
-* **-h** | **--help**
+- **-h** | **--help**
 
   Show help and return.
 
-* **-n** | **--dry-run**
+- **-n** | **--dry-run**
 
   Print the commands instead of running them.
 
-* **-p** | **--private**
+- **-p** | **--private**
 
   Create with mode 700 (owner only).
 
-* **--sudo**
+- **--sudo**
 
   Retry with sudo when the parent is not writable.
 
 #### Arguments
 
-* **...** (string): Directory paths.
+- **...** (string): Directory paths.
 
 #### Exit codes
 
-* **0**: Every directory exists afterwards.
-* **1**: A directory could not be created.
-* **2**: No path was given.
+- **0**: Every directory exists afterwards.
+- **1**: A directory could not be created.
+- **2**: No path was given.
 
 ### shell::fs::touch
 
@@ -136,27 +137,27 @@ shell::fs::touch --private "$SHELL_KEY_FILE"
 
 #### Options
 
-* **-h** | **--help**
+- **-h** | **--help**
 
   Show help and return.
 
-* **-n** | **--dry-run**
+- **-n** | **--dry-run**
 
   Print the commands instead of running them.
 
-* **-p** | **--private**
+- **-p** | **--private**
 
   Create the file with mode 600 and new parents with 700.
 
 #### Arguments
 
-* **...** (string): File paths.
+- **...** (string): File paths.
 
 #### Exit codes
 
-* **0**: Every file exists afterwards.
-* **1**: A file or its parent could not be created.
-* **2**: No path was given.
+- **0**: Every file exists afterwards.
+- **1**: A file or its parent could not be created.
+- **2**: No path was given.
 
 ### shell::fs::copy
 
@@ -171,25 +172,25 @@ shell::fs::copy source.txt copy1.txt copy2.txt
 
 #### Options
 
-* **-h** | **--help**
+- **-h** | **--help**
 
   Show help and return.
 
-* **-n** | **--dry-run**
+- **-n** | **--dry-run**
 
   Print the commands instead of running them.
 
 #### Arguments
 
-* **$1** (string): Source file.
-* **...** (string): One or more new filenames.
+- **$1** (string): Source file.
+- **...** (string): One or more new filenames.
 
 #### Exit codes
 
-* **0**: Every copy succeeded (or dry-run printed).
-* **1**: At least one copy failed or was skipped.
-* **2**: Fewer than two arguments were given.
-* **3**: The source does not exist.
+- **0**: Every copy succeeded (or dry-run printed).
+- **1**: At least one copy failed or was skipped.
+- **2**: Fewer than two arguments were given.
+- **3**: The source does not exist.
 
 ### shell::fs::move
 
@@ -204,25 +205,25 @@ shell::fs::move /path/to/dest file1.txt file2.txt
 
 #### Options
 
-* **-h** | **--help**
+- **-h** | **--help**
 
   Show help and return.
 
-* **-n** | **--dry-run**
+- **-n** | **--dry-run**
 
   Print the commands instead of running them.
 
 #### Arguments
 
-* **$1** (string): Destination directory (must exist).
-* **...** (string): Files or directories to move.
+- **$1** (string): Destination directory (must exist).
+- **...** (string): Files or directories to move.
 
 #### Exit codes
 
-* **0**: Every move succeeded (or dry-run printed).
-* **1**: At least one move failed or was skipped.
-* **2**: Fewer than two arguments were given.
-* **3**: The destination directory does not exist.
+- **0**: Every move succeeded (or dry-run printed).
+- **1**: At least one move failed or was skipped.
+- **2**: Fewer than two arguments were given.
+- **3**: The destination directory does not exist.
 
 ### shell::fs::remove
 
@@ -239,27 +240,27 @@ shell::fs::remove -n --sudo /var/tmp/stale
 
 #### Options
 
-* **-h** | **--help**
+- **-h** | **--help**
 
   Show help and return.
 
-* **-n** | **--dry-run**
+- **-n** | **--dry-run**
 
   Print the commands instead of running them.
 
-* **--sudo**
+- **--sudo**
 
   Run rm through sudo.
 
 #### Arguments
 
-* **...** (string): Paths to delete.
+- **...** (string): Paths to delete.
 
 #### Exit codes
 
-* **0**: Every path was removed (or dry-run printed).
-* **1**: A removal failed.
-* **2**: No path given, or a path was refused as unsafe.
+- **0**: Every path was removed (or dry-run printed).
+- **1**: A removal failed.
+- **2**: No path given, or a path was refused as unsafe.
 
 ### shell::fs::unarchive
 
@@ -276,24 +277,24 @@ shell::fs::unarchive release.tar.gz
 
 #### Options
 
-* **-h** | **--help**
+- **-h** | **--help**
 
   Show help and return.
 
-* **-n** | **--dry-run**
+- **-n** | **--dry-run**
 
   Print the command instead of running it.
 
 #### Arguments
 
-* **$1** (string): Archive file.
+- **$1** (string): Archive file.
 
 #### Exit codes
 
-* **0**: Extracted (or dry-run printed).
-* **1**: The extractor failed.
-* **2**: Wrong arguments or unsupported extension.
-* **3**: The archive or its extractor is missing.
+- **0**: Extracted (or dry-run printed).
+- **1**: The extractor failed.
+- **2**: Wrong arguments or unsupported extension.
+- **3**: The archive or its extractor is missing.
 
 ### shell::fs::ls
 
@@ -309,27 +310,27 @@ shell::fs::ls -al
 
 #### Options
 
-* **-h** | **--help**
+- **-h** | **--help**
 
   Show help and return.
 
-* **-a**
+- **-a**
 
   Include hidden entries.
 
-* **-l**
+- **-l**
 
   Long format: permissions, size, modified time.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The directory could not be read.
-* **2**: Unknown option.
+- **0**: Success.
+- **1**: The directory could not be read.
+- **2**: Unknown option.
 
 #### Output on stdout
 
-* A column-aligned listing. `[d]` directory, `[e]` executable, `[f]` file.
+- A column-aligned listing. `[d]` directory, `[e]` executable, `[f]` file.
 
 ### shell::link::hard
 
@@ -346,24 +347,24 @@ shell::link::hard            # reads ./.link
 
 #### Options
 
-* **-h** | **--help**
+- **-h** | **--help**
 
   Show help and return.
 
-* **-n** | **--dry-run**
+- **-n** | **--dry-run**
 
   Print the commands instead of running them.
 
 #### Arguments
 
-* **$1** (string): Source file (omit both arguments to read ./.link).
-* **$2** (string): Destination path.
+- **$1** (string): Source file (omit both arguments to read ./.link).
+- **$2** (string): Destination path.
 
 #### Exit codes
 
-* **0**: Every link was created (or dry-run printed).
-* **1**: A source is missing or `ln` failed.
-* **2**: Invalid arguments, malformed `.link` entry, or destination exists.
+- **0**: Every link was created (or dry-run printed).
+- **1**: A source is missing or `ln` failed.
+- **2**: Invalid arguments, malformed `.link` entry, or destination exists.
 
 ### shell::directory::open
 
@@ -378,20 +379,20 @@ shell::directory::open ~/Downloads
 
 #### Options
 
-* **-h** | **--help**
+- **-h** | **--help**
 
   Show help and return.
 
 #### Arguments
 
-* **$1** (string): Directory (default: current directory).
+- **$1** (string): Directory (default: current directory).
 
 #### Exit codes
 
-* **0**: The file manager was launched.
-* **1**: The directory is missing or the launcher failed.
-* **2**: More than one argument.
-* **4**: Unsupported operating system.
+- **0**: The file manager was launched.
+- **1**: The directory is missing or the launcher failed.
+- **2**: More than one argument.
+- **4**: Unsupported operating system.
 
 ### shell::directory::back
 
@@ -399,15 +400,15 @@ Change to the previous working directory (`cd -`).
 
 #### Options
 
-* **-h** | **--help**
+- **-h** | **--help**
 
   Show help and return.
 
 #### Exit codes
 
-* **0**: Directory changed.
-* **1**: There is no previous directory, or it is not accessible.
-* **2**: Arguments were given.
+- **0**: Directory changed.
+- **1**: There is no previous directory, or it is not accessible.
+- **2**: Arguments were given.
 
 ### shell::file::mime
 
@@ -425,23 +426,23 @@ shell::file::mime report.pdf   # -> application/pdf
 
 #### Options
 
-* **-h** | **--help**
+- **-h** | **--help**
 
   Show help and return.
 
 #### Arguments
 
-* **$1** (string): File path.
+- **$1** (string): File path.
 
 #### Exit codes
 
-* **0**: Success.
-* **2**: No path given.
-* **3**: The file does not exist.
+- **0**: Success.
+- **2**: No path given.
+- **3**: The file does not exist.
 
 #### Output on stdout
 
-* The MIME type.
+- The MIME type.
 
 ### shell::encode::file::base64
 
@@ -457,28 +458,28 @@ b64="$(shell::encode::file::base64 logo.png)"
 
 #### Options
 
-* **-h** | **--help**
+- **-h** | **--help**
 
   Show help and return.
 
-* **-n** | **--dry-run**
+- **-n** | **--dry-run**
 
   Print the command instead of running it.
 
 #### Arguments
 
-* **$1** (string): File path.
+- **$1** (string): File path.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: Encoding failed.
-* **2**: Not exactly one path was given.
-* **3**: The file does not exist.
+- **0**: Success.
+- **1**: Encoding failed.
+- **2**: Not exactly one path was given.
+- **3**: The file does not exist.
 
 #### Output on stdout
 
-* The Base64 text without newlines.
+- The Base64 text without newlines.
 
 ### shell::fs::browse
 
@@ -496,22 +497,21 @@ shell::fs::browse -n .
 
 #### Options
 
-* **-h** | **--help**
+- **-h** | **--help**
 
   Show help and return.
 
-* **-n** | **--dry-run**
+- **-n** | **--dry-run**
 
   Print the chosen command instead of running it.
 
 #### Arguments
 
-* **$1** (string): Directory whose files are offered (default: current directory).
+- **$1** (string): Directory whose files are offered (default: current directory).
 
 #### Exit codes
 
-* **0**: The action completed.
-* **1**: The action failed.
-* **3**: The directory does not exist or holds no files.
-* **9**: The user cancelled a selection.
-
+- **0**: The action completed.
+- **1**: The action failed.
+- **3**: The directory does not exist or holds no files.
+- **9**: The user cancelled a selection.

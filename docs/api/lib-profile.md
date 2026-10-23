@@ -7,26 +7,86 @@ Profile management built on the INI store.
 Returns the path to the profile directory for a given profile name.
 
 Constructs and returns the path to the profile directory within the workspace,
-located at $SHELL_CONFIG_DIR/workspace.
+located at `$SHELL_CONFIG_DIR/workspace`.
 
 ## Index
 
-* [shell::profile::path](#shellprofilepath)
-* [shell::profile::add](#shellprofileadd)
-* [shell::profile::read](#shellprofileread)
-* [shell::profile::update](#shellprofileupdate)
-* [shell::profile::remove](#shellprofileremove)
-* [shell::profile::get](#shellprofileget)
-* [shell::profile::rename](#shellprofilerename)
-* [shell::profile::conf::add](#shellprofileconfadd)
-* [shell::profile::conf::get](#shellprofileconfget)
-* [shell::profile::conf::value](#shellprofileconfvalue)
-* [shell::profile::conf::remove](#shellprofileconfremove)
-* [shell::profile::conf::update](#shellprofileconfupdate)
-* [shell::profile::conf::exists](#shellprofileconfexists)
-* [shell::profile::conf::rename](#shellprofileconfrename)
-* [shell::profile::conf::clone](#shellprofileconfclone)
-* [shell::profile::conf::list](#shellprofileconflist)
+- [lib/profile.sh](#libprofilesh)
+  - [Overview](#overview)
+  - [Index](#index)
+    - [shell::profile::path](#shellprofilepath)
+      - [Example](#example)
+      - [Arguments](#arguments)
+      - [Exit codes](#exit-codes)
+    - [shell::profile::add](#shellprofileadd)
+      - [Example](#example-1)
+      - [Options](#options)
+      - [Arguments](#arguments-1)
+      - [Exit codes](#exit-codes-1)
+    - [shell::profile::read](#shellprofileread)
+      - [Example](#example-2)
+      - [Options](#options-1)
+      - [Arguments](#arguments-2)
+      - [Exit codes](#exit-codes-2)
+    - [shell::profile::update](#shellprofileupdate)
+      - [Example](#example-3)
+      - [Options](#options-2)
+      - [Arguments](#arguments-3)
+      - [Exit codes](#exit-codes-3)
+    - [shell::profile::remove](#shellprofileremove)
+      - [Example](#example-4)
+      - [Options](#options-3)
+      - [Arguments](#arguments-4)
+      - [Exit codes](#exit-codes-4)
+    - [shell::profile::get](#shellprofileget)
+      - [Example](#example-5)
+      - [Arguments](#arguments-5)
+      - [Exit codes](#exit-codes-5)
+    - [shell::profile::rename](#shellprofilerename)
+      - [Example](#example-6)
+      - [Options](#options-4)
+      - [Arguments](#arguments-6)
+      - [Exit codes](#exit-codes-6)
+    - [shell::profile::conf::add](#shellprofileconfadd)
+      - [Example](#example-7)
+      - [Options](#options-5)
+      - [Arguments](#arguments-7)
+      - [Exit codes](#exit-codes-7)
+    - [shell::profile::conf::get](#shellprofileconfget)
+      - [Example](#example-8)
+      - [Arguments](#arguments-8)
+      - [Exit codes](#exit-codes-8)
+    - [shell::profile::conf::value](#shellprofileconfvalue)
+      - [Example](#example-9)
+      - [Arguments](#arguments-9)
+      - [Exit codes](#exit-codes-9)
+    - [shell::profile::conf::remove](#shellprofileconfremove)
+      - [Example](#example-10)
+      - [Arguments](#arguments-10)
+      - [Exit codes](#exit-codes-10)
+    - [shell::profile::conf::update](#shellprofileconfupdate)
+      - [Example](#example-11)
+      - [Options](#options-6)
+      - [Arguments](#arguments-11)
+      - [Exit codes](#exit-codes-11)
+    - [shell::profile::conf::exists](#shellprofileconfexists)
+      - [Example](#example-12)
+      - [Arguments](#arguments-12)
+      - [Exit codes](#exit-codes-12)
+    - [shell::profile::conf::rename](#shellprofileconfrename)
+      - [Example](#example-13)
+      - [Options](#options-7)
+      - [Arguments](#arguments-13)
+      - [Exit codes](#exit-codes-13)
+    - [shell::profile::conf::clone](#shellprofileconfclone)
+      - [Example](#example-14)
+      - [Options](#options-8)
+      - [Arguments](#arguments-14)
+      - [Exit codes](#exit-codes-14)
+    - [shell::profile::conf::list](#shellprofileconflist)
+      - [Example](#example-15)
+      - [Options](#options-9)
+      - [Exit codes](#exit-codes-15)
 
 ### shell::profile::path
 
@@ -43,12 +103,12 @@ profile_dir=$(shell::profile::path "my_profile")  # Returns "$SHELL_CONFIG_DIR/w
 
 #### Arguments
 
-* **$1** (string): profile_name: The name of the profile.
+- **$1** (string): profile_name: The name of the profile.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::profile::add
 
@@ -66,18 +126,18 @@ shell::profile::add -n my_profile      # Prints the commands without executing t
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, commands are printed using shell::logger::command_clip instead of executed.
 
 #### Arguments
 
-* **$1** (string): profile_name: The name of the profile to create.
+- **$1** (string): profile_name: The name of the profile to create.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::profile::read
 
@@ -95,18 +155,18 @@ shell::profile::read -n my_profile      # Prints the sourcing command without ex
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, the command is printed using shell::logger::command_clip instead of executed.
 
 #### Arguments
 
-* **$1** (string): profile_name: The name of the profile to read.
+- **$1** (string): profile_name: The name of the profile to read.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::profile::update
 
@@ -124,18 +184,18 @@ shell::profile::update -n my_profile      # Prints the editor command without ex
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, the command is printed using shell::logger::command_clip instead of executed.
 
 #### Arguments
 
-* **$1** (string): profile_name: The name of the profile to update.
+- **$1** (string): profile_name: The name of the profile to update.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::profile::remove
 
@@ -153,18 +213,18 @@ shell::profile::remove -n my_profile      # Prints the removal command without e
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, the command is printed using shell::logger::command_clip instead of executed.
 
 #### Arguments
 
-* **$1** (string): profile_name: The name of the profile to remove.
+- **$1** (string): profile_name: The name of the profile to remove.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::profile::get
 
@@ -181,12 +241,12 @@ shell::profile::get my_profile         # Displays the contents of profile.conf f
 
 #### Arguments
 
-* **$1** (string): profile_name: The name of the profile to display.
+- **$1** (string): profile_name: The name of the profile to display.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::profile::rename
 
@@ -204,19 +264,19 @@ shell::profile::rename -n old_profile new_profile      # Prints the rename comma
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, the command is printed using shell::logger::command_clip instead of executed.
 
 #### Arguments
 
-* **$1** (string): old_name: The current name of the profile.
-* **$2** (string): new_name: The new name for the profile.
+- **$1** (string): old_name: The current name of the profile.
+- **$2** (string): new_name: The new name for the profile.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::profile::conf::add
 
@@ -237,20 +297,20 @@ shell::profile::conf::add -n my_profile my_setting "some secret value"      # Pr
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, the command is printed using shell::logger::command_clip instead of executed.
 
 #### Arguments
 
-* **$1** (string): profile_name: The name of the profile.
-* **$2** (string): key: The configuration key.
-* **$3** (string): value: The configuration value to be encoded and saved.
+- **$1** (string): profile_name: The name of the profile.
+- **$2** (string): key: The configuration key.
+- **$3** (string): value: The configuration value to be encoded and saved.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::profile::conf::get
 
@@ -270,12 +330,12 @@ shell::profile::conf::get -n my_profile       # Dry-run mode: prints the command
 
 #### Arguments
 
-* **$1** (string): profile_name: The name of the configuration profile.
+- **$1** (string): profile_name: The name of the configuration profile.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::profile::conf::value
 
@@ -295,13 +355,13 @@ shell::profile::conf::value -n my_profile API_KEY   # Dry-run: prints commands w
 
 #### Arguments
 
-* **$1** (string): profile_name: The name of the configuration profile.
-* **$2** (string): key: The configuration key whose value will be retrieved.
+- **$1** (string): profile_name: The name of the configuration profile.
+- **$2** (string): key: The configuration key whose value will be retrieved.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::profile::conf::remove
 
@@ -322,12 +382,12 @@ shell::profile::conf::remove -n my_profile   # Dry-run: prints the removal comma
 
 #### Arguments
 
-* **$1** (string): profile_name: The name of the configuration profile.
+- **$1** (string): profile_name: The name of the configuration profile.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::profile::conf::update
 
@@ -346,18 +406,18 @@ shell::profile::conf::update -n my_profile   # dry-run mode
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, the update command is printed using shell::logger::command_clip without executing.
 
 #### Arguments
 
-* **$1** (string): profile_name: The name of the profile to update.
+- **$1** (string): profile_name: The name of the profile to update.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::profile::conf::exists
 
@@ -375,13 +435,13 @@ shell::profile::conf::exists my_profile my_key
 
 #### Arguments
 
-* **$1** (string): profile_name: The name of the profile.
-* **$2** (string): key: The configuration key to search for.
+- **$1** (string): profile_name: The name of the profile.
+- **$2** (string): key: The configuration key to search for.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::profile::conf::rename
 
@@ -402,18 +462,18 @@ shell::profile::conf::rename -n my_profile   # dry-run mode
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, prints the sed command using shell::logger::command_clip without executing.
 
 #### Arguments
 
-* **$1** (string): profile_name: The name of the profile whose key should be renamed.
+- **$1** (string): profile_name: The name of the profile whose key should be renamed.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::profile::conf::clone
 
@@ -433,25 +493,25 @@ shell::profile::conf::clone my_profile backup_profile   # Clones profile.conf fr
 
 #### Options
 
-* **-n**
+- **-n**
 
   (Optional) Dry-run flag. If provided, the command is printed but not executed.
 
 #### Arguments
 
-* **$1** (string): source_profile: The name of the source profile.
-* **$2** (string): destination_profile: The name of the destination profile.
+- **$1** (string): source_profile: The name of the source profile.
+- **$2** (string): destination_profile: The name of the destination profile.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::profile::conf::list
 
 Lists all available configuration profiles in the workspace.
 
-This function checks that the workspace directory ($SHELL_CONFIG_DIR/workspace) exists.
+This function checks that the workspace directory (`$SHELL_CONFIG_DIR/workspace`) exists.
 It then finds all subdirectories (each representing a profile) and prints their names.
 If no profiles are found, an appropriate message is displayed.
 
@@ -463,12 +523,11 @@ shell::profile::conf::list       # Displays the names of all profiles in the wor
 
 #### Options
 
-* **-h**
+- **-h**
 
   Optional. Displays this help message.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
-
+- **0**: Success.
+- **1**: The operation failed.

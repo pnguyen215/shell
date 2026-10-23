@@ -8,9 +8,9 @@ Print the goto version.
 
 ## Index
 
-* [shell::goto::version](#shellgotoversion)
-* [shell::goto::usage](#shellgotousage)
-* [shell::goto::run](#shellgotorun)
+- [shell::goto::version](#shellgotoversion)
+- [shell::goto::usage](#shellgotousage)
+- [shell::goto::run](#shellgotorun)
 
 ### shell::goto::version
 
@@ -20,11 +20,11 @@ _Function has no arguments._
 
 #### Exit codes
 
-* **0**: Always.
+- **0**: Always.
 
 #### Output on stdout
 
-* "goto v0.0.1".
+- "goto v0.0.1".
 
 ### shell::goto::usage
 
@@ -34,11 +34,11 @@ _Function has no arguments._
 
 #### Exit codes
 
-* **0**: Always.
+- **0**: Always.
 
 #### Output on stdout
 
-* The command list.
+- The command list.
 
 ### shell::goto::run
 
@@ -56,32 +56,31 @@ shell::goto back
 
 #### Options
 
-* **-s** | **-b**
+- **-s** | **-b**
 
   Save the current directory as a bookmark (needs a name).
 
-* **-d**
+- **-d**
 
   Delete a bookmark (needs a name).
 
-* **-l** | **--list**
+- **-l** | **--list**
 
   List bookmarks (`-list` and `-all` are accepted too).
 
-* **-v** | **--version**
+- **-v** | **--version**
 
   Show the version (`-ver` is accepted too).
 
-* **-h |**
+- **-h |**
 
   help Show the command reference.
 
 #### Arguments
 
-* **$1** (string): A bookmark name to jump to, or `back`.
+- **$1** (string): A bookmark name to jump to, or `back`.
 
 #### Exit codes
 
-* **0**: Success.
-* **2**: A command that needs a bookmark name did not get one.
-
+- **0**: Success.
+- **2**: A command that needs a bookmark name did not get one.

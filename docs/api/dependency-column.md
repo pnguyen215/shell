@@ -6,17 +6,23 @@ Ensure `column` is installed (column formatter used by shell::fs::ls).
 
 Make sure `column` is available, installing it when allowed.
 Thin wrapper around shell::dependency::ensure; see that function for the
-install policy (SHELL_AUTO_INSTALL_DEPS).
+install policy (`SHELL_AUTO_INSTALL_DEPS`).
 
 ## Index
 
-- [shell::dependency::column::ensure](#shelldependencycolumnensure)
+- [dependency/column.sh](#dependencycolumnsh)
+  - [Overview](#overview)
+  - [Index](#index)
+    - [shell::dependency::column::ensure](#shelldependencycolumnensure)
+      - [Example](#example)
+      - [Exit codes](#exit-codes)
+      - [See also](#see-also)
 
 ### shell::dependency::column::ensure
 
 Make sure `column` is available, installing it when allowed.
 Thin wrapper around shell::dependency::ensure; see that function for the
-install policy (SHELL_AUTO_INSTALL_DEPS).
+install policy (`SHELL_AUTO_INSTALL_DEPS`).
 
 #### Example
 

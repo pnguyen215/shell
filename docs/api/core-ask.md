@@ -4,26 +4,26 @@ Interactive prompts: yes/no, text, secret, number, path and menus.
 
 ## Overview
 
-All prompts write the *question* to stderr and the *answer* to stdout, so
+All prompts write the _question_ to stderr and the _answer_ to stdout, so
 `answer="$(shell::ask::text "Name?")"` captures only the answer.
 
 Cancelling (ESC in a menu, Ctrl-D / EOF in a text prompt) returns
-RETURN_CANCELLED. Earlier versions looped forever in those cases, which
+`RETURN_CANCELLED`. Earlier versions looped forever in those cases, which
 made it impossible to abort - and hung any non-interactive caller.
 
 ## Index
 
-* [shell::ask::reply](#shellaskreply)
-* [shell::ask::deny](#shellaskdeny)
-* [shell::ask::accept](#shellaskaccept)
-* [shell::ask::text](#shellasktext)
-* [shell::ask::password](#shellaskpassword)
-* [shell::ask::number](#shellasknumber)
-* [shell::ask::path](#shellaskpath)
-* [shell::ask::option](#shellaskoption)
-* [shell::ask::option::value](#shellaskoptionvalue)
-* [shell::ask::options](#shellaskoptions)
-* [shell::ask::options::values](#shellaskoptionsvalues)
+- [shell::ask::reply](#shellaskreply)
+- [shell::ask::deny](#shellaskdeny)
+- [shell::ask::accept](#shellaskaccept)
+- [shell::ask::text](#shellasktext)
+- [shell::ask::password](#shellaskpassword)
+- [shell::ask::number](#shellasknumber)
+- [shell::ask::path](#shellaskpath)
+- [shell::ask::option](#shellaskoption)
+- [shell::ask::option::value](#shellaskoptionvalue)
+- [shell::ask::options](#shellaskoptions)
+- [shell::ask::options::values](#shellaskoptionsvalues)
 
 ### shell::ask::reply
 
@@ -37,23 +37,23 @@ Ask a yes/no question with an fzf menu and print the answer.
 
 #### Options
 
-* **-h** | **--help**
+- **-h** | **--help**
 
   Show help and return.
 
 #### Arguments
 
-* **$1** (string): The question.
+- **$1** (string): The question.
 
 #### Exit codes
 
-* **0**: An answer was chosen.
-* **2**: The question is empty.
-* **9**: The user cancelled (ESC).
+- **0**: An answer was chosen.
+- **2**: The question is empty.
+- **9**: The user cancelled (ESC).
 
 #### Output on stdout
 
-* "yes" or "no".
+- "yes" or "no".
 
 ### shell::ask::deny
 
@@ -62,20 +62,20 @@ Reads naturally in guard clauses: `shell::ask::deny "Abort?" && return`.
 
 #### Options
 
-* **-h** | **--help**
+- **-h** | **--help**
 
   Show help and return.
 
 #### Arguments
 
-* **$1** (string): The question.
+- **$1** (string): The question.
 
 #### Exit codes
 
-* **0**: The user answered no (denied).
-* **1**: The user answered yes.
-* **2**: The question is empty.
-* **9**: Input ended (EOF).
+- **0**: The user answered no (denied).
+- **1**: The user answered yes.
+- **2**: The question is empty.
+- **9**: Input ended (EOF).
 
 ### shell::ask::accept
 
@@ -91,20 +91,20 @@ if shell::ask::accept "Continue?"; then echo "go"; fi
 
 #### Options
 
-* **-h** | **--help**
+- **-h** | **--help**
 
   Show help and return.
 
 #### Arguments
 
-* **$1** (string): The question.
+- **$1** (string): The question.
 
 #### Exit codes
 
-* **0**: The user answered yes.
-* **1**: The user answered no.
-* **2**: The question is empty.
-* **9**: Input ended (EOF).
+- **0**: The user answered yes.
+- **1**: The user answered no.
+- **2**: The question is empty.
+- **9**: Input ended (EOF).
 
 ### shell::ask::text
 
@@ -118,23 +118,23 @@ name="$(shell::ask::text "Project name?")"
 
 #### Options
 
-* **-h** | **--help**
+- **-h** | **--help**
 
   Show help and return.
 
 #### Arguments
 
-* **$1** (string): The question.
+- **$1** (string): The question.
 
 #### Exit codes
 
-* **0**: A value was entered.
-* **2**: The question is empty.
-* **9**: Input ended (EOF).
+- **0**: A value was entered.
+- **2**: The question is empty.
+- **9**: Input ended (EOF).
 
 #### Output on stdout
 
-* The trimmed text.
+- The trimmed text.
 
 ### shell::ask::password
 
@@ -142,23 +142,23 @@ Prompt for a secret (input is not echoed).
 
 #### Options
 
-* **-h** | **--help**
+- **-h** | **--help**
 
   Show help and return.
 
 #### Arguments
 
-* **$1** (string): The question.
+- **$1** (string): The question.
 
 #### Exit codes
 
-* **0**: A value was entered.
-* **2**: The question is empty.
-* **9**: Input ended (EOF).
+- **0**: A value was entered.
+- **2**: The question is empty.
+- **9**: Input ended (EOF).
 
 #### Output on stdout
 
-* The trimmed secret.
+- The trimmed secret.
 
 ### shell::ask::number
 
@@ -166,23 +166,23 @@ Prompt for a number (integer or decimal, optionally negative).
 
 #### Options
 
-* **-h** | **--help**
+- **-h** | **--help**
 
   Show help and return.
 
 #### Arguments
 
-* **$1** (string): The question.
+- **$1** (string): The question.
 
 #### Exit codes
 
-* **0**: A valid number was entered.
-* **2**: The question is empty.
-* **9**: Input ended (EOF).
+- **0**: A valid number was entered.
+- **2**: The question is empty.
+- **9**: Input ended (EOF).
 
 #### Output on stdout
 
-* The number as typed.
+- The number as typed.
 
 ### shell::ask::path
 
@@ -197,43 +197,43 @@ dir="$(shell::ask::path --dir --writable "Output directory?")"
 
 #### Options
 
-* **-h** | **--help**
+- **-h** | **--help**
 
   Show help and return.
 
-* **--exists**
+- **--exists**
 
   The path must exist.
 
-* **--dir**
+- **--dir**
 
   The path must be a directory (implies --exists).
 
-* **--file**
+- **--file**
 
   The path must be a regular file (implies --exists).
 
-* **--writable**
+- **--writable**
 
   The path must be writable.
 
-* **--readable**
+- **--readable**
 
   The path must be readable.
 
 #### Arguments
 
-* **$1** (string): The question.
+- **$1** (string): The question.
 
 #### Exit codes
 
-* **0**: A valid path was entered.
-* **2**: Unknown option or empty question.
-* **9**: Input ended (EOF).
+- **0**: A valid path was entered.
+- **2**: Unknown option or empty question.
+- **9**: Input ended (EOF).
 
 #### Output on stdout
 
-* The validated path (with `~` expanded).
+- The validated path (with `~` expanded).
 
 ### shell::ask::option
 
@@ -247,23 +247,23 @@ env="$(shell::ask::option dev staging prod)" || return
 
 #### Options
 
-* **-h** | **--help**
+- **-h** | **--help**
 
   Show help and return.
 
 #### Arguments
 
-* **...** (string): The choices.
+- **...** (string): The choices.
 
 #### Exit codes
 
-* **0**: An entry was chosen.
-* **2**: No choices were given.
-* **9**: The user cancelled (ESC).
+- **0**: An entry was chosen.
+- **2**: No choices were given.
+- **9**: The user cancelled (ESC).
 
 #### Output on stdout
 
-* The chosen entry.
+- The chosen entry.
 
 ### shell::ask::option::value
 
@@ -278,23 +278,23 @@ port="$(shell::ask::option::value "HTTP:80" "HTTPS:443")"
 
 #### Options
 
-* **-h** | **--help**
+- **-h** | **--help**
 
   Show help and return.
 
 #### Arguments
 
-* **...** (string): Entries in the form `label:value`.
+- **...** (string): Entries in the form `label:value`.
 
 #### Exit codes
 
-* **0**: An entry was chosen.
-* **2**: No entries were given.
-* **9**: The user cancelled (ESC).
+- **0**: An entry was chosen.
+- **2**: No entries were given.
+- **9**: The user cancelled (ESC).
 
 #### Output on stdout
 
-* The value belonging to the chosen label.
+- The value belonging to the chosen label.
 
 ### shell::ask::options
 
@@ -308,22 +308,22 @@ picks="$(shell::ask::options alpha beta gamma)"
 
 #### Options
 
-* **-h** | **--help**
+- **-h** | **--help**
 
   Show help and return.
 
 #### Arguments
 
-* **...** (string): The choices.
+- **...** (string): The choices.
 
 #### Exit codes
 
-* **0**: Zero or more entries were chosen.
-* **2**: No choices were given.
+- **0**: Zero or more entries were chosen.
+- **2**: No choices were given.
 
 #### Output on stdout
 
-* The chosen entries, separated by single spaces (empty if none).
+- The chosen entries, separated by single spaces (empty if none).
 
 ### shell::ask::options::values
 
@@ -331,20 +331,19 @@ Choose several `label:value` entries; print the values.
 
 #### Options
 
-* **-h** | **--help**
+- **-h** | **--help**
 
   Show help and return.
 
 #### Arguments
 
-* **...** (string): Entries in the form `label:value`.
+- **...** (string): Entries in the form `label:value`.
 
 #### Exit codes
 
-* **0**: Zero or more entries were chosen.
-* **2**: No entries were given.
+- **0**: Zero or more entries were chosen.
+- **2**: No entries were given.
 
 #### Output on stdout
 
-* The values of the chosen labels, separated by single spaces.
-
+- The values of the chosen labels, separated by single spaces.

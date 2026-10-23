@@ -10,8 +10,8 @@ which would replace (and effectively kill) the shell running this function.
 
 ## Index
 
-* [shell::ohmyzsh::install](#shellohmyzshinstall)
-* [shell::ohmyzsh::uninstall](#shellohmyzshuninstall)
+- [shell::ohmyzsh::install](#shellohmyzshinstall)
+- [shell::ohmyzsh::uninstall](#shellohmyzshuninstall)
 
 ### shell::ohmyzsh::install
 
@@ -27,18 +27,18 @@ shell::ohmyzsh::install
 
 #### Options
 
-* **-h** | **--help**
+- **-h** | **--help**
 
   Show help and return.
 
-* **-n** | **--dry-run**
+- **-n** | **--dry-run**
 
   Print the installer command instead of running it.
 
 #### Exit codes
 
-* **0**: Installed, already installed, or dry-run printed.
-* **1**: The installer failed.
+- **0**: Installed, already installed, or dry-run printed.
+- **1**: The installer failed.
 
 ### shell::ohmyzsh::uninstall
 
@@ -53,20 +53,19 @@ shell::ohmyzsh::uninstall -y
 
 #### Options
 
-* **-h** | **--help**
+- **-h** | **--help**
 
   Show help and return.
 
-* **-n** | **--dry-run**
+- **-n** | **--dry-run**
 
   Print the commands instead of running them.
 
-* **-y** | **--yes**
+- **-y** | **--yes**
 
   Do not ask for confirmation.
 
 #### Exit codes
 
-* **0**: Removed, absent, or the user declined.
-* **1**: A removal step failed.
-
+- **0**: Removed, absent, or the user declined.
+- **1**: A removal step failed.

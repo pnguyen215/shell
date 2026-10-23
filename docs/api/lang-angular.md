@@ -10,13 +10,18 @@ The .gitignore file is essential for specifying which files and directories
 should be ignored by Git, helping to keep the repository clean and free of
 unnecessary files that do not need to be tracked.
 
-It utilizes the shell::net::download function to fetch the .gitignore file
+It utilizes the `shell::net::download` function to fetch the .gitignore file
 from the specified URL and saves it in the appropriate location within the
 project structure.
 
 ## Index
 
-* [shell::angular::gitignore::add](#shellangulargitignoreadd)
+- [lang/angular.sh](#langangularsh)
+  - [Overview](#overview)
+  - [Index](#index)
+    - [shell::angular::gitignore::add](#shellangulargitignoreadd)
+      - [Example](#example)
+      - [Exit codes](#exit-codes)
 
 ### shell::angular::gitignore::add
 
@@ -26,7 +31,7 @@ The .gitignore file is essential for specifying which files and directories
 should be ignored by Git, helping to keep the repository clean and free of
 unnecessary files that do not need to be tracked.
 
-It utilizes the shell::net::download function to fetch the .gitignore file
+It utilizes the `shell::net::download` function to fetch the .gitignore file
 from the specified URL and saves it in the appropriate location within the
 project structure.
 
@@ -40,5 +45,4 @@ _Function has no arguments._
 
 #### Exit codes
 
-* **0**: Success.
-
+- **0**: Success.

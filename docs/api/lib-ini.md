@@ -8,46 +8,163 @@ Reads the value of a specified key from a given section in an INI file.
 
 This function reads an INI file and retrieves the value associated with a
 specified key within a given section. It validates the presence of the file,
-section, and key, and applies strict validation rules if SHELL_INI_STRICT is set.
+section, and key, and applies strict validation rules if `SHELL_INI_STRICT` is set.
 The function handles comments, empty lines, and quoted values within the INI file.
 
 Notes:
+
 - Relies on the shell::console::print function for output.
-- The behavior is controlled by the SHELL_INI_STRICT environment variable.
+- The behavior is controlled by the `SHELL_INI_STRICT` environment variable.
 
 ## Index
 
-* [shell::ini::read](#shelliniread)
-* [shell::ini::validate::section](#shellinivalidatesection)
-* [shell::ini::validate::key](#shellinivalidatekey)
-* [shell::ini::temp_file](#shellinitemp_file)
-* [shell::ini::trim](#shellinitrim)
-* [shell::ini::escape_regex](#shelliniescape_regex)
-* [shell::ini::check](#shellinicheck)
-* [shell::ini::section::list](#shellinisectionlist)
-* [shell::ini::key::list](#shellinikeylist)
-* [shell::ini::section::exists](#shellinisectionexists)
-* [shell::ini::section::add](#shellinisectionadd)
-* [shell::ini::write](#shelliniwrite)
-* [shell::ini::section::remove](#shellinisectionremove)
-* [shell::ini::key::remove::fzf](#shellinikeyremovefzf)
-* [shell::ini::key::remove](#shellinikeyremove)
-* [shell::ini::array::set](#shelliniarrayset)
-* [shell::ini::array::get](#shelliniarrayget)
-* [shell::ini::key::exists](#shellinikeyexists)
-* [shell::ini::env::expose](#shellinienvexpose)
-* [shell::ini::env::destroy](#shellinienvdestroy)
-* [shell::ini::value::get_or_default](#shellinivalueget_or_default)
-* [shell::ini::section::rename](#shellinisectionrename)
-* [shell::ini::section::rename::fzf](#shellinisectionrenamefzf)
-* [shell::ini::section::clone](#shellinisectionclone)
-* [shell::ini::section::clone::fzf](#shellinisectionclonefzf)
-* [shell::ini::section::remove::fzf](#shellinisectionremovefzf)
-* [shell::ini::view::fzf](#shelliniviewfzf)
-* [shell::ini::view::super::fzf](#shelliniviewsuperfzf)
-* [shell::ini::view::control::fzf](#shelliniviewcontrolfzf)
-* [shell::ini::edit::fzf](#shellinieditfzf)
-* [shell::ini::dump::json](#shellinidumpjson)
+- [lib/ini.sh](#libinish)
+  - [Overview](#overview)
+  - [Index](#index)
+    - [shell::ini::read](#shelliniread)
+      - [Example](#example)
+      - [Arguments](#arguments)
+      - [Exit codes](#exit-codes)
+    - [shell::ini::validate::section](#shellinivalidatesection)
+      - [Example](#example-1)
+      - [Arguments](#arguments-1)
+      - [Exit codes](#exit-codes-1)
+    - [shell::ini::validate::key](#shellinivalidatekey)
+      - [Example](#example-2)
+      - [Options](#options)
+      - [Arguments](#arguments-2)
+      - [Exit codes](#exit-codes-2)
+    - [shell::ini::temp_file](#shellinitemp_file)
+      - [Example](#example-3)
+      - [Exit codes](#exit-codes-3)
+    - [shell::ini::trim](#shellinitrim)
+      - [Example](#example-4)
+      - [Arguments](#arguments-3)
+      - [Exit codes](#exit-codes-4)
+    - [shell::ini::escape_regex](#shelliniescape_regex)
+      - [Example](#example-5)
+      - [Arguments](#arguments-4)
+      - [Exit codes](#exit-codes-5)
+    - [shell::ini::check](#shellinicheck)
+      - [Example](#example-6)
+      - [Arguments](#arguments-5)
+      - [Exit codes](#exit-codes-6)
+    - [shell::ini::section::list](#shellinisectionlist)
+      - [Example](#example-7)
+      - [Options](#options-1)
+      - [Arguments](#arguments-6)
+      - [Exit codes](#exit-codes-7)
+    - [shell::ini::key::list](#shellinikeylist)
+      - [Example](#example-8)
+      - [Options](#options-2)
+      - [Arguments](#arguments-7)
+      - [Exit codes](#exit-codes-8)
+    - [shell::ini::section::exists](#shellinisectionexists)
+      - [Example](#example-9)
+      - [Options](#options-3)
+      - [Arguments](#arguments-8)
+      - [Exit codes](#exit-codes-9)
+    - [shell::ini::section::add](#shellinisectionadd)
+      - [Example](#example-10)
+      - [Options](#options-4)
+      - [Arguments](#arguments-9)
+      - [Exit codes](#exit-codes-10)
+    - [shell::ini::write](#shelliniwrite)
+      - [Example](#example-11)
+      - [Options](#options-5)
+      - [Arguments](#arguments-10)
+      - [Exit codes](#exit-codes-11)
+    - [shell::ini::section::remove](#shellinisectionremove)
+      - [Example](#example-12)
+      - [Arguments](#arguments-11)
+      - [Exit codes](#exit-codes-12)
+    - [shell::ini::key::remove::fzf](#shellinikeyremovefzf)
+      - [Example](#example-13)
+      - [Options](#options-6)
+      - [Arguments](#arguments-12)
+      - [Exit codes](#exit-codes-13)
+    - [shell::ini::key::remove](#shellinikeyremove)
+      - [Example](#example-14)
+      - [Options](#options-7)
+      - [Arguments](#arguments-13)
+      - [Exit codes](#exit-codes-14)
+    - [shell::ini::array::set](#shelliniarrayset)
+      - [Example](#example-15)
+      - [Options](#options-8)
+      - [Arguments](#arguments-14)
+      - [Exit codes](#exit-codes-15)
+    - [shell::ini::array::get](#shelliniarrayget)
+      - [Example](#example-16)
+      - [Options](#options-9)
+      - [Arguments](#arguments-15)
+      - [Exit codes](#exit-codes-16)
+    - [shell::ini::key::exists](#shellinikeyexists)
+      - [Example](#example-17)
+      - [Options](#options-10)
+      - [Arguments](#arguments-16)
+      - [Exit codes](#exit-codes-17)
+    - [shell::ini::env::expose](#shellinienvexpose)
+      - [Example](#example-18)
+      - [Options](#options-11)
+      - [Arguments](#arguments-17)
+      - [Exit codes](#exit-codes-18)
+    - [shell::ini::env::destroy](#shellinienvdestroy)
+      - [Example](#example-19)
+      - [Options](#options-12)
+      - [Arguments](#arguments-18)
+      - [Exit codes](#exit-codes-19)
+    - [shell::ini::value::get_or_default](#shellinivalueget_or_default)
+      - [Example](#example-20)
+      - [Options](#options-13)
+      - [Arguments](#arguments-19)
+      - [Exit codes](#exit-codes-20)
+    - [shell::ini::section::rename](#shellinisectionrename)
+      - [Example](#example-21)
+      - [Options](#options-14)
+      - [Arguments](#arguments-20)
+      - [Exit codes](#exit-codes-21)
+    - [shell::ini::section::rename::fzf](#shellinisectionrenamefzf)
+      - [Example](#example-22)
+      - [Options](#options-15)
+      - [Arguments](#arguments-21)
+      - [Exit codes](#exit-codes-22)
+    - [shell::ini::section::clone](#shellinisectionclone)
+      - [Example](#example-23)
+      - [Options](#options-16)
+      - [Arguments](#arguments-22)
+      - [Exit codes](#exit-codes-23)
+    - [shell::ini::section::clone::fzf](#shellinisectionclonefzf)
+      - [Example](#example-24)
+      - [Options](#options-17)
+      - [Arguments](#arguments-23)
+      - [Exit codes](#exit-codes-24)
+    - [shell::ini::section::remove::fzf](#shellinisectionremovefzf)
+      - [Example](#example-25)
+      - [Options](#options-18)
+      - [Arguments](#arguments-24)
+      - [Exit codes](#exit-codes-25)
+    - [shell::ini::view::fzf](#shelliniviewfzf)
+      - [Example](#example-26)
+      - [Arguments](#arguments-25)
+      - [Exit codes](#exit-codes-26)
+    - [shell::ini::view::super::fzf](#shelliniviewsuperfzf)
+      - [Example](#example-27)
+      - [Options](#options-19)
+      - [Arguments](#arguments-26)
+      - [Exit codes](#exit-codes-27)
+    - [shell::ini::view::control::fzf](#shelliniviewcontrolfzf)
+      - [Example](#example-28)
+      - [Options](#options-20)
+      - [Arguments](#arguments-27)
+      - [Exit codes](#exit-codes-28)
+    - [shell::ini::edit::fzf](#shellinieditfzf)
+      - [Example](#example-29)
+      - [Arguments](#arguments-28)
+      - [Exit codes](#exit-codes-29)
+    - [shell::ini::dump::json](#shellinidumpjson)
+      - [Example](#example-30)
+      - [Arguments](#arguments-29)
+      - [Exit codes](#exit-codes-30)
 
 ### shell::ini::read
 
@@ -55,12 +172,13 @@ Reads the value of a specified key from a given section in an INI file.
 
 This function reads an INI file and retrieves the value associated with a
 specified key within a given section. It validates the presence of the file,
-section, and key, and applies strict validation rules if SHELL_INI_STRICT is set.
+section, and key, and applies strict validation rules if `SHELL_INI_STRICT` is set.
 The function handles comments, empty lines, and quoted values within the INI file.
 
 Notes:
+
 - Relies on the shell::console::print function for output.
-- The behavior is controlled by the SHELL_INI_STRICT environment variable.
+- The behavior is controlled by the `SHELL_INI_STRICT` environment variable.
 
 #### Example
 
@@ -70,33 +188,34 @@ shell::ini::read config.ini MySection MyKey  # Retrieves the value of MyKey in M
 
 #### Arguments
 
-* **$1** (string): file: The path to the INI file.
-* **$2** (string): section: The section within the INI file to search.
-* **$3** (string): key: The key within the section whose value is to be retrieved.
+- **$1** (string): file: The path to the INI file.
+- **$2** (string): section: The section within the INI file to search.
+- **$3** (string): key: The key within the section whose value is to be retrieved.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::ini::validate::section
 
 Validates an INI section name based on defined strictness levels.
 It checks for empty names and disallowed characters or spaces according to
-SHELL_INI_STRICT and SHELL_INI_ALLOW_SPACES_IN_NAMES variables.
+`SHELL_INI_STRICT` and `SHELL_INI_ALLOW_SPACES_IN_NAMES` variables.
 
 This function takes a section name as input and applies validation rules.
 An empty section name is always considered invalid.
-If SHELL_INI_STRICT is set to 1, the function checks for the presence of
+If `SHELL_INI_STRICT` is set to 1, the function checks for the presence of
 illegal characters: square brackets (`[` and `]`) and the equals sign (`=`).
-If SHELL_INI_ALLOW_SPACES_IN_NAMES is set to 0, the function checks for
+If `SHELL_INI_ALLOW_SPACES_IN_NAMES` is set to 0, the function checks for
 the presence of spaces within the section name.
 Error messages are displayed using the shell::console::print function.
 
 Notes:
+
 - Relies on the shell::console::print function for output.
-- The behavior is controlled by the SHELL_INI_STRICT and
-SHELL_INI_ALLOW_SPACES_IN_NAMES environment variables or constants.
+- The behavior is controlled by the `SHELL_INI_STRICT` and
+  `SHELL_INI_ALLOW_SPACES_IN_NAMES` environment variables or constants.
 
 #### Example
 
@@ -110,21 +229,22 @@ shell::ini::validate::section ""            # Invalid (empty)
 
 #### Arguments
 
-* **$1** (string): section_name: The name of the INI section to validate.
+- **$1** (string): section_name: The name of the INI section to validate.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::ini::validate::key
 
 Validates an INI key name based on defined strictness levels.
 
 Notes:
+
 - Relies on the shell::console::print function for output.
-- The behavior is controlled by the SHELL_INI_STRICT and
-SHELL_INI_ALLOW_SPACES_IN_NAMES environment variables or constants.
+- The behavior is controlled by the `SHELL_INI_STRICT` and
+  `SHELL_INI_ALLOW_SPACES_IN_NAMES` environment variables or constants.
 
 #### Example
 
@@ -134,18 +254,18 @@ shell::ini::validate::key
 
 #### Options
 
-* **-h**
+- **-h**
 
   Optional. Displays this help message.
 
 #### Arguments
 
-* **$1** (string): key_name: The name of the INI key to validate.
+- **$1** (string): key_name: The name of the INI key to validate.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::ini::temp_file
 
@@ -153,7 +273,7 @@ Creates a temporary file with a unique name in the system's temporary directory.
 
 This function generates a temporary file using the mktemp command.
 The file is created in the directory specified by the TMPDIR environment variable,
-or in /tmp if TMPDIR is not set. The filename is prefixed with 'shell_ini_' and
+or in /tmp if TMPDIR is not set. The filename is prefixed with 'shell*ini*' and
 followed by a series of random characters to ensure uniqueness.
 
 #### Example
@@ -166,7 +286,7 @@ _Function has no arguments._
 
 #### Exit codes
 
-* **0**: Success.
+- **0**: Success.
 
 ### shell::ini::trim
 
@@ -184,11 +304,11 @@ trimmed_string=$(shell::ini::trim "  example string  ")  # Outputs "example stri
 
 #### Arguments
 
-* **$1** (string): string: The string from which to remove leading and trailing whitespace.
+- **$1** (string): string: The string from which to remove leading and trailing whitespace.
 
 #### Exit codes
 
-* **0**: Success.
+- **0**: Success.
 
 ### shell::ini::escape_regex
 
@@ -207,11 +327,11 @@ escaped_string=$(shell::ini::escape_regex "example(string)")  # Outputs "example
 
 #### Arguments
 
-* **$1** (string): string: The string in which to escape special regex characters.
+- **$1** (string): string: The string in which to escape special regex characters.
 
 #### Exit codes
 
-* **0**: Success.
+- **0**: Success.
 
 ### shell::ini::check
 
@@ -230,12 +350,12 @@ shell::ini::check /path/to/config.ini  # Checks or creates the file at the speci
 
 #### Arguments
 
-* **$1** (string): file: The path to the file to check or create.
+- **$1** (string): file: The path to the file to check or create.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::ini::section::list
 
@@ -246,6 +366,7 @@ It validates the presence of the file and outputs the section names
 without the enclosing square brackets.
 
 Notes:
+
 - Relies on the shell::console::print function for output.
 
 #### Example
@@ -256,18 +377,18 @@ shell::ini::section::list config.ini  # Lists all sections in config.ini.
 
 #### Options
 
-* **-h**
+- **-h**
 
   Optional. Displays this help message.
 
 #### Arguments
 
-* **$1** (string): file: The path to the INI file.
+- **$1** (string): file: The path to the INI file.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::ini::key::list
 
@@ -275,9 +396,10 @@ Lists all key names from a specified section in a given INI file.
 
 This function reads an INI file and extracts all key names from a specified section.
 It validates the presence of the file and section, and applies strict validation rules
-if SHELL_INI_STRICT is set. The function handles comments and empty lines within the INI file.
+if `SHELL_INI_STRICT` is set. The function handles comments and empty lines within the INI file.
 
 Notes:
+
 - Relies on the shell::console::print function for output.
 
 #### Example
@@ -288,19 +410,19 @@ shell::ini::key::list config.ini MySection  # Lists all keys in MySection.
 
 #### Options
 
-* **-h**
+- **-h**
 
   Optional. Displays this help message.
 
 #### Arguments
 
-* **$1** (string): file: The path to the INI file.
-* **$2** (string): section: The section within the INI file to search for keys.
+- **$1** (string): file: The path to the INI file.
+- **$2** (string): section: The section within the INI file to search for keys.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::ini::section::exists
 
@@ -308,7 +430,7 @@ Checks if a specified section exists in a given INI file.
 
 This function checks whether a specified section exists in an INI file.
 It validates the presence of the file and section, and applies strict
-validation rules if SHELL_INI_STRICT is set. The function uses regex
+validation rules if `SHELL_INI_STRICT` is set. The function uses regex
 to search for the section header within the file.
 
 #### Example
@@ -319,19 +441,19 @@ shell::ini::section::exists config.ini MySection  # Checks if MySection exists i
 
 #### Options
 
-* **-h**
+- **-h**
 
   Optional. Displays this help message.
 
 #### Arguments
 
-* **$1** (string): file: The path to the INI file.
-* **$2** (string): section: The section within the INI file to check for existence.
+- **$1** (string): file: The path to the INI file.
+- **$2** (string): section: The section within the INI file to check for existence.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::ini::section::add
 
@@ -339,7 +461,7 @@ Adds a new section to a specified INI file if it does not already exist.
 
 This function checks if a specified section exists in an INI file and adds it if not.
 It validates the presence of the file and section, and applies strict validation rules
-if SHELL_INI_STRICT is set. The function handles the creation of the file if it does not exist.
+if `SHELL_INI_STRICT` is set. The function handles the creation of the file if it does not exist.
 
 #### Example
 
@@ -349,19 +471,19 @@ shell::ini::section::add config.ini NewSection  # Adds NewSection to config.ini 
 
 #### Options
 
-* **-h**
+- **-h**
 
   Optional. Displays this help message.
 
 #### Arguments
 
-* **$1** (string): file: The path to the INI file.
-* **$2** (string): section: The section to be added to the INI file.
+- **$1** (string): file: The path to the INI file.
+- **$2** (string): section: The section to be added to the INI file.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::ini::write
 
@@ -369,7 +491,7 @@ Writes a key-value pair to a specified section in an INI file.
 
 This function writes a key-value pair to a specified section in an INI file.
 It validates the presence of the file, section, and key, and applies strict
-validation rules if SHELL_INI_STRICT is set. The function handles the creation
+validation rules if `SHELL_INI_STRICT` is set. The function handles the creation
 of the file and section if they do not exist. It also manages special characters
 in values by quoting them if necessary.
 
@@ -381,21 +503,21 @@ shell::ini::write config.ini MySection MyKey MyValue  # Writes MyKey=MyValue in 
 
 #### Options
 
-* **-h**
+- **-h**
 
   Optional. Displays this help message.
 
 #### Arguments
 
-* **$1** (string): file: The path to the INI file.
-* **$2** (string): section: The section within the INI file to write the key-value pair.
-* **$3** (string): key: The key to be written in the specified section.
-* **$4** (string): value: The value associated with the key.
+- **$1** (string): file: The path to the INI file.
+- **$2** (string): section: The section within the INI file to write the key-value pair.
+- **$3** (string): key: The key to be written in the specified section.
+- **$4** (string): value: The value associated with the key.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::ini::section::remove
 
@@ -408,13 +530,14 @@ header is encountered or the end of the file is reached. The remaining lines
 which then replaces the original file.
 
 Notes:
+
 - Assumes the INI file has sections enclosed in square brackets (e.g., [section]).
 - Empty lines and lines outside of sections are preserved.
 - Relies on helper functions like shell::console::print, shell::ini::escape_regex,
-shell::ini::temp_file, and optionally shell::ini::validate::section
-if SHELL_INI_STRICT is enabled. (Note: shell::ini::escape_regex and
-shell::ini::temp_file are not provided in this snippet, but are assumed
-to exist based on usage.)
+  shell::ini::temp_file, and optionally shell::ini::validate::section
+  if SHELL_INI_STRICT is enabled. (Note: shell::ini::escape_regex and
+  shell::ini::temp_file are not provided in this snippet, but are assumed
+  to exist based on usage.)
 - Uses atomic operation (mv) to replace the original file, reducing risk of data loss.
 
 #### Example
@@ -425,13 +548,13 @@ shell::ini::section::remove /path/to/config.ini "database"
 
 #### Arguments
 
-* **$1** (string): file: The path to the INI file.
-* **$2** (string): section: The name of the section to remove (without the square brackets).
+- **$1** (string): file: The path to the INI file.
+- **$2** (string): section: The name of the section to remove (without the square brackets).
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::ini::key::remove::fzf
 
@@ -453,19 +576,19 @@ shell::ini::key::remove::fzf -n settings.ini "API"  # Dry-run: show commands to 
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, commands are printed using shell::logger::command_clip instead of executed.
 
 #### Arguments
 
-* **$1** (string): file: The path to the INI file.
-* **$2** (string): section: The section within the INI file from which to remove a key.
+- **$1** (string): file: The path to the INI file.
+- **$2** (string): section: The section within the INI file from which to remove a key.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::ini::key::remove
 
@@ -478,11 +601,12 @@ and after the target section) are written to a temporary file, which then replac
 the original file.
 
 Notes:
+
 - Assumes the INI file has sections enclosed in square brackets (e.g., [section]) and key=value pairs.
 - Empty lines and lines outside of sections are preserved.
 - Relies on helper functions like shell::console::print, shell::ini::escape_regex,
-shell::ini::temp_file, and optionally shell::ini::validate::section,
-shell::ini::validate::key if SHELL_INI_STRICT is enabled.
+  shell::ini::temp_file, and optionally shell::ini::validate::section,
+  shell::ini::validate::key if SHELL_INI_STRICT is enabled.
 - Uses atomic operation (mv) to replace the original file, reducing risk of data loss.
 
 #### Example
@@ -494,20 +618,20 @@ shell::ini::key::remove -n /path/to/config.ini "api" "api_key" # Dry-run mode
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, commands are printed using shell::logger::command_clip instead of executed.
 
 #### Arguments
 
-* **$1** (string): file: The path to the INI file.
-* **$2** (string): section: The section within the INI file from which to remove the key.
-* **$3** (string): key: The key to be removed from the specified section.
+- **$1** (string): file: The path to the INI file.
+- **$2** (string): section: The section within the INI file from which to remove the key.
+- **$3** (string): key: The key to be removed from the specified section.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::ini::array::set
 
@@ -521,12 +645,13 @@ The final formatted string is passed to 'shell::ini::write' for atomic writing,
 which handles file and section existence, creation, and updates.
 
 Notes:
+
 - Relies on 'shell::console::print' for output and 'shell::ini::write' for file operations.
-- Interaction with SHELL_INI_STRICT in 'shell::ini::write': If SHELL_INI_STRICT is set
-to 1, 'shell::ini::write' might re-quote the entire array string generated by this
-function if it contains spaces or quotes, potentially leading to double-quoting
-(e.g., value becoming ""item1\",\"item 2""). This function aims to produce a
-standard, internally-quoted INI array value.
+- Interaction with `SHELL_INI_STRICT` in 'shell::ini::write': If `SHELL_INI_STRICT` is set
+  to 1, 'shell::ini::write' might re-quote the entire array string generated by this
+  function if it contains spaces or quotes, potentially leading to double-quoting
+  (e.g., value becoming ""item1\",\"item 2""). This function aims to produce a
+  standard, internally-quoted INI array value.
 
 #### Example
 
@@ -537,21 +662,21 @@ shell::ini::array::set config.ini MySection MyList "alpha" "beta gamma" "delta,e
 
 #### Options
 
-* **-h**
+- **-h**
 
   Optional. Displays this help message.
 
 #### Arguments
 
-* **$1** (string): file: The path to the INI file.
-* **$2** (string): section: The section within the INI file to write the array to.
-* **$3** (string): key: The key to be associated with the array of values.
-* **...** (string): valueN: Optional. One or more values to be written as part of the array.
+- **$1** (string): file: The path to the INI file.
+- **$2** (string): section: The section within the INI file to write the array to.
+- **$3** (string): key: The key to be associated with the array of values.
+- **...** (string): valueN: Optional. One or more values to be written as part of the array.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::ini::array::get
 
@@ -566,14 +691,15 @@ Each extracted item is then trimmed of leading/trailing whitespace.
 The function outputs each parsed array item on a new line to standard output.
 
 Notes:
+
 - Relies on 'shell::ini::read' to retrieve the raw value.
 - Relies on 'shell::ini::trim' for whitespace removal from individual items.
 - The parsing logic is custom-built to handle INI-style quoted comma-separated lists.
-- Interaction with SHELL_INI_STRICT in 'shell::ini::write': Values formatted by
-'shell::ini::array::set' (which are read by this function) are intended to be
-interpreted as single strings by 'shell::ini::write'. If 'SHELL_INI_STRICT' is 1
-during writing, the entire formatted string might be re-quoted. This function correctly
-parses values regardless of outer re-quoting, as it targets the internal array structure.
+- Interaction with `SHELL_INI_STRICT` in 'shell::ini::write': Values formatted by
+  'shell::ini::array::set' (which are read by this function) are intended to be
+  interpreted as single strings by 'shell::ini::write'. If '`SHELL_INI_STRICT`' is 1
+  during writing, the entire formatted string might be re-quoted. This function correctly
+  parses values regardless of outer re-quoting, as it targets the internal array structure.
 
 #### Example
 
@@ -591,20 +717,20 @@ shell::ini::array::get my_config.ini Settings MyArray
 
 #### Options
 
-* **-h**
+- **-h**
 
   Optional. Displays this help message.
 
 #### Arguments
 
-* **$1** (string): file: The path to the INI file.
-* **$2** (string): section: The section within the INI file to read the array from.
-* **$3** (string): key: The key whose array of values is to be retrieved.
+- **$1** (string): file: The path to the INI file.
+- **$2** (string): section: The section within the INI file to read the array from.
+- **$3** (string): key: The key whose array of values is to be retrieved.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::ini::key::exists
 
@@ -614,7 +740,7 @@ This function provides a convenient way to verify the presence of a specific
 key within a designated section of an INI configuration file. It acts as a
 wrapper around 'shell::ini::read', using its capabilities to determine if
 the key can be successfully retrieved.
-If strict mode is active (SHELL_INI_STRICT is set to 1), it first
+If strict mode is active (`SHELL_INI_STRICT` is set to 1), it first
 validates the format of the section and key names, returning an error if
 they do not conform to the defined naming conventions.
 The function ensures its own output is clean by suppressing the internal
@@ -622,11 +748,12 @@ logging of 'shell::ini::read', providing clear, colored messages indicating
 whether the key was found or not.
 
 Notes:
+
 - This function does not output the value of the key, only its existence status.
-- It leverages 'shell::ini::read' and other 'shell::ini_validate_*' functions for its operations.
+- It leverages 'shell::ini::read' and other 'shell::ini*validate*\*' functions for its operations.
 - For detailed reasons why a key might not be found (e.g., file doesn't exist,
-section doesn't exist), 'shell::ini::read' or 'shell::ini::section::exists'
-will provide their own specific error messages if called directly.
+  section doesn't exist), 'shell::ini::read' or 'shell::ini::section::exists'
+  will provide their own specific error messages if called directly.
 
 #### Example
 
@@ -641,20 +768,20 @@ fi
 
 #### Options
 
-* **-h**
+- **-h**
 
   Optional. Displays this help message.
 
 #### Arguments
 
-* **$1** (string): file: The path to the INI file.
-* **$2** (string): section: The section within the INI file to check.
-* **$3** (string): key: The key to check for existence.
+- **$1** (string): file: The path to the INI file.
+- **$2** (string): section: The section within the INI file to check.
+- **$3** (string): key: The key to check for existence.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::ini::env::expose
 
@@ -675,18 +802,19 @@ processed. If no section is given, all readable sections and their keys
 across the entire file are exported.
 
 Notes:
+
 - This function does not modify the INI file.
 - Variable names in the environment are derived from sanitized section and
-key names. For instance, a section '[My Config]' and key 'api-key' would
-become 'MY_CONFIG_API_KEY'.
+  key names. For instance, a section '[My Config]' and key 'api-key' would
+  become 'MY_CONFIG_API_KEY'.
 - Values containing special characters are exported as-is; it's the calling
-script's responsibility to handle such values.
+  script's responsibility to handle such values.
 - This function uses process substitution (`< <(...)`) for portability
-when iterating over lists of sections/keys, making it compatible with
-older Bash versions (e.g., Bash 3 on macOS) as well as newer ones.
+  when iterating over lists of sections/keys, making it compatible with
+  older Bash versions (e.g., Bash 3 on macOS) as well as newer ones.
 - If a key's value cannot be read (e.g., key not found by ini_read), that
-specific key will be skipped in the export process, and a warning will be
-logged.
+  specific key will be skipped in the export process, and a warning will be
+  logged.
 
 #### Example
 
@@ -703,19 +831,19 @@ echo $DB_APP_PRODUCTION_HOST # Outputs 'localhost'
 
 #### Options
 
-* **-h**
+- **-h**
 
   Optional. Displays this help message.
 
 #### Arguments
 
-* **$1** (string): file: The path to the INI file to read.
-* **...** (string): section: Optional. If specified, only keys from this specific section will be exported. If omitted, keys from all sections will be exported.
+- **$1** (string): file: The path to the INI file to read.
+- **...** (string): section: Optional. If specified, only keys from this specific section will be exported. If omitted, keys from all sections will be exported.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::ini::env::destroy
 
@@ -737,13 +865,14 @@ were supplied during the initial export to ensure that the correct set of
 variables is targeted for destruction.
 
 Notes:
+
 - This function does not report individual errors if a variable was expected
-but not found or already unset; it simply proceeds.
+  but not found or already unset; it simply proceeds.
 - The function's effectiveness relies on matching the naming convention of
-'shell::ini::env::expose'.
+  'shell::ini::env::expose'.
 - This function uses process substitution (`< <(...)`) for portability
-when iterating over lists of sections/keys, making it compatible with
-older Bash versions (e.g., Bash 3 on macOS) as well as newer ones.
+  when iterating over lists of sections/keys, making it compatible with
+  older Bash versions (e.g., Bash 3 on macOS) as well as newer ones.
 
 #### Example
 
@@ -756,19 +885,19 @@ older Bash versions (e.g., Bash 3 on macOS) as well as newer ones.
 
 #### Options
 
-* **-h**
+- **-h**
 
   Optional. Displays this help message.
 
 #### Arguments
 
-* **$1** (string): file: The path to the INI file that was used for exporting variables.
-* **...** (string): section: Optional. If specified, only variables corresponding to keys from this specific section will be unset. If omitted, keys from all sections (matching the prefix, if given) will be targeted.
+- **$1** (string): file: The path to the INI file that was used for exporting variables.
+- **...** (string): section: Optional. If specified, only variables corresponding to keys from this specific section will be unset. If omitted, keys from all sections (matching the prefix, if given) will be targeted.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::ini::value::get_or_default
 
@@ -791,11 +920,12 @@ either read or default, was provided), unless there are missing mandatory
 parameters.
 
 Notes:
+
 - 'shell::ini::read' error messages (e.g., "File not found", "Key not found") are
-suppressed to avoid clutter when a default value is being returned.
-This function provides its own consolidated logging.
+  suppressed to avoid clutter when a default value is being returned.
+  This function provides its own consolidated logging.
 - Ensures cross-platform compatibility by relying on standard Bash features
-and existing cross-platform helper functions.
+  and existing cross-platform helper functions.
 
 #### Example
 
@@ -812,21 +942,21 @@ fi
 
 #### Options
 
-* **-h**
+- **-h**
 
   Optional. Displays this help message.
 
 #### Arguments
 
-* **$1** (string): file: The path to the INI file.
-* **$2** (string): section: The section within the INI file to search.
-* **$3** (string): key: The key whose value is to be retrieved.
-* **...** (string): default_value: Optional. The value to return if the key is not found or if reading fails. Defaults to an empty string if omitted.
+- **$1** (string): file: The path to the INI file.
+- **$2** (string): section: The section within the INI file to search.
+- **$3** (string): key: The key whose value is to be retrieved.
+- **...** (string): default_value: Optional. The value to return if the key is not found or if reading fails. Defaults to an empty string if omitted.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::ini::section::rename
 
@@ -835,13 +965,14 @@ Renames an existing section in an INI file.
 This function renames a section within an INI file by replacing its header.
 It performs validation to ensure the file exists, the old section exists,
 and the new section name does not already exist. It also applies strict
-validation rules for section names if SHELL_INI_STRICT is enabled.
+validation rules for section names if `SHELL_INI_STRICT` is enabled.
 The function uses 'sed' for in-place editing, adapting its syntax for
 macOS (BSD sed) and Linux (GNU sed) for cross-platform compatibility.
 
 Notes:
+
 - Relies on shell::console::print, shell::ini::check, shell::ini::section::exists,
-shell::ini::escape_regex, shell::ini::validate::section, and shell::exec::shell.
+  shell::ini::escape_regex, shell::ini::validate::section, and shell::exec::shell.
 
 #### Example
 
@@ -852,20 +983,20 @@ shell::ini::section::rename -n settings.ini "Database" "ProductionDB" # Dry-run 
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, commands are printed using shell::logger::command_clip instead of executed.
 
 #### Arguments
 
-* **$1** (string): file: The path to the INI file.
-* **$2** (string): old_section: The current name of the section to be renamed.
-* **$3** (string): new_section: The new name for the section.
+- **$1** (string): file: The path to the INI file.
+- **$2** (string): old_section: The current name of the section to be renamed.
+- **$3** (string): new_section: The new name for the section.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::ini::section::rename::fzf
 
@@ -879,8 +1010,9 @@ delegated to the shell::ini::section::rename function.
 It includes checks for file existence and fzf installation.
 
 Notes:
+
 - Relies on shell::console::print, shell::package::install, shell::ini::section::list,
-and shell::ini::section::rename.
+  and shell::ini::section::rename.
 
 #### Example
 
@@ -891,22 +1023,22 @@ shell::ini::section::rename::fzf -n settings.ini # Dry-run: show commands to ren
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, commands are printed using shell::logger::command_clip instead of executed.
 
-* **-h**
+- **-h**
 
   Optional help flag. Displays this help message.
 
 #### Arguments
 
-* **$1** (string): file: The path to the INI file.
+- **$1** (string): file: The path to the INI file.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::ini::section::clone
 
@@ -922,8 +1054,9 @@ The function ensures file integrity by writing to a temporary file and then atom
 replacing the original file.
 
 Notes:
+
 - Relies on shell::console::print, shell::ini::section::exists, shell::ini::section::add,
-shell::ini::write, shell::ini::temp_file, and shell::ini::escape_regex.
+  shell::ini::write, shell::ini::temp_file, and shell::ini::escape_regex.
 - Honors SHELL_INI_STRICT for section name validation.
 
 #### Example
@@ -935,36 +1068,37 @@ shell::ini::section::clone -n config.ini "Production" "Backup_Prod"
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, commands are printed using shell::logger::command_clip instead of executed.
 
 #### Arguments
 
-* **$1** (string): file: The path to the INI file.
-* **$2** (string): source_section: The name of the section to clone.
-* **$3** (string): destination_section: The name of the new section to create and copy keys into.
+- **$1** (string): file: The path to the INI file.
+- **$2** (string): source_section: The name of the section to clone.
+- **$3** (string): destination_section: The name of the new section to create and copy keys into.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::ini::section::clone::fzf
 
 Interactively selects a section to clone from an INI file using fzf,
-prompts for a new name (with "_clone" prefix), and then clones the section.
+prompts for a new name (with "\_clone" prefix), and then clones the section.
 
 This function first ensures fzf is installed. It then lists all sections in the
 given INI file and uses fzf to allow the user to interactively select a section.
-After selection, it prompts the user for a new section name, appending "_clone"
+After selection, it prompts the user for a new section name, appending "\_clone"
 to the selected section name as a suggestion. Finally, it calls
 shell::ini::section::clone to perform the cloning operation.
 The function handles dry-run mode, where it only prints the commands that would be executed.
 
 Notes:
+
 - Relies on shell::console::print, shell::package::install, shell::ini::section::list,
-shell::ini::section::clone, and shell::logger::command_clip.
+  shell::ini::section::clone, and shell::logger::command_clip.
 - Provides interactive selection and auto-suggestion for the cloned section name.
 
 #### Example
@@ -976,18 +1110,18 @@ shell::ini::section::clone::fzf -n config.ini # Dry-run: show commands to clone 
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, commands are printed using shell::logger::command_clip instead of executed.
 
 #### Arguments
 
-* **$1** (string): file: The path to the INI file.
+- **$1** (string): file: The path to the INI file.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::ini::section::remove::fzf
 
@@ -1000,8 +1134,9 @@ sections and their contents from the INI file.
 The function handles dry-run mode, where it only prints the commands that would be executed.
 
 Notes:
+
 - Relies on shell::console::print, shell::package::install, shell::ini::section::list,
-shell::exec::shell, shell::logger::command_clip, and shell::ini::escape_regex.
+  shell::exec::shell, shell::logger::command_clip, and shell::ini::escape_regex.
 - Uses fzf's multi-select feature (TAB key) for selecting multiple sections.
 
 #### Example
@@ -1013,22 +1148,22 @@ shell::ini::section::remove::fzf -n config.ini # Dry-run: show commands to remov
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, commands are printed using shell::logger::command_clip instead of executed.
 
-* **-h**
+- **-h**
 
   Optional help flag. Displays this help message.
 
 #### Arguments
 
-* **$1** (string): file: The path to the INI file.
+- **$1** (string): file: The path to the INI file.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::ini::view::fzf
 
@@ -1047,12 +1182,12 @@ shell::ini::view::fzf -n config.ini
 
 #### Arguments
 
-* **$1** (string): file: The path to the INI file.
+- **$1** (string): file: The path to the INI file.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::ini::view::super::fzf
 
@@ -1073,26 +1208,26 @@ shell::ini::view::super::fzf config.ini --multi
 
 #### Options
 
-* **--json**
+- **--json**
 
   Optional. Export the selected section as JSON.
 
-* **--yaml**
+- **--yaml**
 
   Optional. Export the selected section as YAML.
 
-* **--multi**
+- **--multi**
 
   Optional. Allow multi-key selection and export.
 
 #### Arguments
 
-* **$1** (string): file: The path to the INI file.
+- **$1** (string): file: The path to the INI file.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::ini::view::control::fzf
 
@@ -1114,26 +1249,26 @@ shell::ini::view::control::fzf config.ini --multi
 
 #### Options
 
-* **--json**
+- **--json**
 
   Optional. Export the selected section as JSON.
 
-* **--yaml**
+- **--yaml**
 
   Optional. Export the selected section as YAML.
 
-* **--multi**
+- **--multi**
 
   Optional. Allow multi-key selection and export.
 
 #### Arguments
 
-* **$1** (string): file: The path to the INI file.
+- **$1** (string): file: The path to the INI file.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::ini::edit::fzf
 
@@ -1151,11 +1286,11 @@ shell::ini::edit::fzf config.ini
 
 #### Arguments
 
-* **$1** (string): file: The path to the INI file.
+- **$1** (string): file: The path to the INI file.
 
 #### Exit codes
 
-* **0**: Success.
+- **0**: Success.
 
 ### shell::ini::dump::json
 
@@ -1172,10 +1307,9 @@ shell::ini::dump::json
 
 #### Arguments
 
-* **$1** (string): file: The path to the INI file.
+- **$1** (string): file: The path to the INI file.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
-
+- **0**: Success.
+- **1**: The operation failed.

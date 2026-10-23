@@ -11,13 +11,23 @@ script when curl fails.
 
 ## Index
 
-* [shell::homebrew::activate](#shellhomebrewactivate)
-* [shell::homebrew::install](#shellhomebrewinstall)
-* [shell::homebrew::uninstall](#shellhomebrewuninstall)
+- [dependency/homebrew.sh](#dependencyhomebrewsh)
+  - [Overview](#overview)
+  - [Index](#index)
+    - [shell::homebrew::activate](#shellhomebrewactivate)
+      - [Exit codes](#exit-codes)
+    - [shell::homebrew::install](#shellhomebrewinstall)
+      - [Example](#example)
+      - [Options](#options)
+      - [Exit codes](#exit-codes-1)
+    - [shell::homebrew::uninstall](#shellhomebrewuninstall)
+      - [Example](#example-1)
+      - [Options](#options-1)
+      - [Exit codes](#exit-codes-2)
 
 ### shell::homebrew::activate
 
-Add Homebrew to PATH for the *current* shell session.
+Add Homebrew to PATH for the _current_ shell session.
 A fresh Apple-Silicon install lives in /opt/homebrew, which is not on PATH
 until `brew shellenv` runs. Without this, the very next `brew install`
 fails with "command not found".
@@ -26,8 +36,8 @@ _Function has no arguments._
 
 #### Exit codes
 
-* **0**: brew is now on PATH.
-* **3**: brew is not installed.
+- **0**: brew is now on PATH.
+- **3**: brew is not installed.
 
 ### shell::homebrew::install
 
@@ -42,18 +52,18 @@ shell::homebrew::install -n
 
 #### Options
 
-* **-h** | **--help**
+- **-h** | **--help**
 
   Show help and return.
 
-* **-n** | **--dry-run**
+- **-n** | **--dry-run**
 
   Print the installer command instead of running it.
 
 #### Exit codes
 
-* **0**: Homebrew is installed (or dry-run printed).
-* **1**: The installer failed.
+- **0**: Homebrew is installed (or dry-run printed).
+- **1**: The installer failed.
 
 ### shell::homebrew::uninstall
 
@@ -69,20 +79,19 @@ shell::homebrew::uninstall -y
 
 #### Options
 
-* **-h** | **--help**
+- **-h** | **--help**
 
   Show help and return.
 
-* **-n** | **--dry-run**
+- **-n** | **--dry-run**
 
   Print the commands instead of running them.
 
-* **-y** | **--yes**
+- **-y** | **--yes**
 
   Do not ask for confirmation.
 
 #### Exit codes
 
-* **0**: Homebrew was removed, was absent, or the user declined.
-* **1**: The uninstaller failed.
-
+- **0**: Homebrew was removed, was absent, or the user declined.
+- **1**: The uninstaller failed.

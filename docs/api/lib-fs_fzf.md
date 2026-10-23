@@ -8,18 +8,19 @@ Interactively selects a file to copy and a destination directory using fzf,
 then copies the selected file to the destination directory.
 
 This function leverages fzf to provide an interactive interface for choosing:
+
 1. A source file (from the current directory and subdirectories).
 2. A destination directory (from the current directory and subdirectories).
-It then copies the source file to the destination directory using the original filename.
+   It then copies the source file to the destination directory using the original filename.
 
 ## Index
 
-* [shell::fs::copy::fzf](#shellfscopyfzf)
-* [shell::fs::move::fzf](#shellfsmovefzf)
-* [shell::fs::remove::fzf](#shellfsremovefzf)
-* [shell::fs::zip::fzf](#shellfszipfzf)
-* [shell::fs::zip::current::fzf](#shellfszipcurrentfzf)
-* [shell::telegram::send_document::fzf](#shelltelegramsend_documentfzf)
+- [shell::fs::copy::fzf](#shellfscopyfzf)
+- [shell::fs::move::fzf](#shellfsmovefzf)
+- [shell::fs::remove::fzf](#shellfsremovefzf)
+- [shell::fs::zip::fzf](#shellfszipfzf)
+- [shell::fs::zip::current::fzf](#shellfszipcurrentfzf)
+- [shell::telegram::send_document::fzf](#shelltelegramsend_documentfzf)
 
 ### shell::fs::copy::fzf
 
@@ -27,9 +28,10 @@ Interactively selects a file to copy and a destination directory using fzf,
 then copies the selected file to the destination directory.
 
 This function leverages fzf to provide an interactive interface for choosing:
+
 1. A source file (from the current directory and subdirectories).
 2. A destination directory (from the current directory and subdirectories).
-It then copies the source file to the destination directory using the original filename.
+   It then copies the source file to the destination directory using the original filename.
 
 #### Example
 
@@ -39,14 +41,14 @@ shell::fs::copy::fzf
 
 #### Options
 
-* **-h**
+- **-h**
 
   Optional. Displays this help message.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::fs::move::fzf
 
@@ -54,9 +56,10 @@ Interactively selects a file to move and a destination directory using fzf,
 then moves the selected file to the destination directory.
 
 This function leverages fzf to provide an interactive interface for choosing:
+
 1. A source file (from the current directory and subdirectories).
 2. A destination directory (from the current directory and subdirectories).
-It then moves the source file to the destination directory using the original filename.
+   It then moves the source file to the destination directory using the original filename.
 
 #### Example
 
@@ -66,14 +69,14 @@ shell::fs::move::fzf
 
 #### Options
 
-* **-h**
+- **-h**
 
   Optional. Displays this help message.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::fs::remove::fzf
 
@@ -81,8 +84,9 @@ Interactively selects a file or directory to remove using fzf,
 then removes the selected file or directory.
 
 This function leverages fzf to provide an interactive interface for choosing:
+
 1. A file or directory (from the current directory and subdirectories).
-It then removes the selected file or directory using the original path.
+   It then removes the selected file or directory using the original path.
 
 #### Example
 
@@ -92,14 +96,14 @@ shell::fs::remove::fzf
 
 #### Options
 
-* **-h**
+- **-h**
 
   Optional. Displays this help message.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::fs::zip::fzf
 
@@ -121,18 +125,18 @@ shell::fs::zip::fzf -n /path/to/folder  # Dry-run: prints the command without ex
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, the command is printed using shell::logger::command_clip instead of executed.
 
 #### Arguments
 
-* **$1** (string): folder_path: The folder (directory) from which to select files for zipping.
+- **$1** (string): folder_path: The folder (directory) from which to select files for zipping.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::fs::zip::current::fzf
 
@@ -154,14 +158,14 @@ shell::fs::zip::current::fzf -n  # Dry-run: prints the command without executing
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, the command is printed using shell::logger::command_clip instead of executed.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
+- **0**: Success.
+- **1**: The operation failed.
 
 ### shell::telegram::send_document::fzf
 
@@ -181,19 +185,18 @@ shell::telegram::send_document::fzf -n 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
 
 #### Options
 
-* **-n**
+- **-n**
 
   Optional dry-run flag. If provided, commands are printed using shell::logger::command_clip instead of executed.
 
 #### Arguments
 
-* **$1** (string): token: The Telegram Bot API token.
-* **$2** (string): chat_id: The chat identifier where the attachments are sent.
-* **$3** (string): description: A text description appended to each attachment's caption along with a timestamp.
-* **...** (string): folder_path: (Optional) The folder to search for files; defaults to the current directory if not provided.
+- **$1** (string): token: The Telegram Bot API token.
+- **$2** (string): chat_id: The chat identifier where the attachments are sent.
+- **$3** (string): description: A text description appended to each attachment's caption along with a timestamp.
+- **...** (string): folder_path: (Optional) The folder to search for files; defaults to the current directory if not provided.
 
 #### Exit codes
 
-* **0**: Success.
-* **1**: The operation failed.
-
+- **0**: Success.
+- **1**: The operation failed.
