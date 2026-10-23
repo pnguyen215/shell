@@ -467,3 +467,27 @@ alias sefb="shell::encode::file::base64"
 # shell::link::hard
 alias slh="shell::link::hard"
 alias slh-n="shell::link::hard -n"
+
+# ///////////////////////
+# Shell skill aliases
+# //////////////////////
+
+# shell::skill::install
+alias ssk-in="shell::skill::install"
+alias ssk-in-n="shell::skill::install -n"
+
+# shell::skill::upgrade
+alias ssk-up="shell::skill::upgrade"
+alias ssk-up-n="shell::skill::upgrade -n"
+
+# shell::skill::uninstall
+alias ssk-rm="shell::skill::uninstall"
+alias ssk-rm-n="shell::skill::uninstall -n"
+
+# shell::skill::sync
+alias ssk-sync="shell::skill::sync"
+alias ssk-sync-n="shell::skill::sync -n"
+
+# shell::skill::list / shell::skill::installed
+alias ssk-ls="shell::skill::list"
+alias ssk-lsi="shell::skill::installed"
