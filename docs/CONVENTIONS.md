@@ -4,12 +4,13 @@ The reference style is `src/lang/*.sh`. This page is the checklist; `make lint` 
 
 ## 1. Where things go
 
-| What | Where |
-|---|---|
-| A path, URL, colour, default, return code, list of protected keys | `src/constant/*.sh` — **never** inline in a function |
-| Output, logging, prompts, OS detection, command execution | `src/core/` |
-| Installing an external tool | `src/dependency/<tool>.sh` |
-| Everything else | `src/lib/` (generic) or `src/lang/`, `src/devops/`, `src/shield/`, `src/bot/` |
+| What                                                              | Where                                                                         |
+| ----------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| A path, URL, colour, default, return code, list of protected keys | `src/constant/*.sh` — **never** inline in a function                          |
+| Output, logging, prompts, OS detection, command execution         | `src/core/`                                                                   |
+| Installing an external tool                                       | `src/dependency/<tool>.sh`                                                    |
+| Installing / upgrading agent skills (Claude Code, OpenCode)       | `src/skill/`                                                                  |
+| Everything else                                                   | `src/lib/` (generic) or `src/lang/`, `src/devops/`, `src/shield/`, `src/bot/` |
 
 Files are `lower_snake_case.sh`, start with `#!/usr/bin/env bash` and an `@file` / `@brief` shdoc header. Constants are `UPPER_SNAKE_CASE`, assigned with `: "${VAR:=default}"` when the user may override them, and are **not** `readonly` (the library can be re-sourced).
 
@@ -72,7 +73,7 @@ shdoc notes: put `@example` **last** and end the block with a lone `#` (an examp
 
 **Never `exit` in a function.** The library is sourced into the user's interactive shell; `exit` closes their terminal. Use `return`.
 
-**Never set a global `trap` in a function** (`trap ... EXIT` fires when the *shell* exits and replaces the user's own trap).
+**Never set a global `trap` in a function** (`trap ... EXIT` fires when the _shell_ exits and replaces the user's own trap).
 
 **Prefer argv over `eval`.** `shell::exec::command prog "$arg"` keeps `$arg` as one word. If a command string is unavoidable (pipes, redirects), quote every interpolated value and never pass untrusted input (message text, filenames from the network).
 
