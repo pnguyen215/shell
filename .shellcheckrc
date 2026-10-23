@@ -1,0 +1,21 @@
+# Applies to every shell file in the repository.
+shell=bash
+external-sources=true
+
+# SC1090/SC1091: sources are resolved at runtime from SHELL_DIR.
+disable=SC1090,SC1091
+# SC2154: RETURN_* / SHELL_* constants are defined in src/constant and sourced first.
+disable=SC2154
+# SC2034: constants and the _SHELL_* result variables are consumed by other files.
+disable=SC2034
+# SC2155: `local x=$(cmd)` is used in many places; the masked exit status is not relied on.
+disable=SC2155
+# SC2016: single-quoted `$` is intentional in help text and eval'd command strings.
+disable=SC2016
+# SC2120: optional-argument functions are flagged when no caller passes any.
+disable=SC2120
+# SC2174: `mkdir -p -m` only applies to the leaf; documented in shell::fs::mkdir.
+disable=SC2174
+# SC2038/SC2164/SC2207: legacy find|xargs, cd/popd without `|| return`, and array
+# splitting in the fzf modules; tracked for follow-up, not regressions.
+disable=SC2038,SC2164,SC2207
