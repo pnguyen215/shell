@@ -39,5 +39,5 @@ tree: ## Print the project layout
 	@tree -a -I '.git|node_modules|logs|.gradle|.idea|build|logs|.vscode|.git|.github|v1' --dirsfirst
 
 clean: ## Remove generated files (docs/api, logs)
-	@rm -rf docs/api logs
+	@rm -rf logs
 	@echo "Cleaned."
