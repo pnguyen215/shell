@@ -162,25 +162,30 @@ shell::net::open_url() {
 #   for being non-empty, then executed.
 #
 #   Environment variables set by the caller (e.g. `RUNZSH=no`) are inherited by
-#   the script.
+#   the script. Any arguments after the interpreter are passed to the script
+#   unchanged (argv style, so spaces and quotes survive).
 # @option -h | --help Show help and return.
 # @option -n | --dry-run Print the equivalent pipeline instead of running it.
 # @arg $1 string Script URL.
 # @arg $2 string Interpreter (default: sh).
+# @arg $@ string Arguments passed to the script (everything after the interpreter).
 # @exitcode 0 The script ran successfully (or dry-run printed).
 # @exitcode 1 Download failed, the script was empty, or it exited non-zero.
 # @exitcode 2 No URL given.
+# @exitcode N Exit status of the script when it exits non-zero.
 # @example
 #   RUNZSH=no shell::net::run_remote_script "$SHELL_URL_OHMYZSH_INSTALL" sh
+#   shell::net::run_remote_script "$url" bash --yes --tool claude
 #
 shell::net::run_remote_script() {
 	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Download a script, verify it, then run it with an interpreter"
-		shell::logger::usage "shell::net::run_remote_script [-n] <url> [interpreter]"
+		shell::logger::usage "shell::net::run_remote_script [-n] <url> [interpreter] [script-args...]"
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
 		shell::logger::option "-h, --help" "Display this help message"
 		shell::logger::example "shell::net::run_remote_script https://example.com/install.sh bash"
+		shell::logger::example "shell::net::run_remote_script https://example.com/install.sh bash --yes"
 		return "$RETURN_SUCCESS"
 	fi
 
@@ -193,12 +198,24 @@ shell::net::run_remote_script() {
 	local url="${1-}"
 	local interpreter="${2:-sh}"
 	if [ -z "$url" ]; then
-		shell::logger::error "Usage: shell::net::run_remote_script [-n] <url> [interpreter]"
+		shell::logger::error "Usage: shell::net::run_remote_script [-n] <url> [interpreter] [script-args...]"
 		return "$RETURN_INVALID"
 	fi
 
+	# Drop <url> and <interpreter>; what is left are the script's own arguments.
+	[ "$#" -gt 0 ] && shift
+	[ "$#" -gt 0 ] && shift
+
 	if [ "$dry_run" = "true" ]; then
-		shell::logger::command_clip "curl -fsSL \"$url\" | $interpreter"
+		local shown="" arg
+		for arg in "$@"; do
+			shown="$shown $(printf '%q' "$arg")"
+		done
+		if [ -n "$shown" ]; then
+			shell::logger::command_clip "curl -fsSL \"$url\" | $interpreter -s --$shown"
+		else
+			shell::logger::command_clip "curl -fsSL \"$url\" | $interpreter"
+		fi
 		return "$RETURN_SUCCESS"
 	fi
 
@@ -220,7 +237,7 @@ shell::net::run_remote_script() {
 
 	local rc=0
 	shell::logger::command "$interpreter <(downloaded $url)"
-	"$interpreter" "$script" || rc=$?
+	"$interpreter" "$script" "$@" || rc=$?
 	rm -f "$script"
 	return "$rc"
 }
