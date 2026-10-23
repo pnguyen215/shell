@@ -114,6 +114,22 @@ shell::fs::browse ~/docs                 # pick a file with fzf, then act on it
 - Most destructive or state-changing functions support `-n` / `--dry-run` (prints the command and copies it to the clipboard if available).
 - Short aliases are defined in [`src/alias/alias.sh`](src/alias/alias.sh) (e.g., `sgbb` = backup branch).
 
+## Agent Skills
+
+Install the [pnguyen215/skills](https://github.com/pnguyen215/skills) collection (`SKILL.md` files) into Claude Code and/or OpenCode:
+
+```bash
+shell::skill::list golang                          # browse upstream skills (filter by category / slug / tag)
+shell::skill::install --tool claude --yes          # all skills, personal scope, symlinked
+shell::skill::install -t all -s project -k golang,security-secure-coding
+shell::skill::installed                            # what shell::skill::install placed
+shell::skill::upgrade --yes                        # refresh, and add skills new upstream (--no-new to skip)
+shell::skill::sync claude --yes                    # mirror the repo exactly, pruning deleted skills
+shell::skill::uninstall --tool all --scope all --yes
+```
+
+Add `-n` to print the download command instead of running it, or `--preview` to let the installer show what it would change. Restart your Claude Code / OpenCode session afterwards. Use a fork with `SHELL_SKILL_REPO_SLUG` / `SHELL_SKILL_REPO_BRANCH`. Full reference: [`docs/api/skill-manage.md`](docs/api/skill-manage.md), [`skill-query.md`](docs/api/skill-query.md). Aliases: `ssk-in`, `ssk-up`, `ssk-rm`, `ssk-sync`, `ssk-ls`, `ssk-lsi`.
+
 ## Naming
 
 Every function is named **`shell::<category>::<name>`**, with an optional `::fzf` suffix for the interactive variant:
@@ -144,6 +160,7 @@ The only exceptions are the four lifecycle functions in [`src/shell.sh`](src/she
     ├── core/           # console, logger, os, exec, clipboard, fzf, ask (prompts)
     ├── dependency/     # one installer per external tool (fzf, jq, curl, git, ...), package manager, Homebrew, Oh My Zsh
     ├── lib/            # fs, net, process, permission, strings, conf, ini, profile, bookmark, goto, ssh, workspace
+    ├── skill/          # agent skills for Claude Code / OpenCode: install, upgrade, uninstall, sync
     ├── lang/           # git, go, python, java, nodejs, angular
     ├── devops/         # GitHub Actions scaffolding
     ├── shield/         # AES-256-CBC helpers
