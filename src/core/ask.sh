@@ -363,6 +363,81 @@ shell::ask::option() {
 	printf '%s\n' "$@" | shell::fzf::select --prompt="Select an option: "
 }
 
+# @description Choose ONE entry from a list with fzf, with a "back" entry at the end.
+#   Like shell::ask::option, plus an extra last entry (`SHELL_FZF_BACK_LABEL`,
+#   "← Back"). Picking it is **not** a cancel: it returns `RETURN_BACK`, so a
+#   multi-step flow can step back one screen, while ESC still means "abort".
+#   The back entry comes last so that Enter never lands on it by accident.
+# @option -h | --help Show help and return.
+# @option -p | --prompt Text of the fzf prompt (default: "Select an option: ").
+# @arg $@ string The choices (the back entry is added for you).
+# @stdout The chosen entry (nothing when back or cancel).
+# @exitcode 0 An entry was chosen.
+# @exitcode 2 No choices were given, or an unknown option.
+# @exitcode 9 The user cancelled (ESC).
+# @exitcode 11 The user picked the back entry.
+# @see shell::ask::option
+# @see shell::fzf::loop
+# @example
+#   env="$(shell::ask::option::back dev staging prod)"
+#   case $? in
+#   0) echo "deploy to $env" ;;
+#   "$RETURN_BACK") echo "previous screen" ;;
+#   *) return ;;
+#   esac
+#
+shell::ask::option::back() {
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Choose one entry from a list (fzf) with a back entry"
+		shell::logger::usage "shell::ask::option::back [-p <prompt>] <choice1> [choice2 ...]"
+		shell::logger::option "-p, --prompt <text>" "fzf prompt text"
+		shell::logger::option "-h, --help" "Display this help message"
+		shell::logger::example "shell::ask::option::back dev staging prod"
+		return "$RETURN_SUCCESS"
+	fi
+
+	local prompt="Select an option: "
+	while [ "$#" -gt 0 ]; do
+		case "$1" in
+		-p | --prompt)
+			if [ "$#" -lt 2 ]; then
+				shell::logger::error "Option $1 requires a value"
+				return "$RETURN_INVALID"
+			fi
+			prompt="$2"
+			shift 2
+			;;
+		--)
+			shift
+			break
+			;;
+		-*)
+			shell::logger::error "Unknown option: $1"
+			return "$RETURN_INVALID"
+			;;
+		*) break ;;
+		esac
+	done
+
+	if [ "$#" -eq 0 ]; then
+		shell::logger::error "No options provided to shell::ask::option::back."
+		return "$RETURN_INVALID"
+	fi
+
+	local choice rc
+	choice="$(printf '%s\n' "$@" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --prompt="$prompt")"
+	rc=$?
+	if [ "$rc" -ne 0 ]; then
+		return "$rc"
+	fi
+
+	if [ "$choice" = "$SHELL_FZF_BACK_LABEL" ]; then
+		return "$RETURN_BACK"
+	fi
+	printf '%s\n' "$choice"
+}
+
 # @description Choose one entry from `label:value` pairs; print the value.
 #   Only the label is displayed; the text after the first colon is returned.
 # @option -h | --help Show help and return.
@@ -481,3 +556,4 @@ shell::ask::options::values() {
 
 	printf '%s\n' "$values"
 }
+
