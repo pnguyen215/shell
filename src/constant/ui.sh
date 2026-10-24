@@ -34,3 +34,22 @@ SHELL_GLYPH_FAIL="[✗]"
 SHELL_GLYPH_COPIED="✨"
 SHELL_GLYPH_POINTER="▶"
 SHELL_GLYPH_MARKER="✓"
+
+# --- Logger style "simple" -----------------------------------------------------
+# Mirrors scripts/lib.sh of pnguyen215/skills: a coloured `[tag]` followed by the
+# plain message, e.g. `[info]  Installed 3 skills`. Only the tag is coloured,
+# using SGR foreground codes (30-37); an empty code means "no colour".
+# The tag is padded to SHELL_LOGGER_TAG_WIDTH so messages line up.
+SHELL_LOGGER_TAG_WIDTH=8
+SHELL_LOGGER_TAG_DEBUG="[debug]"
+SHELL_LOGGER_TAG_INFO="[info]"
+SHELL_LOGGER_TAG_WARN="[warn]"
+SHELL_LOGGER_TAG_ERROR="[error]"
+SHELL_LOGGER_TAG_FATAL="[fatal]"
+SHELL_LOGGER_TAG_SUCCESS="[ok]"
+SHELL_LOGGER_SGR_DEBUG=""
+SHELL_LOGGER_SGR_INFO="34"
+SHELL_LOGGER_SGR_WARN="33"
+SHELL_LOGGER_SGR_ERROR="31"
+SHELL_LOGGER_SGR_FATAL="31"
+SHELL_LOGGER_SGR_SUCCESS="32"
