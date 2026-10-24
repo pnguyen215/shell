@@ -25,6 +25,9 @@ SHELL_KEY_PROTECTED_FILE="$SHELL_CONFIG_DIR/protected.conf"
 SHELL_KEY_GROUP_FILE="$SHELL_CONFIG_DIR/group.conf"
 SHELL_KEY_GROUP_BACKUP_FILE="$SHELL_CONFIG_BACKUP_DIR/group.conf.bak"
 
+# Saved logger style (written by shell::logger::style::set).
+SHELL_LOGGER_CONF_FILE="$SHELL_CONFIG_DIR/logger.conf"
+
 # Bookmarks: one "name=/absolute/path" per line.
 SHELL_BOOKMARK_FILE="$SHELL_BOOKMARK_DIR/.bookmarks"
 
