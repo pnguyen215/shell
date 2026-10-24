@@ -3720,35 +3720,49 @@ EOF
 #   or release-please can parse it. By default a gitmoji shortcode is placed
 #   **after** the colon (`feat: :sparkles: add ...`), which keeps the message
 #   valid; `--plain` leaves it out (`feat: add ...`).
+#
+#   With `--back` both menus get a "← Back" entry: in the message menu it returns
+#   to the category menu; in the category menu it leaves with `RETURN_BACK`, so
+#   a caller can step back one screen (ESC still aborts).
 # @option -h | --help Show this help message.
 # @option -p | --plain Omit the emoji: print `type(scope)!: description` only.
-# @stdout The selected commit message (nothing when the menu is cancelled).
-# @exitcode 0 A message was printed, or the menu was cancelled.
+# @option -b | --back Add a "← Back" entry to both menus.
+# @stdout The selected commit message (nothing when the menu is cancelled or left with Back).
+# @exitcode 0 A message was printed, or the menu was cancelled (ESC).
 # @exitcode 2 Unknown option.
+# @exitcode 11 --back: "Back" was picked in the category menu.
 # @see shell::git::commit::create
+# @see shell::ask::option::back
 # @example
 #   shell::git::commit::message::base
 #   shell::git::commit::message::base --plain
+#   shell::git::commit::message::base --back
 #   git commit --allow-empty -m "$(shell::git::commit::message::base)"
 #
 shell::git::commit::message::base() {
 	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Select a Conventional Commits message from a categorized menu"
-		shell::logger::usage "shell::git::commit::message::base [-p]"
+		shell::logger::usage "shell::git::commit::message::base [-p] [-b]"
 		shell::logger::option "-p, --plain" "Omit the emoji (type(scope)!: description)"
+		shell::logger::option "-b, --back" "Add a back entry to both menus"
 		shell::logger::option "-h, --help" "Show this help message"
 		shell::logger::example "shell::git::commit::message::base"
 		shell::logger::example "shell::git::commit::message::base --plain"
+		shell::logger::example "shell::git::commit::message::base --back"
 		shell::logger::example "git commit --allow-empty -m \"\$(shell::git::commit::message::base)\""
 		return "$RETURN_SUCCESS"
 	fi
 
-	local plain="false"
+	local plain="false" back="false"
 	while [ "$#" -gt 0 ]; do
 		case "$1" in
 		-p | --plain)
 			plain="true"
+			shift
+			;;
+		-b | --back)
+			back="true"
 			shift
 			;;
 		*)
@@ -3761,231 +3775,361 @@ shell::git::commit::message::base() {
 	local catalog
 	catalog="$(shell::git::commit::message::catalog)"
 
-	# Step 1 — categories, in the order they first appear in the catalog.
+	# Categories, in the order they first appear in the catalog.
 	local -a categories=()
 	local line
 	while IFS= read -r line; do
 		categories+=("$line")
 	done < <(printf '%s\n' "$catalog" | awk -F'|' '!seen[$1]++ { print $1 }')
 
-	local selected_category
-	selected_category="$(shell::ask::option "${categories[@]}")"
-
-	if [ -z "$selected_category" ]; then
-		shell::logger::warn "No category selected — aborting"
-		return "$RETURN_SUCCESS"
+	# The picker is the plain menu, or the one with a "← Back" entry.
+	local -a pick=(shell::ask::option)
+	if [ "$back" = "true" ]; then
+		pick=(shell::ask::option::back)
 	fi
 
-	# Step 2 — render the messages of that category.
-	local -a messages=()
+	# Declared once, before the loop (re-declaring a local in a loop prints in zsh).
+	local selected_category selected_message rc
 	local category emoji header description
-	while IFS='|' read -r category emoji header description; do
-		if [ "$category" != "$selected_category" ]; then
+	local -a messages=()
+
+	while true; do
+		# Step 1 — category.
+		selected_category="$("${pick[@]}" "${categories[@]}")"
+		rc=$?
+		if [ "$rc" -eq "$RETURN_BACK" ]; then
+			return "$RETURN_BACK"
+		fi
+		if [ "$rc" -ne 0 ] || [ -z "$selected_category" ]; then
+			shell::logger::warn "No category selected — aborting"
+			return "$RETURN_SUCCESS"
+		fi
+
+		# Step 2 — render the messages of that category.
+		messages=()
+		while IFS='|' read -r category emoji header description; do
+			if [ "$category" != "$selected_category" ]; then
+				continue
+			fi
+			if [ "$plain" = "true" ] || [ -z "$emoji" ]; then
+				messages+=("${header}: ${description}")
+			else
+				messages+=("${header}: ${emoji} ${description}")
+			fi
+		done < <(printf '%s\n' "$catalog")
+
+		# Step 3 — pick one. Back returns to the category menu.
+		selected_message="$("${pick[@]}" "${messages[@]}")"
+		rc=$?
+		if [ "$rc" -eq "$RETURN_BACK" ]; then
 			continue
 		fi
-		if [ "$plain" = "true" ] || [ -z "$emoji" ]; then
-			messages+=("${header}: ${description}")
-		else
-			messages+=("${header}: ${emoji} ${description}")
+		if [ "$rc" -ne 0 ] || [ -z "$selected_message" ]; then
+			shell::logger::warn "No message selected — aborting"
+			return "$RETURN_SUCCESS"
 		fi
-	done < <(printf '%s\n' "$catalog")
 
-	# Step 3 — pick one.
-	local selected_message
-	selected_message="$(shell::ask::option "${messages[@]}")"
-
-	if [ -z "$selected_message" ]; then
-		shell::logger::warn "No message selected — aborting"
+		printf '%s\n' "$selected_message"
 		return "$RETURN_SUCCESS"
-	fi
-
-	printf '%s\n' "$selected_message"
-	return "$RETURN_SUCCESS"
+	done
 }
 
-# @description Interactively builds and commits a formatted Git commit message. In default
-#   mode, prompts for commit type (with emoji), description, and issue number,
-#   then commits, sends a Telegram activity notification, and pushes to origin.
-#   In --empty mode, presents pre-defined empty commit messages grouped by
-#   category for selection via fzf, then runs git commit --allow-empty.
+# @internal
+# @description Read one line of text for a wizard step, with back support.
+#   The prompt goes to stderr and the value to stdout, so the function can be
+#   used in `$(...)`. Typing `:back` returns `RETURN_BACK`. An empty line keeps
+#   `current` when there is one (it is shown in the prompt), otherwise the
+#   question is asked again. End of input (Ctrl-D) is a cancel.
+# @arg $1 string Prompt text.
+# @arg $2 string Current value, kept on an empty line (optional).
+# @stdout The entered (or kept) value.
+# @exitcode 0 A value was entered or kept.
+# @exitcode 9 End of input (Ctrl-D).
+# @exitcode 11 The user typed `:back`.
+# @example
+#   value="$(shell::git::commit::input "Issue number" "$issue")"
 #
-#   Default mode:
-#   1. Select commit type (feat, fix, chore, …) via shell::ask::option
-#   2. Map type → emoji code via case lookup
-#   3. Read commit description (loops until non-empty)
-#   4. Read issue number (loops until non-empty)
-#   5. Build message: <emoji> <type>: <description> <issue>
-#   6. Confirm → git commit -m "<message>"
-#   7. Send Telegram notification via shell::git::telegram::history::send
-#   8. git push origin <current_branch>
+shell::git::commit::input() {
+	local prompt="${1-}" current="${2-}" value=""
+
+	while true; do
+		if [ -n "$current" ]; then
+			printf '%s [Enter keeps: %s] (:back to go back): ' "$prompt" "$current" >&2
+		else
+			printf '%s (:back to go back): ' "$prompt" >&2
+		fi
+
+		if ! read -r value; then
+			printf '\n' >&2
+			return "$RETURN_CANCELLED"
+		fi
+
+		case "$value" in
+		:back) return "$RETURN_BACK" ;;
+		'')
+			if [ -n "$current" ]; then
+				printf '%s\n' "$current"
+				return "$RETURN_SUCCESS"
+			fi
+			shell::logger::warn "This value cannot be empty — please try again"
+			;;
+		*)
+			printf '%s\n' "$value"
+			return "$RETURN_SUCCESS"
+			;;
+		esac
+	done
+}
+
+# @description Interactively builds and commits a formatted Git commit message, one
+#   step at a time. Every menu has a "← Back" entry (and the text prompts accept
+#   `:back`), so a wrong choice is fixed by stepping back instead of aborting.
+#   ESC / Ctrl-C still abort the whole command. In default mode it prompts for
+#   commit type (with emoji), description and issue number, then commits, sends a
+#   Telegram activity notification and pushes to origin. In --empty mode it
+#   presents pre-defined empty commit messages grouped by category and runs
+#   git commit --allow-empty.
+#
+#   Default mode (Back returns to the previous step; at step 1 it leaves):
+#   1. Select commit type (feat, fix, chore, …)            [Back = leave]
+#   2. Read commit description (kept when going back)       [:back = step 1]
+#   3. Read issue number (kept when going back)             [:back = step 2]
+#   4. Build `<emoji> <type>: <description> <issue>`, then Commit / Abort [Back = step 3]
+#   5. git commit -m "<message>"
+#   6. Send Telegram notification via shell::git::telegram::history::send
+#   7. git push origin <current_branch>
+#
 #   Empty mode (--empty):
-#   1. Select category via shell::ask::option
-#   2. Select pre-defined message from category via shell::ask::option
-#   3. Confirm → git commit --allow-empty -m "<message>"
+#   1. Select category, then a message (shell::git::commit::message::base --back)
+#      [Back in the message list = categories; Back in the categories = leave]
+#   2. Choose Create empty commit / Abort                    [Back = step 1]
+#   3. git commit --allow-empty -m "<message>"
 # @option -n | --dry-run Optional. Print the git commit command via shell::logger::command_clip instead of executing it.
 # @option -h | --help Show this help message.
 # @option -e | --empty Optional. Switch to empty-commit mode — select a pre-defined message and run git commit --allow-empty.
-# @exitcode 0 Success.
+# @exitcode 0 Success, or the user backed out / cancelled.
 # @exitcode 1 The operation failed.
+# @see shell::ask::option::back
+# @see shell::git::commit::message::base
 # @example
 #   shell::git::commit::create
 #   shell::git::commit::create --empty
 #   shell::git::commit::create -n
 #
 shell::git::commit::create() {
-	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
 		shell::logger::reset_options
-		shell::logger::info "Interactively build and commit a formatted Git commit message"
+		shell::logger::info "Interactively build and commit a formatted Git commit message (with Back navigation)"
 		shell::logger::usage "shell::git::commit::create [-n] [-h] [-e]"
 		shell::logger::option "-h, --help" "Show this help message"
 		shell::logger::option "-n, --dry-run" "Print the git commit command instead of executing it"
 		shell::logger::option "-e, --empty" "Use a pre-defined empty commit message (--allow-empty)"
+		shell::logger::note "Pick '$SHELL_FZF_BACK_LABEL' in a menu, or type :back at a text prompt, to return to the previous step."
 		shell::logger::example "shell::git::commit::create"
 		shell::logger::example "shell::git::commit::create --empty"
 		shell::logger::example "shell::git::commit::create -n"
-		return $RETURN_SUCCESS
+		return "$RETURN_SUCCESS"
 	fi
 
 	local dry_run="false"
-	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+	if [ "${1-}" = "-n" ] || [ "${1-}" = "--dry-run" ]; then
 		dry_run="true"
 		shift
 	fi
 
 	local empty_mode="false"
-	if [ "$1" = "-e" ] || [ "$1" = "--empty" ]; then
+	if [ "${1-}" = "-e" ] || [ "${1-}" = "--empty" ]; then
 		empty_mode="true"
 		shift
 	fi
 
 	if ! git rev-parse --git-dir >/dev/null 2>&1; then
 		shell::logger::error "Not inside a Git repository"
-		return $RETURN_FAILURE
+		return "$RETURN_FAILURE"
 	fi
 
+	# Declared once, before any loop: re-declaring a local inside a loop prints
+	# its value in zsh.
+	local rc choice value step
+	local selected_message selected_type emoji commit_message
+	local commit_description="" issue_number=""
+	local cmd_commit_empty cmd_commit empty_branch
+
 	# ===========================================================================
-	# Empty commit mode — delegate to shell::git::commit::message::base.
+	# Empty commit mode — delegate the pick to shell::git::commit::message::base.
 	# ===========================================================================
 	if [ "$empty_mode" = "true" ]; then
-		local selected_message
-		selected_message=$(shell::git::commit::message::base)
+		while true; do
+			selected_message="$(shell::git::commit::message::base --back)"
+			rc=$?
 
-		if [ -z "$selected_message" ]; then
-			return $RETURN_SUCCESS
-		fi
-
-		shell::logger::info "Selected commit message: ${selected_message}"
-
-		if shell::ask::deny "Proceed with this empty commit?"; then
-			shell::logger::info "Commit aborted"
-		else
-			local cmd_commit_empty="git commit --allow-empty -m \"${selected_message}\""
-			if [ "$dry_run" = "true" ]; then
-				shell::logger::command_clip "$cmd_commit_empty"
-			else
-				shell::logger::assert "$cmd_commit_empty" \
-					"Empty commit created successfully" "Empty commit aborted" || return $?
-
-				# Push the commit via interactive push command picker.
-				local empty_branch
-				empty_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
-				shell::git::branch::push "${empty_branch}"
+			# Back from the first screen, or ESC: nothing to commit.
+			if [ "$rc" -eq "$RETURN_BACK" ] || [ -z "$selected_message" ]; then
+				return "$RETURN_SUCCESS"
 			fi
+
+			shell::logger::info "Selected commit message: ${selected_message}"
+
+			choice="$(shell::ask::option::back --prompt "Create this empty commit? " "Create empty commit" "Abort")"
+			rc=$?
+			case "$rc" in
+			0) ;;
+			"$RETURN_BACK") continue ;;
+			*)
+				shell::logger::info "Commit aborted"
+				return "$RETURN_SUCCESS"
+				;;
+			esac
+
+			if [ "$choice" != "Create empty commit" ]; then
+				shell::logger::info "Commit aborted"
+				return "$RETURN_SUCCESS"
+			fi
+			break
+		done
+
+		cmd_commit_empty="git commit --allow-empty -m \"${selected_message}\""
+		if [ "$dry_run" = "true" ]; then
+			shell::logger::command_clip "$cmd_commit_empty"
+			return "$RETURN_SUCCESS"
 		fi
 
-		return $RETURN_SUCCESS
+		shell::logger::assert "$cmd_commit_empty" \
+			"Empty commit created successfully" "Empty commit aborted" || return $?
+
+		# Push the commit via interactive push command picker.
+		empty_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+		shell::git::branch::push "${empty_branch}"
+
+		return "$RETURN_SUCCESS"
 	fi
 
 	# ===========================================================================
 	# Default mode — formatted commit: type + emoji + description + issue.
+	# A small state machine: each step can send the user back to the previous one.
 	# ===========================================================================
+	step="type"
+	while true; do
+		case "$step" in
+		type)
+			selected_type="$(shell::ask::option::back --prompt "Commit type: " \
+				"feat" "fix" "chore" "docs" "style" "refactor" "test" "perf" \
+				"WIP" "improvement" "revert" "security" "remove" "initial source" \
+				"logs" "config" "build" "dependency" "deployment" "localization" \
+				"search" "experimental" "version tag" "silent changes" "deprecation" "release")"
+			rc=$?
 
-	# Step 1 — select commit type via fzf.
-	local selected_type
-	selected_type=$(shell::ask::option \
-		"feat" "fix" "chore" "docs" "style" "refactor" "test" "perf" \
-		"WIP" "improvement" "revert" "security" "remove" "initial source" \
-		"logs" "config" "build" "dependency" "deployment" "localization" \
-		"search" "experimental" "version tag" "silent changes" "deprecation" "release")
+			# Back from the first step leaves the command.
+			if [ "$rc" -eq "$RETURN_BACK" ]; then
+				shell::logger::info "Commit cancelled"
+				return "$RETURN_SUCCESS"
+			fi
+			if [ "$rc" -ne 0 ] || [ -z "$selected_type" ]; then
+				shell::logger::warn "No commit type selected — aborting"
+				return "$RETURN_SUCCESS"
+			fi
 
-	if [ -z "$selected_type" ]; then
-		shell::logger::warn "No commit type selected — aborting"
-		return $RETURN_SUCCESS
-	fi
+			# Map commit type → emoji code.
+			case "$selected_type" in
+			feat) emoji=":sparkles:" ;;
+			fix) emoji=":bug:" ;;
+			chore) emoji=":wrench:" ;;
+			docs) emoji=":books:" ;;
+			style) emoji=":art:" ;;
+			refactor) emoji=":recycle:" ;;
+			test) emoji=":white_check_mark:" ;;
+			perf) emoji=":chart_with_upwards_trend:" ;;
+			WIP) emoji=":construction:" ;;
+			improvement) emoji=":zap:" ;;
+			revert) emoji=":rewind:" ;;
+			security) emoji=":lock:" ;;
+			remove) emoji=":fire:" ;;
+			"initial source") emoji=":tada:" ;;
+			logs) emoji=":loud_sound:" ;;
+			config) emoji=":gear:" ;;
+			build) emoji=":hammer:" ;;
+			dependency) emoji=":package:" ;;
+			deployment) emoji=":rocket:" ;;
+			localization) emoji=":earth_americas:" ;;
+			search) emoji=":mag:" ;;
+			experimental) emoji=":alien:" ;;
+			"version tag") emoji=":bookmark:" ;;
+			"silent changes") emoji=":mute:" ;;
+			deprecation) emoji=":warning:" ;;
+			release) emoji=":gem:" ;;
+			*) emoji="" ;;
+			esac
+			step="description"
+			;;
 
-	# Step 2 — map commit type → emoji code.
-	local emoji
-	case "$selected_type" in
-	feat) emoji=":sparkles:" ;;
-	fix) emoji=":bug:" ;;
-	chore) emoji=":wrench:" ;;
-	docs) emoji=":books:" ;;
-	style) emoji=":art:" ;;
-	refactor) emoji=":recycle:" ;;
-	test) emoji=":white_check_mark:" ;;
-	perf) emoji=":chart_with_upwards_trend:" ;;
-	WIP) emoji=":construction:" ;;
-	improvement) emoji=":zap:" ;;
-	revert) emoji=":rewind:" ;;
-	security) emoji=":lock:" ;;
-	remove) emoji=":fire:" ;;
-	"initial source") emoji=":tada:" ;;
-	logs) emoji=":loud_sound:" ;;
-	config) emoji=":gear:" ;;
-	build) emoji=":hammer:" ;;
-	dependency) emoji=":package:" ;;
-	deployment) emoji=":rocket:" ;;
-	localization) emoji=":earth_americas:" ;;
-	search) emoji=":mag:" ;;
-	experimental) emoji=":alien:" ;;
-	"version tag") emoji=":bookmark:" ;;
-	"silent changes") emoji=":mute:" ;;
-	deprecation) emoji=":warning:" ;;
-	release) emoji=":gem:" ;;
-	*) emoji="" ;;
-	esac
+		description)
+			value="$(shell::git::commit::input "Enter a concise and clear commit description" "$commit_description")"
+			rc=$?
+			case "$rc" in
+			0)
+				commit_description="$value"
+				step="issue"
+				;;
+			"$RETURN_BACK") step="type" ;;
+			*)
+				shell::logger::warn "Input cancelled — aborting"
+				return "$RETURN_SUCCESS"
+				;;
+			esac
+			;;
 
-	# Step 3 — read commit description (non-empty, looped).
-	local commit_description=""
-	while [ -z "$commit_description" ]; do
-		shell::logger::info "Enter a concise and clear commit description:"
-		read -r commit_description
-		if [ -z "$commit_description" ]; then
-			shell::logger::warn "Commit description cannot be empty — please try again"
-		fi
+		issue)
+			value="$(shell::git::commit::input "Enter issue number (e.g. #1)" "$issue_number")"
+			rc=$?
+			case "$rc" in
+			0)
+				issue_number="$value"
+				step="confirm"
+				;;
+			"$RETURN_BACK") step="description" ;;
+			*)
+				shell::logger::warn "Input cancelled — aborting"
+				return "$RETURN_SUCCESS"
+				;;
+			esac
+			;;
+
+		confirm)
+			commit_message="${emoji} ${selected_type}: ${commit_description} ${issue_number}"
+			shell::logger::info "Commit message: ${commit_message}"
+
+			choice="$(shell::ask::option::back --prompt "Proceed with this commit? " "Commit" "Abort")"
+			rc=$?
+			case "$rc" in
+			0)
+				if [ "$choice" = "Commit" ]; then
+					break
+				fi
+				shell::logger::info "Commit aborted"
+				return "$RETURN_SUCCESS"
+				;;
+			"$RETURN_BACK") step="issue" ;;
+			*)
+				shell::logger::info "Commit aborted"
+				return "$RETURN_SUCCESS"
+				;;
+			esac
+			;;
+		esac
 	done
 
-	# Step 4 — read issue number (non-empty, looped).
-	local issue_number=""
-	while [ -z "$issue_number" ]; do
-		shell::logger::info "Enter issue number (e.g. #1):"
-		read -r issue_number
-		if [ -z "$issue_number" ]; then
-			shell::logger::warn "Issue number cannot be empty — please try again"
-		fi
-	done
-
-	# Step 5 — build and display commit message.
-	local commit_message="${emoji} ${selected_type}: ${commit_description} ${issue_number}"
-	shell::logger::info "Commit message: ${commit_message}"
-
-	if shell::ask::deny "Proceed with this commit?"; then
-		shell::logger::info "Commit aborted"
-		return $RETURN_SUCCESS
-	fi
-
-	# Step 6 — commit.
-	local cmd_commit="git commit -m \"${commit_message}\""
+	# Commit.
+	cmd_commit="git commit -m \"${commit_message}\""
 
 	if [ "$dry_run" = "true" ]; then
 		shell::logger::command_clip "$cmd_commit"
-		return $RETURN_SUCCESS
+		return "$RETURN_SUCCESS"
 	fi
 
 	shell::logger::assert "$cmd_commit" \
 		"Commit created: ${commit_message}" "Commit aborted" || return $?
 
-	# Step 7 — collect metadata and send Telegram notification.
+	# Collect metadata and send Telegram notification.
 	local git_username
 	local current_branch
 	local commit_hash
@@ -4005,10 +4149,10 @@ shell::git::commit::create() {
 	local telegram_message="username: ${git_username} | repository: ${repository_name} (${server_remote_url}) | branch: ${current_branch} | hash: ${commit_hash} | message: ${commit_message} | timestamp: ${timestamp}"
 	shell::git::telegram::history::send "${telegram_message}"
 
-	# Step 8 — push current branch to origin via interactive push command picker.
+	# Push current branch to origin via interactive push command picker.
 	shell::git::branch::push "${current_branch}"
 
-	return $RETURN_SUCCESS
+	return "$RETURN_SUCCESS"
 }
 
 # @description Checks out a specific commit hash (detached HEAD). Optionally creates a new
