@@ -97,6 +97,9 @@ unset _shell_group
 # cached in SHELL_OS_TYPE and every later shell::os::type call is fork-free.
 shell::os::type >/dev/null 2>&1
 
+# Resolve the logger style once (exported SHELL_LOGGER_STYLE > saved > default).
+shell::logger::style::load >/dev/null 2>&1
+
 SHELL_LOADED=1
 
 # --- 4. Lifecycle commands
