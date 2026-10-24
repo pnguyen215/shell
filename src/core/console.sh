@@ -189,8 +189,10 @@ shell::console::spinner() {
 	local frames='|/-\'
 	local i=0
 	while [ "$SECONDS" -lt "$end_time" ]; do
-		# ${frames:i:1} is a 1-character substring (works in bash and zsh).
-		printf '\r%s' "${frames:i:1}" >&2
+		# ${frames:$i:1} is a 1-character substring. The explicit `$` matters:
+		# zsh reads `${frames:i:1}` as a history modifier (`:i`) and fails with
+		# "unrecognized modifier `i'", while bash accepts both forms.
+		printf '\r%s' "${frames:$i:1}" >&2
 		i=$(((i + 1) % 4))
 		sleep 0.1
 	done
