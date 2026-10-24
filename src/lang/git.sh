@@ -3960,7 +3960,7 @@ shell::git::commit::create() {
 	# ===========================================================================
 	if [ "$empty_mode" = "true" ]; then
 		while true; do
-			selected_message="$(shell::git::commit::message::base --back)"
+			selected_message="$(shell::git::commit::message::base --plain --back)"
 			rc=$?
 
 			# Back from the first screen, or ESC: nothing to commit.
