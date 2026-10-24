@@ -206,17 +206,53 @@ shell::logger::style::save() {
 	local tmp="$SHELL_LOGGER_CONF_FILE.tmp.$$"
 
 	if [ ! -d "$dir" ]; then
-		mkdir -p "$dir" && chmod 700 "$dir" || return "$RETURN_FAILURE"
+		mkdir -p "$dir" 2>/dev/null && chmod 700 "$dir" 2>/dev/null || return "$RETURN_FAILURE"
 	fi
 
-	if ! (umask 077 && printf 'style=%s\n' "$style" >"$tmp"); then
-		rm -f "$tmp"
+	# Fail quietly: the shell would otherwise print a raw "permission denied"
+	# for the redirect. shell::logger::style::save_hint explains what to do.
+	if ! { (umask 077 && printf 'style=%s\n' "$style" >"$tmp"); } 2>/dev/null; then
+		rm -f "$tmp" 2>/dev/null
 		return "$RETURN_FAILURE"
 	fi
-	mv -f "$tmp" "$SHELL_LOGGER_CONF_FILE" || {
-		rm -f "$tmp"
+	mv -f "$tmp" "$SHELL_LOGGER_CONF_FILE" 2>/dev/null || {
+		rm -f "$tmp" 2>/dev/null
 		return "$RETURN_FAILURE"
 	}
+}
+
+# @internal
+# @description Explain why the style could not be saved, and how to fix it.
+#   The usual cause is a config directory owned by another user (typically
+#   `root`, after the library was once run with `sudo`). The command to repair
+#   it is only **printed**, never run.
+# @stdout The suggested fix (a command line).
+# @stderr Warnings describing the problem.
+# @exitcode 0 Always.
+# @example
+#   shell::logger::style::save "$style" || shell::logger::style::save_hint
+#
+shell::logger::style::save_hint() {
+	local dir="${SHELL_LOGGER_CONF_FILE%/*}"
+	local user
+	user="$(id -un 2>/dev/null)"
+
+	shell::logger::warn "Could not write to $dir"
+	if [ -d "$dir" ] && [ ! -w "$dir" ]; then
+		shell::logger::warn "$(ls -ld "$dir" 2>/dev/null)"
+		if [ -O "$dir" ]; then
+			shell::logger::warn "You own it, but it has no write permission. To fix it, run:"
+			shell::logger::command "chmod u+rwx \"$dir\""
+		else
+			shell::logger::warn "It belongs to another user (often root, from an earlier sudo). To fix it, run:"
+			shell::logger::command "sudo chown -R \"$user\" \"$dir\""
+		fi
+	elif [ -e "$dir" ] && [ ! -d "$dir" ]; then
+		shell::logger::warn "$dir exists but is not a directory"
+	else
+		shell::logger::warn "Check the permissions and free space of that location"
+	fi
+	shell::logger::warn "Or use --session to apply a style to this shell only."
 }
 
 # @internal
@@ -403,7 +439,8 @@ shell::logger::style::set() {
 
 	if [ "$save" = "true" ]; then
 		if ! shell::logger::style::save "$style"; then
-			shell::logger::warn "Logger style '$style' applied, but could not be saved to $SHELL_LOGGER_CONF_FILE"
+			shell::logger::warn "Logger style '$style' is active in this shell, but could not be saved"
+			shell::logger::style::save_hint
 			return "$RETURN_FAILURE"
 		fi
 		shell::logger::success "Logger style set to '$style' (saved)"
@@ -480,11 +517,18 @@ shell::logger::style::set::fzf() {
 
 	# The name is the first word of the chosen row.
 	local chosen="${selection%% *}"
-	shell::logger::style::set ${flags[@]+"${flags[@]}"} "$chosen" || return $?
+	# set returns 1 when the style was applied but could not be saved; the style
+	# is active, so the preview is still shown. Anything higher means "not applied".
+	local set_rc=0
+	shell::logger::style::set ${flags[@]+"${flags[@]}"} "$chosen" || set_rc=$?
+	if [ "$set_rc" -gt 1 ]; then
+		return "$set_rc"
+	fi
 
 	if [ "$dry_run" = "false" ]; then
 		shell::logger::style::preview "$chosen"
 	fi
+	return "$set_rc"
 }
 
 # @description Go back to the default logger style and forget the saved one.
