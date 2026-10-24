@@ -3710,274 +3710,97 @@ Developer Experience|:technologist:|chore(dx)|add debug launch configurations fo
 EOF
 }
 
-# @description Presents a two-level interactive menu — first a commit message category,
-#   then a pre-defined message within that category — and prints the selected
-#   message to stdout. Designed as a reusable scaffold for scripted or empty
-#   commits, callable independently or from shell::git::commit::create.
+# @description Pick a pre-defined commit message from a categorized menu and print it.
+#   A two-level fzf menu (category, then message) over the catalog of
+#   shell::git::commit::message::catalog. Meant for scripted or empty commits
+#   (`git commit --allow-empty`); shell::git::commit::create --empty uses it.
+#
+#   Every message follows Conventional Commits 1.0.0, `<type>[(scope)][!]: <description>`,
+#   so the type is always the prefix and tools such as commitlint, semantic-release
+#   or release-please can parse it. By default a gitmoji shortcode is placed
+#   **after** the colon (`feat: :sparkles: add ...`), which keeps the message
+#   valid; `--plain` leaves it out (`feat: add ...`).
 # @option -h | --help Show this help message.
-# @exitcode 0 Success.
+# @option -p | --plain Omit the emoji: print `type(scope)!: description` only.
+# @stdout The selected commit message (nothing when the menu is cancelled).
+# @exitcode 0 A message was printed, or the menu was cancelled.
+# @exitcode 2 Unknown option.
+# @see shell::git::commit::create
 # @example
 #   shell::git::commit::message::base
-#   selected=$(shell::git::commit::message::base)
+#   shell::git::commit::message::base --plain
+#   git commit --allow-empty -m "$(shell::git::commit::message::base)"
 #
 shell::git::commit::message::base() {
-	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
 		shell::logger::reset_options
-		shell::logger::info "Select a pre-defined commit message from a categorized menu"
-		shell::logger::usage "shell::git::commit::message::base [-h]"
+		shell::logger::info "Select a Conventional Commits message from a categorized menu"
+		shell::logger::usage "shell::git::commit::message::base [-p]"
+		shell::logger::option "-p, --plain" "Omit the emoji (type(scope)!: description)"
 		shell::logger::option "-h, --help" "Show this help message"
 		shell::logger::example "shell::git::commit::message::base"
-		shell::logger::example "selected=\$(shell::git::commit::message::base)"
-		return $RETURN_SUCCESS
+		shell::logger::example "shell::git::commit::message::base --plain"
+		shell::logger::example "git commit --allow-empty -m \"\$(shell::git::commit::message::base)\""
+		return "$RETURN_SUCCESS"
 	fi
 
-	# ===========================================================================
-	# Message catalog — grouped by intent and context.
-	# ===========================================================================
+	local plain="false"
+	while [ "$#" -gt 0 ]; do
+		case "$1" in
+		-p | --plain)
+			plain="true"
+			shift
+			;;
+		*)
+			shell::logger::error "Unknown option: $1"
+			return "$RETURN_INVALID"
+			;;
+		esac
+	done
 
-	local -a ci_cd_messages=(
-		":rocket: chore: trigger CI build to test configuration changes"
-		":rocket: chore: deploy latest version to production environment"
-		":white_check_mark: test: force re-run of test suite for validation purposes"
-		":gear: chore: validate GitHub Actions workflow after config update"
-		":rocket: chore: re-trigger deployment after infrastructure provisioning"
-		":wrench: chore: bypass cache and force full rebuild of all pipeline stages"
-	)
+	local catalog
+	catalog="$(shell::git::commit::message::catalog)"
 
-	local -a docs_non_code_messages=(
-		":books: docs: document recent architectural decisions and trade-offs"
-		":books: docs: add notes from the latest team meeting"
-		":package: dependency: document dependency updates in README.md"
-		":books: docs: update API reference with new endpoint specifications"
-		":books: docs: clarify setup instructions in CONTRIBUTING.md"
-		":memo: docs: add inline comments for complex business logic sections"
-	)
-
-	local -a feature_product_messages=(
-		":sparkles: feat: add user-facing support for the requested workflow"
-		":sparkles: feat: implement initial version of the new product capability"
-		":sparkles: feat: add validation and clear feedback to the form flow"
-		":sparkles: feat: introduce configurable behavior for the new integration"
-		":sparkles: feat: add pagination and filtering to the resource listing"
-		":sparkles: feat: support bulk actions for selected records"
-	)
-
-	local -a bugfix_error_handling_messages=(
-		":bug: fix: prevent null reference error when optional data is missing"
-		":bug: fix: handle API timeout and retry transient request failures"
-		":bug: fix: correct edge case in date and timezone conversion"
-		":bug: fix: preserve user input after client-side validation fails"
-		":bug: fix: resolve race condition during concurrent update requests"
-		":bug: fix: return actionable error response for invalid request payload"
-	)
-
-	local -a testing_quality_assurance_messages=(
-		":white_check_mark: test: add regression coverage for reported production issue"
-		":white_check_mark: test: add unit tests for new validation rules"
-		":white_check_mark: test: cover API error responses and authorization paths"
-		":white_check_mark: test: add integration test for end-to-end checkout flow"
-		":white_check_mark: test: stabilize flaky test by waiting for async state"
-		":white_check_mark: test: add fixtures for representative edge-case data"
-	)
-
-	local -a performance_reliability_messages=(
-		":zap: perf: reduce redundant database queries in request path"
-		":zap: perf: cache expensive calculation for repeated lookups"
-		":zap: perf: optimize bundle size by lazy loading non-critical module"
-		":chart_with_upwards_trend: perf: add benchmark for critical query performance"
-		":shield: fix: add graceful fallback when dependent service is unavailable"
-		":card_file_box: perf: add index to improve frequently filtered query"
-	)
-
-	local -a api_data_contract_messages=(
-		":zap: feat: add API endpoint for managing resource settings"
-		":twisted_rightwards_arrows: refactor: align API response with shared contract"
-		":card_file_box: feat: add schema validation for incoming API payloads"
-		":arrows_counterclockwise: fix: make database migration safe to run repeatedly"
-		":card_file_box: feat: add audit fields to persisted domain records"
-		":warning: feat!: remove deprecated API field from public response"
-	)
-
-	local -a dependency_build_messages=(
-		":package: build: upgrade runtime to supported LTS version"
-		":package: dependency: update direct dependencies to compatible versions"
-		":hammer: build: configure reproducible local development build"
-		":construction_worker: ci: cache package dependencies in CI workflow"
-		":wrench: chore: remove unused dependency from project manifest"
-		":green_heart: ci: split test jobs to reduce pipeline duration"
-	)
-
-	local -a architecture_refactoring_messages=(
-		":recycle: refactor: extract shared business rules into dedicated service"
-		":recycle: refactor: separate persistence concerns from application logic"
-		":recycle: refactor: replace duplicated logic with reusable utility"
-		":building_construction: refactor: reorganize module boundaries by domain"
-		":recycle: refactor: simplify conditional flow for easier maintenance"
-		":art: style: standardize error handling conventions across modules"
-	)
-
-	local -a workflow_maintenance_messages=(
-		":recycle: chore: refresh stale pull request to resolve merge conflicts"
-		":recycle: chore: sync with main branch to keep feature branch up-to-date"
-		":sparkles: feat: initialize new feature branch setup"
-		":wrench: chore: clean up obsolete branches and outdated references"
-		":recycle: chore: rebase feature branch on top of latest main"
-		":bookmark: chore: tag release candidate for QA testing"
-	)
-
-	local -a team_communication_messages=(
-		":tada: chore: announce upcoming team building event"
-		":warning: chore: notify team about planned server maintenance downtime"
-		":bookmark: docs: share details about achieving a key project milestone"
-		":busts_in_silhouette: chore: onboard new team member with initial access setup"
-		":warning: chore: broadcast breaking API change notice to all consumers"
-		":books: docs: summarize sprint retrospective findings and action items"
-	)
-
-	local -a hotfix_emergency_messages=(
-		":ambulance: fix: apply emergency patch for critical production outage"
-		":bug: fix: hotfix login failure affecting all authenticated users"
-		":lock: security: patch critical vulnerability in authentication layer"
-		":ambulance: fix: restore database connection pool after exhaustion"
-		":rewind: revert: roll back breaking change causing unexpected data loss"
-		":fire: remove: disable malfunctioning feature flag in production"
-	)
-
-	local -a database_migration_messages=(
-		":wrench: chore: seed development database with realistic test data"
-		":wrench: chore: run pending migrations on staging environment"
-		":wrench: chore: verify migration rollback procedure on pre-production"
-		":package: chore: archive legacy records before destructive schema migration"
-		":recycle: refactor: restructure table indexes for improved query performance"
-		":gear: config: update connection pool settings for load testing scenario"
-	)
-
-	local -a infrastructure_devops_messages=(
-		":gear: config: provision new cloud resources for auto-scaling group"
-		":rocket: deployment: update Kubernetes manifests for blue-green deployment"
-		":wrench: chore: rotate expiring SSL certificates across all environments"
-		":gear: config: tune load balancer health check thresholds"
-		":hammer: build: update Dockerfile base image to latest LTS version"
-		":gear: config: configure centralized log aggregation for microservices"
-	)
-
-	local -a code_quality_messages=(
-		":art: style: enforce consistent formatting across entire codebase"
-		":recycle: refactor: eliminate dead code and unused import statements"
-		":wrench: chore: configure pre-commit hooks for automated lint checks"
-		":white_check_mark: test: raise minimum code coverage threshold to 80 percent"
-		":recycle: refactor: resolve all outstanding static analysis warnings"
-		":art: style: apply naming convention updates per team coding standards"
-	)
-
-	local -a security_compliance_messages=(
-		":lock: security: rotate exposed API keys and invalidate compromised tokens"
-		":lock: security: enforce strict Content Security Policy headers"
-		":warning: deprecation: flag dependency with known CVE for immediate review"
-		":lock: security: enable multi-factor authentication for admin accounts"
-		":books: docs: update security disclosure policy and responsible process"
-		":lock: security: audit third-party integrations for data privacy compliance"
-	)
-
-	local -a release_versioning_messages=(
-		":gem: release: cut stable release with full changelog"
-		":bookmark: version tag: mark stable release point for production rollout"
-		":gem: release: prepare hotfix release branch for patch deployment"
-		":package: dependency: bump all packages to latest stable versions"
-		":books: docs: finalize release notes for upcoming minor version"
-		":rocket: deployment: trigger automated release pipeline for major launch"
-	)
-
-	local -a experimental_research_messages=(
-		":alien: experimental: start working on experimental feature for research"
-		":chart_with_upwards_trend: perf: log results of recent performance benchmark"
-		":books: docs: document feedback from recent user testing session"
-		":alien: experimental: prototype new caching strategy for evaluation"
-		":construction: WIP: spike on feasibility of real-time collaboration feature"
-		":alien: experimental: evaluate alternative state management approaches"
-	)
-
-	local -a miscellaneous_messages=(
-		":busts_in_silhouette: chore: add new contributor to the project"
-		":memo: docs: record internal decision about project direction"
-		":bookmark: docs: mark completion of project milestone"
-		":wrench: chore: update .gitignore to exclude new generated file types"
-		":mute: silent changes: apply minor formatting fix with no functional impact"
-		":loud_sound: logs: temporarily enable verbose logging for active debugging"
-	)
-
-	# ===========================================================================
-	# Step 1 — select a category.
-	# ===========================================================================
+	# Step 1 — categories, in the order they first appear in the catalog.
+	local -a categories=()
+	local line
+	while IFS= read -r line; do
+		categories+=("$line")
+	done < <(printf '%s\n' "$catalog" | awk -F'|' '!seen[$1]++ { print $1 }')
 
 	local selected_category
-	selected_category=$(shell::ask::option \
-		"CI/CD Pipeline Triggers" \
-		"Documentation and Non-Code Changes" \
-		"Feature and Product Development" \
-		"Bug Fixes and Error Handling" \
-		"Testing and Quality Assurance" \
-		"Performance and Reliability" \
-		"API and Data Contracts" \
-		"Dependencies and Build Tooling" \
-		"Architecture and Refactoring" \
-		"Workflow and Repository Maintenance" \
-		"Project and Team Communication" \
-		"Hotfix and Emergency Patches" \
-		"Database and Migration" \
-		"Infrastructure and DevOps" \
-		"Code Quality and Cleanup" \
-		"Security and Compliance" \
-		"Release and Versioning" \
-		"Experimental and Research Purposes" \
-		"Miscellaneous")
+	selected_category="$(shell::ask::option "${categories[@]}")"
 
 	if [ -z "$selected_category" ]; then
 		shell::logger::warn "No category selected — aborting"
-		return $RETURN_SUCCESS
+		return "$RETURN_SUCCESS"
 	fi
 
-	# ===========================================================================
-	# Step 2 — resolve message list for the selected category.
-	# ===========================================================================
+	# Step 2 — render the messages of that category.
+	local -a messages=()
+	local category emoji header description
+	while IFS='|' read -r category emoji header description; do
+		if [ "$category" != "$selected_category" ]; then
+			continue
+		fi
+		if [ "$plain" = "true" ] || [ -z "$emoji" ]; then
+			messages+=("${header}: ${description}")
+		else
+			messages+=("${header}: ${emoji} ${description}")
+		fi
+	done < <(printf '%s\n' "$catalog")
 
-	local -a messages
-	case "$selected_category" in
-	"CI/CD Pipeline Triggers") messages=("${ci_cd_messages[@]}") ;;
-	"Documentation and Non-Code Changes") messages=("${docs_non_code_messages[@]}") ;;
-	"Feature and Product Development") messages=("${feature_product_messages[@]}") ;;
-	"Bug Fixes and Error Handling") messages=("${bugfix_error_handling_messages[@]}") ;;
-	"Testing and Quality Assurance") messages=("${testing_quality_assurance_messages[@]}") ;;
-	"Performance and Reliability") messages=("${performance_reliability_messages[@]}") ;;
-	"API and Data Contracts") messages=("${api_data_contract_messages[@]}") ;;
-	"Dependencies and Build Tooling") messages=("${dependency_build_messages[@]}") ;;
-	"Architecture and Refactoring") messages=("${architecture_refactoring_messages[@]}") ;;
-	"Workflow and Repository Maintenance") messages=("${workflow_maintenance_messages[@]}") ;;
-	"Project and Team Communication") messages=("${team_communication_messages[@]}") ;;
-	"Hotfix and Emergency Patches") messages=("${hotfix_emergency_messages[@]}") ;;
-	"Database and Migration") messages=("${database_migration_messages[@]}") ;;
-	"Infrastructure and DevOps") messages=("${infrastructure_devops_messages[@]}") ;;
-	"Code Quality and Cleanup") messages=("${code_quality_messages[@]}") ;;
-	"Security and Compliance") messages=("${security_compliance_messages[@]}") ;;
-	"Release and Versioning") messages=("${release_versioning_messages[@]}") ;;
-	"Experimental and Research Purposes") messages=("${experimental_research_messages[@]}") ;;
-	"Miscellaneous") messages=("${miscellaneous_messages[@]}") ;;
-	esac
-
-	# ===========================================================================
-	# Step 3 — select a message from the resolved list.
-	# ===========================================================================
-
+	# Step 3 — pick one.
 	local selected_message
-	selected_message=$(shell::ask::option "${messages[@]}")
+	selected_message="$(shell::ask::option "${messages[@]}")"
 
 	if [ -z "$selected_message" ]; then
 		shell::logger::warn "No message selected — aborting"
-		return $RETURN_SUCCESS
+		return "$RETURN_SUCCESS"
 	fi
 
-	echo "$selected_message"
-	return $RETURN_SUCCESS
+	printf '%s\n' "$selected_message"
+	return "$RETURN_SUCCESS"
 }
 
 # @description Interactively builds and commits a formatted Git commit message. In default
