@@ -491,3 +491,16 @@ alias ssk-sync-n="shell::skill::sync -n"
 # shell::skill::list / shell::skill::installed
 alias ssk-ls="shell::skill::list"
 alias ssk-lsi="shell::skill::installed"
+
+# ///////////////////////////
+# Shell logger style aliases
+# //////////////////////////
+
+# shell::logger::style::set::fzf
+alias slgs="shell::logger::style::set::fzf"
+alias slgs-n="shell::logger::style::set::fzf -n"
+
+# shell::logger::style::get / list / reset
+alias slgs-get="shell::logger::style::get"
+alias slgs-ls="shell::logger::style::list"
+alias slgs-reset="shell::logger::style::reset"
