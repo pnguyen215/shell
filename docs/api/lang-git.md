@@ -170,6 +170,8 @@ calls `shell::telegram::send` (with the dry-run flag, if enabled) to send the me
       - [Example](#example-33)
       - [Options](#options-32)
       - [Exit codes](#exit-codes-33)
+      - [Output on stdout](#output-on-stdout)
+      - [See also](#see-also)
     - [shell::git::commit::create](#shellgitcommitcreate)
       - [Example](#example-34)
       - [Options](#options-33)
@@ -1384,16 +1386,23 @@ shell::git::commit::pick::remote -n "main"
 
 ### shell::git::commit::message::base
 
-Presents a two-level interactive menu — first a commit message category,
-then a pre-defined message within that category — and prints the selected
-message to stdout. Designed as a reusable scaffold for scripted or empty
-commits, callable independently or from shell::git::commit::create.
+Pick a pre-defined commit message from a categorized menu and print it.
+A two-level fzf menu (category, then message) over the catalog of
+shell::git::commit::message::catalog. Meant for scripted or empty commits
+(`git commit --allow-empty`); shell::git::commit::create --empty uses it.
+
+Every message follows Conventional Commits 1.0.0, `<type>[(scope)][!]: <description>`,
+so the type is always the prefix and tools such as commitlint, semantic-release
+or release-please can parse it. By default a gitmoji shortcode is placed
+**after** the colon (`feat: :sparkles: add ...`), which keeps the message
+valid; `--plain` leaves it out (`feat: add ...`).
 
 #### Example
 
 ```bash
 shell::git::commit::message::base
-selected=$(shell::git::commit::message::base)
+shell::git::commit::message::base --plain
+git commit --allow-empty -m "$(shell::git::commit::message::base)"
 ```
 
 #### Options
@@ -1402,9 +1411,22 @@ selected=$(shell::git::commit::message::base)
 
   Show this help message.
 
+- **-p** | **--plain**
+
+  Omit the emoji: print `type(scope)!: description` only.
+
 #### Exit codes
 
-- **0**: Success.
+- **0**: A message was printed, or the menu was cancelled.
+- **2**: Unknown option.
+
+#### Output on stdout
+
+- The selected commit message (nothing when the menu is cancelled).
+
+#### See also
+
+- [shell::git::commit::create](#shellgitcommitcreate)
 
 ### shell::git::commit::create
 
