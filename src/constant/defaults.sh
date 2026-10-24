@@ -24,6 +24,9 @@ SHELL_FZF_OPTS=(
 	"--ansi"
 )
 
+# Text of the "go back" entry added by shell::fzf::loop --back.
+: "${SHELL_FZF_BACK_LABEL:=← Back}"
+
 # --- INI parser --------------------------------------------------------------
 # 0 = lenient parsing, 1 = reject malformed names/values.
 : "${SHELL_INI_STRICT:=0}"
