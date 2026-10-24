@@ -90,6 +90,33 @@ printf 'style=; rm -rf /\n' >"$SHELL_LOGGER_CONF_FILE"
 shell::logger::style::load
 t_eq "invalid saved value falls back to default" "simple" "$(shell::logger::style::get)"
 
+# --- saving can fail (unwritable / unusable config location) -----------------------------------
+# Point the config file below a regular file: the directory cannot be created, which fails the
+# same way for root and for normal users.
+real_conf="$SHELL_LOGGER_CONF_FILE"
+: >"$HOME/not-a-dir"
+SHELL_LOGGER_CONF_FILE="$HOME/not-a-dir/logger.conf"
+shell::logger::style::set --session simple >/dev/null 2>&1
+t_run "save failure: set returns 1, style still applied" 1 shell::logger::style::set classic
+t_eq "save failure: style is active in this shell" "classic" "$(shell::logger::style::get)"
+t_lacks "save failure: no raw shell error" "ermission denied" "$T_OUT"
+t_has "save failure: tells what happened" "could not be saved" "$T_OUT"
+t_has "save failure: offers --session" "--session" "$T_OUT"
+t_has "save failure: explains the cause" "is not a directory" "$T_OUT"
+SHELL_LOGGER_CONF_FILE="$real_conf"
+
+# A real "directory exists but is not writable" case needs a non-root user (root ignores modes).
+if [ "$(id -u)" != "0" ]; then
+	ro_dir="$HOME/ro-config"
+	mkdir -m 500 "$ro_dir"
+	SHELL_LOGGER_CONF_FILE="$ro_dir/logger.conf"
+	t_run "read-only config dir: rc 1" 1 shell::logger::style::set simple
+	t_lacks "read-only config dir: no raw shell error" "ermission denied" "$T_OUT"
+	t_has "read-only config dir you own: suggests chmod" "chmod u+rwx" "$T_OUT"
+	SHELL_LOGGER_CONF_FILE="$real_conf"
+	chmod 700 "$ro_dir"
+fi
+
 # --- reset ------------------------------------------------------------------------------------
 shell::logger::style::set classic >/dev/null 2>&1
 t_run "reset -n" 0 shell::logger::style::reset -n
@@ -142,5 +169,13 @@ t_run "picker: unknown option" 2 shell::logger::style::set::fzf --bogus
 # --- help -----------------------------------------------------------------------------------------
 t_run "set -h" 0 shell::logger::style::set -h
 t_has "set help" "shell::logger::style::set" "$T_OUT"
+
+# Picker when the style cannot be saved (config location unusable): still applied and previewed.
+SHELL_LOGGER_CONF_FILE="$HOME/not-a-dir/logger.conf"
+shell::logger::style::set --session classic >/dev/null 2>&1
+FAKE_PICK=simple t_run "picker: save failure keeps rc 1" 1 shell::logger::style::set::fzf
+t_has "picker: previews even when saving failed" "[warn]  Sample warning message" "$T_OUT"
+t_eq "picker: style is applied despite the failure" "simple" "$(shell::logger::style::get)"
+SHELL_LOGGER_CONF_FILE="$real_conf"
 
 t_done
