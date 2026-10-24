@@ -20,3 +20,4 @@ RETURN_EXISTS=7            # The target already exists and was not overwritten.
 RETURN_EMPTY=8             # A required value or result set is empty.
 RETURN_CANCELLED=9         # The user aborted an interactive prompt (ESC / Ctrl-C).
 RETURN_TIMEOUT=10          # The operation exceeded its time budget.
+RETURN_BACK=11             # The user picked the "back" entry of a menu (not a cancel).
