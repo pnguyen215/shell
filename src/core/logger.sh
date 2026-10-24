@@ -11,6 +11,11 @@
 #
 #   The same module also renders the `-h` help blocks every shell::* function
 #   uses (usage / item / option / example), so the help layout is uniform.
+#
+#   **Styles.** How a level line *looks* is a pluggable style (default
+#   `simple`: `[info]  text`; or `classic`: `INFO: text`). The style only
+#   changes the formatting: threshold and stdout/stderr routing are the same
+#   for every style. See core/logger_style.sh to list, pick and save one.
 
 # @description Convert a log-level name to its numeric severity.
 # @arg $1 string Level name (case-insensitive): DEBUG, INFO, WARN, ERROR, FATAL.
@@ -58,8 +63,10 @@ shell::logger::can() {
 
 # @internal
 # @description Format and print one log line if its level is enabled.
-# @arg $1 string Level name; also the visible prefix ("INFO: ...").
-# @arg $2 integer ANSI 256-colour code.
+#   The visible look comes from the active logger style
+#   (shell::logger::style::render); this function only applies the threshold.
+# @arg $1 string Level name: DEBUG, INFO, WARN, ERROR, FATAL, or SUCCESS (an INFO-level success line).
+# @arg $2 integer ANSI 256-colour code (used by styles that colour the whole line).
 # @arg $3 string Stream: "stdout" or "stderr".
 # @arg $@ string Message words, joined with single spaces.
 # @exitcode 0 Always (a filtered message is not an error).
@@ -69,16 +76,17 @@ shell::logger::fmt() {
 	local stream="$3"
 	shift 3
 
-	if ! shell::logger::can "$level"; then
+	# SUCCESS is an INFO-level message with its own tag/colour.
+	local gate="$level"
+	if [ "$level" = "SUCCESS" ]; then
+		gate="INFO"
+	fi
+
+	if ! shell::logger::can "$gate"; then
 		return "$RETURN_SUCCESS"
 	fi
 
-	# "$*" joins all remaining words with the first character of IFS (a space).
-	if [ "$stream" = "stderr" ]; then
-		shell::console::print "$level: $*" "$color" >&2
-	else
-		shell::console::print "$level: $*" "$color"
-	fi
+	shell::logger::style::render "${SHELL_LOGGER_STYLE:-$SHELL_LOGGER_STYLE_DEFAULT}" "$level" "$color" "$stream" "$@"
 	return "$RETURN_SUCCESS"
 }
 
@@ -159,10 +167,10 @@ shell::logger::fatal() {
 
 # @description Log a success message (INFO level, green, stdout).
 # @arg $@ string Message.
-# @stdout "INFO: <message>"
+# @stdout "[ok]    <message>" (style simple) or "INFO: <message>" (style classic)
 # @exitcode 0 Always.
 shell::logger::success() {
-	shell::logger::fmt "INFO" "$SHELL_COLOR_SUCCESS" "stdout" "$@"
+	shell::logger::fmt "SUCCESS" "$SHELL_COLOR_SUCCESS" "stdout" "$@"
 }
 
 # @description Print the "USAGE:" line of a help block.
