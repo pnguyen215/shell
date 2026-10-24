@@ -5804,3 +5804,450 @@ shell::git::commit::spec::history::fzf::current() {
 		shell::git::commit::spec::history::fzf "${current_branch}"
 	fi
 }
+
+# @internal
+# @description Percent-encode a URL path, keeping `/` as the separator.
+#   Letters, digits and `. _ ~ -` stay as they are; every other byte (space,
+#   `#`, `?`, `%`, `&`, non-ASCII ...) becomes `%XX`. A branch such as
+#   `feature/a b#1` therefore stays one valid path.
+# @arg $1 string Path to encode.
+# @stdout The encoded path, without a trailing newline.
+# @exitcode 0 Always.
+# @example
+#   shell::git::open::encode_path "feature/a b#1"   # feature/a%20b%231
+#
+shell::git::open::encode_path() {
+	printf '%s' "${1-}" | LC_ALL=C awk '
+		BEGIN { for (i = 1; i < 256; i++) hex[sprintf("%c", i)] = sprintf("%%%02X", i) }
+		{
+			n = length($0)
+			out = ""
+			for (j = 1; j <= n; j++) {
+				c = substr($0, j, 1)
+				if (c ~ /[A-Za-z0-9._~\/-]/) out = out c
+				else out = out hex[c]
+			}
+			printf "%s", out
+		}'
+}
+
+# @internal
+# @description Turn a git remote URL into the base URL of its web page.
+#   Understands the scp-like form (`git@host:owner/repo.git`) and the
+#   `https://`, `http://`, `ssh://`, `git://` forms. The result never contains
+#   credentials (`user:token@` is dropped), the `.git` suffix or a trailing
+#   slash; ssh and git remotes become `https://`, an explicit http(s) port is
+#   kept, an ssh port is dropped. The host must be plain (`a-z 0-9 . -`) and the
+#   path is percent-encoded, so the URL is safe to hand to a browser opener.
+#   SSH config aliases of the form `github.com-work` map back to `github.com`.
+# @arg $1 string Remote URL.
+# @stdout The web base URL, e.g. `https://github.com/owner/repo`.
+# @exitcode 0 A web URL was produced.
+# @exitcode 1 The remote is not a web-hostable URL (local path, `file://`, empty ...).
+# @example
+#   shell::git::open::web_base "git@github.com:owner/repo.git"   # https://github.com/owner/repo
+#
+shell::git::open::web_base() {
+	local url="${1-}"
+	local web_scheme="https" authority="" host="" port="" repo_path=""
+	local scheme rest before
+
+	if [ -z "$url" ]; then
+		return 1
+	fi
+
+	case "$url" in
+	*://*)
+		scheme="${url%%://*}"
+		rest="${url#*://}"
+		case "$scheme" in
+		http | https | ssh | git | git+ssh | ssh+git) ;;
+		*) return 1 ;;
+		esac
+		authority="${rest%%/*}"
+		if [ "$rest" = "$authority" ]; then
+			return 1
+		fi
+		repo_path="${rest#*/}"
+		authority="${authority##*@}"
+		case "$authority" in
+		*:*)
+			host="${authority%%:*}"
+			port="${authority#*:}"
+			;;
+		*) host="$authority" ;;
+		esac
+		case "$scheme" in
+		http | https) web_scheme="$scheme" ;;
+		*) port="" ;;
+		esac
+		;;
+	/* | ./* | ../* | [A-Za-z]:*) return 1 ;;
+	*:*)
+		before="${url%%:*}"
+		case "$before" in
+		*/*) return 1 ;;
+		esac
+		host="${before##*@}"
+		repo_path="${url#*:}"
+		;;
+	*) return 1 ;;
+	esac
+
+	host="$(printf '%s' "$host" | tr '[:upper:]' '[:lower:]')"
+	case "$host" in
+	github.com-*) host="github.com" ;;
+	gitlab.com-*) host="gitlab.com" ;;
+	bitbucket.org-*) host="bitbucket.org" ;;
+	esac
+	case "$host" in
+	'' | *[!a-z0-9.-]* | -* | .*) return 1 ;;
+	esac
+	case "$port" in
+	*[!0-9]*) return 1 ;;
+	esac
+
+	repo_path="${repo_path#/}"
+	repo_path="${repo_path%/}"
+	repo_path="${repo_path%.git}"
+	repo_path="${repo_path%/}"
+	if [ -z "$repo_path" ]; then
+		return 1
+	fi
+
+	if [ -n "$port" ]; then
+		host="$host:$port"
+	fi
+	printf '%s://%s/%s\n' "$web_scheme" "$host" "$(shell::git::open::encode_path "$repo_path")"
+}
+
+# @internal
+# @description Name the hosting provider of a web base URL.
+#   Taken from the host (`github`, `gitlab`, `bitbucket` anywhere in it, so
+#   GitHub Enterprise and self-hosted GitLab work). When the host gives no hint,
+#   `git config shell.provider <github|gitlab|bitbucket>` decides.
+# @arg $1 string Web base URL (from shell::git::open::web_base).
+# @stdout `github`, `gitlab` or `bitbucket`.
+# @exitcode 0 The provider is known.
+# @exitcode 1 Unknown provider (or an invalid `shell.provider` value).
+# @example
+#   shell::git::open::provider "https://gitlab.example.com/group/repo"   # gitlab
+#
+shell::git::open::provider() {
+	local host="${1-}"
+	host="${host#*://}"
+	host="${host%%/*}"
+	host="${host%%:*}"
+
+	local override
+	override="$(git config --get shell.provider 2>/dev/null)"
+	case "$override" in
+	github | gitlab | bitbucket)
+		printf '%s\n' "$override"
+		return 0
+		;;
+	'') ;;
+	*) return 1 ;;
+	esac
+
+	case "$host" in
+	*github*) printf 'github\n' ;;
+	*gitlab*) printf 'gitlab\n' ;;
+	*bitbucket*) printf 'bitbucket\n' ;;
+	*) return 1 ;;
+	esac
+}
+
+# @internal
+# @description Build the web URL of a repository, a branch or a commit.
+#
+#   | Provider  | Branch            | Commit             |
+#   |-----------|-------------------|--------------------|
+#   | github    | `/tree/<branch>`  | `/commit/<sha>`    |
+#   | gitlab    | `/-/tree/<branch>`| `/-/commit/<sha>`  |
+#   | bitbucket | `/src/<branch>`   | `/commits/<sha>`   |
+# @arg $1 string Provider: github, gitlab or bitbucket.
+# @arg $2 string Web base URL.
+# @arg $3 string Kind: repo, branch or commit.
+# @arg $4 string Branch name or commit hash (not used for `repo`).
+# @stdout The URL.
+# @exitcode 0 URL printed.
+# @exitcode 1 Unknown provider or kind.
+# @example
+#   shell::git::open::url github "https://github.com/o/r" branch feature/x
+#
+shell::git::open::url() {
+	local provider="${1-}" base="${2-}" kind="${3-}" ref="${4-}"
+	local encoded=""
+	if [ "$kind" = "branch" ]; then
+		encoded="$(shell::git::open::encode_path "$ref")"
+	else
+		encoded="$ref"
+	fi
+
+	case "$kind" in
+	repo) printf '%s\n' "$base" ;;
+	branch)
+		case "$provider" in
+		github) printf '%s/tree/%s\n' "$base" "$encoded" ;;
+		gitlab) printf '%s/-/tree/%s\n' "$base" "$encoded" ;;
+		bitbucket) printf '%s/src/%s\n' "$base" "$encoded" ;;
+		*) return 1 ;;
+		esac
+		;;
+	commit)
+		case "$provider" in
+		github) printf '%s/commit/%s\n' "$base" "$encoded" ;;
+		gitlab) printf '%s/-/commit/%s\n' "$base" "$encoded" ;;
+		bitbucket) printf '%s/commits/%s\n' "$base" "$encoded" ;;
+		*) return 1 ;;
+		esac
+		;;
+	*) return 1 ;;
+	esac
+}
+
+# @internal
+# @description Choose which git remote to open.
+#   Order: the explicit name, then (for a branch) the remote it tracks, then
+#   `origin`, then the only remote. Fails when none applies.
+# @arg $1 string Explicit remote name (may be empty).
+# @arg $2 string Branch whose tracked remote is preferred (may be empty).
+# @stdout The remote name.
+# @stderr The reason when no remote can be chosen.
+# @exitcode 0 A remote was chosen.
+# @exitcode 1 No remote, an unknown remote, or several remotes and no `origin`.
+# @example
+#   remote="$(shell::git::open::remote "" "$branch")"
+#
+shell::git::open::remote() {
+	local wanted="${1-}" branch="${2-}"
+	local remotes tracked count
+
+	remotes="$(git remote 2>/dev/null)"
+	if [ -z "$remotes" ]; then
+		shell::logger::error "This repository has no remote configured"
+		return 1
+	fi
+
+	if [ -n "$wanted" ]; then
+		if printf '%s\n' "$remotes" | grep -Fxq -- "$wanted"; then
+			printf '%s\n' "$wanted"
+			return 0
+		fi
+		shell::logger::error "Unknown remote: $wanted"
+		return 1
+	fi
+
+	if [ -n "$branch" ]; then
+		tracked="$(git config --get "branch.$branch.remote" 2>/dev/null)"
+		if [ -n "$tracked" ] && [ "$tracked" != "." ] && printf '%s\n' "$remotes" | grep -Fxq -- "$tracked"; then
+			printf '%s\n' "$tracked"
+			return 0
+		fi
+	fi
+
+	if printf '%s\n' "$remotes" | grep -Fxq -- "origin"; then
+		printf 'origin\n'
+		return 0
+	fi
+
+	count="$(printf '%s\n' "$remotes" | wc -l | tr -d ' ')"
+	if [ "$count" = "1" ]; then
+		printf '%s\n' "$remotes"
+		return 0
+	fi
+
+	shell::logger::error "Several remotes and none is named origin; choose one with --remote"
+	return 1
+}
+
+# @description Opens the current repository, branch, or specific commit in the web browser.
+#
+#   Step 1 — Detect the remote provider (GitHub, GitLab, Bitbucket) from the
+#   remote URL. SSH and HTTPS remotes both work; credentials in the URL are
+#   never copied, `.git` is dropped and SSH config aliases such as
+#   `github.com-work` are mapped back to `github.com`.
+#   Step 2 — Determine the target from the argument: the repository (default),
+#   the current branch (its upstream branch name when it differs), or any
+#   commit-ish (a hash, a short hash, a tag, `HEAD~2` ...), resolved to a full hash.
+#   Step 3 — Construct the correct web URL for that provider.
+#   Step 4 — Open it with shell::net::open_url (`open` on macOS, `xdg-open`
+#   on Linux, `wslview` / `explorer.exe` on WSL).
+#
+#   A warning is printed when the branch or commit is not on the remote yet,
+#   because the page would answer 404 until it is pushed. For a self-hosted
+#   server whose host name does not contain github, gitlab or bitbucket, run
+#   `git config shell.provider <github|gitlab|bitbucket>` once. Bitbucket
+#   Server / Data Center uses different URLs and is not supported.
+# @option -h | --help Show this help message.
+# @option -n | --dry-run Print the open command instead of running it.
+# @option -p | --print Print the URL on stdout and do not open it.
+# @option -r | --remote Remote to use (default: the branch's tracked remote, then origin, then the only remote).
+# @arg $1 string target: Optional. "repo" (default), "branch", or a specific commit hash (any commit-ish).
+# @stdout With --print: the URL.
+# @exitcode 0 Success.
+# @exitcode 1 The operation failed (not a repository, no usable remote, unknown provider, invalid commit, detached HEAD for "branch").
+# @exitcode 2 Invalid usage.
+# @exitcode 3 No URL opener is installed.
+# @exitcode 4 Unsupported operating system for opening a browser.
+# @see shell::net::open_url
+# @example
+#   shell::git::open::browser
+#   shell::git::open::browser branch
+#   shell::git::open::browser HEAD~2
+#   shell::git::open::browser --print a1b2c3d
+#   shell::git::open::browser -r upstream branch
+#
+shell::git::open::browser() {
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Open the repository, current branch or a commit in the web browser"
+		shell::logger::usage "shell::git::open::browser [-n] [-p] [-r <remote>] [repo|branch|<commit>]"
+		shell::logger::item "repo" "The repository page (default)"
+		shell::logger::item "branch" "The current branch"
+		shell::logger::item "<commit>" "A hash, short hash, tag or HEAD~2"
+		shell::logger::option "-n, --dry-run" "Print the open command instead of running it"
+		shell::logger::option "-p, --print" "Print the URL and do not open it"
+		shell::logger::option "-r, --remote <name>" "Remote to use (default: tracked remote, origin, or the only one)"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::git::open::browser"
+		shell::logger::example "shell::git::open::browser branch"
+		shell::logger::example "shell::git::open::browser HEAD~2"
+		shell::logger::example "shell::git::open::browser --print a1b2c3d"
+		return "$RETURN_SUCCESS"
+	fi
+
+	local dry_run="false" print_only="false" remote="" target=""
+	while [ "$#" -gt 0 ]; do
+		case "$1" in
+		-n | --dry-run)
+			dry_run="true"
+			shift
+			;;
+		-p | --print)
+			print_only="true"
+			shift
+			;;
+		-r | --remote)
+			if [ "$#" -lt 2 ]; then
+				shell::logger::error "Option $1 requires a value"
+				return "$RETURN_INVALID"
+			fi
+			remote="$2"
+			shift 2
+			;;
+		--remote=*)
+			remote="${1#*=}"
+			shift
+			;;
+		-*)
+			shell::logger::error "Unknown option: $1"
+			return "$RETURN_INVALID"
+			;;
+		*)
+			if [ -n "$target" ]; then
+				shell::logger::error "Only one target is accepted (got '$target' and '$1')"
+				return "$RETURN_INVALID"
+			fi
+			target="$1"
+			shift
+			;;
+		esac
+	done
+	target="${target:-repo}"
+
+	case "$remote" in
+	-*)
+		shell::logger::error "Invalid remote name: $remote"
+		return "$RETURN_INVALID"
+		;;
+	esac
+
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return "$RETURN_FAILURE"
+	fi
+
+	# Step 2 — what to open.
+	local kind="repo" branch="" sha=""
+	case "$target" in
+	repo) kind="repo" ;;
+	branch)
+		branch="$(git symbolic-ref --short -q HEAD 2>/dev/null)"
+		if [ -z "$branch" ]; then
+			shell::logger::error "HEAD is detached; pass a commit hash instead of 'branch'"
+			return "$RETURN_FAILURE"
+		fi
+		kind="branch"
+		;;
+	-*)
+		shell::logger::error "Invalid target: $target"
+		return "$RETURN_INVALID"
+		;;
+	*)
+		if ! sha="$(git rev-parse --verify --quiet "${target}^{commit}" 2>/dev/null)"; then
+			shell::logger::error "Not a valid commit: $target"
+			return "$RETURN_FAILURE"
+		fi
+		kind="commit"
+		;;
+	esac
+
+	# Step 1 — remote and provider.
+	local remote_name remote_url base provider
+	remote_name="$(shell::git::open::remote "$remote" "$branch")" || return "$RETURN_FAILURE"
+
+	remote_url="$(git remote get-url "$remote_name" 2>/dev/null)"
+	if [ -z "$remote_url" ]; then
+		remote_url="$(git config --get "remote.$remote_name.url" 2>/dev/null)"
+	fi
+
+	if ! base="$(shell::git::open::web_base "$remote_url")"; then
+		shell::logger::error "Remote '$remote_name' is not a web-hostable URL (local path or unsupported scheme)"
+		return "$RETURN_FAILURE"
+	fi
+
+	if ! provider="$(shell::git::open::provider "$base")"; then
+		local web_host="${base#*://}"
+		web_host="${web_host%%/*}"
+		shell::logger::error "Unknown provider for '$web_host'; run: git config shell.provider <github|gitlab|bitbucket>"
+		return "$RETURN_FAILURE"
+	fi
+
+	# Step 3 — the ref and the URL.
+	local ref="$sha"
+	if [ "$kind" = "branch" ]; then
+		ref="$branch"
+		local tracked_remote merge_ref
+		tracked_remote="$(git config --get "branch.$branch.remote" 2>/dev/null)"
+		merge_ref="$(git config --get "branch.$branch.merge" 2>/dev/null)"
+		if [ "$tracked_remote" = "$remote_name" ] && [ -n "$merge_ref" ]; then
+			ref="${merge_ref#refs/heads/}"
+		fi
+		if ! git rev-parse --verify --quiet "refs/remotes/$remote_name/$ref" >/dev/null 2>&1; then
+			shell::logger::warn "Branch '$ref' is not on remote '$remote_name' yet; the page may not exist until you push"
+		fi
+	elif [ "$kind" = "commit" ]; then
+		if [ -z "$(git for-each-ref --contains "$sha" --count=1 --format='%(refname)' "refs/remotes/$remote_name" 2>/dev/null)" ]; then
+			shell::logger::warn "Commit $(printf '%.7s' "$sha") is not on remote '$remote_name' yet; the page may not exist until you push"
+		fi
+	fi
+
+	local url
+	url="$(shell::git::open::url "$provider" "$base" "$kind" "$ref")" || return "$RETURN_FAILURE"
+
+	if [ "$print_only" = "true" ]; then
+		printf '%s\n' "$url"
+		return "$RETURN_SUCCESS"
+	fi
+
+	# Step 4 — open it.
+	if [ "$dry_run" = "true" ]; then
+		shell::net::open_url -n "$url"
+		return $?
+	fi
+
+	shell::logger::info "Opening $url"
+	shell::net::open_url "$url"
+}
