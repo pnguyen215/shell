@@ -23,7 +23,6 @@ SHELL_FZF_OPTS=(
 	"--marker=${SHELL_GLYPH_MARKER:-✓}"
 	"--ansi"
 )
-
 # Text of the "go back" entry added by shell::fzf::loop --back.
 : "${SHELL_FZF_BACK_LABEL:=← Back}"
 
@@ -39,6 +38,15 @@ SHELL_FZF_OPTS=(
 # Seconds before curl gives up connecting / the whole transfer is aborted.
 : "${SHELL_NET_CONNECT_TIMEOUT:=15}"
 : "${SHELL_NET_MAX_TIME:=300}"
+
+# --- Logger style --------------------------------------------------------------
+# Look of the level lines (debug / info / warn / error / fatal / success).
+# Pick one with shell::logger::style::set (or ::set::fzf); see core/logger_style.sh.
+SHELL_LOGGER_STYLES="simple classic"
+# Used when nothing is saved and SHELL_LOGGER_STYLE is not exported.
+: "${SHELL_LOGGER_STYLE_DEFAULT:=simple}"
+SHELL_LOGGER_STYLE_DESC_SIMPLE="Coloured [tag] + plain message, as in pnguyen215/skills: [info]  text"
+SHELL_LOGGER_STYLE_DESC_CLASSIC="Whole line coloured with a LEVEL: prefix (previous look): INFO: text"
 
 # --- Configuration keys that must never be removed interactively ------------
 SHELL_PROTECTED_KEYS=(
