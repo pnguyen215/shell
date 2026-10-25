@@ -6251,3 +6251,409 @@ shell::git::open::browser() {
 	shell::logger::info "Opening $url"
 	shell::net::open_url "$url"
 }
+
+# @internal
+# @description Check that the repository is in a state where squashing is safe.
+#   Squashing is `git reset --soft` followed by `git commit`, so it refuses to
+#   start when that could lose or mix up work:
+#   - not inside a repository, or the repository has no commit;
+#   - detached HEAD (the new commit would belong to no branch);
+#   - a merge, cherry-pick, revert, bisect or rebase is in progress;
+#   - there are staged changes (they would be silently folded into the squash).
+#   Unstaged edits and untracked files are fine: the soft reset leaves them alone.
+# @stderr The reason when the state is not safe.
+# @exitcode 0 Safe to squash.
+# @exitcode 1 Not safe (the reason is printed).
+# @example
+#   shell::git::commit::squash::preflight || return $?
+#
+shell::git::commit::squash::preflight() {
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return "$RETURN_FAILURE"
+	fi
+	if ! git rev-parse --verify --quiet HEAD >/dev/null 2>&1; then
+		shell::logger::error "This repository has no commits yet"
+		return "$RETURN_FAILURE"
+	fi
+	if ! git symbolic-ref -q HEAD >/dev/null 2>&1; then
+		shell::logger::error "HEAD is detached; check out a branch before squashing"
+		return "$RETURN_FAILURE"
+	fi
+
+	local marker
+	for marker in MERGE_HEAD CHERRY_PICK_HEAD REVERT_HEAD BISECT_LOG rebase-merge rebase-apply; do
+		if [ -e "$(git rev-parse --git-path "$marker")" ]; then
+			shell::logger::error "A ${marker} operation is in progress; finish or abort it first"
+			return "$RETURN_FAILURE"
+		fi
+	done
+
+	if ! git diff --cached --quiet 2>/dev/null; then
+		shell::logger::error "There are staged changes; commit or unstage them first (they would be folded into the squash)"
+		return "$RETURN_FAILURE"
+	fi
+	return "$RETURN_SUCCESS"
+}
+
+# @internal
+# @description Build the "combined" message for a squash.
+#   The full message of the base commit (the one the others are squashed into),
+#   then a blank line and one `- <subject>` line per commit folded into it,
+#   oldest first. The base message keeps its own type and scope, so a
+#   Conventional Commits header stays valid.
+# @arg $1 string Hash of the base (oldest) commit.
+# @stdout The message (ends with a newline).
+# @exitcode 0 Always.
+# @example
+#   shell::git::commit::squash::message "$base_hash"
+#
+shell::git::commit::squash::message() {
+	local base="${1-}" body folded
+	body="$(git log -1 --format=%B "$base" 2>/dev/null)"
+	folded="$(git log --first-parent --reverse --format='- %s' "$base..HEAD" 2>/dev/null)"
+
+	if [ -n "$folded" ]; then
+		printf '%s\n\n%s\n' "$body" "$folded"
+	else
+		printf '%s\n' "$body"
+	fi
+}
+
+# @internal
+# @description Put the branch back where it was after a failed squash commit.
+#   A soft reset to the old HEAD keeps the index and the working tree as they
+#   are. When the squash started from the root commit (no parent), the branch
+#   reference was deleted, so it is recreated instead.
+# @arg $1 string The HEAD hash before the squash.
+# @arg $2 string The base commit's parent (empty for a root commit).
+# @stderr A warning, or an error when restoring fails.
+# @exitcode 0 History restored.
+# @exitcode 1 Restoring failed (the hash is printed so it can be done by hand).
+# @example
+#   shell::git::commit::squash::restore "$old_head" "$parent_hash"
+#
+shell::git::commit::squash::restore() {
+	local old_head="${1-}" parent="${2-}"
+
+	if [ -n "$parent" ]; then
+		git reset --soft "$old_head" >/dev/null 2>&1
+	else
+		git update-ref HEAD "$old_head" >/dev/null 2>&1
+	fi
+
+	if [ "$(git rev-parse HEAD 2>/dev/null)" = "$old_head" ]; then
+		shell::logger::warn "The original history was restored (HEAD is back at ${old_head})"
+		return "$RETURN_SUCCESS"
+	fi
+	shell::logger::error "Could not restore automatically; run: git reset --soft ${old_head}"
+	return "$RETURN_FAILURE"
+}
+
+# @description Interactively squashes multiple recent commits into a single commit.
+#
+#   Step 1 — Fetch the last N commits (default 20) using `git log --oneline`
+#   (first-parent history, so the list matches what is squashed).
+#   Step 2 — Present an fzf picker to select the "base" commit (the oldest
+#   commit to squash into). HEAD itself cannot be the base: squashing needs at
+#   least two commits.
+#   Step 3 — Choose the message: the combined messages (the base message plus a
+#   bullet per folded commit), a new one-line message, or the combined messages
+#   opened in your editor. Review the plan and confirm.
+#   Step 4 — Perform a soft reset to the parent of the selected base commit:
+#   `git reset --soft <hash>^` (a base that is the root commit is handled with
+#   `git update-ref -d HEAD`, since it has no parent).
+#   Step 5 — Create the new squashed commit with `git commit -F <message file>`.
+#
+#   Nothing is changed until you confirm, so cancelling at any point leaves the
+#   repository untouched; every menu has a "← Back" entry (and the text prompt
+#   accepts `:back`). If the commit then fails (a hook rejects it, no identity,
+#   an empty message), the original history is restored automatically. On
+#   success the previous HEAD is printed so the squash can be undone with
+#   `git reset --soft <hash>`.
+#
+#   It refuses to start on a detached HEAD, during a merge/rebase/cherry-pick,
+#   or with staged changes. It warns when the range contains merge commits
+#   (their side branches are flattened) or commits already on the upstream
+#   branch (a `git push --force-with-lease` will be needed; this function never
+#   pushes).
+# @option -n | --dry-run Optional. Print planned git commands instead of executing.
+# @option -c | --count Optional. Number of recent commits to list (default 20, minimum 2).
+# @option -h | --help Show this help message.
+# @exitcode 0 Success.
+# @exitcode 1 The operation failed or canceled.
+# @exitcode 2 Invalid usage (bad option or --count).
+# @see shell::ask::option::back
+# @see shell::git::commit::input
+# @example
+#   shell::git::commit::squash::fzf
+#   shell::git::commit::squash::fzf -n
+#   shell::git::commit::squash::fzf --count 50
+#
+shell::git::commit::squash::fzf() {
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Interactively squash recent commits into a single commit"
+		shell::logger::usage "shell::git::commit::squash::fzf [-n] [-c <count>] [-h]"
+		shell::logger::option "-n, --dry-run" "Print the planned git commands instead of executing them"
+		shell::logger::option "-c, --count <N>" "Number of recent commits to list (default 20, minimum 2)"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::note "Nothing changes until you confirm. Pick '$SHELL_FZF_BACK_LABEL' (or type :back) to go back a step."
+		shell::logger::example "shell::git::commit::squash::fzf"
+		shell::logger::example "shell::git::commit::squash::fzf -n"
+		shell::logger::example "shell::git::commit::squash::fzf --count 50"
+		return "$RETURN_SUCCESS"
+	fi
+
+	local dry_run="false" count="20"
+	while [ "$#" -gt 0 ]; do
+		case "$1" in
+		-n | --dry-run)
+			dry_run="true"
+			shift
+			;;
+		-c | --count)
+			if [ "$#" -lt 2 ]; then
+				shell::logger::error "Option $1 requires a value"
+				return "$RETURN_INVALID"
+			fi
+			count="$2"
+			shift 2
+			;;
+		--count=*)
+			count="${1#*=}"
+			shift
+			;;
+		*)
+			shell::logger::error "Unknown option or argument: $1"
+			return "$RETURN_INVALID"
+			;;
+		esac
+	done
+
+	case "$count" in
+	'' | *[!0-9]*)
+		shell::logger::error "--count must be a whole number (got '$count')"
+		return "$RETURN_INVALID"
+		;;
+	esac
+	if [ "$count" -lt 2 ]; then
+		shell::logger::error "--count must be at least 2 (got '$count')"
+		return "$RETURN_INVALID"
+	fi
+
+	shell::git::commit::squash::preflight || return "$RETURN_FAILURE"
+
+	if [ "$(git rev-list --first-parent --count HEAD 2>/dev/null)" -lt 2 ]; then
+		shell::logger::error "Squashing needs at least two commits on this branch"
+		return "$RETURN_FAILURE"
+	fi
+
+	# Declared once, before the loop: re-declaring a local inside a loop prints
+	# its value in zsh.
+	local -a lines=()
+	local line step choice value rc
+	local base_hash parent_hash range n_commits merge_count
+	local message="" custom_message="" use_editor="false"
+	local upstream published branch old_head msg_file new_head
+
+	# ---------------------------------------------------------------------------
+	# Step 1 — the last N commits (first-parent history).
+	# ---------------------------------------------------------------------------
+	while IFS= read -r line; do
+		lines+=("$line")
+	done < <(git log --oneline --first-parent -n "$count" 2>/dev/null)
+
+	branch="$(git symbolic-ref --short -q HEAD 2>/dev/null)"
+	old_head="$(git rev-parse HEAD 2>/dev/null)"
+
+	# ---------------------------------------------------------------------------
+	# Steps 2-3 — pick the base, the message, and confirm (each step can go back).
+	# ---------------------------------------------------------------------------
+	step="base"
+	while true; do
+		case "$step" in
+		base)
+			choice="$(shell::ask::option::back --prompt "Squash into (oldest commit to include): " "${lines[@]}")"
+			rc=$?
+			if [ "$rc" -ne 0 ] || [ -z "$choice" ]; then
+				shell::logger::warn "Squash cancelled — nothing was changed"
+				return "$RETURN_FAILURE"
+			fi
+
+			base_hash="$(git rev-parse --verify --quiet "${choice%% *}^{commit}" 2>/dev/null)"
+			if [ -z "$base_hash" ]; then
+				shell::logger::error "Could not resolve the selected commit: ${choice%% *}"
+				return "$RETURN_FAILURE"
+			fi
+
+			if parent_hash="$(git rev-parse --verify --quiet "${base_hash}^" 2>/dev/null)"; then
+				range="${parent_hash}..HEAD"
+			else
+				parent_hash=""
+				range="HEAD"
+			fi
+			n_commits="$(git rev-list --first-parent --count "$range" 2>/dev/null)"
+
+			if [ "${n_commits:-0}" -lt 2 ]; then
+				shell::logger::warn "That is the latest commit; pick an older one (squashing needs at least two commits)"
+				continue
+			fi
+			step="message"
+			;;
+
+		message)
+			shell::logger::info "These ${n_commits} commits will become one:"
+			git log --first-parent --format='  • %h %s' "$range" 2>/dev/null
+
+			choice="$(shell::ask::option::back --prompt "Commit message: " \
+				"Combined messages" "Write a new message" "Edit combined messages in my editor")"
+			rc=$?
+			case "$rc" in
+			0) ;;
+			"$RETURN_BACK")
+				step="base"
+				continue
+				;;
+			*)
+				shell::logger::warn "Squash cancelled — nothing was changed"
+				return "$RETURN_FAILURE"
+				;;
+			esac
+
+			case "$choice" in
+			"Combined messages")
+				message="$(shell::git::commit::squash::message "$base_hash")"
+				use_editor="false"
+				step="confirm"
+				;;
+			"Edit combined messages in my editor")
+				message="$(shell::git::commit::squash::message "$base_hash")"
+				use_editor="true"
+				step="confirm"
+				;;
+			"Write a new message")
+				value="$(shell::git::commit::input "Enter the new commit message" "$custom_message")"
+				rc=$?
+				case "$rc" in
+				0)
+					custom_message="$value"
+					message="$value"
+					use_editor="false"
+					step="confirm"
+					;;
+				"$RETURN_BACK") ;;
+				*)
+					shell::logger::warn "Squash cancelled — nothing was changed"
+					return "$RETURN_FAILURE"
+					;;
+				esac
+				;;
+			esac
+			;;
+
+		confirm)
+			merge_count="$(git rev-list --first-parent --merges --count "$range" 2>/dev/null)"
+			published=""
+			upstream="$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null)"
+			if [ -n "$upstream" ] && git merge-base --is-ancestor "$base_hash" "$upstream" 2>/dev/null; then
+				published="$upstream"
+			fi
+
+			shell::logger::info "Plan: squash ${n_commits} commits on '${branch}' into one"
+			if [ "${merge_count:-0}" -gt 0 ]; then
+				shell::logger::warn "The range contains ${merge_count} merge commit(s); their side branches are flattened"
+			fi
+			if [ -n "$published" ]; then
+				shell::logger::warn "Some of these commits are already on ${published}; you will need a force push afterwards"
+			fi
+			if [ "$use_editor" = "true" ]; then
+				shell::logger::info "The message will open in your editor. Draft:"
+			else
+				shell::logger::info "New commit message:"
+			fi
+			printf '%s\n' "$message" | sed 's/^/    /'
+
+			choice="$(shell::ask::option::back --prompt "Squash ${n_commits} commits? " "Squash" "Abort")"
+			rc=$?
+			case "$rc" in
+			0)
+				if [ "$choice" = "Squash" ]; then
+					break
+				fi
+				shell::logger::info "Squash aborted — nothing was changed"
+				return "$RETURN_FAILURE"
+				;;
+			"$RETURN_BACK") step="message" ;;
+			*)
+				shell::logger::info "Squash aborted — nothing was changed"
+				return "$RETURN_FAILURE"
+				;;
+			esac
+			;;
+		esac
+	done
+
+	# ---------------------------------------------------------------------------
+	# Step 4 — soft reset to the parent of the base commit.
+	# ---------------------------------------------------------------------------
+	if [ "$dry_run" = "true" ]; then
+		if [ -n "$parent_hash" ]; then
+			shell::exec::command -n git reset --soft "$parent_hash"
+		else
+			shell::exec::command -n git update-ref -d HEAD
+		fi
+		if [ "$use_editor" = "true" ]; then
+			shell::logger::command_clip "git commit -e -m $(printf '%q' "$message")"
+		else
+			shell::logger::command_clip "git commit -m $(printf '%q' "$message")"
+		fi
+		return "$RETURN_SUCCESS"
+	fi
+
+	if [ -n "$parent_hash" ]; then
+		shell::exec::command git reset --soft "$parent_hash" || {
+			shell::logger::error "git reset failed — nothing was changed"
+			return "$RETURN_FAILURE"
+		}
+	else
+		shell::exec::command git update-ref -d HEAD || {
+			shell::logger::error "git update-ref failed — nothing was changed"
+			return "$RETURN_FAILURE"
+		}
+	fi
+
+	# ---------------------------------------------------------------------------
+	# Step 5 — commit. The message goes through a file (-F), so quotes, $ and
+	# newlines are never re-parsed by a shell.
+	# ---------------------------------------------------------------------------
+	msg_file="$(mktemp "$(shell::os::temp_dir)/squash-msg.XXXXXX")" || msg_file=""
+	if [ -z "$msg_file" ]; then
+		shell::logger::error "Could not create a temporary file for the message"
+		shell::git::commit::squash::restore "$old_head" "$parent_hash"
+		return "$RETURN_FAILURE"
+	fi
+	printf '%s\n' "$message" >"$msg_file"
+
+	if [ "$use_editor" = "true" ]; then
+		shell::exec::command git commit -e -F "$msg_file"
+	else
+		shell::exec::command git commit -F "$msg_file"
+	fi
+	rc=$?
+	rm -f "$msg_file"
+
+	if [ "$rc" -ne 0 ]; then
+		shell::logger::error "The commit failed (hook, identity or empty message)"
+		shell::git::commit::squash::restore "$old_head" "$parent_hash"
+		return "$RETURN_FAILURE"
+	fi
+
+	new_head="$(git rev-parse --short HEAD 2>/dev/null)"
+	shell::logger::success "Squashed ${n_commits} commits into ${new_head}"
+	shell::logger::info "Previous HEAD: ${old_head} (undo with: git reset --soft ${old_head})"
+	if [ -n "$published" ]; then
+		shell::logger::warn "History was rewritten; update the remote with: git push --force-with-lease"
+	fi
+	return "$RETURN_SUCCESS"
+}
