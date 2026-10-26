@@ -7596,3 +7596,146 @@ shell::git::config::user::setup() {
 	fi
 	return "$RETURN_SUCCESS"
 }
+
+# @description Presents an interactive fzf picker to view, edit, or delete Git configurations.
+#
+#   Step 1 — List all config keys and values for the chosen scope (local or global).
+#   Step 2 — Present an fzf picker with a preview window showing the current value
+#   (and the file it comes from).
+#   Step 3 — Present an action menu upon selection:
+#   • Edit value
+#   • Unset (Delete) key
+#   • Cancel
+#
+#   After an action (or Cancel) the key list is shown again, so several keys can
+#   be managed in one session; leave with ESC or the "← Back" entry. Editing
+#   asks for the new value (Enter keeps the current one) and goes through
+#   shell::git::config::set; unsetting asks for confirmation first and goes
+#   through shell::git::config::unset, so a key with several values is never
+#   changed by accident. Returns 0 when at least one change was made (or
+#   planned, with -n) and nothing failed, 1 otherwise.
+#
+# @option -g | --global Optional. Manage global configuration instead of local.
+# @option -n | --dry-run Optional. Print the planned git commands instead of executing.
+# @option -h | --help Show this help message.
+# @exitcode 0 Success.
+# @exitcode 1 The operation failed or canceled.
+# @exitcode 2 Invalid usage.
+# @see shell::git::config::set
+# @see shell::git::config::unset
+# @example
+#   shell::git::config::fzf
+#   shell::git::config::fzf -g
+#
+shell::git::config::fzf() {
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Browse Git configuration keys in fzf, then edit or delete them"
+		shell::logger::usage "shell::git::config::fzf [-g] [-n] [-h]"
+		shell::logger::option "-g, --global" "Manage the global configuration instead of the local one"
+		shell::logger::option "-n, --dry-run" "Print the git commands instead of executing them"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::note "ESC or '$SHELL_FZF_BACK_LABEL' ends the session; Cancel in the action menu returns to the list."
+		shell::logger::example "shell::git::config::fzf"
+		shell::logger::example "shell::git::config::fzf -g"
+		return "$RETURN_SUCCESS"
+	fi
+
+	local scope="local" dry_run="false"
+	while [ "$#" -gt 0 ]; do
+		case "$1" in
+		-g | --global)
+			scope="global"
+			shift
+			;;
+		-n | --dry-run)
+			dry_run="true"
+			shift
+			;;
+		*)
+			shell::logger::error "Unknown option or argument: $1"
+			return "$RETURN_INVALID"
+			;;
+		esac
+	done
+
+	shell::git::config::preflight "$scope" || return "$RETURN_FAILURE"
+
+	# Declared once, before the loop.
+	local keys choice key action current new_value confirm rc preview
+	local changed=0 failed=0
+	local -a flags=()
+	if [ "$scope" = "global" ]; then
+		flags+=(--global)
+	fi
+	if [ "$dry_run" = "true" ]; then
+		flags+=(--dry-run)
+	fi
+
+	# The preview runs the same read-only command for the highlighted key; fzf
+	# quotes {} for the shell, so odd key names are safe.
+	preview="git config --${scope} --show-origin --get-all -- {} 2>/dev/null"
+
+	while true; do
+		# Step 1 — keys of the scope (re-read every time: edits change the list).
+		keys="$(git config "--$scope" --name-only --list 2>/dev/null | sort -u)"
+		if [ -z "$keys" ]; then
+			shell::logger::warn "No keys in the ${scope} configuration"
+			break
+		fi
+
+		# Step 2 — picker with a value preview.
+		choice="$(printf '%s\n%s\n' "$keys" "$SHELL_FZF_BACK_LABEL" |
+			shell::fzf::select --prompt="Git ${scope} config: " \
+				--preview="$preview" --preview-window="right:55%:wrap")"
+		rc=$?
+		if [ "$rc" -ne 0 ] || [ -z "$choice" ] || [ "$choice" = "$SHELL_FZF_BACK_LABEL" ]; then
+			break
+		fi
+		key="$choice"
+
+		# Step 3 — action menu.
+		action="$(shell::ask::option "Edit value" "Unset (Delete) key" "Cancel")"
+		case "$action" in
+		"Edit value")
+			current="$(git config "--$scope" --get -- "$key" 2>/dev/null)"
+			new_value="$(shell::git::config::prompt "New value for ${key}" "$current")"
+			rc=$?
+			if [ "$rc" -ne 0 ]; then
+				shell::logger::info "Edit cancelled"
+				continue
+			fi
+			if [ "$new_value" = "$current" ]; then
+				shell::logger::info "Value unchanged"
+				continue
+			fi
+			if shell::git::config::set ${flags[@]+"${flags[@]}"} -- "$key" "$new_value"; then
+				changed=$((changed + 1))
+			else
+				failed=$((failed + 1))
+			fi
+			;;
+		"Unset (Delete) key")
+			confirm="$(shell::ask::option "Unset ${key}" "Cancel")"
+			if [ "$confirm" != "Unset ${key}" ]; then
+				shell::logger::info "Unset cancelled"
+				continue
+			fi
+			if shell::git::config::unset ${flags[@]+"${flags[@]}"} -- "$key"; then
+				changed=$((changed + 1))
+			else
+				failed=$((failed + 1))
+			fi
+			;;
+		*)
+			shell::logger::info "Cancelled — back to the list"
+			;;
+		esac
+	done
+
+	if [ "$changed" -gt 0 ] && [ "$failed" -eq 0 ]; then
+		return "$RETURN_SUCCESS"
+	fi
+	return "$RETURN_FAILURE"
+}
+
