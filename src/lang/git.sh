@@ -7429,3 +7429,170 @@ shell::git::config::unset() {
 	shell::logger::success "Removed ${key} from the ${scope} configuration"
 	return "$RETURN_SUCCESS"
 }
+
+# @description Interactively sets up standard user identity and default branch for a scope.
+#
+#   Prompts the user for:
+#   1. user.name
+#   2. user.email
+#   3. init.defaultBranch (defaults to "main")
+#   4. core.autocrlf (defaults to "input" for Linux/Mac, "true" for Windows)
+#
+#   Enter accepts the value shown in brackets: the one already set in the
+#   scope, otherwise (for name and email in a repository) the one inherited from
+#   the global configuration, otherwise the default above. Answers are
+#   validated (a real e-mail shape, a valid branch name, true/input/false) and
+#   asked again when wrong. A summary is shown, and nothing is written until you
+#   choose Apply; keys whose value does not change are skipped.
+#
+#   This is highly useful when cloning a new project and needing to override
+#   global settings with project-specific credentials.
+#
+# @option -g | --global Optional. Setup the global configuration instead of local.
+# @option -n | --dry-run Optional. Print the planned git commands instead of executing.
+# @option -h | --help Show this help message.
+# @exitcode 0 Success.
+# @exitcode 1 The operation failed or canceled.
+# @exitcode 2 Invalid usage.
+# @see shell::git::config::set
+# @example
+#   shell::git::config::user::setup
+#   shell::git::config::user::setup --global
+#
+shell::git::config::user::setup() {
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Interactively set user.name, user.email, init.defaultBranch and core.autocrlf"
+		shell::logger::usage "shell::git::config::user::setup [-g] [-n] [-h]"
+		shell::logger::option "-g, --global" "Configure the global settings instead of the repository's"
+		shell::logger::option "-n, --dry-run" "Print the git commands instead of executing them"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::note "Enter accepts the value in brackets; Ctrl-D cancels; nothing is written until you choose Apply."
+		shell::logger::example "shell::git::config::user::setup"
+		shell::logger::example "shell::git::config::user::setup --global"
+		return "$RETURN_SUCCESS"
+	fi
+
+	local scope="local" dry_run="false"
+	while [ "$#" -gt 0 ]; do
+		case "$1" in
+		-g | --global)
+			scope="global"
+			shift
+			;;
+		-n | --dry-run)
+			dry_run="true"
+			shift
+			;;
+		*)
+			shell::logger::error "Unknown option or argument: $1"
+			return "$RETURN_INVALID"
+			;;
+		esac
+	done
+
+	shell::git::config::preflight "$scope" || return "$RETURN_FAILURE"
+
+	# Declared once (re-declaring a local in a loop prints its value in zsh).
+	local name email branch crlf
+	local cur_name cur_email cur_branch cur_crlf
+	local def_name def_email def_branch def_crlf os_default
+	local key value current choice failed=0 changed=0
+	local -a set_flags=()
+
+	cur_name="$(git config "--$scope" --get -- user.name 2>/dev/null)"
+	cur_email="$(git config "--$scope" --get -- user.email 2>/dev/null)"
+	cur_branch="$(git config "--$scope" --get -- init.defaultBranch 2>/dev/null)"
+	cur_crlf="$(git config "--$scope" --get -- core.autocrlf 2>/dev/null)"
+
+	def_name="$cur_name"
+	def_email="$cur_email"
+	if [ "$scope" = "local" ]; then
+		# Show what the repository inherits, so Enter can keep it.
+		[ -n "$def_name" ] || def_name="$(git config --get -- user.name 2>/dev/null)"
+		[ -n "$def_email" ] || def_email="$(git config --get -- user.email 2>/dev/null)"
+	fi
+	def_branch="${cur_branch:-main}"
+	if [ "$(shell::os::type)" = "windows" ]; then
+		os_default="true"
+	else
+		os_default="input"
+	fi
+	def_crlf="${cur_crlf:-$os_default}"
+
+	shell::logger::info "Configuring the ${scope} Git settings (Enter accepts the value in brackets, Ctrl-D cancels)"
+
+	name="$(shell::git::config::prompt "user.name" "$def_name" name)" || {
+		shell::logger::warn "Setup cancelled — nothing was changed"
+		return "$RETURN_FAILURE"
+	}
+	email="$(shell::git::config::prompt "user.email" "$def_email" email)" || {
+		shell::logger::warn "Setup cancelled — nothing was changed"
+		return "$RETURN_FAILURE"
+	}
+	branch="$(shell::git::config::prompt "init.defaultBranch" "$def_branch" branch)" || {
+		shell::logger::warn "Setup cancelled — nothing was changed"
+		return "$RETURN_FAILURE"
+	}
+	crlf="$(shell::git::config::prompt "core.autocrlf (true | input | false)" "$def_crlf" autocrlf)" || {
+		shell::logger::warn "Setup cancelled — nothing was changed"
+		return "$RETURN_FAILURE"
+	}
+
+	shell::logger::info "Summary for the ${scope} configuration:"
+	for key in user.name user.email init.defaultBranch core.autocrlf; do
+		case "$key" in
+		user.name)
+			value="$name"
+			current="$cur_name"
+			;;
+		user.email)
+			value="$email"
+			current="$cur_email"
+			;;
+		init.defaultBranch)
+			value="$branch"
+			current="$cur_branch"
+			;;
+		*)
+			value="$crlf"
+			current="$cur_crlf"
+			;;
+		esac
+		if [ "$value" = "$current" ]; then
+			shell::logger::info "  ${key} = ${value}  (unchanged)"
+		else
+			shell::logger::info "  ${key} = ${value}"
+			changed=$((changed + 1))
+		fi
+	done
+
+	if [ "$changed" -eq 0 ]; then
+		shell::logger::info "Nothing to change"
+		return "$RETURN_SUCCESS"
+	fi
+
+	if [ "$scope" = "global" ]; then
+		set_flags+=(--global)
+	fi
+	if [ "$dry_run" = "true" ]; then
+		set_flags+=(--dry-run)
+	else
+		choice="$(shell::ask::option "Apply" "Cancel")"
+		if [ "$choice" != "Apply" ]; then
+			shell::logger::info "Setup cancelled — nothing was changed"
+			return "$RETURN_FAILURE"
+		fi
+	fi
+
+	[ "$name" = "$cur_name" ] || shell::git::config::set ${set_flags[@]+"${set_flags[@]}"} -- user.name "$name" || failed=$((failed + 1))
+	[ "$email" = "$cur_email" ] || shell::git::config::set ${set_flags[@]+"${set_flags[@]}"} -- user.email "$email" || failed=$((failed + 1))
+	[ "$branch" = "$cur_branch" ] || shell::git::config::set ${set_flags[@]+"${set_flags[@]}"} -- init.defaultBranch "$branch" || failed=$((failed + 1))
+	[ "$crlf" = "$cur_crlf" ] || shell::git::config::set ${set_flags[@]+"${set_flags[@]}"} -- core.autocrlf "$crlf" || failed=$((failed + 1))
+
+	if [ "$failed" -gt 0 ]; then
+		shell::logger::error "${failed} setting(s) could not be written"
+		return "$RETURN_FAILURE"
+	fi
+	return "$RETURN_SUCCESS"
+}
