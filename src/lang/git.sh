@@ -6899,3 +6899,231 @@ shell::git::commit::amend() {
 	return "$RETURN_SUCCESS"
 }
 
+# @internal
+# @description Validate a value used by the `shell::git::config::*` functions.
+#   Kinds:
+#   - `key`: `section[.subsection].name`. The section is letters, digits and `-`;
+#     the name starts with a letter; no leading `-` (it would be read as an
+#     option) and no newline.
+#   - `name`: not empty, no `<`, `>` or newline (git strips them from identities).
+#   - `email`: `something@something.something`, no spaces, `<`, `>` or second `@`.
+#   - `branch`: a valid branch name, as `git check-ref-format --branch` sees it.
+#   - `autocrlf`: `true`, `input` or `false`.
+# @arg $1 string Kind: key, name, email, branch or autocrlf.
+# @arg $2 string The value to check.
+# @exitcode 0 Valid.
+# @exitcode 1 Invalid (or unknown kind).
+# @example
+#   shell::git::config::validate key "user.email" && echo ok
+#
+shell::git::config::validate() {
+	local kind="${1-}" value="${2-}" section leaf
+
+	case "$kind" in
+	key)
+		case "$value" in
+		'' | -* | .* | *. | *$'\n'*) return 1 ;;
+		*.*) ;;
+		*) return 1 ;;
+		esac
+		section="${value%%.*}"
+		leaf="${value##*.}"
+		case "$section" in
+		'' | *[!A-Za-z0-9-]*) return 1 ;;
+		esac
+		case "$leaf" in
+		'' | [!A-Za-z]* | *[!A-Za-z0-9-]*) return 1 ;;
+		esac
+		;;
+	name)
+		case "$value" in
+		'' | *'<'* | *'>'* | *$'\n'*) return 1 ;;
+		esac
+		;;
+	email)
+		case "$value" in
+		'' | *[[:space:]]* | *'<'* | *'>'* | *@*@*) return 1 ;;
+		?*@?*.?*) ;;
+		*) return 1 ;;
+		esac
+		;;
+	branch)
+		case "$value" in
+		'' | -*) return 1 ;;
+		esac
+		git check-ref-format --branch "$value" >/dev/null 2>&1 || return 1
+		;;
+	autocrlf)
+		case "$value" in
+		true | input | false) ;;
+		*) return 1 ;;
+		esac
+		;;
+	*) return 1 ;;
+	esac
+	return 0
+}
+
+# @internal
+# @description Check that git exists and that the scope can be used.
+#   `local` needs a repository; `global` works anywhere.
+# @arg $1 string Scope: local or global.
+# @stderr The reason when the scope cannot be used.
+# @exitcode 0 Usable.
+# @exitcode 1 git is missing, or `local` outside a repository.
+# @example
+#   shell::git::config::preflight local || return $?
+#
+shell::git::config::preflight() {
+	local scope="${1-}"
+
+	if ! command -v git >/dev/null 2>&1; then
+		shell::logger::error "git is not installed"
+		return "$RETURN_FAILURE"
+	fi
+	if [ "$scope" = "local" ] && ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository (use --global for the user configuration)"
+		return "$RETURN_FAILURE"
+	fi
+	return "$RETURN_SUCCESS"
+}
+
+# @internal
+# @description Count how many values a key has in one scope.
+#   Uses the NUL-terminated form of `git config`, so a value that contains a
+#   newline still counts once.
+# @arg $1 string Scope: local or global.
+# @arg $2 string Key.
+# @stdout The number of values (0 when the key is absent).
+# @exitcode 0 Always.
+# @example
+#   [ "$(shell::git::config::count local remote.origin.fetch)" -gt 1 ]
+#
+shell::git::config::count() {
+	git config "--${1-}" --get-all -z -- "${2-}" 2>/dev/null | tr -cd '\000' | wc -c | tr -d ' '
+}
+
+# @internal
+# @description Ask for one line of text, with a default and optional validation.
+#   The prompt goes to stderr and the value to stdout (usable in `$(...)`).
+#   Enter accepts the default; an invalid or empty answer asks again; end of
+#   input (Ctrl-D) cancels.
+# @arg $1 string Prompt label.
+# @arg $2 string Default value (may be empty: the answer is then required).
+# @arg $3 string Validation kind for shell::git::config::validate (optional).
+# @stdout The accepted value, trimmed.
+# @exitcode 0 A value was accepted.
+# @exitcode 9 End of input (Ctrl-D).
+# @example
+#   email="$(shell::git::config::prompt "user.email" "$current" email)" || return $?
+#
+shell::git::config::prompt() {
+	local label="${1-}" default="${2-}" kind="${3-}" value=""
+
+	while true; do
+		if [ -n "$default" ]; then
+			printf '%s [%s]: ' "$label" "$default" >&2
+		else
+			printf '%s: ' "$label" >&2
+		fi
+
+		if ! read -r value; then
+			printf '\n' >&2
+			return "$RETURN_CANCELLED"
+		fi
+
+		value="${value#"${value%%[![:space:]]*}"}"
+		value="${value%"${value##*[![:space:]]}"}"
+		if [ -z "$value" ]; then
+			value="$default"
+		fi
+
+		if [ -z "$value" ]; then
+			shell::logger::warn "A value is required"
+			continue
+		fi
+		if [ -n "$kind" ] && ! shell::git::config::validate "$kind" "$value"; then
+			shell::logger::warn "'${value}' is not a valid ${kind}; try again"
+			continue
+		fi
+
+		printf '%s\n' "$value"
+		return "$RETURN_SUCCESS"
+	done
+}
+
+# @description Lists all Git configuration key-value pairs with their origin file.
+#
+#   Defaults to listing the local project configuration (.git/config).
+#   Use the --global flag to list the user's global configuration (~/.gitconfig).
+#   Each line is `file:<path><TAB><key>=<value>` (git's `--show-origin` format),
+#   on stdout, so it can be piped to `grep`, `cut` or `column`.
+#
+# @option -g | --global Optional. List global configuration instead of local.
+# @option -n | --dry-run Optional. Print the planned git command instead of executing.
+# @option -h | --help Show this help message.
+# @stdout The configuration, one entry per line, with its origin file.
+# @exitcode 0 Success.
+# @exitcode 1 The operation failed or not in a git repository (when listing local).
+# @exitcode 2 Invalid usage.
+# @example
+#   shell::git::config::list
+#   shell::git::config::list --global
+#
+shell::git::config::list() {
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "List Git configuration entries with their origin file"
+		shell::logger::usage "shell::git::config::list [-g] [-n] [-h]"
+		shell::logger::option "-g, --global" "List the global configuration instead of the local one"
+		shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::git::config::list"
+		shell::logger::example "shell::git::config::list --global"
+		return "$RETURN_SUCCESS"
+	fi
+
+	local scope="local" dry_run="false" out rc
+	while [ "$#" -gt 0 ]; do
+		case "$1" in
+		-g | --global)
+			scope="global"
+			shift
+			;;
+		-n | --dry-run)
+			dry_run="true"
+			shift
+			;;
+		*)
+			shell::logger::error "Unknown option or argument: $1"
+			return "$RETURN_INVALID"
+			;;
+		esac
+	done
+
+	shell::git::config::preflight "$scope" || return "$RETURN_FAILURE"
+
+	if [ "$dry_run" = "true" ]; then
+		shell::exec::command -n git config "--$scope" --list --show-origin
+		return "$RETURN_SUCCESS"
+	fi
+
+	out="$(git config "--$scope" --list --show-origin 2>&1)"
+	rc=$?
+	if [ "$rc" -ne 0 ]; then
+		case "$out" in
+		*"unable to read config file"*)
+			shell::logger::warn "No ${scope} Git configuration found yet"
+			;;
+		*)
+			shell::logger::error "git config failed: ${out}"
+			;;
+		esac
+		return "$RETURN_FAILURE"
+	fi
+
+	if [ -n "$out" ]; then
+		printf '%s\n' "$out"
+	fi
+	return "$RETURN_SUCCESS"
+}
