@@ -2912,23 +2912,68 @@ shell::git::commit::spec() {
 # @description Displays a decorated commit graph for the currently active branch.
 #
 #   Detects the currently active branch and forwards it to shell::git::commit::spec
-#   to display its commit graph. If not inside a Git repository, an error is logged
-#   and the function returns with failure.
+#   to display its commit graph, together with every option you pass, so all the
+#   filters of shell::git::commit::spec work here too (the branch is added for
+#   you; paths go after `--`). In a detached HEAD the history of HEAD is shown.
+#   If not inside a Git repository, an error is logged and the function returns
+#   with failure.
 # @option -n | --dry-run Optional. Print the command via shell::logger::command_clip instead of executing it.
+# @option -c | --count Optional. Show only the N most recent commits.
+# @option -s | --since Optional. Only commits after this date.
+# @option -u | --until Optional. Only commits before this date.
+# @option -a | --author Optional. Only commits whose author matches this pattern.
+# @option -g | --grep Optional. Only commits whose message matches this pattern.
+# @option --no-merges Optional. Hide merge commits.
+# @option --first-parent Optional. Follow only the first parent of merges.
+# @option --no-graph Optional. Plain list instead of the ASCII graph.
+# @option --oneline Optional. Compact format.
+# @option --reverse Optional. Oldest first (needs --no-graph).
+# @option --stat Optional. Show the files changed by each commit.
 # @option -h | --help Show this help message.
-# @exitcode 1 The operation failed.
+# @exitcode 0 Success.
+# @exitcode 1 The operation failed (not inside a Git repository, or git log failed).
+# @exitcode 2 Invalid arguments.
 # @example
 #   shell::git::commit::spec::current
 #   shell::git::commit::spec::current -n
+#   shell::git::commit::spec::current -c 10
+#   shell::git::commit::spec::current --author Alice --since "1 month ago" -- src/
 #
 shell::git::commit::spec::current() {
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Show the decorated commit graph of the current branch"
+		shell::logger::usage "shell::git::commit::spec::current [-n] [options] [-- <path>...]"
+		shell::logger::item "path" "After --, only commits that touch these paths"
+		shell::logger::option "-c, --count <N>" "Show only the N most recent commits"
+		shell::logger::option "-s, --since <date>" "Only commits after this date (e.g. \"2 weeks ago\")"
+		shell::logger::option "-u, --until <date>" "Only commits before this date"
+		shell::logger::option "-a, --author <pattern>" "Only commits by an author matching the pattern"
+		shell::logger::option "-g, --grep <pattern>" "Only commits whose message matches the pattern"
+		shell::logger::option "--no-merges" "Hide merge commits"
+		shell::logger::option "--first-parent" "Follow only the first parent of merges"
+		shell::logger::option "--no-graph" "Plain list instead of the graph"
+		shell::logger::option "--oneline" "Compact format (short hash, relative time)"
+		shell::logger::option "--reverse" "Oldest first (needs --no-graph)"
+		shell::logger::option "--stat" "Show the files changed by each commit"
+		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::note "-n is the dry-run flag; the number of commits is -c."
+		shell::logger::example "shell::git::commit::spec::current"
+		shell::logger::example "shell::git::commit::spec::current -c 10"
+		shell::logger::example "shell::git::commit::spec::current --author Alice --since \"1 month ago\" -- src/"
+		return "$RETURN_SUCCESS"
+	fi
+
 	local current_branch
 	current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
 	if [ -z "$current_branch" ]; then
 		shell::logger::error "Not inside a Git repository"
-		return $RETURN_FAILURE
+		return "$RETURN_FAILURE"
 	fi
-	shell::git::commit::spec "$current_branch"
+
+	# The branch goes first; every option the user gave follows it.
+	shell::git::commit::spec "$current_branch" "$@"
 }
 
 # @description Displays a decorated commit graph across all refs in the current repository.
