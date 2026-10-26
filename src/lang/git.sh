@@ -7127,3 +7127,305 @@ shell::git::config::list() {
 	fi
 	return "$RETURN_SUCCESS"
 }
+
+# @description Retrieves the value of a specific Git configuration key.
+#
+#   Without `--global` the effective value is returned, the one git itself would
+#   use (local, then global, then system), and it works outside a repository too.
+#   With `--global` only the user's global configuration is read. The value is
+#   printed alone on stdout, exactly as stored, so `$(shell::git::config::get k)`
+#   is safe to use. A key with several values returns the last one.
+#
+# @arg $1 string key: The configuration key to retrieve (e.g., "user.email", "core.autocrlf").
+# @option -g | --global Optional. Get the value from the global configuration.
+# @option -h | --help Show this help message.
+# @stdout The value.
+# @exitcode 0 Success (key found and value printed).
+# @exitcode 1 Key not found or operation failed.
+# @exitcode 2 Missing or invalid key, or invalid usage.
+# @example
+#   shell::git::config::get "user.name"
+#   shell::git::config::get -g "init.defaultBranch"
+#
+shell::git::config::get() {
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Print the value of a Git configuration key"
+		shell::logger::usage "shell::git::config::get [-g] [-h] <key>"
+		shell::logger::item "key" "e.g. user.email, core.autocrlf"
+		shell::logger::option "-g, --global" "Read only the global configuration"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::git::config::get user.name"
+		shell::logger::example "shell::git::config::get -g init.defaultBranch"
+		return "$RETURN_SUCCESS"
+	fi
+
+	local global="false" end_opts="false" key="" have_key="false" rc
+	while [ "$#" -gt 0 ]; do
+		if [ "$end_opts" = "false" ]; then
+			case "$1" in
+			-g | --global)
+				global="true"
+				shift
+				continue
+				;;
+			--)
+				end_opts="true"
+				shift
+				continue
+				;;
+			-*)
+				shell::logger::error "Unknown option: $1"
+				return "$RETURN_INVALID"
+				;;
+			esac
+		fi
+		if [ "$have_key" = "true" ]; then
+			shell::logger::error "Only one key is accepted (got '$key' and '$1')"
+			return "$RETURN_INVALID"
+		fi
+		key="$1"
+		have_key="true"
+		shift
+	done
+
+	if [ "$have_key" = "false" ]; then
+		shell::logger::error "A key is required, e.g. user.email"
+		return "$RETURN_INVALID"
+	fi
+	if ! shell::git::config::validate key "$key"; then
+		shell::logger::error "Invalid key: '$key' (expected section.name, e.g. user.email)"
+		return "$RETURN_INVALID"
+	fi
+	if ! command -v git >/dev/null 2>&1; then
+		shell::logger::error "git is not installed"
+		return "$RETURN_FAILURE"
+	fi
+
+	if [ "$global" = "true" ]; then
+		git config --global --get -- "$key"
+	else
+		git config --get -- "$key"
+	fi
+	rc=$?
+
+	if [ "$rc" -ne 0 ]; then
+		shell::logger::warn "Key not found: ${key}"
+		return "$RETURN_FAILURE"
+	fi
+	return "$RETURN_SUCCESS"
+}
+
+# @description Sets or updates a Git configuration key-value pair.
+#
+#   If the key already exists, its value is overwritten.
+#   Defaults to the local project configuration.
+#   The value is passed to git as one argument (never through `eval`), so
+#   quotes, `$` and spaces are stored exactly as given; an empty value is allowed.
+#   A value that starts with `-` must follow `--` (`set -- core.pager -F`).
+#   A key that already has several values (such as `remote.origin.fetch`) is
+#   refused instead of being collapsed to one; setting the same value again
+#   changes nothing.
+#
+# @arg $1 string key: The configuration key (e.g., "user.email").
+# @arg $2 string value: The value to set.
+# @option -g | --global Optional. Set the value in the global configuration.
+# @option -n | --dry-run Optional. Print the planned git command instead of executing.
+# @option -h | --help Show this help message.
+# @exitcode 0 Success.
+# @exitcode 1 The operation failed (not in a repository for local, key with several values).
+# @exitcode 2 Invalid or missing arguments.
+# @example
+#   shell::git::config::set "user.name" "John Doe"
+#   shell::git::config::set -g "core.editor" "nvim"
+#
+shell::git::config::set() {
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Set (or update) a Git configuration key"
+		shell::logger::usage "shell::git::config::set [-g] [-n] [-h] [--] <key> <value>"
+		shell::logger::item "key" "e.g. user.email"
+		shell::logger::item "value" "The new value (may be empty; use -- if it starts with -)"
+		shell::logger::option "-g, --global" "Write to the global configuration instead of the local one"
+		shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::git::config::set user.name \"John Doe\""
+		shell::logger::example "shell::git::config::set -g core.editor nvim"
+		return "$RETURN_SUCCESS"
+	fi
+
+	local scope="local" dry_run="false" end_opts="false"
+	local key="" value="" have_key="false" have_value="false"
+	local count old
+	while [ "$#" -gt 0 ]; do
+		if [ "$end_opts" = "false" ]; then
+			case "$1" in
+			-g | --global)
+				scope="global"
+				shift
+				continue
+				;;
+			-n | --dry-run)
+				dry_run="true"
+				shift
+				continue
+				;;
+			--)
+				end_opts="true"
+				shift
+				continue
+				;;
+			-*)
+				shell::logger::error "Unknown option: $1 (put -- before a value that starts with -)"
+				return "$RETURN_INVALID"
+				;;
+			esac
+		fi
+		if [ "$have_key" = "false" ]; then
+			key="$1"
+			have_key="true"
+		elif [ "$have_value" = "false" ]; then
+			value="$1"
+			have_value="true"
+		else
+			shell::logger::error "Too many arguments; expected <key> <value>"
+			return "$RETURN_INVALID"
+		fi
+		shift
+	done
+
+	if [ "$have_key" = "false" ] || [ "$have_value" = "false" ]; then
+		shell::logger::error "Usage: shell::git::config::set [-g] [-n] <key> <value>"
+		return "$RETURN_INVALID"
+	fi
+	if ! shell::git::config::validate key "$key"; then
+		shell::logger::error "Invalid key: '$key' (expected section.name, e.g. user.email)"
+		return "$RETURN_INVALID"
+	fi
+
+	shell::git::config::preflight "$scope" || return "$RETURN_FAILURE"
+
+	count="$(shell::git::config::count "$scope" "$key")"
+	if [ "${count:-0}" -gt 1 ]; then
+		shell::logger::error "'${key}' has ${count} values in the ${scope} configuration; refusing to collapse them (use git config --replace-all)"
+		return "$RETURN_FAILURE"
+	fi
+	if [ "${count:-0}" -eq 1 ]; then
+		old="$(git config "--$scope" --get -- "$key" 2>/dev/null)"
+		if [ "$old" = "$value" ]; then
+			shell::logger::info "'${key}' already has this value in the ${scope} configuration"
+			return "$RETURN_SUCCESS"
+		fi
+	fi
+
+	if [ "$dry_run" = "true" ]; then
+		shell::exec::command -n git config "--$scope" -- "$key" "$value"
+		return "$RETURN_SUCCESS"
+	fi
+
+	if ! shell::exec::command git config "--$scope" -- "$key" "$value"; then
+		shell::logger::error "Could not set '${key}' in the ${scope} configuration"
+		return "$RETURN_FAILURE"
+	fi
+	shell::logger::success "Set ${key} in the ${scope} configuration"
+	return "$RETURN_SUCCESS"
+}
+
+# @description Removes a specific key from the Git configuration.
+#
+#   Only the chosen scope is touched: removing a local key leaves the global
+#   value in place (and the other way round). A key with several values is
+#   refused instead of being wiped.
+#
+# @arg $1 string key: The configuration key to remove.
+# @option -g | --global Optional. Remove the key from the global configuration.
+# @option -n | --dry-run Optional. Print the planned git command instead of executing.
+# @option -h | --help Show this help message.
+# @exitcode 0 Success.
+# @exitcode 1 Key not found or operation failed.
+# @exitcode 2 Missing or invalid key, or invalid usage.
+# @example
+#   shell::git::config::unset "user.signingkey"
+#   shell::git::config::unset -g "credential.helper"
+#
+shell::git::config::unset() {
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Remove a key from the Git configuration"
+		shell::logger::usage "shell::git::config::unset [-g] [-n] [-h] <key>"
+		shell::logger::item "key" "e.g. user.signingkey"
+		shell::logger::option "-g, --global" "Remove from the global configuration instead of the local one"
+		shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::git::config::unset user.signingkey"
+		shell::logger::example "shell::git::config::unset -g credential.helper"
+		return "$RETURN_SUCCESS"
+	fi
+
+	local scope="local" dry_run="false" end_opts="false" key="" have_key="false" count
+	while [ "$#" -gt 0 ]; do
+		if [ "$end_opts" = "false" ]; then
+			case "$1" in
+			-g | --global)
+				scope="global"
+				shift
+				continue
+				;;
+			-n | --dry-run)
+				dry_run="true"
+				shift
+				continue
+				;;
+			--)
+				end_opts="true"
+				shift
+				continue
+				;;
+			-*)
+				shell::logger::error "Unknown option: $1"
+				return "$RETURN_INVALID"
+				;;
+			esac
+		fi
+		if [ "$have_key" = "true" ]; then
+			shell::logger::error "Only one key is accepted (got '$key' and '$1')"
+			return "$RETURN_INVALID"
+		fi
+		key="$1"
+		have_key="true"
+		shift
+	done
+
+	if [ "$have_key" = "false" ]; then
+		shell::logger::error "A key is required, e.g. user.signingkey"
+		return "$RETURN_INVALID"
+	fi
+	if ! shell::git::config::validate key "$key"; then
+		shell::logger::error "Invalid key: '$key' (expected section.name, e.g. user.signingkey)"
+		return "$RETURN_INVALID"
+	fi
+
+	shell::git::config::preflight "$scope" || return "$RETURN_FAILURE"
+
+	count="$(shell::git::config::count "$scope" "$key")"
+	if [ "${count:-0}" -eq 0 ]; then
+		shell::logger::warn "Key not found in the ${scope} configuration: ${key}"
+		return "$RETURN_FAILURE"
+	fi
+	if [ "${count:-0}" -gt 1 ]; then
+		shell::logger::error "'${key}' has ${count} values in the ${scope} configuration; refusing to remove them all (use git config --unset-all)"
+		return "$RETURN_FAILURE"
+	fi
+
+	if [ "$dry_run" = "true" ]; then
+		shell::exec::command -n git config "--$scope" --unset -- "$key"
+		return "$RETURN_SUCCESS"
+	fi
+
+	if ! shell::exec::command git config "--$scope" --unset -- "$key"; then
+		shell::logger::error "Could not remove '${key}' from the ${scope} configuration"
+		return "$RETURN_FAILURE"
+	fi
+	shell::logger::success "Removed ${key} from the ${scope} configuration"
+	return "$RETURN_SUCCESS"
+}
