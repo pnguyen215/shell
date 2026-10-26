@@ -6657,3 +6657,245 @@ shell::git::commit::squash::fzf() {
 	fi
 	return "$RETURN_SUCCESS"
 }
+
+# @internal
+# @description Work out where an amended branch must be pushed.
+#   The remote and branch the current branch tracks (the upstream branch name
+#   may differ from the local one); without an upstream, `origin` (or the only
+#   remote) and the local branch name.
+# @arg $1 string The local branch name.
+# @stdout Two lines: the remote name, then the branch name on that remote.
+# @stderr The reason when no target can be chosen.
+# @exitcode 0 A target was printed.
+# @exitcode 1 No remote, several remotes and none is `origin`, or a name that looks like an option.
+# @example
+#   target="$(shell::git::commit::amend::push_target "$branch")" || return $?
+#
+shell::git::commit::amend::push_target() {
+	local branch="${1-}" remote merge remotes
+
+	remote="$(git config --get "branch.$branch.remote" 2>/dev/null)"
+	merge="$(git config --get "branch.$branch.merge" 2>/dev/null)"
+
+	if [ -n "$remote" ] && [ "$remote" != "." ] && [ -n "$merge" ]; then
+		branch="${merge#refs/heads/}"
+	else
+		remotes="$(git remote 2>/dev/null)"
+		if [ -z "$remotes" ]; then
+			shell::logger::error "This repository has no remote to push to"
+			return "$RETURN_FAILURE"
+		fi
+		if printf '%s\n' "$remotes" | grep -Fxq -- "origin"; then
+			remote="origin"
+		elif [ "$(printf '%s\n' "$remotes" | wc -l | tr -d ' ')" = "1" ]; then
+			remote="$remotes"
+		else
+			shell::logger::error "Several remotes and none is named origin; set an upstream first (git branch -u <remote>/<branch>)"
+			return "$RETURN_FAILURE"
+		fi
+	fi
+
+	case "$remote$branch" in
+	-* | *$'\n'*)
+		shell::logger::error "Refusing to push to a remote or branch whose name looks like an option"
+		return "$RETURN_FAILURE"
+		;;
+	esac
+	case "$branch" in
+	-*)
+		shell::logger::error "Refusing to push to a branch whose name looks like an option"
+		return "$RETURN_FAILURE"
+		;;
+	esac
+
+	printf '%s\n%s\n' "$remote" "$branch"
+}
+
+# @description Amends the most recent commit.
+#
+#   Step 1 — Check what would be amended. Staged changes are folded into the
+#   commit; with none staged, the default (editor) mode only rewords the message.
+#   `--no-edit` needs staged changes, because without them it would amend
+#   nothing (it would only change the commit hash and date), so it stops there.
+#   Step 2 — Execute `git commit --amend` (with `--no-edit` when asked; the
+#   editor opens otherwise).
+#   Step 3 — Push with `--force-with-lease`: automatically with `--push`, or,
+#   when the amended commit was already on the upstream branch (so a force push
+#   is needed), by asking. `--force-with-lease` refuses to overwrite commits
+#   somebody else pushed meanwhile, which a plain `--force` would destroy.
+#
+#   The push target is checked before anything is changed, so a missing remote
+#   never leaves a half-done amend. If the amend itself fails (a hook, an empty
+#   message) the commit is left exactly as it was. If only the push fails, the
+#   amended commit stays local and the previous hash is printed.
+# @option -e | --edit Optional. Open the editor to edit the commit message (default opens editor).
+# @option --no-edit Optional. Amend the commit without changing the message.
+# @option -p | --push Optional. Automatically push after amending using --force-with-lease.
+# @option -n | --dry-run Optional. Print planned git commands instead of executing.
+# @option -h | --help Show this help message.
+# @exitcode 0 Success.
+# @exitcode 1 The operation failed (not a repository, nothing to amend, hook, no push target, push rejected).
+# @exitcode 2 Invalid usage (unknown option, or --edit together with --no-edit).
+# @example
+#   shell::git::commit::amend --no-edit -p
+#   shell::git::commit::amend -n
+#
+shell::git::commit::amend() {
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Amend the most recent commit (staged changes and/or message)"
+		shell::logger::usage "shell::git::commit::amend [-e | --no-edit] [-p] [-n] [-h]"
+		shell::logger::option "-e, --edit" "Open the editor to edit the message (the default)"
+		shell::logger::option "--no-edit" "Keep the message; needs staged changes"
+		shell::logger::option "-p, --push" "Push afterwards with --force-with-lease"
+		shell::logger::option "-n, --dry-run" "Print the planned git commands instead of executing them"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::git::commit::amend --no-edit -p"
+		shell::logger::example "shell::git::commit::amend -n"
+		return "$RETURN_SUCCESS"
+	fi
+
+	local dry_run="false" edit="false" no_edit="false" push="false"
+	while [ "$#" -gt 0 ]; do
+		case "$1" in
+		-e | --edit)
+			edit="true"
+			shift
+			;;
+		--no-edit)
+			no_edit="true"
+			shift
+			;;
+		-p | --push)
+			push="true"
+			shift
+			;;
+		-n | --dry-run)
+			dry_run="true"
+			shift
+			;;
+		*)
+			shell::logger::error "Unknown option or argument: $1"
+			return "$RETURN_INVALID"
+			;;
+		esac
+	done
+
+	if [ "$edit" = "true" ] && [ "$no_edit" = "true" ]; then
+		shell::logger::error "--edit and --no-edit cannot be combined"
+		return "$RETURN_INVALID"
+	fi
+
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return "$RETURN_FAILURE"
+	fi
+	if ! git rev-parse --verify --quiet HEAD >/dev/null 2>&1; then
+		shell::logger::error "There is no commit to amend yet"
+		return "$RETURN_FAILURE"
+	fi
+
+	# Declared once, before any branching (re-declaring a local prints in zsh).
+	local has_staged="true" unstaged_count branch upstream published="false"
+	local old_head new_head target remote_name remote_branch choice rc
+	local -a amend_cmd=(git commit --amend)
+
+	# ---------------------------------------------------------------------------
+	# Step 1 — what will be amended?
+	# ---------------------------------------------------------------------------
+	if git diff --cached --quiet 2>/dev/null; then
+		has_staged="false"
+	fi
+	unstaged_count="$(git diff --name-only 2>/dev/null | wc -l | tr -d ' ')"
+
+	if [ "$has_staged" = "false" ]; then
+		if [ "$no_edit" = "true" ]; then
+			shell::logger::error "Nothing is staged, so --no-edit would amend nothing; stage changes (git add) or drop --no-edit to reword"
+			return "$RETURN_FAILURE"
+		fi
+		shell::logger::info "No staged changes: only the commit message will be edited"
+	fi
+	if [ "${unstaged_count:-0}" -gt 0 ]; then
+		shell::logger::info "${unstaged_count} file(s) with unstaged changes are not part of the amend (git add them first)"
+	fi
+
+	branch="$(git symbolic-ref --short -q HEAD 2>/dev/null)"
+	if [ -n "$branch" ]; then
+		upstream="$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null)"
+	fi
+	if [ -n "$upstream" ] && git merge-base --is-ancestor HEAD "$upstream" 2>/dev/null; then
+		published="true"
+		shell::logger::warn "This commit is already on ${upstream}; amending rewrites it and needs a force push"
+	fi
+
+	# Resolve the push target now, before anything is changed.
+	if [ "$push" = "true" ]; then
+		if [ -z "$branch" ]; then
+			shell::logger::error "--push needs a branch, but HEAD is detached"
+			return "$RETURN_FAILURE"
+		fi
+		target="$(shell::git::commit::amend::push_target "$branch")" || return "$RETURN_FAILURE"
+		remote_name="${target%%$'\n'*}"
+		remote_branch="${target#*$'\n'}"
+	fi
+
+	if [ "$no_edit" = "true" ]; then
+		amend_cmd+=(--no-edit)
+	elif [ "$edit" = "true" ]; then
+		amend_cmd+=(--edit)
+	fi
+
+	# ---------------------------------------------------------------------------
+	# Dry-run — print the plan, change nothing.
+	# ---------------------------------------------------------------------------
+	if [ "$dry_run" = "true" ]; then
+		shell::exec::command -n "${amend_cmd[@]}"
+		if [ "$push" = "true" ]; then
+			shell::exec::command -n git push --force-with-lease "$remote_name" "refs/heads/${branch}:refs/heads/${remote_branch}"
+		elif [ "$published" = "true" ]; then
+			shell::logger::info "It would then ask whether to push with --force-with-lease"
+		fi
+		return "$RETURN_SUCCESS"
+	fi
+
+	# ---------------------------------------------------------------------------
+	# Step 2 — amend.
+	# ---------------------------------------------------------------------------
+	old_head="$(git rev-parse HEAD 2>/dev/null)"
+	shell::exec::command "${amend_cmd[@]}"
+	rc=$?
+	if [ "$rc" -ne 0 ]; then
+		shell::logger::error "git commit --amend failed; the commit was left unchanged"
+		return "$RETURN_FAILURE"
+	fi
+
+	new_head="$(git rev-parse --short HEAD 2>/dev/null)"
+	shell::logger::success "Amended: ${new_head}"
+	shell::logger::info "Previous commit: ${old_head} (to go back and keep your changes staged: git reset --soft ${old_head})"
+
+	# ---------------------------------------------------------------------------
+	# Step 3 — push with --force-with-lease (asked for, or offered when needed).
+	# ---------------------------------------------------------------------------
+	if [ "$push" != "true" ] && [ "$published" = "true" ]; then
+		choice="$(shell::ask::option "Push with --force-with-lease" "Don't push")"
+		if [ "$choice" = "Push with --force-with-lease" ]; then
+			target="$(shell::git::commit::amend::push_target "$branch")" || return "$RETURN_FAILURE"
+			remote_name="${target%%$'\n'*}"
+			remote_branch="${target#*$'\n'}"
+			push="true"
+		else
+			shell::logger::info "Not pushed. When ready: git push --force-with-lease"
+		fi
+	fi
+
+	if [ "$push" = "true" ]; then
+		if ! shell::exec::command git push --force-with-lease "$remote_name" "refs/heads/${branch}:refs/heads/${remote_branch}"; then
+			shell::logger::error "Push failed (the remote may have new commits: fetch and review them before retrying). The amended commit is still local"
+			return "$RETURN_FAILURE"
+		fi
+		shell::logger::success "Pushed to ${remote_name}/${remote_branch} with --force-with-lease"
+	fi
+
+	return "$RETURN_SUCCESS"
+}
+
