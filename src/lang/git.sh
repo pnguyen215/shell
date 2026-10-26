@@ -3951,6 +3951,73 @@ Developer Experience|:technologist:|chore(devcontainer)|add development containe
 Developer Experience|:technologist:|build|speed up local rebuilds with incremental caching
 Developer Experience|:technologist:|chore(dx)|add make targets for common tasks
 Developer Experience|:technologist:|chore(dx)|add debug launch configurations for the editor
+API Design and Contracts|:memo:|feat(api)|implement field masking for sensitive data in responses
+API Design and Contracts|:boom:|feat(api)!|standardize error response payload to RFC 7807 format
+API Design and Contracts|:lock:|feat(api)|add ETag and If-None-Match headers for caching support
+API Design and Contracts|:white_check_mark:|test(api)|add contract tests using Pact to prevent breaking changes
+API Design and Contracts|:books:|docs(api)|publish OpenAPI 3.1 specification with strict validation rules
+API Design and Contracts|:recycle:|refactor(api)|replace REST endpoints with GraphQL federation gateway
+API Design and Contracts|:zap:|perf(api)|implement cursor-based pagination for large datasets
+Performance and Scalability|:chart_with_upwards_trend:|perf(db)|add composite index for slow query in reporting dashboard
+Performance and Scalability|:fire:|refactor(cache)|switch from LRU to LFU eviction policy in Redis
+Performance and Scalability|:rocket:|perf(net)|enable HTTP/3 and QUIC protocol at the edge CDN
+Performance and Scalability|:construction_worker:|ci(perf)|add automated k6 load testing to the CI pipeline
+Performance and Scalability|:mag:|chore(metrics)|add p99 latency SLI for the payment processing service
+Performance and Scalability|:wrench:|chore(sre)|define error budget policy and SLO burn rate alerts
+Performance and Scalability|:stopwatch:|perf(app)|optimize event loop blocking operations using worker threads
+Distributed Systems|:link:|feat(saga)|implement orchestrator pattern for cross-service transactions
+Distributed Systems|:shield:|feat(resilience)|add circuit breaker with exponential backoff fallback
+Distributed Systems|:package:|refactor(messaging)|ensure exactly-once delivery semantics using idempotency keys
+Distributed Systems|:alembic:|feat(cqrs)|separate read and write models for the audit log subsystem
+Distributed Systems|:loud_sound:|feat(tracing)|inject W3C Trace Context headers across all gRPC calls
+Distributed Systems|:rewind:|feat(events)|implement outbox pattern to guarantee reliable event publishing
+Distributed Systems|:recycle:|refactor(sync)|replace synchronous HTTP calls with asynchronous domain events
+Security and Compliance (Advanced)|:closed_lock_with_key:|feat(auth)|implement mutual TLS (mTLS) for service-to-service communication
+Security and Compliance (Advanced)|:lock:|fix(security)|remediate Server-Side Request Forgery (SSRF) vulnerability
+Security and Compliance (Advanced)|:passport_control:|feat(auth)|enforce short-lived JWTs with sliding refresh token rotation
+Security and Compliance (Advanced)|:shield:|feat(security)|add content security policy (CSP) reporting endpoint
+Security and Compliance (Advanced)|:bookmark:|chore(compliance)|generate SBOM (Software Bill of Materials) during build
+Security and Compliance (Advanced)|:lock:|fix(security)|sanitize untrusted HTML inputs using DOMPurify on the server
+Data Engineering and Pipelines|:card_file_box:|feat(etl)|add incremental Change Data Capture (CDC) for user tables
+Data Engineering and Pipelines|:arrows_counterclockwise:|fix(pipeline)|ensure idempotent data ingestion to prevent duplicates
+Data Engineering and Pipelines|:hourglass_flowing_sand:|chore(backfill)|trigger historical data backfill for Q3 metrics
+Data Engineering and Pipelines|:white_check_mark:|test(data)|add data quality assertions on schema and nullability
+Data Engineering and Pipelines|:wastebasket:|chore(archival)|move cold storage records to S3 Glacier lifecycle policy
+Data Engineering and Pipelines|:sparkles:|feat(streaming)|implement exactly-once windowing in Apache Flink job
+Testing Strategy and Reliability|:test_tube:|test(e2e)|add visual regression tests for critical user journeys
+Testing Strategy and Reliability|:alembic:|test(mutation)|integrate Stryker to measure test suite effectiveness
+Testing Strategy and Reliability|:bug:|test(fix)|add a reproduction test for the race condition bug
+Testing Strategy and Reliability|:crystal_ball:|test(property)|add property-based testing for the pricing engine
+Testing Strategy and Reliability|:construction_worker:|ci(tests)|parallelize end-to-end test execution across shards
+Testing Strategy and Reliability|:hammer_and_wrench:|test(fixtures)|replace hardcoded mocks with dynamically generated test data
+Cloud Native and Kubernetes|:whale:|build(k8s)|implement zero-downtime rolling updates with preStop hooks
+Cloud Native and Kubernetes|:shield:|feat(k8s)|enforce Pod Security Standards (Restricted) via Kyverno policies
+Cloud Native and Kubernetes|:chart_with_upwards_trend:|feat(k8s)|configure Vertical Pod Autoscaler (VPA) recommendations
+Cloud Native and Kubernetes|:package:|feat(helm)|extract shared subcharts for common deployment templates
+Cloud Native and Kubernetes|:lock:|feat(secrets)|integrate External Secrets Operator with HashiCorp Vault
+Cloud Native and Kubernetes|:fire:|refactor(k8s)|remove deprecated Kubernetes API versions before cluster upgrade
+Observability and Telemetry|:chart_with_upwards_trend:|feat(metrics)|expose custom Prometheus histogram for API latency
+Observability and Telemetry|:mag:|feat(tracing)|propagate OpenTelemetry baggage across microservices
+Observability and Telemetry|:books:|docs(runbook)|document incident response steps for high-severity alerts
+Observability and Telemetry|:loud_sound:|feat(logging)|add structured JSON logging with correlation IDs
+Observability and Telemetry|:zap:|perf(observability)|sample tracing dynamically based on traffic volume
+Database and Schema Evolution|:card_file_box:|feat(db)|add partial index to optimize soft-deleted queries
+Database and Schema Evolution|:lock:|feat(db)|enable row-level security policies for multi-tenancy
+Database and Schema Evolution|:recycle:|refactor(db)|normalize redundant tables to eliminate update anomalies
+Database and Schema Evolution|:zap:|perf(db)|introduce materialized views for complex aggregation dashboards
+Database and Schema Evolution|:fire:|fix(db)|correct collation mismatch causing inconsistent string sorting
+State Management and Frontend Architecture|:recycle:|refactor(state)|migrate global state to a unidirectional data flow pattern
+State Management and Frontend Architecture|:zap:|perf(state)|memoize expensive derived state selectors
+State Management and Frontend Architecture|:package:|build(deps)|replace deprecated state library with modern alternative
+State Management and Frontend Architecture|:lipstick:|feat(ssr)|hydrate server-rendered components without layout shift
+State Management and Frontend Architecture|:fire:|refactor(components)|extract complex logic into custom composables
+State Management and Frontend Architecture|:bug:|fix(routing)|preserve query parameters during nested route transitions
+Machine Learning Operations|:robot:|feat(ml)|register new model version in the model registry
+Machine Learning Operations|:chart_with_upwards_trend:|perf(ml)|quantize model weights to reduce inference latency
+Machine Learning Operations|:alembic:|feat(experiment)|track hyperparameter tuning results in MLflow
+Machine Learning Operations|:construction_worker:|ci(ml)|add automated bias detection to the training pipeline
+Machine Learning Operations|:arrow_up:|build(deps)|upgrade torch version for latest operator support
+Machine Learning Operations|:fire:|chore(ml)|prune stale model checkpoints from the artifact store
 EOF
 }
 
