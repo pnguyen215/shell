@@ -2654,60 +2654,259 @@ shell::git::branch::stash::apply::fzf() {
 	return $RETURN_SUCCESS
 }
 
+# @internal
+# @description Quote one argument so a printed command can be pasted back into a shell.
+#   Safe words are left as they are; anything else is wrapped in single quotes
+#   (an embedded `'` becomes `'\''`). Used for display only: the command itself
+#   is never built as a string.
+# @arg $1 string The argument.
+# @stdout The quoted argument.
+# @exitcode 0 Always.
+# @example
+#   shell::git::commit::spec::quote "John Doe"   # 'John Doe'
+#
+shell::git::commit::spec::quote() {
+	local value="${1-}"
+
+	case "$value" in
+	'') printf "''" ;;
+	*[!A-Za-z0-9_./:=@%+,-]*) printf "'%s'" "$(printf '%s' "$value" | sed "s/'/'\\\\''/g")" ;;
+	*) printf '%s' "$value" ;;
+	esac
+}
+
 # @description Displays a decorated commit graph for a specific branch.
 #
 #   Runs git log with a coloured, decorated graph format scoped to the given
 #   branch. Format: full hash (short hash) — relative time  author  refs  subject.
+#   With no options the commits listed are exactly what they always were (each
+#   one now ends with a newline, so the status line is no longer glued to the
+#   last commit); the options below narrow or reshape it. They can come before
+#   or after the branch, and paths go after `--`, for example
+#   `shell::git::commit::spec main -c 10 --author Alice --no-merges -- src docs`.
+#
+#   git is run directly (never through `eval`), so a branch name, an author or a
+#   pattern containing quotes, `$(...)` or other shell syntax is passed to git as
+#   plain text. `-n` is the dry-run flag of this library, so the number of commits
+#   is `-c` (git's own `-n`).
 # @option -n | --dry-run Optional. Print the command via shell::logger::command_clip instead of executing it.
+# @option -c | --count Optional. Show only the N most recent commits (a positive integer).
+# @option -s | --since Optional. Only commits after this date ("2024-01-01", "2 weeks ago").
+# @option -u | --until Optional. Only commits before this date.
+# @option -a | --author Optional. Only commits whose author matches this pattern.
+# @option -g | --grep Optional. Only commits whose message matches this pattern.
+# @option --no-merges Optional. Hide merge commits.
+# @option --first-parent Optional. Follow only the first parent of merges (the branch's own history).
+# @option --no-graph Optional. Plain list instead of the ASCII graph.
+# @option --oneline Optional. Compact format: short hash and relative time only.
+# @option --reverse Optional. Oldest first (needs --no-graph).
+# @option --stat Optional. Show the files changed by each commit.
 # @option -h | --help Show this help message.
 # @arg $1 string branch: The branch whose commit history to display.
+# @arg $2 string -- paths: After `--`, limit the history to commits that touch these paths.
 # @exitcode 0 Success.
+# @exitcode 1 git log failed (for example an unknown branch).
 # @exitcode 2 Invalid or missing arguments.
 # @example
 #   shell::git::commit::spec "main"
 #   shell::git::commit::spec -n "feature/my-branch"
+#   shell::git::commit::spec main -c 10
+#   shell::git::commit::spec main --author Alice --since "2 weeks ago" --no-merges
+#   shell::git::commit::spec main --grep fix -- src/
 #
 shell::git::commit::spec() {
-	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Show decorated commit graph history for a specific branch"
-		shell::logger::usage "shell::git::commit::spec [-n] [-h] <branch>"
+		shell::logger::usage "shell::git::commit::spec [-n] [options] <branch> [-- <path>...]"
 		shell::logger::item "branch" "Branch whose commit history to display"
-		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::item "path" "After --, only commits that touch these paths"
+		shell::logger::option "-c, --count <N>" "Show only the N most recent commits"
+		shell::logger::option "-s, --since <date>" "Only commits after this date (e.g. \"2 weeks ago\")"
+		shell::logger::option "-u, --until <date>" "Only commits before this date"
+		shell::logger::option "-a, --author <pattern>" "Only commits by an author matching the pattern"
+		shell::logger::option "-g, --grep <pattern>" "Only commits whose message matches the pattern"
+		shell::logger::option "--no-merges" "Hide merge commits"
+		shell::logger::option "--first-parent" "Follow only the first parent of merges"
+		shell::logger::option "--no-graph" "Plain list instead of the graph"
+		shell::logger::option "--oneline" "Compact format (short hash, relative time)"
+		shell::logger::option "--reverse" "Oldest first (needs --no-graph)"
+		shell::logger::option "--stat" "Show the files changed by each commit"
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::note "-n is the dry-run flag; the number of commits is -c."
 		shell::logger::example "shell::git::commit::spec \"main\""
 		shell::logger::example "shell::git::commit::spec -n \"feature/my-branch\""
-		return $RETURN_SUCCESS
+		shell::logger::example "shell::git::commit::spec main -c 10"
+		shell::logger::example "shell::git::commit::spec main --author Alice --since \"2 weeks ago\" --no-merges"
+		shell::logger::example "shell::git::commit::spec main --grep fix -- src/"
+		return "$RETURN_SUCCESS"
 	fi
 
-	local dry_run="false"
-	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
-		dry_run="true"
-		shift
-	fi
+	local dry_run="false" end_opts="false" branch="" have_branch="false"
+	local count="" since_date="" until_date="" author="" grep_pattern=""
+	local graph="true" compact="false" no_merges="false" first_parent="false" reverse="false" stat="false"
+	local opt val rc
+	local -a paths=()
 
-	local branch="$1"
+	while [ "$#" -gt 0 ]; do
+		if [ "$end_opts" = "true" ]; then
+			paths+=("$1")
+			shift
+			continue
+		fi
+		case "$1" in
+		-n | --dry-run)
+			dry_run="true"
+			shift
+			;;
+		--no-merges)
+			no_merges="true"
+			shift
+			;;
+		--first-parent)
+			first_parent="true"
+			shift
+			;;
+		--no-graph)
+			graph="false"
+			shift
+			;;
+		--oneline)
+			compact="true"
+			shift
+			;;
+		--reverse)
+			reverse="true"
+			shift
+			;;
+		--stat)
+			stat="true"
+			shift
+			;;
+		-h | --help)
+			shell::git::commit::spec --help
+			return "$RETURN_SUCCESS"
+			;;
+		--)
+			end_opts="true"
+			shift
+			;;
+		-c | --count | -s | --since | -u | --until | -a | --author | -g | --grep | --count=* | --since=* | --until=* | --author=* | --grep=*)
+			opt="$1"
+			case "$opt" in
+			--*=*)
+				val="${opt#*=}"
+				opt="${opt%%=*}"
+				shift
+				;;
+			*)
+				if [ "$#" -lt 2 ]; then
+					shell::logger::error "Option $opt requires a value"
+					return "$RETURN_INVALID"
+				fi
+				val="$2"
+				shift 2
+				;;
+			esac
+			case "$opt" in
+			-c | --count)
+				case "$val" in
+				'' | *[!0-9]* | 0*)
+					shell::logger::error "--count must be a positive whole number (got '$val')"
+					return "$RETURN_INVALID"
+					;;
+				esac
+				count="$val"
+				;;
+			*)
+				if [ -z "$val" ]; then
+					shell::logger::error "Option $opt requires a non-empty value"
+					return "$RETURN_INVALID"
+				fi
+				case "$opt" in
+				-s | --since) since_date="$val" ;;
+				-u | --until) until_date="$val" ;;
+				-a | --author) author="$val" ;;
+				-g | --grep) grep_pattern="$val" ;;
+				esac
+				;;
+			esac
+			;;
+		-*)
+			shell::logger::error "Unknown option: $1"
+			return "$RETURN_INVALID"
+			;;
+		*)
+			if [ "$have_branch" = "true" ]; then
+				shell::logger::error "Unexpected argument '$1' (the branch is '$branch'; put paths after --)"
+				return "$RETURN_INVALID"
+			fi
+			branch="$1"
+			have_branch="true"
+			shift
+			;;
+		esac
+	done
 
-	if [ -z "$branch" ]; then
+	if [ "$have_branch" = "false" ] || [ -z "$branch" ]; then
 		shell::logger::error "Branch name is required"
-		return $RETURN_INVALID
+		return "$RETURN_INVALID"
+	fi
+	if [ "$reverse" = "true" ] && [ "$graph" = "true" ]; then
+		shell::logger::error "--reverse cannot be combined with the graph; add --no-graph"
+		return "$RETURN_INVALID"
 	fi
 
 	# ---------------------------------------------------------------------------
 	# Log format — coloured graph: hash, relative time, absolute time, author, refs, subject.
 	# ---------------------------------------------------------------------------
 	local log_format="%C(bold blue)%H (%h)%C(reset) - %C(bold green)(%ar at %ad)%C(reset) %C(white)%an%C(reset)%C(bold yellow)%d%C(reset) %C(dim white)- %s%C(reset)"
-	local cmd_log="git log --graph --decorate --date=format:'%Y-%m-%d %H:%M:%S' --format=format:\"${log_format}\" \"${branch}\""
-
-	if [ "$dry_run" = "true" ]; then
-		shell::logger::command_clip "$cmd_log"
-		return $RETURN_SUCCESS
+	if [ "$compact" = "true" ]; then
+		log_format="%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%an%C(reset)%C(bold yellow)%d%C(reset) %C(dim white)- %s%C(reset)"
 	fi
 
-	shell::logger::assert "$cmd_log" \
-		"Commit history for branch '${branch}' displayed" "Git log aborted" || return $?
+	# The command is an argument list, never a string: every value reaches git as
+	# one word, whatever characters it contains.
+	local -a log_args=(log)
+	if [ "$graph" = "true" ]; then
+		log_args+=(--graph)
+	fi
+	log_args+=(--decorate "--date=format:%Y-%m-%d %H:%M:%S")
+	if [ -n "$count" ]; then log_args+=("--max-count=$count"); fi
+	if [ -n "$since_date" ]; then log_args+=("--since=$since_date"); fi
+	if [ -n "$until_date" ]; then log_args+=("--until=$until_date"); fi
+	if [ -n "$author" ]; then log_args+=("--author=$author"); fi
+	if [ -n "$grep_pattern" ]; then log_args+=("--grep=$grep_pattern"); fi
+	if [ "$no_merges" = "true" ]; then log_args+=(--no-merges); fi
+	if [ "$first_parent" = "true" ]; then log_args+=(--first-parent); fi
+	if [ "$reverse" = "true" ]; then log_args+=(--reverse); fi
+	if [ "$stat" = "true" ]; then log_args+=(--stat); fi
+	log_args+=("--format=tformat:${log_format}" "$branch" --)
+	if [ "${#paths[@]}" -gt 0 ]; then
+		log_args+=("${paths[@]}")
+	fi
 
-	return $RETURN_SUCCESS
+	# What is shown (and copied) is a quoted, pasteable rendering of that list.
+	local display="git" arg
+	for arg in "${log_args[@]}"; do
+		display="${display} $(shell::git::commit::spec::quote "$arg")"
+	done
+
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::command_clip "$display"
+		return "$RETURN_SUCCESS"
+	fi
+
+	shell::logger::command "$display"
+	git "${log_args[@]}"
+	rc=$?
+	if [ "$rc" -ne 0 ]; then
+		shell::logger::error "Git log aborted (exit code: ${rc})"
+		return "$rc"
+	fi
+	shell::logger::success "Commit history for branch '${branch}' displayed"
+	return "$RETURN_SUCCESS"
 }
 
 # @description Displays a decorated commit graph for the currently active branch.
