@@ -3785,6 +3785,65 @@ shell::git::commit::message::scan() {
 	fi
 }
 
+# @description Check commit message template files and report every problem.
+#   Run it after adding a template: each rule that a record breaks is printed
+#   as `file:line: problem` (for example a type that is not conventional, a
+#   description that ends with a period, a header over 100 characters, or a
+#   template that appears twice), and a one-line summary follows. A header over
+#   72 characters (the length git recommends) is only a warning. With no argument it
+#   checks the installed templates and, when it exists, your own file
+#   (`~/.shell-config/git/git-commit-messages.user.txt`); with arguments, only those files.
+#   The rules are those of Conventional Commits 1.0.0 plus a few that keep a
+#   message safe to pass to `git commit -m`; they are listed in the header of
+#   the data file.
+# @option --strict Optional. Treat style warnings (a header over 72 characters) as problems, for CI.
+# @option -h | --help Show this help message.
+# @arg $@ string file: Optional. Template files to check instead of the default ones.
+# @stdout A summary line: `N template(s) in M categories, P problem(s), W warning(s)`.
+# @stderr One `file:line: problem` line per problem.
+# @exitcode 0 Every template is valid.
+# @exitcode 1 At least one problem was found, or a file is missing.
+# @exitcode 2 Invalid usage.
+# @see shell::git::commit::message::base
+# @example
+#   shell::git::commit::message::validate
+#   shell::git::commit::message::validate ./my-templates.txt
+#
+shell::git::commit::message::validate() {
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Check commit message templates against the format rules"
+		shell::logger::usage "shell::git::commit::message::validate [--strict] [-h] [<file>...]"
+		shell::logger::item "file" "Template files to check (default: the built-in and your own file)"
+		shell::logger::option "--strict" "Treat style warnings (such as a header over 72 characters) as problems"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::note "Problems are printed as file:line: message; the exit status is 1 when there is any."
+		shell::logger::example "shell::git::commit::message::validate"
+		shell::logger::example "shell::git::commit::message::validate ./my-templates.txt"
+		return "$RETURN_SUCCESS"
+	fi
+
+	local file strict=""
+	if [ "${1-}" = "--strict" ]; then
+		strict="--strict"
+		shift
+	fi
+	for file in "$@"; do
+		case "$file" in
+		-*)
+			shell::logger::error "Unknown option: $file"
+			return "$RETURN_INVALID"
+			;;
+		esac
+		if [ ! -r "$file" ]; then
+			shell::logger::error "Cannot read: ${file}"
+			return "$RETURN_FAILURE"
+		fi
+	done
+
+	shell::git::commit::message::scan validate ${strict:+"$strict"} "$@"
+}
+
 # @internal
 # @description Print the commit message catalog, one record per line:
 #   `category|emoji|header|description`.
