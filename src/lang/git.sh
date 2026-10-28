@@ -4207,6 +4207,11 @@ shell::git::commit::create() {
 			selected_message="$(shell::git::commit::message::base --plain --back)"
 			rc=$?
 
+			# A real failure (e.g. the templates are missing): pass it on.
+			if [ "$rc" -ne 0 ] && [ "$rc" -ne "$RETURN_BACK" ]; then
+				return "$rc"
+			fi
+
 			# Back from the first screen, or ESC: nothing to commit.
 			if [ "$rc" -eq "$RETURN_BACK" ] || [ -z "$selected_message" ]; then
 				return "$RETURN_SUCCESS"
