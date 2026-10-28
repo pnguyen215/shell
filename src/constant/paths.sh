@@ -12,6 +12,9 @@
 #     ├── group.conf          group=key1,key2,... definitions
 #     ├── backup/             automatic backups
 #     ├── bookmarks/.bookmarks
+#     ├── git/
+#     │   ├── git-commit-messages.txt       installed copy of src/data/ (see git::commit::message::sync)
+#     │   └── git-commit-messages.user.txt  your own commit message templates (never overwritten)
 #     └── workspace/          one INI file per workspace
 
 : "${SHELL_CONFIG_DIR:=$HOME/.shell-config}"
@@ -33,3 +36,14 @@ SHELL_BOOKMARK_FILE="$SHELL_BOOKMARK_DIR/.bookmarks"
 
 # SSH material managed by shell::ssh::*.
 : "${SHELL_SSH_DIR:=$HOME/.ssh}"
+
+# Git commit message templates (shell::git::commit::message::*).
+#   SOURCE     the file shipped in the repository (source of truth).
+#   INSTALLED  the copy install.sh / upgrade.sh / ::sync place under SHELL_CONFIG_DIR.
+#   FILE       the file that is read; defaults to the installed copy. When that
+#              copy does not exist yet, the default path falls back to SOURCE.
+#   USER_FILE  optional templates of your own, merged after the built-in ones.
+SHELL_GIT_COMMIT_MESSAGES_SOURCE="$SHELL_SRC_DIR/data/git-commit-messages.txt"
+SHELL_GIT_COMMIT_MESSAGES_INSTALLED="$SHELL_CONFIG_DIR/git/git-commit-messages.txt"
+: "${SHELL_GIT_COMMIT_MESSAGES_FILE:=$SHELL_GIT_COMMIT_MESSAGES_INSTALLED}"
+: "${SHELL_GIT_COMMIT_MESSAGES_USER_FILE:=$SHELL_CONFIG_DIR/git/git-commit-messages.user.txt}"
