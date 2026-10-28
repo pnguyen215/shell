@@ -93,6 +93,47 @@
 :books:|docs(adr)|record architecture decision for the storage choice
 :books:|docs|add troubleshooting guide for common setup failures
 :books:|docs(readme)|add quick start and usage examples
+:books:|docs(readme)|add project overview and architecture diagram
+:books:|docs(readme)|add quick start guide with installation steps
+:books:|docs(readme)|add development setup instructions
+:books:|docs(readme)|add contribution guidelines and code of conduct
+:books:|docs(readme)|add troubleshooting section for common issues
+:books:|docs(readme)|add FAQ section with answers to common questions
+:books:|docs(api)|add OpenAPI specification for REST endpoints
+:books:|docs(api)|add GraphQL schema documentation
+:books:|docs(api)|add WebSocket event documentation
+:books:|docs(api)|add gRPC service definitions
+:books:|docs(api)|add authentication and authorization guide
+:books:|docs(api)|add rate limiting and throttling policies
+:books:|docs(api)|add error codes and response formats
+:books:|docs(api)|add webhook payload documentation
+:books:|docs(architecture)|add system design document with diagrams
+:books:|docs(architecture)|add data flow diagrams and sequence diagrams
+:books:|docs(architecture)|add deployment architecture documentation
+:books:|docs(architecture)|add infrastructure topology map
+:books:|docs(architecture)|add decision records for key design choices
+:books:|docs(deployment)|add deployment guide for different environments
+:books:|docs(deployment)|add rollback procedures and disaster recovery
+:books:|docs(deployment)|add monitoring and alerting setup guide
+:books:|docs(deployment)|add scaling strategies and capacity planning
+:books:|docs(development)|add coding standards and style guide
+:books:|docs(development)|add Git workflow and branching strategy
+:books:|docs(development)|add code review checklist and process
+:books:|docs(development)|add testing strategy and best practices
+:books:|docs(development)|add performance optimization guidelines
+:books:|docs(security)|add security best practices document
+:books:|docs(security)|add threat model and risk assessment
+:books:|docs(security)|add incident response procedures
+:books:|docs(security)|add compliance and audit requirements
+:books:|docs(user)|add end-user manual and feature guide
+:books:|docs(user)|add FAQ for common user questions
+:books:|docs(user)|add video tutorials and walkthroughs
+:books:|docs(changelog)|add detailed release notes with migration guide
+:books:|docs(changelog)|add breaking changes and deprecation notices
+:books:|docs(ops)|add runbook for common operational tasks
+:books:|docs(ops)|add on-call rotation and escalation procedures
+:books:|docs(ops)|add monitoring dashboard and metrics guide
+:books:|docs(ops)|add backup and restore procedures
 
 [Feature and Product Development]
 :sparkles:|feat|add user-facing support for the requested workflow
@@ -211,6 +252,47 @@
 :zap:|perf|batch writes to reduce database round trips
 :goal_net:|fix(resilience)|add timeout and circuit breaker to outbound calls
 :zap:|perf(db)|fix N+1 query when loading related records
+:zap:|perf(db)|add database indexes for frequently queried columns
+:zap:|perf(db)|optimize N+1 query problem with eager loading
+:zap:|perf(db)|add connection pooling for database connections
+:zap:|perf(db)|implement query result caching with Redis
+:zap:|perf(db)|optimize large table queries with pagination
+:zap:|perf(db)|add materialized views for complex aggregations
+:zap:|perf(db)|implement read replicas for query load distribution
+:zap:|perf(api)|add response compression with gzip and brotli
+:zap:|perf(api)|implement HTTP caching with ETags and Cache-Control
+:zap:|perf(api)|add rate limiting to prevent abuse
+:zap:|perf(api)|implement request queuing for burst traffic
+:zap:|perf(api)|add connection keep-alive for persistent connections
+:zap:|perf(api)|implement batching for multiple API calls
+:zap:|perf(api)|add streaming responses for large payloads
+:zap:|perf(cache)|implement multi-level caching strategy
+:zap:|perf(cache)|add cache invalidation with pub/sub
+:zap:|perf(cache)|implement cache warming for cold starts
+:zap:|perf(cache)|add cache compression for memory efficiency
+:zap:|perf(cache)|implement cache tags for selective invalidation
+:zap:|perf(frontend)|implement code splitting with lazy loading
+:zap:|perf(frontend)|add route-based code splitting
+:zap:|perf(frontend)|implement tree shaking for unused code
+:zap:|perf(frontend)|add bundle analysis and optimization
+:zap:|perf(frontend)|implement image optimization and lazy loading
+:zap:|perf(frontend)|add font subsetting and preloading
+:zap:|perf(frontend)|implement service worker for offline caching
+:zap:|perf(frontend)|add resource hints (preload, prefetch, preconnect)
+:zap:|perf(frontend)|implement virtual scrolling for large lists
+:zap:|perf(frontend)|add memoization for expensive computations
+:zap:|perf(network)|implement CDN for static asset delivery
+:zap:|perf(network)|add HTTP/2 multiplexing and server push
+:zap:|perf(network)|implement connection pooling for microservices
+:zap:|perf(network)|add request deduplication and batching
+:zap:|perf(compute)|implement worker threads for CPU-intensive tasks
+:zap:|perf(compute)|add job queue for background processing
+:zap:|perf(compute)|implement batch processing for bulk operations
+:zap:|perf(compute)|add parallel processing with worker pools
+:zap:|perf(memory)|implement memory pooling for object reuse
+:zap:|perf(memory)|add garbage collection tuning
+:zap:|perf(memory)|implement streaming for large data processing
+:zap:|perf(memory)|add memory limits and monitoring
 
 [API and Data Contracts]
 :sparkles:|feat(api)|add endpoint for managing resource settings
@@ -366,10 +448,71 @@
 :books:|docs(security)|update security disclosure policy and process
 :lock:|chore(security)|audit third-party integrations for privacy compliance
 :closed_lock_with_key:|fix(security)|remove committed secret and move it to a secret manager
+:closed_lock_with_key:|feat(auth)|implement mutual TLS (mTLS) for service-to-service communication
+:lock:|fix(security)|remediate Server-Side Request Forgery (SSRF) vulnerability
+:passport_control:|feat(auth)|enforce short-lived JWTs with sliding refresh token rotation
+:shield:|feat(security)|add content security policy (CSP) reporting endpoint
+:bookmark:|chore(compliance)|generate SBOM (Software Bill of Materials) during build
+:lock:|fix(security)|sanitize untrusted HTML inputs using DOMPurify on the server
 :lock:|fix(security)|sanitize user input to prevent injection attacks
 :lock:|fix(security)|validate redirect targets to prevent open redirects
 :lock:|feat(security)|add rate limiting to authentication endpoints
 :lock:|ci(security)|add automated secret scanning to the pipeline
+:lock:|fix(security)|patch XSS vulnerability in user input handling
+:lock:|fix(security)|fix SQL injection in search query builder
+:lock:|fix(security)|remediate CSRF vulnerability with token validation
+:lock:|fix(security)|patch SSRF vulnerability in URL fetching
+:lock:|fix(security)|fix path traversal in file upload handling
+:lock:|fix(security)|remediate command injection in system calls
+:lock:|fix(security)|patch XML external entity (XXE) vulnerability
+:lock:|fix(security)|fix insecure deserialization in session handling
+:lock:|fix(security)|remediate server-side template injection
+:lock:|fix(security)|patch prototype pollution in object merging
+:lock:|feat(security)|implement rate limiting for authentication endpoints
+:lock:|feat(security)|add account lockout after failed login attempts
+:lock:|feat(security)|implement IP-based blocking for suspicious activity
+:lock:|feat(security)|add bot detection with CAPTCHA integration
+:lock:|feat(security)|implement device fingerprinting for fraud detection
+:lock:|feat(security)|add anomaly detection for user behavior
+:lock:|feat(security)|implement session timeout and auto-logout
+:lock:|feat(security)|add concurrent session limits
+:lock:|feat(security)|implement secure password storage with bcrypt
+:lock:|feat(security)|add password complexity requirements
+:lock:|feat(security)|implement password history to prevent reuse
+:lock:|feat(security)|add password expiration and rotation policies
+:lock:|feat(security)|implement API key rotation and revocation
+:lock:|feat(security)|add OAuth2 scope validation
+:lock:|feat(security)|implement JWT signature validation
+:lock:|feat(security)|add token blacklisting for logout
+:lock:|feat(security)|implement refresh token rotation
+:lock:|feat(security)|add CORS policy enforcement
+:lock:|feat(security)|implement Content Security Policy headers
+:lock:|feat(security)|add HTTP Strict Transport Security (HSTS)
+:lock:|feat(security)|implement X-Frame-Options for clickjacking prevention
+:lock:|feat(security)|add X-Content-Type-Options header
+:lock:|feat(security)|implement Referrer-Policy header
+:lock:|feat(security)|add Permissions-Policy header
+:lock:|feat(security)|implement secure cookie flags (HttpOnly, Secure, SameSite)
+:lock:|feat(security)|add input validation and sanitization
+:lock:|feat(security)|implement output encoding for different contexts
+:lock:|feat(security)|add secure random number generation
+:lock:|feat(security)|implement encrypted storage for sensitive data
+:lock:|feat(security)|add audit logging for security events
+:lock:|feat(security)|implement secret scanning in codebase
+:lock:|feat(security)|add dependency vulnerability scanning
+:lock:|feat(security)|implement container image scanning
+:lock:|feat(security)|add infrastructure security hardening
+:lock:|feat(security)|implement network segmentation
+:lock:|feat(security)|add firewall rules and security groups
+:lock:|feat(security)|implement intrusion detection system
+:lock:|feat(security)|add security monitoring and alerting
+:lock:|feat(security)|implement incident response procedures
+:lock:|feat(security)|add penetration testing and security audits
+:lock:|feat(security)|implement compliance with GDPR, HIPAA, PCI-DSS
+:lock:|feat(security)|add data anonymization and pseudonymization
+:lock:|feat(security)|implement data retention and deletion policies
+:lock:|feat(security)|add user consent management
+:lock:|feat(security)|implement privacy by design principles
 
 [Release and Versioning]
 :bookmark:|chore(release)|cut stable release with full changelog
@@ -577,6 +720,7 @@
 :wrench:|chore(sre)|define error budget policy and SLO burn rate alerts
 :stopwatch:|perf(app)|optimize event loop blocking operations using worker threads
 
+
 [Distributed Systems]
 :link:|feat(saga)|implement orchestrator pattern for cross-service transactions
 :shield:|feat(resilience)|add circuit breaker with exponential backoff fallback
@@ -585,14 +729,6 @@
 :loud_sound:|feat(tracing)|inject W3C Trace Context headers across all gRPC calls
 :rewind:|feat(events)|implement outbox pattern to guarantee reliable event publishing
 :recycle:|refactor(sync)|replace synchronous HTTP calls with asynchronous domain events
-
-[Security and Compliance (Advanced)]
-:closed_lock_with_key:|feat(auth)|implement mutual TLS (mTLS) for service-to-service communication
-:lock:|fix(security)|remediate Server-Side Request Forgery (SSRF) vulnerability
-:passport_control:|feat(auth)|enforce short-lived JWTs with sliding refresh token rotation
-:shield:|feat(security)|add content security policy (CSP) reporting endpoint
-:bookmark:|chore(compliance)|generate SBOM (Software Bill of Materials) during build
-:lock:|fix(security)|sanitize untrusted HTML inputs using DOMPurify on the server
 
 [Data Engineering and Pipelines]
 :card_file_box:|feat(etl)|add incremental Change Data Capture (CDC) for user tables
