@@ -3950,7 +3950,6 @@ shell::git::commit::message::catalog() {
 	shell::git::commit::message::scan records
 }
 
-
 # @description Pick a pre-defined commit message from a categorized menu and print it.
 #   A two-level fzf menu (category, then message) over the catalog of
 #   shell::git::commit::message::catalog. Meant for scripted or empty commits
