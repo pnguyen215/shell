@@ -3587,6 +3587,205 @@ shell::git::commit::pick::remote() {
 }
 
 # @internal
+# @description The one parser behind every commit message template function.
+#   Reads the template files in a single `awk` pass: the installed copy
+#   `SHELL_GIT_COMMIT_MESSAGES_FILE` (`~/.shell-config/git/git-commit-messages.txt`,
+#   or, when it is not installed yet, the repository's own copy) and, after it,
+#   the user's own `SHELL_GIT_COMMIT_MESSAGES_USER_FILE` when it exists. Keeping the parsing and
+#   the rules in one place means the menu, the checker and the tests can never
+#   disagree about what a valid template is.
+#
+#   File format (see the header of the data file): `[Category]` lines open a
+#   category; every other non-blank, non-`#` line is `emoji|type(scope)!|description`.
+#   A category that appears in both files is merged (built-in templates first),
+#   a template that appears twice is kept once, and a record that breaks a rule
+#   is skipped (reported when listing categories, so a typo in your own file
+#   shows up once, not on every keystroke).
+#
+#   Modes:
+#   - `records`: every valid record as `category|emoji|header|description`.
+#   - `categories`: the category names, in first-seen order.
+#   - `render <category> <plain>`: the messages of one category, ready to commit.
+#   - `validate [--strict] [file...]`: check the given files (default: the template
+#     files) and print `file:line: problem` on stderr and a summary on stdout.
+#     Style recommendations are reported as warnings; `--strict` makes them problems.
+#
+#   The rules. Problems (checked by `validate`; the other modes skip such records):
+#   conventional type, optional lower-case scope, optional `!`; emoji `:shortcode:`
+#   or empty; description starts lower case or a digit, at least 12 characters, no
+#   final period, no surrounding space, none of `"`, `$`, a backtick, `\` or `'`;
+#   the header (with the emoji) at most 100 characters; no duplicates. A warning,
+#   which never hides a template: `type(scope)!: description` over 72 characters,
+#   the length git recommends.
+# @arg $1 string Mode: records, categories, render or validate.
+# @arg $@ string For `render`: the category and `true` to drop the emoji. For `validate`: files.
+# @stdout Depends on the mode (see above).
+# @stderr Problems found in the files.
+# @exitcode 0 Success (validate: no problem).
+# @exitcode 1 The template file is missing, or (validate) a problem was found.
+# @example
+#   shell::git::commit::message::scan render "Release and Versioning" false
+#
+shell::git::commit::message::scan() {
+	local mode="${1-}"
+	shift
+
+	local category="" plain="false" warn="0" strict="0"
+	local -a files=()
+	case "$mode" in
+	render)
+		category="${1-}"
+		plain="${2-false}"
+		;;
+	validate)
+		if [ "${1-}" = "--strict" ]; then
+			strict="1"
+			shift
+		fi
+		files=("$@")
+		;;
+	categories) warn="1" ;;
+	esac
+
+	local main_file="$SHELL_GIT_COMMIT_MESSAGES_FILE"
+	if [ "${#files[@]}" -eq 0 ]; then
+		# Not installed yet (running from a clone, before install/upgrade): read the
+		# copy in the repository. Only for the default location; a path you set
+		# yourself is never silently replaced by another file.
+		if [ ! -r "$main_file" ] && [ "$main_file" = "$SHELL_GIT_COMMIT_MESSAGES_INSTALLED" ] &&
+			[ -r "$SHELL_GIT_COMMIT_MESSAGES_SOURCE" ]; then
+			main_file="$SHELL_GIT_COMMIT_MESSAGES_SOURCE"
+		fi
+		if [ ! -r "$main_file" ]; then
+			shell::logger::error "Commit message templates not found: ${main_file}"
+			return "$RETURN_FAILURE"
+		fi
+		files+=("$main_file")
+		if [ -r "$SHELL_GIT_COMMIT_MESSAGES_USER_FILE" ]; then
+			files+=("$SHELL_GIT_COMMIT_MESSAGES_USER_FILE")
+		fi
+	fi
+
+	local result problems
+	result="$(awk -v mode="$mode" -v want="$category" -v plain="$plain" -v warn="$warn" -v strict="$strict" \
+		-v builtin="$main_file" '
+		BEGIN {
+			FS = "|"
+			HDR = "^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\\([a-z0-9][a-z0-9.-]*\\))?!?$"
+			apos = sprintf("%c", 39)
+		}
+
+		# Report a problem with a record; the record is then skipped.
+		function bad(msg) {
+			problems++
+			if (mode == "validate" || (warn == 1 && FILENAME != builtin)) {
+				printf "%s:%d: %s\n", FILENAME, FNR, msg > "/dev/stderr"
+			}
+			ok = 0
+		}
+
+		# A style recommendation: the template is still loaded. With --strict it counts as a problem.
+		function style(msg) {
+			warnings++
+			if (mode == "validate") {
+				printf "%s:%d: warning: %s\n", FILENAME, FNR, msg > "/dev/stderr"
+				if (strict == 1) problems++
+			}
+		}
+
+		function trim(s) { sub(/^[ \t]+/, "", s); sub(/[ \t]+$/, "", s); return s }
+
+		FNR == 1 { files++ }
+		{ sub(/\r$/, "") }
+
+		# Blank lines and comments.
+		/^[ \t]*(#.*)?$/ { next }
+
+		# A category header.
+		/^\[.*\]$/ {
+			cur = trim(substr($0, 2, length($0) - 2))
+			if (cur == "") {
+				problems++
+				if (mode == "validate") printf "%s:%d: empty category name\n", FILENAME, FNR > "/dev/stderr"
+				next
+			}
+			if (!(cur in seen)) { seen[cur] = ++ncat; cats[ncat] = cur; cnt[cur] = 0 }
+			next
+		}
+
+		# A template record: emoji|header|description.
+		{
+			ok = 1
+			if (cur == "") { bad("template outside a [Category]"); next }
+			if (NF != 3) { bad("expected emoji|type(scope)!|description (" NF " fields)"); next }
+
+			emoji = $1; header = $2; desc = $3
+			if (emoji != "" && emoji !~ /^:[a-z0-9_+-]+:$/) bad("emoji must be a :shortcode: or empty (got \"" emoji "\")")
+			if (header !~ HDR) bad("header \"" header "\" is not type[(scope)][!] with a conventional type")
+			if (length(desc) < 12) bad("description is shorter than 12 characters")
+			if (desc !~ /^[a-z0-9]/) bad("description must start with a lower-case letter or a digit")
+			if (desc ~ /\.$/) bad("description must not end with a period")
+			if (desc ~ /^ / || desc ~ / $/) bad("description has leading or trailing spaces")
+			if (index(desc, "\"") || index(desc, "$") || index(desc, "`") || index(desc, "\\") || index(desc, apos)) {
+				bad("description has a character that is unsafe for git commit -m (\" $ ` \\ or a single quote)")
+			}
+			plainlen = length(header) + 2 + length(desc)
+			fulllen = plainlen
+			if (emoji != "") fulllen = plainlen + 1 + length(emoji)
+			if (fulllen > 100) bad("header is " fulllen " characters with the emoji; the limit is 100")
+			else if (plainlen > 72) style("header is " plainlen " characters; git recommends at most 72")
+
+			key = header SUBSEP desc
+			# A repeated template is harmless: skipped quietly, and only `validate` reports it.
+			if (key in first) {
+				if (mode == "validate") bad("duplicate of " first[key])
+				else ok = 0
+			}
+			if (!ok) next
+			first[key] = FILENAME ":" FNR
+
+			n = ++cnt[cur]
+			E[cur, n] = emoji; H[cur, n] = header; D[cur, n] = desc
+			total++
+		}
+
+		END {
+			if (mode == "validate") {
+				for (i = 1; i <= ncat; i++) if (cnt[cats[i]] == 0) {
+					printf "category \"%s\" has no templates\n", cats[i] > "/dev/stderr"
+					problems++
+				}
+				# The first field is the problem count: the shell turns it into the exit status.
+				printf "%d\t%d template(s) in %d categories, %d problem(s), %d warning(s)\n", problems, total, ncat, problems, warnings + 0
+			} else if (mode == "categories") {
+				for (i = 1; i <= ncat; i++) if (cnt[cats[i]] > 0) print cats[i]
+			} else {
+				for (i = 1; i <= ncat; i++) {
+					c = cats[i]
+					if (mode == "render" && c != want) continue
+					for (n = 1; n <= cnt[c]; n++) {
+						if (mode == "records") print c "|" E[c, n] "|" H[c, n] "|" D[c, n]
+						else if (plain == "true" || E[c, n] == "") print H[c, n] ": " D[c, n]
+						else print H[c, n] ": " E[c, n] " " D[c, n]
+					}
+				}
+			}
+		}' "${files[@]}")" || return "$RETURN_FAILURE"
+
+	if [ "$mode" = "validate" ]; then
+		problems="${result%%$'\t'*}"
+		printf '%s\n' "${result#*$'\t'}"
+		if [ "${problems:-1}" -ne 0 ]; then
+			return "$RETURN_FAILURE"
+		fi
+		return "$RETURN_SUCCESS"
+	fi
+	if [ -n "$result" ]; then
+		printf '%s\n' "$result"
+	fi
+}
+
+# @internal
 # @description Print the commit message catalog, one record per line:
 #   `category|emoji|header|description`.
 #
