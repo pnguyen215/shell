@@ -358,17 +358,6 @@
 :closed_lock_with_key:|chore(config)|move secrets out of config files into a vault
 :fire:|chore(flags)|remove feature flag after full rollout
 
-[Frontend and User Interface]
-:lipstick:|feat(ui)|add dark mode with persisted preference
-:lipstick:|style(ui)|adjust spacing and alignment to match design
-:iphone:|fix(ui)|fix layout overflow on small mobile screens
-:wheelchair:|fix(a11y)|add missing labels and keyboard focus handling
-:bug:|fix(ui)|prevent layout shift while images load
-:lipstick:|feat(ui)|add loading skeletons and empty states
-:zap:|perf(ui)|debounce expensive input handlers
-:children_crossing:|feat(ux)|improve error messages shown to the user
-:art:|style(ui)|align components with the updated design tokens
-
 [Localization and Accessibility]
 :globe_with_meridians:|feat(i18n)|add translation keys and localized strings
 :globe_with_meridians:|fix(i18n)|format dates, numbers and currency by locale
@@ -559,7 +548,16 @@
 :arrow_up:|build(deps)|upgrade torch version for latest operator support
 :fire:|chore(ml)|prune stale model checkpoints from the artifact store
 
-[UI/UX Features]
+[Frontend and UI/UX Features]
+:lipstick:|feat(ui)|add dark mode with persisted preference
+:lipstick:|style(ui)|adjust spacing and alignment to match design
+:iphone:|fix(ui)|fix layout overflow on small mobile screens
+:wheelchair:|fix(a11y)|add missing labels and keyboard focus handling
+:bug:|fix(ui)|prevent layout shift while images load
+:lipstick:|feat(ui)|add loading skeletons and empty states
+:zap:|perf(ui)|debounce expensive input handlers
+:children_crossing:|feat(ux)|improve error messages shown to the user
+:art:|style(ui)|align components with the updated design tokens
 :lipstick:|feat(ui)|add dark mode with system preference detection
 :lipstick:|feat(ui)|implement responsive design with mobile-first approach
 :lipstick:|feat(ui)|add skeleton loaders for better perceived performance
