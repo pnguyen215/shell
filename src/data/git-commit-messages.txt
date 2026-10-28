@@ -558,3 +558,35 @@
 :construction_worker:|ci(ml)|add automated bias detection to the training pipeline
 :arrow_up:|build(deps)|upgrade torch version for latest operator support
 :fire:|chore(ml)|prune stale model checkpoints from the artifact store
+
+[UI/UX Features]
+:lipstick:|feat(ui)|add dark mode with system preference detection
+:lipstick:|feat(ui)|implement responsive design with mobile-first approach
+:lipstick:|feat(ui)|add skeleton loaders for better perceived performance
+:lipstick:|feat(ui)|implement toast notifications with auto-dismiss and undo actions
+:lipstick:|feat(ui)|add drag-and-drop reordering for list items
+:lipstick:|feat(ui)|implement infinite scroll with intersection observer
+:lipstick:|feat(ui)|add keyboard shortcuts for power users
+:lipstick:|feat(ui)|implement command palette with fuzzy search
+:lipstick:|feat(ui)|add context menus with customizable actions
+:lipstick:|feat(ui)|implement breadcrumbs with dropdown navigation
+:lipstick:|feat(ui)|add progress indicators for multi-step workflows
+:lipstick:|feat(ui)|implement collapsible sidebar with persistent state
+:lipstick:|feat(ui)|add modal dialogs with focus trapping and escape handling
+:lipstick:|feat(ui)|implement autocomplete with debounced API calls
+:lipstick:|feat(ui)|add date picker with range selection and presets
+:lipstick:|feat(ui)|implement color picker with palette and custom input
+:lipstick:|feat(ui)|add file dropzone with preview and validation
+:lipstick:|feat(ui)|implement data tables with sorting, filtering, and pagination
+:lipstick:|feat(ui)|add charts and graphs with interactive tooltips
+:lipstick:|feat(ui)|implement onboarding tour for new users
+:lipstick:|feat(ui)|add empty states with helpful guidance and CTAs
+:lipstick:|feat(ui)|implement error boundaries with user-friendly messages
+:lipstick:|feat(ui)|add loading spinners with branded animations
+:lipstick:|feat(ui)|implement form validation with inline error messages
+:lipstick:|feat(ui)|add password strength indicator with requirements checklist
+:lipstick:|feat(ui)|implement image gallery with lightbox and zoom
+:lipstick:|feat(ui)|add video player with custom controls and captions
+:lipstick:|feat(ui)|implement carousel with autoplay and touch gestures
+:lipstick:|feat(ui)|add tabs with lazy loading and deep linking
+:lipstick:|feat(ui)|implement accordion with smooth animations
