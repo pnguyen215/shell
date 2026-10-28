@@ -49,6 +49,36 @@
 :construction_worker:|ci(preview)|rebuild preview environment for this branch
 :construction_worker:|ci|trigger scheduled workflow outside its normal window
 :construction_worker:|ci|re-trigger webhook delivery to the downstream pipeline
+:construction_worker:|ci(github)|add workflow for automated testing on PRs
+:construction_worker:|ci(github)|configure matrix testing for multiple Node versions
+:construction_worker:|ci(github)|add code coverage reporting with Codecov
+:construction_worker:|ci(github)|configure branch protection rules
+:construction_worker:|ci(github)|add automated dependency updates with Dependabot
+:construction_worker:|ci(github)|configure semantic release for automated versioning
+:construction_worker:|ci(github)|add security scanning with CodeQL
+:construction_worker:|ci(github)|configure caching for faster workflow runs
+:construction_worker:|ci(gitlab)|add pipeline stages for build, test, and deploy
+:construction_worker:|ci(gitlab)|configure artifact caching between stages
+:construction_worker:|ci(gitlab)|add environment-specific deployment jobs
+:construction_worker:|ci(gitlab)|configure manual approval for production deploys
+:construction_worker:|ci(gitlab)|add SAST and DAST security scanning
+:construction_worker:|ci(jenkins)|add declarative pipeline for microservices
+:construction_worker:|ci(jenkins)|configure parallel test execution
+:construction_worker:|ci(jenkins)|add Slack notifications for build status
+:construction_worker:|ci(jenkins)|configure artifact archiving and retention
+:construction_worker:|ci(circleci)|add workflow with approval gates
+:construction_worker:|ci(circleci)|configure test splitting for faster feedback
+:construction_worker:|ci(circleci)|add orb for common CI/CD patterns
+:construction_worker:|ci(travis)|add build matrix for cross-platform testing
+:construction_worker:|ci(travis)|configure deployment to staging on merge
+:construction_worker:|ci(deploy)|add blue-green deployment strategy
+:construction_worker:|ci(deploy)|configure canary releases with traffic splitting
+:construction_worker:|ci(deploy)|add automatic rollback on deployment failure
+:construction_worker:|ci(deploy)|configure health checks before traffic switch
+:construction_worker:|ci(deploy)|add database migration step in deployment pipeline
+:construction_worker:|ci(deploy)|configure feature flag toggle after deployment
+:construction_worker:|ci(deploy)|add smoke tests after successful deployment
+:construction_worker:|ci(deploy)|configure multi-region deployment strategy
 
 [Documentation and Non-Code Changes]
 :books:|docs|document recent architectural decisions and trade-offs
@@ -130,6 +160,45 @@
 :white_check_mark:|test(contract)|add consumer contract tests for the public API
 :clown_face:|test|mock external service to remove network dependency
 :white_check_mark:|test|add failing test that reproduces the reported bug
+:white_check_mark:|test(unit)|add tests for user authentication service
+:white_check_mark:|test(unit)|add tests for payment processing logic
+:white_check_mark:|test(unit)|add tests for data validation utilities
+:white_check_mark:|test(unit)|add tests for error handling scenarios
+:white_check_mark:|test(unit)|add tests for edge cases and boundary conditions
+:white_check_mark:|test(unit)|add tests for async operations and promises
+:white_check_mark:|test(unit)|add tests for pure functions with various inputs
+:white_check_mark:|test(unit)|add tests for state transitions and reducers
+:white_check_mark:|test(integration)|add tests for API endpoint interactions
+:white_check_mark:|test(integration)|add tests for database transaction flows
+:white_check_mark:|test(integration)|add tests for message queue processing
+:white_check_mark:|test(integration)|add tests for third-party service integrations
+:white_check_mark:|test(integration)|add tests for caching layer behavior
+:white_check_mark:|test(integration)|add tests for authentication middleware
+:white_check_mark:|test(e2e)|add tests for user registration flow
+:white_check_mark:|test(e2e)|add tests for checkout and payment process
+:white_check_mark:|test(e2e)|add tests for admin dashboard functionality
+:white_check_mark:|test(e2e)|add tests for file upload and download
+:white_check_mark:|test(e2e)|add tests for search and filtering
+:white_check_mark:|test(e2e)|add tests for user permissions and access control
+:white_check_mark:|test(e2e)|add tests for responsive design across devices
+:white_check_mark:|test(e2e)|add tests for error states and recovery
+:white_check_mark:|test(visual)|add visual regression tests for UI components
+:white_check_mark:|test(visual)|add snapshot tests for complex layouts
+:white_check_mark:|test(performance)|add load tests for API endpoints
+:white_check_mark:|test(performance)|add stress tests for database queries
+:white_check_mark:|test(performance)|add benchmark tests for critical functions
+:white_check_mark:|test(accessibility)|add a11y tests with axe-core
+:white_check_mark:|test(accessibility)|add keyboard navigation tests
+:white_check_mark:|test(security)|add tests for input sanitization
+:white_check_mark:|test(security)|add tests for authentication bypass attempts
+:white_check_mark:|test(security)|add tests for SQL injection prevention
+:white_check_mark:|test(security)|add tests for XSS attack vectors
+:white_check_mark:|test(config)|configure Jest with custom matchers
+:white_check_mark:|test(config)|add test coverage thresholds enforcement
+:white_check_mark:|test(config)|configure parallel test execution
+:white_check_mark:|test(config)|add test environment setup and teardown
+:white_check_mark:|test(config)|configure test database with fixtures
+:white_check_mark:|test(config)|add mock factories for test data generation
 
 [Performance and Reliability]
 :zap:|perf|reduce redundant database queries in request path
@@ -287,6 +356,7 @@
 :art:|style|convert class components to functional components with hooks
 :art:|style|apply consistent prop validation with PropTypes or TypeScript
 :art:|style|refactor HOCs to custom hooks for better composition
+:art:|style|remove debugger statements from production code
 
 [Security and Compliance]
 :lock:|fix(security)|rotate exposed API keys and invalidate compromised tokens
@@ -650,3 +720,36 @@
 :arrow_up:|build(deps)|update GraphQL to 16.8 for better error handling
 :arrow_up:|build(deps)|upgrade Apollo Client to 3.10 for cache improvements
 :arrow_up:|build(deps)|update Prisma to 5.12 for new relation features
+
+[Build System]
+:hammer:|build(webpack)|optimize bundle size with tree shaking
+:hammer:|build(vite)|configure code splitting for better caching
+:hammer:|build(esbuild)|add minification for production builds
+:hammer:|build(rollup)|configure external dependencies as peer deps
+:hammer:|build(babel)|update preset-env targets for modern browsers
+:hammer:|build(typescript)|configure path aliases for cleaner imports
+:hammer:|build(npm)|add workspaces for monorepo package management
+:hammer:|build(pnpm)|configure strict peer dependency resolution
+:hammer:|build(yarn)|enable PnP mode for faster installs
+:hammer:|build(gradle)|optimize dependency resolution and caching
+:hammer:|build(maven)|configure shade plugin for uber-jar creation
+:hammer:|build(cargo)|configure release profile with LTO and codegen units
+:hammer:|build(make)|add parallel build support for faster compilation
+:hammer:|build(docker)|implement multi-stage builds for smaller images
+:hammer:|build(docker)|add health checks and proper signal handling
+:hammer:|build(compose)|configure service dependencies and restart policies
+:hammer:|build(terraform)|configure remote state backend in S3
+:hammer:|build(ansible)|add vault encryption for sensitive variables
+:hammer:|build(scripts)|add dev, build, test, and deploy npm scripts
+:hammer:|build(scripts)|add pre-commit hooks for linting and formatting
+:hammer:|build(scripts)|add post-install script for environment setup
+:hammer:|build(tooling)|configure ESLint with recommended rules
+:hammer:|build(tooling)|configure Prettier with custom options
+:hammer:|build(tooling)|add Husky for Git hooks management
+:hammer:|build(tooling)|configure commitlint for conventional commits
+:hammer:|build(tooling)|add lint-staged for incremental linting
+:hammer:|build(tooling)|configure TypeScript with strict mode enabled
+:hammer:|build(tooling)|add path mapping for cleaner imports
+:hammer:|build(tooling)|configure VS Code settings for team consistency
+:hammer:|build(tooling)|add EditorConfig for cross-editor formatting
+
