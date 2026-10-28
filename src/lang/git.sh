@@ -3844,6 +3844,93 @@ shell::git::commit::message::validate() {
 	shell::git::commit::message::scan validate ${strict:+"$strict"} "$@"
 }
 
+# @description Copies the commit message templates from the repository to the config directory.
+#   `install.sh` and `upgrade.sh` already do this. Run it yourself after editing
+#   `src/data/git-commit-messages.txt` in a clone, or after a `git pull`, to see
+#   the change in shell::git::commit::message::base without reinstalling.
+#
+#   The repository is the source of truth, so the installed file is replaced
+#   when it differs; the file that was there is kept as `<file>.bak`, one copy
+#   (the previous `.bak` is overwritten). Edits belong in your own file,
+#   `~/.shell-config/git/git-commit-messages.user.txt`, which is never touched.
+#   The new file is written next to the old one and moved into place, so a
+#   failure never leaves a half-written file.
+# @option -n | --dry-run Optional. Say what would be copied without copying.
+# @option -h | --help Show this help message.
+# @exitcode 0 Copied, or already up to date.
+# @exitcode 1 The source is missing, or the copy failed.
+# @exitcode 2 Invalid usage.
+# @see shell::git::commit::message::base
+# @example
+#   shell::git::commit::message::sync
+#   shell::git::commit::message::sync -n
+#
+shell::git::commit::message::sync() {
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Copy the commit message templates from the repository to ~/.shell-config/git"
+		shell::logger::usage "shell::git::commit::message::sync [-n] [-h]"
+		shell::logger::option "-n, --dry-run" "Say what would be copied without copying"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::note "The previous file is kept as <file>.bak; your own file (.user.txt) is never touched."
+		shell::logger::example "shell::git::commit::message::sync"
+		return "$RETURN_SUCCESS"
+	fi
+
+	local dry_run="false"
+	while [ "$#" -gt 0 ]; do
+		case "$1" in
+		-n | --dry-run)
+			dry_run="true"
+			shift
+			;;
+		*)
+			shell::logger::error "Unknown option or argument: $1"
+			return "$RETURN_INVALID"
+			;;
+		esac
+	done
+
+	local src="$SHELL_GIT_COMMIT_MESSAGES_SOURCE" dest="$SHELL_GIT_COMMIT_MESSAGES_FILE" tmp
+	if [ ! -r "$src" ]; then
+		shell::logger::error "Template file not found: ${src}"
+		return "$RETURN_FAILURE"
+	fi
+	if [ -f "$dest" ] && cmp -s "$src" "$dest"; then
+		shell::logger::info "Already up to date: ${dest}"
+		return "$RETURN_SUCCESS"
+	fi
+
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::info "Would copy ${src} to ${dest}"
+		if [ -f "$dest" ]; then
+			shell::logger::info "The current file would be kept as ${dest}.bak"
+		fi
+		return "$RETURN_SUCCESS"
+	fi
+
+	if ! (umask 077 && mkdir -p "${dest%/*}") 2>/dev/null; then
+		shell::logger::error "Cannot create the directory ${dest%/*}"
+		return "$RETURN_FAILURE"
+	fi
+	if [ -f "$dest" ] && ! cp -p "$dest" "${dest}.bak" 2>/dev/null; then
+		shell::logger::error "Cannot keep a backup of ${dest}; nothing was changed"
+		return "$RETURN_FAILURE"
+	fi
+	tmp="${dest}.tmp.$$"
+	if ! cp "$src" "$tmp" 2>/dev/null || ! mv -f "$tmp" "$dest" 2>/dev/null; then
+		rm -f "$tmp"
+		shell::logger::error "Could not write ${dest}"
+		return "$RETURN_FAILURE"
+	fi
+
+	shell::logger::success "Templates installed: ${dest}"
+	if [ -f "${dest}.bak" ]; then
+		shell::logger::info "The previous file is kept as ${dest}.bak"
+	fi
+	return "$RETURN_SUCCESS"
+}
+
 # @internal
 # @description Print the commit message catalog, one record per line:
 #   `category|emoji|header|description`.
