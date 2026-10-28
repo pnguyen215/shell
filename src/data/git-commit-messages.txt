@@ -1,0 +1,535 @@
+# Git commit message templates.
+#
+# Read by shell::git::commit::message::base (and so by `shell::git::commit::create --empty`).
+# This is DATA, not code: it is parsed on demand and never sourced, so adding a
+# template costs nothing at shell start-up.
+#
+# WHERE IT LIVES
+#   This file, in the repository, is the source of truth. install.sh / upgrade.sh
+#   copy it to ~/.shell-config/git/git-commit-messages.txt, which is the file the
+#   menu reads. After editing it in a clone, run  shell::git::commit::message::sync
+#   to refresh that copy. The copy is replaced whenever it differs (the previous
+#   one is kept as git-commit-messages.txt.bak), so do not edit it by hand: use
+#   your own file, described below.
+#
+# FORMAT
+#   [Category name]                        starts a category (the first menu)
+#   :emoji:|type(scope)!|description       one template per line (the second menu)
+#
+#   - Fields are separated by "|"; blank lines and lines starting with "#" are ignored.
+#   - The message is shown as   type(scope)!: :emoji: description   (--plain drops the emoji),
+#     so the type stays the prefix and the message is valid Conventional Commits 1.0.0.
+#   - emoji       a gitmoji shortcode such as :sparkles:, or empty for none.
+#   - type        build chore ci docs feat fix perf refactor revert style test.
+#   - (scope)     optional, lower case, e.g. (api) (deps) (ci).
+#   - !           optional, marks a breaking change; the description says what breaks.
+#   - description starts with a lower-case letter or digit, imperative mood, at least
+#                 12 characters, no final period, no quote, $, backtick or backslash
+#                 (so it is safe for `git commit -m`). type(scope)!: description must
+#                 fit in 72 characters (100 with the emoji).
+#   - A template may appear only once.
+#
+# ADDING TEMPLATES
+#   Put a line under the right [Category], or add a new [Category]. Then run
+#       shell::git::commit::message::validate
+#   which reports every problem with its file and line number. The same format
+#   works in your own file, ~/.shell-config/git/git-commit-messages.user.txt,
+#   which is read after this one and never overwritten: its categories are
+#   appended, and a category with the same name gets your templates added to it.
+#   Invalid lines there are skipped with a warning instead of breaking the menu.
+
+[CI/CD Pipeline Triggers]
+:construction_worker:|ci|trigger CI build to test configuration changes
+:rocket:|ci(deploy)|deploy latest version to production environment
+:construction_worker:|ci|force re-run of test suite for validation purposes
+:construction_worker:|ci|validate GitHub Actions workflow after config update
+:rocket:|ci(deploy)|re-trigger deployment after infrastructure provisioning
+:wrench:|ci|bypass cache and force full rebuild of all pipeline stages
+:construction_worker:|ci|re-run failed pipeline after transient runner outage
+:construction_worker:|ci(preview)|rebuild preview environment for this branch
+:construction_worker:|ci|trigger scheduled workflow outside its normal window
+:construction_worker:|ci|re-trigger webhook delivery to the downstream pipeline
+
+[Documentation and Non-Code Changes]
+:books:|docs|document recent architectural decisions and trade-offs
+:books:|docs|add notes from the latest team meeting
+:books:|docs(readme)|document dependency updates in README.md
+:books:|docs(api)|update API reference with new endpoint specifications
+:books:|docs(contributing)|clarify setup instructions in CONTRIBUTING.md
+:memo:|docs|add inline comments for complex business logic sections
+:pencil2:|docs|fix typos and broken links in documentation
+:books:|docs(changelog)|backfill missing entries in the changelog
+:books:|docs|add architecture diagram for the request lifecycle
+:books:|docs(adr)|record architecture decision for the storage choice
+:books:|docs|add troubleshooting guide for common setup failures
+:books:|docs(readme)|add quick start and usage examples
+
+[Feature and Product Development]
+:sparkles:|feat|add user-facing support for the requested workflow
+:sparkles:|feat|implement initial version of the new product capability
+:sparkles:|feat|add validation and clear feedback to the form flow
+:sparkles:|feat|introduce configurable behavior for the new integration
+:sparkles:|feat|add pagination and filtering to the resource listing
+:sparkles:|feat|support bulk actions for selected records
+:sparkles:|feat(search)|add full-text search with relevance ranking
+:sparkles:|feat(export)|allow exporting results as CSV
+:sparkles:|feat(notifications)|send email notification on status change
+:triangular_flag_on_post:|feat(flags)|hide unfinished feature behind a feature flag
+
+[Bug Fixes and Error Handling]
+:bug:|fix|prevent null reference error when optional data is missing
+:bug:|fix|handle API timeout and retry transient request failures
+:bug:|fix|correct edge case in date and timezone conversion
+:bug:|fix|preserve user input after client-side validation fails
+:bug:|fix|resolve race condition during concurrent update requests
+:bug:|fix|return actionable error response for invalid request payload
+:bug:|fix|handle empty collection without throwing an error
+:bug:|fix|correct off-by-one error at the pagination boundary
+:bug:|fix|escape special characters in user-provided search input
+:bug:|fix|handle leap years and daylight saving transitions
+:adhesive_bandage:|fix|correct typo in user-facing error message
+:bug:|fix|prevent memory leak caused by unreleased event listeners
+:bug:|fix|truncate text without splitting unicode characters
+:bug:|fix|stop duplicate form submission on repeated clicks
+
+[Testing and Quality Assurance]
+:white_check_mark:|test|add regression coverage for reported production issue
+:white_check_mark:|test|add unit tests for new validation rules
+:white_check_mark:|test|cover API error responses and authorization paths
+:white_check_mark:|test|add integration test for end-to-end checkout flow
+:white_check_mark:|test|stabilize flaky test by waiting for async state
+:white_check_mark:|test|add fixtures for representative edge-case data
+:white_check_mark:|test(e2e)|add smoke test for the critical user journey
+:white_check_mark:|test|quarantine flaky test and link the tracking issue
+:camera_flash:|test|add snapshot tests for rendered components
+:white_check_mark:|test(contract)|add consumer contract tests for the public API
+:clown_face:|test|mock external service to remove network dependency
+:white_check_mark:|test|add failing test that reproduces the reported bug
+
+[Performance and Reliability]
+:zap:|perf|reduce redundant database queries in request path
+:zap:|perf|cache expensive calculation for repeated lookups
+:zap:|perf(web)|reduce bundle size by lazy loading non-critical module
+:chart_with_upwards_trend:|test(perf)|add benchmark for critical query performance
+:goal_net:|fix(resilience)|add graceful fallback when dependency is unavailable
+:card_file_box:|perf(db)|add index to improve frequently filtered query
+:zap:|perf|stream large responses instead of buffering in memory
+:zap:|perf|batch writes to reduce database round trips
+:goal_net:|fix(resilience)|add timeout and circuit breaker to outbound calls
+:zap:|perf(db)|fix N+1 query when loading related records
+
+[API and Data Contracts]
+:sparkles:|feat(api)|add endpoint for managing resource settings
+:recycle:|refactor(api)|align API response with shared contract
+:safety_vest:|feat(api)|add schema validation for incoming payloads
+:card_file_box:|fix(db)|make database migration safe to run repeatedly
+:card_file_box:|feat(db)|add audit fields to persisted domain records
+:boom:|feat(api)!|remove deprecated field from public response
+:sparkles:|feat(api)|add versioned route for the new response format
+:bug:|fix(api)|return correct status code for validation errors
+:memo:|docs(api)|publish OpenAPI specification for public endpoints
+:sparkles:|feat(api)|add idempotency key support for create endpoints
+:sparkles:|feat(api)|support cursor-based pagination
+
+[Dependencies and Build Tooling]
+:package:|build|upgrade runtime to supported LTS version
+:arrow_up:|build(deps)|update direct dependencies to compatible versions
+:hammer:|build|configure reproducible local development build
+:construction_worker:|ci|cache package dependencies in CI workflow
+:heavy_minus_sign:|build(deps)|remove unused dependency from project manifest
+:green_heart:|ci|split test jobs to reduce pipeline duration
+:arrow_up:|build(deps)|bump all packages to latest stable versions
+:pushpin:|build(deps)|pin transitive dependency to a known good version
+:arrow_up:|fix(deps)|upgrade vulnerable dependency to patched release
+:package:|build(deps)|regenerate lockfile to fix integrity mismatch
+:heavy_plus_sign:|build(deps)|add runtime dependency required by the feature
+:arrow_down:|build(deps)|downgrade dependency to avoid regression in latest release
+
+[Architecture and Refactoring]
+:recycle:|refactor|extract shared business rules into dedicated service
+:recycle:|refactor|separate persistence concerns from application logic
+:recycle:|refactor|replace duplicated logic with reusable utility
+:building_construction:|refactor|reorganize module boundaries by domain
+:recycle:|refactor|simplify conditional flow for easier maintenance
+:recycle:|refactor|standardize error handling conventions across modules
+:truck:|refactor|move files to match the new directory structure
+:coffin:|refactor|remove dead code and unused exports
+:recycle:|refactor|replace inheritance with composition in domain model
+:recycle:|refactor|introduce interface to decouple from third-party client
+
+[Workflow and Repository Maintenance]
+:twisted_rightwards_arrows:|chore|refresh stale pull request to resolve merge conflicts
+:twisted_rightwards_arrows:|chore|sync with main branch to keep feature branch up-to-date
+:construction:|chore|set up scaffolding for the new feature branch
+:wastebasket:|chore|clean up obsolete branches and outdated references
+:twisted_rightwards_arrows:|chore|rebase feature branch on top of latest main
+:bookmark:|chore(release)|tag release candidate for QA testing
+:twisted_rightwards_arrows:|chore|resolve merge conflicts with the base branch
+:twisted_rightwards_arrows:|chore|resolve lockfile conflicts after rebase
+:bug:|fix|restore changes lost during conflict resolution
+:wrench:|chore|squash fixup commits before merging
+:wrench:|chore|add pull request and issue templates
+:wrench:|chore|add CODEOWNERS to route reviews automatically
+
+[Project and Team Communication]
+:tada:|chore(team)|announce upcoming team building event
+:warning:|chore(infra)|notify team about planned server maintenance downtime
+:bookmark:|docs|share details about achieving a key project milestone
+:busts_in_silhouette:|chore(team)|onboard new team member with initial access setup
+:warning:|docs(api)|broadcast breaking API change notice to all consumers
+:books:|docs|summarize sprint retrospective findings and action items
+:books:|docs|add on-call handover notes for the next rotation
+:books:|docs|publish post-incident review and follow-up actions
+:books:|docs|record decisions from the planning session
+:busts_in_silhouette:|chore(team)|offboard former member and revoke repository access
+
+[Hotfix and Emergency Patches]
+:ambulance:|fix|apply emergency patch for critical production outage
+:ambulance:|fix(auth)|hotfix login failure affecting all authenticated users
+:lock:|fix(security)|patch critical vulnerability in authentication layer
+:ambulance:|fix(db)|restore database connection pool after exhaustion
+:rewind:|revert|roll back breaking change causing unexpected data loss
+:triangular_flag_on_post:|fix(flags)|disable malfunctioning feature flag in production
+:ambulance:|fix(config)|restore service after bad configuration rollout
+:ambulance:|fix|stop error spike by guarding the failing code path
+:ambulance:|fix(payments)|prevent duplicate charge on payment retry
+:ambulance:|fix|patch regression introduced in the latest release
+
+[Database and Migration]
+:seedling:|chore(db)|seed development database with realistic test data
+:card_file_box:|chore(db)|run pending migrations on staging environment
+:card_file_box:|test(db)|verify migration rollback procedure on pre-production
+:package:|chore(db)|archive legacy records before destructive schema migration
+:card_file_box:|perf(db)|restructure table indexes for improved query performance
+:gear:|chore(db)|update connection pool settings for load testing scenario
+:card_file_box:|feat(db)|add nullable column first to allow zero-downtime rollout
+:card_file_box:|fix(db)|backfill missing values before adding not-null constraint
+:card_file_box:|feat(db)|add down migration so the change can be rolled back
+:card_file_box:|refactor(db)|split large migration into smaller reversible steps
+:card_file_box:|fix(db)|resolve migration ordering conflict between branches
+
+[Infrastructure and DevOps]
+:bricks:|chore(infra)|provision new cloud resources for auto-scaling group
+:rocket:|ci(deploy)|update Kubernetes manifests for blue-green deployment
+:wrench:|chore(infra)|rotate expiring SSL certificates across all environments
+:gear:|chore(infra)|tune load balancer health check thresholds
+:hammer:|build(docker)|update Dockerfile base image to latest LTS version
+:loud_sound:|chore(infra)|configure centralized log aggregation for microservices
+:hammer:|build(docker)|use multi-stage build to shrink the image
+:bricks:|chore(infra)|add resource limits and requests to workloads
+:bricks:|feat(infra)|add terraform module for the shared network
+:stethoscope:|feat(infra)|add readiness and liveness probes
+:bricks:|chore(infra)|schedule shutdown of idle environments to cut cost
+
+[Code Quality and Cleanup]
+:art:|style|enforce consistent formatting across entire codebase
+:coffin:|refactor|eliminate dead code and unused import statements
+:wrench:|chore|configure pre-commit hooks for automated lint checks
+:white_check_mark:|test|raise minimum code coverage threshold to 80 percent
+:recycle:|refactor|resolve all outstanding static analysis warnings
+:recycle:|refactor|apply naming convention updates per team coding standards
+:art:|style|reformat files with the project formatter
+:label:|refactor|add missing type annotations
+:pencil2:|style|fix whitespace and trailing newline issues
+:wrench:|chore(lint)|enable stricter linter rules for new code
+
+[Security and Compliance]
+:lock:|fix(security)|rotate exposed API keys and invalidate compromised tokens
+:lock:|feat(security)|enforce strict Content Security Policy headers
+:arrow_up:|fix(deps)|upgrade dependency to remediate a known CVE
+:lock:|feat(security)|enable multi-factor authentication for admin accounts
+:books:|docs(security)|update security disclosure policy and process
+:lock:|chore(security)|audit third-party integrations for privacy compliance
+:closed_lock_with_key:|fix(security)|remove committed secret and move it to a secret manager
+:lock:|fix(security)|sanitize user input to prevent injection attacks
+:lock:|fix(security)|validate redirect targets to prevent open redirects
+:lock:|feat(security)|add rate limiting to authentication endpoints
+:lock:|ci(security)|add automated secret scanning to the pipeline
+
+[Release and Versioning]
+:bookmark:|chore(release)|cut stable release with full changelog
+:bookmark:|chore(release)|mark stable release point for production rollout
+:bookmark:|chore(release)|prepare hotfix release branch for patch deployment
+:bookmark:|chore(release)|bump version to the next minor
+:books:|docs(changelog)|finalize release notes for upcoming minor version
+:rocket:|ci(release)|trigger automated release pipeline for major launch
+:bookmark:|chore(release)|prepare first release candidate for QA
+:bookmark:|chore(release)|bump version after publishing the release
+:bookmark:|chore(release)|promote release candidate to stable
+
+[Experimental and Research Purposes]
+:alembic:|feat(experimental)|start working on experimental feature for research
+:chart_with_upwards_trend:|docs(perf)|log results of recent performance benchmark
+:books:|docs|document feedback from recent user testing session
+:alembic:|feat(experimental)|prototype new caching strategy for evaluation
+:construction:|chore(spike)|spike on feasibility of real-time collaboration feature
+:alembic:|feat(experimental)|evaluate alternative state management approaches
+:alembic:|feat(experimental)|add proof of concept behind an off-by-default flag
+:alembic:|chore(spike)|time-box investigation of third-party library fit
+:fire:|chore(experimental)|remove concluded experiment and its flags
+
+[Miscellaneous]
+:busts_in_silhouette:|chore|add new contributor to the project
+:memo:|docs|record internal decision about project direction
+:bookmark:|docs|mark completion of project milestone
+:see_no_evil:|chore|update .gitignore to exclude new generated file types
+:mute:|style|apply minor formatting fix with no functional impact
+:loud_sound:|chore(logging)|temporarily enable verbose logging for active debugging
+:wastebasket:|chore|remove unused assets and stale generated files
+:pencil2:|chore|fix typo in code comment
+:bulb:|docs|update outdated code comments
+:page_facing_up:|chore|update copyright year in license headers
+
+[Breaking Changes and Deprecations]
+:boom:|feat(api)!|remove deprecated endpoints and drop v1 support
+:boom:|feat!|require authentication for previously public endpoints
+:boom:|refactor!|rename public configuration keys
+:boom:|build!|drop support for end-of-life runtime versions
+:boom:|fix(api)!|return 400 instead of 200 for invalid payloads
+:wastebasket:|feat(api)|deprecate legacy endpoint in favor of its replacement
+:wastebasket:|feat(cli)|deprecate old command flags and print warnings
+:boom:|refactor(db)!|replace integer ids with UUIDs in public identifiers
+:boom:|refactor(config)!|remove legacy configuration format
+:books:|docs|add migration guide for the upcoming breaking release
+
+[Revert and Rollback]
+:rewind:|revert|undo last change that broke the production build
+:rewind:|revert|roll back feature release pending further validation
+:rewind:|revert|revert dependency upgrade that caused runtime errors
+:rewind:|revert|undo accidental merge of unfinished branch
+:rewind:|revert(db)|roll back database migration that failed on staging
+:rewind:|revert(config)|restore previous configuration after failed rollout
+:rewind:|revert|undo experimental change that degraded performance
+:bug:|fix|reapply reverted change with the root cause addressed
+
+[Initial Setup and Project Bootstrap]
+:tada:|chore|initial commit
+:tada:|feat|initialize project skeleton with baseline structure
+:wrench:|chore|add editorconfig, linter and formatter configuration
+:construction_worker:|ci|add baseline CI workflow for build and tests
+:books:|docs|add README with project overview and setup steps
+:page_facing_up:|chore|add license file
+:hammer:|build|scaffold build tooling and package manifest
+:see_no_evil:|chore|add gitignore for the project toolchain
+:white_check_mark:|test|set up test framework and first smoke test
+
+[Monorepo and Workspace]
+:package:|build(workspace)|add new package to the monorepo
+:recycle:|refactor(workspace)|extract shared code into internal library package
+:arrow_up:|build(deps)|align dependency versions across workspace packages
+:construction_worker:|ci|run checks only for packages affected by the change
+:hammer:|build(workspace)|configure incremental builds and project references
+:wrench:|chore(workspace)|hoist common dev dependencies to the root
+:bookmark:|chore(release)|version and publish changed packages together
+:fire:|refactor(workspace)|remove unused package from the workspace
+
+[Configuration and Environment]
+:wrench:|chore(config)|add .env.example listing required variables
+:bug:|fix(config)|fall back to safe default when variable is unset
+:triangular_flag_on_post:|feat(flags)|add runtime feature flag for gradual rollout
+:fire:|refactor(config)|remove hard-coded environment values from source
+:gear:|chore(config)|separate settings for dev, staging and production
+:bug:|fix(config)|validate configuration at startup and fail fast
+:closed_lock_with_key:|chore(config)|move secrets out of config files into a vault
+:fire:|chore(flags)|remove feature flag after full rollout
+
+[Frontend and User Interface]
+:lipstick:|feat(ui)|add dark mode with persisted preference
+:lipstick:|style(ui)|adjust spacing and alignment to match design
+:iphone:|fix(ui)|fix layout overflow on small mobile screens
+:wheelchair:|fix(a11y)|add missing labels and keyboard focus handling
+:bug:|fix(ui)|prevent layout shift while images load
+:lipstick:|feat(ui)|add loading skeletons and empty states
+:zap:|perf(ui)|debounce expensive input handlers
+:children_crossing:|feat(ux)|improve error messages shown to the user
+:art:|style(ui)|align components with the updated design tokens
+
+[Localization and Accessibility]
+:globe_with_meridians:|feat(i18n)|add translation keys and localized strings
+:globe_with_meridians:|fix(i18n)|format dates, numbers and currency by locale
+:globe_with_meridians:|fix(i18n)|handle right-to-left layouts
+:globe_with_meridians:|chore(i18n)|sync translations from the localization platform
+:wheelchair:|fix(a11y)|meet color contrast requirements
+:wheelchair:|feat(a11y)|add screen reader announcements for dynamic updates
+:globe_with_meridians:|fix(i18n)|replace hard-coded text with translated strings
+:globe_with_meridians:|fix(i18n)|apply the correct plural rules for each language
+
+[Mobile and Cross-Platform]
+:iphone:|fix(ios)|fix crash on app launch after OS update
+:iphone:|fix(android)|fix back button handling in nested navigation
+:bookmark:|chore(release)|bump build number for store submission
+:hammer:|build(ios)|raise minimum deployment target
+:bug:|fix|normalize file paths across Windows, macOS and Linux
+:bug:|fix|handle CRLF and LF line endings consistently
+:bug:|fix(compat)|add fallback for browsers missing the required API
+:construction_worker:|ci|add build matrix for supported operating systems
+
+[Observability and Monitoring]
+:loud_sound:|feat(logging)|add structured logging with correlation ids
+:chart_with_upwards_trend:|feat(metrics)|expose request latency and error rate metrics
+:wrench:|chore(alerts)|tune alert thresholds to reduce noisy pages
+:loud_sound:|feat(tracing)|propagate trace context across service calls
+:mute:|fix(logging)|redact sensitive fields from log output
+:books:|docs(runbook)|add runbook for the new alert
+:mute:|fix(logging)|reduce log noise from expected errors
+:stethoscope:|feat(health)|add health check endpoint for orchestration
+
+[Authentication and Authorization]
+:passport_control:|feat(auth)|add OAuth2 login with an external identity provider
+:bug:|fix(auth)|refresh expired access tokens transparently
+:passport_control:|feat(auth)|add role-based access control for admin routes
+:lock:|fix(auth)|invalidate sessions on password change
+:bug:|fix(auth)|account for clock skew when validating token expiry
+:lock:|fix(auth)|enforce authorization checks on object ownership
+:lock:|feat(auth)|lock account after repeated failed sign-in attempts
+:passport_control:|feat(auth)|support single sign-on for enterprise customers
+
+[Data Processing and Background Jobs]
+:bug:|fix(jobs)|make background job idempotent to survive retries
+:sparkles:|feat(jobs)|add dead-letter queue for failed messages
+:zap:|perf|process large files in streams instead of loading into memory
+:bug:|fix(queue)|prevent duplicate message processing
+:sparkles:|feat(export)|stream large CSV exports to avoid timeouts
+:bug:|fix(jobs)|release locks when a scheduled job crashes
+:bug:|fix(jobs)|use UTC for scheduled job triggers
+:sparkles:|feat(jobs)|add retry with exponential backoff
+
+[Third-Party Integrations]
+:sparkles:|feat(webhook)|add webhook endpoint for the external service
+:lock:|fix(webhook)|verify request signatures before processing
+:bug:|fix(integration)|respect upstream rate limits with backoff
+:arrow_up:|build(deps)|update vendor SDK to the latest supported version
+:bug:|fix(integration)|tolerate unexpected fields in upstream responses
+:recycle:|refactor(integration)|wrap vendor client behind an adapter interface
+:bug:|fix(payments)|handle webhook retries without double processing
+:fire:|chore(integration)|remove integration with discontinued service
+
+[Legacy Code and Migration]
+:recycle:|refactor|migrate callbacks to async and await
+:recycle:|refactor(legacy)|wrap legacy module behind an adapter
+:truck:|refactor|move legacy code into a dedicated package
+:arrow_up:|build|migrate to the new build tool
+:recycle:|refactor|replace legacy implementation incrementally, keeping behavior
+:wastebasket:|chore|retire legacy code paths that are no longer used
+:white_check_mark:|test|add characterization tests before refactoring legacy code
+:fire:|refactor|delete legacy module after migration completes
+
+[Licensing and Repository Governance]
+:page_facing_up:|chore|add license file and SPDX headers
+:page_facing_up:|docs|add third-party notices and attributions
+:books:|docs|add code of conduct
+:lock:|docs(security)|add SECURITY.md with reporting instructions
+:books:|docs(contributing)|add contribution guide and review checklist
+:busts_in_silhouette:|chore|update maintainers list
+:wrench:|ci(license)|add dependency license compliance check to the pipeline
+
+[Git Hygiene and Housekeeping]
+:fire:|chore|remove accidentally committed build artifacts
+:see_no_evil:|chore|stop tracking local environment files
+:wrench:|chore|normalize line endings with gitattributes
+:package:|chore|track large binary assets with Git LFS
+:wrench:|chore|configure commit message linting
+:see_no_evil:|chore|ignore editor and operating system files
+
+[Work in Progress and Checkpoints]
+:construction:|chore(wip)|save checkpoint before switching tasks
+:construction:|chore(wip)|partial implementation, tests still failing
+:construction:|chore(wip)|scaffold structure only, behavior to follow
+:construction:|chore(wip)|draft for early feedback, not ready to merge
+:construction:|chore(wip)|stash progress to discuss the approach
+
+[Developer Experience]
+:technologist:|chore(dx)|add scripts for one-command local setup
+:technologist:|chore(devcontainer)|add development container configuration
+:technologist:|build|speed up local rebuilds with incremental caching
+:technologist:|chore(dx)|add make targets for common tasks
+:technologist:|chore(dx)|add debug launch configurations for the editor
+
+[API Design and Contracts]
+:memo:|feat(api)|implement field masking for sensitive data in responses
+:boom:|feat(api)!|standardize error response payload to RFC 7807 format
+:lock:|feat(api)|add ETag and If-None-Match headers for caching support
+:white_check_mark:|test(api)|add contract tests using Pact to prevent breaking changes
+:books:|docs(api)|publish OpenAPI 3.1 specification with strict validation rules
+:recycle:|refactor(api)|replace REST endpoints with GraphQL federation gateway
+:zap:|perf(api)|implement cursor-based pagination for large datasets
+
+[Performance and Scalability]
+:chart_with_upwards_trend:|perf(db)|add composite index for slow query in reporting dashboard
+:fire:|refactor(cache)|switch from LRU to LFU eviction policy in Redis
+:rocket:|perf(net)|enable HTTP/3 and QUIC protocol at the edge CDN
+:construction_worker:|ci(perf)|add automated k6 load testing to the CI pipeline
+:mag:|chore(metrics)|add p99 latency SLI for the payment processing service
+:wrench:|chore(sre)|define error budget policy and SLO burn rate alerts
+:stopwatch:|perf(app)|optimize event loop blocking operations using worker threads
+
+[Distributed Systems]
+:link:|feat(saga)|implement orchestrator pattern for cross-service transactions
+:shield:|feat(resilience)|add circuit breaker with exponential backoff fallback
+:package:|refactor(messaging)|ensure exactly-once delivery semantics using idempotency keys
+:alembic:|feat(cqrs)|separate read and write models for the audit log subsystem
+:loud_sound:|feat(tracing)|inject W3C Trace Context headers across all gRPC calls
+:rewind:|feat(events)|implement outbox pattern to guarantee reliable event publishing
+:recycle:|refactor(sync)|replace synchronous HTTP calls with asynchronous domain events
+
+[Security and Compliance (Advanced)]
+:closed_lock_with_key:|feat(auth)|implement mutual TLS (mTLS) for service-to-service communication
+:lock:|fix(security)|remediate Server-Side Request Forgery (SSRF) vulnerability
+:passport_control:|feat(auth)|enforce short-lived JWTs with sliding refresh token rotation
+:shield:|feat(security)|add content security policy (CSP) reporting endpoint
+:bookmark:|chore(compliance)|generate SBOM (Software Bill of Materials) during build
+:lock:|fix(security)|sanitize untrusted HTML inputs using DOMPurify on the server
+
+[Data Engineering and Pipelines]
+:card_file_box:|feat(etl)|add incremental Change Data Capture (CDC) for user tables
+:arrows_counterclockwise:|fix(pipeline)|ensure idempotent data ingestion to prevent duplicates
+:hourglass_flowing_sand:|chore(backfill)|trigger historical data backfill for Q3 metrics
+:white_check_mark:|test(data)|add data quality assertions on schema and nullability
+:wastebasket:|chore(archival)|move cold storage records to S3 Glacier lifecycle policy
+:sparkles:|feat(streaming)|implement exactly-once windowing in Apache Flink job
+
+[Testing Strategy and Reliability]
+:test_tube:|test(e2e)|add visual regression tests for critical user journeys
+:alembic:|test(mutation)|integrate Stryker to measure test suite effectiveness
+:bug:|test(fix)|add a reproduction test for the race condition bug
+:crystal_ball:|test(property)|add property-based testing for the pricing engine
+:construction_worker:|ci(tests)|parallelize end-to-end test execution across shards
+:hammer_and_wrench:|test(fixtures)|replace hardcoded mocks with dynamically generated test data
+
+[Cloud Native and Kubernetes]
+:whale:|build(k8s)|implement zero-downtime rolling updates with preStop hooks
+:shield:|feat(k8s)|enforce Pod Security Standards (Restricted) via Kyverno policies
+:chart_with_upwards_trend:|feat(k8s)|configure Vertical Pod Autoscaler (VPA) recommendations
+:package:|feat(helm)|extract shared subcharts for common deployment templates
+:lock:|feat(secrets)|integrate External Secrets Operator with HashiCorp Vault
+:fire:|refactor(k8s)|remove deprecated Kubernetes API versions before cluster upgrade
+
+[Observability and Telemetry]
+:chart_with_upwards_trend:|feat(metrics)|expose custom Prometheus histogram for API latency
+:mag:|feat(tracing)|propagate OpenTelemetry baggage across microservices
+:books:|docs(runbook)|document incident response steps for high-severity alerts
+:loud_sound:|feat(logging)|add structured JSON logging with correlation IDs
+:zap:|perf(observability)|sample tracing dynamically based on traffic volume
+
+[Database and Schema Evolution]
+:card_file_box:|feat(db)|add partial index to optimize soft-deleted queries
+:lock:|feat(db)|enable row-level security policies for multi-tenancy
+:recycle:|refactor(db)|normalize redundant tables to eliminate update anomalies
+:zap:|perf(db)|introduce materialized views for complex aggregation dashboards
+:fire:|fix(db)|correct collation mismatch causing inconsistent string sorting
+
+[State Management and Frontend Architecture]
+:recycle:|refactor(state)|migrate global state to a unidirectional data flow pattern
+:zap:|perf(state)|memoize expensive derived state selectors
+:package:|build(deps)|replace deprecated state library with modern alternative
+:lipstick:|feat(ssr)|hydrate server-rendered components without layout shift
+:fire:|refactor(components)|extract complex logic into custom composables
+:bug:|fix(routing)|preserve query parameters during nested route transitions
+
+[Machine Learning Operations]
+:robot:|feat(ml)|register new model version in the model registry
+:chart_with_upwards_trend:|perf(ml)|quantize model weights to reduce inference latency
+:alembic:|feat(experiment)|track hyperparameter tuning results in MLflow
+:construction_worker:|ci(ml)|add automated bias detection to the training pipeline
+:arrow_up:|build(deps)|upgrade torch version for latest operator support
+:fire:|chore(ml)|prune stale model checkpoints from the artifact store

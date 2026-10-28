@@ -13,9 +13,15 @@
 #     3. Swaps it into place, keeping the previous installation as `<dir>.bak`
 #        and restoring it automatically if the swap fails.
 #     4. Adds `source <dir>/src/shell.sh` to the right shell profile, once.
+#     5. Copies the data files the library reads (the git commit message
+#        templates) to `~/.shell-config/git/`. The repository is the source of
+#        truth, so the copy is refreshed on every install/upgrade; a copy that
+#        differs is kept as `<file>.bak`. Never fatal: without the copy the
+#        library reads the file inside the installation.
 #
 #   Environment overrides:
 #     SHELL_INSTALL_DIR  install location          (default: $HOME/shell)
+#     SHELL_CONFIG_DIR   user data location        (default: $HOME/.shell-config)
 #     SHELL_REPO_SLUG    GitHub owner/repo         (default: pnguyen215/shell)
 #     SHELL_REPO_BRANCH  branch to install         (default: master)
 #     SHELL_NO_PROFILE   set to 1 to leave dotfiles untouched
@@ -86,6 +92,36 @@ if ! mv "$stage/extract" "$INSTALL_DIR"; then
 	# Roll back so the user keeps a working installation.
 	[ -e "$backup" ] && mv "$backup" "$INSTALL_DIR"
 	die "Could not move the new version into place; the previous version was restored."
+fi
+
+# --- Data files ----------------------------------------------------------------
+CONFIG_DIR="${SHELL_CONFIG_DIR:-$HOME/.shell-config}"
+
+# install_data <source> <destination>: copy a data file shipped in the repository
+# into the config directory. Replaced only when it differs (the old one is kept as
+# <destination>.bak); written next to the destination and moved into place, so a
+# failure never leaves a half-written file.
+install_data() {
+	local src="$1" dest="$2" tmp
+	[ -f "$src" ] || return 0
+	if [ -f "$dest" ] && cmp -s "$src" "$dest"; then
+		return 0
+	fi
+	(umask 077 && mkdir -p "$(dirname "$dest")") || return 1
+	if [ -f "$dest" ]; then
+		cp -p "$dest" "$dest.bak" || return 1
+	fi
+	tmp="$dest.tmp.$$"
+	if ! cp "$src" "$tmp" || ! mv -f "$tmp" "$dest"; then
+		rm -f "$tmp"
+		return 1
+	fi
+}
+
+if install_data "$INSTALL_DIR/src/data/git-commit-messages.txt" "$CONFIG_DIR/git/git-commit-messages.txt"; then
+	say "[▸] Commit message templates: $CONFIG_DIR/git/git-commit-messages.txt"
+else
+	say "[!] Could not copy the commit message templates to $CONFIG_DIR/git; the copy inside $INSTALL_DIR is used instead."
 fi
 
 # --- Hook into the shell profile ---------------------------------------------
