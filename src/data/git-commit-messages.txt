@@ -75,6 +75,31 @@
 :sparkles:|feat(export)|allow exporting results as CSV
 :sparkles:|feat(notifications)|send email notification on status change
 :triangular_flag_on_post:|feat(flags)|hide unfinished feature behind a feature flag
+:sparkles:|feat(auth)|implement JWT refresh token rotation with sliding expiration
+:sparkles:|feat(auth)|add social login support for Google, GitHub, and Apple
+:sparkles:|feat(auth)|implement passwordless magic link authentication
+:sparkles:|feat(search)|add full-text search with fuzzy matching and typo tolerance
+:sparkles:|feat(search)|implement faceted search with dynamic filter aggregation
+:sparkles:|feat(notifications)|add push notifications via Firebase Cloud Messaging
+:sparkles:|feat(notifications)|implement email digest scheduling with customizable frequency
+:sparkles:|feat(uploads)|add resumable file uploads with chunking support
+:sparkles:|feat(uploads)|implement virus scanning for uploaded files using ClamAV
+:sparkles:|feat(payments)|integrate Stripe for subscription billing and invoicing
+:sparkles:|feat(payments)|add support for multiple currencies and tax calculation
+:sparkles:|feat(analytics)|implement user behavior tracking with event funneling
+:sparkles:|feat(analytics)|add cohort analysis dashboard for retention metrics
+:sparkles:|feat(comments)|add threaded comment system with nested replies
+:sparkles:|feat(comments)|implement real-time comment updates via WebSocket
+:sparkles:|feat(feed)|add personalized content feed based on user preferences
+:sparkles:|feat(feed)|implement infinite scroll with virtualized list rendering
+:sparkles:|feat(ratings)|add star rating system with weighted average calculation
+:sparkles:|feat(ratings)|implement review moderation queue with spam detection
+:sparkles:|feat(export)|add CSV and PDF export for user data and reports
+:sparkles:|feat(export)|implement async export jobs for large datasets
+:sparkles:|feat(import)|add bulk data import with validation and error reporting
+:sparkles:|feat(import)|implement schema mapping for flexible CSV imports
+:sparkles:|feat(scheduling)|add recurring event scheduling with timezone support
+:sparkles:|feat(scheduling)|implement calendar integration with Google Calendar sync
 
 [Bug Fixes and Error Handling]
 :bug:|fix|prevent null reference error when optional data is missing
