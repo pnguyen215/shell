@@ -3969,6 +3969,7 @@ shell::git::commit::message::catalog() {
 # @option -b | --back Add a "← Back" entry to both menus.
 # @stdout The selected commit message (nothing when the menu is cancelled or left with Back).
 # @exitcode 0 A message was printed, or the menu was cancelled (ESC).
+# @exitcode 1 The template file is missing.
 # @exitcode 2 Unknown option.
 # @exitcode 11 --back: "Back" was picked in the category menu.
 # @see shell::git::commit::create
@@ -4012,8 +4013,11 @@ shell::git::commit::message::base() {
 		esac
 	done
 
+	# Fail early (the scan has already said why) instead of showing an empty menu.
 	local catalog
-	catalog="$(shell::git::commit::message::catalog)"
+	if ! catalog="$(shell::git::commit::message::catalog)"; then
+		return "$RETURN_FAILURE"
+	fi
 
 	# Categories, in the order they first appear in the catalog.
 	local -a categories=()
