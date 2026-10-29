@@ -381,6 +381,16 @@
 :memo:|docs(api)|publish OpenAPI specification for public endpoints
 :sparkles:|feat(api)|add idempotency key support for create endpoints
 :sparkles:|feat(api)|support cursor-based pagination
+:link:|feat(api)|add GraphQL subscriptions for real-time dashboard updates
+:memo:|feat(api)|implement HATEOAS links in REST responses for better discoverability
+:shield:|feat(api)|add API key scoping for multi-tenant environments
+:zap:|perf(api)|implement response streaming for large JSON payloads
+:recycle:|refactor(api)|migrate REST endpoints to tRPC for end-to-end type safety
+:bug:|fix(api)|resolve pagination cursor instability on filtered queries
+:books:|docs(api)|generate OpenAPI spec dynamically from Zod schemas
+:sparkles:|feat(webhook)|add exponential backoff for failed webhook deliveries
+:lock:|feat(api)|implement request signing using HMAC-SHA256
+:wrench:|chore(api)|deprecate v1 endpoints and add sunset headers
 
 [Dependencies and Build Tooling]
 :package:|build|upgrade runtime to supported LTS version
@@ -2092,6 +2102,16 @@
 :lipstick:|feat(ui)|implement carousel with autoplay and touch gestures
 :lipstick:|feat(ui)|add tabs with lazy loading and deep linking
 :lipstick:|feat(ui)|implement accordion with smooth animations
+:recycle:|refactor(state)|migrate global state from Redux to Zustand for smaller bundle
+:zap:|perf(ui)|implement virtualization for the 10k row data grid
+:sparkles:|feat(ui)|add optimistic UI updates for mutation queries
+:bug:|fix(hydration)|resolve React hydration mismatch on server-rendered dates
+:lipstick:|style(ui)|extract design tokens into CSS variables for dynamic theming
+:art:|style(components)|standardize compound component API using Radix primitives
+:wrench:|chore(build)|configure module federation for micro-frontend architecture
+:memo:|feat(a11y)|add live regions for screen reader announcements on toast popups
+:fire:|refactor(hooks)|remove prop drilling by introducing context providers
+:bug:|fix(routing)|preserve scroll position when navigating back in history
 
 [Updates]
 :arrow_up:|build(deps)|upgrade React from 18.2 to 18.3 for concurrent features
