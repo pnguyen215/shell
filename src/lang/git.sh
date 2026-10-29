@@ -4125,6 +4125,87 @@ shell::git::commit::input() {
 	done
 }
 
+# @description Lists the commit types of the interactive commit commands.
+# @internal
+# @stdout One type per line, in menu order (see SHELL_GIT_COMMIT_TYPES).
+# @exitcode 0 Always.
+shell::git::commit::types() {
+	printf '%s\n' "$SHELL_GIT_COMMIT_TYPES" | awk -F'|' '{ print $1 }'
+}
+
+# @description Prints the emoji code a commit type is committed with.
+# @internal
+# @arg $1 string Commit type (feat, fix, "initial source", ...).
+# @stdout The emoji code (e.g. `:sparkles:`), or nothing for an unknown type.
+# @exitcode 0 Always.
+shell::git::commit::emoji() {
+	printf '%s\n' "$SHELL_GIT_COMMIT_TYPES" | awk -F'|' -v wanted="${1-}" '$1 == wanted { print $2; exit }'
+}
+
+# @description Sends the Telegram activity notification for the commit that was
+#   just created, then pushes the current branch (interactive push picker).
+#   Shared by shell::git::commit::create and shell::git::commit::predict.
+# @internal
+# @arg $1 string The commit message that was committed.
+# @exitcode 0 Always (the notification and the push report their own errors).
+shell::git::commit::publish() {
+	local commit_message="${1-}"
+
+	local git_username
+	local current_branch
+	local commit_hash
+	local repository_path
+	local repository_name
+	local server_remote_url
+	local timestamp
+
+	git_username=$(git config user.name 2>/dev/null)
+	current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+	commit_hash=$(git rev-parse HEAD 2>/dev/null)
+	repository_path=$(git rev-parse --show-toplevel 2>/dev/null)
+	repository_name=$(basename "${repository_path}")
+	server_remote_url=$(git config --get remote.origin.url 2>/dev/null)
+	timestamp=$(date "+%Y-%m-%d %H:%M:%S")
+
+	local telegram_message="username: ${git_username} | repository: ${repository_name} (${server_remote_url}) | branch: ${current_branch} | hash: ${commit_hash} | message: ${commit_message} | timestamp: ${timestamp}"
+	shell::git::telegram::history::send "${telegram_message}"
+
+	# Push current branch to origin via interactive push command picker.
+	shell::git::branch::push "${current_branch}"
+
+	return "$RETURN_SUCCESS"
+}
+
+# @description Guesses the issue reference of the current work from a branch name.
+#   Recognises a tracker key (`ABC-123`) or a bare number segment
+#   (`feat/123-login` → `#123`, `fix/issue-45` → `#45`). A four-digit number
+#   that looks like a year (19xx / 20xx) is ignored.
+# @internal
+# @arg $1 string Branch name.
+# @stdout The issue reference, or nothing.
+# @exitcode 0 Always.
+# @example
+#   shell::git::commit::predict::issue "feat/123-login"   # → #123
+#
+shell::git::commit::predict::issue() {
+	printf '%s\n' "${1-}" | awk '
+		{
+			if (match($0, "[A-Z][A-Z0-9]+-[0-9]+")) {
+				print substr($0, RSTART, RLENGTH)
+				exit
+			}
+			n = split($0, parts, "[/_-]")
+			for (i = 1; i <= n; i++) {
+				token = parts[i]
+				sub(/^#/, "", token)
+				if (token ~ /^[0-9]+$/ && !(length(token) == 4 && token ~ /^(19|20)/)) {
+					print "#" token
+					exit
+				}
+			}
+		}'
+}
+
 # @description Interactively builds and commits a formatted Git commit message, one
 #   step at a time. Every menu has a "← Back" entry (and the text prompts accept
 #   `:back`), so a wrong choice is fixed by stepping back instead of aborting.
