@@ -26,35 +26,45 @@ SHELL_FZF_OPTS=(
 # Text of the "go back" entry added by shell::fzf::loop --back.
 : "${SHELL_FZF_BACK_LABEL:=← Back}"
 
-# --- Git commit types --------------------------------------------------------
-# `type|emoji` per line: the menu of shell::git::commit::create (sgcf) and
-# ::predict, and the emoji prefixed to the message. Order = order in the menu.
-SHELL_GIT_COMMIT_TYPES="feat|:sparkles:
-fix|:bug:
-chore|:wrench:
-docs|:books:
-style|:art:
-refactor|:recycle:
-test|:white_check_mark:
-perf|:chart_with_upwards_trend:
-WIP|:construction:
-improvement|:zap:
-revert|:rewind:
-security|:lock:
-remove|:fire:
-initial source|:tada:
-logs|:loud_sound:
-config|:gear:
-build|:hammer:
-dependency|:package:
-deployment|:rocket:
-localization|:earth_americas:
-search|:mag:
-experimental|:alien:
-version tag|:bookmark:
-silent changes|:mute:
-deprecation|:warning:
-release|:gem:"
+# --- Git commit messages -----------------------------------------------------
+# Emoji in the messages built by shell::git::commit::create (sgcf) and ::predict.
+# Conventional Commits 1.0.0 wants the type first, so the gitmoji shortcode goes
+# AFTER the colon: `feat: :sparkles: add login`. false (default) | true.
+# One call can override it with --emoji / --no-emoji.
+: "${SHELL_GIT_COMMIT_EMOJI:=false}"
+
+# `label|type|emoji` per line: the menu of shell::git::commit::create (sgcf) and
+# ::predict (the label, in this order), the Conventional Commits type[(scope)] the
+# message is written with, and the emoji used when SHELL_GIT_COMMIT_EMOJI is on.
+# The type is one of build chore ci docs feat fix perf refactor revert style test
+# (what shell::git::commit::message::validate accepts), so a label that is not a
+# valid type itself ("initial source", "WIP", ...) is mapped onto one.
+SHELL_GIT_COMMIT_TYPES="feat|feat|:sparkles:
+fix|fix|:bug:
+chore|chore|:wrench:
+docs|docs|:books:
+style|style|:art:
+refactor|refactor|:recycle:
+test|test|:white_check_mark:
+perf|perf|:chart_with_upwards_trend:
+WIP|chore(wip)|:construction:
+improvement|perf|:zap:
+revert|revert|:rewind:
+security|fix(security)|:lock:
+remove|refactor|:fire:
+initial source|chore(init)|:tada:
+logs|chore(logs)|:loud_sound:
+config|chore(config)|:gear:
+build|build|:hammer:
+dependency|build(deps)|:package:
+deployment|ci(deploy)|:rocket:
+localization|feat(i18n)|:earth_americas:
+search|feat(search)|:mag:
+experimental|feat(experimental)|:alien:
+version tag|chore(release)|:bookmark:
+silent changes|chore|:mute:
+deprecation|chore(deprecate)|:warning:
+release|chore(release)|:gem:"
 
 # --- INI parser --------------------------------------------------------------
 # 0 = lenient parsing, 1 = reject malformed names/values.

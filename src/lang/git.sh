@@ -4125,21 +4125,60 @@ shell::git::commit::input() {
 	done
 }
 
-# @description Lists the commit types of the interactive commit commands.
+# @description Lists the commit types (menu labels) of the interactive commit commands.
 # @internal
-# @stdout One type per line, in menu order (see SHELL_GIT_COMMIT_TYPES).
+# @stdout One label per line, in menu order (see SHELL_GIT_COMMIT_TYPES).
 # @exitcode 0 Always.
 shell::git::commit::types() {
 	printf '%s\n' "$SHELL_GIT_COMMIT_TYPES" | awk -F'|' '{ print $1 }'
 }
 
 # @description Prints the emoji code a commit type is committed with.
+#   Only looks the emoji up: whether it ends up in the message is decided by
+#   shell::git::commit::emoji::enabled.
 # @internal
 # @arg $1 string Commit type (feat, fix, "initial source", ...).
 # @stdout The emoji code (e.g. `:sparkles:`), or nothing for an unknown type.
 # @exitcode 0 Always.
 shell::git::commit::emoji() {
-	printf '%s\n' "$SHELL_GIT_COMMIT_TYPES" | awk -F'|' -v wanted="${1-}" '$1 == wanted { print $2; exit }'
+	printf '%s\n' "$SHELL_GIT_COMMIT_TYPES" | awk -F'|' -v wanted="${1-}" '$1 == wanted { print $3; exit }'
+}
+
+# @description Tells whether commit messages carry an emoji.
+#   The setting is SHELL_GIT_COMMIT_EMOJI (default `false`); `true`, `1`, `yes`
+#   and `on` (any case) turn it on. An explicit value in $1 (what `--emoji` and
+#   `--no-emoji` pass) wins over the setting.
+# @internal
+# @arg $1 string Optional. `true` or `false` to override the setting; empty uses the setting.
+# @exitcode 0 Emoji are on.
+# @exitcode 1 Emoji are off.
+# @example
+#   if shell::git::commit::emoji::enabled "$use_emoji"; then ...; fi
+#
+shell::git::commit::emoji::enabled() {
+	local value="${1:-${SHELL_GIT_COMMIT_EMOJI:-false}}"
+	value="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')"
+	case "$value" in
+	true | 1 | yes | on) return 0 ;;
+	*) return 1 ;;
+	esac
+}
+
+# @description Maps a menu label to the Conventional Commits `type[(scope)]` it is
+#   committed with: `feat` stays `feat`, `WIP` becomes `chore(wip)`, `dependency`
+#   becomes `build(deps)`. A label that is not in SHELL_GIT_COMMIT_TYPES (for
+#   example a type the prediction engine produced) is returned unchanged.
+# @internal
+# @arg $1 string Menu label (feat, "initial source", ...).
+# @stdout The header type, e.g. `chore(init)`.
+# @exitcode 0 Always.
+# @example
+#   shell::git::commit::type::resolve "initial source"   # → chore(init)
+#
+shell::git::commit::type::resolve() {
+	printf '%s\n' "$SHELL_GIT_COMMIT_TYPES" | awk -F'|' -v wanted="${1-}" '
+		$1 == wanted { print $2; found = 1; exit }
+		END { if (!found) print wanted }'
 }
 
 # @description Sends the Telegram activity notification for the commit that was
@@ -4206,22 +4245,33 @@ shell::git::commit::predict::issue() {
 		}'
 }
 
-# @description Builds a message in the format of `sgcf`:
-#   `<emoji> <type>: <description> <issue>` (the issue part is optional).
+# @description Builds the message of `sgcf` and `predict` as a Conventional Commits 1.0.0
+#   header: `<type>[(scope)]: [<emoji> ]<description>[ <issue>]`. The type is always
+#   the prefix (see shell::git::commit::type::resolve); the emoji, when it is on,
+#   sits after the colon, as part of the description, so the header stays valid.
+#   The issue part is optional.
 # @internal
-# @arg $1 string Commit type.
+# @arg $1 string Commit type (a menu label or a Conventional Commits type).
 # @arg $2 string Description.
 # @arg $3 string Optional issue reference.
+# @arg $4 string Optional. `true` / `false` overrides SHELL_GIT_COMMIT_EMOJI (see shell::git::commit::emoji::enabled).
 # @stdout The formatted message.
 # @exitcode 0 Always.
+# @example
+#   shell::git::commit::predict::format feat "add login" "#12"          # feat: add login #12
+#   shell::git::commit::predict::format feat "add login" "#12" true     # feat: :sparkles: add login #12
+#
 shell::git::commit::predict::format() {
-	local emoji out
-	emoji="$(shell::git::commit::emoji "${1-}")"
-	out=""
-	if [ -n "$emoji" ]; then
-		out="${emoji} "
+	local header emoji out
+	header="$(shell::git::commit::type::resolve "${1-}")"
+	out="${header}: "
+	if shell::git::commit::emoji::enabled "${4-}"; then
+		emoji="$(shell::git::commit::emoji "${1-}")"
+		if [ -n "$emoji" ]; then
+			out="${out}${emoji} "
+		fi
 	fi
-	out="${out}${1-}: ${2-}"
+	out="${out}${2-}"
 	if [ -n "${3-}" ]; then
 		out="${out} ${3}"
 	fi
@@ -4449,10 +4499,15 @@ shell::git::commit::predict::candidates() {
 # @description Predicts the commit message from your changes and lets you pick one.
 #   Where `sgcf` (shell::git::commit::create) starts from a blank prompt, this
 #   starts from the staged diff: it proposes the most likely messages, already
-#   formatted as `<emoji> <type>: <description> <issue>`. Pick one — or choose
+#   formatted as Conventional Commits headers, `<type>[(scope)]: <description> <issue>`.
+#   Pick one — or choose
 #   "Enter manually" to fill in the type, description and issue yourself, exactly
 #   as `sgcf` asks for them. Either way you get a confirmation step (Commit /
 #   Edit message / Abort), then the same commit, Telegram notification and push.
+#
+#   The type is always the prefix, as Conventional Commits 1.0.0 requires. An emoji
+#   is off by default; when it is on (`--emoji`, or SHELL_GIT_COMMIT_EMOJI=true) it
+#   goes after the colon: `feat: :sparkles: add login`.
 #
 #   The issue reference is taken from the branch name (`feat/123-login` →
 #   `#123`) and pre-filled, so Enter keeps it. With nothing staged the working
@@ -4466,6 +4521,8 @@ shell::git::commit::predict::candidates() {
 # @option -n | --dry-run Optional. Print the git commit command instead of executing it.
 # @option -l | --list Optional. Only print the predicted messages (no menu, no commit).
 # @option -c | --count Optional. How many predictions to offer (1-9, default 3).
+# @option --emoji Optional. Put a gitmoji after the colon (`feat: :sparkles: add x`), whatever SHELL_GIT_COMMIT_EMOJI says.
+# @option --no-emoji Optional. Leave the emoji out, whatever SHELL_GIT_COMMIT_EMOJI says (the default).
 # @option -h | --help Show this help message.
 # @exitcode 0 Success, or the user backed out / cancelled.
 # @exitcode 1 Not inside a Git repository, or the commit failed.
@@ -4473,28 +4530,36 @@ shell::git::commit::predict::candidates() {
 # @exitcode 8 --list: there was nothing to predict from.
 # @see shell::git::commit::create
 # @see shell::git::commit::predict::candidates
+# @see shell::git::commit::emoji::enabled
 # @example
 #   shell::git::commit::predict
 #   shell::git::commit::predict --list
 #   shell::git::commit::predict -n --count 5
+#   shell::git::commit::predict --emoji
+#   SHELL_GIT_COMMIT_EMOJI=true shell::git::commit::predict
 #
 shell::git::commit::predict() {
 	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Predict the commit message from your changes, pick one or type your own (like sgcf)"
-		shell::logger::usage "shell::git::commit::predict [-n] [-l] [-c <count>] [-h]"
+		shell::logger::usage "shell::git::commit::predict [-n] [-l] [-c <count>] [--emoji | --no-emoji] [-h]"
 		shell::logger::option "-n, --dry-run" "Print the git commit command instead of executing it"
 		shell::logger::option "-l, --list" "Only print the predicted messages"
 		shell::logger::option "-c, --count" "How many predictions to offer (1-9, default 3)"
+		shell::logger::option "--emoji" "Put a gitmoji after the colon (feat: :sparkles: add x)"
+		shell::logger::option "--no-emoji" "Leave the emoji out (the default)"
 		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::note "Emoji are off unless SHELL_GIT_COMMIT_EMOJI=true or --emoji is given. The type always stays the prefix (Conventional Commits)."
 		shell::logger::note "Pick '$SHELL_FZF_BACK_LABEL' in a menu, or type :back at a text prompt, to return to the previous step."
 		shell::logger::example "shell::git::commit::predict"
 		shell::logger::example "shell::git::commit::predict --list"
 		shell::logger::example "shell::git::commit::predict -n --count 5"
+		shell::logger::example "shell::git::commit::predict --emoji"
 		return "$RETURN_SUCCESS"
 	fi
 
-	local dry_run="false" list_only="false" count=3
+	# use_emoji: empty follows SHELL_GIT_COMMIT_EMOJI; --emoji / --no-emoji force it.
+	local dry_run="false" list_only="false" count=3 use_emoji=""
 	while [ "$#" -gt 0 ]; do
 		case "$1" in
 		-n | --dry-run)
@@ -4512,6 +4577,14 @@ shell::git::commit::predict() {
 			fi
 			count="$2"
 			shift 2
+			;;
+		--emoji)
+			use_emoji="true"
+			shift
+			;;
+		--no-emoji)
+			use_emoji="false"
+			shift
 			;;
 		*)
 			shell::logger::error "Unknown option: $1"
@@ -4567,7 +4640,7 @@ shell::git::commit::predict() {
 			if [ -z "$ptype" ]; then
 				continue
 			fi
-			predictions+=("$(shell::git::commit::predict::format "$ptype" "$pdesc" "$issue")")
+			predictions+=("$(shell::git::commit::predict::format "$ptype" "$pdesc" "$issue" "$use_emoji")")
 		done < <(printf '%s\n' "$changes" | shell::git::commit::predict::candidates \
 			--branch "$branch" --hint "$hint" --initial "$initial" --count "$count")
 	fi
@@ -4672,7 +4745,7 @@ shell::git::commit::predict() {
 			case "$rc" in
 			0)
 				issue_number="$value"
-				commit_message="$(shell::git::commit::predict::format "$selected_type" "$commit_description" "$issue_number")"
+				commit_message="$(shell::git::commit::predict::format "$selected_type" "$commit_description" "$issue_number" "$use_emoji")"
 				step="confirm"
 				;;
 			"$RETURN_BACK") step="description" ;;
@@ -4748,17 +4821,23 @@ shell::git::commit::predict() {
 #   step at a time. Every menu has a "← Back" entry (and the text prompts accept
 #   `:back`), so a wrong choice is fixed by stepping back instead of aborting.
 #   ESC / Ctrl-C still abort the whole command. In default mode it prompts for
-#   commit type (with emoji), description and issue number, then commits, sends a
+#   commit type, description and issue number, then commits, sends a
 #   Telegram activity notification and pushes to origin. In --empty mode it
 #   presents pre-defined empty commit messages grouped by category and runs
 #   git commit --allow-empty.
+#
+#   The message is a Conventional Commits 1.0.0 header, `<type>[(scope)]: <description> <issue>`:
+#   the type is always the prefix, and a menu label that is not a conventional type
+#   is mapped onto one (`WIP` → `chore(wip)`, `dependency` → `build(deps)`).
+#   An emoji is off by default; when it is on (`--emoji`, or SHELL_GIT_COMMIT_EMOJI=true)
+#   the gitmoji goes after the colon, part of the description: `feat: :sparkles: add login`.
 #
 #   Default mode (Back returns to the previous step; at step 1 it leaves):
 #   1. Select commit type (feat, fix, chore, …)            [Back = leave]
 #   2. Read commit description (kept when going back)       [:back = step 1]
 #   3. Read issue number (kept when going back)             [:back = step 2]
-#   4. Build `<emoji> <type>: <description> <issue>`, then Commit / Abort [Back = step 3]
-#   5. git commit -m "<message>"
+#   4. Build `<type>[(scope)]: [<emoji> ]<description> <issue>`, then Commit / Abort [Back = step 3]
+#   5. git commit -m "<message>" (the message is passed to git verbatim)
 #   6. Send Telegram notification via shell::git::telegram::history::send
 #   7. git push origin <current_branch>
 #
@@ -4770,41 +4849,70 @@ shell::git::commit::predict() {
 # @option -n | --dry-run Optional. Print the git commit command via shell::logger::command_clip instead of executing it.
 # @option -h | --help Show this help message.
 # @option -e | --empty Optional. Switch to empty-commit mode — select a pre-defined message and run git commit --allow-empty.
+# @option --emoji Optional. Put a gitmoji after the colon (`feat: :sparkles: add x`), whatever SHELL_GIT_COMMIT_EMOJI says.
+# @option --no-emoji Optional. Leave the emoji out, whatever SHELL_GIT_COMMIT_EMOJI says (the default).
 # @exitcode 0 Success, or the user backed out / cancelled.
 # @exitcode 1 The operation failed.
+# @exitcode 2 Invalid option.
 # @see shell::ask::option::back
 # @see shell::git::commit::message::base
+# @see shell::git::commit::emoji::enabled
 # @example
 #   shell::git::commit::create
 #   shell::git::commit::create --empty
 #   shell::git::commit::create -n
+#   shell::git::commit::create --emoji
+#   SHELL_GIT_COMMIT_EMOJI=true shell::git::commit::create
 #
 shell::git::commit::create() {
 	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Interactively build and commit a formatted Git commit message (with Back navigation)"
-		shell::logger::usage "shell::git::commit::create [-n] [-h] [-e]"
+		shell::logger::usage "shell::git::commit::create [-n] [-e] [--emoji | --no-emoji] [-h]"
 		shell::logger::option "-h, --help" "Show this help message"
 		shell::logger::option "-n, --dry-run" "Print the git commit command instead of executing it"
 		shell::logger::option "-e, --empty" "Use a pre-defined empty commit message (--allow-empty)"
+		shell::logger::option "--emoji" "Put a gitmoji after the colon (feat: :sparkles: add x)"
+		shell::logger::option "--no-emoji" "Leave the emoji out (the default)"
+		shell::logger::note "Emoji are off unless SHELL_GIT_COMMIT_EMOJI=true or --emoji is given. The type always stays the prefix (Conventional Commits)."
 		shell::logger::note "Pick '$SHELL_FZF_BACK_LABEL' in a menu, or type :back at a text prompt, to return to the previous step."
 		shell::logger::example "shell::git::commit::create"
 		shell::logger::example "shell::git::commit::create --empty"
 		shell::logger::example "shell::git::commit::create -n"
+		shell::logger::example "shell::git::commit::create --emoji"
 		return "$RETURN_SUCCESS"
 	fi
 
-	local dry_run="false"
-	if [ "${1-}" = "-n" ] || [ "${1-}" = "--dry-run" ]; then
-		dry_run="true"
-		shift
-	fi
-
-	local empty_mode="false"
-	if [ "${1-}" = "-e" ] || [ "${1-}" = "--empty" ]; then
-		empty_mode="true"
-		shift
-	fi
+	# use_emoji: empty follows SHELL_GIT_COMMIT_EMOJI; --emoji / --no-emoji force it.
+	local dry_run="false" empty_mode="false" use_emoji=""
+	while [ "$#" -gt 0 ]; do
+		case "$1" in
+		-n | --dry-run)
+			dry_run="true"
+			shift
+			;;
+		-e | --empty)
+			empty_mode="true"
+			shift
+			;;
+		--emoji)
+			use_emoji="true"
+			shift
+			;;
+		--no-emoji)
+			use_emoji="false"
+			shift
+			;;
+		-h | --help)
+			shell::git::commit::create --help
+			return $?
+			;;
+		*)
+			shell::logger::error "Unknown option: $1"
+			return "$RETURN_INVALID"
+			;;
+		esac
+	done
 
 	if ! git rev-parse --git-dir >/dev/null 2>&1; then
 		shell::logger::error "Not inside a Git repository"
@@ -4814,17 +4922,22 @@ shell::git::commit::create() {
 	# Declared once, before any loop: re-declaring a local inside a loop prints
 	# its value in zsh.
 	local rc choice value step
-	local selected_message selected_type emoji commit_message type_line
+	local selected_message selected_type commit_message type_line shown
 	local commit_description="" issue_number=""
-	local -a commit_types=()
-	local cmd_commit_empty cmd_commit empty_branch
+	local -a commit_types=() base_args=(--back)
+	local cmd_commit_empty empty_branch
 
 	# ===========================================================================
 	# Empty commit mode — delegate the pick to shell::git::commit::message::base.
 	# ===========================================================================
 	if [ "$empty_mode" = "true" ]; then
+		# The catalog carries an emoji per template: show it only when emoji are on.
+		if ! shell::git::commit::emoji::enabled "$use_emoji"; then
+			base_args+=(--plain)
+		fi
+
 		while true; do
-			selected_message="$(shell::git::commit::message::base --plain --back)"
+			selected_message="$(shell::git::commit::message::base "${base_args[@]}")"
 			rc=$?
 
 			# A real failure (e.g. the templates are missing): pass it on.
@@ -4874,7 +4987,7 @@ shell::git::commit::create() {
 	fi
 
 	# ===========================================================================
-	# Default mode — formatted commit: type + emoji + description + issue.
+	# Default mode — formatted commit: <type>[(scope)]: [emoji ]description issue.
 	# A small state machine: each step can send the user back to the previous one.
 	# ===========================================================================
 	while IFS= read -r type_line; do
@@ -4898,8 +5011,6 @@ shell::git::commit::create() {
 				return "$RETURN_SUCCESS"
 			fi
 
-			# Map commit type → emoji code.
-			emoji="$(shell::git::commit::emoji "$selected_type")"
 			step="description"
 			;;
 
@@ -4936,7 +5047,7 @@ shell::git::commit::create() {
 			;;
 
 		confirm)
-			commit_message="${emoji} ${selected_type}: ${commit_description} ${issue_number}"
+			commit_message="$(shell::git::commit::predict::format "$selected_type" "$commit_description" "$issue_number" "$use_emoji")"
 			shell::logger::info "Commit message: ${commit_message}"
 
 			choice="$(shell::ask::option::back --prompt "Proceed with this commit? " "Commit" "Abort")"
@@ -4959,16 +5070,16 @@ shell::git::commit::create() {
 		esac
 	done
 
-	# Commit.
-	cmd_commit="git commit -m \"${commit_message}\""
-
+	# Commit. argv style: the message is passed to git verbatim, so quotes, `$`
+	# and backticks in the description cannot be interpreted by the shell.
 	if [ "$dry_run" = "true" ]; then
-		shell::logger::command_clip "$cmd_commit"
+		shown="$(printf '%s' "$commit_message" | sed 's/[\\"$`]/\\&/g')"
+		shell::logger::command_clip "git commit -m \"${shown}\""
 		return "$RETURN_SUCCESS"
 	fi
 
-	shell::logger::assert "$cmd_commit" \
-		"Commit created: ${commit_message}" "Commit aborted" || return $?
+	shell::exec::command git commit -m "$commit_message" || return $?
+	shell::logger::success "Commit created: ${commit_message}"
 
 	# Telegram notification, then push the current branch.
 	shell::git::commit::publish "$commit_message"
