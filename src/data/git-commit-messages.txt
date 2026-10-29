@@ -378,6 +378,16 @@
 :zap:|perf(memory)|add garbage collection tuning
 :zap:|perf(memory)|implement streaming for large data processing
 :zap:|perf(memory)|add memory limits and monitoring
+:zap:|perf(db)|add composite index to optimize the slowest query in the dashboard
+:chart_with_upwards_trend:|perf(network)|enable Brotli compression and HTTP/3 on the CDN edge
+:fire:|perf(bundle)|remove moment.js and replace with dayjs to cut 200KB from bundle
+:zap:|perf(render)|memoize expensive React components using useMemo and React.memo
+:mag:|perf(tracing)|add OpenTelemetry auto-instrumentation for PostgreSQL queries
+:recycle:|perf(gc)|tune Node.js max-old-space-size to prevent OOM kills under load
+:zap:|perf(cache)|implement Redis pipeline to batch multiple GET operations
+:chart_with_upwards_trend:|perf(images)|convert static assets to WebP and implement lazy loading
+:fire:|perf(startup)|defer non-critical third-party scripts to improve FCP and TTI
+:zap:|perf(db)|batch insert operations using unnest to reduce network roundtrips
 
 [API and Data Contracts]
 :sparkles:|feat(api)|add endpoint for managing resource settings
@@ -1298,6 +1308,16 @@
 :lock:|feat(security)|implement data retention and deletion policies
 :lock:|feat(security)|add user consent management
 :lock:|feat(security)|implement privacy by design principles
+:lock:|fix(security)|patch SSRF vulnerability in the URL preview generator
+:shield:|feat(security)|implement Content Security Policy (CSP) with strict dynamic nonces
+:closed_lock_with_key:|feat(auth)|enforce MFA for users accessing the admin dashboard
+:fire:|chore(secrets)|rotate compromised AWS keys and revoke active sessions
+:lock:|fix(crypto)|upgrade password hashing from bcrypt to Argon2id
+:memo:|docs(security)|add threat model for the new payment processing flow
+:shield:|feat(api)|add rate limiting per IP and user ID to prevent brute force
+:lock:|fix(xss)|sanitize user-generated HTML using DOMPurify before rendering
+:bookmark:|chore(compliance)|generate SBOM using Syft for supply chain security
+:lock:|feat(auth)|implement PKCE flow for the public SPA OAuth integration
 
 [Release and Versioning]
 :bookmark:|chore(release)|cut stable release with full changelog
