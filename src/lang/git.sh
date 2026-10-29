@@ -4814,8 +4814,9 @@ shell::git::commit::create() {
 	# Declared once, before any loop: re-declaring a local inside a loop prints
 	# its value in zsh.
 	local rc choice value step
-	local selected_message selected_type emoji commit_message
+	local selected_message selected_type emoji commit_message type_line
 	local commit_description="" issue_number=""
+	local -a commit_types=()
 	local cmd_commit_empty cmd_commit empty_branch
 
 	# ===========================================================================
@@ -4876,15 +4877,15 @@ shell::git::commit::create() {
 	# Default mode — formatted commit: type + emoji + description + issue.
 	# A small state machine: each step can send the user back to the previous one.
 	# ===========================================================================
+	while IFS= read -r type_line; do
+		commit_types+=("$type_line")
+	done < <(shell::git::commit::types)
+
 	step="type"
 	while true; do
 		case "$step" in
 		type)
-			selected_type="$(shell::ask::option::back --prompt "Commit type: " \
-				"feat" "fix" "chore" "docs" "style" "refactor" "test" "perf" \
-				"WIP" "improvement" "revert" "security" "remove" "initial source" \
-				"logs" "config" "build" "dependency" "deployment" "localization" \
-				"search" "experimental" "version tag" "silent changes" "deprecation" "release")"
+			selected_type="$(shell::ask::option::back --prompt "Commit type: " "${commit_types[@]}")"
 			rc=$?
 
 			# Back from the first step leaves the command.
@@ -4898,35 +4899,7 @@ shell::git::commit::create() {
 			fi
 
 			# Map commit type → emoji code.
-			case "$selected_type" in
-			feat) emoji=":sparkles:" ;;
-			fix) emoji=":bug:" ;;
-			chore) emoji=":wrench:" ;;
-			docs) emoji=":books:" ;;
-			style) emoji=":art:" ;;
-			refactor) emoji=":recycle:" ;;
-			test) emoji=":white_check_mark:" ;;
-			perf) emoji=":chart_with_upwards_trend:" ;;
-			WIP) emoji=":construction:" ;;
-			improvement) emoji=":zap:" ;;
-			revert) emoji=":rewind:" ;;
-			security) emoji=":lock:" ;;
-			remove) emoji=":fire:" ;;
-			"initial source") emoji=":tada:" ;;
-			logs) emoji=":loud_sound:" ;;
-			config) emoji=":gear:" ;;
-			build) emoji=":hammer:" ;;
-			dependency) emoji=":package:" ;;
-			deployment) emoji=":rocket:" ;;
-			localization) emoji=":earth_americas:" ;;
-			search) emoji=":mag:" ;;
-			experimental) emoji=":alien:" ;;
-			"version tag") emoji=":bookmark:" ;;
-			"silent changes") emoji=":mute:" ;;
-			deprecation) emoji=":warning:" ;;
-			release) emoji=":gem:" ;;
-			*) emoji="" ;;
-			esac
+			emoji="$(shell::git::commit::emoji "$selected_type")"
 			step="description"
 			;;
 
@@ -4997,28 +4970,8 @@ shell::git::commit::create() {
 	shell::logger::assert "$cmd_commit" \
 		"Commit created: ${commit_message}" "Commit aborted" || return $?
 
-	# Collect metadata and send Telegram notification.
-	local git_username
-	local current_branch
-	local commit_hash
-	local repository_path
-	local repository_name
-	local server_remote_url
-	local timestamp
-
-	git_username=$(git config user.name 2>/dev/null)
-	current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
-	commit_hash=$(git rev-parse HEAD 2>/dev/null)
-	repository_path=$(git rev-parse --show-toplevel 2>/dev/null)
-	repository_name=$(basename "${repository_path}")
-	server_remote_url=$(git config --get remote.origin.url 2>/dev/null)
-	timestamp=$(date "+%Y-%m-%d %H:%M:%S")
-
-	local telegram_message="username: ${git_username} | repository: ${repository_name} (${server_remote_url}) | branch: ${current_branch} | hash: ${commit_hash} | message: ${commit_message} | timestamp: ${timestamp}"
-	shell::git::telegram::history::send "${telegram_message}"
-
-	# Push current branch to origin via interactive push command picker.
-	shell::git::branch::push "${current_branch}"
+	# Telegram notification, then push the current branch.
+	shell::git::commit::publish "$commit_message"
 
 	return "$RETURN_SUCCESS"
 }
