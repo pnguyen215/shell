@@ -556,4 +556,3 @@ shell::ask::options::values() {
 
 	printf '%s\n' "$values"
 }
-
