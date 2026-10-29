@@ -488,6 +488,16 @@
 :recycle:|refactor(error)|implement custom error types
 :recycle:|refactor(error)|add error reporting to external services
 :recycle:|refactor(error)|extract error handlers to separate classes
+:recycle:|refactor(ddd)|extract domain logic into aggregate roots and value objects
+:sparkles:|feat(cqrs)|separate read and write models for the reporting module
+:hammer:|build(monorepo)|configure Turborepo for parallel task execution and remote caching
+:fire:|refactor(legacy)|strangler fig pattern: route 20% of traffic to new microservice
+:recycle:|refactor(di)|implement dependency injection container for better testability
+:memo:|docs(adr)|add Architecture Decision Record for adopting event sourcing
+:wastebasket:|chore(clean)|remove dead code flagged by SonarQube coverage reports
+:recycle:|refactor(patterns)|replace service locator pattern with constructor injection
+:sparkles:|feat(saga)|implement choreography-based saga for cross-service transactions
+:bug:|fix(circular)|resolve circular dependency between auth and user modules
 
 [Workflow and Repository Maintenance]
 :twisted_rightwards_arrows:|chore|refresh stale pull request to resolve merge conflicts
@@ -1010,7 +1020,7 @@
 :card_file_box:|feat(db)|add cache auto-happening
 :card_file_box:|feat(db)|add cache auto-phenomenon
 
-[Infrastructure and DevOps]
+[DevOps/Cloud and Infrastructure]
 :bricks:|chore(infra)|provision new cloud resources for auto-scaling group
 :rocket:|ci(deploy)|update Kubernetes manifests for blue-green deployment
 :wrench:|chore(infra)|rotate expiring SSL certificates across all environments
@@ -1151,6 +1161,16 @@
 :bricks:|chore(infra)|set up Edge Locations for CDN
 :bricks:|chore(infra)|configure Points of Presence for network
 :bricks:|chore(infra)|add Global Infrastructure for scale
+:whale:|build(docker)|optimize Dockerfile using multi-stage builds and distroless base
+:construction_worker:|ci(github)|add PR size labeler to block mega-PRs from merging
+:rocket:|feat(deploy)|implement canary deployment strategy using Argo Rollouts
+:shield:|feat(security)|add Trivy container scanning to the CI pipeline
+:chart_with_upwards_trend:|feat(monitoring)|export custom Prometheus metrics for business KPIs
+:wrench:|chore(terraform)|refactor monolithic TF state into modular workspaces
+:fire:|refactor(k8s)|remove deprecated PodSecurityPolicy in favor of Kyverno policies
+:lock:|feat(secrets)|migrate hardcoded env vars to External Secrets Operator
+:zap:|perf(ci)|enable GitHub Actions cache for node_modules and Docker layers
+:bookmark:|chore(release)|configure semantic-release with custom changelog generator
 
 [Code Quality and Cleanup]
 :art:|style|enforce consistent formatting across entire codebase
