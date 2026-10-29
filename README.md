@@ -193,6 +193,21 @@ Required: `git`, `curl`, `fzf`. Optional (installed on demand): `jq`, `openssl`,
 - **Missing dependencies**: Run `shell::dependency::doctor` to see what's missing. Many can be auto-installed if `SHELL_AUTO_INSTALL_DEPS=1` (default).
 - **Permission issues**: Config files are written with restrictive modes (`~/.shell-config` 700, `key.conf` 600). Ensure your home directory permissions are correct.
 
+### Commit messages and emoji
+
+`shell::git::commit::create` (`sgcf`) and `shell::git::commit::predict` write [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/) headers: `<type>[(scope)]: <description>`. The type is always the prefix. Menu labels that are not conventional types are mapped onto one (`WIP` → `chore(wip)`, `dependency` → `build(deps)`, `initial source` → `chore(init)`).
+
+Emoji are **off by default**. When on, the gitmoji goes after the colon, so the header stays valid:
+
+```bash
+shell::git::commit::create                  # feat: add login #12
+shell::git::commit::create --emoji          # feat: :sparkles: add login #12
+export SHELL_GIT_COMMIT_EMOJI=true          # turn them on everywhere (put it in your ~/.zshrc or ~/.bashrc)
+shell::git::commit::create --no-emoji       # ...and off for one commit
+```
+
+`--emoji` / `--no-emoji` win over `SHELL_GIT_COMMIT_EMOJI`. Both commands accept them.
+
 ## Development
 
 ```bash

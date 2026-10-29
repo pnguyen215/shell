@@ -5,6 +5,8 @@
 # text prompts read stdin. Most runs use -n; the real-commit cases stub the push/Telegram step.
 . "$SHELL_TEST_ROOT/test/lib.sh"
 t_setup
+# Emoji are off by default; a SHELL_GIT_COMMIT_EMOJI exported by the person running the tests must not leak in.
+SHELL_GIT_COMMIT_EMOJI=false
 
 mkdir "$HOME/bin"
 cat >"$HOME/bin/fzf" <<'FAKE'
@@ -55,9 +57,51 @@ t_eq "types: 26 of them" "26" "$(shell::git::commit::types | wc -l | tr -d ' ')"
 t_eq "types: feat first (menu order)" "feat" "$(shell::git::commit::types | head -n 1)"
 t_eq "types: release last" "release" "$(shell::git::commit::types | tail -n 1)"
 t_eq "types: every type has an emoji" "0" "$(shell::git::commit::types | while IFS= read -r ty; do [ -z "$(shell::git::commit::emoji "$ty")" ] && echo "$ty"; done | wc -l | tr -d ' ')"
-t_eq "format: sgcf style" ":sparkles: feat: add x #1" "$(shell::git::commit::predict::format feat "add x" "#1")"
-t_eq "format: issue is optional" ":bug: fix: y" "$(shell::git::commit::predict::format fix y)"
+t_eq "format: sgcf style" "feat: add x #1" "$(shell::git::commit::predict::format feat "add x" "#1")"
+t_eq "format: issue is optional" "fix: y" "$(shell::git::commit::predict::format fix y)"
 t_eq "format: unknown type has no leading space" "nope: y" "$(shell::git::commit::predict::format nope y)"
+
+# --- emoji: off by default, after the colon when on, never before the type (Conventional Commits) --
+t_eq "emoji setting: off by default" "false" "$(env -u SHELL_GIT_COMMIT_EMOJI SHELL_AUTO_INSTALL_DEPS=0 bash -c '. "$SHELL_TEST_ROOT/src/shell.sh" >/dev/null 2>&1; printf %s "$SHELL_GIT_COMMIT_EMOJI"')"
+emoji_on() { SHELL_GIT_COMMIT_EMOJI="$1" shell::git::commit::emoji::enabled "${2-}" && echo on || echo off; }
+t_eq "enabled: false is off" "off" "$(emoji_on false)"
+t_eq "enabled: empty is off" "off" "$(emoji_on '')"
+t_eq "enabled: garbage is off" "off" "$(emoji_on maybe)"
+t_eq "enabled: 0 / no / off are off" "off off off" "$(emoji_on 0) $(emoji_on no) $(emoji_on off)"
+t_eq "enabled: true / 1 / yes / on are on" "on on on on" "$(emoji_on true) $(emoji_on 1) $(emoji_on yes) $(emoji_on on)"
+t_eq "enabled: any case" "on on" "$(emoji_on TRUE) $(emoji_on Yes)"
+t_eq "enabled: an explicit true beats the setting" "on" "$(emoji_on false true)"
+t_eq "enabled: an explicit false beats the setting" "off" "$(emoji_on true false)"
+
+t_eq "resolve: a conventional label is unchanged" "feat" "$(shell::git::commit::type::resolve feat)"
+t_eq "resolve: a label with a space becomes a valid type" "chore(init)" "$(shell::git::commit::type::resolve "initial source")"
+t_eq "resolve: WIP" "chore(wip)" "$(shell::git::commit::type::resolve WIP)"
+t_eq "resolve: dependency" "build(deps)" "$(shell::git::commit::type::resolve dependency)"
+t_eq "resolve: an unknown type is returned unchanged" "ci" "$(shell::git::commit::type::resolve ci)"
+# Every menu label must map to something shell::git::commit::message::validate accepts.
+map_file="$HOME/map.txt"
+{
+	echo "[Mapping]"
+	i=0
+	shell::git::commit::types | while IFS= read -r ty; do
+		i=$((i + 1))
+		printf '%s|%s|check mapping number %d here\n' "$(shell::git::commit::emoji "$ty")" "$(shell::git::commit::type::resolve "$ty")" "$i"
+	done
+} >"$map_file"
+out="$(shell::git::commit::message::validate "$map_file" 2>&1)"
+t_has "resolve: all 26 labels map to a valid type, scope and emoji" "26 template(s) in 1 categories, 0 problem(s)" "$out"
+
+t_eq "format: the emoji goes after the colon" "feat: :sparkles: add x #1" "$(shell::git::commit::predict::format feat "add x" "#1" true)"
+t_eq "format: a mapped type keeps the type first" "chore(init): :tada: first commit" "$(shell::git::commit::predict::format "initial source" "first commit" "" true)"
+t_eq "format: off is plain, with a mapped type" "chore(init): first commit" "$(shell::git::commit::predict::format "initial source" "first commit")"
+t_eq "format: the setting turns the emoji on" "feat: :sparkles: add x" "$(SHELL_GIT_COMMIT_EMOJI=true shell::git::commit::predict::format feat "add x")"
+t_eq "format: an explicit false beats the setting" "feat: add x" "$(SHELL_GIT_COMMIT_EMOJI=true shell::git::commit::predict::format feat "add x" "" false)"
+t_eq "format: no known emoji, no emoji (and no stray space)" "nope: y" "$(shell::git::commit::predict::format nope y "" true)"
+t_eq "format: every label is a Conventional Commits header, emoji on or off" "0" "$(
+	for on in true false; do
+		shell::git::commit::types | while IFS= read -r ty; do shell::git::commit::predict::format "$ty" "some description" "" "$on"; done
+	done | grep -cvE '^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\([a-z0-9.-]+\))?: (:[a-z0-9_+-]+: )?some description$'
+)"
 
 # --- branch → issue ---------------------------------------------------------------------------
 t_eq "issue: feat/123-login" "#123" "$(shell::git::commit::predict::issue feat/123-login)"
@@ -176,7 +220,7 @@ run_predict "" "" --list >/dev/null
 t_eq "list: nothing to predict returns RETURN_EMPTY" "$RETURN_EMPTY" "$?"
 out="$(run_predict "feat${nl}Commit" "first thing${nl}#1${nl}" -n)"
 t_has "no changes: says so" "No changes found to predict from" "$out"
-t_has "no changes: sgcf-style manual entry" 'git commit -m ":sparkles: feat: first thing #1"' "$out"
+t_has "no changes: sgcf-style manual entry" 'git commit -m "feat: first thing #1"' "$out"
 t_eq "no changes: no predictions menu, so the type menu is the first" "feat" "$(head -n 1 "$HOME/stdin.1")"
 out="$(run_predict "$B" "" -n)"
 t_has "no changes: Back at the type menu leaves" "Commit cancelled" "$out"
@@ -189,8 +233,12 @@ echo 'echo hello again' >src/hello.sh && echo 'echo bye' >src/bye.sh && git add 
 
 list="$(shell::git::commit::predict --list 2>&1)"
 t_eq "list: 3 predictions" "3" "$(printf '%s\n' "$list" | wc -l | tr -d ' ')"
-t_eq "list: best guess (branch feat/ + a new file)" ":sparkles: feat: add bye #7" "$(printf '%s\n' "$list" | head -n 1)"
+t_eq "list: best guess (branch feat/ + a new file)" "feat: add bye #7" "$(printf '%s\n' "$list" | head -n 1)"
 t_has "list: the issue comes from the branch" " #7" "$(printf '%s\n' "$list" | sed -n 2p)"
+t_eq "list --emoji: the emoji follows the type" "feat: :sparkles: add bye #7" "$(shell::git::commit::predict --list --emoji 2>&1 | head -n 1)"
+t_eq "list: SHELL_GIT_COMMIT_EMOJI=true does the same" "feat: :sparkles: add bye #7" "$(SHELL_GIT_COMMIT_EMOJI=true shell::git::commit::predict --list 2>&1 | head -n 1)"
+t_eq "list --no-emoji beats the setting" "feat: add bye #7" "$(SHELL_GIT_COMMIT_EMOJI=true shell::git::commit::predict --list --no-emoji 2>&1 | head -n 1)"
+t_eq "list: no prediction starts with an emoji" "0" "$(shell::git::commit::predict --list --emoji 2>&1 | grep -c '^:')"
 t_eq "list: -c 1" "1" "$(shell::git::commit::predict --list -c 1 2>&1 | wc -l | tr -d ' ')"
 t_eq "list: prints nothing else (no logging noise)" "0" "$(printf '%s\n' "$list" | grep -c 'WARN\|warn\|INFO\|info')"
 first="$(printf '%s\n' "$list" | head -n 1)"
@@ -238,28 +286,36 @@ t_has "edit: :back keeps the prediction" "git commit -m \"$first\"" "$out"
 
 # --- manual entry: exactly the sgcf steps ------------------------------------------------------
 out="$(run_predict "${M}${nl}fix${nl}Commit" "a real fix${nl}#99${nl}" -n)"
-t_has "manual: sgcf-style message" 'git commit -m ":bug: fix: a real fix #99"' "$out"
+t_has "manual: sgcf-style message" 'git commit -m "fix: a real fix #99"' "$out"
 t_eq "manual: the type menu is sgcf's (feat first)" "feat" "$(head -n 1 "$HOME/stdin.2")"
 t_eq "manual: ...with all 26 types and Back" "27" "$(wc -l <"$HOME/stdin.2" | tr -d ' ')"
 t_has "manual: ...and a type prompt" "--prompt=Commit type: " "$(cat "$HOME/args.2")"
 
+out="$(run_predict "${M}${nl}feat${nl}Commit" "thing${nl}#7${nl}" -n --emoji)"
+t_has "manual --emoji: the emoji is after the colon" 'git commit -m "feat: :sparkles: thing #7"' "$out"
+t_lacks "manual --emoji: ...never before the type" '-m ":sparkles:' "$out"
+out="$(run_predict "${M}${nl}initial source${nl}Commit" "first commit${nl}#1${nl}" -n)"
+t_has "manual: a label that is not a type is mapped onto one" 'git commit -m "chore(init): first commit #1"' "$out"
+out="$(run_predict "${M}${nl}WIP${nl}Commit" "half done${nl}#1${nl}" -n --emoji)"
+t_has "manual: ...and keeps its emoji when they are on" 'git commit -m "chore(wip): :construction: half done #1"' "$out"
+
 out="$(run_predict "${M}${nl}feat${nl}Commit" "thing${nl}${nl}" -n)"
-t_has "manual: Enter at the issue prompt keeps the branch's issue" 'git commit -m ":sparkles: feat: thing #7"' "$out"
+t_has "manual: Enter at the issue prompt keeps the branch's issue" 'git commit -m "feat: thing #7"' "$out"
 out="$(run_predict "${M}${nl}feat${nl}Commit" "thing${nl}ABC-1${nl}" -n)"
-t_has "manual: ...which can be overwritten" 'git commit -m ":sparkles: feat: thing ABC-1"' "$out"
+t_has "manual: ...which can be overwritten" 'git commit -m "feat: thing ABC-1"' "$out"
 out="$(run_predict "${M}${nl}feat${nl}Commit" "${nl}real${nl}#2${nl}" -n)"
 t_has "manual: an empty description is refused" "This value cannot be empty" "$out"
-t_has "manual: ...and asked again" 'git commit -m ":sparkles: feat: real #2"' "$out"
+t_has "manual: ...and asked again" 'git commit -m "feat: real #2"' "$out"
 
 # Back through the manual steps.
 out="$(run_predict "${M}${nl}${B}${nl}${first}${nl}Commit" "" -n)"
 t_has "manual: Back at the type menu returns to the predictions" "git commit -m \"$first\"" "$out"
 out="$(run_predict "${M}${nl}feat${nl}fix${nl}Commit" ":back${nl}better${nl}#3${nl}" -n)"
-t_has "manual: :back at the description returns to the type menu" 'git commit -m ":bug: fix: better #3"' "$out"
+t_has "manual: :back at the description returns to the type menu" 'git commit -m "fix: better #3"' "$out"
 out="$(run_predict "${M}${nl}feat${nl}Commit" "first${nl}:back${nl}second${nl}#4${nl}" -n)"
-t_has "manual: :back at the issue returns to the description" 'git commit -m ":sparkles: feat: second #4"' "$out"
+t_has "manual: :back at the issue returns to the description" 'git commit -m "feat: second #4"' "$out"
 out="$(run_predict "${M}${nl}feat${nl}${B}${nl}Commit" "kept${nl}#5${nl}${nl}" -n)"
-t_has "manual: Back at the confirmation returns to the issue (value kept)" 'git commit -m ":sparkles: feat: kept #5"' "$out"
+t_has "manual: Back at the confirmation returns to the issue (value kept)" 'git commit -m "feat: kept #5"' "$out"
 out="$(run_predict "${M}${nl}feat${nl}Edit message${nl}Commit" "kept${nl}#5${nl}tweaked: ok${nl}" -n)"
 t_has "manual: the message can still be edited" 'git commit -m "tweaked: ok"' "$out"
 out="$(run_predict "${M}${nl}feat" "" -n)"
@@ -270,7 +326,7 @@ t_has "manual: ESC at the type menu aborts" "No commit type selected" "$out"
 
 # --- the dry-run command is shell-safe ---------------------------------------------------------
 out="$(run_predict "${M}${nl}feat${nl}Commit" 'say "hi" $HOME `id`'"${nl}#1${nl}" -n)"
-t_has "dry-run: quotes, \$ and backticks are escaped in the printed command" 'git commit -m ":sparkles: feat: say \"hi\" \$HOME \`id\` #1"' "$out"
+t_has "dry-run: quotes, \$ and backticks are escaped in the printed command" 'git commit -m "feat: say \"hi\" \$HOME \`id\` #1"' "$out"
 
 # --- a real commit -----------------------------------------------------------------------------
 # The push / Telegram step is interactive and networked: stub it, and check it is reached.
@@ -284,7 +340,7 @@ t_eq "commit: ...and it consumed the staged files" "" "$(git diff --cached --nam
 
 echo 'echo x' >src/q.sh && git add src/q.sh
 out="$(run_predict "${M}${nl}fix${nl}Commit" 'quote " and $HOME and `id` and \ done'"${nl}#8${nl}")"
-t_eq "commit: a nasty message is stored verbatim (no shell interpretation)" ':bug: fix: quote " and $HOME and `id` and \ done #8' "$(git log -1 --format=%s)"
+t_eq "commit: a nasty message is stored verbatim (no shell interpretation)" 'fix: quote " and $HOME and `id` and \ done #8' "$(git log -1 --format=%s)"
 t_has "commit: ...and still published" "PUBLISHED<" "$out"
 
 # A failing commit stops the flow before the publish step.
@@ -307,12 +363,13 @@ echo 'brand new' >src/untracked.sh
 out="$(run_predict "$B" "" -n)"
 t_has "worktree: warns that nothing is staged" "Nothing is staged" "$out"
 list="$(shell::git::commit::predict --list 2>&1)"
-t_eq "worktree: tracked and untracked files are both analysed" "feat: add untracked" "$(printf '%s\n' "$list" | head -n 1 | sed 's/^[^ ]* //; s/ #.*//')"
+t_eq "worktree: tracked and untracked files are both analysed" "feat: add untracked" "$(printf '%s\n' "$list" | head -n 1 | sed 's/ #.*//')"
 
 # --- sgcf still works on top of the shared helpers ---------------------------------------------
 reset_fzf
 out="$(printf 'my change\n#12\n' | FAKE_FZF_PICKS="feat${nl}Commit" shell::git::commit::create -n 2>&1)"
-t_has "sgcf: unchanged by the refactor" 'git commit -m ":sparkles: feat: my change #12"' "$out"
+t_has "predict help documents the emoji switch" "--no-emoji" "$(shell::git::commit::predict -h 2>&1)"
+t_has "sgcf: unchanged by the refactor" 'git commit -m "feat: my change #12"' "$out"
 t_eq "sgcf: same type menu (26 types + Back)" "27" "$(wc -l <"$HOME/stdin.1" | tr -d ' ')"
 t_eq "sgcf: ...in the same order" "$(shell::git::commit::types | head -n 3 | tr '\n' ',')" "$(head -n 3 "$HOME/stdin.1" | tr '\n' ',')"
 
