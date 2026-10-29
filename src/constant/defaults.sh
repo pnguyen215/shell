@@ -26,6 +26,36 @@ SHELL_FZF_OPTS=(
 # Text of the "go back" entry added by shell::fzf::loop --back.
 : "${SHELL_FZF_BACK_LABEL:=← Back}"
 
+# --- Git commit types --------------------------------------------------------
+# `type|emoji` per line: the menu of shell::git::commit::create (sgcf) and
+# ::predict, and the emoji prefixed to the message. Order = order in the menu.
+SHELL_GIT_COMMIT_TYPES="feat|:sparkles:
+fix|:bug:
+chore|:wrench:
+docs|:books:
+style|:art:
+refactor|:recycle:
+test|:white_check_mark:
+perf|:chart_with_upwards_trend:
+WIP|:construction:
+improvement|:zap:
+revert|:rewind:
+security|:lock:
+remove|:fire:
+initial source|:tada:
+logs|:loud_sound:
+config|:gear:
+build|:hammer:
+dependency|:package:
+deployment|:rocket:
+localization|:earth_americas:
+search|:mag:
+experimental|:alien:
+version tag|:bookmark:
+silent changes|:mute:
+deprecation|:warning:
+release|:gem:"
+
 # --- INI parser --------------------------------------------------------------
 # 0 = lenient parsing, 1 = reject malformed names/values.
 : "${SHELL_INI_STRICT:=0}"
