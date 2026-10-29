@@ -149,7 +149,7 @@ The only exceptions are the four lifecycle functions in [`src/shell.sh`](src/she
 ├── install.sh  upgrade.sh  uninstall.sh   # bootstrap scripts (curl-able)
 ├── Makefile                               # make test | lint | fmt | docs | doctor
 ├── docs/
-│   ├── ARCHITECTURE.md  CONVENTIONS.md  MIGRATION.md
+│   ├── ARCHITECTURE.md  CONVENTIONS.md  COMMIT_MESSAGES.md  MIGRATION.md
 │   └── api/                               # generated reference (make docs)
 ├── scripts/                               # lint.sh, gen_docs.sh
 ├── test/                                  # run under bash and zsh
@@ -176,10 +176,11 @@ All constants are in [`src/constant/`](src/constant) and can be overridden from 
 export SHELL_CONFIG_DIR="$HOME/.config/shell"   # default: ~/.shell-config
 export SHELL_LOGGER_LEVEL=INFO                  # DEBUG | INFO | WARN | ERROR | FATAL
 export SHELL_AUTO_INSTALL_DEPS=0                # only report missing tools, never install
+export SHELL_GIT_COMMIT_EMOJI=true              # gitmoji in commit messages (default: false)
 source "$HOME/shell/src/shell.sh"
 ```
 
-User data (keys, bookmarks, workspaces) lives under `SHELL_CONFIG_DIR` with mode 700/600.
+User data (keys, bookmarks, workspaces) lives under `SHELL_CONFIG_DIR` with mode 700/600. Settings of a single feature are documented in [`docs/`](docs), for example [commit messages](docs/COMMIT_MESSAGES.md).
 
 ## Dependencies
 
@@ -192,21 +193,6 @@ Required: `git`, `curl`, `fzf`. Optional (installed on demand): `jq`, `openssl`,
 - **Functions not available after upgrade**: Restart your terminal or run `source "$HOME/shell/src/shell.sh"`.
 - **Missing dependencies**: Run `shell::dependency::doctor` to see what's missing. Many can be auto-installed if `SHELL_AUTO_INSTALL_DEPS=1` (default).
 - **Permission issues**: Config files are written with restrictive modes (`~/.shell-config` 700, `key.conf` 600). Ensure your home directory permissions are correct.
-
-### Commit messages and emoji
-
-`shell::git::commit::create` (`sgcf`) and `shell::git::commit::predict` write [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/) headers: `<type>[(scope)]: <description>`. The type is always the prefix. Menu labels that are not conventional types are mapped onto one (`WIP` → `chore(wip)`, `dependency` → `build(deps)`, `initial source` → `chore(init)`).
-
-Emoji are **off by default**. When on, the gitmoji goes after the colon, so the header stays valid:
-
-```bash
-shell::git::commit::create                  # feat: add login #12
-shell::git::commit::create --emoji          # feat: :sparkles: add login #12
-export SHELL_GIT_COMMIT_EMOJI=true          # turn them on everywhere (put it in your ~/.zshrc or ~/.bashrc)
-shell::git::commit::create --no-emoji       # ...and off for one commit
-```
-
-`--emoji` / `--no-emoji` win over `SHELL_GIT_COMMIT_EMOJI`. Both commands accept them.
 
 ## Development
 
