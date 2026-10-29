@@ -197,6 +197,10 @@ Required: `git`, `curl`, `fzf`. Optional (installed on demand): `jq`, `openssl`,
 
 ```bash
 make test    # run bash + zsh test suites
+make test T=squash                         # only test files whose name contains "squash"
+make test-fn F=shell::git::commit::squash  # only test files that mention this function
+make test-list F=shell::git::commit::squash  # just list which files would run
+SHELLS=bash make test T=squash             # skip zsh for a faster loop
 make lint    # naming, shdoc coverage, portability, shellcheck, shfmt
 make docs    # regenerate docs/api (requires shdoc: https://github.com/reconquest/shdoc)
 make doctor  # report installed dependencies

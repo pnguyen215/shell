@@ -1,6 +1,6 @@
 # Developer tasks. `make` or `make help` lists them.
 .DEFAULT_GOAL := help
-.PHONY: help check test lint fmt docs doctor tree clean
+.PHONY: help check test test-fn test-list lint fmt docs doctor tree clean
 
 # bash is required (the recipes use bash features). Works with GNU make 3.81 (macOS).
 SHELL := /bin/bash
@@ -11,12 +11,19 @@ command -v $(1) >/dev/null 2>&1 || { echo "ERROR: '$(1)' is not installed. $(2)"
 endef
 
 help: ## Show this help
-	@grep -E '^[a-z_]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-8s %s\n", $$1, $$2}'
+	@grep -E '^[a-z_-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-10s %s\n", $$1, $$2}'
 
 check: lint test ## Run lint and test (what CI runs)
 
-test: ## Run the test suite under bash and zsh (if installed)
-	@bash test/run_tests.sh
+test: ## Run the tests (all; or narrow: make test T=squash, T=test_git_amend.sh)
+	@bash test/run_tests.sh $(T)
+
+test-fn: ## Run only the test files that mention a function: make test-fn F=shell::git::commit::squash
+	@test -n "$(F)" || { echo "usage: make test-fn F=<function>" >&2; exit 2; }
+	@bash test/run_tests.sh -f "$(F)"
+
+test-list: ## List the test files (same filters: make test-list T=git, F=<function>)
+	@bash test/run_tests.sh -l $(if $(F),-f "$(F)") $(T)
 
 lint: ## Naming, shdoc, portability, shellcheck and shfmt checks
 	@bash scripts/lint.sh
