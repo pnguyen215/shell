@@ -219,6 +219,10 @@ alias sgcc-n="shell::git::commit::create -n"
 alias sgcf="shell::git::commit::create"
 alias sgcf-n="shell::git::commit::create -n"
 
+# shell::git::commit::predict
+alias sgcpd="shell::git::commit::predict"
+alias sgcpd-n="shell::git::commit::predict -n"
+
 # shell::git::commit::checkout
 alias sgco="shell::git::commit::checkout"
 alias sgco-n="shell::git::commit::checkout -n"
