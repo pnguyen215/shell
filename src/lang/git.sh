@@ -4206,6 +4206,544 @@ shell::git::commit::predict::issue() {
 		}'
 }
 
+# @description Builds a message in the format of `sgcf`:
+#   `<emoji> <type>: <description> <issue>` (the issue part is optional).
+# @internal
+# @arg $1 string Commit type.
+# @arg $2 string Description.
+# @arg $3 string Optional issue reference.
+# @stdout The formatted message.
+# @exitcode 0 Always.
+shell::git::commit::predict::format() {
+	local emoji out
+	emoji="$(shell::git::commit::emoji "${1-}")"
+	out=""
+	if [ -n "$emoji" ]; then
+		out="${emoji} "
+	fi
+	out="${out}${1-}: ${2-}"
+	if [ -n "${3-}" ]; then
+		out="${out} ${3}"
+	fi
+	printf '%s\n' "$out"
+}
+
+# @description The prediction engine. Reads `git diff --name-status` lines on
+#   stdin and prints the most likely commit types, each with a description.
+#
+#   The type is inferred from, in order of weight: the branch prefix
+#   (`fix/...`, `feat/...`), the kind of files touched (docs, tests, lockfiles,
+#   CI, Dockerfiles, styles, config, code), what happened to them (added,
+#   modified, deleted, renamed) and, for modified code, whether the added lines
+#   talk about a fix. Nothing leaves the machine and no model is involved, so
+#   the result is instant and deterministic.
+# @option -b | --branch Optional. Current branch name.
+# @option -H | --hint Optional. Lower-case words of the added lines (fix detection).
+# @option -i | --initial Optional. `true` when the repository has no commit yet.
+# @option -c | --count Optional. How many predictions to print (default 3, max 9).
+# @stdout `type|description`, best guess first.
+# @exitcode 0 Predictions were printed, or there was nothing to predict from.
+# @exitcode 2 Invalid or missing option value.
+# @example
+#   git diff --cached --name-status -M | shell::git::commit::predict::candidates --branch "fix/12-crash"
+#
+shell::git::commit::predict::candidates() {
+	local branch="" hint="" initial="false" count=3
+
+	while [ "$#" -gt 0 ]; do
+		case "$1" in
+		-b | --branch | -H | --hint | -i | --initial | -c | --count)
+			if [ "$#" -lt 2 ]; then
+				shell::logger::error "Option $1 needs a value"
+				return "$RETURN_INVALID"
+			fi
+			case "$1" in
+			-b | --branch) branch="$2" ;;
+			-H | --hint) hint="$2" ;;
+			-i | --initial) initial="$2" ;;
+			-c | --count) count="$2" ;;
+			esac
+			shift 2
+			;;
+		*)
+			shell::logger::error "Unknown option: $1"
+			return "$RETURN_INVALID"
+			;;
+		esac
+	done
+
+	case "$count" in
+	'' | *[!0-9]* | 0 | ??*)
+		shell::logger::error "--count must be a number from 1 to 9"
+		return "$RETURN_INVALID"
+		;;
+	esac
+
+	awk -F'\t' -v branch="$branch" -v hint="$hint" -v initial="$initial" -v max="$count" '
+		function basename(p,   n, a) { n = split(p, a, "/"); return a[n] }
+		function dirname(p,   i) {
+			i = length(p)
+			while (i > 0 && substr(p, i, 1) != "/") i--
+			return i > 1 ? substr(p, 1, i - 1) : ""
+		}
+		function stem(b,   i) {
+			i = match(b, /\.[^.]*$/)
+			return i > 1 ? substr(b, 1, i - 1) : b
+		}
+		function inpath(p, seg) { return index("/" p, "/" seg "/") > 0 }
+
+		# What kind of file is this?
+		function classify(path,   p, b, e) {
+			p = tolower(path); b = basename(p); e = ""
+			if (match(b, /\.[^.]*$/)) e = substr(b, RSTART + 1)
+			if (b ~ /^(package(-lock)?\.json|yarn\.lock|pnpm-lock\.yaml|go\.(mod|sum)|cargo\.(toml|lock)|gemfile(\.lock)?|pipfile(\.lock)?|poetry\.lock|composer\.(json|lock)|requirements.*\.txt)$/) return "dependency"
+			if (b ~ /^(dockerfile.*|docker-compose.*\.ya?ml)$/ || e == "tf" || e == "tfvars" || inpath(p, "k8s") || inpath(p, "kubernetes") || inpath(p, "helm") || inpath(p, "terraform")) return "deployment"
+			if (inpath(p, ".github/workflows") || inpath(p, ".circleci") || e == "mk" || b ~ /^(makefile|gnumakefile|jenkinsfile|\.gitlab-ci\.ya?ml|azure-pipelines\.ya?ml|cmakelists\.txt|pom\.xml|build\.gradle(\.kts)?)$/) return "build"
+			if (inpath(p, "locales") || inpath(p, "locale") || inpath(p, "i18n") || inpath(p, "l10n") || inpath(p, "translations") || e == "po" || e == "pot") return "localization"
+			if (e ~ /^(md|mdx|rst|adoc)$/ || inpath(p, "docs") || inpath(p, "doc") || b ~ /^(readme|license|changelog|contributing|authors|notice)/) return "docs"
+			if (inpath(p, "test") || inpath(p, "tests") || inpath(p, "__tests__") || inpath(p, "spec") || inpath(p, "specs") || inpath(p, "e2e") || b ~ /(_test|\.test|\.spec|_spec)\.[^.]+$/ || b ~ /^test_/) return "test"
+			if (e ~ /^(css|scss|sass|less|styl)$/) return "style"
+			if (substr(b, 1, 1) == "." || e ~ /^(json|ya?ml|toml|ini|cfg|conf|env|properties)$/) return "config"
+			return "code"
+		}
+
+		# Commit type named by the branch prefix: fix/..., feature-..., hotfix_...
+		function branchtype(b,   i, p) {
+			b = tolower(b)
+			i = match(b, "[/_-]")
+			if (i == 0) return ""
+			p = substr(b, 1, i - 1)
+			if (p == "feat" || p == "feature") return "feat"
+			if (p == "fix" || p == "bugfix" || p == "hotfix" || p == "bug") return "fix"
+			if (p == "doc" || p == "docs") return "docs"
+			if (p == "test" || p == "tests") return "test"
+			if (p == "ci" || p == "build") return "build"
+			if (p == "deps" || p == "dependency" || p == "dependencies") return "dependency"
+			if (p == "improvement" || p == "improve" || p == "enhancement") return "improvement"
+			if (p == "wip") return "WIP"
+			if (p == "chore" || p == "style" || p == "refactor" || p == "perf" || p == "security" || p == "revert" || p == "release" || p == "config") return p
+			return ""
+		}
+
+		# Short name of what changed: the file names, or the common directory.
+		# Looks only at the files of one category (filter) when there are any
+		# (only the added ones with addedonly); sets anyadded / alladded for the
+		# files it looked at.
+		function subject(filter, addedonly,   i, m, s, k, out, seen, common, d, only) {
+			only = 0
+			if (filter != "") for (i = 1; i <= n; i++) if (cats[i] == filter && (!addedonly || sts[i] == "A")) only++
+			split("", pick)
+			m = 0; anyadded = 0; alladded = 1
+			for (i = 1; i <= n; i++) {
+				if (filter != "" && only > 0 && (cats[i] != filter || (addedonly && sts[i] != "A"))) continue
+				pick[++m] = paths[i]
+				if (sts[i] == "A") anyadded = 1; else alladded = 0
+			}
+			if (m <= 3) {
+				out = ""; k = 0
+				for (i = 1; i <= m; i++) {
+					s = stem(basename(pick[i]))
+					if (!(s in seen)) { seen[s] = 1; out = (k++ ? out ", " : "") s }
+				}
+			} else {
+				common = dirname(pick[1])
+				for (i = 2; i <= m; i++) {
+					d = dirname(pick[i])
+					while (common != "" && !(d == common || index(d "/", common "/") == 1)) common = dirname(common)
+				}
+				out = (common != "" ? common " (" m " files)" : m " files")
+			}
+			# Keep it safe to paste into a commit message.
+			gsub("[^A-Za-z0-9._ ,()+/-]", "", out)
+			subjectfiles = m
+			return out
+		}
+
+		function infra(phrase, filter,   s) {
+			s = subject(filter)
+			return (subjectfiles <= 3 ? phrase " (" s ")" : phrase)
+		}
+
+		function describe(t,   s) {
+			if (t == "build") return infra("update build configuration", "build")
+			if (t == "dependency") return infra("update dependencies", "dependency")
+			if (t == "deployment") return infra("update deployment configuration", "deployment")
+			if (t == "config") return infra("update configuration", "config")
+			if (t == "localization") return infra("update translations", "localization")
+			if (t == "docs") { s = subject("docs"); return (alladded ? "add" : "update") " documentation for " s }
+			if (t == "test") { s = subject("test"); return (alladded ? "add" : "update") " tests for " s }
+			if (t == "style") { s = subject("style"); return "update styles of " s }
+			if (t == "feat") { s = subject("code", 1); return (anyadded ? "add " : "extend ") s }
+			if (t == "fix" || t == "improvement" || t == "refactor" || t == "perf" || t == "security") s = subject("code")
+			else s = subject("")
+			if (t == "fix") return "fix " s
+			if (t == "refactor") return (nD == n ? "clean up " : "refactor ") s
+			if (t == "perf") return "optimize " s
+			if (t == "improvement") return "improve " s
+			if (t == "remove") return "remove " s
+			if (t == "revert") return "revert " s
+			if (t == "security") return "address security concerns in " s
+			if (t == "WIP") return "work in progress on " s
+			if (t == "initial source") return "bootstrap the project"
+			if (t == "release") return "prepare release"
+			return "update " s
+		}
+
+		function add(t,   i) {
+			for (i = 1; i <= nt; i++) if (tl[i] == t) return
+			tl[++nt] = t
+		}
+
+		NF >= 2 {
+			st = substr($1, 1, 1)
+			n++
+			paths[n] = $NF
+			c = classify($NF)
+			cats[n] = c
+			sts[n] = (st == "C" ? "A" : st)
+			cnt[c]++
+			if (st == "A" || st == "C") { nA++; if (c == "code") aCode++ }
+			else if (st == "D") nD++
+			else if (st == "R") nR++
+			else nM++
+		}
+
+		END {
+			if (n == 0) exit 0
+
+			# Dominant non-code category (ties go to the first of this list).
+			best = ""; bestn = 0
+			split("docs test style config build dependency deployment localization", order, " ")
+			for (i = 1; i <= 8; i++) if (cnt[order[i]] > bestn) { best = order[i]; bestn = cnt[order[i]] }
+			codelogic = (cnt["code"] > 0 && cnt["code"] >= bestn)
+
+			words = " " hint " "
+			hasfix = (index(words, " fix ") || index(words, " fixes ") || index(words, " fixed ") || index(words, " bug ") || index(words, " bugs ") || index(words, " hotfix ") || index(words, " typo ") || index(words, " regression "))
+
+			if (initial == "true") add("initial source")
+			bt = branchtype(branch)
+			if (bt != "") add(bt)
+			if (nD == n) {
+				add("remove"); add("refactor")
+			} else if (codelogic) {
+				if (nM > 0 && hasfix) add("fix")
+				if (aCode > 0) add("feat")
+				if (nR > 0) add("refactor")
+				add("improvement"); add("fix"); add("refactor")
+			} else {
+				# Every kind of file present, the most numerous first.
+				for (k = 1; k <= 8; k++) {
+					top = ""; topn = 0
+					for (i = 1; i <= 8; i++) if (cnt[order[i]] > topn && !(order[i] in used)) { top = order[i]; topn = cnt[order[i]] }
+					if (top == "") break
+					used[top] = 1; add(top)
+				}
+			}
+			add("chore")
+
+			for (i = 1; i <= nt && i <= max; i++) print tl[i] "|" describe(tl[i])
+		}
+	'
+}
+
+# @description Predicts the commit message from your changes and lets you pick one.
+#   Where `sgcf` (shell::git::commit::create) starts from a blank prompt, this
+#   starts from the staged diff: it proposes the most likely messages, already
+#   formatted as `<emoji> <type>: <description> <issue>`. Pick one — or choose
+#   "Enter manually" to fill in the type, description and issue yourself, exactly
+#   as `sgcf` asks for them. Either way you get a confirmation step (Commit /
+#   Edit message / Abort), then the same commit, Telegram notification and push.
+#
+#   The issue reference is taken from the branch name (`feat/123-login` →
+#   `#123`) and pre-filled, so Enter keeps it. With nothing staged the working
+#   tree is analysed instead; with no changes at all it goes straight to manual
+#   entry. Every menu has "← Back" and the text prompts accept `:back`.
+#
+#   1. Pick a prediction, or "Enter manually (sgcf style)"      [Back = leave]
+#   2. (manual) type → description → issue                      [Back = previous step]
+#   3. Commit / Edit message / Abort                            [Back = step 1, or the issue]
+#   4. git commit -m "<message>", Telegram notification, push
+# @option -n | --dry-run Optional. Print the git commit command instead of executing it.
+# @option -l | --list Optional. Only print the predicted messages (no menu, no commit).
+# @option -c | --count Optional. How many predictions to offer (1-9, default 3).
+# @option -h | --help Show this help message.
+# @exitcode 0 Success, or the user backed out / cancelled.
+# @exitcode 1 Not inside a Git repository, or the commit failed.
+# @exitcode 2 Invalid option.
+# @exitcode 8 --list: there was nothing to predict from.
+# @see shell::git::commit::create
+# @see shell::git::commit::predict::candidates
+# @example
+#   shell::git::commit::predict
+#   shell::git::commit::predict --list
+#   shell::git::commit::predict -n --count 5
+#
+shell::git::commit::predict() {
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Predict the commit message from your changes, pick one or type your own (like sgcf)"
+		shell::logger::usage "shell::git::commit::predict [-n] [-l] [-c <count>] [-h]"
+		shell::logger::option "-n, --dry-run" "Print the git commit command instead of executing it"
+		shell::logger::option "-l, --list" "Only print the predicted messages"
+		shell::logger::option "-c, --count" "How many predictions to offer (1-9, default 3)"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::note "Pick '$SHELL_FZF_BACK_LABEL' in a menu, or type :back at a text prompt, to return to the previous step."
+		shell::logger::example "shell::git::commit::predict"
+		shell::logger::example "shell::git::commit::predict --list"
+		shell::logger::example "shell::git::commit::predict -n --count 5"
+		return "$RETURN_SUCCESS"
+	fi
+
+	local dry_run="false" list_only="false" count=3
+	while [ "$#" -gt 0 ]; do
+		case "$1" in
+		-n | --dry-run)
+			dry_run="true"
+			shift
+			;;
+		-l | --list)
+			list_only="true"
+			shift
+			;;
+		-c | --count)
+			if [ "$#" -lt 2 ]; then
+				shell::logger::error "Option $1 needs a value"
+				return "$RETURN_INVALID"
+			fi
+			count="$2"
+			shift 2
+			;;
+		*)
+			shell::logger::error "Unknown option: $1"
+			return "$RETURN_INVALID"
+			;;
+		esac
+	done
+
+	case "$count" in
+	'' | *[!0-9]* | 0 | ??*)
+		shell::logger::error "--count must be a number from 1 to 9"
+		return "$RETURN_INVALID"
+		;;
+	esac
+
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return "$RETURN_FAILURE"
+	fi
+
+	# ---------------------------------------------------------------------------
+	# Gather the evidence: staged changes first, else the working tree.
+	# ---------------------------------------------------------------------------
+	local changes hint="" branch initial="false" issue from_tree="false"
+	changes="$(git diff --cached --name-status -M 2>/dev/null)"
+	if [ -z "$changes" ]; then
+		from_tree="true"
+		changes="$({
+			git diff --name-status -M 2>/dev/null
+			git ls-files --others --exclude-standard 2>/dev/null | awk '{ print "A\t" $0 }'
+		})"
+	fi
+
+	if [ "$from_tree" = "true" ]; then
+		hint="$(git diff -U0 2>/dev/null | grep '^+' | head -c 20000 | tr -c 'A-Za-z0-9' ' ' | tr 'A-Z' 'a-z')"
+	else
+		hint="$(git diff --cached -U0 2>/dev/null | grep '^+' | head -c 20000 | tr -c 'A-Za-z0-9' ' ' | tr 'A-Z' 'a-z')"
+	fi
+
+	if ! git rev-parse --verify -q HEAD >/dev/null 2>&1; then
+		initial="true"
+	fi
+	branch="$(git symbolic-ref --short -q HEAD 2>/dev/null)"
+	issue="$(shell::git::commit::predict::issue "$branch")"
+
+	# ---------------------------------------------------------------------------
+	# Predict. Declared once, before any loop (zsh prints re-declared locals).
+	# ---------------------------------------------------------------------------
+	local ptype pdesc
+	local -a predictions=()
+	if [ -n "$changes" ]; then
+		while IFS='|' read -r ptype pdesc; do
+			if [ -z "$ptype" ]; then
+				continue
+			fi
+			predictions+=("$(shell::git::commit::predict::format "$ptype" "$pdesc" "$issue")")
+		done < <(printf '%s\n' "$changes" | shell::git::commit::predict::candidates \
+			--branch "$branch" --hint "$hint" --initial "$initial" --count "$count")
+	fi
+
+	if [ "$list_only" = "true" ]; then
+		if [ "${#predictions[@]}" -eq 0 ]; then
+			return "$RETURN_EMPTY"
+		fi
+		printf '%s\n' "${predictions[@]}"
+		return "$RETURN_SUCCESS"
+	fi
+
+	local have_predictions="false"
+	if [ "${#predictions[@]}" -gt 0 ]; then
+		have_predictions="true"
+		if [ "$from_tree" = "true" ]; then
+			shell::logger::warn "Nothing is staged — predicting from the working tree (git add the files you want to commit)"
+		fi
+	else
+		shell::logger::warn "No changes found to predict from — enter the message manually"
+	fi
+
+	# ---------------------------------------------------------------------------
+	# Choose. A small state machine, like sgcf: every step can go back.
+	# ---------------------------------------------------------------------------
+	local manual_label="Enter manually (sgcf style)"
+	local step origin="predict" rc choice value selected selected_type type_line
+	local commit_description="" issue_number="$issue" commit_message=""
+	local -a commit_types=()
+	while IFS= read -r type_line; do
+		commit_types+=("$type_line")
+	done < <(shell::git::commit::types)
+
+	step="predict"
+	if [ "$have_predictions" = "false" ]; then
+		step="type"
+		origin="manual"
+	fi
+
+	while true; do
+		case "$step" in
+		predict)
+			selected="$(shell::ask::option::back --prompt "Predicted commit message: " \
+				"${predictions[@]}" "$manual_label")"
+			rc=$?
+			if [ "$rc" -eq "$RETURN_BACK" ]; then
+				shell::logger::info "Commit cancelled"
+				return "$RETURN_SUCCESS"
+			fi
+			if [ "$rc" -ne 0 ] || [ -z "$selected" ]; then
+				shell::logger::warn "No commit message selected — aborting"
+				return "$RETURN_SUCCESS"
+			fi
+			if [ "$selected" = "$manual_label" ]; then
+				step="type"
+			else
+				commit_message="$selected"
+				origin="predict"
+				step="confirm"
+			fi
+			;;
+
+		type)
+			selected_type="$(shell::ask::option::back --prompt "Commit type: " "${commit_types[@]}")"
+			rc=$?
+			if [ "$rc" -eq "$RETURN_BACK" ]; then
+				# Back from the first manual step: the predictions, or leave.
+				if [ "$have_predictions" = "true" ]; then
+					step="predict"
+					continue
+				fi
+				shell::logger::info "Commit cancelled"
+				return "$RETURN_SUCCESS"
+			fi
+			if [ "$rc" -ne 0 ] || [ -z "$selected_type" ]; then
+				shell::logger::warn "No commit type selected — aborting"
+				return "$RETURN_SUCCESS"
+			fi
+			origin="manual"
+			step="description"
+			;;
+
+		description)
+			value="$(shell::git::commit::input "Enter a concise and clear commit description" "$commit_description")"
+			rc=$?
+			case "$rc" in
+			0)
+				commit_description="$value"
+				step="issue"
+				;;
+			"$RETURN_BACK") step="type" ;;
+			*)
+				shell::logger::warn "Input cancelled — aborting"
+				return "$RETURN_SUCCESS"
+				;;
+			esac
+			;;
+
+		issue)
+			value="$(shell::git::commit::input "Enter issue number (e.g. #1)" "$issue_number")"
+			rc=$?
+			case "$rc" in
+			0)
+				issue_number="$value"
+				commit_message="$(shell::git::commit::predict::format "$selected_type" "$commit_description" "$issue_number")"
+				step="confirm"
+				;;
+			"$RETURN_BACK") step="description" ;;
+			*)
+				shell::logger::warn "Input cancelled — aborting"
+				return "$RETURN_SUCCESS"
+				;;
+			esac
+			;;
+
+		confirm)
+			shell::logger::info "Commit message: ${commit_message}"
+			choice="$(shell::ask::option::back --prompt "Proceed with this commit? " "Commit" "Edit message" "Abort")"
+			rc=$?
+			case "$rc" in
+			0)
+				case "$choice" in
+				"Commit") break ;;
+				"Edit message")
+					value="$(shell::git::commit::input "Edit the commit message" "$commit_message")"
+					rc=$?
+					case "$rc" in
+					0) commit_message="$value" ;;
+					"$RETURN_BACK") ;;
+					*)
+						shell::logger::warn "Input cancelled — aborting"
+						return "$RETURN_SUCCESS"
+						;;
+					esac
+					;;
+				*)
+					shell::logger::info "Commit aborted"
+					return "$RETURN_SUCCESS"
+					;;
+				esac
+				;;
+			"$RETURN_BACK")
+				if [ "$origin" = "manual" ]; then
+					step="issue"
+				else
+					step="predict"
+				fi
+				;;
+			*)
+				shell::logger::info "Commit aborted"
+				return "$RETURN_SUCCESS"
+				;;
+			esac
+			;;
+		esac
+	done
+
+	# ---------------------------------------------------------------------------
+	# Commit. argv style: the message is passed to git verbatim, so quotes, `$`
+	# and backticks in it cannot be interpreted by the shell.
+	# ---------------------------------------------------------------------------
+	if [ "$dry_run" = "true" ]; then
+		local shown
+		shown="$(printf '%s' "$commit_message" | sed 's/[\\"$`]/\\&/g')"
+		shell::logger::command_clip "git commit -m \"${shown}\""
+		return "$RETURN_SUCCESS"
+	fi
+
+	shell::exec::command git commit -m "$commit_message" || return $?
+	shell::logger::success "Commit created: ${commit_message}"
+
+	shell::git::commit::publish "$commit_message"
+
+	return "$RETURN_SUCCESS"
+}
+
 # @description Interactively builds and commits a formatted Git commit message, one
 #   step at a time. Every menu has a "← Back" entry (and the text prompts accept
 #   `:back`), so a wrong choice is fixed by stepping back instead of aborting.
