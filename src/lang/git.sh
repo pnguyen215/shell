@@ -8571,17 +8571,17 @@ shell::git::config::fzf() {
 #   shell::git::commit::pick::in_progress && echo "busy"
 #
 shell::git::commit::pick::in_progress() {
-    local head_file todo_file
-    head_file="$(git rev-parse --git-path CHERRY_PICK_HEAD 2>/dev/null)"
-    todo_file="$(git rev-parse --git-path sequencer/todo 2>/dev/null)"
+	local head_file todo_file
+	head_file="$(git rev-parse --git-path CHERRY_PICK_HEAD 2>/dev/null)"
+	todo_file="$(git rev-parse --git-path sequencer/todo 2>/dev/null)"
 
-    if [ -n "$head_file" ] && [ -e "$head_file" ]; then
-        return 0
-    fi
-    if [ -n "$todo_file" ] && [ -s "$todo_file" ]; then
-        return 0
-    fi
-    return 1
+	if [ -n "$head_file" ] && [ -e "$head_file" ]; then
+		return 0
+	fi
+	if [ -n "$todo_file" ] && [ -s "$todo_file" ]; then
+		return 0
+	fi
+	return 1
 }
 
 # @internal
@@ -8598,31 +8598,31 @@ shell::git::commit::pick::in_progress() {
 #   shell::git::commit::pick::guard commit || return $?
 #
 shell::git::commit::pick::guard() {
-    local mode="${1:-commit}" marker
+	local mode="${1:-commit}" marker
 
-    if ! git rev-parse --git-dir >/dev/null 2>&1; then
-        shell::logger::error "Not inside a Git repository"
-        return "$RETURN_FAILURE"
-    fi
-    if ! git rev-parse --verify --quiet HEAD >/dev/null 2>&1; then
-        shell::logger::error "This repository has no commits yet"
-        return "$RETURN_FAILURE"
-    fi
-    if shell::git::commit::pick::in_progress; then
-        shell::logger::error "A cherry-pick is already in progress; finish it (shell::git::commit::pick::continue / skip) or cancel it (abort / quit)"
-        return "$RETURN_FAILURE"
-    fi
-    for marker in MERGE_HEAD REVERT_HEAD; do
-        if [ -e "$(git rev-parse --git-path "$marker")" ]; then
-            shell::logger::error "A ${marker} operation is in progress; finish or abort it first"
-            return "$RETURN_FAILURE"
-        fi
-    done
-    if [ "$mode" = "commit" ] && ! git diff --cached --quiet 2>/dev/null; then
-        shell::logger::error "There are staged changes; commit or unstage them first (or use --no-commit)"
-        return "$RETURN_FAILURE"
-    fi
-    return "$RETURN_SUCCESS"
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return "$RETURN_FAILURE"
+	fi
+	if ! git rev-parse --verify --quiet HEAD >/dev/null 2>&1; then
+		shell::logger::error "This repository has no commits yet"
+		return "$RETURN_FAILURE"
+	fi
+	if shell::git::commit::pick::in_progress; then
+		shell::logger::error "A cherry-pick is already in progress; finish it (shell::git::commit::pick::continue / skip) or cancel it (abort / quit)"
+		return "$RETURN_FAILURE"
+	fi
+	for marker in MERGE_HEAD REVERT_HEAD; do
+		if [ -e "$(git rev-parse --git-path "$marker")" ]; then
+			shell::logger::error "A ${marker} operation is in progress; finish or abort it first"
+			return "$RETURN_FAILURE"
+		fi
+	done
+	if [ "$mode" = "commit" ] && ! git diff --cached --quiet 2>/dev/null; then
+		shell::logger::error "There are staged changes; commit or unstage them first (or use --no-commit)"
+		return "$RETURN_FAILURE"
+	fi
+	return "$RETURN_SUCCESS"
 }
 
 # @internal
@@ -8649,71 +8649,71 @@ shell::git::commit::pick::guard() {
 #   hashes="$(shell::git::commit::pick::plan "" false HEAD "$h1" "$h2")" || return $?
 #
 shell::git::commit::pick::plan() {
-    local mainline="${1-}" allow_empty="${2-false}" base="${3-HEAD}"
-    shift 3
+	local mainline="${1-}" allow_empty="${2-false}" base="${3-HEAD}"
+	shift 3
 
-    local hash parents equal errors=0 kept=0 seen=" " out=""
-    for hash in "$@"; do
-        case "$seen" in
-        *" $hash "*) continue ;;
-        esac
-        seen="$seen$hash "
+	local hash parents equal errors=0 kept=0 seen=" " out=""
+	for hash in "$@"; do
+		case "$seen" in
+		*" $hash "*) continue ;;
+		esac
+		seen="$seen$hash "
 
-        parents="$(git rev-list --parents -n 1 "$hash" 2>/dev/null | wc -w | tr -d ' ')"
-        parents=$((parents - 1))
+		parents="$(git rev-list --parents -n 1 "$hash" 2>/dev/null | wc -w | tr -d ' ')"
+		parents=$((parents - 1))
 
-        if [ "$parents" -gt 1 ]; then
-            if [ -z "$mainline" ]; then
-                shell::logger::error "$(git log -1 --format='%h %s' "$hash") is a merge commit; use shell::git::commit::pick::merge -m <parent-number> (1 = the branch the merge was made on)"
-                errors=$((errors + 1))
-                continue
-            fi
-            if [ "$mainline" -gt "$parents" ]; then
-                shell::logger::error "$(git log -1 --format='%h' "$hash") has only ${parents} parents; -m ${mainline} is out of range"
-                errors=$((errors + 1))
-                continue
-            fi
-        elif [ -n "$mainline" ]; then
-            shell::logger::error "$(git log -1 --format='%h %s' "$hash") is not a merge commit; -m ${mainline} only applies to merges"
-            errors=$((errors + 1))
-            continue
-        fi
+		if [ "$parents" -gt 1 ]; then
+			if [ -z "$mainline" ]; then
+				shell::logger::error "$(git log -1 --format='%h %s' "$hash") is a merge commit; use shell::git::commit::pick::merge -m <parent-number> (1 = the branch the merge was made on)"
+				errors=$((errors + 1))
+				continue
+			fi
+			if [ "$mainline" -gt "$parents" ]; then
+				shell::logger::error "$(git log -1 --format='%h' "$hash") has only ${parents} parents; -m ${mainline} is out of range"
+				errors=$((errors + 1))
+				continue
+			fi
+		elif [ -n "$mainline" ]; then
+			shell::logger::error "$(git log -1 --format='%h %s' "$hash") is not a merge commit; -m ${mainline} only applies to merges"
+			errors=$((errors + 1))
+			continue
+		fi
 
-        if git merge-base --is-ancestor "$hash" "$base" 2>/dev/null; then
-            shell::logger::warn "Skipping $(git log -1 --format='%h %s' "$hash"): already contained in ${base}"
-            continue
-        fi
+		if git merge-base --is-ancestor "$hash" "$base" 2>/dev/null; then
+			shell::logger::warn "Skipping $(git log -1 --format='%h %s' "$hash"): already contained in ${base}"
+			continue
+		fi
 
-        # A commit that was cherry-picked before has another hash but the same
-        # patch; picking it again would end in an empty commit and a stuck state.
-        if [ "$parents" -eq 1 ]; then
-            equal="$(git cherry "$base" "$hash" "${hash}^" 2>/dev/null | head -n 1)"
-            case "$equal" in
-            -*)
-                shell::logger::warn "Skipping $(git log -1 --format='%h %s' "$hash"): a patch-equivalent commit is already in ${base}"
-                continue
-                ;;
-            esac
-        fi
+		# A commit that was cherry-picked before has another hash but the same
+		# patch; picking it again would end in an empty commit and a stuck state.
+		if [ "$parents" -eq 1 ]; then
+			equal="$(git cherry "$base" "$hash" "${hash}^" 2>/dev/null | head -n 1)"
+			case "$equal" in
+			-*)
+				shell::logger::warn "Skipping $(git log -1 --format='%h %s' "$hash"): a patch-equivalent commit is already in ${base}"
+				continue
+				;;
+			esac
+		fi
 
-        if [ "$parents" -le 1 ] && [ "$allow_empty" != "true" ] &&
-            [ -z "$(git diff-tree --no-commit-id --name-only -r --root "$hash" 2>/dev/null)" ]; then
-            shell::logger::warn "Skipping $(git log -1 --format='%h %s' "$hash"): it is an empty commit (use --allow-empty to keep it)"
-            continue
-        fi
+		if [ "$parents" -le 1 ] && [ "$allow_empty" != "true" ] &&
+			[ -z "$(git diff-tree --no-commit-id --name-only -r --root "$hash" 2>/dev/null)" ]; then
+			shell::logger::warn "Skipping $(git log -1 --format='%h %s' "$hash"): it is an empty commit (use --allow-empty to keep it)"
+			continue
+		fi
 
-        out="$out$hash"$'\n'
-        kept=$((kept + 1))
-    done
+		out="$out$hash"$'\n'
+		kept=$((kept + 1))
+	done
 
-    if [ "$errors" -gt 0 ]; then
-        return "$RETURN_FAILURE"
-    fi
-    if [ "$kept" -eq 0 ]; then
-        shell::logger::warn "Nothing to apply"
-        return "$RETURN_FAILURE"
-    fi
-    printf '%s' "$out"
+	if [ "$errors" -gt 0 ]; then
+		return "$RETURN_FAILURE"
+	fi
+	if [ "$kept" -eq 0 ]; then
+		shell::logger::warn "Nothing to apply"
+		return "$RETURN_FAILURE"
+	fi
+	printf '%s' "$out"
 }
 
 # @description Validates that revisions resolve to commits.
@@ -8736,75 +8736,75 @@ shell::git::commit::pick::plan() {
 #   shell::git::commit::pick::validate -q a1b2c3d || echo "not a commit"
 #
 shell::git::commit::pick::validate() {
-    if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
-        shell::logger::reset_options
-        shell::logger::info "Check that revisions resolve to commits and print their full hashes"
-        shell::logger::usage "shell::git::commit::pick::validate [-q] [-h] <revision>..."
-        shell::logger::item "revision" "A hash, branch, tag, HEAD~2, ..."
-        shell::logger::option "-q, --quiet" "Print nothing; only the exit status tells"
-        shell::logger::option "-h, --help" "Show this help message"
-        shell::logger::example "shell::git::commit::pick::validate HEAD~2"
-        shell::logger::example "shell::git::commit::pick::validate -q a1b2c3d"
-        return "$RETURN_SUCCESS"
-    fi
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Check that revisions resolve to commits and print their full hashes"
+		shell::logger::usage "shell::git::commit::pick::validate [-q] [-h] <revision>..."
+		shell::logger::item "revision" "A hash, branch, tag, HEAD~2, ..."
+		shell::logger::option "-q, --quiet" "Print nothing; only the exit status tells"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::git::commit::pick::validate HEAD~2"
+		shell::logger::example "shell::git::commit::pick::validate -q a1b2c3d"
+		return "$RETURN_SUCCESS"
+	fi
 
-    local quiet="false" end_opts="false" rev hash bad=0 out=""
-    local -a revs=()
-    while [ "$#" -gt 0 ]; do
-        if [ "$end_opts" = "false" ]; then
-            case "$1" in
-            -q | --quiet)
-                quiet="true"
-                shift
-                continue
-                ;;
-            --)
-                end_opts="true"
-                shift
-                continue
-                ;;
-            -?*)
-                shell::logger::error "Unknown option: $1"
-                return "$RETURN_INVALID"
-                ;;
-            esac
-        fi
-        revs+=("$1")
-        shift
-    done
+	local quiet="false" end_opts="false" rev hash bad=0 out=""
+	local -a revs=()
+	while [ "$#" -gt 0 ]; do
+		if [ "$end_opts" = "false" ]; then
+			case "$1" in
+			-q | --quiet)
+				quiet="true"
+				shift
+				continue
+				;;
+			--)
+				end_opts="true"
+				shift
+				continue
+				;;
+			-?*)
+				shell::logger::error "Unknown option: $1"
+				return "$RETURN_INVALID"
+				;;
+			esac
+		fi
+		revs+=("$1")
+		shift
+	done
 
-    if [ "${#revs[@]}" -eq 0 ]; then
-        shell::logger::error "At least one revision is required"
-        return "$RETURN_INVALID"
-    fi
-    if ! git rev-parse --git-dir >/dev/null 2>&1; then
-        if [ "$quiet" = "false" ]; then shell::logger::error "Not inside a Git repository"; fi
-        return "$RETURN_FAILURE"
-    fi
+	if [ "${#revs[@]}" -eq 0 ]; then
+		shell::logger::error "At least one revision is required"
+		return "$RETURN_INVALID"
+	fi
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		if [ "$quiet" = "false" ]; then shell::logger::error "Not inside a Git repository"; fi
+		return "$RETURN_FAILURE"
+	fi
 
-    for rev in "${revs[@]}"; do
-        hash=""
-        case "$rev" in
-        '' | -*) ;;
-        *) hash="$(git rev-parse --verify --quiet "${rev}^{commit}" 2>/dev/null)" ;;
-        esac
-        if [ -z "$hash" ]; then
-            bad=$((bad + 1))
-            if [ "$quiet" = "false" ]; then
-                shell::logger::error "Not a valid commit: '${rev}'"
-            fi
-            continue
-        fi
-        out="$out$hash"$'\n'
-    done
+	for rev in "${revs[@]}"; do
+		hash=""
+		case "$rev" in
+		'' | -*) ;;
+		*) hash="$(git rev-parse --verify --quiet "${rev}^{commit}" 2>/dev/null)" ;;
+		esac
+		if [ -z "$hash" ]; then
+			bad=$((bad + 1))
+			if [ "$quiet" = "false" ]; then
+				shell::logger::error "Not a valid commit: '${rev}'"
+			fi
+			continue
+		fi
+		out="$out$hash"$'\n'
+	done
 
-    if [ "$bad" -gt 0 ]; then
-        return "$RETURN_FAILURE"
-    fi
-    if [ "$quiet" = "false" ]; then
-        printf '%s' "$out"
-    fi
-    return "$RETURN_SUCCESS"
+	if [ "$bad" -gt 0 ]; then
+		return "$RETURN_FAILURE"
+	fi
+	if [ "$quiet" = "false" ]; then
+		printf '%s' "$out"
+	fi
+	return "$RETURN_SUCCESS"
 }
 
 # @internal
@@ -8817,7 +8817,7 @@ shell::git::commit::pick::validate() {
 #   [ -n "$(shell::git::commit::pick::conflict_files)" ] && echo "still conflicted"
 #
 shell::git::commit::pick::conflict_files() {
-    git -c core.quotepath=off diff --name-only --diff-filter=U 2>/dev/null
+	git -c core.quotepath=off diff --name-only --diff-filter=U 2>/dev/null
 }
 
 # @description Cherry-picks one or more commits onto the current branch.
@@ -8854,171 +8854,171 @@ shell::git::commit::pick::conflict_files() {
 #   shell::git::commit::pick::apply -n --no-commit feature~2
 #
 shell::git::commit::pick::apply() {
-    if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
-        shell::logger::reset_options
-        shell::logger::info "Cherry-pick one or more commits onto the current branch"
-        shell::logger::usage "shell::git::commit::pick::apply [-n] [-x] [-s] [--no-commit] [--ff] [--allow-empty] [-m <N>] [--] <revision>..."
-        shell::logger::item "revision" "Commits to apply, in the order given"
-        shell::logger::option "-x, --reference" "Record the source commit in each message"
-        shell::logger::option "-s, --signoff" "Add a Signed-off-by trailer"
-        shell::logger::option "--no-commit" "Apply to the index/working tree without committing"
-        shell::logger::option "--ff" "Fast-forward when possible (not with -x, -s, --no-commit)"
-        shell::logger::option "--allow-empty" "Keep commits that were empty to begin with"
-        shell::logger::option "-m, --mainline <N>" "Parent number to follow for a merge commit"
-        shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
-        shell::logger::option "-h, --help" "Show this help message"
-        shell::logger::example "shell::git::commit::pick::apply a1b2c3d"
-        shell::logger::example "shell::git::commit::pick::apply -x a1b2c3d e4f5a6b"
-        shell::logger::example "shell::git::commit::pick::apply -n --no-commit feature~2"
-        return "$RETURN_SUCCESS"
-    fi
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Cherry-pick one or more commits onto the current branch"
+		shell::logger::usage "shell::git::commit::pick::apply [-n] [-x] [-s] [--no-commit] [--ff] [--allow-empty] [-m <N>] [--] <revision>..."
+		shell::logger::item "revision" "Commits to apply, in the order given"
+		shell::logger::option "-x, --reference" "Record the source commit in each message"
+		shell::logger::option "-s, --signoff" "Add a Signed-off-by trailer"
+		shell::logger::option "--no-commit" "Apply to the index/working tree without committing"
+		shell::logger::option "--ff" "Fast-forward when possible (not with -x, -s, --no-commit)"
+		shell::logger::option "--allow-empty" "Keep commits that were empty to begin with"
+		shell::logger::option "-m, --mainline <N>" "Parent number to follow for a merge commit"
+		shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::git::commit::pick::apply a1b2c3d"
+		shell::logger::example "shell::git::commit::pick::apply -x a1b2c3d e4f5a6b"
+		shell::logger::example "shell::git::commit::pick::apply -n --no-commit feature~2"
+		return "$RETURN_SUCCESS"
+	fi
 
-    local dry_run="false" reference="false" signoff="false" no_commit="false" ff="false"
-    local allow_empty="false" mainline="" end_opts="false" opt val
-    local -a revs=()
-    while [ "$#" -gt 0 ]; do
-        if [ "$end_opts" = "false" ]; then
-            case "$1" in
-            -n | --dry-run)
-                dry_run="true"
-                shift
-                continue
-                ;;
-            -x | --reference)
-                reference="true"
-                shift
-                continue
-                ;;
-            -s | --signoff)
-                signoff="true"
-                shift
-                continue
-                ;;
-            --no-commit)
-                no_commit="true"
-                shift
-                continue
-                ;;
-            --ff)
-                ff="true"
-                shift
-                continue
-                ;;
-            --allow-empty)
-                allow_empty="true"
-                shift
-                continue
-                ;;
-            --)
-                end_opts="true"
-                shift
-                continue
-                ;;
-            -m | --mainline | --mainline=*)
-                opt="$1"
-                case "$opt" in
-                --mainline=*)
-                    val="${opt#*=}"
-                    shift
-                    ;;
-                *)
-                    if [ "$#" -lt 2 ]; then
-                        shell::logger::error "Option $opt requires a value"
-                        return "$RETURN_INVALID"
-                    fi
-                    val="$2"
-                    shift 2
-                    ;;
-                esac
-                case "$val" in
-                '' | *[!0-9]* | 0*)
-                    shell::logger::error "--mainline must be a positive whole number (got '$val')"
-                    return "$RETURN_INVALID"
-                    ;;
-                esac
-                mainline="$val"
-                continue
-                ;;
-            -?*)
-                shell::logger::error "Unknown option: $1"
-                return "$RETURN_INVALID"
-                ;;
-            esac
-        fi
-        revs+=("$1")
-        shift
-    done
+	local dry_run="false" reference="false" signoff="false" no_commit="false" ff="false"
+	local allow_empty="false" mainline="" end_opts="false" opt val
+	local -a revs=()
+	while [ "$#" -gt 0 ]; do
+		if [ "$end_opts" = "false" ]; then
+			case "$1" in
+			-n | --dry-run)
+				dry_run="true"
+				shift
+				continue
+				;;
+			-x | --reference)
+				reference="true"
+				shift
+				continue
+				;;
+			-s | --signoff)
+				signoff="true"
+				shift
+				continue
+				;;
+			--no-commit)
+				no_commit="true"
+				shift
+				continue
+				;;
+			--ff)
+				ff="true"
+				shift
+				continue
+				;;
+			--allow-empty)
+				allow_empty="true"
+				shift
+				continue
+				;;
+			--)
+				end_opts="true"
+				shift
+				continue
+				;;
+			-m | --mainline | --mainline=*)
+				opt="$1"
+				case "$opt" in
+				--mainline=*)
+					val="${opt#*=}"
+					shift
+					;;
+				*)
+					if [ "$#" -lt 2 ]; then
+						shell::logger::error "Option $opt requires a value"
+						return "$RETURN_INVALID"
+					fi
+					val="$2"
+					shift 2
+					;;
+				esac
+				case "$val" in
+				'' | *[!0-9]* | 0*)
+					shell::logger::error "--mainline must be a positive whole number (got '$val')"
+					return "$RETURN_INVALID"
+					;;
+				esac
+				mainline="$val"
+				continue
+				;;
+			-?*)
+				shell::logger::error "Unknown option: $1"
+				return "$RETURN_INVALID"
+				;;
+			esac
+		fi
+		revs+=("$1")
+		shift
+	done
 
-    if [ "${#revs[@]}" -eq 0 ]; then
-        shell::logger::error "At least one commit is required"
-        return "$RETURN_INVALID"
-    fi
-    if [ "$ff" = "true" ] && { [ "$reference" = "true" ] || [ "$signoff" = "true" ] || [ "$no_commit" = "true" ]; }; then
-        shell::logger::error "--ff cannot be combined with -x, -s or --no-commit (git refuses it)"
-        return "$RETURN_INVALID"
-    fi
+	if [ "${#revs[@]}" -eq 0 ]; then
+		shell::logger::error "At least one commit is required"
+		return "$RETURN_INVALID"
+	fi
+	if [ "$ff" = "true" ] && { [ "$reference" = "true" ] || [ "$signoff" = "true" ] || [ "$no_commit" = "true" ]; }; then
+		shell::logger::error "--ff cannot be combined with -x, -s or --no-commit (git refuses it)"
+		return "$RETURN_INVALID"
+	fi
 
-    local guard_mode="commit"
-    if [ "$no_commit" = "true" ]; then guard_mode="stage"; fi
-    shell::git::commit::pick::guard "$guard_mode" || return "$RETURN_FAILURE"
+	local guard_mode="commit"
+	if [ "$no_commit" = "true" ]; then guard_mode="stage"; fi
+	shell::git::commit::pick::guard "$guard_mode" || return "$RETURN_FAILURE"
 
-    # Resolve, then keep only what can really be applied.
-    local resolved planned hash branch count=0
-    local -a hashes=() pick_args=(cherry-pick)
-    resolved="$(shell::git::commit::pick::validate -- "${revs[@]}")" || return "$RETURN_FAILURE"
-    while IFS= read -r hash; do
-        if [ -n "$hash" ]; then hashes+=("$hash"); fi
-    done <<EOF
+	# Resolve, then keep only what can really be applied.
+	local resolved planned hash branch count=0
+	local -a hashes=() pick_args=(cherry-pick)
+	resolved="$(shell::git::commit::pick::validate -- "${revs[@]}")" || return "$RETURN_FAILURE"
+	while IFS= read -r hash; do
+		if [ -n "$hash" ]; then hashes+=("$hash"); fi
+	done <<EOF
 $resolved
 EOF
 
-    planned="$(shell::git::commit::pick::plan "$mainline" "$allow_empty" HEAD "${hashes[@]}")" || return "$RETURN_FAILURE"
-    hashes=()
-    while IFS= read -r hash; do
-        if [ -n "$hash" ]; then hashes+=("$hash"); fi
-    done <<EOF
+	planned="$(shell::git::commit::pick::plan "$mainline" "$allow_empty" HEAD "${hashes[@]}")" || return "$RETURN_FAILURE"
+	hashes=()
+	while IFS= read -r hash; do
+		if [ -n "$hash" ]; then hashes+=("$hash"); fi
+	done <<EOF
 $planned
 EOF
-    count="${#hashes[@]}"
+	count="${#hashes[@]}"
 
-    if [ "$reference" = "true" ]; then pick_args+=(-x); fi
-    if [ "$signoff" = "true" ]; then pick_args+=(-s); fi
-    if [ "$no_commit" = "true" ]; then pick_args+=(--no-commit); fi
-    if [ "$ff" = "true" ]; then pick_args+=(--ff); fi
-    if [ "$allow_empty" = "true" ]; then pick_args+=(--allow-empty); fi
-    if [ -n "$mainline" ]; then pick_args+=(-m "$mainline"); fi
-    pick_args+=("${hashes[@]}")
+	if [ "$reference" = "true" ]; then pick_args+=(-x); fi
+	if [ "$signoff" = "true" ]; then pick_args+=(-s); fi
+	if [ "$no_commit" = "true" ]; then pick_args+=(--no-commit); fi
+	if [ "$ff" = "true" ]; then pick_args+=(--ff); fi
+	if [ "$allow_empty" = "true" ]; then pick_args+=(--allow-empty); fi
+	if [ -n "$mainline" ]; then pick_args+=(-m "$mainline"); fi
+	pick_args+=("${hashes[@]}")
 
-    branch="$(git symbolic-ref --short -q HEAD 2>/dev/null)"
-    shell::logger::info "Applying ${count} commit(s) onto '${branch:-detached HEAD}', oldest first:"
-    for hash in "${hashes[@]}"; do
-        shell::logger::info "  • $(git log -1 --format='%h %s' "$hash")"
-    done
+	branch="$(git symbolic-ref --short -q HEAD 2>/dev/null)"
+	shell::logger::info "Applying ${count} commit(s) onto '${branch:-detached HEAD}', oldest first:"
+	for hash in "${hashes[@]}"; do
+		shell::logger::info "  • $(git log -1 --format='%h %s' "$hash")"
+	done
 
-    if [ "$dry_run" = "true" ]; then
-        shell::exec::command -n git "${pick_args[@]}"
-        return "$RETURN_SUCCESS"
-    fi
+	if [ "$dry_run" = "true" ]; then
+		shell::exec::command -n git "${pick_args[@]}"
+		return "$RETURN_SUCCESS"
+	fi
 
-    if shell::exec::command git "${pick_args[@]}"; then
-        if [ "$no_commit" = "true" ]; then
-            shell::logger::success "Applied ${count} commit(s) to the index; review them and run git commit when ready"
-        else
-            shell::logger::success "Applied ${count} commit(s) onto '${branch:-detached HEAD}'"
-        fi
-        return "$RETURN_SUCCESS"
-    fi
+	if shell::exec::command git "${pick_args[@]}"; then
+		if [ "$no_commit" = "true" ]; then
+			shell::logger::success "Applied ${count} commit(s) to the index; review them and run git commit when ready"
+		else
+			shell::logger::success "Applied ${count} commit(s) onto '${branch:-detached HEAD}'"
+		fi
+		return "$RETURN_SUCCESS"
+	fi
 
-    if shell::git::commit::pick::in_progress; then
-        if [ -z "$(shell::git::commit::pick::conflict_files)" ] && git diff --cached --quiet 2>/dev/null; then
-            shell::logger::warn "The last commit became empty here (its changes are already in the branch); drop it with shell::git::commit::pick::skip, or stop with abort / quit"
-        else
-            shell::logger::warn "Stopped; resolve it with shell::git::commit::pick::status, conflicts, resolve, then continue (or skip / abort)"
-        fi
-    else
-        shell::logger::error "git cherry-pick failed; nothing was left in progress"
-    fi
-    return "$RETURN_FAILURE"
+	if shell::git::commit::pick::in_progress; then
+		if [ -z "$(shell::git::commit::pick::conflict_files)" ] && git diff --cached --quiet 2>/dev/null; then
+			shell::logger::warn "The last commit became empty here (its changes are already in the branch); drop it with shell::git::commit::pick::skip, or stop with abort / quit"
+		else
+			shell::logger::warn "Stopped; resolve it with shell::git::commit::pick::status, conflicts, resolve, then continue (or skip / abort)"
+		fi
+	else
+		shell::logger::error "git cherry-pick failed; nothing was left in progress"
+	fi
+	return "$RETURN_FAILURE"
 }
 
 # @description Cherry-picks commits without committing them.
@@ -9037,16 +9037,16 @@ EOF
 #   shell::git::commit::pick::no_commit a1b2c3d e4f5a6b
 #
 shell::git::commit::pick::no_commit() {
-    if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
-        shell::logger::reset_options
-        shell::logger::info "Apply commits to the index and working tree without committing"
-        shell::logger::usage "shell::git::commit::pick::no_commit [-n] [-h] <revision>..."
-        shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
-        shell::logger::option "-h, --help" "Show this help message"
-        shell::logger::example "shell::git::commit::pick::no_commit a1b2c3d e4f5a6b"
-        return "$RETURN_SUCCESS"
-    fi
-    shell::git::commit::pick::apply --no-commit "$@"
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Apply commits to the index and working tree without committing"
+		shell::logger::usage "shell::git::commit::pick::no_commit [-n] [-h] <revision>..."
+		shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::git::commit::pick::no_commit a1b2c3d e4f5a6b"
+		return "$RETURN_SUCCESS"
+	fi
+	shell::git::commit::pick::apply --no-commit "$@"
 }
 
 # @description Cherry-picks commits, fast-forwarding when git can.
@@ -9064,16 +9064,16 @@ shell::git::commit::pick::no_commit() {
 #   shell::git::commit::pick::ff a1b2c3d
 #
 shell::git::commit::pick::ff() {
-    if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
-        shell::logger::reset_options
-        shell::logger::info "Cherry-pick, fast-forwarding when HEAD is the commit's parent"
-        shell::logger::usage "shell::git::commit::pick::ff [-n] [-h] <revision>..."
-        shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
-        shell::logger::option "-h, --help" "Show this help message"
-        shell::logger::example "shell::git::commit::pick::ff a1b2c3d"
-        return "$RETURN_SUCCESS"
-    fi
-    shell::git::commit::pick::apply --ff "$@"
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Cherry-pick, fast-forwarding when HEAD is the commit's parent"
+		shell::logger::usage "shell::git::commit::pick::ff [-n] [-h] <revision>..."
+		shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::git::commit::pick::ff a1b2c3d"
+		return "$RETURN_SUCCESS"
+	fi
+	shell::git::commit::pick::apply --ff "$@"
 }
 
 # @description Cherry-picks a merge commit, following the parent you name.
@@ -9093,29 +9093,29 @@ shell::git::commit::pick::ff() {
 #   shell::git::commit::pick::merge -m 1 a1b2c3d
 #
 shell::git::commit::pick::merge() {
-    if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
-        shell::logger::reset_options
-        shell::logger::info "Cherry-pick a merge commit, following the parent given with -m"
-        shell::logger::usage "shell::git::commit::pick::merge [-n] -m <parent-number> [-h] <revision>..."
-        shell::logger::option "-m, --mainline <N>" "Parent to follow: 1 = branch merged into, 2 = branch merged in"
-        shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
-        shell::logger::option "-h, --help" "Show this help message"
-        shell::logger::example "shell::git::commit::pick::merge -m 1 a1b2c3d"
-        return "$RETURN_SUCCESS"
-    fi
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Cherry-pick a merge commit, following the parent given with -m"
+		shell::logger::usage "shell::git::commit::pick::merge [-n] -m <parent-number> [-h] <revision>..."
+		shell::logger::option "-m, --mainline <N>" "Parent to follow: 1 = branch merged into, 2 = branch merged in"
+		shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::git::commit::pick::merge -m 1 a1b2c3d"
+		return "$RETURN_SUCCESS"
+	fi
 
-    local arg has_mainline="false"
-    for arg in "$@"; do
-        case "$arg" in
-        --) break ;;
-        -m | --mainline | --mainline=*) has_mainline="true" ;;
-        esac
-    done
-    if [ "$has_mainline" = "false" ]; then
-        shell::logger::error "-m <parent-number> is required (1 = the branch the merge was made on)"
-        return "$RETURN_INVALID"
-    fi
-    shell::git::commit::pick::apply "$@"
+	local arg has_mainline="false"
+	for arg in "$@"; do
+		case "$arg" in
+		--) break ;;
+		-m | --mainline | --mainline=*) has_mainline="true" ;;
+		esac
+	done
+	if [ "$has_mainline" = "false" ]; then
+		shell::logger::error "-m <parent-number> is required (1 = the branch the merge was made on)"
+		return "$RETURN_INVALID"
+	fi
+	shell::git::commit::pick::apply "$@"
 }
 
 # @description Cherry-picks commits, keeping the ones that were empty.
@@ -9132,16 +9132,16 @@ shell::git::commit::pick::merge() {
 #   shell::git::commit::pick::empty a1b2c3d
 #
 shell::git::commit::pick::empty() {
-    if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
-        shell::logger::reset_options
-        shell::logger::info "Cherry-pick commits, keeping those that were empty"
-        shell::logger::usage "shell::git::commit::pick::empty [-n] [-h] <revision>..."
-        shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
-        shell::logger::option "-h, --help" "Show this help message"
-        shell::logger::example "shell::git::commit::pick::empty a1b2c3d"
-        return "$RETURN_SUCCESS"
-    fi
-    shell::git::commit::pick::apply --allow-empty "$@"
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Cherry-pick commits, keeping those that were empty"
+		shell::logger::usage "shell::git::commit::pick::empty [-n] [-h] <revision>..."
+		shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::git::commit::pick::empty a1b2c3d"
+		return "$RETURN_SUCCESS"
+	fi
+	shell::git::commit::pick::apply --allow-empty "$@"
 }
 
 # @description Cherry-picks commits and records where they came from.
@@ -9158,16 +9158,16 @@ shell::git::commit::pick::empty() {
 #   shell::git::commit::pick::with_reference a1b2c3d
 #
 shell::git::commit::pick::with_reference() {
-    if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
-        shell::logger::reset_options
-        shell::logger::info "Cherry-pick and add a '(cherry picked from commit ...)' line"
-        shell::logger::usage "shell::git::commit::pick::with_reference [-n] [-h] <revision>..."
-        shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
-        shell::logger::option "-h, --help" "Show this help message"
-        shell::logger::example "shell::git::commit::pick::with_reference a1b2c3d"
-        return "$RETURN_SUCCESS"
-    fi
-    shell::git::commit::pick::apply -x "$@"
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Cherry-pick and add a '(cherry picked from commit ...)' line"
+		shell::logger::usage "shell::git::commit::pick::with_reference [-n] [-h] <revision>..."
+		shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::git::commit::pick::with_reference a1b2c3d"
+		return "$RETURN_SUCCESS"
+	fi
+	shell::git::commit::pick::apply -x "$@"
 }
 
 # @description Cherry-picks commits with a Signed-off-by trailer.
@@ -9184,16 +9184,16 @@ shell::git::commit::pick::with_reference() {
 #   shell::git::commit::pick::signoff a1b2c3d
 #
 shell::git::commit::pick::signoff() {
-    if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
-        shell::logger::reset_options
-        shell::logger::info "Cherry-pick and add a Signed-off-by trailer"
-        shell::logger::usage "shell::git::commit::pick::signoff [-n] [-h] <revision>..."
-        shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
-        shell::logger::option "-h, --help" "Show this help message"
-        shell::logger::example "shell::git::commit::pick::signoff a1b2c3d"
-        return "$RETURN_SUCCESS"
-    fi
-    shell::git::commit::pick::apply -s "$@"
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Cherry-pick and add a Signed-off-by trailer"
+		shell::logger::usage "shell::git::commit::pick::signoff [-n] [-h] <revision>..."
+		shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::git::commit::pick::signoff a1b2c3d"
+		return "$RETURN_SUCCESS"
+	fi
+	shell::git::commit::pick::apply -s "$@"
 }
 
 # @description Cherry-picks a range of commits, oldest first.
@@ -9221,117 +9221,117 @@ shell::git::commit::pick::signoff() {
 #   shell::git::commit::pick::range -x --no-merges release/1.2..main
 #
 shell::git::commit::pick::range() {
-    if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
-        shell::logger::reset_options
-        shell::logger::info "Cherry-pick a range of commits, oldest first"
-        shell::logger::usage "shell::git::commit::pick::range [-n] [-x] [-s] [--no-commit] [--allow-empty] [--no-merges] <A..B>"
-        shell::logger::item "A..B" "Commits reachable from B but not from A (A^..B includes A)"
-        shell::logger::option "-x, --reference" "Record each source commit in the message"
-        shell::logger::option "-s, --signoff" "Add a Signed-off-by trailer"
-        shell::logger::option "--no-commit" "Apply without committing"
-        shell::logger::option "--allow-empty" "Keep commits that were empty to begin with"
-        shell::logger::option "--no-merges" "Leave merge commits out of the range"
-        shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
-        shell::logger::option "-h, --help" "Show this help message"
-        shell::logger::example "shell::git::commit::pick::range main..feature"
-        shell::logger::example "shell::git::commit::pick::range -x --no-merges release/1.2..main"
-        return "$RETURN_SUCCESS"
-    fi
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Cherry-pick a range of commits, oldest first"
+		shell::logger::usage "shell::git::commit::pick::range [-n] [-x] [-s] [--no-commit] [--allow-empty] [--no-merges] <A..B>"
+		shell::logger::item "A..B" "Commits reachable from B but not from A (A^..B includes A)"
+		shell::logger::option "-x, --reference" "Record each source commit in the message"
+		shell::logger::option "-s, --signoff" "Add a Signed-off-by trailer"
+		shell::logger::option "--no-commit" "Apply without committing"
+		shell::logger::option "--allow-empty" "Keep commits that were empty to begin with"
+		shell::logger::option "--no-merges" "Leave merge commits out of the range"
+		shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::git::commit::pick::range main..feature"
+		shell::logger::example "shell::git::commit::pick::range -x --no-merges release/1.2..main"
+		return "$RETURN_SUCCESS"
+	fi
 
-    local no_merges="false" end_opts="false" range="" have_range="false"
-    local -a pass=()
-    while [ "$#" -gt 0 ]; do
-        if [ "$end_opts" = "false" ]; then
-            case "$1" in
-            --no-merges)
-                no_merges="true"
-                shift
-                continue
-                ;;
-            -n | --dry-run | -x | --reference | -s | --signoff | --no-commit | --allow-empty)
-                pass+=("$1")
-                shift
-                continue
-                ;;
-            --)
-                end_opts="true"
-                shift
-                continue
-                ;;
-            -?*)
-                shell::logger::error "Unknown option: $1"
-                return "$RETURN_INVALID"
-                ;;
-            esac
-        fi
-        if [ "$have_range" = "true" ]; then
-            shell::logger::error "Only one range is accepted (got '$range' and '$1')"
-            return "$RETURN_INVALID"
-        fi
-        range="$1"
-        have_range="true"
-        shift
-    done
+	local no_merges="false" end_opts="false" range="" have_range="false"
+	local -a pass=()
+	while [ "$#" -gt 0 ]; do
+		if [ "$end_opts" = "false" ]; then
+			case "$1" in
+			--no-merges)
+				no_merges="true"
+				shift
+				continue
+				;;
+			-n | --dry-run | -x | --reference | -s | --signoff | --no-commit | --allow-empty)
+				pass+=("$1")
+				shift
+				continue
+				;;
+			--)
+				end_opts="true"
+				shift
+				continue
+				;;
+			-?*)
+				shell::logger::error "Unknown option: $1"
+				return "$RETURN_INVALID"
+				;;
+			esac
+		fi
+		if [ "$have_range" = "true" ]; then
+			shell::logger::error "Only one range is accepted (got '$range' and '$1')"
+			return "$RETURN_INVALID"
+		fi
+		range="$1"
+		have_range="true"
+		shift
+	done
 
-    if [ "$have_range" = "false" ]; then
-        shell::logger::error "A range is required, e.g. main..feature"
-        return "$RETURN_INVALID"
-    fi
-    case "$range" in
-    *...*)
-        shell::logger::error "A three-dot range (A...B) has no order to replay; use A..B"
-        return "$RETURN_INVALID"
-        ;;
-    *..*) ;;
-    *)
-        shell::logger::error "Not a range: '${range}' (expected A..B)"
-        return "$RETURN_INVALID"
-        ;;
-    esac
-    case "$range" in
-    -*)
-        shell::logger::error "Invalid range: '${range}'"
-        return "$RETURN_INVALID"
-        ;;
-    esac
-    if ! git rev-parse --git-dir >/dev/null 2>&1; then
-        shell::logger::error "Not inside a Git repository"
-        return "$RETURN_FAILURE"
-    fi
+	if [ "$have_range" = "false" ]; then
+		shell::logger::error "A range is required, e.g. main..feature"
+		return "$RETURN_INVALID"
+	fi
+	case "$range" in
+	*...*)
+		shell::logger::error "A three-dot range (A...B) has no order to replay; use A..B"
+		return "$RETURN_INVALID"
+		;;
+	*..*) ;;
+	*)
+		shell::logger::error "Not a range: '${range}' (expected A..B)"
+		return "$RETURN_INVALID"
+		;;
+	esac
+	case "$range" in
+	-*)
+		shell::logger::error "Invalid range: '${range}'"
+		return "$RETURN_INVALID"
+		;;
+	esac
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return "$RETURN_FAILURE"
+	fi
 
-    local side
-    for side in "${range%%..*}" "${range#*..}"; do
-        if [ -n "$side" ] && ! git rev-parse --verify --quiet "${side}^{commit}" >/dev/null 2>&1; then
-            shell::logger::error "Not a valid commit in the range: '${side}'"
-            return "$RETURN_FAILURE"
-        fi
-    done
+	local side
+	for side in "${range%%..*}" "${range#*..}"; do
+		if [ -n "$side" ] && ! git rev-parse --verify --quiet "${side}^{commit}" >/dev/null 2>&1; then
+			shell::logger::error "Not a valid commit in the range: '${side}'"
+			return "$RETURN_FAILURE"
+		fi
+	done
 
-    local merges list hash
-    local -a hashes=() list_args=(rev-list --reverse --topo-order)
-    merges="$(git rev-list --merges --count "$range" 2>/dev/null)"
-    if [ "${merges:-0}" -gt 0 ]; then
-        if [ "$no_merges" = "true" ]; then
-            list_args+=(--no-merges)
-        else
-            shell::logger::error "The range contains ${merges} merge commit(s); add --no-merges to leave them out, or pick them one by one with shell::git::commit::pick::merge"
-            return "$RETURN_FAILURE"
-        fi
-    fi
+	local merges list hash
+	local -a hashes=() list_args=(rev-list --reverse --topo-order)
+	merges="$(git rev-list --merges --count "$range" 2>/dev/null)"
+	if [ "${merges:-0}" -gt 0 ]; then
+		if [ "$no_merges" = "true" ]; then
+			list_args+=(--no-merges)
+		else
+			shell::logger::error "The range contains ${merges} merge commit(s); add --no-merges to leave them out, or pick them one by one with shell::git::commit::pick::merge"
+			return "$RETURN_FAILURE"
+		fi
+	fi
 
-    list="$(git "${list_args[@]}" "$range" 2>/dev/null)"
-    while IFS= read -r hash; do
-        if [ -n "$hash" ]; then hashes+=("$hash"); fi
-    done <<EOF
+	list="$(git "${list_args[@]}" "$range" 2>/dev/null)"
+	while IFS= read -r hash; do
+		if [ -n "$hash" ]; then hashes+=("$hash"); fi
+	done <<EOF
 $list
 EOF
-    if [ "${#hashes[@]}" -eq 0 ]; then
-        shell::logger::warn "No commits in ${range}"
-        return "$RETURN_FAILURE"
-    fi
+	if [ "${#hashes[@]}" -eq 0 ]; then
+		shell::logger::warn "No commits in ${range}"
+		return "$RETURN_FAILURE"
+	fi
 
-    shell::logger::info "Range ${range}: ${#hashes[@]} commit(s)"
-    shell::git::commit::pick::apply ${pass[@]+"${pass[@]}"} -- "${hashes[@]}"
+	shell::logger::info "Range ${range}: ${#hashes[@]} commit(s)"
+	shell::git::commit::pick::apply ${pass[@]+"${pass[@]}"} -- "${hashes[@]}"
 }
 
 # @description Shows what a commit contains before it is applied.
@@ -9352,71 +9352,71 @@ EOF
 #   shell::git::commit::pick::preview --stat feature~2 feature~1
 #
 shell::git::commit::pick::preview() {
-    if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
-        shell::logger::reset_options
-        shell::logger::info "Show a commit's metadata, file summary and patch before applying it"
-        shell::logger::usage "shell::git::commit::pick::preview [-S] [-h] <revision>..."
-        shell::logger::option "-S, --stat" "Metadata and file summary only (no patch)"
-        shell::logger::option "-h, --help" "Show this help message"
-        shell::logger::example "shell::git::commit::pick::preview a1b2c3d"
-        shell::logger::example "shell::git::commit::pick::preview --stat feature~2"
-        return "$RETURN_SUCCESS"
-    fi
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Show a commit's metadata, file summary and patch before applying it"
+		shell::logger::usage "shell::git::commit::pick::preview [-S] [-h] <revision>..."
+		shell::logger::option "-S, --stat" "Metadata and file summary only (no patch)"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::git::commit::pick::preview a1b2c3d"
+		shell::logger::example "shell::git::commit::pick::preview --stat feature~2"
+		return "$RETURN_SUCCESS"
+	fi
 
-    local stat_only="false" end_opts="false" resolved hash parents
-    local -a revs=() show_args=()
-    while [ "$#" -gt 0 ]; do
-        if [ "$end_opts" = "false" ]; then
-            case "$1" in
-            -S | --stat)
-                stat_only="true"
-                shift
-                continue
-                ;;
-            --)
-                end_opts="true"
-                shift
-                continue
-                ;;
-            -?*)
-                shell::logger::error "Unknown option: $1"
-                return "$RETURN_INVALID"
-                ;;
-            esac
-        fi
-        revs+=("$1")
-        shift
-    done
+	local stat_only="false" end_opts="false" resolved hash parents
+	local -a revs=() show_args=()
+	while [ "$#" -gt 0 ]; do
+		if [ "$end_opts" = "false" ]; then
+			case "$1" in
+			-S | --stat)
+				stat_only="true"
+				shift
+				continue
+				;;
+			--)
+				end_opts="true"
+				shift
+				continue
+				;;
+			-?*)
+				shell::logger::error "Unknown option: $1"
+				return "$RETURN_INVALID"
+				;;
+			esac
+		fi
+		revs+=("$1")
+		shift
+	done
 
-    if [ "${#revs[@]}" -eq 0 ]; then
-        shell::logger::error "At least one commit is required"
-        return "$RETURN_INVALID"
-    fi
-    resolved="$(shell::git::commit::pick::validate -- "${revs[@]}")" || return "$RETURN_FAILURE"
+	if [ "${#revs[@]}" -eq 0 ]; then
+		shell::logger::error "At least one commit is required"
+		return "$RETURN_INVALID"
+	fi
+	resolved="$(shell::git::commit::pick::validate -- "${revs[@]}")" || return "$RETURN_FAILURE"
 
-    # --stat alone prints the summary without the patch; --patch adds the patch.
-    show_args=(show --format=fuller --stat)
-    if [ "$stat_only" = "false" ]; then
-        show_args+=(--patch)
-    fi
+	# --stat alone prints the summary without the patch; --patch adds the patch.
+	show_args=(show --format=fuller --stat)
+	if [ "$stat_only" = "false" ]; then
+		show_args+=(--patch)
+	fi
 
-    while IFS= read -r hash; do
-        if [ -z "$hash" ]; then continue; fi
-        parents="$(git rev-list --parents -n 1 "$hash" 2>/dev/null | wc -w | tr -d ' ')"
-        if [ "$((parents - 1))" -gt 1 ]; then
-            shell::logger::warn "$(git log -1 --format='%h' "$hash") is a merge commit; applying it needs -m (shell::git::commit::pick::merge)"
-        fi
-        if git merge-base --is-ancestor "$hash" HEAD 2>/dev/null; then
-            shell::logger::warn "$(git log -1 --format='%h' "$hash") is already contained in HEAD"
-        fi
-        if [ "$((parents - 1))" -le 1 ] && [ -z "$(git diff-tree --no-commit-id --name-only -r --root "$hash" 2>/dev/null)" ]; then
-            shell::logger::warn "$(git log -1 --format='%h' "$hash") is an empty commit; applying it needs --allow-empty"
-        fi
-        git "${show_args[@]}" "$hash"
-    done <<EOF
+	while IFS= read -r hash; do
+		if [ -z "$hash" ]; then continue; fi
+		parents="$(git rev-list --parents -n 1 "$hash" 2>/dev/null | wc -w | tr -d ' ')"
+		if [ "$((parents - 1))" -gt 1 ]; then
+			shell::logger::warn "$(git log -1 --format='%h' "$hash") is a merge commit; applying it needs -m (shell::git::commit::pick::merge)"
+		fi
+		if git merge-base --is-ancestor "$hash" HEAD 2>/dev/null; then
+			shell::logger::warn "$(git log -1 --format='%h' "$hash") is already contained in HEAD"
+		fi
+		if [ "$((parents - 1))" -le 1 ] && [ -z "$(git diff-tree --no-commit-id --name-only -r --root "$hash" 2>/dev/null)" ]; then
+			shell::logger::warn "$(git log -1 --format='%h' "$hash") is an empty commit; applying it needs --allow-empty"
+		fi
+		git "${show_args[@]}" "$hash"
+	done <<EOF
 $resolved
 EOF
-    return "$RETURN_SUCCESS"
+	return "$RETURN_SUCCESS"
 }
 
 # @description Checks whether commits already exist on another branch, by patch.
@@ -9442,109 +9442,109 @@ EOF
 #   shell::git::commit::pick::equivalent -t release/1.2 a1b2c3d e4f5a6b
 #
 shell::git::commit::pick::equivalent() {
-    if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
-        shell::logger::reset_options
-        shell::logger::info "Check whether commits already exist on another branch (patch-equivalent)"
-        shell::logger::usage "shell::git::commit::pick::equivalent [-t <target>] [-q] [-h] <revision>..."
-        shell::logger::option "-t, --target <rev>" "Branch or revision to look in (default: HEAD)"
-        shell::logger::option "-q, --quiet" "Print nothing; only the exit status tells"
-        shell::logger::option "-h, --help" "Show this help message"
-        shell::logger::note "Status: contained | equivalent | missing | unsupported (merge or root commit). Exit 0 only when none is missing."
-        shell::logger::example "shell::git::commit::pick::equivalent a1b2c3d"
-        shell::logger::example "shell::git::commit::pick::equivalent -t release/1.2 a1b2c3d e4f5a6b"
-        return "$RETURN_SUCCESS"
-    fi
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Check whether commits already exist on another branch (patch-equivalent)"
+		shell::logger::usage "shell::git::commit::pick::equivalent [-t <target>] [-q] [-h] <revision>..."
+		shell::logger::option "-t, --target <rev>" "Branch or revision to look in (default: HEAD)"
+		shell::logger::option "-q, --quiet" "Print nothing; only the exit status tells"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::note "Status: contained | equivalent | missing | unsupported (merge or root commit). Exit 0 only when none is missing."
+		shell::logger::example "shell::git::commit::pick::equivalent a1b2c3d"
+		shell::logger::example "shell::git::commit::pick::equivalent -t release/1.2 a1b2c3d e4f5a6b"
+		return "$RETURN_SUCCESS"
+	fi
 
-    local target="HEAD" quiet="false" end_opts="false" opt val resolved target_hash
-    local hash parents status_word line missing=0 subject
-    local -a revs=()
-    while [ "$#" -gt 0 ]; do
-        if [ "$end_opts" = "false" ]; then
-            case "$1" in
-            -q | --quiet)
-                quiet="true"
-                shift
-                continue
-                ;;
-            -t | --target | --target=*)
-                opt="$1"
-                case "$opt" in
-                --target=*)
-                    val="${opt#*=}"
-                    shift
-                    ;;
-                *)
-                    if [ "$#" -lt 2 ]; then
-                        shell::logger::error "Option $opt requires a value"
-                        return "$RETURN_INVALID"
-                    fi
-                    val="$2"
-                    shift 2
-                    ;;
-                esac
-                target="$val"
-                continue
-                ;;
-            --)
-                end_opts="true"
-                shift
-                continue
-                ;;
-            -?*)
-                shell::logger::error "Unknown option: $1"
-                return "$RETURN_INVALID"
-                ;;
-            esac
-        fi
-        revs+=("$1")
-        shift
-    done
+	local target="HEAD" quiet="false" end_opts="false" opt val resolved target_hash
+	local hash parents status_word line missing=0 subject
+	local -a revs=()
+	while [ "$#" -gt 0 ]; do
+		if [ "$end_opts" = "false" ]; then
+			case "$1" in
+			-q | --quiet)
+				quiet="true"
+				shift
+				continue
+				;;
+			-t | --target | --target=*)
+				opt="$1"
+				case "$opt" in
+				--target=*)
+					val="${opt#*=}"
+					shift
+					;;
+				*)
+					if [ "$#" -lt 2 ]; then
+						shell::logger::error "Option $opt requires a value"
+						return "$RETURN_INVALID"
+					fi
+					val="$2"
+					shift 2
+					;;
+				esac
+				target="$val"
+				continue
+				;;
+			--)
+				end_opts="true"
+				shift
+				continue
+				;;
+			-?*)
+				shell::logger::error "Unknown option: $1"
+				return "$RETURN_INVALID"
+				;;
+			esac
+		fi
+		revs+=("$1")
+		shift
+	done
 
-    if [ "${#revs[@]}" -eq 0 ]; then
-        shell::logger::error "At least one commit is required"
-        return "$RETURN_INVALID"
-    fi
-    if [ -z "$target" ]; then
-        shell::logger::error "--target needs a value"
-        return "$RETURN_INVALID"
-    fi
+	if [ "${#revs[@]}" -eq 0 ]; then
+		shell::logger::error "At least one commit is required"
+		return "$RETURN_INVALID"
+	fi
+	if [ -z "$target" ]; then
+		shell::logger::error "--target needs a value"
+		return "$RETURN_INVALID"
+	fi
 
-    target_hash="$(shell::git::commit::pick::validate -- "$target")" || return "$RETURN_FAILURE"
-    resolved="$(shell::git::commit::pick::validate -- "${revs[@]}")" || return "$RETURN_FAILURE"
+	target_hash="$(shell::git::commit::pick::validate -- "$target")" || return "$RETURN_FAILURE"
+	resolved="$(shell::git::commit::pick::validate -- "${revs[@]}")" || return "$RETURN_FAILURE"
 
-    while IFS= read -r hash; do
-        if [ -z "$hash" ]; then continue; fi
-        subject="$(git log -1 --format='%s' "$hash" 2>/dev/null)"
-        parents="$(git rev-list --parents -n 1 "$hash" 2>/dev/null | wc -w | tr -d ' ')"
-        parents=$((parents - 1))
+	while IFS= read -r hash; do
+		if [ -z "$hash" ]; then continue; fi
+		subject="$(git log -1 --format='%s' "$hash" 2>/dev/null)"
+		parents="$(git rev-list --parents -n 1 "$hash" 2>/dev/null | wc -w | tr -d ' ')"
+		parents=$((parents - 1))
 
-        if git merge-base --is-ancestor "$hash" "$target_hash" 2>/dev/null; then
-            status_word="contained"
-        elif [ "$parents" -ne 1 ]; then
-            status_word="unsupported"
-        else
-            line="$(git cherry "$target_hash" "$hash" "${hash}^" 2>/dev/null | head -n 1)"
-            case "$line" in
-            -*) status_word="equivalent" ;;
-            *) status_word="missing" ;;
-            esac
-        fi
+		if git merge-base --is-ancestor "$hash" "$target_hash" 2>/dev/null; then
+			status_word="contained"
+		elif [ "$parents" -ne 1 ]; then
+			status_word="unsupported"
+		else
+			line="$(git cherry "$target_hash" "$hash" "${hash}^" 2>/dev/null | head -n 1)"
+			case "$line" in
+			-*) status_word="equivalent" ;;
+			*) status_word="missing" ;;
+			esac
+		fi
 
-        case "$status_word" in
-        contained | equivalent) ;;
-        *) missing=$((missing + 1)) ;;
-        esac
-        if [ "$quiet" = "false" ]; then
-            printf '%s\t%s\t%s\n' "$status_word" "$hash" "$subject"
-        fi
-    done <<EOF
+		case "$status_word" in
+		contained | equivalent) ;;
+		*) missing=$((missing + 1)) ;;
+		esac
+		if [ "$quiet" = "false" ]; then
+			printf '%s\t%s\t%s\n' "$status_word" "$hash" "$subject"
+		fi
+	done <<EOF
 $resolved
 EOF
 
-    if [ "$missing" -gt 0 ]; then
-        return "$RETURN_FAILURE"
-    fi
-    return "$RETURN_SUCCESS"
+	if [ "$missing" -gt 0 ]; then
+		return "$RETURN_FAILURE"
+	fi
+	return "$RETURN_SUCCESS"
 }
 
 # @internal
@@ -9558,25 +9558,25 @@ EOF
 #   shell::git::commit::pick::todo | head -n 1
 #
 shell::git::commit::pick::todo() {
-    local todo_file line rest hash subject
-    todo_file="$(git rev-parse --git-path sequencer/todo 2>/dev/null)"
-    if [ -z "$todo_file" ] || [ ! -s "$todo_file" ]; then
-        return "$RETURN_SUCCESS"
-    fi
+	local todo_file line rest hash subject
+	todo_file="$(git rev-parse --git-path sequencer/todo 2>/dev/null)"
+	if [ -z "$todo_file" ] || [ ! -s "$todo_file" ]; then
+		return "$RETURN_SUCCESS"
+	fi
 
-    while IFS= read -r line || [ -n "$line" ]; do
-        case "$line" in
-        '' | '#'*) continue ;;
-        esac
-        rest="${line#* }"
-        hash="${rest%% *}"
-        subject=""
-        case "$rest" in
-        *' '*) subject="${rest#* }" ;;
-        esac
-        subject="${subject#\# }"
-        printf '%s\t%s\n' "$hash" "$subject"
-    done <"$todo_file"
+	while IFS= read -r line || [ -n "$line" ]; do
+		case "$line" in
+		'' | '#'*) continue ;;
+		esac
+		rest="${line#* }"
+		hash="${rest%% *}"
+		subject=""
+		case "$rest" in
+		*' '*) subject="${rest#* }" ;;
+		esac
+		subject="${subject#\# }"
+		printf '%s\t%s\n' "$hash" "$subject"
+	done <"$todo_file"
 }
 
 # @internal
@@ -9588,16 +9588,16 @@ shell::git::commit::pick::todo() {
 #   hash="$(shell::git::commit::pick::head_hash)" || return $?
 #
 shell::git::commit::pick::head_hash() {
-    local head_file hash
-    head_file="$(git rev-parse --git-path CHERRY_PICK_HEAD 2>/dev/null)"
-    if [ -z "$head_file" ] || [ ! -e "$head_file" ]; then
-        return "$RETURN_FAILURE"
-    fi
-    hash="$(git rev-parse --verify --quiet CHERRY_PICK_HEAD 2>/dev/null)"
-    if [ -z "$hash" ]; then
-        return "$RETURN_FAILURE"
-    fi
-    printf '%s\n' "$hash"
+	local head_file hash
+	head_file="$(git rev-parse --git-path CHERRY_PICK_HEAD 2>/dev/null)"
+	if [ -z "$head_file" ] || [ ! -e "$head_file" ]; then
+		return "$RETURN_FAILURE"
+	fi
+	hash="$(git rev-parse --verify --quiet CHERRY_PICK_HEAD 2>/dev/null)"
+	if [ -z "$hash" ]; then
+		return "$RETURN_FAILURE"
+	fi
+	printf '%s\n' "$hash"
 }
 
 # @description Shows the state of a cherry-pick in progress.
@@ -9619,92 +9619,92 @@ shell::git::commit::pick::head_hash() {
 #   shell::git::commit::pick::status -q && echo "busy"
 #
 shell::git::commit::pick::status() {
-    if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
-        shell::logger::reset_options
-        shell::logger::info "Show the state of a cherry-pick in progress"
-        shell::logger::usage "shell::git::commit::pick::status [-q] [-h]"
-        shell::logger::option "-q, --quiet" "Print nothing; exit 0 when a cherry-pick is in progress, 1 otherwise"
-        shell::logger::option "-h, --help" "Show this help message"
-        shell::logger::example "shell::git::commit::pick::status"
-        shell::logger::example "shell::git::commit::pick::status -q && echo busy"
-        return "$RETURN_SUCCESS"
-    fi
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Show the state of a cherry-pick in progress"
+		shell::logger::usage "shell::git::commit::pick::status [-q] [-h]"
+		shell::logger::option "-q, --quiet" "Print nothing; exit 0 when a cherry-pick is in progress, 1 otherwise"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::git::commit::pick::status"
+		shell::logger::example "shell::git::commit::pick::status -q && echo busy"
+		return "$RETURN_SUCCESS"
+	fi
 
-    local quiet="false"
-    while [ "$#" -gt 0 ]; do
-        case "$1" in
-        -q | --quiet)
-            quiet="true"
-            shift
-            ;;
-        *)
-            shell::logger::error "Unknown option or argument: $1"
-            return "$RETURN_INVALID"
-            ;;
-        esac
-    done
+	local quiet="false"
+	while [ "$#" -gt 0 ]; do
+		case "$1" in
+		-q | --quiet)
+			quiet="true"
+			shift
+			;;
+		*)
+			shell::logger::error "Unknown option or argument: $1"
+			return "$RETURN_INVALID"
+			;;
+		esac
+	done
 
-    if ! git rev-parse --git-dir >/dev/null 2>&1; then
-        if [ "$quiet" = "false" ]; then shell::logger::error "Not inside a Git repository"; fi
-        return "$RETURN_FAILURE"
-    fi
-    if ! shell::git::commit::pick::in_progress; then
-        if [ "$quiet" = "false" ]; then shell::logger::info "No cherry-pick in progress"; fi
-        return "$RETURN_FAILURE"
-    fi
-    if [ "$quiet" = "true" ]; then
-        return "$RETURN_SUCCESS"
-    fi
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		if [ "$quiet" = "false" ]; then shell::logger::error "Not inside a Git repository"; fi
+		return "$RETURN_FAILURE"
+	fi
+	if ! shell::git::commit::pick::in_progress; then
+		if [ "$quiet" = "false" ]; then shell::logger::info "No cherry-pick in progress"; fi
+		return "$RETURN_FAILURE"
+	fi
+	if [ "$quiet" = "true" ]; then
+		return "$RETURN_SUCCESS"
+	fi
 
-    local current="" current_line="" branch conflicts staged hash subject remaining=0 conflict_count=0 file
-    local first="true"
+	local current="" current_line="" branch conflicts staged hash subject remaining=0 conflict_count=0 file
+	local first="true"
 
-    branch="$(git symbolic-ref --short -q HEAD 2>/dev/null)"
-    current="$(shell::git::commit::pick::head_hash)" || current=""
-    if [ -n "$current" ]; then
-        current_line="$(git log -1 --format='%h %s' "$current" 2>/dev/null)"
-    fi
+	branch="$(git symbolic-ref --short -q HEAD 2>/dev/null)"
+	current="$(shell::git::commit::pick::head_hash)" || current=""
+	if [ -n "$current" ]; then
+		current_line="$(git log -1 --format='%h %s' "$current" 2>/dev/null)"
+	fi
 
-    # The first to-do entry is the commit being handled (git drops it on --continue,
-    # whether it stopped on it or you already committed it by hand); the rest wait.
-    while IFS="$(printf '\t')" read -r hash subject; do
-        if [ -z "$hash" ]; then continue; fi
-        if [ "$first" = "true" ]; then
-            first="false"
-            continue
-        fi
-        remaining=$((remaining + 1))
-    done <<EOF
+	# The first to-do entry is the commit being handled (git drops it on --continue,
+	# whether it stopped on it or you already committed it by hand); the rest wait.
+	while IFS="$(printf '\t')" read -r hash subject; do
+		if [ -z "$hash" ]; then continue; fi
+		if [ "$first" = "true" ]; then
+			first="false"
+			continue
+		fi
+		remaining=$((remaining + 1))
+	done <<EOF
 $(shell::git::commit::pick::todo)
 EOF
 
-    conflicts="$(shell::git::commit::pick::conflict_files)"
-    if [ -n "$conflicts" ]; then
-        conflict_count="$(printf '%s\n' "$conflicts" | wc -l | tr -d ' ')"
-    fi
-    # Unmerged paths show up in --cached too; they are counted as conflicts, not as staged.
-    staged="$(git diff --cached --name-only --diff-filter=ACDMRT 2>/dev/null | wc -l | tr -d ' ')"
+	conflicts="$(shell::git::commit::pick::conflict_files)"
+	if [ -n "$conflicts" ]; then
+		conflict_count="$(printf '%s\n' "$conflicts" | wc -l | tr -d ' ')"
+	fi
+	# Unmerged paths show up in --cached too; they are counted as conflicts, not as staged.
+	staged="$(git diff --cached --name-only --diff-filter=ACDMRT 2>/dev/null | wc -l | tr -d ' ')"
 
-    shell::logger::info "Cherry-pick in progress on '${branch:-detached HEAD}'"
-    if [ -n "$current_line" ]; then
-        shell::logger::info "  Stopped on : ${current_line}"
-    else
-        shell::logger::info "  Stopped between commits (you committed by hand; git carries on with the next one)"
-    fi
-    shell::logger::info "  Remaining  : ${remaining} commit(s) after it"
-    shell::logger::info "  Staged     : ${staged} file(s)"
-    shell::logger::info "  Conflicts  : ${conflict_count} file(s)"
-    if [ -n "$conflicts" ]; then
-        while IFS= read -r file; do
-            shell::logger::info "    ✗ ${file}"
-        done <<EOF
+	shell::logger::info "Cherry-pick in progress on '${branch:-detached HEAD}'"
+	if [ -n "$current_line" ]; then
+		shell::logger::info "  Stopped on : ${current_line}"
+	else
+		shell::logger::info "  Stopped between commits (you committed by hand; git carries on with the next one)"
+	fi
+	shell::logger::info "  Remaining  : ${remaining} commit(s) after it"
+	shell::logger::info "  Staged     : ${staged} file(s)"
+	shell::logger::info "  Conflicts  : ${conflict_count} file(s)"
+	if [ -n "$conflicts" ]; then
+		while IFS= read -r file; do
+			shell::logger::info "    ✗ ${file}"
+		done <<EOF
 $conflicts
 EOF
-        shell::logger::info "Next: fix the files, then shell::git::commit::pick::resolve and shell::git::commit::pick::continue (or skip / abort)"
-    else
-        shell::logger::info "Next: shell::git::commit::pick::continue (or skip / abort)"
-    fi
-    return "$RETURN_SUCCESS"
+		shell::logger::info "Next: fix the files, then shell::git::commit::pick::resolve and shell::git::commit::pick::continue (or skip / abort)"
+	else
+		shell::logger::info "Next: shell::git::commit::pick::continue (or skip / abort)"
+	fi
+	return "$RETURN_SUCCESS"
 }
 
 # @description Shows the commit git is currently trying to apply.
@@ -9722,45 +9722,45 @@ EOF
 #   hash="$(shell::git::commit::pick::current --hash)"
 #
 shell::git::commit::pick::current() {
-    if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
-        shell::logger::reset_options
-        shell::logger::info "Show the commit currently being cherry-picked (CHERRY_PICK_HEAD)"
-        shell::logger::usage "shell::git::commit::pick::current [--hash] [-h]"
-        shell::logger::option "--hash" "Print only the full hash"
-        shell::logger::option "-h, --help" "Show this help message"
-        shell::logger::example "shell::git::commit::pick::current"
-        shell::logger::example "shell::git::commit::pick::current --hash"
-        return "$RETURN_SUCCESS"
-    fi
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Show the commit currently being cherry-picked (CHERRY_PICK_HEAD)"
+		shell::logger::usage "shell::git::commit::pick::current [--hash] [-h]"
+		shell::logger::option "--hash" "Print only the full hash"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::git::commit::pick::current"
+		shell::logger::example "shell::git::commit::pick::current --hash"
+		return "$RETURN_SUCCESS"
+	fi
 
-    local hash_only="false" hash
-    while [ "$#" -gt 0 ]; do
-        case "$1" in
-        --hash)
-            hash_only="true"
-            shift
-            ;;
-        *)
-            shell::logger::error "Unknown option or argument: $1"
-            return "$RETURN_INVALID"
-            ;;
-        esac
-    done
+	local hash_only="false" hash
+	while [ "$#" -gt 0 ]; do
+		case "$1" in
+		--hash)
+			hash_only="true"
+			shift
+			;;
+		*)
+			shell::logger::error "Unknown option or argument: $1"
+			return "$RETURN_INVALID"
+			;;
+		esac
+	done
 
-    if ! git rev-parse --git-dir >/dev/null 2>&1; then
-        shell::logger::error "Not inside a Git repository"
-        return "$RETURN_FAILURE"
-    fi
-    if ! hash="$(shell::git::commit::pick::head_hash)"; then
-        shell::logger::warn "No commit is being cherry-picked (CHERRY_PICK_HEAD not found)"
-        return "$RETURN_FAILURE"
-    fi
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return "$RETURN_FAILURE"
+	fi
+	if ! hash="$(shell::git::commit::pick::head_hash)"; then
+		shell::logger::warn "No commit is being cherry-picked (CHERRY_PICK_HEAD not found)"
+		return "$RETURN_FAILURE"
+	fi
 
-    if [ "$hash_only" = "true" ]; then
-        printf '%s\n' "$hash"
-        return "$RETURN_SUCCESS"
-    fi
-    git show --format=fuller --stat "$hash"
+	if [ "$hash_only" = "true" ]; then
+		printf '%s\n' "$hash"
+		return "$RETURN_SUCCESS"
+	fi
+	git show --format=fuller --stat "$hash"
 }
 
 # @description Lists the files that are still in conflict.
@@ -9778,30 +9778,30 @@ shell::git::commit::pick::current() {
 #   shell::git::commit::pick::conflicts | xargs "${EDITOR:-vi}"
 #
 shell::git::commit::pick::conflicts() {
-    if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
-        shell::logger::reset_options
-        shell::logger::info "List the files that are still in conflict"
-        shell::logger::usage "shell::git::commit::pick::conflicts [-h]"
-        shell::logger::option "-h, --help" "Show this help message"
-        shell::logger::example "shell::git::commit::pick::conflicts"
-        return "$RETURN_SUCCESS"
-    fi
-    if [ "$#" -gt 0 ]; then
-        shell::logger::error "Unknown option or argument: $1"
-        return "$RETURN_INVALID"
-    fi
-    if ! git rev-parse --git-dir >/dev/null 2>&1; then
-        shell::logger::error "Not inside a Git repository"
-        return "$RETURN_FAILURE"
-    fi
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "List the files that are still in conflict"
+		shell::logger::usage "shell::git::commit::pick::conflicts [-h]"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::git::commit::pick::conflicts"
+		return "$RETURN_SUCCESS"
+	fi
+	if [ "$#" -gt 0 ]; then
+		shell::logger::error "Unknown option or argument: $1"
+		return "$RETURN_INVALID"
+	fi
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return "$RETURN_FAILURE"
+	fi
 
-    local files
-    files="$(shell::git::commit::pick::conflict_files)"
-    if [ -z "$files" ]; then
-        shell::logger::info "No conflicted files" >&2
-        return "$RETURN_FAILURE"
-    fi
-    printf '%s\n' "$files"
+	local files
+	files="$(shell::git::commit::pick::conflict_files)"
+	if [ -z "$files" ]; then
+		shell::logger::info "No conflicted files" >&2
+		return "$RETURN_FAILURE"
+	fi
+	printf '%s\n' "$files"
 }
 
 # @description Marks conflicted files as resolved (`git add`).
@@ -9825,107 +9825,107 @@ shell::git::commit::pick::conflicts() {
 #   shell::git::commit::pick::resolve src/main.c docs/README.md
 #
 shell::git::commit::pick::resolve() {
-    if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
-        shell::logger::reset_options
-        shell::logger::info "Mark conflicted files as resolved (git add)"
-        shell::logger::usage "shell::git::commit::pick::resolve [-n] [-f] [--] [<file>...]"
-        shell::logger::item "file" "Conflicted files to stage (default: all of them)"
-        shell::logger::option "-f, --force" "Stage files even if conflict markers remain"
-        shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
-        shell::logger::option "-h, --help" "Show this help message"
-        shell::logger::example "shell::git::commit::pick::resolve"
-        shell::logger::example "shell::git::commit::pick::resolve src/main.c"
-        return "$RETURN_SUCCESS"
-    fi
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Mark conflicted files as resolved (git add)"
+		shell::logger::usage "shell::git::commit::pick::resolve [-n] [-f] [--] [<file>...]"
+		shell::logger::item "file" "Conflicted files to stage (default: all of them)"
+		shell::logger::option "-f, --force" "Stage files even if conflict markers remain"
+		shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::git::commit::pick::resolve"
+		shell::logger::example "shell::git::commit::pick::resolve src/main.c"
+		return "$RETURN_SUCCESS"
+	fi
 
-    local dry_run="false" force="false" end_opts="false" conflicts file left marked=0
-    local -a files=() with_markers=()
-    while [ "$#" -gt 0 ]; do
-        if [ "$end_opts" = "false" ]; then
-            case "$1" in
-            -n | --dry-run)
-                dry_run="true"
-                shift
-                continue
-                ;;
-            -f | --force)
-                force="true"
-                shift
-                continue
-                ;;
-            --)
-                end_opts="true"
-                shift
-                continue
-                ;;
-            -?*)
-                shell::logger::error "Unknown option: $1"
-                return "$RETURN_INVALID"
-                ;;
-            esac
-        fi
-        files+=("$1")
-        shift
-    done
+	local dry_run="false" force="false" end_opts="false" conflicts file left marked=0
+	local -a files=() with_markers=()
+	while [ "$#" -gt 0 ]; do
+		if [ "$end_opts" = "false" ]; then
+			case "$1" in
+			-n | --dry-run)
+				dry_run="true"
+				shift
+				continue
+				;;
+			-f | --force)
+				force="true"
+				shift
+				continue
+				;;
+			--)
+				end_opts="true"
+				shift
+				continue
+				;;
+			-?*)
+				shell::logger::error "Unknown option: $1"
+				return "$RETURN_INVALID"
+				;;
+			esac
+		fi
+		files+=("$1")
+		shift
+	done
 
-    if ! git rev-parse --git-dir >/dev/null 2>&1; then
-        shell::logger::error "Not inside a Git repository"
-        return "$RETURN_FAILURE"
-    fi
-    conflicts="$(shell::git::commit::pick::conflict_files)"
-    if [ -z "$conflicts" ]; then
-        shell::logger::warn "There are no conflicted files"
-        return "$RETURN_FAILURE"
-    fi
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return "$RETURN_FAILURE"
+	fi
+	conflicts="$(shell::git::commit::pick::conflict_files)"
+	if [ -z "$conflicts" ]; then
+		shell::logger::warn "There are no conflicted files"
+		return "$RETURN_FAILURE"
+	fi
 
-    if [ "${#files[@]}" -eq 0 ]; then
-        while IFS= read -r file; do
-            if [ -n "$file" ]; then files+=("$file"); fi
-        done <<EOF
+	if [ "${#files[@]}" -eq 0 ]; then
+		while IFS= read -r file; do
+			if [ -n "$file" ]; then files+=("$file"); fi
+		done <<EOF
 $conflicts
 EOF
-    else
-        for file in "${files[@]}"; do
-            if ! printf '%s\n' "$conflicts" | grep -Fxq -- "$file"; then
-                shell::logger::error "Not a conflicted file: ${file}"
-                return "$RETURN_INVALID"
-            fi
-        done
-    fi
+	else
+		for file in "${files[@]}"; do
+			if ! printf '%s\n' "$conflicts" | grep -Fxq -- "$file"; then
+				shell::logger::error "Not a conflicted file: ${file}"
+				return "$RETURN_INVALID"
+			fi
+		done
+	fi
 
-    if [ "$force" = "false" ]; then
-        for file in "${files[@]}"; do
-            if [ -f "$file" ] && grep -Eq '^<<<<<<<( |$)' -- "$file" 2>/dev/null &&
-                grep -Eq '^>>>>>>>( |$)' -- "$file" 2>/dev/null; then
-                with_markers+=("$file")
-            fi
-        done
-        if [ "${#with_markers[@]}" -gt 0 ]; then
-            shell::logger::error "Conflict markers are still in ${#with_markers[@]} file(s); fix them first (or use --force):"
-            for file in "${with_markers[@]}"; do
-                shell::logger::error "  ✗ ${file}"
-            done
-            return "$RETURN_FAILURE"
-        fi
-    fi
+	if [ "$force" = "false" ]; then
+		for file in "${files[@]}"; do
+			if [ -f "$file" ] && grep -Eq '^<<<<<<<( |$)' -- "$file" 2>/dev/null &&
+				grep -Eq '^>>>>>>>( |$)' -- "$file" 2>/dev/null; then
+				with_markers+=("$file")
+			fi
+		done
+		if [ "${#with_markers[@]}" -gt 0 ]; then
+			shell::logger::error "Conflict markers are still in ${#with_markers[@]} file(s); fix them first (or use --force):"
+			for file in "${with_markers[@]}"; do
+				shell::logger::error "  ✗ ${file}"
+			done
+			return "$RETURN_FAILURE"
+		fi
+	fi
 
-    if [ "$dry_run" = "true" ]; then
-        shell::exec::command -n git add -- "${files[@]}"
-        return "$RETURN_SUCCESS"
-    fi
-    if ! shell::exec::command git add -- "${files[@]}"; then
-        shell::logger::error "git add failed"
-        return "$RETURN_FAILURE"
-    fi
+	if [ "$dry_run" = "true" ]; then
+		shell::exec::command -n git add -- "${files[@]}"
+		return "$RETURN_SUCCESS"
+	fi
+	if ! shell::exec::command git add -- "${files[@]}"; then
+		shell::logger::error "git add failed"
+		return "$RETURN_FAILURE"
+	fi
 
-    left="$(shell::git::commit::pick::conflict_files)"
-    if [ -n "$left" ]; then
-        marked="$(printf '%s\n' "$left" | wc -l | tr -d ' ')"
-        shell::logger::success "Marked ${#files[@]} file(s) as resolved; ${marked} still in conflict"
-    else
-        shell::logger::success "Marked ${#files[@]} file(s) as resolved; no conflicts left"
-    fi
-    return "$RETURN_SUCCESS"
+	left="$(shell::git::commit::pick::conflict_files)"
+	if [ -n "$left" ]; then
+		marked="$(printf '%s\n' "$left" | wc -l | tr -d ' ')"
+		shell::logger::success "Marked ${#files[@]} file(s) as resolved; ${marked} still in conflict"
+	else
+		shell::logger::success "Marked ${#files[@]} file(s) as resolved; no conflicts left"
+	fi
+	return "$RETURN_SUCCESS"
 }
 
 # @description Lists the commits still waiting in a cherry-pick sequence.
@@ -9943,47 +9943,47 @@ EOF
 #   shell::git::commit::pick::remaining
 #
 shell::git::commit::pick::remaining() {
-    if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
-        shell::logger::reset_options
-        shell::logger::info "List the commits still waiting in a cherry-pick sequence"
-        shell::logger::usage "shell::git::commit::pick::remaining [-h]"
-        shell::logger::option "-h, --help" "Show this help message"
-        shell::logger::example "shell::git::commit::pick::remaining"
-        return "$RETURN_SUCCESS"
-    fi
-    if [ "$#" -gt 0 ]; then
-        shell::logger::error "Unknown option or argument: $1"
-        return "$RETURN_INVALID"
-    fi
-    if ! git rev-parse --git-dir >/dev/null 2>&1; then
-        shell::logger::error "Not inside a Git repository"
-        return "$RETURN_FAILURE"
-    fi
-    if ! shell::git::commit::pick::in_progress; then
-        shell::logger::info "No cherry-pick in progress" >&2
-        return "$RETURN_FAILURE"
-    fi
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "List the commits still waiting in a cherry-pick sequence"
+		shell::logger::usage "shell::git::commit::pick::remaining [-h]"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::git::commit::pick::remaining"
+		return "$RETURN_SUCCESS"
+	fi
+	if [ "$#" -gt 0 ]; then
+		shell::logger::error "Unknown option or argument: $1"
+		return "$RETURN_INVALID"
+	fi
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return "$RETURN_FAILURE"
+	fi
+	if ! shell::git::commit::pick::in_progress; then
+		shell::logger::info "No cherry-pick in progress" >&2
+		return "$RETURN_FAILURE"
+	fi
 
-    local hash subject first="true" count=0
+	local hash subject first="true" count=0
 
-    # The first to-do entry is the commit being handled; the ones after it wait.
-    while IFS="$(printf '\t')" read -r hash subject; do
-        if [ -z "$hash" ]; then continue; fi
-        if [ "$first" = "true" ]; then
-            first="false"
-            continue
-        fi
-        printf '%s %s\n' "$hash" "$subject"
-        count=$((count + 1))
-    done <<EOF
+	# The first to-do entry is the commit being handled; the ones after it wait.
+	while IFS="$(printf '\t')" read -r hash subject; do
+		if [ -z "$hash" ]; then continue; fi
+		if [ "$first" = "true" ]; then
+			first="false"
+			continue
+		fi
+		printf '%s %s\n' "$hash" "$subject"
+		count=$((count + 1))
+	done <<EOF
 $(shell::git::commit::pick::todo)
 EOF
 
-    if [ "$count" -eq 0 ]; then
-        shell::logger::info "No commits are waiting after the current one" >&2
-        return "$RETURN_FAILURE"
-    fi
-    return "$RETURN_SUCCESS"
+	if [ "$count" -eq 0 ]; then
+		shell::logger::info "No commits are waiting after the current one" >&2
+		return "$RETURN_FAILURE"
+	fi
+	return "$RETURN_SUCCESS"
 }
 
 # @internal
@@ -10001,84 +10001,84 @@ EOF
 #   shell::git::commit::pick::control continue --no-edit
 #
 shell::git::commit::pick::control() {
-    local action="${1-}"
-    shift
+	local action="${1-}"
+	shift
 
-    local dry_run="false" no_edit="false" conflicts count file
-    while [ "$#" -gt 0 ]; do
-        case "$1" in
-        -n | --dry-run)
-            dry_run="true"
-            shift
-            ;;
-        --no-edit)
-            if [ "$action" != "continue" ]; then
-                shell::logger::error "--no-edit only applies to continue"
-                return "$RETURN_INVALID"
-            fi
-            no_edit="true"
-            shift
-            ;;
-        *)
-            shell::logger::error "Unknown option or argument: $1"
-            return "$RETURN_INVALID"
-            ;;
-        esac
-    done
+	local dry_run="false" no_edit="false" conflicts count file
+	while [ "$#" -gt 0 ]; do
+		case "$1" in
+		-n | --dry-run)
+			dry_run="true"
+			shift
+			;;
+		--no-edit)
+			if [ "$action" != "continue" ]; then
+				shell::logger::error "--no-edit only applies to continue"
+				return "$RETURN_INVALID"
+			fi
+			no_edit="true"
+			shift
+			;;
+		*)
+			shell::logger::error "Unknown option or argument: $1"
+			return "$RETURN_INVALID"
+			;;
+		esac
+	done
 
-    if ! git rev-parse --git-dir >/dev/null 2>&1; then
-        shell::logger::error "Not inside a Git repository"
-        return "$RETURN_FAILURE"
-    fi
-    if ! shell::git::commit::pick::in_progress; then
-        shell::logger::warn "No cherry-pick in progress; nothing to ${action}"
-        return "$RETURN_FAILURE"
-    fi
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return "$RETURN_FAILURE"
+	fi
+	if ! shell::git::commit::pick::in_progress; then
+		shell::logger::warn "No cherry-pick in progress; nothing to ${action}"
+		return "$RETURN_FAILURE"
+	fi
 
-    if [ "$action" = "continue" ]; then
-        conflicts="$(shell::git::commit::pick::conflict_files)"
-        if [ -n "$conflicts" ]; then
-            count="$(printf '%s\n' "$conflicts" | wc -l | tr -d ' ')"
-            shell::logger::error "${count} file(s) are still in conflict; resolve them first (shell::git::commit::pick::resolve):"
-            while IFS= read -r file; do
-                shell::logger::error "  ✗ ${file}"
-            done <<EOF
+	if [ "$action" = "continue" ]; then
+		conflicts="$(shell::git::commit::pick::conflict_files)"
+		if [ -n "$conflicts" ]; then
+			count="$(printf '%s\n' "$conflicts" | wc -l | tr -d ' ')"
+			shell::logger::error "${count} file(s) are still in conflict; resolve them first (shell::git::commit::pick::resolve):"
+			while IFS= read -r file; do
+				shell::logger::error "  ✗ ${file}"
+			done <<EOF
 $conflicts
 EOF
-            return "$RETURN_FAILURE"
-        fi
-    fi
+			return "$RETURN_FAILURE"
+		fi
+	fi
 
-    local -a git_args=(cherry-pick "--${action}")
-    if [ "$no_edit" = "true" ]; then
-        git_args+=(--no-edit)
-    fi
+	local -a git_args=(cherry-pick "--${action}")
+	if [ "$no_edit" = "true" ]; then
+		git_args+=(--no-edit)
+	fi
 
-    if [ "$dry_run" = "true" ]; then
-        shell::exec::command -n git "${git_args[@]}"
-        return "$RETURN_SUCCESS"
-    fi
+	if [ "$dry_run" = "true" ]; then
+		shell::exec::command -n git "${git_args[@]}"
+		return "$RETURN_SUCCESS"
+	fi
 
-    if [ "$action" = "abort" ]; then
-        shell::logger::warn "Aborting puts HEAD back where the cherry-pick started and drops what it changed"
-    fi
+	if [ "$action" = "abort" ]; then
+		shell::logger::warn "Aborting puts HEAD back where the cherry-pick started and drops what it changed"
+	fi
 
-    if shell::exec::command git "${git_args[@]}"; then
-        case "$action" in
-        continue) shell::logger::success "Cherry-pick continued and completed" ;;
-        skip) shell::logger::success "Commit skipped; the cherry-pick completed" ;;
-        abort) shell::logger::success "Cherry-pick aborted; the branch is back where it started" ;;
-        quit) shell::logger::success "Cherry-pick state cleared; the index and working tree were left as they are" ;;
-        esac
-        return "$RETURN_SUCCESS"
-    fi
+	if shell::exec::command git "${git_args[@]}"; then
+		case "$action" in
+		continue) shell::logger::success "Cherry-pick continued and completed" ;;
+		skip) shell::logger::success "Commit skipped; the cherry-pick completed" ;;
+		abort) shell::logger::success "Cherry-pick aborted; the branch is back where it started" ;;
+		quit) shell::logger::success "Cherry-pick state cleared; the index and working tree were left as they are" ;;
+		esac
+		return "$RETURN_SUCCESS"
+	fi
 
-    if shell::git::commit::pick::in_progress; then
-        shell::logger::warn "Stopped again (another conflict); see shell::git::commit::pick::status"
-    else
-        shell::logger::error "git cherry-pick --${action} failed"
-    fi
-    return "$RETURN_FAILURE"
+	if shell::git::commit::pick::in_progress; then
+		shell::logger::warn "Stopped again (another conflict); see shell::git::commit::pick::status"
+	else
+		shell::logger::error "git cherry-pick --${action} failed"
+	fi
+	return "$RETURN_FAILURE"
 }
 
 # @description Continues a cherry-pick after the conflicts are resolved.
@@ -10098,17 +10098,17 @@ EOF
 #   shell::git::commit::pick::continue --no-edit
 #
 shell::git::commit::pick::continue() {
-    if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
-        shell::logger::reset_options
-        shell::logger::info "Continue a cherry-pick after the conflicts are resolved"
-        shell::logger::usage "shell::git::commit::pick::continue [-n] [--no-edit] [-h]"
-        shell::logger::option "--no-edit" "Keep the commit message without opening the editor"
-        shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
-        shell::logger::option "-h, --help" "Show this help message"
-        shell::logger::example "shell::git::commit::pick::continue --no-edit"
-        return "$RETURN_SUCCESS"
-    fi
-    shell::git::commit::pick::control continue "$@"
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Continue a cherry-pick after the conflicts are resolved"
+		shell::logger::usage "shell::git::commit::pick::continue [-n] [--no-edit] [-h]"
+		shell::logger::option "--no-edit" "Keep the commit message without opening the editor"
+		shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::git::commit::pick::continue --no-edit"
+		return "$RETURN_SUCCESS"
+	fi
+	shell::git::commit::pick::control continue "$@"
 }
 
 # @description Skips the commit git is stopped on and goes on with the sequence.
@@ -10124,16 +10124,16 @@ shell::git::commit::pick::continue() {
 #   shell::git::commit::pick::skip
 #
 shell::git::commit::pick::skip() {
-    if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
-        shell::logger::reset_options
-        shell::logger::info "Skip the commit that stopped the cherry-pick and carry on"
-        shell::logger::usage "shell::git::commit::pick::skip [-n] [-h]"
-        shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
-        shell::logger::option "-h, --help" "Show this help message"
-        shell::logger::example "shell::git::commit::pick::skip"
-        return "$RETURN_SUCCESS"
-    fi
-    shell::git::commit::pick::control skip "$@"
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Skip the commit that stopped the cherry-pick and carry on"
+		shell::logger::usage "shell::git::commit::pick::skip [-n] [-h]"
+		shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::git::commit::pick::skip"
+		return "$RETURN_SUCCESS"
+	fi
+	shell::git::commit::pick::control skip "$@"
 }
 
 # @description Cancels the cherry-pick in progress and restores the branch.
@@ -10152,17 +10152,17 @@ shell::git::commit::pick::skip() {
 #   shell::git::commit::pick::abort
 #
 shell::git::commit::pick::abort() {
-    if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
-        shell::logger::reset_options
-        shell::logger::info "Cancel the cherry-pick and restore the branch to where it started"
-        shell::logger::usage "shell::git::commit::pick::abort [-n] [-h]"
-        shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
-        shell::logger::option "-h, --help" "Show this help message"
-        shell::logger::note "This discards the cherry-pick's changes, including your conflict resolution."
-        shell::logger::example "shell::git::commit::pick::abort"
-        return "$RETURN_SUCCESS"
-    fi
-    shell::git::commit::pick::control abort "$@"
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Cancel the cherry-pick and restore the branch to where it started"
+		shell::logger::usage "shell::git::commit::pick::abort [-n] [-h]"
+		shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::note "This discards the cherry-pick's changes, including your conflict resolution."
+		shell::logger::example "shell::git::commit::pick::abort"
+		return "$RETURN_SUCCESS"
+	fi
+	shell::git::commit::pick::control abort "$@"
 }
 
 # @description Stops the cherry-pick but keeps everything as it is now.
@@ -10179,16 +10179,16 @@ shell::git::commit::pick::abort() {
 #   shell::git::commit::pick::quit
 #
 shell::git::commit::pick::quit() {
-    if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
-        shell::logger::reset_options
-        shell::logger::info "Forget the cherry-pick state but keep the index and working tree"
-        shell::logger::usage "shell::git::commit::pick::quit [-n] [-h]"
-        shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
-        shell::logger::option "-h, --help" "Show this help message"
-        shell::logger::example "shell::git::commit::pick::quit"
-        return "$RETURN_SUCCESS"
-    fi
-    shell::git::commit::pick::control quit "$@"
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Forget the cherry-pick state but keep the index and working tree"
+		shell::logger::usage "shell::git::commit::pick::quit [-n] [-h]"
+		shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::git::commit::pick::quit"
+		return "$RETURN_SUCCESS"
+	fi
+	shell::git::commit::pick::control quit "$@"
 }
 
 # @description Applies commits onto a release or maintenance branch (a backport).
@@ -10226,225 +10226,225 @@ shell::git::commit::pick::quit() {
 #   shell::git::commit::pick::backport -n --in-place maintenance/2.x a1b2c3d e4f5a6b
 #
 shell::git::commit::pick::backport() {
-    if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
-        shell::logger::reset_options
-        shell::logger::info "Backport commits onto a release or maintenance branch"
-        shell::logger::usage "shell::git::commit::pick::backport [-n] [-b <name>] [--in-place] [--no-reference] [-s] [--allow-empty] <target> <revision>..."
-        shell::logger::item "target" "Release branch (local or remote-tracking)"
-        shell::logger::item "revision" "Commits to backport, oldest first"
-        shell::logger::option "-b, --branch <name>" "Name of the new branch (default: backport/<target>/<hash>)"
-        shell::logger::option "--in-place" "Apply on the local target branch itself"
-        shell::logger::option "--no-reference" "Do not add the '(cherry picked from commit ...)' line"
-        shell::logger::option "-s, --signoff" "Add a Signed-off-by trailer"
-        shell::logger::option "--allow-empty" "Keep commits that were empty to begin with"
-        shell::logger::option "-n, --dry-run" "Print the git commands instead of executing them"
-        shell::logger::option "-h, --help" "Show this help message"
-        shell::logger::example "shell::git::commit::pick::backport release/1.2 a1b2c3d"
-        shell::logger::example "shell::git::commit::pick::backport -n --in-place maintenance/2.x a1b2c3d e4f5a6b"
-        return "$RETURN_SUCCESS"
-    fi
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Backport commits onto a release or maintenance branch"
+		shell::logger::usage "shell::git::commit::pick::backport [-n] [-b <name>] [--in-place] [--no-reference] [-s] [--allow-empty] <target> <revision>..."
+		shell::logger::item "target" "Release branch (local or remote-tracking)"
+		shell::logger::item "revision" "Commits to backport, oldest first"
+		shell::logger::option "-b, --branch <name>" "Name of the new branch (default: backport/<target>/<hash>)"
+		shell::logger::option "--in-place" "Apply on the local target branch itself"
+		shell::logger::option "--no-reference" "Do not add the '(cherry picked from commit ...)' line"
+		shell::logger::option "-s, --signoff" "Add a Signed-off-by trailer"
+		shell::logger::option "--allow-empty" "Keep commits that were empty to begin with"
+		shell::logger::option "-n, --dry-run" "Print the git commands instead of executing them"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::git::commit::pick::backport release/1.2 a1b2c3d"
+		shell::logger::example "shell::git::commit::pick::backport -n --in-place maintenance/2.x a1b2c3d e4f5a6b"
+		return "$RETURN_SUCCESS"
+	fi
 
-    local dry_run="false" custom="" in_place="false" reference="true" signoff="false" allow_empty="false"
-    local end_opts="false" target="" have_target="false" opt val
-    local -a revs=()
-    while [ "$#" -gt 0 ]; do
-        if [ "$end_opts" = "false" ]; then
-            case "$1" in
-            -n | --dry-run)
-                dry_run="true"
-                shift
-                continue
-                ;;
-            --in-place)
-                in_place="true"
-                shift
-                continue
-                ;;
-            --no-reference)
-                reference="false"
-                shift
-                continue
-                ;;
-            -s | --signoff)
-                signoff="true"
-                shift
-                continue
-                ;;
-            --allow-empty)
-                allow_empty="true"
-                shift
-                continue
-                ;;
-            -b | --branch | --branch=*)
-                opt="$1"
-                case "$opt" in
-                --branch=*)
-                    val="${opt#*=}"
-                    shift
-                    ;;
-                *)
-                    if [ "$#" -lt 2 ]; then
-                        shell::logger::error "Option $opt requires a value"
-                        return "$RETURN_INVALID"
-                    fi
-                    val="$2"
-                    shift 2
-                    ;;
-                esac
-                custom="$val"
-                continue
-                ;;
-            --)
-                end_opts="true"
-                shift
-                continue
-                ;;
-            -?*)
-                shell::logger::error "Unknown option: $1"
-                return "$RETURN_INVALID"
-                ;;
-            esac
-        fi
-        if [ "$have_target" = "false" ]; then
-            target="$1"
-            have_target="true"
-        else
-            revs+=("$1")
-        fi
-        shift
-    done
+	local dry_run="false" custom="" in_place="false" reference="true" signoff="false" allow_empty="false"
+	local end_opts="false" target="" have_target="false" opt val
+	local -a revs=()
+	while [ "$#" -gt 0 ]; do
+		if [ "$end_opts" = "false" ]; then
+			case "$1" in
+			-n | --dry-run)
+				dry_run="true"
+				shift
+				continue
+				;;
+			--in-place)
+				in_place="true"
+				shift
+				continue
+				;;
+			--no-reference)
+				reference="false"
+				shift
+				continue
+				;;
+			-s | --signoff)
+				signoff="true"
+				shift
+				continue
+				;;
+			--allow-empty)
+				allow_empty="true"
+				shift
+				continue
+				;;
+			-b | --branch | --branch=*)
+				opt="$1"
+				case "$opt" in
+				--branch=*)
+					val="${opt#*=}"
+					shift
+					;;
+				*)
+					if [ "$#" -lt 2 ]; then
+						shell::logger::error "Option $opt requires a value"
+						return "$RETURN_INVALID"
+					fi
+					val="$2"
+					shift 2
+					;;
+				esac
+				custom="$val"
+				continue
+				;;
+			--)
+				end_opts="true"
+				shift
+				continue
+				;;
+			-?*)
+				shell::logger::error "Unknown option: $1"
+				return "$RETURN_INVALID"
+				;;
+			esac
+		fi
+		if [ "$have_target" = "false" ]; then
+			target="$1"
+			have_target="true"
+		else
+			revs+=("$1")
+		fi
+		shift
+	done
 
-    if [ "$have_target" = "false" ] || [ -z "$target" ]; then
-        shell::logger::error "A target branch is required"
-        return "$RETURN_INVALID"
-    fi
-    if [ "${#revs[@]}" -eq 0 ]; then
-        shell::logger::error "At least one commit to backport is required"
-        return "$RETURN_INVALID"
-    fi
-    if [ "$in_place" = "true" ] && [ -n "$custom" ]; then
-        shell::logger::error "--branch and --in-place cannot be combined"
-        return "$RETURN_INVALID"
-    fi
-    if [ -n "$custom" ] && ! git check-ref-format --branch "$custom" >/dev/null 2>&1; then
-        shell::logger::error "Invalid branch name: '${custom}'"
-        return "$RETURN_INVALID"
-    fi
+	if [ "$have_target" = "false" ] || [ -z "$target" ]; then
+		shell::logger::error "A target branch is required"
+		return "$RETURN_INVALID"
+	fi
+	if [ "${#revs[@]}" -eq 0 ]; then
+		shell::logger::error "At least one commit to backport is required"
+		return "$RETURN_INVALID"
+	fi
+	if [ "$in_place" = "true" ] && [ -n "$custom" ]; then
+		shell::logger::error "--branch and --in-place cannot be combined"
+		return "$RETURN_INVALID"
+	fi
+	if [ -n "$custom" ] && ! git check-ref-format --branch "$custom" >/dev/null 2>&1; then
+		shell::logger::error "Invalid branch name: '${custom}'"
+		return "$RETURN_INVALID"
+	fi
 
-    # Step 1 — state.
-    shell::git::commit::pick::guard commit || return "$RETURN_FAILURE"
-    local dirty
-    dirty="$(git status --porcelain --untracked-files=no 2>/dev/null | wc -l | tr -d ' ')"
-    if [ "${dirty:-0}" -gt 0 ]; then
-        shell::logger::error "The working tree has ${dirty} uncommitted change(s); commit or stash them first (the branch is switched)"
-        return "$RETURN_FAILURE"
-    fi
+	# Step 1 — state.
+	shell::git::commit::pick::guard commit || return "$RETURN_FAILURE"
+	local dirty
+	dirty="$(git status --porcelain --untracked-files=no 2>/dev/null | wc -l | tr -d ' ')"
+	if [ "${dirty:-0}" -gt 0 ]; then
+		shell::logger::error "The working tree has ${dirty} uncommitted change(s); commit or stash them first (the branch is switched)"
+		return "$RETURN_FAILURE"
+	fi
 
-    local target_hash resolved planned hash orig_branch orig_hash name short n=2 base_name count
-    local -a hashes=() flags=()
-    target_hash="$(shell::git::commit::pick::validate -- "$target")" || return "$RETURN_FAILURE"
-    if [ "$in_place" = "true" ] && ! git show-ref --verify --quiet "refs/heads/${target}"; then
-        shell::logger::error "--in-place needs a local branch; '${target}' is not one"
-        return "$RETURN_FAILURE"
-    fi
-    resolved="$(shell::git::commit::pick::validate -- "${revs[@]}")" || return "$RETURN_FAILURE"
-    while IFS= read -r hash; do
-        if [ -n "$hash" ]; then hashes+=("$hash"); fi
-    done <<EOF
+	local target_hash resolved planned hash orig_branch orig_hash name short n=2 base_name count
+	local -a hashes=() flags=()
+	target_hash="$(shell::git::commit::pick::validate -- "$target")" || return "$RETURN_FAILURE"
+	if [ "$in_place" = "true" ] && ! git show-ref --verify --quiet "refs/heads/${target}"; then
+		shell::logger::error "--in-place needs a local branch; '${target}' is not one"
+		return "$RETURN_FAILURE"
+	fi
+	resolved="$(shell::git::commit::pick::validate -- "${revs[@]}")" || return "$RETURN_FAILURE"
+	while IFS= read -r hash; do
+		if [ -n "$hash" ]; then hashes+=("$hash"); fi
+	done <<EOF
 $resolved
 EOF
 
-    # Step 2 — what is really missing from the target.
-    planned="$(shell::git::commit::pick::plan "" "$allow_empty" "$target_hash" "${hashes[@]}")" || return "$RETURN_FAILURE"
-    hashes=()
-    while IFS= read -r hash; do
-        if [ -n "$hash" ]; then hashes+=("$hash"); fi
-    done <<EOF
+	# Step 2 — what is really missing from the target.
+	planned="$(shell::git::commit::pick::plan "" "$allow_empty" "$target_hash" "${hashes[@]}")" || return "$RETURN_FAILURE"
+	hashes=()
+	while IFS= read -r hash; do
+		if [ -n "$hash" ]; then hashes+=("$hash"); fi
+	done <<EOF
 $planned
 EOF
-    count="${#hashes[@]}"
+	count="${#hashes[@]}"
 
-    orig_branch="$(git symbolic-ref --short -q HEAD 2>/dev/null)"
-    orig_hash="$(git rev-parse HEAD 2>/dev/null)"
+	orig_branch="$(git symbolic-ref --short -q HEAD 2>/dev/null)"
+	orig_hash="$(git rev-parse HEAD 2>/dev/null)"
 
-    # Step 3 — the branch to work on.
-    if [ "$in_place" = "true" ]; then
-        name="$target"
-    else
-        if [ -n "$custom" ]; then
-            name="$custom"
-            if git show-ref --verify --quiet "refs/heads/${name}"; then
-                shell::logger::error "A branch named '${name}' already exists"
-                return "$RETURN_FAILURE"
-            fi
-        else
-            short="$(git rev-parse --short "$(printf '%s\n' "${hashes[@]}" | head -n 1)" 2>/dev/null)"
-            base_name="backport/$(printf '%s' "$target" | sed 's#[^A-Za-z0-9._-]#-#g')/${short}"
-            name="$base_name"
-            while git show-ref --verify --quiet "refs/heads/${name}"; do
-                name="${base_name}-${n}"
-                n=$((n + 1))
-            done
-        fi
-    fi
+	# Step 3 — the branch to work on.
+	if [ "$in_place" = "true" ]; then
+		name="$target"
+	else
+		if [ -n "$custom" ]; then
+			name="$custom"
+			if git show-ref --verify --quiet "refs/heads/${name}"; then
+				shell::logger::error "A branch named '${name}' already exists"
+				return "$RETURN_FAILURE"
+			fi
+		else
+			short="$(git rev-parse --short "$(printf '%s\n' "${hashes[@]}" | head -n 1)" 2>/dev/null)"
+			base_name="backport/$(printf '%s' "$target" | sed 's#[^A-Za-z0-9._-]#-#g')/${short}"
+			name="$base_name"
+			while git show-ref --verify --quiet "refs/heads/${name}"; do
+				name="${base_name}-${n}"
+				n=$((n + 1))
+			done
+		fi
+	fi
 
-    if [ "$reference" = "true" ]; then flags+=(-x); fi
-    if [ "$signoff" = "true" ]; then flags+=(-s); fi
-    if [ "$allow_empty" = "true" ]; then flags+=(--allow-empty); fi
+	if [ "$reference" = "true" ]; then flags+=(-x); fi
+	if [ "$signoff" = "true" ]; then flags+=(-s); fi
+	if [ "$allow_empty" = "true" ]; then flags+=(--allow-empty); fi
 
-    shell::logger::info "Backport ${count} commit(s) to '${name}' (target ${target}):"
-    for hash in "${hashes[@]}"; do
-        shell::logger::info "  • $(git log -1 --format='%h %s' "$hash")"
-    done
+	shell::logger::info "Backport ${count} commit(s) to '${name}' (target ${target}):"
+	for hash in "${hashes[@]}"; do
+		shell::logger::info "  • $(git log -1 --format='%h %s' "$hash")"
+	done
 
-    if [ "$dry_run" = "true" ]; then
-        if [ "$in_place" = "true" ]; then
-            shell::exec::command -n git checkout "$target"
-        else
-            shell::exec::command -n git checkout -b "$name" --no-track "$target"
-        fi
-        shell::exec::command -n git cherry-pick ${flags[@]+"${flags[@]}"} "${hashes[@]}"
-        return "$RETURN_SUCCESS"
-    fi
+	if [ "$dry_run" = "true" ]; then
+		if [ "$in_place" = "true" ]; then
+			shell::exec::command -n git checkout "$target"
+		else
+			shell::exec::command -n git checkout -b "$name" --no-track "$target"
+		fi
+		shell::exec::command -n git cherry-pick ${flags[@]+"${flags[@]}"} "${hashes[@]}"
+		return "$RETURN_SUCCESS"
+	fi
 
-    # Step 3 — switch.
-    if [ "$in_place" = "true" ]; then
-        shell::exec::command git checkout "$target" || {
-            shell::logger::error "Could not switch to '${target}'"
-            return "$RETURN_FAILURE"
-        }
-    else
-        shell::exec::command git checkout -b "$name" --no-track "$target" || {
-            shell::logger::error "Could not create '${name}' from '${target}'"
-            return "$RETURN_FAILURE"
-        }
-    fi
-    local start_hash
-    start_hash="$(git rev-parse HEAD 2>/dev/null)"
+	# Step 3 — switch.
+	if [ "$in_place" = "true" ]; then
+		shell::exec::command git checkout "$target" || {
+			shell::logger::error "Could not switch to '${target}'"
+			return "$RETURN_FAILURE"
+		}
+	else
+		shell::exec::command git checkout -b "$name" --no-track "$target" || {
+			shell::logger::error "Could not create '${name}' from '${target}'"
+			return "$RETURN_FAILURE"
+		}
+	fi
+	local start_hash
+	start_hash="$(git rev-parse HEAD 2>/dev/null)"
 
-    # Step 4 — apply.
-    if shell::git::commit::pick::apply ${flags[@]+"${flags[@]}"} -- "${hashes[@]}"; then
-        shell::logger::success "Backported ${count} commit(s) to '${name}'"
-        shell::logger::info "You were on '${orig_branch:-${orig_hash}}'. Next: git push -u <remote> ${name}, then open a pull request"
-        return "$RETURN_SUCCESS"
-    fi
+	# Step 4 — apply.
+	if shell::git::commit::pick::apply ${flags[@]+"${flags[@]}"} -- "${hashes[@]}"; then
+		shell::logger::success "Backported ${count} commit(s) to '${name}'"
+		shell::logger::info "You were on '${orig_branch:-${orig_hash}}'. Next: git push -u <remote> ${name}, then open a pull request"
+		return "$RETURN_SUCCESS"
+	fi
 
-    if shell::git::commit::pick::in_progress; then
-        shell::logger::warn "Stopped on '${name}'. Resolve and continue, or cancel everything: shell::git::commit::pick::abort, then git checkout ${orig_branch:-${orig_hash}}$([ "$in_place" = "false" ] && printf ' and git branch -D %s' "$name")"
-        return "$RETURN_FAILURE"
-    fi
+	if shell::git::commit::pick::in_progress; then
+		shell::logger::warn "Stopped on '${name}'. Resolve and continue, or cancel everything: shell::git::commit::pick::abort, then git checkout ${orig_branch:-${orig_hash}}$([ "$in_place" = "false" ] && printf ' and git branch -D %s' "$name")"
+		return "$RETURN_FAILURE"
+	fi
 
-    # Nothing was applied: undo the switch so no empty branch is left behind.
-    if [ "$in_place" = "false" ] && [ "$(git rev-parse HEAD 2>/dev/null)" = "$start_hash" ]; then
-        if [ -n "$orig_branch" ]; then
-            git checkout --quiet "$orig_branch" 2>/dev/null
-        else
-            git checkout --quiet --detach "$orig_hash" 2>/dev/null
-        fi
-        git branch -D "$name" >/dev/null 2>&1
-        shell::logger::warn "Nothing was applied; '${name}' was removed and you are back on '${orig_branch:-${orig_hash}}'"
-    fi
-    return "$RETURN_FAILURE"
+	# Nothing was applied: undo the switch so no empty branch is left behind.
+	if [ "$in_place" = "false" ] && [ "$(git rev-parse HEAD 2>/dev/null)" = "$start_hash" ]; then
+		if [ -n "$orig_branch" ]; then
+			git checkout --quiet "$orig_branch" 2>/dev/null
+		else
+			git checkout --quiet --detach "$orig_hash" 2>/dev/null
+		fi
+		git branch -D "$name" >/dev/null 2>&1
+		shell::logger::warn "Nothing was applied; '${name}' was removed and you are back on '${orig_branch:-${orig_hash}}'"
+	fi
+	return "$RETURN_FAILURE"
 }
 
 # @internal
@@ -10459,14 +10459,14 @@ EOF
 #   shell::git::commit::pick::branches true
 #
 shell::git::commit::pick::branches() {
-    local current
-    local -a refs=(refs/heads)
-    if [ "${1-false}" = "true" ]; then
-        refs+=(refs/remotes)
-    fi
-    current="$(git symbolic-ref --short -q HEAD 2>/dev/null)"
-    git for-each-ref --sort=-committerdate --format='%(refname) %(refname:short)' "${refs[@]}" 2>/dev/null |
-        awk -v cur="$current" '$1 !~ /\/HEAD$/ && $2 != cur { print $2 }'
+	local current
+	local -a refs=(refs/heads)
+	if [ "${1-false}" = "true" ]; then
+		refs+=(refs/remotes)
+	fi
+	current="$(git symbolic-ref --short -q HEAD 2>/dev/null)"
+	git for-each-ref --sort=-committerdate --format='%(refname) %(refname:short)' "${refs[@]}" 2>/dev/null |
+		awk -v cur="$current" '$1 !~ /\/HEAD$/ && $2 != cur { print $2 }'
 }
 
 # @internal
@@ -10483,11 +10483,11 @@ shell::git::commit::pick::branches() {
 #   shell::git::commit::pick::fzf::candidates 500 --all --not HEAD
 #
 shell::git::commit::pick::fzf::candidates() {
-    local count="${1-500}"
-    shift
-    git log --topo-order --no-merges "--max-count=${count}" --color=always \
-        '--format=%H%x09%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%an%C(reset)%C(bold yellow)%d%C(reset) %C(dim white)- %s%C(reset)' \
-        "$@" 2>/dev/null
+	local count="${1-500}"
+	shift
+	git log --topo-order --no-merges "--max-count=${count}" --color=always \
+		'--format=%H%x09%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%an%C(reset)%C(bold yellow)%d%C(reset) %C(dim white)- %s%C(reset)' \
+		"$@" 2>/dev/null
 }
 
 # @internal
@@ -10504,20 +10504,20 @@ shell::git::commit::pick::fzf::candidates() {
 #   hashes="$(shell::git::commit::pick::fzf::choose "$candidates" "Pick: ")" || return $?
 #
 shell::git::commit::pick::fzf::choose() {
-    local candidates="${1-}" prompt="${2-Select commits: }" selected hashes
-    local tab
-    tab="$(printf '\t')"
+	local candidates="${1-}" prompt="${2-Select commits: }" selected hashes
+	local tab
+	tab="$(printf '\t')"
 
-    selected="$(printf '%s\n' "$candidates" | shell::fzf::select --multi --height=80% \
-        "--delimiter=${tab}" --with-nth=2.. --prompt="$prompt" \
-        '--preview=git show --stat --patch --color=always {1} | head -n 300' \
-        --preview-window='right:55%:wrap')" || return "$RETURN_CANCELLED"
-    if [ -z "$selected" ]; then
-        return "$RETURN_CANCELLED"
-    fi
+	selected="$(printf '%s\n' "$candidates" | shell::fzf::select --multi --height=80% \
+		"--delimiter=${tab}" --with-nth=2.. --prompt="$prompt" \
+		'--preview=git show --stat --patch --color=always {1} | head -n 300' \
+		--preview-window='right:55%:wrap')" || return "$RETURN_CANCELLED"
+	if [ -z "$selected" ]; then
+		return "$RETURN_CANCELLED"
+	fi
 
-    hashes="$(printf '%s\n' "$selected" | cut -f1 | tr '\n' ' ')"
-    printf '%s\n' "$candidates" | awk -F'\t' -v sel="$hashes" '
+	hashes="$(printf '%s\n' "$selected" | cut -f1 | tr '\n' ' ')"
+	printf '%s\n' "$candidates" | awk -F'\t' -v sel="$hashes" '
         BEGIN { n = split(sel, a, " "); for (i = 1; i <= n; i++) s[a[i]] = 1 }
         ($1 in s) { list[++c] = $1 }
         END { for (i = c; i >= 1; i--) print list[i] }'
@@ -10540,72 +10540,72 @@ shell::git::commit::pick::fzf::choose() {
 #   shell::git::commit::pick::fzf::engine false 500 "Pick: " --all --not HEAD
 #
 shell::git::commit::pick::fzf::engine() {
-    local dry_run="${1-false}" count="${2-500}" prompt="${3-Select commits: }"
-    shift 3
+	local dry_run="${1-false}" count="${2-500}" prompt="${3-Select commits: }"
+	shift 3
 
-    shell::git::commit::pick::guard stage || return "$RETURN_FAILURE"
+	shell::git::commit::pick::guard stage || return "$RETURN_FAILURE"
 
-    local candidates step choice rc hash
-    local -a hashes=() flags=()
-    candidates="$(shell::git::commit::pick::fzf::candidates "$count" "$@")"
-    if [ -z "$candidates" ]; then
-        shell::logger::warn "No commits to pick from"
-        return "$RETURN_FAILURE"
-    fi
+	local candidates step choice rc hash
+	local -a hashes=() flags=()
+	candidates="$(shell::git::commit::pick::fzf::candidates "$count" "$@")"
+	if [ -z "$candidates" ]; then
+		shell::logger::warn "No commits to pick from"
+		return "$RETURN_FAILURE"
+	fi
 
-    step="pick"
-    while true; do
-        case "$step" in
-        pick)
-            choice="$(shell::git::commit::pick::fzf::choose "$candidates" "$prompt")"
-            rc=$?
-            if [ "$rc" -ne 0 ] || [ -z "$choice" ]; then
-                shell::logger::info "Cancelled — nothing was applied"
-                return "$RETURN_FAILURE"
-            fi
-            hashes=()
-            while IFS= read -r hash; do
-                if [ -n "$hash" ]; then hashes+=("$hash"); fi
-            done <<EOF
+	step="pick"
+	while true; do
+		case "$step" in
+		pick)
+			choice="$(shell::git::commit::pick::fzf::choose "$candidates" "$prompt")"
+			rc=$?
+			if [ "$rc" -ne 0 ] || [ -z "$choice" ]; then
+				shell::logger::info "Cancelled — nothing was applied"
+				return "$RETURN_FAILURE"
+			fi
+			hashes=()
+			while IFS= read -r hash; do
+				if [ -n "$hash" ]; then hashes+=("$hash"); fi
+			done <<EOF
 $choice
 EOF
-            step="action"
-            ;;
-        action)
-            shell::logger::info "${#hashes[@]} commit(s) selected, oldest first:"
-            for hash in "${hashes[@]}"; do
-                shell::logger::info "  • $(git log -1 --format='%h %s' "$hash")"
-            done
-            choice="$(shell::ask::option::back --prompt "Apply the selected commits: " \
-                "Cherry-pick" "Cherry-pick with reference (-x)" "Apply without committing (--no-commit)" "Preview only")"
-            rc=$?
-            case "$rc" in
-            0) ;;
-            "$RETURN_BACK")
-                step="pick"
-                continue
-                ;;
-            *)
-                shell::logger::info "Cancelled — nothing was applied"
-                return "$RETURN_FAILURE"
-                ;;
-            esac
+			step="action"
+			;;
+		action)
+			shell::logger::info "${#hashes[@]} commit(s) selected, oldest first:"
+			for hash in "${hashes[@]}"; do
+				shell::logger::info "  • $(git log -1 --format='%h %s' "$hash")"
+			done
+			choice="$(shell::ask::option::back --prompt "Apply the selected commits: " \
+				"Cherry-pick" "Cherry-pick with reference (-x)" "Apply without committing (--no-commit)" "Preview only")"
+			rc=$?
+			case "$rc" in
+			0) ;;
+			"$RETURN_BACK")
+				step="pick"
+				continue
+				;;
+			*)
+				shell::logger::info "Cancelled — nothing was applied"
+				return "$RETURN_FAILURE"
+				;;
+			esac
 
-            flags=()
-            case "$choice" in
-            "Preview only")
-                shell::git::commit::pick::preview -- "${hashes[@]}"
-                continue
-                ;;
-            "Cherry-pick with reference (-x)") flags+=(-x) ;;
-            "Apply without committing (--no-commit)") flags+=(--no-commit) ;;
-            esac
-            if [ "$dry_run" = "true" ]; then flags+=(-n); fi
-            shell::git::commit::pick::apply ${flags[@]+"${flags[@]}"} -- "${hashes[@]}"
-            return $?
-            ;;
-        esac
-    done
+			flags=()
+			case "$choice" in
+			"Preview only")
+				shell::git::commit::pick::preview -- "${hashes[@]}"
+				continue
+				;;
+			"Cherry-pick with reference (-x)") flags+=(-x) ;;
+			"Apply without committing (--no-commit)") flags+=(--no-commit) ;;
+			esac
+			if [ "$dry_run" = "true" ]; then flags+=(-n); fi
+			shell::git::commit::pick::apply ${flags[@]+"${flags[@]}"} -- "${hashes[@]}"
+			return $?
+			;;
+		esac
+	done
 }
 
 # @internal
@@ -10620,63 +10620,63 @@ EOF
 #   shell::git::commit::pick::fzf::parse "$@" || return $?
 #
 shell::git::commit::pick::fzf::parse() {
-    fzf_dry_run="false"
-    fzf_count="500"
-    fzf_rest=""
-    local opt val
-    while [ "$#" -gt 0 ]; do
-        case "$1" in
-        -n | --dry-run)
-            fzf_dry_run="true"
-            shift
-            ;;
-        -c | --count | --count=*)
-            opt="$1"
-            case "$opt" in
-            --count=*)
-                val="${opt#*=}"
-                shift
-                ;;
-            *)
-                if [ "$#" -lt 2 ]; then
-                    shell::logger::error "Option $opt requires a value"
-                    return "$RETURN_INVALID"
-                fi
-                val="$2"
-                shift 2
-                ;;
-            esac
-            case "$val" in
-            '' | *[!0-9]* | 0*)
-                shell::logger::error "--count must be a positive whole number (got '$val')"
-                return "$RETURN_INVALID"
-                ;;
-            esac
-            fzf_count="$val"
-            ;;
-        --)
-            shift
-            while [ "$#" -gt 0 ]; do
-                fzf_rest="${fzf_rest}${1}"$'\n'
-                shift
-            done
-            ;;
-        -?*)
-            if [ "${fzf_extra_ok-}" = "true" ]; then
-                fzf_rest="${fzf_rest}${1}"$'\n'
-                shift
-            else
-                shell::logger::error "Unknown option: $1"
-                return "$RETURN_INVALID"
-            fi
-            ;;
-        *)
-            fzf_rest="${fzf_rest}${1}"$'\n'
-            shift
-            ;;
-        esac
-    done
-    return "$RETURN_SUCCESS"
+	fzf_dry_run="false"
+	fzf_count="500"
+	fzf_rest=""
+	local opt val
+	while [ "$#" -gt 0 ]; do
+		case "$1" in
+		-n | --dry-run)
+			fzf_dry_run="true"
+			shift
+			;;
+		-c | --count | --count=*)
+			opt="$1"
+			case "$opt" in
+			--count=*)
+				val="${opt#*=}"
+				shift
+				;;
+			*)
+				if [ "$#" -lt 2 ]; then
+					shell::logger::error "Option $opt requires a value"
+					return "$RETURN_INVALID"
+				fi
+				val="$2"
+				shift 2
+				;;
+			esac
+			case "$val" in
+			'' | *[!0-9]* | 0*)
+				shell::logger::error "--count must be a positive whole number (got '$val')"
+				return "$RETURN_INVALID"
+				;;
+			esac
+			fzf_count="$val"
+			;;
+		--)
+			shift
+			while [ "$#" -gt 0 ]; do
+				fzf_rest="${fzf_rest}${1}"$'\n'
+				shift
+			done
+			;;
+		-?*)
+			if [ "${fzf_extra_ok-}" = "true" ]; then
+				fzf_rest="${fzf_rest}${1}"$'\n'
+				shift
+			else
+				shell::logger::error "Unknown option: $1"
+				return "$RETURN_INVALID"
+			fi
+			;;
+		*)
+			fzf_rest="${fzf_rest}${1}"$'\n'
+			shift
+			;;
+		esac
+	done
+	return "$RETURN_SUCCESS"
 }
 
 # @description Finds commits with fzf and cherry-picks the ones you select.
@@ -10701,62 +10701,62 @@ shell::git::commit::pick::fzf::parse() {
 #   shell::git::commit::pick::fzf -c 100 -n
 #
 shell::git::commit::pick::fzf() {
-    if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
-        shell::logger::reset_options
-        shell::logger::info "Find commits with fzf (preview, multi-select) and cherry-pick them"
-        shell::logger::usage "shell::git::commit::pick::fzf [-n] [-c <N>] [--include-head] [<source>]"
-        shell::logger::item "source" "Only the history of this revision (default: all refs)"
-        shell::logger::option "--include-head" "Also list commits already in HEAD"
-        shell::logger::option "-c, --count <N>" "Maximum commits listed (default 500)"
-        shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
-        shell::logger::option "-h, --help" "Show this help message"
-        shell::logger::note "Tab marks several commits; they are applied oldest first."
-        shell::logger::example "shell::git::commit::pick::fzf"
-        shell::logger::example "shell::git::commit::pick::fzf feature/login"
-        return "$RETURN_SUCCESS"
-    fi
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Find commits with fzf (preview, multi-select) and cherry-pick them"
+		shell::logger::usage "shell::git::commit::pick::fzf [-n] [-c <N>] [--include-head] [<source>]"
+		shell::logger::item "source" "Only the history of this revision (default: all refs)"
+		shell::logger::option "--include-head" "Also list commits already in HEAD"
+		shell::logger::option "-c, --count <N>" "Maximum commits listed (default 500)"
+		shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::note "Tab marks several commits; they are applied oldest first."
+		shell::logger::example "shell::git::commit::pick::fzf"
+		shell::logger::example "shell::git::commit::pick::fzf feature/login"
+		return "$RETURN_SUCCESS"
+	fi
 
-    local fzf_dry_run fzf_count fzf_rest include_head="false" source="" item
-    local fzf_extra_ok="true"
-    shell::git::commit::pick::fzf::parse "$@" || return $?
+	local fzf_dry_run fzf_count fzf_rest include_head="false" source="" item
+	local fzf_extra_ok="true"
+	shell::git::commit::pick::fzf::parse "$@" || return $?
 
-    local -a rest=() log_args=()
-    while IFS= read -r item; do
-        case "$item" in
-        '') ;;
-        --include-head) include_head="true" ;;
-        -*)
-            shell::logger::error "Unknown option: $item"
-            return "$RETURN_INVALID"
-            ;;
-        *)
-            if [ -n "$source" ]; then
-                shell::logger::error "Only one source is accepted (got '$source' and '$item')"
-                return "$RETURN_INVALID"
-            fi
-            source="$item"
-            ;;
-        esac
-    done <<EOF
+	local -a rest=() log_args=()
+	while IFS= read -r item; do
+		case "$item" in
+		'') ;;
+		--include-head) include_head="true" ;;
+		-*)
+			shell::logger::error "Unknown option: $item"
+			return "$RETURN_INVALID"
+			;;
+		*)
+			if [ -n "$source" ]; then
+				shell::logger::error "Only one source is accepted (got '$source' and '$item')"
+				return "$RETURN_INVALID"
+			fi
+			source="$item"
+			;;
+		esac
+	done <<EOF
 $fzf_rest
 EOF
 
-    if ! git rev-parse --git-dir >/dev/null 2>&1; then
-        shell::logger::error "Not inside a Git repository"
-        return "$RETURN_FAILURE"
-    fi
-    if [ -n "$source" ]; then
-        shell::git::commit::pick::validate -q -- "$source" || {
-            shell::logger::error "Not a valid commit: '${source}'"
-            return "$RETURN_FAILURE"
-        }
-        log_args+=("$source")
-    else
-        log_args+=(--all)
-    fi
-    if [ "$include_head" = "false" ]; then log_args+=(--not HEAD); fi
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return "$RETURN_FAILURE"
+	fi
+	if [ -n "$source" ]; then
+		shell::git::commit::pick::validate -q -- "$source" || {
+			shell::logger::error "Not a valid commit: '${source}'"
+			return "$RETURN_FAILURE"
+		}
+		log_args+=("$source")
+	else
+		log_args+=(--all)
+	fi
+	if [ "$include_head" = "false" ]; then log_args+=(--not HEAD); fi
 
-    shell::git::commit::pick::fzf::engine "$fzf_dry_run" "$fzf_count" "Cherry-pick (Tab to mark): " "${log_args[@]}"
+	shell::git::commit::pick::fzf::engine "$fzf_dry_run" "$fzf_count" "Cherry-pick (Tab to mark): " "${log_args[@]}"
 }
 
 # @description Picks commits from the local branches and cherry-picks them.
@@ -10777,67 +10777,67 @@ EOF
 #   shell::git::commit::pick::fzf::local 'hotfix/*'
 #
 shell::git::commit::pick::fzf::local() {
-    if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
-        shell::logger::reset_options
-        shell::logger::info "Pick commits from the local branches with fzf and cherry-pick them"
-        shell::logger::usage "shell::git::commit::pick::fzf::local [-n] [-c <N>] [--include-head] [<branch-glob>]"
-        shell::logger::item "branch-glob" "Only branches matching this glob (e.g. 'feature/*')"
-        shell::logger::option "--include-head" "Also list commits already in HEAD"
-        shell::logger::option "-c, --count <N>" "Maximum commits listed (default 500)"
-        shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
-        shell::logger::option "-h, --help" "Show this help message"
-        shell::logger::example "shell::git::commit::pick::fzf::local"
-        shell::logger::example "shell::git::commit::pick::fzf::local 'hotfix/*'"
-        return "$RETURN_SUCCESS"
-    fi
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Pick commits from the local branches with fzf and cherry-pick them"
+		shell::logger::usage "shell::git::commit::pick::fzf::local [-n] [-c <N>] [--include-head] [<branch-glob>]"
+		shell::logger::item "branch-glob" "Only branches matching this glob (e.g. 'feature/*')"
+		shell::logger::option "--include-head" "Also list commits already in HEAD"
+		shell::logger::option "-c, --count <N>" "Maximum commits listed (default 500)"
+		shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::git::commit::pick::fzf::local"
+		shell::logger::example "shell::git::commit::pick::fzf::local 'hotfix/*'"
+		return "$RETURN_SUCCESS"
+	fi
 
-    local fzf_dry_run fzf_count fzf_rest include_head="false" pattern="" item
-    local fzf_extra_ok="true"
-    shell::git::commit::pick::fzf::parse "$@" || return $?
-    while IFS= read -r item; do
-        case "$item" in
-        '') ;;
-        --include-head) include_head="true" ;;
-        -*)
-            shell::logger::error "Unknown option: $item"
-            return "$RETURN_INVALID"
-            ;;
-        *)
-            if [ -n "$pattern" ]; then
-                shell::logger::error "Only one branch pattern is accepted"
-                return "$RETURN_INVALID"
-            fi
-            pattern="$item"
-            ;;
-        esac
-    done <<EOF
+	local fzf_dry_run fzf_count fzf_rest include_head="false" pattern="" item
+	local fzf_extra_ok="true"
+	shell::git::commit::pick::fzf::parse "$@" || return $?
+	while IFS= read -r item; do
+		case "$item" in
+		'') ;;
+		--include-head) include_head="true" ;;
+		-*)
+			shell::logger::error "Unknown option: $item"
+			return "$RETURN_INVALID"
+			;;
+		*)
+			if [ -n "$pattern" ]; then
+				shell::logger::error "Only one branch pattern is accepted"
+				return "$RETURN_INVALID"
+			fi
+			pattern="$item"
+			;;
+		esac
+	done <<EOF
 $fzf_rest
 EOF
 
-    if ! git rev-parse --git-dir >/dev/null 2>&1; then
-        shell::logger::error "Not inside a Git repository"
-        return "$RETURN_FAILURE"
-    fi
-    local -a log_args=()
-    if [ -z "$pattern" ]; then
-        log_args+=(--branches)
-    else
-        case "$pattern" in
-        *[\*\?\[]*) log_args+=("--branches=${pattern}") ;;
-        *)
-            # git reads a pattern without glob characters as "<pattern>/*", which
-            # would miss the branch of that exact name; an existing branch is used as is.
-            if git show-ref --verify --quiet "refs/heads/${pattern}"; then
-                log_args+=("$pattern")
-            else
-                log_args+=("--branches=${pattern}")
-            fi
-            ;;
-        esac
-    fi
-    if [ "$include_head" = "false" ]; then log_args+=(--not HEAD); fi
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return "$RETURN_FAILURE"
+	fi
+	local -a log_args=()
+	if [ -z "$pattern" ]; then
+		log_args+=(--branches)
+	else
+		case "$pattern" in
+		*[\*\?\[]*) log_args+=("--branches=${pattern}") ;;
+		*)
+			# git reads a pattern without glob characters as "<pattern>/*", which
+			# would miss the branch of that exact name; an existing branch is used as is.
+			if git show-ref --verify --quiet "refs/heads/${pattern}"; then
+				log_args+=("$pattern")
+			else
+				log_args+=("--branches=${pattern}")
+			fi
+			;;
+		esac
+	fi
+	if [ "$include_head" = "false" ]; then log_args+=(--not HEAD); fi
 
-    shell::git::commit::pick::fzf::engine "$fzf_dry_run" "$fzf_count" "Cherry-pick from local branches: " "${log_args[@]}"
+	shell::git::commit::pick::fzf::engine "$fzf_dry_run" "$fzf_count" "Cherry-pick from local branches: " "${log_args[@]}"
 }
 
 # @description Picks commits from the remote-tracking branches and cherry-picks them.
@@ -10858,56 +10858,56 @@ EOF
 #   shell::git::commit::pick::fzf::remote origin
 #
 shell::git::commit::pick::fzf::remote() {
-    if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
-        shell::logger::reset_options
-        shell::logger::info "Pick commits from the remote-tracking branches with fzf and cherry-pick them"
-        shell::logger::usage "shell::git::commit::pick::fzf::remote [-n] [-c <N>] [--include-head] [<remote>]"
-        shell::logger::item "remote" "Only this remote (e.g. origin)"
-        shell::logger::option "--include-head" "Also list commits already in HEAD"
-        shell::logger::option "-c, --count <N>" "Maximum commits listed (default 500)"
-        shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
-        shell::logger::option "-h, --help" "Show this help message"
-        shell::logger::note "Run git fetch first: only what is already fetched can be listed."
-        shell::logger::example "shell::git::commit::pick::fzf::remote origin"
-        return "$RETURN_SUCCESS"
-    fi
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Pick commits from the remote-tracking branches with fzf and cherry-pick them"
+		shell::logger::usage "shell::git::commit::pick::fzf::remote [-n] [-c <N>] [--include-head] [<remote>]"
+		shell::logger::item "remote" "Only this remote (e.g. origin)"
+		shell::logger::option "--include-head" "Also list commits already in HEAD"
+		shell::logger::option "-c, --count <N>" "Maximum commits listed (default 500)"
+		shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::note "Run git fetch first: only what is already fetched can be listed."
+		shell::logger::example "shell::git::commit::pick::fzf::remote origin"
+		return "$RETURN_SUCCESS"
+	fi
 
-    local fzf_dry_run fzf_count fzf_rest include_head="false" remote="" item
-    local fzf_extra_ok="true"
-    shell::git::commit::pick::fzf::parse "$@" || return $?
-    while IFS= read -r item; do
-        case "$item" in
-        '') ;;
-        --include-head) include_head="true" ;;
-        -*)
-            shell::logger::error "Unknown option: $item"
-            return "$RETURN_INVALID"
-            ;;
-        *)
-            if [ -n "$remote" ]; then
-                shell::logger::error "Only one remote is accepted"
-                return "$RETURN_INVALID"
-            fi
-            remote="$item"
-            ;;
-        esac
-    done <<EOF
+	local fzf_dry_run fzf_count fzf_rest include_head="false" remote="" item
+	local fzf_extra_ok="true"
+	shell::git::commit::pick::fzf::parse "$@" || return $?
+	while IFS= read -r item; do
+		case "$item" in
+		'') ;;
+		--include-head) include_head="true" ;;
+		-*)
+			shell::logger::error "Unknown option: $item"
+			return "$RETURN_INVALID"
+			;;
+		*)
+			if [ -n "$remote" ]; then
+				shell::logger::error "Only one remote is accepted"
+				return "$RETURN_INVALID"
+			fi
+			remote="$item"
+			;;
+		esac
+	done <<EOF
 $fzf_rest
 EOF
 
-    if ! git rev-parse --git-dir >/dev/null 2>&1; then
-        shell::logger::error "Not inside a Git repository"
-        return "$RETURN_FAILURE"
-    fi
-    local -a log_args=()
-    if [ -n "$remote" ]; then
-        log_args+=("--remotes=${remote}")
-    else
-        log_args+=(--remotes)
-    fi
-    if [ "$include_head" = "false" ]; then log_args+=(--not HEAD); fi
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return "$RETURN_FAILURE"
+	fi
+	local -a log_args=()
+	if [ -n "$remote" ]; then
+		log_args+=("--remotes=${remote}")
+	else
+		log_args+=(--remotes)
+	fi
+	if [ "$include_head" = "false" ]; then log_args+=(--not HEAD); fi
 
-    shell::git::commit::pick::fzf::engine "$fzf_dry_run" "$fzf_count" "Cherry-pick from remote branches: " "${log_args[@]}"
+	shell::git::commit::pick::fzf::engine "$fzf_dry_run" "$fzf_count" "Cherry-pick from remote branches: " "${log_args[@]}"
 }
 
 # @description Picks a local branch first, then the commits to cherry-pick from it.
@@ -10925,43 +10925,43 @@ EOF
 #   shell::git::commit::pick::fzf::branch
 #
 shell::git::commit::pick::fzf::branch() {
-    if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
-        shell::logger::reset_options
-        shell::logger::info "Choose a local branch with fzf, then pick its commits to cherry-pick"
-        shell::logger::usage "shell::git::commit::pick::fzf::branch [-n] [-c <N>] [-h]"
-        shell::logger::option "-c, --count <N>" "Maximum commits listed (default 500)"
-        shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
-        shell::logger::option "-h, --help" "Show this help message"
-        shell::logger::example "shell::git::commit::pick::fzf::branch"
-        return "$RETURN_SUCCESS"
-    fi
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Choose a local branch with fzf, then pick its commits to cherry-pick"
+		shell::logger::usage "shell::git::commit::pick::fzf::branch [-n] [-c <N>] [-h]"
+		shell::logger::option "-c, --count <N>" "Maximum commits listed (default 500)"
+		shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::git::commit::pick::fzf::branch"
+		return "$RETURN_SUCCESS"
+	fi
 
-    local fzf_dry_run fzf_count fzf_rest
-    local fzf_extra_ok="false"
-    shell::git::commit::pick::fzf::parse "$@" || return $?
-    if [ -n "$fzf_rest" ]; then
-        shell::logger::error "Unexpected argument: ${fzf_rest%%$'\n'*}"
-        return "$RETURN_INVALID"
-    fi
-    shell::git::commit::pick::guard stage || return "$RETURN_FAILURE"
+	local fzf_dry_run fzf_count fzf_rest
+	local fzf_extra_ok="false"
+	shell::git::commit::pick::fzf::parse "$@" || return $?
+	if [ -n "$fzf_rest" ]; then
+		shell::logger::error "Unexpected argument: ${fzf_rest%%$'\n'*}"
+		return "$RETURN_INVALID"
+	fi
+	shell::git::commit::pick::guard stage || return "$RETURN_FAILURE"
 
-    local branches picked
-    branches="$(shell::git::commit::pick::branches false)"
-    if [ -z "$branches" ]; then
-        shell::logger::warn "There is no other local branch"
-        return "$RETURN_FAILURE"
-    fi
+	local branches picked
+	branches="$(shell::git::commit::pick::branches false)"
+	if [ -z "$branches" ]; then
+		shell::logger::warn "There is no other local branch"
+		return "$RETURN_FAILURE"
+	fi
 
-    picked="$(printf '%s\n' "$branches" | shell::fzf::select --height=60% --prompt="Source branch: " \
-        '--preview=git log --oneline --color=always -n 15 {}' --preview-window='right:55%:wrap')" || {
-        shell::logger::info "Cancelled — nothing was applied"
-        return "$RETURN_FAILURE"
-    }
-    if [ -z "$picked" ]; then
-        return "$RETURN_FAILURE"
-    fi
+	picked="$(printf '%s\n' "$branches" | shell::fzf::select --height=60% --prompt="Source branch: " \
+		'--preview=git log --oneline --color=always -n 15 {}' --preview-window='right:55%:wrap')" || {
+		shell::logger::info "Cancelled — nothing was applied"
+		return "$RETURN_FAILURE"
+	}
+	if [ -z "$picked" ]; then
+		return "$RETURN_FAILURE"
+	fi
 
-    shell::git::commit::pick::fzf::engine "$fzf_dry_run" "$fzf_count" "Cherry-pick from ${picked}: " "$picked" --not HEAD
+	shell::git::commit::pick::fzf::engine "$fzf_dry_run" "$fzf_count" "Cherry-pick from ${picked}: " "$picked" --not HEAD
 }
 
 # @description Picks commits from the current branch's own history.
@@ -10981,109 +10981,109 @@ shell::git::commit::pick::fzf::branch() {
 #   shell::git::commit::pick::fzf::current
 #
 shell::git::commit::pick::fzf::current() {
-    if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
-        shell::logger::reset_options
-        shell::logger::info "Pick commits from this branch's history and apply them onto another branch"
-        shell::logger::usage "shell::git::commit::pick::fzf::current [-n] [-c <N>] [-h]"
-        shell::logger::option "-c, --count <N>" "Maximum commits listed (default 500)"
-        shell::logger::option "-n, --dry-run" "Print the git commands instead of executing them"
-        shell::logger::option "-h, --help" "Show this help message"
-        shell::logger::note "These commits are already in HEAD, so they are applied onto a branch you choose next."
-        shell::logger::example "shell::git::commit::pick::fzf::current"
-        return "$RETURN_SUCCESS"
-    fi
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Pick commits from this branch's history and apply them onto another branch"
+		shell::logger::usage "shell::git::commit::pick::fzf::current [-n] [-c <N>] [-h]"
+		shell::logger::option "-c, --count <N>" "Maximum commits listed (default 500)"
+		shell::logger::option "-n, --dry-run" "Print the git commands instead of executing them"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::note "These commits are already in HEAD, so they are applied onto a branch you choose next."
+		shell::logger::example "shell::git::commit::pick::fzf::current"
+		return "$RETURN_SUCCESS"
+	fi
 
-    local fzf_dry_run fzf_count fzf_rest
-    local fzf_extra_ok="false"
-    shell::git::commit::pick::fzf::parse "$@" || return $?
-    if [ -n "$fzf_rest" ]; then
-        shell::logger::error "Unexpected argument: ${fzf_rest%%$'\n'*}"
-        return "$RETURN_INVALID"
-    fi
-    shell::git::commit::pick::guard stage || return "$RETURN_FAILURE"
+	local fzf_dry_run fzf_count fzf_rest
+	local fzf_extra_ok="false"
+	shell::git::commit::pick::fzf::parse "$@" || return $?
+	if [ -n "$fzf_rest" ]; then
+		shell::logger::error "Unexpected argument: ${fzf_rest%%$'\n'*}"
+		return "$RETURN_INVALID"
+	fi
+	shell::git::commit::pick::guard stage || return "$RETURN_FAILURE"
 
-    local current candidates branches step choice rc hash target
-    local -a hashes=() backport_args=() branch_list=()
-    current="$(git symbolic-ref --short -q HEAD 2>/dev/null)"
-    candidates="$(shell::git::commit::pick::fzf::candidates "$fzf_count" HEAD)"
-    if [ -z "$candidates" ]; then
-        shell::logger::warn "No commits to pick from"
-        return "$RETURN_FAILURE"
-    fi
-    branches="$(shell::git::commit::pick::branches false)"
-    if [ -z "$branches" ]; then
-        shell::logger::warn "There is no other local branch to apply the commits onto"
-        return "$RETURN_FAILURE"
-    fi
-    while IFS= read -r hash; do
-        if [ -n "$hash" ]; then branch_list+=("$hash"); fi
-    done <<EOF
+	local current candidates branches step choice rc hash target
+	local -a hashes=() backport_args=() branch_list=()
+	current="$(git symbolic-ref --short -q HEAD 2>/dev/null)"
+	candidates="$(shell::git::commit::pick::fzf::candidates "$fzf_count" HEAD)"
+	if [ -z "$candidates" ]; then
+		shell::logger::warn "No commits to pick from"
+		return "$RETURN_FAILURE"
+	fi
+	branches="$(shell::git::commit::pick::branches false)"
+	if [ -z "$branches" ]; then
+		shell::logger::warn "There is no other local branch to apply the commits onto"
+		return "$RETURN_FAILURE"
+	fi
+	while IFS= read -r hash; do
+		if [ -n "$hash" ]; then branch_list+=("$hash"); fi
+	done <<EOF
 $branches
 EOF
 
-    step="pick"
-    while true; do
-        case "$step" in
-        pick)
-            choice="$(shell::git::commit::pick::fzf::choose "$candidates" "Commits of ${current:-HEAD} (Tab to mark): ")"
-            rc=$?
-            if [ "$rc" -ne 0 ] || [ -z "$choice" ]; then
-                shell::logger::info "Cancelled — nothing was applied"
-                return "$RETURN_FAILURE"
-            fi
-            hashes=()
-            while IFS= read -r hash; do
-                if [ -n "$hash" ]; then hashes+=("$hash"); fi
-            done <<EOF
+	step="pick"
+	while true; do
+		case "$step" in
+		pick)
+			choice="$(shell::git::commit::pick::fzf::choose "$candidates" "Commits of ${current:-HEAD} (Tab to mark): ")"
+			rc=$?
+			if [ "$rc" -ne 0 ] || [ -z "$choice" ]; then
+				shell::logger::info "Cancelled — nothing was applied"
+				return "$RETURN_FAILURE"
+			fi
+			hashes=()
+			while IFS= read -r hash; do
+				if [ -n "$hash" ]; then hashes+=("$hash"); fi
+			done <<EOF
 $choice
 EOF
-            step="target"
-            ;;
-        target)
-            choice="$(shell::ask::option::back --prompt "Apply onto branch: " "${branch_list[@]}")"
-            rc=$?
-            case "$rc" in
-            0) target="$choice" ;;
-            "$RETURN_BACK")
-                step="pick"
-                continue
-                ;;
-            *)
-                shell::logger::info "Cancelled — nothing was applied"
-                return "$RETURN_FAILURE"
-                ;;
-            esac
-            step="confirm"
-            ;;
-        confirm)
-            shell::logger::info "${#hashes[@]} commit(s) from '${current}' will be applied onto '${target}' (the branch is switched):"
-            for hash in "${hashes[@]}"; do
-                shell::logger::info "  • $(git log -1 --format='%h %s' "$hash")"
-            done
-            choice="$(shell::ask::option::back --prompt "Proceed? " "Apply onto ${target}" "Abort")"
-            rc=$?
-            case "$rc" in
-            0) ;;
-            "$RETURN_BACK")
-                step="target"
-                continue
-                ;;
-            *)
-                shell::logger::info "Cancelled — nothing was applied"
-                return "$RETURN_FAILURE"
-                ;;
-            esac
-            if [ "$choice" != "Apply onto ${target}" ]; then
-                shell::logger::info "Cancelled — nothing was applied"
-                return "$RETURN_FAILURE"
-            fi
-            backport_args=(--in-place)
-            if [ "$fzf_dry_run" = "true" ]; then backport_args+=(-n); fi
-            shell::git::commit::pick::backport "${backport_args[@]}" "$target" "${hashes[@]}"
-            return $?
-            ;;
-        esac
-    done
+			step="target"
+			;;
+		target)
+			choice="$(shell::ask::option::back --prompt "Apply onto branch: " "${branch_list[@]}")"
+			rc=$?
+			case "$rc" in
+			0) target="$choice" ;;
+			"$RETURN_BACK")
+				step="pick"
+				continue
+				;;
+			*)
+				shell::logger::info "Cancelled — nothing was applied"
+				return "$RETURN_FAILURE"
+				;;
+			esac
+			step="confirm"
+			;;
+		confirm)
+			shell::logger::info "${#hashes[@]} commit(s) from '${current}' will be applied onto '${target}' (the branch is switched):"
+			for hash in "${hashes[@]}"; do
+				shell::logger::info "  • $(git log -1 --format='%h %s' "$hash")"
+			done
+			choice="$(shell::ask::option::back --prompt "Proceed? " "Apply onto ${target}" "Abort")"
+			rc=$?
+			case "$rc" in
+			0) ;;
+			"$RETURN_BACK")
+				step="target"
+				continue
+				;;
+			*)
+				shell::logger::info "Cancelled — nothing was applied"
+				return "$RETURN_FAILURE"
+				;;
+			esac
+			if [ "$choice" != "Apply onto ${target}" ]; then
+				shell::logger::info "Cancelled — nothing was applied"
+				return "$RETURN_FAILURE"
+			fi
+			backport_args=(--in-place)
+			if [ "$fzf_dry_run" = "true" ]; then backport_args+=(-n); fi
+			shell::git::commit::pick::backport "${backport_args[@]}" "$target" "${hashes[@]}"
+			return $?
+			;;
+		esac
+	done
 }
 
 # @description Picks the commits of a range one by one and cherry-picks the chosen ones.
@@ -11102,53 +11102,53 @@ EOF
 #   shell::git::commit::pick::fzf::range main..feature
 #
 shell::git::commit::pick::fzf::range() {
-    if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
-        shell::logger::reset_options
-        shell::logger::info "Choose some of the commits of a range with fzf and cherry-pick them"
-        shell::logger::usage "shell::git::commit::pick::fzf::range [-n] [-c <N>] [-h] <A..B>"
-        shell::logger::item "A..B" "Commits reachable from B but not from A"
-        shell::logger::option "-c, --count <N>" "Maximum commits listed (default 500)"
-        shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
-        shell::logger::option "-h, --help" "Show this help message"
-        shell::logger::example "shell::git::commit::pick::fzf::range main..feature"
-        return "$RETURN_SUCCESS"
-    fi
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Choose some of the commits of a range with fzf and cherry-pick them"
+		shell::logger::usage "shell::git::commit::pick::fzf::range [-n] [-c <N>] [-h] <A..B>"
+		shell::logger::item "A..B" "Commits reachable from B but not from A"
+		shell::logger::option "-c, --count <N>" "Maximum commits listed (default 500)"
+		shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::git::commit::pick::fzf::range main..feature"
+		return "$RETURN_SUCCESS"
+	fi
 
-    local fzf_dry_run fzf_count fzf_rest range side
-    local fzf_extra_ok="false"
-    shell::git::commit::pick::fzf::parse "$@" || return $?
-    range="${fzf_rest%%$'\n'*}"
-    if [ -z "$range" ]; then
-        shell::logger::error "A range is required, e.g. main..feature"
-        return "$RETURN_INVALID"
-    fi
-    if [ "$(printf '%s' "$fzf_rest" | grep -c .)" -gt 1 ]; then
-        shell::logger::error "Only one range is accepted"
-        return "$RETURN_INVALID"
-    fi
-    case "$range" in
-    *...*)
-        shell::logger::error "A three-dot range (A...B) has no order to replay; use A..B"
-        return "$RETURN_INVALID"
-        ;;
-    *..*) ;;
-    *)
-        shell::logger::error "Not a range: '${range}' (expected A..B)"
-        return "$RETURN_INVALID"
-        ;;
-    esac
-    if ! git rev-parse --git-dir >/dev/null 2>&1; then
-        shell::logger::error "Not inside a Git repository"
-        return "$RETURN_FAILURE"
-    fi
-    for side in "${range%%..*}" "${range#*..}"; do
-        if [ -n "$side" ] && ! git rev-parse --verify --quiet "${side}^{commit}" >/dev/null 2>&1; then
-            shell::logger::error "Not a valid commit in the range: '${side}'"
-            return "$RETURN_FAILURE"
-        fi
-    done
+	local fzf_dry_run fzf_count fzf_rest range side
+	local fzf_extra_ok="false"
+	shell::git::commit::pick::fzf::parse "$@" || return $?
+	range="${fzf_rest%%$'\n'*}"
+	if [ -z "$range" ]; then
+		shell::logger::error "A range is required, e.g. main..feature"
+		return "$RETURN_INVALID"
+	fi
+	if [ "$(printf '%s' "$fzf_rest" | grep -c .)" -gt 1 ]; then
+		shell::logger::error "Only one range is accepted"
+		return "$RETURN_INVALID"
+	fi
+	case "$range" in
+	*...*)
+		shell::logger::error "A three-dot range (A...B) has no order to replay; use A..B"
+		return "$RETURN_INVALID"
+		;;
+	*..*) ;;
+	*)
+		shell::logger::error "Not a range: '${range}' (expected A..B)"
+		return "$RETURN_INVALID"
+		;;
+	esac
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return "$RETURN_FAILURE"
+	fi
+	for side in "${range%%..*}" "${range#*..}"; do
+		if [ -n "$side" ] && ! git rev-parse --verify --quiet "${side}^{commit}" >/dev/null 2>&1; then
+			shell::logger::error "Not a valid commit in the range: '${side}'"
+			return "$RETURN_FAILURE"
+		fi
+	done
 
-    shell::git::commit::pick::fzf::engine "$fzf_dry_run" "$fzf_count" "Cherry-pick from ${range}: " "$range"
+	shell::git::commit::pick::fzf::engine "$fzf_dry_run" "$fzf_count" "Cherry-pick from ${range}: " "$range"
 }
 
 # @description Picks commits with fzf and backports them to a release branch.
@@ -11173,179 +11173,179 @@ shell::git::commit::pick::fzf::range() {
 #   shell::git::commit::pick::fzf::backport release/1.2 --source main
 #
 shell::git::commit::pick::fzf::backport() {
-    if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
-        shell::logger::reset_options
-        shell::logger::info "Pick commits with fzf and backport them to a release branch"
-        shell::logger::usage "shell::git::commit::pick::fzf::backport [-n] [-c <N>] [-s <rev>] [--in-place] [-b <name>] [<target>]"
-        shell::logger::item "target" "Release branch; omit to choose it with fzf"
-        shell::logger::option "-s, --source <rev>" "Only commits from the history of this revision"
-        shell::logger::option "--in-place" "Apply on the local target branch itself"
-        shell::logger::option "-b, --branch <name>" "Name of the new branch"
-        shell::logger::option "-c, --count <N>" "Maximum commits listed (default 500)"
-        shell::logger::option "-n, --dry-run" "Print the git commands instead of executing them"
-        shell::logger::option "-h, --help" "Show this help message"
-        shell::logger::example "shell::git::commit::pick::fzf::backport"
-        shell::logger::example "shell::git::commit::pick::fzf::backport release/1.2 --source main"
-        return "$RETURN_SUCCESS"
-    fi
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Pick commits with fzf and backport them to a release branch"
+		shell::logger::usage "shell::git::commit::pick::fzf::backport [-n] [-c <N>] [-s <rev>] [--in-place] [-b <name>] [<target>]"
+		shell::logger::item "target" "Release branch; omit to choose it with fzf"
+		shell::logger::option "-s, --source <rev>" "Only commits from the history of this revision"
+		shell::logger::option "--in-place" "Apply on the local target branch itself"
+		shell::logger::option "-b, --branch <name>" "Name of the new branch"
+		shell::logger::option "-c, --count <N>" "Maximum commits listed (default 500)"
+		shell::logger::option "-n, --dry-run" "Print the git commands instead of executing them"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::git::commit::pick::fzf::backport"
+		shell::logger::example "shell::git::commit::pick::fzf::backport release/1.2 --source main"
+		return "$RETURN_SUCCESS"
+	fi
 
-    local dry_run="false" count="500" source="" in_place="false" custom="" target="" opt val
-    while [ "$#" -gt 0 ]; do
-        case "$1" in
-        -n | --dry-run)
-            dry_run="true"
-            shift
-            ;;
-        --in-place)
-            in_place="true"
-            shift
-            ;;
-        -c | --count | --count=* | -s | --source | --source=* | -b | --branch | --branch=*)
-            opt="$1"
-            case "$opt" in
-            --*=*)
-                val="${opt#*=}"
-                opt="${opt%%=*}"
-                shift
-                ;;
-            *)
-                if [ "$#" -lt 2 ]; then
-                    shell::logger::error "Option $opt requires a value"
-                    return "$RETURN_INVALID"
-                fi
-                val="$2"
-                shift 2
-                ;;
-            esac
-            case "$opt" in
-            -c | --count)
-                case "$val" in
-                '' | *[!0-9]* | 0*)
-                    shell::logger::error "--count must be a positive whole number (got '$val')"
-                    return "$RETURN_INVALID"
-                    ;;
-                esac
-                count="$val"
-                ;;
-            -s | --source) source="$val" ;;
-            -b | --branch) custom="$val" ;;
-            esac
-            ;;
-        -?*)
-            shell::logger::error "Unknown option: $1"
-            return "$RETURN_INVALID"
-            ;;
-        *)
-            if [ -n "$target" ]; then
-                shell::logger::error "Only one target is accepted (got '$target' and '$1')"
-                return "$RETURN_INVALID"
-            fi
-            target="$1"
-            shift
-            ;;
-        esac
-    done
+	local dry_run="false" count="500" source="" in_place="false" custom="" target="" opt val
+	while [ "$#" -gt 0 ]; do
+		case "$1" in
+		-n | --dry-run)
+			dry_run="true"
+			shift
+			;;
+		--in-place)
+			in_place="true"
+			shift
+			;;
+		-c | --count | --count=* | -s | --source | --source=* | -b | --branch | --branch=*)
+			opt="$1"
+			case "$opt" in
+			--*=*)
+				val="${opt#*=}"
+				opt="${opt%%=*}"
+				shift
+				;;
+			*)
+				if [ "$#" -lt 2 ]; then
+					shell::logger::error "Option $opt requires a value"
+					return "$RETURN_INVALID"
+				fi
+				val="$2"
+				shift 2
+				;;
+			esac
+			case "$opt" in
+			-c | --count)
+				case "$val" in
+				'' | *[!0-9]* | 0*)
+					shell::logger::error "--count must be a positive whole number (got '$val')"
+					return "$RETURN_INVALID"
+					;;
+				esac
+				count="$val"
+				;;
+			-s | --source) source="$val" ;;
+			-b | --branch) custom="$val" ;;
+			esac
+			;;
+		-?*)
+			shell::logger::error "Unknown option: $1"
+			return "$RETURN_INVALID"
+			;;
+		*)
+			if [ -n "$target" ]; then
+				shell::logger::error "Only one target is accepted (got '$target' and '$1')"
+				return "$RETURN_INVALID"
+			fi
+			target="$1"
+			shift
+			;;
+		esac
+	done
 
-    shell::git::commit::pick::guard stage || return "$RETURN_FAILURE"
-    if [ -n "$source" ]; then
-        shell::git::commit::pick::validate -q -- "$source" || {
-            shell::logger::error "Not a valid source revision: '${source}'"
-            return "$RETURN_FAILURE"
-        }
-    fi
-    if [ -n "$target" ]; then
-        shell::git::commit::pick::validate -q -- "$target" || {
-            shell::logger::error "Not a valid target: '${target}'"
-            return "$RETURN_FAILURE"
-        }
-    fi
+	shell::git::commit::pick::guard stage || return "$RETURN_FAILURE"
+	if [ -n "$source" ]; then
+		shell::git::commit::pick::validate -q -- "$source" || {
+			shell::logger::error "Not a valid source revision: '${source}'"
+			return "$RETURN_FAILURE"
+		}
+	fi
+	if [ -n "$target" ]; then
+		shell::git::commit::pick::validate -q -- "$target" || {
+			shell::logger::error "Not a valid target: '${target}'"
+			return "$RETURN_FAILURE"
+		}
+	fi
 
-    local targets candidates step choice rc hash
-    local -a hashes=() backport_args=() log_args=() target_list=()
-    targets="$(shell::git::commit::pick::branches true)"
-    while IFS= read -r hash; do
-        if [ -n "$hash" ]; then target_list+=("$hash"); fi
-    done <<EOF
+	local targets candidates step choice rc hash
+	local -a hashes=() backport_args=() log_args=() target_list=()
+	targets="$(shell::git::commit::pick::branches true)"
+	while IFS= read -r hash; do
+		if [ -n "$hash" ]; then target_list+=("$hash"); fi
+	done <<EOF
 $targets
 EOF
 
-    if [ -n "$target" ]; then
-        step="pick"
-    else
-        if [ -z "$targets" ]; then
-            shell::logger::warn "There is no other branch to backport onto"
-            return "$RETURN_FAILURE"
-        fi
-        step="target"
-    fi
+	if [ -n "$target" ]; then
+		step="pick"
+	else
+		if [ -z "$targets" ]; then
+			shell::logger::warn "There is no other branch to backport onto"
+			return "$RETURN_FAILURE"
+		fi
+		step="target"
+	fi
 
-    while true; do
-        case "$step" in
-        target)
-            choice="$(shell::ask::option::back --prompt "Backport onto: " "${target_list[@]}")"
-            rc=$?
-            if [ "$rc" -ne 0 ] || [ -z "$choice" ]; then
-                shell::logger::info "Cancelled — nothing was applied"
-                return "$RETURN_FAILURE"
-            fi
-            target="$choice"
-            step="pick"
-            ;;
-        pick)
-            # Only commits the target does not have yet.
-            log_args=()
-            if [ -n "$source" ]; then log_args+=("$source"); else log_args+=(--all); fi
-            log_args+=(--not "$target")
-            candidates="$(shell::git::commit::pick::fzf::candidates "$count" "${log_args[@]}")"
-            if [ -z "$candidates" ]; then
-                shell::logger::warn "Every commit is already in '${target}'; nothing to backport"
-                return "$RETURN_FAILURE"
-            fi
-            choice="$(shell::git::commit::pick::fzf::choose "$candidates" "Backport to ${target} (Tab to mark): ")"
-            rc=$?
-            if [ "$rc" -ne 0 ] || [ -z "$choice" ]; then
-                shell::logger::info "Cancelled — nothing was applied"
-                return "$RETURN_FAILURE"
-            fi
-            hashes=()
-            while IFS= read -r hash; do
-                if [ -n "$hash" ]; then hashes+=("$hash"); fi
-            done <<EOF
+	while true; do
+		case "$step" in
+		target)
+			choice="$(shell::ask::option::back --prompt "Backport onto: " "${target_list[@]}")"
+			rc=$?
+			if [ "$rc" -ne 0 ] || [ -z "$choice" ]; then
+				shell::logger::info "Cancelled — nothing was applied"
+				return "$RETURN_FAILURE"
+			fi
+			target="$choice"
+			step="pick"
+			;;
+		pick)
+			# Only commits the target does not have yet.
+			log_args=()
+			if [ -n "$source" ]; then log_args+=("$source"); else log_args+=(--all); fi
+			log_args+=(--not "$target")
+			candidates="$(shell::git::commit::pick::fzf::candidates "$count" "${log_args[@]}")"
+			if [ -z "$candidates" ]; then
+				shell::logger::warn "Every commit is already in '${target}'; nothing to backport"
+				return "$RETURN_FAILURE"
+			fi
+			choice="$(shell::git::commit::pick::fzf::choose "$candidates" "Backport to ${target} (Tab to mark): ")"
+			rc=$?
+			if [ "$rc" -ne 0 ] || [ -z "$choice" ]; then
+				shell::logger::info "Cancelled — nothing was applied"
+				return "$RETURN_FAILURE"
+			fi
+			hashes=()
+			while IFS= read -r hash; do
+				if [ -n "$hash" ]; then hashes+=("$hash"); fi
+			done <<EOF
 $choice
 EOF
-            step="confirm"
-            ;;
-        confirm)
-            shell::logger::info "${#hashes[@]} commit(s) will be backported to '${target}', oldest first:"
-            for hash in "${hashes[@]}"; do
-                shell::logger::info "  • $(git log -1 --format='%h %s' "$hash")"
-            done
-            choice="$(shell::ask::option::back --prompt "Proceed? " "Backport" "Abort")"
-            rc=$?
-            case "$rc" in
-            0) ;;
-            "$RETURN_BACK")
-                step="pick"
-                continue
-                ;;
-            *)
-                shell::logger::info "Cancelled — nothing was applied"
-                return "$RETURN_FAILURE"
-                ;;
-            esac
-            if [ "$choice" != "Backport" ]; then
-                shell::logger::info "Cancelled — nothing was applied"
-                return "$RETURN_FAILURE"
-            fi
-            backport_args=()
-            if [ "$dry_run" = "true" ]; then backport_args+=(-n); fi
-            if [ "$in_place" = "true" ]; then backport_args+=(--in-place); fi
-            if [ -n "$custom" ]; then backport_args+=(-b "$custom"); fi
-            shell::git::commit::pick::backport ${backport_args[@]+"${backport_args[@]}"} "$target" "${hashes[@]}"
-            return $?
-            ;;
-        esac
-    done
+			step="confirm"
+			;;
+		confirm)
+			shell::logger::info "${#hashes[@]} commit(s) will be backported to '${target}', oldest first:"
+			for hash in "${hashes[@]}"; do
+				shell::logger::info "  • $(git log -1 --format='%h %s' "$hash")"
+			done
+			choice="$(shell::ask::option::back --prompt "Proceed? " "Backport" "Abort")"
+			rc=$?
+			case "$rc" in
+			0) ;;
+			"$RETURN_BACK")
+				step="pick"
+				continue
+				;;
+			*)
+				shell::logger::info "Cancelled — nothing was applied"
+				return "$RETURN_FAILURE"
+				;;
+			esac
+			if [ "$choice" != "Backport" ]; then
+				shell::logger::info "Cancelled — nothing was applied"
+				return "$RETURN_FAILURE"
+			fi
+			backport_args=()
+			if [ "$dry_run" = "true" ]; then backport_args+=(-n); fi
+			if [ "$in_place" = "true" ]; then backport_args+=(--in-place); fi
+			if [ -n "$custom" ]; then backport_args+=(-b "$custom"); fi
+			shell::git::commit::pick::backport ${backport_args[@]+"${backport_args[@]}"} "$target" "${hashes[@]}"
+			return $?
+			;;
+		esac
+	done
 }
 
 # @description Chooses a conflicted file with fzf and resolves it.
@@ -11366,112 +11366,112 @@ EOF
 #   shell::git::commit::pick::fzf::conflicts
 #
 shell::git::commit::pick::fzf::conflicts() {
-    if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
-        shell::logger::reset_options
-        shell::logger::info "Choose a conflicted file with fzf: open, diff, take ours/theirs, or mark resolved"
-        shell::logger::usage "shell::git::commit::pick::fzf::conflicts [-n] [-h]"
-        shell::logger::option "-n, --dry-run" "Print the git commands instead of executing them"
-        shell::logger::option "-h, --help" "Show this help message"
-        shell::logger::note "Ours = the branch you are on; theirs = the commit being picked."
-        shell::logger::example "shell::git::commit::pick::fzf::conflicts"
-        return "$RETURN_SUCCESS"
-    fi
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Choose a conflicted file with fzf: open, diff, take ours/theirs, or mark resolved"
+		shell::logger::usage "shell::git::commit::pick::fzf::conflicts [-n] [-h]"
+		shell::logger::option "-n, --dry-run" "Print the git commands instead of executing them"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::note "Ours = the branch you are on; theirs = the commit being picked."
+		shell::logger::example "shell::git::commit::pick::fzf::conflicts"
+		return "$RETURN_SUCCESS"
+	fi
 
-    local dry_run="false"
-    while [ "$#" -gt 0 ]; do
-        case "$1" in
-        -n | --dry-run)
-            dry_run="true"
-            shift
-            ;;
-        *)
-            shell::logger::error "Unknown option or argument: $1"
-            return "$RETURN_INVALID"
-            ;;
-        esac
-    done
-    if ! git rev-parse --git-dir >/dev/null 2>&1; then
-        shell::logger::error "Not inside a Git repository"
-        return "$RETURN_FAILURE"
-    fi
+	local dry_run="false"
+	while [ "$#" -gt 0 ]; do
+		case "$1" in
+		-n | --dry-run)
+			dry_run="true"
+			shift
+			;;
+		*)
+			shell::logger::error "Unknown option or argument: $1"
+			return "$RETURN_INVALID"
+			;;
+		esac
+	done
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return "$RETURN_FAILURE"
+	fi
 
-    local files choice file action sure side rc editor handled=0 failed=0
-    local -a res_flags=()
-    if [ "$dry_run" = "true" ]; then res_flags+=(-n); fi
+	local files choice file action sure side rc editor handled=0 failed=0
+	local -a res_flags=()
+	if [ "$dry_run" = "true" ]; then res_flags+=(-n); fi
 
-    while true; do
-        files="$(shell::git::commit::pick::conflict_files)"
-        if [ -z "$files" ]; then
-            shell::logger::info "No conflicted files"
-            break
-        fi
+	while true; do
+		files="$(shell::git::commit::pick::conflict_files)"
+		if [ -z "$files" ]; then
+			shell::logger::info "No conflicted files"
+			break
+		fi
 
-        choice="$(printf '%s\n%s\n' "$files" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --height=60% \
-            --prompt="Conflicted file: " '--preview=git diff --color=always -- {} | head -n 200' \
-            --preview-window='right:60%:wrap')" || break
-        if [ -z "$choice" ] || [ "$choice" = "$SHELL_FZF_BACK_LABEL" ]; then
-            break
-        fi
-        file="$choice"
+		choice="$(printf '%s\n%s\n' "$files" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --height=60% \
+			--prompt="Conflicted file: " '--preview=git diff --color=always -- {} | head -n 200' \
+			--preview-window='right:60%:wrap')" || break
+		if [ -z "$choice" ] || [ "$choice" = "$SHELL_FZF_BACK_LABEL" ]; then
+			break
+		fi
+		file="$choice"
 
-        action="$(shell::ask::option::back --prompt "${file}: " \
-            "Open in editor" "Show diff" "Take ours (current branch) and mark resolved" \
-            "Take theirs (picked commit) and mark resolved" "Mark as resolved")"
-        rc=$?
-        if [ "$rc" -ne 0 ]; then
-            continue
-        fi
+		action="$(shell::ask::option::back --prompt "${file}: " \
+			"Open in editor" "Show diff" "Take ours (current branch) and mark resolved" \
+			"Take theirs (picked commit) and mark resolved" "Mark as resolved")"
+		rc=$?
+		if [ "$rc" -ne 0 ]; then
+			continue
+		fi
 
-        case "$action" in
-        "Open in editor")
-            editor="${VISUAL:-${EDITOR:-vi}}"
-            if [ "$dry_run" = "true" ]; then
-                shell::logger::command_clip "${editor} $(shell::git::commit::spec::quote "$file")"
-                handled=$((handled + 1))
-            elif sh -c "${editor} \"\$1\"" _ "$file"; then
-                handled=$((handled + 1))
-            else
-                failed=$((failed + 1))
-            fi
-            ;;
-        "Show diff")
-            git diff -- "$file"
-            ;;
-        "Take ours"* | "Take theirs"*)
-            case "$action" in
-            "Take ours"*) side="ours" ;;
-            *) side="theirs" ;;
-            esac
-            sure="$(shell::ask::option "Overwrite ${file} with the ${side} version" "Cancel")"
-            if [ "$sure" != "Overwrite ${file} with the ${side} version" ]; then
-                shell::logger::info "Cancelled"
-                continue
-            fi
-            if [ "$dry_run" = "true" ]; then
-                shell::exec::command -n git checkout "--${side}" -- "$file"
-                shell::exec::command -n git add -- "$file"
-                handled=$((handled + 1))
-            elif shell::exec::command git checkout "--${side}" -- "$file" && shell::exec::command git add -- "$file"; then
-                handled=$((handled + 1))
-            else
-                shell::logger::error "Could not take the ${side} version of ${file}"
-                failed=$((failed + 1))
-            fi
-            ;;
-        "Mark as resolved")
-            if shell::git::commit::pick::resolve ${res_flags[@]+"${res_flags[@]}"} -- "$file"; then
-                handled=$((handled + 1))
-            else
-                failed=$((failed + 1))
-            fi
-            ;;
-        esac
-    done
+		case "$action" in
+		"Open in editor")
+			editor="${VISUAL:-${EDITOR:-vi}}"
+			if [ "$dry_run" = "true" ]; then
+				shell::logger::command_clip "${editor} $(shell::git::commit::spec::quote "$file")"
+				handled=$((handled + 1))
+			elif sh -c "${editor} \"\$1\"" _ "$file"; then
+				handled=$((handled + 1))
+			else
+				failed=$((failed + 1))
+			fi
+			;;
+		"Show diff")
+			git diff -- "$file"
+			;;
+		"Take ours"* | "Take theirs"*)
+			case "$action" in
+			"Take ours"*) side="ours" ;;
+			*) side="theirs" ;;
+			esac
+			sure="$(shell::ask::option "Overwrite ${file} with the ${side} version" "Cancel")"
+			if [ "$sure" != "Overwrite ${file} with the ${side} version" ]; then
+				shell::logger::info "Cancelled"
+				continue
+			fi
+			if [ "$dry_run" = "true" ]; then
+				shell::exec::command -n git checkout "--${side}" -- "$file"
+				shell::exec::command -n git add -- "$file"
+				handled=$((handled + 1))
+			elif shell::exec::command git checkout "--${side}" -- "$file" && shell::exec::command git add -- "$file"; then
+				handled=$((handled + 1))
+			else
+				shell::logger::error "Could not take the ${side} version of ${file}"
+				failed=$((failed + 1))
+			fi
+			;;
+		"Mark as resolved")
+			if shell::git::commit::pick::resolve ${res_flags[@]+"${res_flags[@]}"} -- "$file"; then
+				handled=$((handled + 1))
+			else
+				failed=$((failed + 1))
+			fi
+			;;
+		esac
+	done
 
-    if [ "$handled" -gt 0 ] && [ "$failed" -eq 0 ]; then
-        return "$RETURN_SUCCESS"
-    fi
-    return "$RETURN_FAILURE"
+	if [ "$handled" -gt 0 ] && [ "$failed" -eq 0 ]; then
+		return "$RETURN_SUCCESS"
+	fi
+	return "$RETURN_FAILURE"
 }
 
 # @description Shows the cherry-pick state and asks before continuing it.
@@ -11488,36 +11488,36 @@ shell::git::commit::pick::fzf::conflicts() {
 #   shell::git::commit::pick::fzf::continue
 #
 shell::git::commit::pick::fzf::continue() {
-    if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
-        shell::logger::reset_options
-        shell::logger::info "Show the cherry-pick state, then ask before continuing"
-        shell::logger::usage "shell::git::commit::pick::fzf::continue [-n] [--no-edit] [-h]"
-        shell::logger::option "--no-edit" "Keep the commit message without opening the editor"
-        shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
-        shell::logger::option "-h, --help" "Show this help message"
-        shell::logger::example "shell::git::commit::pick::fzf::continue"
-        return "$RETURN_SUCCESS"
-    fi
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Show the cherry-pick state, then ask before continuing"
+		shell::logger::usage "shell::git::commit::pick::fzf::continue [-n] [--no-edit] [-h]"
+		shell::logger::option "--no-edit" "Keep the commit message without opening the editor"
+		shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::git::commit::pick::fzf::continue"
+		return "$RETURN_SUCCESS"
+	fi
 
-    local arg
-    for arg in "$@"; do
-        case "$arg" in
-        -n | --dry-run | --no-edit) ;;
-        *)
-            shell::logger::error "Unknown option or argument: $arg"
-            return "$RETURN_INVALID"
-            ;;
-        esac
-    done
+	local arg
+	for arg in "$@"; do
+		case "$arg" in
+		-n | --dry-run | --no-edit) ;;
+		*)
+			shell::logger::error "Unknown option or argument: $arg"
+			return "$RETURN_INVALID"
+			;;
+		esac
+	done
 
-    shell::git::commit::pick::status || return "$RETURN_FAILURE"
-    local choice
-    choice="$(shell::ask::option "Continue the cherry-pick" "Cancel")"
-    if [ "$choice" != "Continue the cherry-pick" ]; then
-        shell::logger::info "Cancelled — the cherry-pick was left as it is"
-        return "$RETURN_FAILURE"
-    fi
-    shell::git::commit::pick::continue "$@"
+	shell::git::commit::pick::status || return "$RETURN_FAILURE"
+	local choice
+	choice="$(shell::ask::option "Continue the cherry-pick" "Cancel")"
+	if [ "$choice" != "Continue the cherry-pick" ]; then
+		shell::logger::info "Cancelled — the cherry-pick was left as it is"
+		return "$RETURN_FAILURE"
+	fi
+	shell::git::commit::pick::continue "$@"
 }
 
 # @description Shows the commit that is blocking the cherry-pick and asks before skipping it.
@@ -11533,42 +11533,42 @@ shell::git::commit::pick::fzf::continue() {
 #   shell::git::commit::pick::fzf::skip
 #
 shell::git::commit::pick::fzf::skip() {
-    if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
-        shell::logger::reset_options
-        shell::logger::info "Show the commit being picked, then ask before skipping it"
-        shell::logger::usage "shell::git::commit::pick::fzf::skip [-n] [-h]"
-        shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
-        shell::logger::option "-h, --help" "Show this help message"
-        shell::logger::example "shell::git::commit::pick::fzf::skip"
-        return "$RETURN_SUCCESS"
-    fi
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Show the commit being picked, then ask before skipping it"
+		shell::logger::usage "shell::git::commit::pick::fzf::skip [-n] [-h]"
+		shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::git::commit::pick::fzf::skip"
+		return "$RETURN_SUCCESS"
+	fi
 
-    local arg
-    for arg in "$@"; do
-        case "$arg" in
-        -n | --dry-run) ;;
-        *)
-            shell::logger::error "Unknown option or argument: $arg"
-            return "$RETURN_INVALID"
-            ;;
-        esac
-    done
+	local arg
+	for arg in "$@"; do
+		case "$arg" in
+		-n | --dry-run) ;;
+		*)
+			shell::logger::error "Unknown option or argument: $arg"
+			return "$RETURN_INVALID"
+			;;
+		esac
+	done
 
-    if ! shell::git::commit::pick::in_progress; then
-        shell::logger::warn "No cherry-pick in progress; nothing to skip"
-        return "$RETURN_FAILURE"
-    fi
-    local hash choice
-    if hash="$(shell::git::commit::pick::head_hash)"; then
-        shell::logger::info "Commit that will be skipped:"
-        git show --format=fuller --stat "$hash"
-    fi
-    choice="$(shell::ask::option "Skip this commit" "Cancel")"
-    if [ "$choice" != "Skip this commit" ]; then
-        shell::logger::info "Cancelled — the cherry-pick was left as it is"
-        return "$RETURN_FAILURE"
-    fi
-    shell::git::commit::pick::skip "$@"
+	if ! shell::git::commit::pick::in_progress; then
+		shell::logger::warn "No cherry-pick in progress; nothing to skip"
+		return "$RETURN_FAILURE"
+	fi
+	local hash choice
+	if hash="$(shell::git::commit::pick::head_hash)"; then
+		shell::logger::info "Commit that will be skipped:"
+		git show --format=fuller --stat "$hash"
+	fi
+	choice="$(shell::ask::option "Skip this commit" "Cancel")"
+	if [ "$choice" != "Skip this commit" ]; then
+		shell::logger::info "Cancelled — the cherry-pick was left as it is"
+		return "$RETURN_FAILURE"
+	fi
+	shell::git::commit::pick::skip "$@"
 }
 
 # @description Shows the cherry-pick state and asks before aborting it.
@@ -11585,34 +11585,34 @@ shell::git::commit::pick::fzf::skip() {
 #   shell::git::commit::pick::fzf::abort
 #
 shell::git::commit::pick::fzf::abort() {
-    if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
-        shell::logger::reset_options
-        shell::logger::info "Show the cherry-pick state, then ask before aborting it"
-        shell::logger::usage "shell::git::commit::pick::fzf::abort [-n] [-h]"
-        shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
-        shell::logger::option "-h, --help" "Show this help message"
-        shell::logger::example "shell::git::commit::pick::fzf::abort"
-        return "$RETURN_SUCCESS"
-    fi
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Show the cherry-pick state, then ask before aborting it"
+		shell::logger::usage "shell::git::commit::pick::fzf::abort [-n] [-h]"
+		shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::example "shell::git::commit::pick::fzf::abort"
+		return "$RETURN_SUCCESS"
+	fi
 
-    local arg
-    for arg in "$@"; do
-        case "$arg" in
-        -n | --dry-run) ;;
-        *)
-            shell::logger::error "Unknown option or argument: $arg"
-            return "$RETURN_INVALID"
-            ;;
-        esac
-    done
+	local arg
+	for arg in "$@"; do
+		case "$arg" in
+		-n | --dry-run) ;;
+		*)
+			shell::logger::error "Unknown option or argument: $arg"
+			return "$RETURN_INVALID"
+			;;
+		esac
+	done
 
-    shell::git::commit::pick::status || return "$RETURN_FAILURE"
-    shell::logger::warn "Aborting drops everything the cherry-pick changed, your conflict resolution included"
-    local choice
-    choice="$(shell::ask::option "Abort the cherry-pick" "Cancel")"
-    if [ "$choice" != "Abort the cherry-pick" ]; then
-        shell::logger::info "Cancelled — the cherry-pick was left as it is"
-        return "$RETURN_FAILURE"
-    fi
-    shell::git::commit::pick::abort "$@"
+	shell::git::commit::pick::status || return "$RETURN_FAILURE"
+	shell::logger::warn "Aborting drops everything the cherry-pick changed, your conflict resolution included"
+	local choice
+	choice="$(shell::ask::option "Abort the cherry-pick" "Cancel")"
+	if [ "$choice" != "Abort the cherry-pick" ]; then
+		shell::logger::info "Cancelled — the cherry-pick was left as it is"
+		return "$RETURN_FAILURE"
+	fi
+	shell::git::commit::pick::abort "$@"
 }
