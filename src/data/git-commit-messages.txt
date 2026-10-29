@@ -2177,3 +2177,14 @@
 :hammer:|build(tooling)|configure VS Code settings for team consistency
 :hammer:|build(tooling)|add EditorConfig for cross-editor formatting
 
+[Backend and Concurrency]
+:thread:|feat(workers)|offload image processing to worker threads to unblock event loop
+:lock:|fix(concurrency)|prevent race condition in inventory deduction using advisory locks
+:sparkles:|feat(queue)|implement dead letter exchange for unprocessable RabbitMQ messages
+:recycle:|refactor(db)|replace raw SQL queries with Kysely query builder for type safety
+:zap:|perf(cache)|implement cache stampede protection using probabilistic early expiration
+:bug:|fix(memory)|resolve memory leak caused by unremoved event listeners in sockets
+:shield:|feat(auth)|implement sliding session expiration with refresh token rotation
+:wrench:|chore(scripts)|add seed script with deterministic faker.js data for local dev
+:sparkles:|feat(events)|implement outbox pattern to guarantee event publishing after DB commit
+:bug:|fix(cron)|prevent overlapping cron job executions using Redlock
