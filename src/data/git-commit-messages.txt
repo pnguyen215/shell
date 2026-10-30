@@ -2238,3 +2238,75 @@
 :wrench:|chore(scripts)|add seed script with deterministic faker.js data for local dev
 :sparkles:|feat(events)|implement outbox pattern to guarantee event publishing after DB commit
 :bug:|fix(cron)|prevent overlapping cron job executions using Redlock
+
+[Mobile and Cross-Platform Development]
+:iphone:|feat(mobile)|add push notification support for iOS and Android
+:iphone:|feat(mobile)|implement offline mode with local SQLite database
+:iphone:|fix(mobile)|resolve keyboard overlapping input fields on Android
+:iphone:|perf(mobile)|optimize list rendering using FlatList and memo
+:iphone:|build(mobile)|configure fastlane for automated store deployment
+:iphone:|chore(mobile)|update iOS provisioning profiles and certificates
+:iphone:|feat(mobile)|add biometric authentication using FaceID and TouchID
+:iphone:|fix(mobile)|resolve deep link routing not working on cold start
+:iphone:|style(mobile)|adapt responsive layouts for tablet screen sizes
+:iphone:|refactor(mobile)|switch class components to functional hooks
+
+[Localization and Internationalization]
+:globe_with_meridians:|feat(i18n)|add multi-language support using i18next
+:globe_with_meridians:|feat(i18n)|implement RTL layout support for Arabic and Hebrew
+:globe_with_meridians:|feat(i18n)|add currency and date formatting based on locale
+:globe_with_meridians:|fix(i18n)|resolve missing translation keys in user profile
+:globe_with_meridians:|chore(i18n)|extract hardcoded strings into translation files
+:globe_with_meridians:|feat(i18n)|add automatic language detection from browser settings
+:globe_with_meridians:|docs(i18n)|document guidelines for adding new translation keys
+:globe_with_meridians:|fix(i18n)|fix pluralization rules for complex language structures
+:globe_with_meridians:|perf(i18n)|lazy load translation bundles to reduce initial load
+:globe_with_meridians:|test(i18n)|add snapshot tests for localized UI components
+
+[SEO and Web Analytics]
+:mag:|feat(seo)|add dynamic meta tags and Open Graph properties for sharing
+:mag:|feat(seo)|implement structured data using JSON-LD for rich snippets
+:mag:|feat(seo)|generate dynamic XML sitemap with lastmod timestamps
+:mag:|fix(seo)|resolve canonical URL pointing to incorrect environment
+:mag:|perf(seo)|add preconnect and prefetch hints for critical resources
+:mag:|feat(analytics)|integrate GA4 with custom event tracking
+:mag:|feat(analytics)|implement server-side tracking with GTM
+:mag:|fix(analytics)|resolve double event firing on SPA routing
+:mag:|perf(seo)|reduce cumulative layout shift for core web vitals
+:mag:|chore(seo)|update robots.txt to allow indexing of new public pages
+
+[Security and Compliance]
+:lock:|feat(security)|add role-based access control for admin dashboard
+:lock:|feat(security)|add rate limiting to prevent brute force attacks
+:lock:|fix(security)|sanitize inputs to prevent cross-site scripting
+:lock:|feat(security)|implement two-factor authentication using TOTP
+:lock:|fix(security)|resolve session fixation vulnerability during login
+:lock:|chore(security)|add CSP and HSTS headers to HTTP responses
+:lock:|docs(security)|add security policy and disclosure guidelines
+:lock:|test(security)|add automated dependency vulnerability scanning
+:lock:|feat(security)|implement API request signing to prevent tampering
+:lock:|fix(security)|fix IDOR vulnerability in user profile endpoints
+
+[DevOps and Infrastructure as Code]
+:cloud:|feat(iac)|add Terraform modules for provisioning AWS VPC
+:cloud:|feat(iac)|configure auto-scaling groups based on CPU utilization
+:cloud:|fix(iac)|resolve IAM policy denying access to S3 buckets
+:cloud:|perf(iac)|enable transit gateway encryption for cross-region traffic
+:cloud:|chore(iac)|refactor Terraform state to use remote backend in S3
+:cloud:|feat(iac)|add Ansible playbooks for configuring web server nodes
+:cloud:|fix(iac)|resolve Docker image build failing due to missing OS packages
+:cloud:|build(iac)|configure GitHub Actions to deploy infra on merge
+:cloud:|docs(iac)|document disaster recovery procedures for cloud resources
+:cloud:|perf(iac)|optimize Docker layer caching to speed up image builds
+
+[Accessibility and Inclusive Design]
+:wheelchair:|feat(a11y)|add skip navigation link for keyboard users
+:wheelchair:|feat(a18n)|implement focus trapping inside modal dialogs
+:wheelchair:|fix(a11y)|resolve color contrast ratio failing WCAG AA standards
+:wheelchair:|feat(a11y)|add ARIA live regions for dynamic content updates
+:wheelchair:|style(a11y)|increase touch target size to minimum 44x44 pixels
+:wheelchair:|fix(a11y)|add descriptive alt text to all product images
+:wheelchair:|feat(a11y)|support reduced motion preference for animations
+:wheelchair:|fix(a11y)|ensure all form inputs have associated label tags
+:wheelchair:|feat(a11y)|add screen reader announcements for toast notifications
+:wheelchair:|test(a11y)|integrate automated accessibility testing with axe-core
