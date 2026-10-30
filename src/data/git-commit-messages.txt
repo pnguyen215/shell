@@ -2310,3 +2310,75 @@
 :wheelchair:|fix(a11y)|ensure all form inputs have associated label tags
 :wheelchair:|feat(a11y)|add screen reader announcements for toast notifications
 :wheelchair:|test(a11y)|integrate automated accessibility testing with axe-core
+
+[Artificial Intelligence and LLMs]
+:robot:|feat(ai)|integrate openai api for automated text summarization
+:robot:|feat(ai)|add retrieval augmented generation with vector database
+:robot:|perf(ai)|implement streaming responses for chat completions
+:robot:|feat(ai)|add prompt template manager with version control
+:robot:|fix(ai)|handle rate limit errors from external llm providers
+:robot:|feat(ai)|add semantic search using embeddings and cosine similarity
+:robot:|test(ai)|evaluate model performance using rouge and bleu scores
+:robot:|feat(ai)|add fallback model routing for high availability
+:robot:|fix(ai)|correct token counting logic for prompt truncation
+:robot:|feat(ai)|add function calling support for external api tools
+
+[Web3, Blockchain and Smart Contracts]
+:chains:|feat(web3)|add metamask wallet connection for user authentication
+:chains:|build(web3)|deploy erc20 token smart contract to ethereum testnet
+:chains:|fix(web3)|resolve transaction signature validation failing on polygon
+:chains:|perf(web3)|cache rpc node responses to reduce provider quota usage
+:chains:|feat(web3)|add ipfs integration for decentralized asset storage
+:chains:|feat(web3)|add reentrancy guards on smart contract withdrawals
+:chains:|build(web3)|update hardhat configuration for latest network forks
+:chains:|test(web3)|add fuzz testing for smart contract edge cases
+:chains:|feat(web3)|add cross chain bridge support for asset transfers
+:chains:|fix(web3)|handle reverted transactions gracefully in the frontend
+
+[Media, Audio and Video Processing]
+:movie_camera:|feat(media)|add ffmpeg integration for video transcoding
+:movie_camera:|feat(media)|implement webrtc peer to peer video streaming
+:movie_camera:|fix(media)|resolve audio desync during long livestreams
+:movie_camera:|perf(media)|use web workers to process large audio files
+:movie_camera:|feat(media)|add dynamic watermark overlay on exported videos
+:movie_camera:|fix(media)|correct exif orientation parsing for uploaded images
+:movie_camera:|feat(media)|generate video thumbnails at specific time intervals
+:movie_camera:|feat(media)|add support for hls streaming with adaptive bitrate
+:movie_camera:|chore(media)|delete temporary media files after processing
+:movie_camera:|feat(media)|add client side image cropping before upload
+
+[IoT and Edge Computing]
+:control_knobs:|feat(iot)|add mqtt client for receiving sensor telemetry data
+:control_knobs:|feat(iot)|implement over the air firmware update mechanism
+:control_knobs:|fix(iot)|resolve device reconnection loop after network drop
+:control_knobs:|perf(iot)|batch telemetry payloads to reduce network overhead
+:control_knobs:|feat(iot)|add digital twin representation for physical devices
+:control_knobs:|feat(iot)|implement edge computing rules engine for local actions
+:control_knobs:|fix(iot)|correct timezone offset parsing from device clocks
+:control_knobs:|feat(iot)|add bluetooth low energy device discovery service
+:control_knobs:|chore(iot)|rotate device certificates before expiration
+:control_knobs:|feat(iot)|add secure element integration for hardware key storage
+
+[Advanced Developer Tooling and Quality]
+:wrench:|build(tooling)|add custom eslint rule to prevent direct database calls
+:wrench:|build(tooling)|integrate sonarqube scanner into the pull request pipeline
+:wrench:|build(tooling)|add bundle analyzer plugin to track frontend asset sizes
+:wrench:|build(tooling)|configure commitlint to enforce strict conventional commits
+:wrench:|feat(dx)|add interactive command line interface for project scaffolding
+:wrench:|perf(dx)|cache linting results to speed up pre commit hook execution
+:wrench:|build(tooling)|add dead code detection plugin to the typescript compiler
+:wrench:|feat(dx)|generate visual dependency graph for the monorepo packages
+:wrench:|build(tooling)|update husky hooks to use the new pnpm package manager
+:wrench:|feat(dx)|add custom cli command to generate boilerplate code for apis
+
+[Monorepo and Workspace Management]
+:package:|build(monorepo)|add shared ui library to the workspace packages
+:package:|build(monorepo)|configure turborepo remote caching for faster ci builds
+:package:|refactor(monorepo)|extract shared utilities into a dedicated internal package
+:package:|fix(monorepo)|resolve circular dependency between api and web packages
+:package:|chore(monorepo)|update package manager to the latest stable version
+:package:|perf(monorepo)|enable lazy installation to speed up local setup
+:package:|build(monorepo)|add release please workflow for automated version bumping
+:package:|test(monorepo)|add integration tests across different workspace packages
+:package:|feat(monorepo)|add dynamic workspace filtering for targeted test runs
+:package:|chore(monorepo)|synchronize typescript base configs across all packages
