@@ -514,3 +514,50 @@ alias slgs-n="shell::logger::style::set::fzf -n"
 alias slgs-get="shell::logger::style::get"
 alias slgs-ls="shell::logger::style::list"
 alias slgs-reset="shell::logger::style::reset"
+
+# ///////////////////
+# Shell brew aliases
+# //////////////////
+
+# Control panel and fzf pickers (append -n for a dry run: choices are made, nothing is changed).
+alias sbm="shell::brew::manage" # Homebrew control panel (fzf menu)
+alias sbm-n="shell::brew::manage -n"
+alias sbi="shell::brew::install::fzf" # browse formulae, install the ones you pick
+alias sbi-n="shell::brew::install::fzf -n"
+alias sbic="shell::brew::install::fzf --cask" # browse casks, install the ones you pick
+alias sbic-n="shell::brew::install::fzf --cask -n"
+alias sbrm="shell::brew::uninstall::fzf" # pick installed formulae and uninstall them
+alias sbrm-n="shell::brew::uninstall::fzf -n"
+alias sbrmc="shell::brew::uninstall::fzf --cask" # pick installed casks and uninstall them
+alias sbrmc-n="shell::brew::uninstall::fzf --cask -n"
+alias sbup="shell::brew::upgrade::fzf" # pick outdated packages and upgrade them
+alias sbup-n="shell::brew::upgrade::fzf -n"
+alias sbin="shell::brew::info::fzf" # browse installed packages with brew info
+alias sbpin="shell::brew::pin::fzf" # pin packages
+alias sbpin-n="shell::brew::pin::fzf -n"
+alias sbunpin="shell::brew::unpin::fzf" # unpin packages
+alias sbunpin-n="shell::brew::unpin::fzf -n"
+alias sbsv="shell::brew::services::fzf" # start / stop / restart services
+alias sbsv-n="shell::brew::services::fzf -n"
+alias sbut="shell::brew::untap::fzf" # remove taps
+alias sbut-n="shell::brew::untap::fzf -n"
+
+# Unused packages and disk usage.
+alias sbun="shell::brew::unused"       # report orphans and stale formulae (read-only)
+alias sbunf="shell::brew::unused::fzf" # pick unused packages and remove them
+alias sbunf-n="shell::brew::unused::fzf -n"
+alias sbor="shell::brew::unused --orphans" # report dependencies nothing needs
+alias sbtidy="shell::brew::tidy"           # preview, then autoremove + cleanup
+alias sbtidy-n="shell::brew::tidy -n"
+alias sbsz="shell::brew::size" # largest installed packages
+
+# Plain commands.
+alias sbl="shell::brew::list"
+alias sbo="shell::brew::outdated"
+alias sbu="shell::brew::update"
+alias sbug="shell::brew::upgrade"
+alias sbug-n="shell::brew::upgrade -n"
+alias sbdr="shell::brew::doctor"
+alias sbs="shell::brew::search"
+alias sbbd="shell::brew::bundle::dump"
+alias sbbi="shell::brew::bundle::install"
