@@ -48,3 +48,10 @@ tree: ## Print the project layout
 clean: ## Remove generated files (docs/api, logs)
 	@rm -rf logs
 	@echo "Cleaned."
+
+hint: ## Show hints for installing required tools
+	@echo "Required tools and installation hints:"
+	@echo "  shfmt: Install it: brew install shfmt  |  sudo apt install shfmt"
+	@echo "  gawk: Install it: brew install gawk  |  sudo apt install gawk"
+	@echo "  shdoc: Install it: brew install shdoc  |  git clone https://github.com/reconquest/shdoc && sudo make -C shdoc install"
+	@echo "  tree: Install it: brew install tree  |  sudo apt install tree"
