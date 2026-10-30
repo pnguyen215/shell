@@ -373,4 +373,155 @@ t_has "sgcf: unchanged by the refactor" 'git commit -m "feat: my change #12"' "$
 t_eq "sgcf: same type menu (26 types + Back)" "27" "$(wc -l <"$HOME/stdin.1" | tr -d ' ')"
 t_eq "sgcf: ...in the same order" "$(shell::git::commit::types | head -n 3 | tr '\n' ',')" "$(head -n 3 "$HOME/stdin.1" | tr '\n' ',')"
 
+# --- format: type(scope) ----------------------------------------------------------------------
+t_eq "format: a scope goes after the type" "fix(auth): handle expired tokens #7" "$(shell::git::commit::predict::format 'fix(auth)' 'handle expired tokens' '#7')"
+t_eq "format: a menu label is resolved, the scope kept" "perf(git): improve x" "$(shell::git::commit::predict::format 'improvement(git)' 'improve x')"
+t_eq "format: a mapped type that has a scope keeps its own" "build(deps): bump x" "$(shell::git::commit::predict::format 'dependency(zzz)' 'bump x')"
+t_eq "format: the emoji is looked up for the type, not the scope" "feat(auth): :sparkles: add x" "$(shell::git::commit::predict::format 'feat(auth)' 'add x' '' true)"
+
+# --- smart engine: the patch and the history say WHAT changed ---------------------------------
+SP="$HOME/smart"
+mkdir -p "$SP"
+# smart <patch> <history> <branch> <name-status lines...>  -> engine output (smart mode)
+smart() {
+	local patch="$1" history="$2" branch="$3"
+	shift 3
+	printf '%s' "$patch" >"$SP/patch"
+	printf '%s' "$history" >"$SP/history"
+	printf '%s\n' "$@" | shell::git::commit::predict::candidates --branch "$branch" --patch-file "$SP/patch" --history-file "$SP/history"
+}
+# hunk <path> <hunk context> <+/- line>...  -> a one-hunk patch of a modified file
+hunk() {
+	local path="$1" ctx="$2"
+	shift 2
+	printf 'diff --git a/%s b/%s\n--- a/%s\n+++ b/%s\n@@ -1,1 +1,1 @@ %s\n' "$path" "$path" "$path" "$path" "$ctx"
+	printf '%s\n' "$@"
+}
+# newfile <path> <line>...  -> the patch of a new file
+newfile() {
+	local path="$1"
+	shift
+	printf 'diff --git a/%s b/%s\nnew file mode 100644\n--- /dev/null\n+++ b/%s\n@@ -0,0 +1,%d @@\n' "$path" "$path" "$path" "$#"
+	printf '+%s\n' "$@"
+}
+first_of() { printf '%s\n' "$1" | head -n 1; }
+
+# What the fix is about, and where: the function the hunk sits in.
+patch="$(hunk src/lang/session.sh 'shell::auth::login() {' "+${tab}if [ -z \"\$user\" ]; then" "+${tab}${tab}return 1 # fix the crash" "+${tab}fi")"
+out="$(smart "$patch" "" "" "M${tab}src/lang/session.sh")"
+t_eq "smart: a fix names its kind, the function and the scope" "fix(session)|prevent crash in auth::login" "$(first_of "$out")"
+t_has "smart: ...with generic alternatives behind it" "refactor(session)|restructure auth::login" "$out"
+t_lacks "smart: ...but never the vague 'improvement' (committed as perf)" "improvement" "$out"
+t_eq "smart: without evidence the description stays honest" "fix(session)|fix incorrect behavior in auth::login" "$(smart "$(hunk src/lang/session.sh 'shell::auth::login() {' "+${tab}echo a" "-${tab}echo b")" "" "fix/1" "M${tab}src/lang/session.sh" | head -n 1)"
+t_eq "smart: a guard clause reads as a fix" "fix(session)|handle missing values in auth::login" "$(smart "$(hunk src/lang/session.sh 'shell::auth::login() {' "+${tab}if [ -z \"\$x\" ] || [ \"\$x\" = null ]; then" "+${tab}${tab}return 1" "+${tab}fi")" "" "" "M${tab}src/lang/session.sh" | head -n 1)"
+t_eq "smart: a Go 'if err != nil' is not a missing-value guard" "feat(session)|extend auth::login" "$(smart "$(hunk src/lang/session.sh 'func Login() error {' "+${tab}if err != nil {" "+${tab}${tab}return err" "+${tab}}" "+${tab}a := 1" "+${tab}b := 2" "+${tab}c := 3" "+${tab}d := 4" "+${tab}e := 5" "+${tab}g := 6" "+${tab}h := 7" "+${tab}i := 8" "+${tab}j := 9")" "" "" "M${tab}src/lang/session.sh" | sed 's/Login/auth::login/' | head -n 1)"
+
+# New functions: the hunk header names the function BEFORE them, which is not what changed.
+patch="$(hunk src/lang/session.sh 'shell::auth::login() {' '+shell::auth::logout() {' "+${tab}echo bye" '+}')"
+out="$(smart "$patch" "" "" "M${tab}src/lang/session.sh")"
+t_eq "smart: a new function is a feat that names it" "feat(session)|add auth::logout" "$(first_of "$out")"
+t_lacks "smart: ...and the function the hunk sits in is not reported as modified" "login" "$out"
+t_eq "smart: ...and nothing vague is offered behind it" "1" "$(printf '%s\n' "$out" | wc -l | tr -d ' ')"
+patch="$(hunk src/lang/session.sh 'shell::auth::login() {' '+shell::a::one() {' '+}' '+shell::a::two() {' '+}' '+shell::a::three() {' '+}')"
+t_eq "smart: up to three new names are listed" "feat(session)|add a::one, a::two and a::three" "$(smart "$patch" "" "" "M${tab}src/lang/session.sh" | head -n 1)"
+patch="$(hunk src/lang/session.sh 'shell::auth::login() {' '+shell::a::one() {' '+}' '+shell::a::two() {' '+}' '+shell::a::three() {' '+}' '+shell::a::four() {' '+}' '+shell::a::five() {' '+}')"
+t_eq "smart: ...more are counted" "feat(session)|add a::one, a::two, a::three and 2 more" "$(smart "$patch" "" "" "M${tab}src/lang/session.sh" | head -n 1)"
+patch="$(newfile src/auth/token_refresher.go 'package auth' 'func (t *Refresher) Refresh() {}' 'func NewRefresher() {}' 'type Refresher struct{}' 'func a() {}' 'func b() {}')"
+t_eq "smart: many symbols in a new file are named by the file" "feat(auth)|add token refresher" "$(smart "$patch" "" "" "A${tab}src/auth/token_refresher.go" | head -n 1)"
+
+# Removing a function; renaming and moving files.
+patch="$(hunk src/lang/session.sh 'shell::auth::login() {' '-shell::auth::old() {' "-${tab}echo x" '-}')"
+t_eq "smart: removing a function names it" "remove(session)|remove auth::old" "$(smart "$patch" "" "" "M${tab}src/lang/session.sh" | head -n 1)"
+out="$(smart "" "" "" "R100${tab}src/login.sh${tab}src/signin.sh")"
+t_eq "smart: a rename says so" "refactor|rename login to signin" "$out"
+out="$(smart "" "" "" "R100${tab}src/login.sh${tab}src/auth/login.sh")"
+t_eq "smart: a move says so" "refactor|move login to auth" "$out"
+out="$(smart "" "" "" "D${tab}src/old_thing.sh" "D${tab}src/other.sh")"
+t_eq "smart: deleting files names them, humanised" "remove|remove old thing and other" "$(first_of "$out")"
+t_has "smart: ...and offers the clean-up wording second" "refactor|clean up old thing and other" "$out"
+
+# Docs, tests, dependencies, assets.
+patch="$(hunk README.md '' '+## Installation' '+' '+Run it.' '+## Commit prediction' '+')"
+t_eq "smart: added headings are documented" "docs|document installation and commit prediction in README" "$(smart "$patch" "" "" "M${tab}README.md" | head -n 1)"
+patch="$(hunk docs/guide.md '' '+Some more words.')"
+t_eq "smart: docs without headings keep the file wording" "docs|update documentation for guide" "$(smart "$patch" "" "" "M${tab}docs/guide.md" | head -n 1)"
+patch="$(newfile src/auth/login_test.go 'func TestLoginOK(t *testing.T) {}' 'func TestLoginFails(t *testing.T) {}')"
+t_eq "smart: new test cases are counted" "test(auth)|add 2 test cases for login" "$(smart "$patch" "" "" "A${tab}src/auth/login_test.go" | head -n 1)"
+patch="$(newfile web/cart.test.js 'it("shows the total", () => {});')"
+t_eq "smart: ...one is named as one" "test(web)|add test for cart" "$(smart "$patch" "" "" "A${tab}web/cart.test.js" | head -n 1)"
+patch="$(hunk package.json '' '-    "lodash": "^4.17.0",' '+    "lodash": "^4.17.21",')"
+t_eq "smart: a version bump names the package and version" "dependency|bump lodash to 4.17.21" "$(smart "$patch" "" "" "M${tab}package.json" | head -n 1)"
+patch="$(hunk package.json '' '-    "lodash": "^4.17.0"' '+    "lodash": "^4.17.0",' '+    "zod": "^3.23.0"')"
+t_eq "smart: a comma is not a bump, a new package is an addition" "dependency|add zod dependency" "$(smart "$patch" "" "" "M${tab}package.json" | head -n 1)"
+patch="$(hunk go.mod '' '-	github.com/spf13/cobra v1.7.0' '+	github.com/spf13/cobra v1.8.0' '+	github.com/stretchr/testify v1.9.0')"
+t_eq "smart: go.mod" "dependency|bump cobra and add testify" "$(smart "$patch" "" "" "M${tab}go.mod" | head -n 1)"
+t_eq "smart: a lockfile alone is a refresh" "dependency|refresh lockfile (yarn)" "$(smart "$(hunk yarn.lock '' '+x' '-y')" "" "" "M${tab}yarn.lock" | head -n 1)"
+t_eq "smart: a binary asset is a chore" "chore|add assets (logo)" "$(smart "" "" "" "A${tab}web/logo.png")"
+
+# A change that carries tests and docs says so, within the header length.
+patch="$(newfile src/auth/refresh.go 'func Refresh() {}')"
+out="$(smart "$patch" "" "" "A${tab}src/auth/refresh.go" "A${tab}src/auth/refresh_test.go" "M${tab}README.md")"
+t_eq "smart: code + tests + docs" "feat(auth)|add Refresh with tests and docs" "$(first_of "$out")"
+patch="$(hunk src/lang/session.sh 'shell::auth::a_very_long_function_name_indeed() {' '+shell::auth::another_quite_long_function_name() {' '+}' '+shell::auth::and_one_more_long_function_name() {' '+}')"
+out="$(smart "$patch" "" "" "M${tab}src/lang/session.sh" "A${tab}test/test_session.sh")"
+t_eq "smart: a long header is shortened, not cut" "0" "$(printf '%s\n' "$out" | awk -F'|' '{ if (length($1) + length($2) + 2 > 66) print }' | wc -l | tr -d ' ')"
+
+# Performance of a big change and quality of the safety net.
+patch="$(newfile 'src/we"ird$(x)`y`;|n.sh' 'function evil"name$(x)`y`() {' '}')"
+out="$(smart "$patch" "" "" "A${tab}src/we\"ird\$(x)\`y\`;|n.sh")"
+t_lacks "smart: no double quote in the output" '"' "$out"
+t_lacks "smart: no dollar in the output" '$' "$out"
+t_lacks "smart: no backtick in the output" '`' "$out"
+t_eq "smart: one pipe per line" "$(printf '%s\n' "$out" | wc -l | tr -d ' ')" "$(printf '%s\n' "$out" | awk -F'|' 'NF == 2' | wc -l | tr -d ' ')"
+
+# The history: scopes only where the repository uses them; no repeating what was just said.
+patch="$(hunk src/lang/session.sh 'shell::auth::login() {' "+${tab}if [ -z \"\$user\" ]; then" "+${tab}${tab}return 1 # fix the crash" "+${tab}fi")"
+plain_history="feat: a${nl}fix: b${nl}feat: c${nl}chore: d${nl}docs: e${nl}fix: f${nl}feat: g${nl}test: h${nl}feat: i${nl}"
+t_eq "history: a repository that never uses scopes gets none" "fix|prevent crash in auth::login" "$(smart "$patch" "$plain_history" "" "M${tab}src/lang/session.sh" | head -n 1)"
+scoped_history="feat(a): a${nl}fix(b): b${nl}feat(c): c${nl}chore: d${nl}docs: e${nl}fix(f): f${nl}feat(g): g${nl}test: h${nl}feat: i${nl}"
+t_eq "history: ...one that does keeps them" "fix(session)|prevent crash in auth::login" "$(smart "$patch" "$scoped_history" "" "M${tab}src/lang/session.sh" | head -n 1)"
+t_eq "history: too little history to tell keeps the scope" "fix(session)|prevent crash in auth::login" "$(smart "$patch" "feat: a${nl}" "" "M${tab}src/lang/session.sh" | head -n 1)"
+patch="$(hunk src/lang/session.sh 'shell::auth::login() {' "-${tab}echo a" "+${tab}echo b")"
+t_eq "smart: a balanced edit of a function reads as a refactor" "refactor(session)|restructure auth::login" "$(smart "$patch" "" "" "M${tab}src/lang/session.sh" | head -n 1)"
+t_neq() { if [ "$2" != "$3" ]; then t_ok; else t_bad "$1" "expected anything but [$2]"; fi; }
+out="$(smart "$patch" "refactor(session): restructure auth::login${nl}" "" "M${tab}src/lang/session.sh" | head -n 1)"
+t_neq "history: a description the history already has is not offered first again" "refactor(session)|restructure auth::login" "$out"
+
+# The branch prefix still wins, and works for a change without any code.
+patch="$(hunk README.md '' '+Some more words.')"
+t_eq "smart: fix/ branch with only docs describes the files" "fix|fix README" "$(smart "$patch" "" "fix/9-typo" "M${tab}README.md" | head -n 1)"
+
+# Without a patch the engine is exactly what it was.
+t_eq "smart: an unreadable patch file falls back to name-status mode" "feat|add login" "$(printf 'A\tsrc/login.sh\n' | shell::git::commit::predict::candidates --patch-file "$SP/does-not-exist" | head -n 1)"
+printf 'A\ta.sh\n' | shell::git::commit::predict::candidates --patch-file >/dev/null 2>&1
+t_eq "smart: --patch-file needs a value" "2" "$?"
+printf 'A\ta.sh\n' | shell::git::commit::predict::candidates --history-file >/dev/null 2>&1
+t_eq "smart: --history-file needs a value" "2" "$?"
+
+# --- the evidence and the whole thing, on a real repository ------------------------------------
+mkdir "$HOME/smartrepo" && cd "$HOME/smartrepo" && git init -q && git config user.email t@example.com && git config user.name Tester
+mkdir lib && printf '#!/usr/bin/env bash\nsession::open() {\n\techo open\n}\nsession::close() {\n\techo close\n}\n' >lib/auth.sh
+git add -A && git commit -q -m "base"
+printf '#!/usr/bin/env bash\nsession::open() {\n\tif [ -z "$1" ]; then\n\t\treturn 1 # fix the crash\n\tfi\n\techo open\n}\nsession::close() {\n\techo close\n}\n' >lib/auth.sh
+git add -A
+list="$(shell::git::commit::predict --list -c 2 2>&1)"
+t_eq "e2e: a fix in a function of a real repository" "fix(auth): prevent crash in session::open" "$(first_of "$list")"
+t_eq "e2e: --list prints nothing but messages" "0" "$(printf '%s\n' "$list" | grep -vcE '^[a-z]+(\([a-z0-9.-]+\))?: ')"
+ev="$HOME/evidence"
+mkdir "$ev" && shell::git::commit::predict::evidence "$ev" false
+t_has "evidence: the staged patch" "+++ b/lib/auth.sh" "$(cat "$ev/patch")"
+t_has "evidence: the recent subjects" "base" "$(cat "$ev/history")"
+git reset -q
+printf 'brand new\n' >lib/untracked.sh
+rm -rf "$ev" && mkdir "$ev" && shell::git::commit::predict::evidence "$ev" true
+t_has "evidence: the working tree diff" "+++ b/lib/auth.sh" "$(cat "$ev/patch")"
+t_has "evidence: ...and the untracked files, as new files" "+++ b/lib/untracked.sh" "$(cat "$ev/patch")"
+shell::git::commit::predict::evidence "$HOME/does-not-exist" false
+t_eq "evidence: a missing directory is refused" "2" "$?"
+shell::git::commit::predict::evidence "" false
+t_eq "evidence: so is an empty one" "2" "$?"
+mkdir "$HOME/tmpcheck"
+TMPDIR="$HOME/tmpcheck" shell::git::commit::predict --list >/dev/null 2>&1
+t_eq "e2e: the evidence directory is removed afterwards" "0" "$(find "$HOME/tmpcheck" -mindepth 1 | wc -l | tr -d ' ')"
+
 t_done

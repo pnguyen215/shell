@@ -4251,7 +4251,7 @@ shell::git::commit::predict::issue() {
 #   sits after the colon, as part of the description, so the header stays valid.
 #   The issue part is optional.
 # @internal
-# @arg $1 string Commit type (a menu label or a Conventional Commits type).
+# @arg $1 string Commit type (a menu label or a Conventional Commits type), optionally with a scope: `fix(auth)`. The type is resolved, the scope added (unless the mapped type has one already, as `build(deps)`).
 # @arg $2 string Description.
 # @arg $3 string Optional issue reference.
 # @arg $4 string Optional. `true` / `false` overrides SHELL_GIT_COMMIT_EMOJI (see shell::git::commit::emoji::enabled).
@@ -4260,13 +4260,31 @@ shell::git::commit::predict::issue() {
 # @example
 #   shell::git::commit::predict::format feat "add login" "#12"          # feat: add login #12
 #   shell::git::commit::predict::format feat "add login" "#12" true     # feat: :sparkles: add login #12
+#   shell::git::commit::predict::format "fix(auth)" "handle expired tokens" "#7"   # fix(auth): handle expired tokens #7
 #
 shell::git::commit::predict::format() {
-	local header emoji out
-	header="$(shell::git::commit::type::resolve "${1-}")"
+	local label base scope header emoji out
+	label="${1-}"
+	base="$label"
+	scope=""
+	# The engine may hand over `type(scope)`: the type is resolved, the scope kept.
+	case "$label" in
+	*\(*\))
+		base="${label%%\(*}"
+		scope="${label#*\(}"
+		scope="${scope%\)}"
+		;;
+	esac
+	header="$(shell::git::commit::type::resolve "$base")"
+	if [ -n "$scope" ]; then
+		case "$header" in
+		*\(*) ;; # the mapped type has a scope already (build(deps), chore(wip)): keep it
+		*) header="${header}(${scope})" ;;
+		esac
+	fi
 	out="${header}: "
 	if shell::git::commit::emoji::enabled "${4-}"; then
-		emoji="$(shell::git::commit::emoji "${1-}")"
+		emoji="$(shell::git::commit::emoji "$base")"
 		if [ -n "$emoji" ]; then
 			out="${out}${emoji} "
 		fi
@@ -4278,31 +4296,85 @@ shell::git::commit::predict::format() {
 	printf '%s\n' "$out"
 }
 
-# @description The prediction engine. Reads `git diff --name-status` lines on
-#   stdin and prints the most likely commit types, each with a description.
+# @description Collects the evidence the smart prediction needs into a directory:
+#   `patch` (the change as `git diff -U0 -M`, staged, or the working tree plus
+#   the untracked files when nothing is staged; capped in size) and `history`
+#   (the subjects of the last 150 non-merge commits).
+# @internal
+# @arg $1 string Existing directory to write into.
+# @arg $2 string `true` to read the working tree instead of the index.
+# @exitcode 0 The files were written (they may be empty).
+# @exitcode 2 No directory given.
+# @example
+#   shell::git::commit::predict::evidence "$dir" false
 #
-#   The type is inferred from, in order of weight: the branch prefix
-#   (`fix/...`, `feat/...`), the kind of files touched (docs, tests, lockfiles,
-#   CI, Dockerfiles, styles, config, code), what happened to them (added,
-#   modified, deleted, renamed) and, for modified code, whether the added lines
-#   talk about a fix. Nothing leaves the machine and no model is involved, so
-#   the result is instant and deterministic.
+shell::git::commit::predict::evidence() {
+	local dir="${1-}" from_tree="${2-false}" untracked_file=""
+	if [ -z "$dir" ] || [ ! -d "$dir" ]; then
+		return "$RETURN_INVALID"
+	fi
+
+	if [ "$from_tree" = "true" ]; then
+		git -c core.quotepath=off diff -U0 -M --no-color --no-ext-diff 2>/dev/null | head -c 400000 >"$dir/patch"
+		# New files are not in `git diff`: show each one as an all-added file (the first 30).
+		git ls-files --others --exclude-standard 2>/dev/null | head -n 30 | while IFS= read -r untracked_file; do
+			git -c core.quotepath=off diff --no-index --no-color -U0 -- /dev/null "$untracked_file" 2>/dev/null | head -c 20000 >>"$dir/patch"
+		done
+	else
+		git -c core.quotepath=off diff --cached -U0 -M --no-color --no-ext-diff 2>/dev/null | head -c 400000 >"$dir/patch"
+	fi
+	git log -n 150 --no-merges --format='%s' 2>/dev/null >"$dir/history"
+	return "$RETURN_SUCCESS"
+}
+
+# @description The prediction engine. Reads `git diff --name-status` lines on
+#   stdin and prints the most likely commit messages, best guess first, each as
+#   `type[(scope)]|description`.
+#
+#   Two modes:
+#
+#   - Name-status only (the original behaviour): the type is inferred from the
+#     branch prefix, the kind of files touched (docs, tests, lockfiles, CI,
+#     Dockerfiles, styles, config, code), what happened to them (added, modified,
+#     deleted, renamed) and, with --hint, whether the added lines talk about a fix.
+#     The description names the files.
+#   - Smart (--patch-file, what `shell::git::commit::predict` uses): it also reads
+#     the patch (`git diff -U0`) and the recent history, so it can say *what* changed:
+#       * the functions / classes / types that were added, modified or removed
+#         (bash, Go, Python, JS/TS, Rust, Java/Kotlin/C#, SQL, ...), taken from the
+#         added and removed lines and from the hunk headers;
+#       * headings added to documentation, test cases added, dependencies bumped /
+#         added / removed (package.json, go.mod, requirements.txt, Cargo.toml, Gemfile);
+#       * what kind of fix, optimisation or hardening the added code talks about;
+#       * the scope (`feat(auth): ...`), from where the files live, left out when the
+#         recent history never uses scopes;
+#       * "with tests" / "with docs" when the commit carries them as well;
+#       * the header is kept short (about 72 characters) by naming fewer symbols.
+#     Candidates are ranked by evidence, not by a fixed order, and a description the
+#     history already contains is pushed down. When there is nothing to say (a pure
+#     rename, only new functions) it prints fewer messages rather than vague ones.
+#
+#   Nothing leaves the machine and no model is involved, so the result is instant
+#   and deterministic.
 # @option -b | --branch Optional. Current branch name.
-# @option -H | --hint Optional. Lower-case words of the added lines (fix detection).
+# @option -H | --hint Optional. Lower-case words of the added lines (fix detection, name-status mode only).
 # @option -i | --initial Optional. `true` when the repository has no commit yet.
 # @option -c | --count Optional. How many predictions to print (default 3, max 9).
-# @stdout `type|description`, best guess first.
+# @option --patch-file Optional. File with `git diff -U0 -M` output; turns the smart mode on.
+# @option --history-file Optional. File with recent commit subjects, one per line (smart mode).
+# @stdout `type[(scope)]|description`, best guess first.
 # @exitcode 0 Predictions were printed, or there was nothing to predict from.
 # @exitcode 2 Invalid or missing option value.
 # @example
 #   git diff --cached --name-status -M | shell::git::commit::predict::candidates --branch "fix/12-crash"
+#   git diff --cached --name-status -M | shell::git::commit::predict::candidates --patch-file /tmp/p --history-file /tmp/h
 #
 shell::git::commit::predict::candidates() {
-	local branch="" hint="" initial="false" count=3
+	local branch="" hint="" initial="false" count=3 patch_file="" history_file=""
 
 	while [ "$#" -gt 0 ]; do
 		case "$1" in
-		-b | --branch | -H | --hint | -i | --initial | -c | --count)
+		-b | --branch | -H | --hint | -i | --initial | -c | --count | --patch-file | --history-file)
 			if [ "$#" -lt 2 ]; then
 				shell::logger::error "Option $1 needs a value"
 				return "$RETURN_INVALID"
@@ -4312,6 +4384,8 @@ shell::git::commit::predict::candidates() {
 			-H | --hint) hint="$2" ;;
 			-i | --initial) initial="$2" ;;
 			-c | --count) count="$2" ;;
+			--patch-file) patch_file="$2" ;;
+			--history-file) history_file="$2" ;;
 			esac
 			shift 2
 			;;
@@ -4329,7 +4403,16 @@ shell::git::commit::predict::candidates() {
 		;;
 	esac
 
-	awk -F'\t' -v branch="$branch" -v hint="$hint" -v initial="$initial" -v max="$count" '
+	# An unreadable evidence file just means "no evidence": fall back, do not fail.
+	if [ -n "$patch_file" ] && [ ! -r "$patch_file" ]; then
+		patch_file=""
+	fi
+	if [ -n "$history_file" ] && [ ! -r "$history_file" ]; then
+		history_file=""
+	fi
+
+	awk -F'\t' -v branch="$branch" -v hint="$hint" -v initial="$initial" -v max="$count" \
+		-v patch="$patch_file" -v history="$history_file" '
 		function basename(p,   n, a) { n = split(p, a, "/"); return a[n] }
 		function dirname(p,   i) {
 			i = length(p)
@@ -4341,6 +4424,8 @@ shell::git::commit::predict::candidates() {
 			return i > 1 ? substr(b, 1, i - 1) : b
 		}
 		function inpath(p, seg) { return index("/" p, "/" seg "/") > 0 }
+		function trim(s) { sub(/^[ \t]+/, "", s); sub(/[ \t]+$/, "", s); return s }
+		function clean(s) { gsub("[^A-Za-z0-9._ ,()+/:-]", "", s); return s }
 
 		# What kind of file is this?
 		function classify(path,   p, b, e) {
@@ -4352,6 +4437,7 @@ shell::git::commit::predict::candidates() {
 			if (inpath(p, "locales") || inpath(p, "locale") || inpath(p, "i18n") || inpath(p, "l10n") || inpath(p, "translations") || e == "po" || e == "pot") return "localization"
 			if (e ~ /^(md|mdx|rst|adoc)$/ || inpath(p, "docs") || inpath(p, "doc") || b ~ /^(readme|license|changelog|contributing|authors|notice)/) return "docs"
 			if (inpath(p, "test") || inpath(p, "tests") || inpath(p, "__tests__") || inpath(p, "spec") || inpath(p, "specs") || inpath(p, "e2e") || b ~ /(_test|\.test|\.spec|_spec)\.[^.]+$/ || b ~ /^test_/) return "test"
+			if (e ~ /^(png|jpe?g|gif|svg|ico|icns|webp|avif|bmp|tiff?|woff2?|ttf|otf|eot|mp[34]|mov|webm|wav|ogg|pdf|zip|gz|tgz|jar|psd|sketch|fig)$/) return "asset"
 			if (e ~ /^(css|scss|sass|less|styl)$/) return "style"
 			if (substr(b, 1, 1) == "." || e ~ /^(json|ya?ml|toml|ini|cfg|conf|env|properties)$/) return "config"
 			return "code"
@@ -4414,6 +4500,7 @@ shell::git::commit::predict::candidates() {
 			return (subjectfiles <= 3 ? phrase " (" s ")" : phrase)
 		}
 
+		# Name-status only description (no diff available).
 		function describe(t,   s) {
 			if (t == "build") return infra("update build configuration", "build")
 			if (t == "dependency") return infra("update dependencies", "dependency")
@@ -4423,6 +4510,7 @@ shell::git::commit::predict::candidates() {
 			if (t == "docs") { s = subject("docs"); return (alladded ? "add" : "update") " documentation for " s }
 			if (t == "test") { s = subject("test"); return (alladded ? "add" : "update") " tests for " s }
 			if (t == "style") { s = subject("style"); return "update styles of " s }
+			if (t == "chore" && cnt["asset"] == n) { s = subject("asset"); return (alladded ? "add" : "update") " assets (" s ")" }
 			if (t == "feat") { s = subject("code", 1); return (anyadded ? "add " : "extend ") s }
 			if (t == "fix" || t == "improvement" || t == "refactor" || t == "perf" || t == "security") s = subject("code")
 			else s = subject("")
@@ -4444,10 +4532,563 @@ shell::git::commit::predict::candidates() {
 			tl[++nt] = t
 		}
 
+		# ============================================================================
+		# Smart mode: reads the patch (git diff -U0) and the recent history.
+		# ============================================================================
+
+		# "Humanise" an identifier: login_handler / LoginHandler -> login handler.
+		function humanize(s,   i, c, out) {
+			out = ""
+			for (i = 1; i <= length(s); i++) {
+				c = substr(s, i, 1)
+				if (i > 1 && c ~ /[A-Z]/ && substr(s, i - 1, 1) ~ /[a-z0-9]/) out = out " "
+				out = out c
+			}
+			gsub(/[_-]+/, " ", out)
+			gsub(/ +/, " ", out)
+			return trim(tolower(out))
+		}
+
+		# Strip the test decoration from a name: test_login, login_test, LoginTest, login.spec.
+		function teststem(f) {
+			if (f ~ /^test[_.-]./) sub(/^test[_.-]/, "", f)
+			if (f ~ /.[_.-](test|tests|spec)$/) sub(/[_.-](test|tests|spec)$/, "", f)
+			else if (f ~ /[a-z0-9](Test|Tests|Spec)$/) sub(/(Test|Tests|Spec)$/, "", f)
+			return f
+		}
+
+		# The name a line defines (function / class / type), or "" when it defines nothing.
+		function defsym(s,   t, hadmod, a, k) {
+			sub(/^[ \t]+/, "", s)
+			if (s == "" || s ~ /^(#|\/\/|\/\*|\*|@|--)/) return ""
+			hadmod = 0
+			while (match(s, /^(export|public|private|protected|static|async|default|final|abstract|pub|override|extern|inline|unsafe|internal|open|suspend|virtual|readonly|sealed|partial)[ \t]+/)) { s = substr(s, RLENGTH + 1); hadmod = 1 }
+			if (match(s, /^function[ \t]+[A-Za-z_$][A-Za-z0-9_$:.-]*/)) { t = substr(s, RSTART, RLENGTH); sub(/^function[ \t]+/, "", t); return t }
+			if (match(s, /^def[ \t]+(self\.)?[A-Za-z_][A-Za-z0-9_?!]*/)) { t = substr(s, RSTART, RLENGTH); sub(/^def[ \t]+(self\.)?/, "", t); return t }
+			if (match(s, /^func[ \t]+/)) {
+				t = substr(s, RLENGTH + 1)
+				if (substr(t, 1, 1) == "(") sub(/^\([^)]*\)[ \t]*/, "", t)
+				if (match(t, /^[A-Za-z_][A-Za-z0-9_]*/)) return substr(t, 1, RLENGTH)
+				return ""
+			}
+			if (match(s, /^(fn|fun)[ \t]+[A-Za-z_][A-Za-z0-9_]*/)) { t = substr(s, RSTART, RLENGTH); sub(/^(fn|fun)[ \t]+/, "", t); return t }
+			if (match(s, /^(class|struct|interface|enum|trait|object|record|protocol|namespace|mixin|actor)[ \t]+[A-Za-z_][A-Za-z0-9_.]*/)) { t = substr(s, RSTART, RLENGTH); sub(/^[a-z]+[ \t]+/, "", t); return t }
+			if (s ~ /^type[ \t]+[A-Za-z_][A-Za-z0-9_]*[ \t]*(=|struct|interface)/) { match(s, /^type[ \t]+/); t = substr(s, RLENGTH + 1); match(t, /^[A-Za-z_][A-Za-z0-9_]*/); return substr(t, 1, RLENGTH) }
+			if (s ~ /^(const|let|var)[ \t]+[A-Za-z_$][A-Za-z0-9_$]*[ \t]*(:[^=]*)?=[ \t]*(async[ \t]*)?(\(|function|[A-Za-z_$][A-Za-z0-9_$]*[ \t]*=>)/ && (index(s, "=>") || index(s, "function"))) {
+				t = s; sub(/^(const|let|var)[ \t]+/, "", t); match(t, /^[A-Za-z_$][A-Za-z0-9_$]*/); return substr(t, 1, RLENGTH)
+			}
+			if (match(s, /^[A-Za-z_][A-Za-z0-9_:.$@-]*[ \t]*\(\)[ \t]*\{/)) { t = substr(s, RSTART, RLENGTH); sub(/[ \t]*\(\)[ \t]*\{$/, "", t); return t }
+			if (s ~ /^[A-Za-z_$][A-Za-z0-9_$]*[ \t]*\([^()]*\)[ \t]*\{[ \t]*$/) { t = s; sub(/[ \t]*\(.*$/, "", t); if (t !~ /^(if|for|while|switch|catch|else|elif|function|return|with|do|until|select|case)$/) return t }
+			if (hadmod && match(s, /^[A-Za-z_][^ \t(]*[ \t]+[A-Za-z_][A-Za-z0-9_]*[ \t]*\(/)) { t = substr(s, RSTART, RLENGTH); sub(/[ \t]*\($/, "", t); sub(/^.*[ \t]/, "", t); return t }
+			t = tolower(s)
+			if (match(t, /^create[ \t]+(or[ \t]+replace[ \t]+)?(unique[ \t]+)?(table|view|index|function|procedure|trigger)[ \t]+(if[ \t]+not[ \t]+exists[ \t]+)?[a-z0-9_.]+/)) {
+				t = substr(t, RSTART, RLENGTH); sub(/^.*[ \t]/, "", t); k = split(t, a, "."); return a[k]
+			}
+			return ""
+		}
+
+		# shell::git::commit::predict::candidates -> predict::candidates
+		function abbrev(name,   k, a, r) {
+			sub(/^self\./, "", name)
+			k = split(name, a, "::")
+			if (k >= 2) {
+				r = a[k - 1] "::" a[k]
+				return (length(r) > 30 ? a[k] : r)
+			}
+			k = split(name, a, ".")
+			return (k >= 2 && a[k] != "" ? a[k] : name)
+		}
+
+		# The title of a test case: it("does x"), test("x"), describe("x").
+		function testtitle(s,   best, qq, q, i, k, t, j) {
+			sub(/^[ \t]+/, "", s)
+			if (s !~ /^(it|test|describe|context|specify|scenario)[ \t]*[(.]/) return ""
+			best = 0; qq = ""
+			for (k = 1; k <= 3; k++) {
+				q = (k == 1 ? "\"" : (k == 2 ? "\047" : "\140"))
+				i = index(s, q)
+				if (i > 0 && (best == 0 || i < best)) { best = i; qq = q }
+			}
+			if (best == 0) return ""
+			t = substr(s, best + 1)
+			j = index(t, qq)
+			if (j <= 1) return ""
+			return substr(t, 1, j - 1)
+		}
+
+		# A dependency declared on this line: "name<TAB>version", or "".
+		function depparse(body, b,   t, a, k, name, ver, q) {
+			name = ""; ver = ""
+			if (b == "package.json" || b == "composer.json") {
+				if (match(body, /^[ \t]*"[^"]+"[ \t]*:[ \t]*"[^"]*"/)) {
+					t = substr(body, RSTART, RLENGTH)
+					split(t, a, "\"")
+					name = a[2]; ver = a[4]
+					if (ver !~ /[0-9*]/ || name ~ /^(name|version|description|main|module|types|license|author|homepage|repository|url|type|private|engines|node|npm|php|bin|files|scripts|keywords|bugs|email)$/) name = ""
+				}
+			} else if (b == "go.mod") {
+				if (match(body, /^[ \t]*(require[ \t]+)?[A-Za-z0-9.-]+\.[a-z]+\/[^ \t]+[ \t]+v[0-9][^ \t]*/)) {
+					t = substr(body, RSTART, RLENGTH); sub(/^[ \t]*(require[ \t]+)?/, "", t)
+					split(t, a, " "); ver = a[2]
+					k = split(a[1], a, "/"); name = a[k]
+					if (name ~ /^v[0-9]+$/ && k > 1) name = a[k - 1]
+				}
+			} else if (b ~ /^requirements.*\.txt$/) {
+				if (match(body, /^[A-Za-z0-9_.-]+[ \t]*(==|>=|<=|~=|!=|>|<)[ \t]*[0-9]/)) {
+					t = substr(body, RSTART, RLENGTH)
+					match(t, /^[A-Za-z0-9_.-]+/); name = substr(t, 1, RLENGTH)
+					ver = substr(t, RLENGTH + 1); gsub(/[ \t=<>~!]/, "", ver)
+				}
+			} else if (b == "cargo.toml") {
+				if (match(body, /^[A-Za-z0-9_-]+[ \t]*=[ \t]*("[0-9^~<>=*]|\{)/)) {
+					t = substr(body, RSTART, RLENGTH)
+					match(t, /^[A-Za-z0-9_-]+/); name = substr(t, 1, RLENGTH)
+					if (name ~ /^(version|edition|name|description|license|authors|readme|repository|homepage|rust-version|resolver|publish|documentation|keywords|categories)$/) name = ""
+					else if (match(body, /"[^"]*"/)) ver = substr(body, RSTART + 1, RLENGTH - 2)
+				}
+			} else if (b == "gemfile") {
+				if (body ~ /^[ \t]*gem[ \t]/) {
+					q = (index(body, "\047") > 0 && (index(body, "\"") == 0 || index(body, "\047") < index(body, "\""))) ? "\047" : "\""
+					k = index(body, q)
+					if (k > 0) { t = substr(body, k + 1); k = index(t, q); if (k > 1) name = substr(t, 1, k - 1) }
+				}
+			}
+			if (name == "") return ""
+			sub(/^[\^~=<> ]+/, "", ver)
+			return name "\t" ver
+		}
+
+		# Tidy a markdown heading: keep ACRONYMS, lower-case the rest.
+		function headtext(h,   k, a, i, out) {
+			gsub("[^A-Za-z0-9 ./()+-]", "", h)
+			k = split(trim(h), a, " ")
+			out = ""
+			for (i = 1; i <= k; i++) out = out (i > 1 ? " " : "") ((a[i] ~ /^[A-Z0-9]+$/ && length(a[i]) > 1) ? a[i] : tolower(a[i]))
+			if (length(out) > 32) { out = substr(out, 1, 32); sub(/ [^ ]*$/, "", out) }
+			return out
+		}
+
+		# The function a hunk sits in counts as modified only when the hunk did not
+		# itself add or remove a definition (then it is the new / removed one that matters).
+		function flushctx() {
+			if (pctx != "" && !pdef) ctxsym[++nctx] = pctx
+			pctx = ""; pdef = 0
+		}
+
+		function pushsym(kind, name,   key) {
+			key = kind SUBSEP name
+			if (key in seensym) return
+			seensym[key] = 1
+			if (kind == "N") newsym[++nnew] = abbrev(name)
+			else if (kind == "M") modsym[++nmod] = abbrev(name)
+			else remsym[++nrem] = abbrev(name)
+		}
+
+		# Read the patch: symbols added / touched / removed, headings, test cases,
+		# dependencies, the words of the added code and the size of the change.
+		function readpatch(   line, hdr, cur, old, cat, b, c, body, k, t, ws, i, ctx, sym, h, d, lock, key) {
+			hdr = 0; cur = ""; old = ""; cat = ""; b = ""; lock = 0
+			while ((getline line < patch) > 0) {
+				sub(/\r$/, "", line)
+				if (substr(line, 1, 10) == "diff --git") { flushctx(); hdr = 1; cur = ""; old = ""; cat = ""; continue }
+				if (hdr) {
+					if (substr(line, 1, 4) == "--- ") {
+						old = substr(line, 5); sub(/\t.*$/, "", old)
+						if (old == "/dev/null") old = ""; else sub(/^a\//, "", old)
+						continue
+					}
+					if (substr(line, 1, 4) == "+++ ") {
+						cur = substr(line, 5); sub(/\t.*$/, "", cur)
+						if (cur == "/dev/null") cur = old; else sub(/^b\//, "", cur)
+						cat = (cur == "" ? "" : classify(cur)); b = tolower(basename(cur))
+						lock = (b ~ /(\.lock|-lock\.json|-lock\.yaml|\.sum)$/)
+						continue
+					}
+					if (substr(line, 1, 2) != "@@") continue
+					hdr = 0
+				}
+				if (cur == "") continue
+				c = substr(line, 1, 1)
+				if (c == "@") {
+					flushctx()
+					if (cat == "code") {
+						t = substr(line, 4); k = index(t, "@@")
+						if (k > 0) pctx = defsym(substr(t, k + 3))
+					}
+					continue
+				}
+				body = substr(line, 2)
+				if (c == "+") {
+					tadd++
+					if (cat == "code") {
+						cadd++
+						t = tolower(body); gsub(/[^a-z0-9]+/, " ", t)
+						k = split(t, ws, " "); for (i = 1; i <= k; i++) cw[ws[i]] = 1
+						# A guard: "if x is None", "if (!user)", "unless item.nil" (not Go "if err != nil").
+						t = " " t " "
+						if (t ~ / (if|unless|guard|while) / && t ~ / (null|nil|none|undefined|empty) / && t !~ / err /) guardhit++
+						sym = defsym(body)
+						if (sym != "") { asym[++nas] = sym; asymf[nas] = cur; defa[cur SUBSEP sym] = 1; seena[sym] = 1; pdef = 1 }
+					} else if (cat == "test") {
+						if (testtitle(body) != "") ntests++
+						else { sym = defsym(body); if (sym ~ /^(Test|test)/) ntests++ }
+					} else if (cat == "docs") {
+						if (match(body, /^#+[ \t]+/)) {
+							h = headtext(substr(body, RLENGTH + 1))
+							if (h != "" && !(h in seenh) && nh < 6) { seenh[h] = 1; heads[++nh] = h }
+						}
+					} else if (cat == "dependency" && !lock) {
+						d = depparse(body, b)
+						if (d != "") { k = index(d, "\t"); key = substr(d, 1, k - 1); if (!(key in dver)) dord[++ndep] = key; dver[key] = substr(d, k + 1) }
+					}
+				} else if (c == "-") {
+					tdel++
+					if (cat == "code") {
+						cdel++
+						sym = defsym(body)
+						if (sym != "") { rsym[++nrs] = sym; defr[cur SUBSEP sym] = 1; pdef = 1 }
+					} else if (cat == "dependency" && !lock) {
+						d = depparse(body, b)
+						if (d != "") { k = index(d, "\t"); if (!(substr(d, 1, k - 1) in drem)) ndrem++; drem[substr(d, 1, k - 1)] = substr(d, k + 1) }
+					}
+				}
+			}
+			flushctx()
+			close(patch)
+		}
+
+		# Reads the recent subjects: does the repository use scopes at all, and which
+		# descriptions were already used.
+		function readhistory(   line, rl, d) {
+			if (history == "") return
+			while ((getline line < history) > 0) {
+				if (match(line, /^[a-z]+(\([^)]+\))?!?:[ \t]/)) {
+					rl = RLENGTH; conv++
+					if (index(substr(line, 1, rl), "(") > 0) scoped++
+					d = substr(line, rl + 1); sub(/ #[0-9]+$/, "", d)
+					recent[tolower(d)] = 1
+				}
+			}
+			close(history)
+			noscope = (conv >= 8 && scoped * 100 < conv * 15)
+		}
+
+		# New / modified / removed symbols from what readpatch saw.
+		function derive(   i, s) {
+			for (i = 1; i <= nas; i++) {
+				if ((asymf[i] SUBSEP asym[i]) in defr) pushsym("M", asym[i])
+				else pushsym("N", asym[i])
+			}
+			for (i = 1; i <= nctx; i++) if (!((("N") SUBSEP ctxsym[i]) in seensym)) pushsym("M", ctxsym[i])
+			for (i = 1; i <= nrs; i++) if (!(rsym[i] in seena)) pushsym("R", rsym[i])
+		}
+
+		# a, b and c / a, b, c and 2 more (at most LK names).
+		function joinlist(arr, m,   i, out) {
+			out = ""
+			if (m <= LK) {
+				for (i = 1; i <= m; i++) out = out (i == 1 ? "" : (i == m ? " and " : ", ")) arr[i]
+				return out
+			}
+			for (i = 1; i <= LK; i++) out = out (i == 1 ? "" : ", ") arr[i]
+			return out " and " (m - LK) " more"
+		}
+
+		# The files of one category as a humanised list (or the common directory).
+		function names(filter, addedonly, strip,   s, i, k, nm, seen, m, items) {
+			s = subject(filter, addedonly)
+			if (subjectfiles > 3) return s
+			m = 0; split("", seen); split("", items)
+			for (i = 1; i <= subjectfiles; i++) {
+				nm = stem(basename(pick[i]))
+				if (strip) nm = teststem(nm)
+				nm = humanize(nm)
+				if (nm != "" && !(nm in seen)) { seen[nm] = 1; items[++m] = nm }
+			}
+			return (m > 0 ? joinlist(items, m) : s)
+		}
+
+		function hasw(w) { return (w in cw) }
+		function anyw(list,   a, k, i) {
+			k = split(list, a, " ")
+			for (i = 1; i <= k; i++) if (a[i] in cw) return 1
+			return 0
+		}
+
+		# What the change touches: modified symbols, else new ones, else the files.
+		function target() {
+			if (nmod > 0) return joinlist(modsym, nmod)
+			if (nnew > 0) return joinlist(newsym, nnew)
+			return names("code")
+		}
+
+		function fixphrase() {
+			if (guardfix && !hasfixw) return "handle missing values"
+			if (!hasfixw) return "fix incorrect behavior"
+			if (hasw("typo")) return "correct typo"
+			if (anyw("race mutex deadlock atomic")) return "prevent race condition"
+			if (anyw("leak leaks dispose")) return "fix resource leak"
+			if (anyw("timeout timeouts deadline")) return "handle timeouts"
+			if (anyw("crash crashes panic")) return "prevent crash"
+			if (anyw("null nil undefined")) return "handle missing values"
+			if (anyw("validate validation invalid")) return "tighten input validation"
+			if (anyw("error errors err exception catch recover")) return "improve error handling"
+			if (hasw("regression")) return "fix regression"
+			return "fix incorrect behavior"
+		}
+
+		function d_feat() {
+			if (nnew > 6 && aCode == 0) return "extend " names("code")
+			if (nnew > 0 && !(nnew > 3 && aCode > 0)) return "add " joinlist(newsym, nnew)
+			if (aCode > 0) return "add " names("code", 1)
+			return "extend " target()
+		}
+
+		function d_refactor(   i, o, nw, od, nd) {
+			if (nD == n) return "clean up " names("")
+			if (nR == 1) {
+				o = stem(basename(rold[1])); nw = stem(basename(rnew[1]))
+				od = dirname(rold[1]); nd = dirname(rnew[1])
+				if (o != nw) return "rename " humanize(o) " to " humanize(nw)
+				if (od != nd) return "move " humanize(nw) " to " (nd == "" ? "the project root" : basename(nd))
+			}
+			if (nR > 1) return "reorganize " names("")
+			if (cdel > cadd) return "simplify " target()
+			return "restructure " target()
+		}
+
+		function d_perf() {
+			if (anyw("cache caching memoize memoized")) return "cache results in " target()
+			if (anyw("batch batching")) return "batch operations in " target()
+			if (anyw("parallel concurrent goroutine")) return "parallelize " target()
+			if (hasw("lazy")) return "load " target() " lazily"
+			return "optimize " target()
+		}
+
+		function d_security() {
+			if (anyw("sanitize sanitise xss injection escape escaped escaping")) return "sanitize input in " target()
+			return "harden " target()
+		}
+
+		function d_docs(   p, s) {
+			if (nh > 0) {
+				if (cnt["docs"] == 1) { s = subject("docs"); p = stem(basename(pick[1])); return "document " joinlist(heads, nh) " in " (tolower(p) == "readme" ? "README" : p) }
+				return "document " joinlist(heads, nh)
+			}
+			s = subject("docs")
+			if (subjectfiles == 1) {
+				p = stem(basename(pick[1]))
+				if (tolower(p) ~ /^(readme|changelog|contributing|license|authors|notice|security)$/) return (alladded ? "add " : "update ") (tolower(p) == "readme" ? "README" : tolower(p))
+			}
+			return describe("docs")
+		}
+
+		function d_test(   s) {
+			s = names("test", 0, 1)
+			if (ntests > 1) return "add " ntests " test cases for " s
+			if (ntests == 1) return "add test for " s
+			subject("test")
+			return (alladded ? "add" : "update") " tests for " s
+		}
+
+		function d_deps(   i, nb, na, nr, b, a, r, k, s, out) {
+			if (ndep == 0 && ndrem == 0) {
+				s = subject("dependency")
+				return (subjectfiles <= 3 ? "refresh lockfile (" s ")" : "refresh lockfiles")
+			}
+			nb = 0; na = 0; nr = 0
+			for (i = 1; i <= ndep; i++) {
+				k = dord[i]
+				if (k in drem) { if (drem[k] != dver[k]) b[++nb] = k }
+				else a[++na] = k
+			}
+			for (k in drem) if (!(k in dver)) r[++nr] = k
+			if (nb + na + nr == 0) return "tidy dependency manifest"
+			out = ""
+			if (nb > 0) out = (nb == 1 && na == 0 && nr == 0 && dver[b[1]] != "") ? "bump " b[1] " to " dver[b[1]] : "bump " joinlist(b, nb)
+			if (na > 0) out = out (out != "" ? " and add " : "add ") joinlist(a, na) ((nb == 0 && nr == 0) ? (na == 1 ? " dependency" : " dependencies") : "")
+			if (nr > 0 && out == "") out = "remove " joinlist(r, nr) (nr == 1 ? " dependency" : " dependencies")
+			else if (nr > 0) out = "update dependencies"
+			return out
+		}
+
+		function d_remove() {
+			if (nD == n || nrem == 0) return "remove " names("")
+			return "remove " joinlist(remsym, nrem)
+		}
+
+		function describe2(t) {
+			# A fix/feat/... named by the branch for a change without any code: describe the files.
+			if (codetype(t) && cnt["code"] == 0) return describe(t)
+			if (t == "feat") return d_feat()
+			if (t == "fix") return fixphrase() " in " target()
+			if (t == "refactor") return d_refactor()
+			if (t == "perf") return d_perf()
+			if (t == "security") return d_security()
+			if (t == "improvement") return "improve " target()
+			if (t == "docs") return d_docs()
+			if (t == "test") return d_test()
+			if (t == "style") return "update styles for " names("style")
+			if (t == "dependency") return d_deps()
+			if (t == "remove") return d_remove()
+			if (t == "chore") return (cnt["asset"] == n ? describe("chore") : "update " names(""))
+			return describe(t)
+		}
+
+		# Does this type talk about code, so that "with tests" makes sense?
+		function codetype(t) { return (t == "feat" || t == "fix" || t == "refactor" || t == "perf" || t == "security" || t == "improvement") }
+
+		# The description, shortened (fewer names, then cut) to fit the budget.
+		function build(t, bud,   d, k, sfx) {
+			for (k = 3; k >= 1; k--) {
+				LK = k
+				d = clean(describe2(t))
+				if (length(d) <= bud) break
+			}
+			if (length(d) > bud) { d = substr(d, 1, bud); sub(/[ ,(]+[^ ]*$/, "", d) }
+			if (codetype(t) && codelogic) {
+				sfx = (cnt["test"] > 0 && cnt["docs"] > 0) ? " with tests and docs" : (cnt["test"] > 0 ? " with tests" : (cnt["docs"] > 0 ? " with docs" : ""))
+				if (length(d) + length(sfx) <= bud) d = d sfx
+			}
+			return d
+		}
+
+		# Where in the project: the directory (or file) the change lives in.
+		function component(path,   segs, ns, start, f, d, jv) {
+			ns = split(path, segs, "/")
+			start = 1; jv = 0
+			while (start < ns && tolower(segs[start]) ~ /^(src|lib|app|apps|pkg|packages|internal|cmd|source|sources|main|java|kotlin|scala|python|js|ts|go|rust|include|test|tests|spec|specs|__tests__)$/) { if (tolower(segs[start]) ~ /^(java|kotlin|scala)$/) jv = 1; start++ }
+			# Java / Kotlin / Scala: skip the reverse-domain package root (com/acme/...).
+			if (jv && tolower(segs[start]) ~ /^(com|org|net|io|edu|gov|co|me|app|dev)$/ && start + 2 < ns) start += 2
+			f = teststem(stem(segs[ns]))
+			if (f ~ /^(index|main|mod|__init__|init)$/ && ns > 1) f = segs[ns - 1]
+			if (ns - start >= 1) {
+				d = segs[start]
+				if (tolower(d) ~ /^(util|utils|helper|helpers|common|shared|misc|lib|libs|core|base|lang|internal|pkg|src|app|scripts|script|bin|tools|modules|plugins)$/) {
+					if (ns - start >= 2) return segs[start + 1]
+					return f
+				}
+				return d
+			}
+			return f
+		}
+
+		function normscope(s) {
+			s = tolower(s)
+			gsub(/[^a-z0-9.-]+/, "-", s); gsub(/-+/, "-", s); sub(/^-/, "", s); sub(/-$/, "", s)
+			if (length(s) > 24) s = substr(s, 1, 24)
+			return s
+		}
+
+		# The scope of the change: the one area most of the files of this kind share.
+		function scopeof(kind,   i, comp, cc, tot, k, best, bestn) {
+			if (noscope) return ""
+			split("", cc); tot = 0
+			for (i = 1; i <= n; i++) {
+				if (kind != "all" && cats[i] != kind) continue
+				comp = component(paths[i])
+				if (comp == "") continue
+				cc[comp]++; tot++
+			}
+			if (tot == 0) return ""
+			best = ""; bestn = 0
+			for (k in cc) if (cc[k] > bestn) { best = k; bestn = cc[k] }
+			if (bestn * 100 < tot * 60) return ""
+			return normscope(best)
+		}
+
+		# The words of a text (camelCase split, punctuation dropped), padded with spaces.
+		function normwords(s) { s = humanize(s); gsub(/[^a-z0-9]+/, " ", s); return " " trim(s) " " }
+
+		function typescope(t) {
+			if (t == "feat" || t == "fix" || t == "refactor" || t == "perf" || t == "improvement") return scopeof("code")
+			if (t == "test") return scopeof("test")
+			if (t == "style") return scopeof("style")
+			if (t == "remove" && nD < n) return scopeof("code")
+			return ""
+		}
+
+		function add2(t, s,   i) {
+			for (i = 1; i <= nt; i++) if (tl[i] == t) { if (s > ts[i]) ts[i] = s; return }
+			tl[++nt] = t; ts[nt] = s
+		}
+
+		function smart(   i, j, k, bt, f, fx, rf, weak, perfhit, sechit, tmp, tt, o, ordr, top, topn, scp, lab, bud, d, tsc, tds) {
+			readpatch()
+			readhistory()
+			derive()
+			nR2 = 0
+			for (i = 1; i <= n; i++) if (sts0[i] == "R") { rold[++nR2] = olds[i]; rnew[nR2] = paths[i] }
+
+			if (initial == "true") add2("initial source", 100)
+			bt = branchtype(branch)
+			if (bt != "") add2(bt, 60)
+
+			if (nD == n) {
+				add2("remove", 60); add2("refactor", 25)
+			} else if (codelogic) {
+				hasfixw = (nM > 0 && anyw("fix fixes fixed bug bugs hotfix typo regression crash crashes workaround leak leaks deadlock"))
+				perfhit = anyw("cache caching memoize memoized batch batching lazy parallel concurrent goroutine throttle debounce optimize optimized optimization")
+				sechit = anyw("sanitize sanitise xss csrf injection vulnerability vulnerable cve exploit harden escape escaped escaping")
+				# Only additions of new symbols, only removals of symbols, or only a rename:
+				# the generic "improve / fix / refactor" alternatives would have nothing to stand on.
+				weak = ((cdel == 0 && nnew > 0) || (cadd == 0 && nrem > 0) || (cadd + cdel == 0 && nR > 0))
+				f = 0
+				if (nnew > 0) f = 45 + 3 * (nnew > 5 ? 5 : nnew)
+				if (aCode > 0) f += 25
+				if (f == 0 && cadd >= 1.5 * cdel && cadd >= 8) f = 33
+				if (f > 0) add2("feat", f)
+				fx = 0
+				if (hasfixw) { fx = 40; if (nnew == 0) fx += 12; if (cadd + cdel <= 15) fx += 8 }
+				if (fx == 0 && nM > 0 && guardhit > 0 && cadd <= 25) { fx = 36; guardfix = 1 }
+				if (fx > 0) add2("fix", fx)
+				rf = 0
+				if (nR > 0) rf = 36
+				if (nnew == 0 && !hasfixw && !guardfix && !weak) { if (cdel > cadd) { if (rf < 32) rf = 32 } else if (nmod > 0 && rf < 26) rf = 26 }
+				if (rf > 0) add2("refactor", rf)
+				if (perfhit && (nnew == 0 || anyw("cache caching memoize memoized batch batching"))) add2("perf", 38)
+				if (sechit) add2("security", 40)
+				if (nrem > 0 && nnew == 0) add2("remove", 34)
+				# "improvement" is committed as perf: only offer it when the branch asks for it.
+				if (!weak) { add2("feat", 18); add2("fix", 9); add2("refactor", 9) }
+			} else {
+				split("docs test style config build dependency deployment localization asset", ordr, " ")
+				for (i = 1; i <= 9; i++) if (cnt[ordr[i]] > 0) add2((ordr[i] == "asset" ? "chore" : ordr[i]), 50 + 3 * cnt[ordr[i]] - i / 10)
+			}
+			if (nt == 0) add2("chore", 1)
+
+			# Describe every candidate, then rank (a description used recently ranks lower).
+			for (i = 1; i <= nt; i++) {
+				scp = typescope(tl[i])
+				bud = 64 - length(tl[i]) - (scp != "" ? length(scp) + 2 : 0)
+				if (bud < 20) bud = 20
+				d = build(tl[i], bud)
+				if (length(scp) >= 3 && index(normwords(d), normwords(scp)) > 0) scp = ""
+				tds[i] = d; tsc[i] = scp
+				if (tolower(d) in recent) ts[i] -= 25
+			}
+			for (i = 1; i <= nt; i++) {
+				top = i
+				for (j = i + 1; j <= nt; j++) if (ts[j] > ts[top]) top = j
+				if (top != i) {
+					tt = tl[i]; tl[i] = tl[top]; tl[top] = tt
+					tmp = ts[i]; ts[i] = ts[top]; ts[top] = tmp
+					tt = tds[i]; tds[i] = tds[top]; tds[top] = tt
+					tt = tsc[i]; tsc[i] = tsc[top]; tsc[top] = tt
+				}
+			}
+			for (i = 1; i <= nt && i <= max; i++) {
+				lab = tl[i] (tsc[i] != "" ? "(" tsc[i] ")" : "")
+				print lab "|" tds[i]
+			}
+		}
+
 		NF >= 2 {
 			st = substr($1, 1, 1)
 			n++
 			paths[n] = $NF
+			sts0[n] = st
+			olds[n] = $2
 			c = classify($NF)
 			cats[n] = c
 			sts[n] = (st == "C" ? "A" : st)
@@ -4463,9 +5104,11 @@ shell::git::commit::predict::candidates() {
 
 			# Dominant non-code category (ties go to the first of this list).
 			best = ""; bestn = 0
-			split("docs test style config build dependency deployment localization", order, " ")
-			for (i = 1; i <= 8; i++) if (cnt[order[i]] > bestn) { best = order[i]; bestn = cnt[order[i]] }
+			split("docs test style config build dependency deployment localization asset", order, " ")
+			for (i = 1; i <= 9; i++) if (cnt[order[i]] > bestn) { best = order[i]; bestn = cnt[order[i]] }
 			codelogic = (cnt["code"] > 0 && cnt["code"] >= bestn)
+
+			if (patch != "") { smart(); exit 0 }
 
 			words = " " hint " "
 			hasfix = (index(words, " fix ") || index(words, " fixes ") || index(words, " fixed ") || index(words, " bug ") || index(words, " bugs ") || index(words, " hotfix ") || index(words, " typo ") || index(words, " regression "))
@@ -4482,11 +5125,11 @@ shell::git::commit::predict::candidates() {
 				add("improvement"); add("fix"); add("refactor")
 			} else {
 				# Every kind of file present, the most numerous first.
-				for (k = 1; k <= 8; k++) {
+				for (k = 1; k <= 9; k++) {
 					top = ""; topn = 0
-					for (i = 1; i <= 8; i++) if (cnt[order[i]] > topn && !(order[i] in used)) { top = order[i]; topn = cnt[order[i]] }
+					for (i = 1; i <= 9; i++) if (cnt[order[i]] > topn && !(order[i] in used)) { top = order[i]; topn = cnt[order[i]] }
 					if (top == "") break
-					used[top] = 1; add(top)
+					used[top] = 1; add((top == "asset" ? "chore" : top))
 				}
 			}
 			add("chore")
@@ -4549,6 +5192,7 @@ shell::git::commit::predict() {
 		shell::logger::option "--emoji" "Put a gitmoji after the colon (feat: :sparkles: add x)"
 		shell::logger::option "--no-emoji" "Leave the emoji out (the default)"
 		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::note "The message is predicted from the diff itself: the functions added or changed, headings added to docs, dependencies bumped, the kind of fix, the scope, and what your recent commits already say."
 		shell::logger::note "Emoji are off unless SHELL_GIT_COMMIT_EMOJI=true or --emoji is given. The type always stays the prefix (Conventional Commits)."
 		shell::logger::note "Pick '$SHELL_FZF_BACK_LABEL' in a menu, or type :back at a text prompt, to return to the previous step."
 		shell::logger::example "shell::git::commit::predict"
@@ -4633,16 +5277,25 @@ shell::git::commit::predict() {
 	# ---------------------------------------------------------------------------
 	# Predict. Declared once, before any loop (zsh prints re-declared locals).
 	# ---------------------------------------------------------------------------
-	local ptype pdesc
+	local ptype pdesc evidence_dir=""
 	local -a predictions=()
 	if [ -n "$changes" ]; then
+		# The patch and the recent history let the engine say what changed, not just which files.
+		evidence_dir="$(mktemp -d 2>/dev/null || mktemp -d -t 'git_predict')"
+		if [ -n "$evidence_dir" ]; then
+			shell::git::commit::predict::evidence "$evidence_dir" "$from_tree"
+		fi
 		while IFS='|' read -r ptype pdesc; do
 			if [ -z "$ptype" ]; then
 				continue
 			fi
 			predictions+=("$(shell::git::commit::predict::format "$ptype" "$pdesc" "$issue" "$use_emoji")")
 		done < <(printf '%s\n' "$changes" | shell::git::commit::predict::candidates \
-			--branch "$branch" --hint "$hint" --initial "$initial" --count "$count")
+			--branch "$branch" --hint "$hint" --initial "$initial" --count "$count" \
+			--patch-file "${evidence_dir:+$evidence_dir/patch}" --history-file "${evidence_dir:+$evidence_dir/history}")
+		if [ -n "$evidence_dir" ]; then
+			rm -rf "$evidence_dir" 2>/dev/null
+		fi
 	fi
 
 	if [ "$list_only" = "true" ]; then
@@ -4874,6 +5527,7 @@ shell::git::commit::create() {
 		shell::logger::option "-e, --empty" "Use a pre-defined empty commit message (--allow-empty)"
 		shell::logger::option "--emoji" "Put a gitmoji after the colon (feat: :sparkles: add x)"
 		shell::logger::option "--no-emoji" "Leave the emoji out (the default)"
+		shell::logger::note "The message is predicted from the diff itself: the functions added or changed, headings added to docs, dependencies bumped, the kind of fix, the scope, and what your recent commits already say."
 		shell::logger::note "Emoji are off unless SHELL_GIT_COMMIT_EMOJI=true or --emoji is given. The type always stays the prefix (Conventional Commits)."
 		shell::logger::note "Pick '$SHELL_FZF_BACK_LABEL' in a menu, or type :back at a text prompt, to return to the previous step."
 		shell::logger::example "shell::git::commit::create"
