@@ -177,3 +177,11 @@ shell::uninstall() {
 	fi
 	SHELL_DIR="$SHELL_DIR" bash "$script" "$@"
 }
+
+shell::hint() {
+	shell::logger::info "Required tools and installation hints:"
+	shell::logger::info "  shfmt: Install it: brew install shfmt  |  sudo apt install shfmt"
+	shell::logger::info "  gawk: Install it: brew install gawk  |  sudo apt install gawk"
+	shell::logger::info "  shdoc: Install it: brew install shdoc  |  git clone https://github.com/reconquest/shdoc && sudo make -C shdoc install"
+	shell::logger::info "  tree: Install it: brew install tree  |  sudo apt install tree"
+}
