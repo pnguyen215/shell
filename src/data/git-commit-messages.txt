@@ -2382,3 +2382,75 @@
 :package:|test(monorepo)|add integration tests across different workspace packages
 :package:|feat(monorepo)|add dynamic workspace filtering for targeted test runs
 :package:|chore(monorepo)|synchronize typescript base configs across all packages
+
+[Real-time Communication and WebSockets]
+:satellite:|feat(websocket)|add persistent connection handling with auto reconnect
+:satellite:|feat(rtc)|implement peer to peer video calling using webrtc
+:satellite:|fix(websocket)|resolve heartbeat timeout causing silent disconnects
+:satellite:|perf(websocket)|compress json payloads using binary message frames
+:satellite:|feat(chat)|add typing indicators broadcast to active room members
+:satellite:|feat(chat)|store offline messages for delivery upon reconnection
+:satellite:|fix(rtc)|handle ice candidate gathering failures gracefully
+:satellite:|perf(websocket)|batch outgoing events to reduce network round trips
+:recycle:|refactor(websocket)|extract socket logic into a dedicated adapter class
+:white_check_mark:|test(websocket)|simulate high concurrency to validate socket server
+
+[E-commerce and Payment Gateways]
+:credit_card:|feat(payment)|integrate braintree sdk for recurring subscription billing
+:bug:|fix(cart)|preserve item quantities when merging guest and user sessions
+:sparkles:|feat(cart)|apply discount codes dynamically on the checkout summary
+:bug:|fix(payment)|handle idempotency keys to prevent duplicate charges
+:zap:|perf(cart)|cache shipping rate calculations from external providers
+:sparkles:|feat(inventory)|reserve stock items temporarily during checkout flow
+:bug:|fix(order)|generate pdf receipts asynchronously after successful payment
+:sparkles:|feat(payment)|add support for apple pay and google pay on the web
+:recycle:|refactor(cart)|move tax calculation logic to a dedicated domain service
+:white_check_mark:|test(payment)|mock webhook responses to validate order state transitions
+
+[Game Development and Engine Features]
+:video_game:|feat(engine)|add spatial partitioning for efficient collision detection
+:zap:|perf(render)|implement frustum culling to hide off screen game objects
+:sparkles:|feat(physics)|add raycasting for projectile trajectory calculations
+:bug:|fix(audio)|resolve sound stuttering during heavy scene transitions
+:sparkles:|feat(input)|map controller buttons to actions using a config file
+:zap:|perf(memory)|pool bullet objects to avoid garbage collection spikes
+:sparkles:|feat(netcode)|add client side prediction to mask network latency
+:bug:|fix(save)|serialize game state to local storage without corrupting data
+:sparkles:|feat(ai)|add behavior trees for complex non player character logic
+:zap:|perf(shaders)|compile shader variants asynchronously during the loading screen
+
+[Data Privacy and GDPR Compliance]
+:shield:|feat(privacy)|add user data export tool for the right of access
+:shield:|feat(privacy)|implement hard delete logic for the right to be forgotten
+:bug:|fix(tracking)|block analytics scripts until cookie consent is given
+:shield:|feat(privacy)|anonymize ip addresses before writing them to the database
+:wrench:|chore(privacy)|update privacy policy link in the registration footer
+:bug:|fix(privacy)|prevent personal data from leaking into application logs
+:shield:|feat(consent)|add granular cookie preference center for the end user
+:recycle:|refactor(privacy)|extract data masking logic into a shared utility
+:shield:|feat(privacy)|track data processing activities for compliance audits
+:white_check_mark:|test(privacy)|verify identifiers are removed from public data exports
+
+[Desktop Application and Electron]
+:desktop_computer:|feat(electron)|add automatic application updates using electron updater
+:desktop_computer:|feat(electron)|register global keyboard shortcuts for window management
+:bug:|fix(electron)|prevent multiple instances from launching on startup
+:zap:|perf(electron)|offload heavy file parsing to a hidden browser window
+:sparkles:|feat(os)|add native context menu items for quick actions
+:bug:|fix(electron)|resolve blank screen issue when waking from sleep mode
+:sparkles:|feat(electron)|enable hardware acceleration for smooth video playback
+:hammer:|build(electron)|configure code signing for windows and macos installers
+:sparkles:|feat(electron)|add system tray icon with background processing status
+:bug:|fix(electron)|handle deep linking protocols when the app is closed
+
+[Networking and Protocols]
+:satellite_antenna:|feat(network)|add grpc client for fast internal communication
+:bug:|fix(network)|handle dns resolution failures with a fallback resolver
+:zap:|perf(network)|enable http2 multiplexing to reduce connection overhead
+:sparkles:|feat(network)|implement exponential backoff for failed outbound requests
+:bug:|fix(network)|parse multipart form data correctly for large file uploads
+:sparkles:|feat(network)|add proxy support for environments behind a firewall
+:zap:|perf(network)|reuse tcp connections using a custom http agent pool
+:bug:|fix(network)|handle incomplete chunked transfer encoding gracefully
+:lock:|feat(network)|add tls certificate pinning for secure mobile traffic
+:white_check_mark:|test(network)|mock tcp sockets to validate retry logic without internet
