@@ -26,6 +26,15 @@ SHELL_FZF_OPTS=(
 # Text of the "go back" entry added by shell::fzf::loop --back.
 : "${SHELL_FZF_BACK_LABEL:=← Back}"
 
+# --- Homebrew ----------------------------------------------------------------
+# Packages the unused-package scan (shell::brew::unused) never proposes to
+# remove, because this library needs them. Space separated; extend it from
+# your profile, e.g.  SHELL_BREW_PROTECTED="fzf git curl jq node".
+: "${SHELL_BREW_PROTECTED:=fzf git curl jq}"
+# A formula you installed yourself is "stale" when none of its files were
+# touched for this many days (and none of its commands is in your shell history).
+: "${SHELL_BREW_STALE_DAYS:=90}"
+
 # --- Git commit messages -----------------------------------------------------
 # Emoji in the messages built by shell::git::commit::create (sgcf) and ::predict.
 # Conventional Commits 1.0.0 wants the type first, so the gitmoji shortcode goes
