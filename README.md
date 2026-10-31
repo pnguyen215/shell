@@ -149,7 +149,7 @@ The only exceptions are the four lifecycle functions in [`src/shell.sh`](src/she
 ├── install.sh  upgrade.sh  uninstall.sh   # bootstrap scripts (curl-able)
 ├── Makefile                               # make test | lint | fmt | docs | doctor
 ├── docs/
-│   ├── ARCHITECTURE.md  CONVENTIONS.md  COMMIT_MESSAGES.md  HOMEBREW.md  MIGRATION.md
+│   ├── ARCHITECTURE.md  CONVENTIONS.md  COMMIT_MESSAGES.md  HOMEBREW.md  NVM.md  MIGRATION.md
 │   └── api/                               # generated reference (make docs)
 ├── scripts/                               # lint.sh, gen_docs.sh
 ├── test/                                  # run under bash and zsh
@@ -158,10 +158,10 @@ The only exceptions are the four lifecycle functions in [`src/shell.sh`](src/she
     ├── shell.sh        # loader / entry point
     ├── constant/       # ALL configuration: paths, URLs, colours, defaults, return codes
     ├── core/           # console, logger, os, exec, clipboard, fzf, ask (prompts)
-    ├── dependency/     # one installer per external tool (fzf, jq, curl, git, ...), package manager, Homebrew, Oh My Zsh
+    ├── dependency/     # one installer per external tool (fzf, jq, curl, git, ...), package manager, Homebrew, nvm, Oh My Zsh
     ├── lib/            # fs, net, process, permission, strings, conf, ini, profile, bookmark, goto, ssh, workspace, brew (Homebrew packages + fzf)
     ├── skill/          # agent skills for Claude Code / OpenCode: install, upgrade, uninstall, sync
-    ├── lang/           # git, go, python, java, nodejs, angular
+    ├── lang/           # git, go, python, java, nodejs, nvm, angular
     ├── devops/         # GitHub Actions scaffolding
     ├── shield/         # AES-256-CBC helpers
     ├── bot/            # Telegram
@@ -180,7 +180,7 @@ export SHELL_GIT_COMMIT_EMOJI=true              # gitmoji in commit messages (de
 source "$HOME/shell/src/shell.sh"
 ```
 
-User data (keys, bookmarks, workspaces) lives under `SHELL_CONFIG_DIR` with mode 700/600. Settings of a single feature are documented in [`docs/`](docs), for example [commit messages](docs/COMMIT_MESSAGES.md) and [Homebrew](docs/HOMEBREW.md).
+User data (keys, bookmarks, workspaces) lives under `SHELL_CONFIG_DIR` with mode 700/600. Settings of a single feature are documented in [`docs/`](docs), for example [commit messages](docs/COMMIT_MESSAGES.md), [Homebrew](docs/HOMEBREW.md) and [nvm](docs/NVM.md).
 
 ## Dependencies
 

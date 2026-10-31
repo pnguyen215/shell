@@ -29,9 +29,19 @@ SHELL_URL_DOC_VERSIONING="${SHELL_URL_STORE}/docs/VERSIONING.md"
 SHELL_URL_GO_MAKEFILE="${SHELL_URL_STORE}/languages/golang/sdk/Makefile"
 
 # --- Third-party installers --------------------------------------------------
+
+# Homebrew installation scripts
 SHELL_URL_HOMEBREW_INSTALL="https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh"
 SHELL_URL_HOMEBREW_UNINSTALL="https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh"
+
+# Oh My Zsh installation script
 SHELL_URL_OHMYZSH_INSTALL="https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh"
+
+# nvm (Node Version Manager). The installer is pinned to a release: it is
+# executed, and `master` could change under you. Override SHELL_NVM_VERSION to
+# install another release (shell::dependency::nvm::install -v <version> does it per call).
+: "${SHELL_NVM_VERSION:=v0.40.8}"
+SHELL_URL_NVM_RAW="https://raw.githubusercontent.com/nvm-sh/nvm"
 
 # --- Messaging ---------------------------------------------------------------
 SHELL_URL_TELEGRAM_API="https://api.telegram.org"

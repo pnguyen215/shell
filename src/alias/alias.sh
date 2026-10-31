@@ -561,3 +561,43 @@ alias sbdr="shell::brew::doctor"
 alias sbs="shell::brew::search"
 alias sbbd="shell::brew::bundle::dump"
 alias sbbi="shell::brew::bundle::install"
+
+# ///////////////////
+# Shell nvm aliases
+# //////////////////
+
+# Control panel and fzf pickers (append -n for a dry run: choices are made, nothing is changed).
+alias snm="shell::nvm::manage" # nvm control panel (fzf menu)
+alias snm-n="shell::nvm::manage -n"
+alias snmu="shell::nvm::use::fzf"     # pick an installed Node and switch this shell to it
+alias snmi="shell::nvm::install::fzf" # browse Node versions, install the ones you pick
+alias snmi-n="shell::nvm::install::fzf -n"
+alias snmil="shell::nvm::install::fzf --lts" # the same, LTS versions only
+alias snmil-n="shell::nvm::install::fzf --lts -n"
+alias snmrm="shell::nvm::uninstall::fzf" # pick installed Node versions and uninstall them
+alias snmrm-n="shell::nvm::uninstall::fzf -n"
+alias snmd="shell::nvm::default::fzf" # pick the default version
+alias snmd-n="shell::nvm::default::fzf -n"
+alias snma="shell::nvm::alias::fzf" # name an alias for a version
+alias snma-n="shell::nvm::alias::fzf -n"
+alias snmua="shell::nvm::unalias::fzf" # delete aliases
+alias snmua-n="shell::nvm::unalias::fzf -n"
+alias snmrc="shell::nvm::nvmrc::fzf" # pin this project's Node version (.nvmrc)
+alias snmrc-n="shell::nvm::nvmrc::fzf -n"
+alias snmmv="shell::nvm::migrate::fzf" # install a newer Node and carry the global packages over
+alias snmmv-n="shell::nvm::migrate::fzf -n"
+alias snmx="shell::nvm::exec::fzf" # run a command with a picked Node version
+
+# Unused versions and disk usage.
+alias snmun="shell::nvm::unused"       # report Node versions nothing refers to (read-only)
+alias snmunf="shell::nvm::unused::fzf" # pick unused versions and remove them
+alias snmunf-n="shell::nvm::unused::fzf -n"
+alias snmsz="shell::nvm::size" # largest Node versions and the download cache
+
+# Plain commands.
+alias snmls="shell::nvm::ls"
+alias snmlr="shell::nvm::ls::remote"
+alias snmc="shell::nvm::current"
+alias snmdr="shell::nvm::doctor"
+alias snmon="shell::nvm::autouse::on" # switch Node automatically on cd (.nvmrc)
+alias snmoff="shell::nvm::autouse::off"
