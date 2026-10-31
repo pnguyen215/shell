@@ -10,8 +10,9 @@ define need
 command -v $(1) >/dev/null 2>&1 || { echo "ERROR: '$(1)' is not installed. $(2)" >&2; exit 1; }
 endef
 
-help: ## Show this help
-	@grep -E '^[a-z_-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-10s %s\n", $$1, $$2}'
+help: ## Show this help message
+	@echo "Available targets:"
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
 
 check: lint test ## Run lint and test (what CI runs)
 
