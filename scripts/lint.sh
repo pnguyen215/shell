@@ -59,6 +59,8 @@ out="$(
 
 # zsh-reserved names
 grep_fail zsh-names '^[[:space:]]*local (-[a-zA-Z]+ )?(path|status|options|commands|functions|aliases|parameters|argv|reply|pipestatus)([ =]|$)'
+# ...and anywhere later in the same `local` line (`local -a opts=() argv=()` once reset $@ in zsh)
+grep_fail zsh-names-later '^[^#]*[[:space:]]local( -[a-zA-Z]+)?[[:space:]]([^#]*[[:space:]])?(path|status|options|commands|functions|parameters|argv|reply|pipestatus)([ =]|$)|^[[:space:]]*local( -[a-zA-Z]+)?[[:space:]]([^#]*[[:space:]])(path|status|options|commands|functions|parameters|argv|reply|pipestatus)([ =]|$)'
 
 # portability
 grep_fail portability-bash4 'declare -A|local -A|mapfile|readarray|local -n [A-Za-z_]+=|declare -n [A-Za-z_]+=|\$\{[A-Za-z_0-9]+(,,|\^\^)|wait -n|\[\[ -v '

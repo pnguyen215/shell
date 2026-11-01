@@ -4,7 +4,7 @@
 [![Shell: bash >= 3.2, zsh](https://img.shields.io/badge/Shell-bash%20%3E%3D%203.2%20%7C%20zsh-blue.svg)](https://github.com/pnguyen215/shell)
 [![Platform: Linux, macOS](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS-green.svg)](https://github.com/pnguyen215/shell)
 
-A lightweight shell library that streamlines your development environment on **Linux** (Ubuntu 22.04/24.04 and other mainstream distributions) and **macOS**. It provides ~330 documented functions for files, bookmarks, a key/value config store, INI files, SSH tunnels, workspaces, Git/GitHub, Python/Go project helpers, AES encryption, and Telegram notifications — all with dry-run (`-n`) support.
+A lightweight shell library that streamlines your development environment on **Linux** (Ubuntu 22.04/24.04 and other mainstream distributions) and **macOS**. It provides ~330 documented functions for files, bookmarks, a key/value config store, INI files, SSH (connect, keys, agent, tunnels, scp/rsync, `~/.ssh/config`), workspaces, Git/GitHub, Python/Go project helpers, AES encryption, and Telegram notifications — all with dry-run (`-n`) support.
 
 Works when sourced from **bash ≥ 3.2** (including the macOS system bash) and **zsh**.
 
@@ -149,7 +149,7 @@ The only exceptions are the four lifecycle functions in [`src/shell.sh`](src/she
 ├── install.sh  upgrade.sh  uninstall.sh   # bootstrap scripts (curl-able)
 ├── Makefile                               # make test | lint | fmt | docs | doctor
 ├── docs/
-│   ├── ARCHITECTURE.md  CONVENTIONS.md  COMMIT_MESSAGES.md  HOMEBREW.md  NVM.md  MIGRATION.md
+│   ├── ARCHITECTURE.md  CONVENTIONS.md  COMMIT_MESSAGES.md  HOMEBREW.md  NVM.md  SSH.md  MIGRATION.md
 │   └── api/                               # generated reference (make docs)
 ├── scripts/                               # lint.sh, gen_docs.sh
 ├── test/                                  # run under bash and zsh
@@ -180,11 +180,11 @@ export SHELL_GIT_COMMIT_EMOJI=true              # gitmoji in commit messages (de
 source "$HOME/shell/src/shell.sh"
 ```
 
-User data (keys, bookmarks, workspaces) lives under `SHELL_CONFIG_DIR` with mode 700/600. Settings of a single feature are documented in [`docs/`](docs), for example [commit messages](docs/COMMIT_MESSAGES.md), [Homebrew](docs/HOMEBREW.md) and [nvm](docs/NVM.md).
+User data (keys, bookmarks, workspaces) lives under `SHELL_CONFIG_DIR` with mode 700/600. Settings of a single feature are documented in [`docs/`](docs), for example [commit messages](docs/COMMIT_MESSAGES.md), [Homebrew](docs/HOMEBREW.md), [nvm](docs/NVM.md) and [SSH](docs/SSH.md).
 
 ## Dependencies
 
-Required: `git`, `curl`, `fzf`. Optional (installed on demand): `jq`, `openssl`, `lsof`, `column`, `ssh-keygen`. Installation uses the native package manager (apt, dnf, yum, pacman, zypper, apk, Homebrew) — see [`src/dependency/`](src/dependency). Run `make doctor` for a report.
+Required: `git`, `curl`, `fzf`. Optional (installed on demand): `jq`, `openssl`, `lsof`, `column`, `ssh` (with `scp`, `sftp`, `ssh-keygen`, `ssh-add`), `rsync`. Installation uses the native package manager (apt, dnf, yum, pacman, zypper, apk, Homebrew) — see [`src/dependency/`](src/dependency). Run `make doctor` for a report.
 
 ## Troubleshooting
 

@@ -20,7 +20,7 @@ shell::dependency::package_name() {
 	local manager="$2"
 
 	case "$command" in
-	ssh | ssh-keygen | ssh-copy-id)
+	ssh | ssh-keygen | ssh-copy-id | ssh-add | ssh-agent | ssh-keyscan | scp | sftp)
 		case "$manager" in
 		apt) printf 'openssh-client\n' ;;
 		dnf | yum | zypper) printf 'openssh-clients\n' ;;
