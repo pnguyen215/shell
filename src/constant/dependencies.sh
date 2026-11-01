@@ -9,4 +9,4 @@
 #   OPTIONAL: only specific functions need them; they are installed on demand.
 
 SHELL_DEPENDENCIES_REQUIRED=(git curl fzf)
-SHELL_DEPENDENCIES_OPTIONAL=(jq openssl lsof column ssh-keygen)
+SHELL_DEPENDENCIES_OPTIONAL=(jq openssl lsof column ssh-keygen ssh rsync)

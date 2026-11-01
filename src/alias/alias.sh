@@ -601,3 +601,19 @@ alias snmc="shell::nvm::current"
 alias snmdr="shell::nvm::doctor"
 alias snmon="shell::nvm::autouse::on" # switch Node automatically on cd (.nvmrc)
 alias snmoff="shell::nvm::autouse::off"
+
+# ///////////////////
+# Shell ssh aliases
+# //////////////////
+
+# shell::ssh::connect::fzf
+alias ssc="shell::ssh::connect::fzf"
+alias ssc-n="shell::ssh::connect::fzf -n"
+
+# shell::ssh::agent::add::fzf
+alias ssa="shell::ssh::agent::add::fzf"
+alias ssa-n="shell::ssh::agent::add::fzf -n"
+
+# shell::ssh::permission::fix
+alias ssp="shell::ssh::permission::fix"
+alias ssp-n="shell::ssh::permission::fix -n"

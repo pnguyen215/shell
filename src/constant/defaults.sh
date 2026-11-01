@@ -75,6 +75,17 @@ silent changes|chore|:mute:
 deprecation|chore(deprecate)|:warning:
 release|chore(release)|:gem:"
 
+# --- SSH ---------------------------------------------------------------------
+# Keep-alive for tunnels and long sessions: seconds between probes, and how many
+# unanswered probes are tolerated before ssh gives up (shell::ssh::tunnel::*).
+: "${SHELL_SSH_KEEPALIVE_INTERVAL:=30}"
+: "${SHELL_SSH_KEEPALIVE_COUNT:=3}"
+# Seconds shell::ssh::check waits for the server.
+: "${SHELL_SSH_CHECK_TIMEOUT:=5}"
+# How long a multiplexed master connection stays open after its last session
+# (ControlPersist written by shell::ssh::config::add --mux).
+: "${SHELL_SSH_CONTROL_PERSIST:=10m}"
+
 # --- INI parser --------------------------------------------------------------
 # 0 = lenient parsing, 1 = reject malformed names/values.
 : "${SHELL_INI_STRICT:=0}"

@@ -35,7 +35,14 @@ SHELL_LOGGER_CONF_FILE="$SHELL_CONFIG_DIR/logger.conf"
 SHELL_BOOKMARK_FILE="$SHELL_BOOKMARK_DIR/.bookmarks"
 
 # SSH material managed by shell::ssh::*.
+#   CONFIG / KNOWN_HOSTS   the files ssh itself reads.
+#   SOCKET_DIR             where multiplexed connections keep their control sockets (mode 700).
+#   CONFIG_BACKUP_FILE     copy of the config taken before shell::ssh::config::* rewrites it.
 : "${SHELL_SSH_DIR:=$HOME/.ssh}"
+SHELL_SSH_CONFIG_FILE="$SHELL_SSH_DIR/config"
+SHELL_SSH_KNOWN_HOSTS_FILE="$SHELL_SSH_DIR/known_hosts"
+SHELL_SSH_SOCKET_DIR="$SHELL_SSH_DIR/sockets"
+SHELL_SSH_CONFIG_BACKUP_FILE="$SHELL_CONFIG_BACKUP_DIR/ssh_config.bak"
 
 # Git commit message templates (shell::git::commit::message::*).
 #   SOURCE     the file shipped in the repository (source of truth).
