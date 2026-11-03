@@ -1152,8 +1152,10 @@ shell::git::branch::remove() {
 #   confirms with the user, then executes the selected command.
 #
 #   Builds a set of labelled push strategies (label:command pairs), presents
-#   them via shell::ask::option::value (fzf), prompts for confirmation, then
+#   them via shell::fzf::select (fzf), prompts for confirmation, then
 #   runs the selected git command via shell::logger::assert.
+#   While navigating the list, the git command of the focused item is shown
+#   dimmed in a preview pane on the right of the item label.
 #   Available strategies:
 #   - Set upstream tracking        git push -u origin <branch>
 #   - Push all branches            git push --all origin
@@ -1227,8 +1229,32 @@ shell::git::branch::push() {
 		"Simple push to remote:git push"
 	)
 
-	local selected_cmd
-	selected_cmd=$(shell::ask::option::value "${push_options[@]}")
+	# ---------------------------------------------------------------------------
+	# Picker — fzf shows only the label; the git command of the focused item is
+	# rendered dimmed (ANSI faint) in a preview pane on the right.
+	#   Row format fed to fzf : <label><TAB><command>
+	#   --with-nth=1          : display the label column only
+	#   --preview             : {2} is the (shell-quoted) command column
+	# ---------------------------------------------------------------------------
+	local entry
+	local rows=""
+	for entry in "${push_options[@]}"; do
+		rows+="${entry%%:*}"$'\t'"${entry#*:}"$'\n'
+	done
+
+	local picked
+	picked=$(printf '%s' "$rows" | shell::fzf::select \
+		--prompt="Select push option: " \
+		--delimiter=$'\t' \
+		--with-nth=1 \
+		--preview="printf '\033[2m%s\033[0m\n' {2}" \
+		--preview-window="right:60%:wrap")
+
+	# Keep only the command column (everything after the first TAB).
+	local selected_cmd=""
+	if [ -n "$picked" ]; then
+		selected_cmd="${picked#*$'\t'}"
+	fi
 
 	if [ -z "$selected_cmd" ]; then
 		shell::logger::warn "No push command selected — aborting"
