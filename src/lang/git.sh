@@ -1156,6 +1156,9 @@ shell::git::branch::remove() {
 #   runs the selected git command via shell::logger::assert.
 #   While navigating the list, the git command of the focused item is shown
 #   dimmed in a preview pane on the right of the item label.
+#   The last entry is "← Back" (SHELL_FZF_BACK_LABEL): picking it leaves the list
+#   without pushing and returns RETURN_BACK, so a caller can step back one screen
+#   (ESC still aborts with exit code 0).
 #   Available strategies:
 #   - Set upstream tracking        git push -u origin <branch>
 #   - Push all branches            git push --all origin
@@ -1172,9 +1175,11 @@ shell::git::branch::remove() {
 # @option -n | --dry-run Optional. After selection and confirmation, print the selected command via shell::logger::command_clip instead of executing it.
 # @option -h | --help Show this help message.
 # @arg $1 string branch: Branch name to substitute into push commands.
-# @exitcode 0 Success.
+# @exitcode 0 Success, or the picker was cancelled (ESC) / the push was declined.
 # @exitcode 1 The operation failed.
 # @exitcode 2 Invalid or missing arguments.
+# @exitcode 11 "Back" was picked in the options list.
+# @see shell::ask::option::back
 # @example
 #   shell::git::branch::push "main"
 #   shell::git::branch::push -n "feature/my-branch"
@@ -1187,6 +1192,7 @@ shell::git::branch::push() {
 		shell::logger::item "branch" "Branch name to use in push commands"
 		shell::logger::option "-h, --help" "Show this help message"
 		shell::logger::option "-n, --dry-run" "Print the selected command instead of executing it"
+		shell::logger::note "Pick '$SHELL_FZF_BACK_LABEL' in the list to leave without pushing (returns ${RETURN_BACK})."
 		shell::logger::example "shell::git::branch::push \"main\""
 		shell::logger::example "shell::git::branch::push -n \"feature/my-branch\""
 		return $RETURN_SUCCESS
@@ -1241,6 +1247,9 @@ shell::git::branch::push() {
 	for entry in "${push_options[@]}"; do
 		rows+="${entry%%:*}"$'\t'"${entry#*:}"$'\n'
 	done
+	# Back entry — always last so Enter never lands on it by accident. Its
+	# preview text is a hint, not a git command.
+	rows+="${SHELL_FZF_BACK_LABEL}"$'\t'"Go back without pushing"$'\n'
 
 	local picked
 	picked=$(printf '%s' "$rows" | shell::fzf::select \
@@ -1249,6 +1258,12 @@ shell::git::branch::push() {
 		--with-nth=1 \
 		--preview="printf '\033[2m%s\033[0m\n' {2}" \
 		--preview-window="right:60%:wrap")
+
+	# Back is not a cancel: report it with RETURN_BACK so callers can step back.
+	if [ "${picked%%$'\t'*}" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — nothing was pushed"
+		return $RETURN_BACK
+	fi
 
 	# Keep only the command column (everything after the first TAB).
 	local selected_cmd=""
