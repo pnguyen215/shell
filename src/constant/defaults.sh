@@ -86,6 +86,20 @@ release|chore(release)|:gem:"
 # (ControlPersist written by shell::ssh::config::add --mux).
 : "${SHELL_SSH_CONTROL_PERSIST:=10m}"
 
+# --- rsync -------------------------------------------------------------------
+# shell::rsync::mirror lets rsync delete at most this many files (--max-delete),
+# then stops with status 25. A guard against a wrong source, not a preview: the
+# files removed before the limit was reached stay removed.
+: "${SHELL_RSYNC_MAX_DELETE:=1000}"
+# Seconds without any data before rsync gives up (--timeout); used by shell::rsync::resume.
+: "${SHELL_RSYNC_TIMEOUT:=120}"
+# Where shell::rsync::resume keeps unfinished files, below the destination (--partial-dir).
+: "${SHELL_RSYNC_PARTIAL_DIR:=.rsync-partial}"
+# shell::rsync::resume starts rsync again this many times after a network failure,
+# waiting <attempt> x SHELL_RSYNC_RETRY_DELAY seconds before each retry.
+: "${SHELL_RSYNC_RETRIES:=5}"
+: "${SHELL_RSYNC_RETRY_DELAY:=10}"
+
 # --- INI parser --------------------------------------------------------------
 # 0 = lenient parsing, 1 = reject malformed names/values.
 : "${SHELL_INI_STRICT:=0}"

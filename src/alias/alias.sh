@@ -617,3 +617,26 @@ alias ssa-n="shell::ssh::agent::add::fzf -n"
 # shell::ssh::permission::fix
 alias ssp="shell::ssh::permission::fix"
 alias ssp-n="shell::ssh::permission::fix -n"
+
+# ///////////////////
+# Shell rsync aliases
+# //////////////////
+
+# shell::rsync::sync
+alias srsy="shell::rsync::sync"
+alias srsy-n="shell::rsync::sync -n"
+
+# shell::rsync::mirror
+alias srmi="shell::rsync::mirror"
+alias srmi-n="shell::rsync::mirror -n"
+
+# shell::rsync::move
+alias srmv="shell::rsync::move"
+alias srmv-n="shell::rsync::move -n"
+
+# shell::rsync::resume
+alias srrs="shell::rsync::resume"
+alias srrs-n="shell::rsync::resume -n"
+
+# shell::rsync::diff
+alias srdf="shell::rsync::diff"

@@ -38,7 +38,7 @@ Defaults of a command (the keep-alive of a tunnel, the timeout of `check`) are p
 | (is the server reachable?)                          | `check`                                                                                                      |
 | `ssh -V`                                            | `version`                                                                                                    |
 | `scp file host:/dir`, `scp -r`, `-P`, `-p`          | `scp::upload`, `scp::download`                                                                               |
-| `rsync -avz [--delete] -e ssh`                      | `rsync::push`, `rsync::pull`                                                                                 |
+| `rsync -avz [--delete] -e ssh`                      | `rsync::push`, `rsync::pull` (everything else about rsync: [RSYNC.md](RSYNC.md))                             |
 | `sftp host`                                         | `sftp::connect`                                                                                              |
 | `ssh -L` / `-R` / `-D`, `-N`, `-f`, `-NnT`          | `tunnel::local`, `tunnel::remote`, `tunnel::socks` (background by default, `--foreground`)                   |
 | (existing) tunnel with a key and 7 arguments        | `tunnel::open`, `tunnel::list`, `tunnel::kill`, `tunnel::kill::fzf`                                          |
