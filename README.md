@@ -6,6 +6,8 @@
 
 A lightweight shell library that streamlines your development environment on **Linux** (Ubuntu 22.04/24.04 and other mainstream distributions) and **macOS**. It provides ~330 documented functions for files, bookmarks, a key/value config store, INI files, SSH (connect, keys, agent, tunnels, scp, `~/.ssh/config`), rsync (sync, mirror, move, resume, diff), workspaces, Git/GitHub, Python/Go project helpers, AES encryption, and Telegram notifications — all with dry-run (`-n`) support.
 
+This is not a framework or a replacement for your shell. It is a personal collection of **routines I use every day when interacting with the terminal as a software engineer** — the small, repeated tasks (jump to a project, cut a branch, connect to a server, sync a build, store a key) wrapped into named functions with help text and a dry-run mode, so they are safe to reach for and easy to remember.
+
 Works when sourced from **bash ≥ 3.2** (including the macOS system bash) and **zsh**.
 
 ## Prerequisites
