@@ -25,6 +25,9 @@ Things worth knowing:
   machine** for `pull`). Try it first with `--simulate`, or with `-n`.
 - Recent scp (OpenSSH 9) talks the sftp protocol and needs no quoting for a
   remote path with spaces; older scp passes it to a remote shell.
+- `rsync::push` and `rsync::pull` are the short form. Local copies, mirrors with
+  guard rails, resumable transfers, `--bwlimit`, `--chmod` and the rest of the rsync
+  cheat sheets are in lib/rsync.sh (`shell::rsync::*`).
 
 ## Index
 
@@ -187,6 +190,7 @@ shell::ssh::rsync::push --delete --simulate --exclude .git ./site/ deploy@web1:/
 
 - [shell::ssh::cmd](#shellsshcmd)
 - [shell::ssh::rsync::pull](#shellsshrsyncpull)
+- [shell::rsync::sync](#shellrsyncsync)
 
 ### shell::ssh::rsync::pull
 
@@ -238,6 +242,7 @@ shell::ssh::rsync::pull --progress -p 2222 deploy@web1:/var/backups/ ./backups/
 
 - [shell::ssh::cmd](#shellsshcmd)
 - [shell::ssh::rsync::push](#shellsshrsyncpush)
+- [shell::rsync::sync](#shellrsyncsync)
 
 ### shell::ssh::sftp::connect
 

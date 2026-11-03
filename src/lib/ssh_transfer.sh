@@ -23,6 +23,9 @@
 #     machine** for `pull`). Try it first with `--simulate`, or with `-n`.
 #   * Recent scp (OpenSSH 9) talks the sftp protocol and needs no quoting for a
 #     remote path with spaces; older scp passes it to a remote shell.
+#   * `rsync::push` and `rsync::pull` are the short form. Local copies, mirrors with
+#     guard rails, resumable transfers, `--bwlimit`, `--chmod` and the rest of the rsync
+#     cheat sheets are in lib/rsync.sh (`shell::rsync::*`).
 
 # @description Copy local files or directories to a server (`scp file user@host:/path`).
 #   The last argument is the destination, as `[user@]host:path`. Use `-r` for a
@@ -112,6 +115,7 @@ shell::ssh::scp::download() {
 # @exitcode N Exit status of rsync.
 # @see shell::ssh::cmd
 # @see shell::ssh::rsync::pull
+# @see shell::rsync::sync
 # @example
 #   shell::ssh::rsync::push ./site/ deploy@web1:/var/www/site/
 #   shell::ssh::rsync::push --delete --simulate --exclude .git ./site/ deploy@web1:/var/www/site/
@@ -148,6 +152,7 @@ shell::ssh::rsync::push() {
 # @exitcode N Exit status of rsync.
 # @see shell::ssh::cmd
 # @see shell::ssh::rsync::push
+# @see shell::rsync::sync
 # @example
 #   shell::ssh::rsync::pull deploy@web1:/var/www/site/ ./site/
 #   shell::ssh::rsync::pull --progress -p 2222 deploy@web1:/var/backups/ ./backups/
