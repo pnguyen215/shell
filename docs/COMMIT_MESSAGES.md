@@ -66,6 +66,59 @@ worker|Background jobs"
 export SHELL_GIT_COMMIT_SCOPES=""       # no scope menu
 ```
 
+## Body and footers (optional)
+
+Conventional Commits allows a body and footers after the header:
+
+```
+<type>[(scope)]: <description> [<issue>]
+
+[body: any number of paragraphs]
+
+[footer: Token: value]
+[footer: Token: value]
+```
+
+In `create` they are optional and live in the confirmation menu (`Commit` is still the first entry, so Enter commits as before):
+
+| Entry                          | What it does                                                                                                                                         |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Add body`                     | Type a paragraph on one or more lines; an empty line ends it, a second empty line finishes. `:back` cancels. Run it again to append more paragraphs. |
+| `Add footer`                   | Pick a token from a table (or `(custom token)`), then type its value. The table comes back for the next footer; **← Back** when done.                |
+| `Clear body` / `Clear footers` | Shown only when there is something to clear.                                                                                                         |
+
+```
+BREAKING CHANGE   An incompatible API change (a MAJOR release)
+Closes            Issue or pull request this commit closes
+Refs              Related issue, pull request, commit or document
+Reviewed-by       Who reviewed the change
+...
+(custom token)    type your own token, e.g. Acked-by
+← Back  no more footers
+```
+
+A footer token is one word with `-` instead of spaces (`Acked-by`); the exception is `BREAKING CHANGE`, and `breaking change` or `breaking-change` are written `BREAKING CHANGE`. The token list is `SHELL_GIT_COMMIT_FOOTERS`, one `token|description` per line; replace it from your profile, or set it empty to leave only the custom entry:
+
+```bash
+export SHELL_GIT_COMMIT_FOOTERS="Jira|Ticket key
+Refs|Related issue or PR"
+```
+
+The result, for `fix: prevent racing #123` with two body paragraphs and two footers:
+
+```
+fix: prevent racing #123
+
+Introduce a request id and a reference to latest request.
+
+Remove timeouts which were used to mitigate the racing issue.
+
+Reviewed-by: Z
+Refs: #123
+```
+
+The header, the body and the footers are passed to git as separate `-m` arguments (git puts the blank lines between them), verbatim, so `$`, quotes and backticks are stored as typed. Footer values are one line each. Only the header is sent in the Telegram notification.
+
 ## Menu labels and the type they produce
 
 The type menu keeps its familiar labels. A label that is not a Conventional Commits type (`initial source` has a space, `WIP` is not a type) is committed as one that is, and the confirmation step shows the final message before anything is committed.

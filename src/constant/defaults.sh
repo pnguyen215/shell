@@ -101,6 +101,20 @@ security|Security hardening
 test|Tests and fixtures
 ui|User interface and styles}"
 
+# `token|description` per line: the footers shell::git::commit::create (sgcf) offers
+# under "Add footer" (Conventional Commits 1.0.0, rules 8-9: a token with `-` instead of
+# spaces, except BREAKING CHANGE). Each one is committed as `Token: value`. Extend or
+# replace the list from your profile; an explicitly empty value leaves only the
+# "(custom token)" entry.
+: "${SHELL_GIT_COMMIT_FOOTERS=BREAKING CHANGE|An incompatible API change (a MAJOR release)
+Closes|Issue or pull request this commit closes
+Fixes|Issue this commit fixes
+Refs|Related issue, pull request, commit or document
+Reviewed-by|Who reviewed the change
+Co-authored-by|Co-author, as Name <email>
+Signed-off-by|Sign-off (Developer Certificate of Origin)
+Acked-by|Who acknowledged the change}"
+
 # --- SSH ---------------------------------------------------------------------
 # Keep-alive for tunnels and long sessions: seconds between probes, and how many
 # unanswered probes are tolerated before ssh gives up (shell::ssh::tunnel::*).
