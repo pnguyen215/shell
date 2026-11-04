@@ -4297,6 +4297,195 @@ shell::git::commit::scope::pick() {
 	done
 }
 
+# @description Joins the parts of a commit message the way Conventional Commits 1.0.0
+#   lays them out: the header, then (each one blank line after the previous part) the
+#   optional body and the optional footers.
+#
+#       <header>
+#
+#       <body: any number of paragraphs>
+#
+#       <footer>
+#       <footer>
+# @internal
+# @arg $1 string Header, `<type>[(scope)]: <description>`.
+# @arg $2 string Optional. Body; paragraphs are separated by a blank line.
+# @arg $3 string Optional. Footers, one `Token: value` per line.
+# @stdout The whole message.
+# @exitcode 0 Always.
+# @example
+#   shell::git::commit::compose "fix: x" "Why." "Refs: #1"
+#
+shell::git::commit::compose() {
+	local out="${1-}"
+	if [ -n "${2-}" ]; then
+		out="${out}"$'\n\n'"${2}"
+	fi
+	if [ -n "${3-}" ]; then
+		out="${out}"$'\n\n'"${3}"
+	fi
+	printf '%s\n' "$out"
+}
+
+# @description Reads the optional body of a commit message: any number of paragraphs
+#   (Conventional Commits 1.0.0, rule 7). Type a paragraph on one or more lines; an
+#   empty line ends the paragraph, and an empty line where a paragraph would start
+#   finishes the body. Typing nothing at all gives an empty body.
+#   Prompts and hints go to stderr, the body to stdout, so the function works in `$(...)`.
+# @internal
+# @stdout The paragraphs, separated by one blank line (nothing when none was typed).
+# @exitcode 0 The body was read (it may be empty).
+# @exitcode 9 End of input (Ctrl-D).
+# @exitcode 11 The user typed `:back`: nothing was added.
+# @example
+#   body="$(shell::git::commit::body::read)"
+#
+shell::git::commit::body::read() {
+	local line paragraph="" body=""
+
+	printf 'Body — type a paragraph; an empty line ends it, an empty line after that finishes (:back cancels)\n' >&2
+	while true; do
+		printf '  > ' >&2
+		if ! read -r line; then
+			printf '\n' >&2
+			return "$RETURN_CANCELLED"
+		fi
+
+		if [ "$line" = ":back" ]; then
+			return "$RETURN_BACK"
+		fi
+
+		if [ -n "$line" ]; then
+			paragraph="${paragraph:+${paragraph}$'\n'}${line}"
+			continue
+		fi
+
+		# An empty line: it ends the paragraph being typed, or finishes the body.
+		if [ -z "$paragraph" ]; then
+			break
+		fi
+		body="${body:+${body}$'\n\n'}${paragraph}"
+		paragraph=""
+		printf 'Next paragraph — or an empty line to finish\n' >&2
+	done
+
+	if [ -n "$body" ]; then
+		printf '%s\n' "$body"
+	fi
+	return "$RETURN_SUCCESS"
+}
+
+# @description Checks a footer token and prints it in its canonical form.
+#   A token is one word with `-` in place of whitespace (`Acked-by`); the exception is
+#   `BREAKING CHANGE`, which must be uppercase (rules 9, 15, 16), so `breaking change`
+#   and `breaking-change` are accepted and printed as `BREAKING CHANGE`.
+# @internal
+# @arg $1 string Token as typed.
+# @stdout The canonical token.
+# @exitcode 0 The token is valid.
+# @exitcode 1 It is not (empty, a space, a colon, a leading or trailing `-`, ...).
+# @example
+#   shell::git::commit::footer::token "breaking change"   # → BREAKING CHANGE
+#   shell::git::commit::footer::token "Acked by"          # fails: use Acked-by
+#
+shell::git::commit::footer::token() {
+	local token="${1-}" upper
+	upper="$(printf '%s' "$token" | tr '[:lower:]' '[:upper:]')"
+	case "$upper" in
+	"BREAKING CHANGE" | "BREAKING-CHANGE")
+		printf 'BREAKING CHANGE\n'
+		return 0
+		;;
+	esac
+	case "$token" in
+	'' | -* | *- | *[!A-Za-z0-9-]*) return 1 ;;
+	esac
+	printf '%s\n' "$token"
+}
+
+# @description Reads one footer of a commit message and prints it as `Token: value`.
+#   A table lists the tokens of SHELL_GIT_COMMIT_FOOTERS (BREAKING CHANGE, Refs,
+#   Reviewed-by, ...), then "(custom token)" and "← Back". The value is typed on one
+#   line. `:back` at the value prompt returns to the table.
+# @internal
+# @stdout The footer, `Token: value`.
+# @exitcode 0 A footer was read.
+# @exitcode 9 ESC / Ctrl-C / end of input.
+# @exitcode 11 "← Back" was picked: no more footers.
+# @see shell::git::commit::footer::token
+# @example
+#   footer="$(shell::git::commit::footer::read)"
+#
+shell::git::commit::footer::read() {
+	local rows picked kind token value rc
+
+	# Rows are `<kind><TAB><display>`; fzf shows the display column only (see
+	# shell::git::commit::scope::pick).
+	rows="$(printf '%s\n' "${SHELL_GIT_COMMIT_FOOTERS-}" | awk -F'|' -v back="$SHELL_FZF_BACK_LABEL" '
+		function pad(text, width,   out) {
+			out = text
+			while (length(out) < width) out = out " "
+			return out
+		}
+		function dim(text) { return "\033[2m" text "\033[0m" }
+		NF && $1 != "" {
+			n++; name[n] = $1; desc[n] = $2
+			if (length($1) > w) w = length($1)
+		}
+		END {
+			custom = "(custom token)"
+			if (length(custom) > w) w = length(custom)
+			for (i = 1; i <= n; i++)
+				printf "footer:%s\t%s  %s\n", name[i], pad(name[i], w), dim(desc[i])
+			printf "custom\t%s  %s\n", pad(custom, w), dim("type your own token, e.g. Acked-by")
+			printf "back\t%s  %s\n", back, dim("no more footers")
+		}')"
+
+	while true; do
+		picked="$(printf '%s\n' "$rows" | shell::fzf::select \
+			--prompt="Footer: " \
+			--header="Pick a footer token, then type its value — Back when done" \
+			--delimiter=$'\t' \
+			--with-nth=2 \
+			--height=50%)"
+		rc=$?
+		if [ "$rc" -ne 0 ] || [ -z "$picked" ]; then
+			return "$RETURN_CANCELLED"
+		fi
+
+		kind="${picked%%$'\t'*}"
+		case "$kind" in
+		back) return "$RETURN_BACK" ;;
+		footer:*) token="${kind#footer:}" ;;
+		custom)
+			value="$(shell::git::commit::input "Enter a footer token (e.g. Acked-by, BREAKING CHANGE)")"
+			rc=$?
+			case "$rc" in
+			0) ;;
+			"$RETURN_BACK") continue ;;
+			*) return "$RETURN_CANCELLED" ;;
+			esac
+			if ! token="$(shell::git::commit::footer::token "$value")"; then
+				shell::logger::warn "A footer token is one word, with '-' instead of spaces (Acked-by) — or BREAKING CHANGE"
+				continue
+			fi
+			;;
+		*) return "$RETURN_CANCELLED" ;;
+		esac
+
+		value="$(shell::git::commit::input "Value for ${token}")"
+		rc=$?
+		case "$rc" in
+		0) ;;
+		"$RETURN_BACK") continue ;;
+		*) return "$RETURN_CANCELLED" ;;
+		esac
+
+		printf '%s: %s\n' "$token" "$value"
+		return "$RETURN_SUCCESS"
+	done
+}
+
 # @description Prints the emoji code a commit type is committed with.
 #   Only looks the emoji up: whether it ends up in the message is decided by
 #   shell::git::commit::emoji::enabled.
@@ -5697,9 +5886,15 @@ shell::git::commit::predict() {
 #      is empty                                             [Back = step 1]
 #   3. Read commit description (kept when going back)       [:back = step 2, or 1 without step 2]
 #   4. Read issue number (kept when going back)             [:back = step 3]
-#   5. Build `<type>[(scope)]: [<emoji> ]<description> <issue>`, then Commit / Abort [Back = step 4]
-#   6. git commit -m "<message>" (the message is passed to git verbatim)
-#   7. Send Telegram notification via shell::git::telegram::history::send
+#   5. Build `<type>[(scope)]: [<emoji> ]<description> <issue>`, then Commit / Add body /
+#      Add footer / (Clear body, Clear footers when there are some) / Abort  [Back = step 4]
+#      - Add body: any number of paragraphs (an empty line ends one, a second empty line
+#        finishes; `:back` cancels). Optional.
+#      - Add footer: pick a token from a table (BREAKING CHANGE, Refs, Reviewed-by, ...) or
+#        type your own, then its value; repeat for more, Back when done. Optional.
+#        Tokens follow Conventional Commits: one word with `-` instead of spaces, or BREAKING CHANGE.
+#   6. git commit -m "<message>" [-m "<body>"] [-m "<footers>"] (passed to git verbatim)
+#   7. Send Telegram notification via shell::git::telegram::history::send (the header only)
 #   8. git push origin <current_branch>
 #
 #   Empty mode (--empty):
@@ -5719,6 +5914,8 @@ shell::git::commit::predict() {
 # @see shell::git::commit::message::base
 # @see shell::git::commit::emoji::enabled
 # @see shell::git::commit::scope::pick
+# @see shell::git::commit::body::read
+# @see shell::git::commit::footer::read
 # @example
 #   shell::git::commit::create
 #   shell::git::commit::create --empty
@@ -5740,6 +5937,7 @@ shell::git::commit::create() {
 		shell::logger::note "Emoji are off unless SHELL_GIT_COMMIT_EMOJI=true or --emoji is given. The type always stays the prefix (Conventional Commits)."
 		shell::logger::note "Pick '$SHELL_FZF_BACK_LABEL' in a menu, or type :back at a text prompt, to return to the previous step."
 		shell::logger::note "After the type, pick a scope from a table (feat(docs), feat(git), ...) or (no scope). The list is SHELL_GIT_COMMIT_SCOPES; set it empty to skip the step."
+		shell::logger::note "At the confirmation, 'Add body' adds paragraphs and 'Add footer' adds Token: value lines (BREAKING CHANGE, Refs, ...; SHELL_GIT_COMMIT_FOOTERS). Both are optional."
 		shell::logger::example "shell::git::commit::create"
 		shell::logger::example "shell::git::commit::create --empty"
 		shell::logger::example "shell::git::commit::create -n"
@@ -5789,7 +5987,8 @@ shell::git::commit::create() {
 	local selected_message selected_type commit_message type_line shown
 	local selected_scope="" format_type
 	local commit_description="" issue_number=""
-	local -a commit_types=() base_args=(--back)
+	local commit_body="" commit_footers="" full_message
+	local -a commit_types=() base_args=(--back) confirm_options=() commit_args=()
 	local cmd_commit_empty empty_branch
 
 	# ===========================================================================
@@ -5946,17 +6145,67 @@ shell::git::commit::create() {
 				format_type="${selected_type}(${selected_scope})"
 			fi
 			commit_message="$(shell::git::commit::predict::format "$format_type" "$commit_description" "$issue_number" "$use_emoji")"
-			shell::logger::info "Commit message: ${commit_message}"
+			full_message="$(shell::git::commit::compose "$commit_message" "$commit_body" "$commit_footers")"
+			shell::logger::info "Commit message: ${full_message}"
 
-			choice="$(shell::ask::option::back --prompt "Proceed with this commit? " "Commit" "Abort")"
+			# The body and the footers are optional: Commit stays the first entry, so
+			# Enter commits as before.
+			confirm_options=("Commit" "Add body" "Add footer")
+			if [ -n "$commit_body" ]; then
+				confirm_options+=("Clear body")
+			fi
+			if [ -n "$commit_footers" ]; then
+				confirm_options+=("Clear footers")
+			fi
+			confirm_options+=("Abort")
+
+			choice="$(shell::ask::option::back --prompt "Proceed with this commit? " "${confirm_options[@]}")"
 			rc=$?
 			case "$rc" in
 			0)
-				if [ "$choice" = "Commit" ]; then
-					break
-				fi
-				shell::logger::info "Commit aborted"
-				return "$RETURN_SUCCESS"
+				case "$choice" in
+				"Commit") break ;;
+				"Add body")
+					value="$(shell::git::commit::body::read)"
+					rc=$?
+					case "$rc" in
+					0)
+						if [ -n "$value" ]; then
+							commit_body="${commit_body:+${commit_body}$'\n\n'}${value}"
+						fi
+						;;
+					"$RETURN_BACK") ;;
+					*)
+						shell::logger::warn "Input cancelled — aborting"
+						return "$RETURN_SUCCESS"
+						;;
+					esac
+					;;
+				"Add footer")
+					# One footer per round; Back in the table ends the loop.
+					while true; do
+						value="$(shell::git::commit::footer::read)"
+						rc=$?
+						case "$rc" in
+						0)
+							commit_footers="${commit_footers:+${commit_footers}$'\n'}${value}"
+							shell::logger::info "Footer added: ${value}"
+							;;
+						"$RETURN_BACK") break ;;
+						*)
+							shell::logger::warn "Input cancelled — aborting"
+							return "$RETURN_SUCCESS"
+							;;
+						esac
+					done
+					;;
+				"Clear body") commit_body="" ;;
+				"Clear footers") commit_footers="" ;;
+				*)
+					shell::logger::info "Commit aborted"
+					return "$RETURN_SUCCESS"
+					;;
+				esac
 				;;
 			"$RETURN_BACK") step="issue" ;;
 			*)
@@ -5969,14 +6218,31 @@ shell::git::commit::create() {
 	done
 
 	# Commit. argv style: the message is passed to git verbatim, so quotes, `$`
-	# and backticks in the description cannot be interpreted by the shell.
+	# and backticks in it cannot be interpreted by the shell. The body and the footers
+	# are separate -m arguments: git puts a blank line between them, which is what
+	# Conventional Commits wants (header, blank line, body, blank line, footers).
+	commit_args=(-m "$commit_message")
+	if [ -n "$commit_body" ]; then
+		commit_args+=(-m "$commit_body")
+	fi
+	if [ -n "$commit_footers" ]; then
+		commit_args+=(-m "$commit_footers")
+	fi
+
 	if [ "$dry_run" = "true" ]; then
 		shown="$(printf '%s' "$commit_message" | sed 's/[\\"$`]/\\&/g')"
-		shell::logger::command_clip "git commit -m \"${shown}\""
+		shown="git commit -m \"${shown}\""
+		if [ -n "$commit_body" ]; then
+			shown="${shown} -m \"$(printf '%s' "$commit_body" | sed 's/[\\"$`]/\\&/g')\""
+		fi
+		if [ -n "$commit_footers" ]; then
+			shown="${shown} -m \"$(printf '%s' "$commit_footers" | sed 's/[\\"$`]/\\&/g')\""
+		fi
+		shell::logger::command_clip "$shown"
 		return "$RETURN_SUCCESS"
 	fi
 
-	shell::exec::command git commit -m "$commit_message" || return $?
+	shell::exec::command git commit "${commit_args[@]}" || return $?
 	shell::logger::success "Commit created: ${commit_message}"
 
 	# Telegram notification, then push the current branch.

@@ -96,7 +96,7 @@ t_eq "base --back: ESC still returns 0" "0" "$?"
 out="$(run_create "feat${nl}none${nl}Commit" "add login${nl}#12${nl}" -n)"
 t_has "create: happy path" 'git commit -m "feat: add login #12"' "$out"
 t_eq "create: type menu ends with a Back entry" "$B" "$(tail -n 1 "$HOME/stdin.1")"
-t_eq "create: confirm menu is Commit / Abort / Back" "Commit${nl}Abort${nl}${B}" "$(cat "$HOME/stdin.3")"
+t_eq "create: confirm menu is Commit / Add body / Add footer / Abort / Back" "Commit${nl}Add body${nl}Add footer${nl}Abort${nl}${B}" "$(cat "$HOME/stdin.3")"
 
 out="$(run_create "feat${nl}none${nl}${B}${nl}Commit" "add login${nl}#1${nl}#2${nl}" -n)"
 t_has "create: Back at confirm re-asks the issue number" 'add login #2"' "$out"
@@ -169,7 +169,7 @@ t_lacks "scope: ...without committing" "git commit -m" "$out"
 # A type that already maps onto a scoped header has no scope menu.
 out="$(run_create "dependency${nl}Commit" "bump the parser${nl}#2${nl}" -n)"
 t_has "scope: 'dependency' keeps build(deps)" 'git commit -m "build(deps): bump the parser #2"' "$out"
-t_eq "scope: ...and gets no scope menu (the 2nd menu is the confirmation)" "Commit${nl}Abort${nl}${B}" "$(cat "$HOME/stdin.2")"
+t_eq "scope: ...and gets no scope menu (the 2nd menu is the confirmation)" "Commit${nl}Add body${nl}Add footer${nl}Abort${nl}${B}" "$(cat "$HOME/stdin.2")"
 t_eq "scope: ...so there is no 3rd menu" "no" "$([ -e "$HOME/stdin.3" ] && echo yes || echo no)"
 
 # A label mapped onto another type shows (and commits) that type, with its own emoji.
@@ -258,6 +258,121 @@ run_create "feat${nl}none${nl}Commit" "will be rejected${nl}#1${nl}" >/dev/null
 t_eq "create: ...and the failure is returned" "1" "$?"
 git config --local --unset core.hooksPath
 git reset -q
+
+# --- create: optional body and footers (Conventional Commits 1.0.0, rules 6-10) -------------
+# They live in the confirmation menu, so Enter on "Commit" is still the short path.
+# fzf calls: 1 type, 2 scope, 3 confirmation, then the footer table / the confirmation again.
+out="$(run_create "feat${nl}none${nl}Add body${nl}Commit" "x${nl}#1${nl}Why this matters.${nl}${nl}${nl}" -n)"
+t_has "body: one paragraph is a second -m" 'git commit -m "feat: x #1" -m "Why this matters."' "$out"
+t_eq "body: the confirmation then offers Clear body" "Commit${nl}Add body${nl}Add footer${nl}Clear body${nl}Abort${nl}${B}" "$(cat "$HOME/stdin.4")"
+t_has "body: the confirmation shows the body under the header" "Why this matters." "$out"
+
+out="$(run_create "feat${nl}none${nl}Add body${nl}Commit" "x${nl}#1${nl}Line one${nl}line two${nl}${nl}Second para${nl}${nl}${nl}" -n)"
+t_has "body: several paragraphs, several lines each" "-m \"Line one${nl}line two${nl}${nl}Second para\"" "$out"
+
+out="$(run_create "feat${nl}none${nl}Add body${nl}Add body${nl}Commit" "x${nl}#1${nl}P1${nl}${nl}${nl}P2${nl}${nl}${nl}" -n)"
+t_has "body: Add body again appends a paragraph" "-m \"P1${nl}${nl}P2\"" "$out"
+
+out="$(run_create "feat${nl}none${nl}Add body${nl}Commit" "x${nl}#1${nl}ignored${nl}:back${nl}" -n)"
+t_has "body: :back adds nothing" 'git commit -m "feat: x #1"' "$out"
+t_lacks "body: ...not even what was typed" '-m "ignored' "$out"
+
+out="$(run_create "feat${nl}none${nl}Add body${nl}Commit" "x${nl}#1${nl}${nl}" -n)"
+t_has "body: an empty body is no body" 'git commit -m "feat: x #1"' "$out"
+t_lacks "body: ...so there is no second -m" '" -m "' "$out"
+
+out="$(run_create "feat${nl}none${nl}Add body${nl}Clear body${nl}Commit" "x${nl}#1${nl}P1${nl}${nl}${nl}" -n)"
+t_lacks "body: Clear body removes it" '-m "P1' "$out"
+
+out="$(run_create "feat${nl}none${nl}Add body" "x${nl}#1${nl}" -n)"
+t_has "body: end of input aborts" "Input cancelled" "$out"
+t_lacks "body: ...without committing" "git commit -m" "$out"
+
+out="$(run_create "feat${nl}none${nl}Add body${nl}Commit" "x${nl}#1${nl}"'say "hi" $HOME `id`'"${nl}${nl}${nl}" -n)"
+t_has "body: quotes, \$ and backticks are escaped in the printed command" '-m "say \"hi\" \$HOME \`id\`"' "$out"
+
+# Footers.
+out="$(run_create "feat${nl}none${nl}Add footer${nl}footer:Reviewed-by${nl}footer:Refs${nl}back${nl}Commit" "x${nl}#1${nl}Z${nl}#123${nl}" -n)"
+t_has "footer: several footers are one -m, one per line" "-m \"Reviewed-by: Z${nl}Refs: #123\"" "$out"
+t_has "footer: each one is reported" "Footer added: Refs: #123" "$out"
+kinds="$(cut -f1 "$HOME/stdin.4")"
+t_eq "footer: the table starts with BREAKING CHANGE" "footer:BREAKING CHANGE" "$(printf '%s\n' "$kinds" | head -n 1)"
+t_eq "footer: ...then custom, then Back" "custom${nl}back" "$(printf '%s\n' "$kinds" | tail -n 2)"
+t_has "footer: ...a table of two columns" "--with-nth=2" "$(cat "$HOME/args.4")"
+t_has "footer: ...with a description per token" "Who reviewed the change" "$(cut -f2 "$HOME/stdin.4")"
+
+out="$(run_create "feat${nl}none${nl}Add footer${nl}footer:BREAKING CHANGE${nl}back${nl}Commit" "x${nl}#1${nl}drop the v1 API${nl}" -n)"
+t_has "footer: BREAKING CHANGE keeps its space" '-m "BREAKING CHANGE: drop the v1 API"' "$out"
+
+out="$(run_create "feat${nl}none${nl}Add footer${nl}custom${nl}custom${nl}back${nl}Commit" "x${nl}#1${nl}Bad Token${nl}Acked-by${nl}Bob${nl}" -n)"
+t_has "footer: a token with a space is refused" "one word" "$out"
+t_has "footer: ...and the next custom token is used" '-m "Acked-by: Bob"' "$out"
+
+out="$(run_create "feat${nl}none${nl}Add footer${nl}custom${nl}back${nl}Commit" "x${nl}#1${nl}breaking change${nl}the API moved${nl}" -n)"
+t_has "footer: breaking change is written BREAKING CHANGE" '-m "BREAKING CHANGE: the API moved"' "$out"
+
+out="$(run_create "feat${nl}none${nl}Add footer${nl}footer:Refs${nl}footer:Closes${nl}back${nl}Commit" "x${nl}#1${nl}:back${nl}#9${nl}" -n)"
+t_has "footer: :back at the value returns to the table" '-m "Closes: #9"' "$out"
+t_lacks "footer: ...and the first token is dropped" "Refs:" "$out"
+
+out="$(run_create "feat${nl}none${nl}Add footer${nl}back${nl}Commit" "x${nl}#1${nl}" -n)"
+t_has "footer: Back with nothing added commits without footers" 'git commit -m "feat: x #1"' "$out"
+t_eq "footer: ...and the menu has no Clear footers" "Commit${nl}Add body${nl}Add footer${nl}Abort${nl}${B}" "$(cat "$HOME/stdin.5")"
+
+out="$(run_create "feat${nl}none${nl}Add footer" "x${nl}#1${nl}" -n)"
+t_has "footer: ESC at the table aborts" "Input cancelled" "$out"
+t_lacks "footer: ...without committing" "git commit -m" "$out"
+
+out="$(run_create "feat${nl}none${nl}Add footer${nl}footer:Refs${nl}back${nl}Clear footers${nl}Commit" "x${nl}#1${nl}#5${nl}" -n)"
+t_has "footer: Clear footers is offered once there are some" "Clear footers" "$(cat "$HOME/stdin.6")"
+t_lacks "footer: ...and removes them" "Refs:" "$(printf '%s\n' "$out" | grep 'git commit')"
+
+out="$(run_create "feat${nl}none${nl}Add body${nl}Add footer${nl}footer:Refs${nl}back${nl}Commit" "x${nl}#1${nl}Body.${nl}${nl}${nl}#1${nl}" -n)"
+t_has "body + footer: header, body and footers are three -m" 'git commit -m "feat: x #1" -m "Body." -m "Refs: #1"' "$out"
+
+out="$(SHELL_GIT_COMMIT_FOOTERS="" run_create "feat${nl}none${nl}Add footer${nl}back${nl}Commit" "x${nl}#1${nl}" -n)"
+t_eq "footer: an empty SHELL_GIT_COMMIT_FOOTERS leaves custom and Back" "custom${nl}back" "$(cut -f1 "$HOME/stdin.4")"
+out="$(SHELL_GIT_COMMIT_FOOTERS="Jira|Ticket" run_create "feat${nl}none${nl}Add footer${nl}back${nl}Commit" "x${nl}#1${nl}" -n)"
+t_eq "footer: SHELL_GIT_COMMIT_FOOTERS replaces the list" "footer:Jira${nl}custom${nl}back" "$(cut -f1 "$HOME/stdin.4")"
+
+# A real commit: the layout is the one of the spec, and git reads the footers as trailers.
+echo five >five.txt && git add five.txt
+out="$(run_create "fix${nl}none${nl}Add body${nl}Add footer${nl}footer:Reviewed-by${nl}footer:Refs${nl}back${nl}Commit" \
+	"prevent racing${nl}#123${nl}Introduce a request id.${nl}Dismiss old responses.${nl}${nl}Remove timeouts.${nl}${nl}${nl}Z${nl}#123${nl}")"
+want="fix: prevent racing #123${nl}${nl}Introduce a request id.${nl}Dismiss old responses.${nl}${nl}Remove timeouts.${nl}${nl}Reviewed-by: Z${nl}Refs: #123"
+t_eq "real: header, blank line, body paragraphs, blank line, footers" "$want" "$(git log -1 --format=%B | sed -e :a -e '/^\n*$/{$d;N;ba' -e '}')"
+t_eq "real: git parses the footers as trailers" "Reviewed-by: Z${nl}Refs: #123" "$(git log -1 --format=%B | git interpret-trailers --parse)"
+t_eq "real: the subject is the header alone" "fix: prevent racing #123" "$(git log -1 --format=%s)"
+t_has "real: only the header goes to the notification" "PUBLISHED<fix: prevent racing #123>" "$out"
+
+echo six >six.txt && git add six.txt
+run_create "feat${nl}none${nl}Add body${nl}Commit" "keep hash lines${nl}#2${nl}# not a comment${nl}${nl}${nl}" >/dev/null
+t_has "real: a body line starting with # is kept" "# not a comment" "$(git log -1 --format=%B)"
+
+echo seven >seven.txt && git add seven.txt
+run_create "feat${nl}none${nl}Add body${nl}Commit" "dollar${nl}#3${nl}"'cost $HOME `id` "q"'"${nl}${nl}${nl}" >/dev/null
+t_eq "real: a nasty body is stored verbatim" 'cost $HOME `id` "q"' "$(git log -1 --format=%b | sed '/^$/d')"
+
+# The helpers.
+t_eq "compose: header only" "fix: x" "$(shell::git::commit::compose "fix: x")"
+t_eq "compose: header, body, footers" "fix: x${nl}${nl}Why.${nl}${nl}Refs: #1" "$(shell::git::commit::compose "fix: x" "Why." "Refs: #1")"
+t_eq "compose: footers without a body" "fix: x${nl}${nl}Refs: #1" "$(shell::git::commit::compose "fix: x" "" "Refs: #1")"
+t_eq "footer::token: a plain token" "Acked-by" "$(shell::git::commit::footer::token "Acked-by")"
+t_eq "footer::token: BREAKING CHANGE, any case" "BREAKING CHANGE" "$(shell::git::commit::footer::token "breaking change")"
+t_eq "footer::token: BREAKING-CHANGE is a synonym" "BREAKING CHANGE" "$(shell::git::commit::footer::token "Breaking-Change")"
+for bad in "Acked by" "-x" "x-" "a:b" "" "a b c"; do
+	shell::git::commit::footer::token "$bad" >/dev/null
+	t_eq "footer::token: [$bad] is refused" "1" "$?"
+done
+out="$(printf 'A\nB\n\nC\n\n\n' | shell::git::commit::body::read 2>/dev/null)"
+t_eq "body::read: paragraphs are separated by a blank line" "A${nl}B${nl}${nl}C" "$out"
+out="$(printf '\n' | shell::git::commit::body::read 2>/dev/null)"
+t_eq "body::read: an empty line first gives an empty body" "" "$out"
+printf ':back\n' | shell::git::commit::body::read >/dev/null 2>&1
+t_eq "body::read: :back returns RETURN_BACK" "$RETURN_BACK" "$?"
+printf 'A\n' | shell::git::commit::body::read >/dev/null 2>&1
+t_eq "body::read: end of input is a cancel" "$RETURN_CANCELLED" "$?"
+t_has "create -h documents the body and footers" "Add footer" "$(shell::git::commit::create -h 2>&1)"
 
 # --- create, empty mode --------------------------------------------------------------------
 cat="CI/CD Pipeline Triggers"
