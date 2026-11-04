@@ -4341,7 +4341,7 @@ shell::git::commit::compose() {
 #   body="$(shell::git::commit::body::read)"
 #
 shell::git::commit::body::read() {
-	local line paragraph="" body=""
+	local line paragraph="" body="" nl=$'\n'
 
 	printf 'Body — type a paragraph; an empty line ends it, an empty line after that finishes (:back cancels)\n' >&2
 	while true; do
@@ -4356,7 +4356,7 @@ shell::git::commit::body::read() {
 		fi
 
 		if [ -n "$line" ]; then
-			paragraph="${paragraph:+${paragraph}$'\n'}${line}"
+			paragraph="${paragraph:+${paragraph}${nl}}${line}"
 			continue
 		fi
 
@@ -4364,7 +4364,7 @@ shell::git::commit::body::read() {
 		if [ -z "$paragraph" ]; then
 			break
 		fi
-		body="${body:+${body}$'\n\n'}${paragraph}"
+		body="${body:+${body}${nl}${nl}}${paragraph}"
 		paragraph=""
 		printf 'Next paragraph — or an empty line to finish\n' >&2
 	done
@@ -5924,6 +5924,7 @@ shell::git::commit::predict() {
 #   SHELL_GIT_COMMIT_EMOJI=true shell::git::commit::create
 #
 shell::git::commit::create() {
+	local nl=$'\n'
 	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Interactively build and commit a formatted Git commit message (with Back navigation)"
@@ -6171,7 +6172,7 @@ shell::git::commit::create() {
 					case "$rc" in
 					0)
 						if [ -n "$value" ]; then
-							commit_body="${commit_body:+${commit_body}$'\n\n'}${value}"
+							commit_body="${commit_body:+${commit_body}${nl}${nl}}${value}"
 						fi
 						;;
 					"$RETURN_BACK") ;;
@@ -6188,7 +6189,7 @@ shell::git::commit::create() {
 						rc=$?
 						case "$rc" in
 						0)
-							commit_footers="${commit_footers:+${commit_footers}$'\n'}${value}"
+							commit_footers="${commit_footers:+${commit_footers}${nl}}${value}"
 							shell::logger::info "Footer added: ${value}"
 							;;
 						"$RETURN_BACK") break ;;
