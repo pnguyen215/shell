@@ -12892,3 +12892,232 @@ shell::git::commit::pick::fzf::abort() {
 	fi
 	shell::git::commit::pick::abort "$@"
 }
+
+# @description Writes every uncommitted change of the working tree into one `.patch` file:
+#   staged changes, unstaged changes and untracked files (binary files included), so the
+#   file can be applied to a clean checkout with `git apply`. Nothing in the repository
+#   is modified (the index is not touched).
+#
+#   Step 1 — Verify the git repository and that something is uncommitted.
+#   Step 2 — Pick the file name (default `<repo>-<branch>-<YYYYmmdd-HHMMSS>.patch`).
+#   Step 3 — Collect tracked changes (`git diff HEAD --binary`) and untracked files.
+#   Step 4 — Write the patch; an existing file is never overwritten.
+# @option -n | --dry-run Optional. Print what would be written instead of writing it.
+# @option -h | --help Show this help message.
+# @arg $1 string Optional. Output file; `.patch` is appended when missing.
+# @stdout Messages about the written file.
+# @exitcode 0 The patch was written (or dry-run printed, or nothing to save).
+# @exitcode 1 Writing the patch failed.
+# @exitcode 2 Unknown option.
+# @exitcode 7 The output file already exists.
+# @example
+#   shell::git::patch::create
+#   shell::git::patch::create my-work
+#   shell::git::patch::create -n
+#
+shell::git::patch::create() {
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Save all uncommitted changes (staged, unstaged, untracked) as a .patch file"
+		shell::logger::usage "shell::git::patch::create [-n] [-h] [file]"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print what would be written instead of writing it"
+		shell::logger::item "file" "Output file (default: <repo>-<branch>-<timestamp>.patch)"
+		shell::logger::example "shell::git::patch::create"
+		shell::logger::example "shell::git::patch::create my-work"
+		return "$RETURN_SUCCESS"
+	fi
+
+	local dry_run="false"
+	if [ "${1-}" = "-n" ] || [ "${1-}" = "--dry-run" ]; then
+		dry_run="true"
+		shift
+	fi
+	case "${1-}" in
+	-*)
+		shell::logger::error "Unknown option: $1"
+		return "$RETURN_INVALID"
+		;;
+	esac
+
+	# Step 1 — repository and content checks.
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return "$RETURN_FAILURE"
+	fi
+	local root
+	root="$(git rev-parse --show-toplevel)" || return "$RETURN_FAILURE"
+
+	if [ -z "$(git -C "$root" status --porcelain 2>/dev/null)" ]; then
+		shell::logger::warn "No uncommitted changes — nothing to save"
+		return "$RETURN_SUCCESS"
+	fi
+
+	# Step 2 — output file name (a branch such as feat/x must not create a folder).
+	local out="${1-}"
+	if [ -z "$out" ]; then
+		local branch
+		branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null)" || branch=""
+		[ -z "$branch" ] && branch="detached"
+		out="$(basename "$root")-$(printf '%s' "$branch" | tr -c 'A-Za-z0-9._-' '-')-$(date +%Y%m%d-%H%M%S).patch"
+	fi
+	case "$out" in
+	*.patch) ;;
+	*) out="${out}.patch" ;;
+	esac
+
+	if [ -e "$out" ]; then
+		shell::logger::error "File already exists: $out"
+		return "$RETURN_EXISTS"
+	fi
+
+	# Step 3 — tracked changes against HEAD (the empty tree when there is no commit yet).
+	local base="HEAD"
+	git rev-parse --verify -q HEAD >/dev/null 2>&1 || base="4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+
+	local -a untracked=()
+	local file
+	while IFS= read -r -d '' file; do
+		untracked+=("$file")
+	done < <(git -C "$root" ls-files --others --exclude-standard -z)
+
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::command_clip "git diff ${base} --binary > $(shell::git::commit::spec::quote "$out")"
+		for file in "${untracked[@]}"; do
+			shell::logger::command_clip "git diff --no-index --binary -- /dev/null $(shell::git::commit::spec::quote "$file") >> $(shell::git::commit::spec::quote "$out")"
+		done
+		return "$RETURN_SUCCESS"
+	fi
+
+	# Step 4 — write to a temporary file first, so a failure leaves no half-written patch.
+	local tmp
+	tmp="$(mktemp "$(shell::os::temp_dir)/git-patch.XXXXXX")" || {
+		shell::logger::error "Could not create a temporary file"
+		return "$RETURN_FAILURE"
+	}
+
+	if ! git -C "$root" diff "$base" --binary >"$tmp"; then
+		rm -f "$tmp"
+		shell::logger::error "git diff failed"
+		return "$RETURN_FAILURE"
+	fi
+	for file in "${untracked[@]}"; do
+		# --no-index exits 1 when the files differ, which is the normal case here.
+		git -C "$root" diff --no-index --binary -- /dev/null "$file" >>"$tmp"
+		if [ "$?" -gt 1 ]; then
+			rm -f "$tmp"
+			shell::logger::error "Could not add untracked file: $file"
+			return "$RETURN_FAILURE"
+		fi
+	done
+
+	if [ ! -s "$tmp" ]; then
+		rm -f "$tmp"
+		shell::logger::warn "The changes produced an empty patch — nothing saved"
+		return "$RETURN_SUCCESS"
+	fi
+
+	if ! mv "$tmp" "$out"; then
+		rm -f "$tmp"
+		shell::logger::error "Could not write: $out"
+		return "$RETURN_FAILURE"
+	fi
+
+	shell::logger::info "Patch saved: $out ($(git apply --numstat -- "$out" 2>/dev/null | wc -l | tr -d ' ') file(s))"
+	return "$RETURN_SUCCESS"
+}
+
+# @description Presents an fzf picker of `.patch` files and applies the chosen one with
+#   `git apply <name>.patch`. The preview pane shows the diffstat and the patch itself.
+#
+#   Step 1 — Verify the git repository.
+#   Step 2 — Find `*.patch` files (up to 3 levels deep, `.git` and `node_modules` skipped).
+#   Step 3 — Pick one via shell::fzf::select.
+#   Step 4 — Check that it applies cleanly (`git apply --check`), then apply it.
+# @option -n | --dry-run Optional. Print the apply command instead of running it.
+# @option -h | --help Show this help message.
+# @arg $1 string Optional. Directory to search (default: the current directory).
+# @exitcode 0 The patch was applied, or the user cancelled, or none was found.
+# @exitcode 1 The patch does not apply cleanly or git apply failed.
+# @exitcode 3 The directory does not exist.
+# @example
+#   shell::git::patch::apply::fzf
+#   shell::git::patch::apply::fzf ~/patches
+#   shell::git::patch::apply::fzf -n
+#
+shell::git::patch::apply::fzf() {
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Pick a .patch file via fzf and apply it with git apply"
+		shell::logger::usage "shell::git::patch::apply::fzf [-n] [-h] [dir]"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the git apply command instead of running it"
+		shell::logger::item "dir" "Directory to search (default: current directory)"
+		shell::logger::example "shell::git::patch::apply::fzf"
+		shell::logger::example "shell::git::patch::apply::fzf -n"
+		return "$RETURN_SUCCESS"
+	fi
+
+	local dry_run="false"
+	if [ "${1-}" = "-n" ] || [ "${1-}" = "--dry-run" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	# Step 1 — repository check.
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return "$RETURN_FAILURE"
+	fi
+
+	local dir="${1:-.}"
+	if [ ! -d "$dir" ]; then
+		shell::logger::error "Directory not found: $dir"
+		return "$RETURN_NOT_FOUND"
+	fi
+
+	# Step 2 — candidates, newest first would need stat; a sorted list is enough for fzf.
+	local candidates
+	candidates="$(find "$dir" -maxdepth 3 -type f -name '*.patch' \
+		-not -path '*/.git/*' -not -path '*/node_modules/*' 2>/dev/null | sort)"
+
+	if [ -z "$candidates" ]; then
+		shell::logger::warn "No .patch files found under '$dir'"
+		return "$RETURN_SUCCESS"
+	fi
+
+	# Step 3 — picker.
+	local picked
+	picked="$(printf '%s\n' "$candidates" | shell::fzf::select \
+		--prompt="Select patch to apply: " \
+		--preview="git apply --stat -- {} 2>&1; echo; cat {}" \
+		--preview-window="right:60%:wrap")" || {
+		shell::logger::warn "No patch selected — aborting"
+		return "$RETURN_SUCCESS"
+	}
+
+	if [ -z "$picked" ]; then
+		shell::logger::warn "No patch selected — aborting"
+		return "$RETURN_SUCCESS"
+	fi
+
+	if [ "$dry_run" = "true" ]; then
+		shell::exec::command -n git apply -- "$picked"
+		return "$RETURN_SUCCESS"
+	fi
+
+	# Step 4 — verify first: git apply is all-or-nothing, but the message is clearer up front.
+	if ! git apply --check -- "$picked" 2>/dev/null; then
+		shell::logger::error "'$picked' does not apply cleanly to the working tree"
+		git apply --check -- "$picked" 2>&1 | sed 's/^/    /' >&2
+		return "$RETURN_FAILURE"
+	fi
+
+	if shell::exec::command git apply -- "$picked"; then
+		shell::logger::info "Applied: $picked"
+		return "$RETURN_SUCCESS"
+	fi
+
+	shell::logger::error "git apply failed for '$picked'"
+	return "$RETURN_FAILURE"
+}
