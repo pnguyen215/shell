@@ -32,28 +32,48 @@ p="$(cat work.patch)"
 t_has "create: unstaged change" "+two" "$p"
 t_has "create: staged change" "+y" "$p"
 t_has "create: untracked file" "+new" "$p"
-t_eq "create: index untouched (new file still untracked)" "?? \"new file.txt\"" "$(git status --porcelain | grep 'new file')"
+t_eq "create: working tree is clean afterwards" "" "$(git status --porcelain | grep -v work.patch)"
+t_eq "create: tracked change gone" "one" "$(cat a.txt)"
+t_eq "create: untracked file gone" "no" "$([ -e 'new file.txt' ] && echo yes || echo no)"
+t_eq "create: patch is kept (saved inside the repo)" "yes" "$([ -f work.patch ] && echo yes || echo no)"
 t_rc "create: refuses to overwrite" 7 shell::git::patch::create work
-t_rc "create: dry run writes nothing" 0 shell::git::patch::create -n dry
-t_eq "create: dry run left no file" "no" "$([ -f dry.patch ] && echo yes || echo no)"
-t_rc "create: unknown option" 2 shell::git::patch::create --bogus
 
-# --- apply: round trip on a clean checkout
+# dry run: nothing written, nothing removed
+printf 'dry\n' >>a.txt
+t_rc "create: dry run" 0 shell::git::patch::create -n dry
+t_eq "create: dry run left no file" "no" "$([ -f dry.patch ] && echo yes || echo no)"
+t_eq "create: dry run kept the change" "dry" "$(sed -n 2p a.txt)"
+t_rc "create: unknown option" 2 shell::git::patch::create --bogus
+git checkout -q a.txt
+
+# --- apply: round trip on the clean checkout
 mkdir "$HOME/patches" && mv work.patch "$HOME/patches/"
-git stash -u -q
 P="$HOME/patches"
 t_rc "apply: dry run prints command" 0 shell::git::patch::apply::fzf -n "$P"
 t_has "apply: dry run shows git apply" "git apply" "$T_OUT"
 t_eq "apply: dry run changed nothing" "one" "$(cat a.txt)"
+t_rc "apply: unknown option" 2 shell::git::patch::apply::fzf --bogus
 t_rc "apply: applies the picked patch" 0 shell::git::patch::apply::fzf "$P"
 t_eq "apply: tracked change back" "two" "$(sed -n 2p a.txt)"
 t_eq "apply: untracked file back" "new" "$(cat 'new file.txt')"
+t_eq "apply: patch kept by default" "yes" "$([ -f "$P/work.patch" ] && echo yes || echo no)"
 
 # --- apply: second time conflicts, cancel and empty dir
 t_rc "apply: already applied fails cleanly" 1 shell::git::patch::apply::fzf "$P"
 FAKE_FZF_ESC=1
 t_rc "apply: ESC is not an error" 0 shell::git::patch::apply::fzf "$P"
 FAKE_FZF_ESC=0
+
+# --- apply -r: removes the file after a successful apply only
+t_rc "apply -r: failing apply is not an error-free run" 1 shell::git::patch::apply::fzf -r "$P"
+t_eq "apply -r: patch kept when apply failed" "yes" "$([ -f "$P/work.patch" ] && echo yes || echo no)"
+git reset -q --hard && git clean -fdq
+t_rc "apply -r: dry run keeps the file" 0 shell::git::patch::apply::fzf -n -r "$P"
+t_eq "apply -r: dry run kept the file" "yes" "$([ -f "$P/work.patch" ] && echo yes || echo no)"
+t_rc "apply -r: applies" 0 shell::git::patch::apply::fzf --remove "$P"
+t_eq "apply -r: change applied" "two" "$(sed -n 2p a.txt)"
+t_eq "apply -r: patch file removed" "no" "$([ -f "$P/work.patch" ] && echo yes || echo no)"
+
 mkdir empty
 t_rc "apply: no patches is not an error" 0 shell::git::patch::apply::fzf empty
 t_has "apply: no patches message" "No .patch files" "$T_OUT"
