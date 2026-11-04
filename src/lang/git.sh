@@ -13220,6 +13220,8 @@ shell::git::diff::target() {
 #   - Move with the arrow keys: the preview follows the file under the cursor
 #     (Ctrl-D / Ctrl-U scroll it). Enter opens the full diff of that file in the pager and
 #     comes back to the list; ESC leaves.
+#   - The last entry is "← Back" (SHELL_FZF_BACK_LABEL): picking it leaves the browser with
+#     RETURN_BACK, so a caller that opened it as a step can step back. ESC just quits.
 #   - Colours are used when the terminal supports them (and `NO_COLOR` is unset); the diff
 #     is syntax-highlighted through `delta` when it is installed, else with git's own colours.
 # @option -s | --staged Optional. Diff the staged changes (`git diff --cached`) instead.
@@ -13227,9 +13229,10 @@ shell::git::diff::target() {
 # @option -n | --dry-run Optional. Print the git commands instead of opening the browser.
 # @option -h | --help Show this help message.
 # @arg $1 string Optional. Commit-ish or `<from>..<to>`. Default: uncommitted changes against HEAD.
-# @exitcode 0 Success, or the user left the picker.
+# @exitcode 0 Success, or the user left the picker with ESC.
 # @exitcode 1 Not a repository, no commits, or an unknown commit.
 # @exitcode 2 Unknown option.
+# @exitcode 11 The user picked the "← Back" entry.
 # @example
 #   shell::git::diff::fzf
 #   shell::git::diff::fzf HEAD~3
@@ -13277,10 +13280,17 @@ shell::git::diff::fzf() {
 	# Step 1 — what to diff.
 	if [ "$pick" = "true" ]; then
 		local picked
-		picked="$(git log -n 500 --format='%h %s (%an, %ar)' 2>/dev/null | shell::fzf::select --prompt="Select commit: ")" || {
+		picked="$({
+			git log -n 500 --format='%h %s (%an, %ar)' 2>/dev/null
+			printf '%s\n' "$SHELL_FZF_BACK_LABEL"
+		} | shell::fzf::select --prompt="Select commit: ")" || {
 			shell::logger::warn "No commit selected — aborting"
 			return "$RETURN_SUCCESS"
 		}
+		if [ "$picked" = "$SHELL_FZF_BACK_LABEL" ]; then
+			shell::logger::info "Back — nothing was shown"
+			return "$RETURN_BACK"
+		fi
 		target="${picked%% *}"
 	fi
 
@@ -13358,11 +13368,13 @@ shell::git::diff::fzf() {
 	local header="${total} file(s): ${n_a} added, ${n_m} modified, ${n_d} deleted, ${n_r} renamed"
 	[ "$n_o" -gt 0 ] && header="${header}, ${n_o} other"
 	header="${header}  |  Enter: full diff  Ctrl-D/U: scroll  ESC: quit"
+	# Overview first (empty path column); Back last, so Enter never lands on it by accident.
 	rows="Overview — all changed files (${total})${tab}${tab}"$'\n'"${rows}"
+	rows="${rows}${SHELL_FZF_BACK_LABEL}${tab}:back${tab}"$'\n'
 
 	# Step 4 — the browser. Enter shows the diff in the pager, then the list comes back.
 	local preview
-	preview="if [ -z {2} ]; then git diff --stat=100 ${color_flag}${q_args}; else git diff ${color_flag}${q_args} -- {3} {2}${pipe}; fi"
+	preview="case {2} in '') git diff --stat=100 ${color_flag}${q_args};; :back) echo 'Go back without viewing a diff';; *) git diff ${color_flag}${q_args} -- {3} {2}${pipe};; esac"
 
 	local choice file orig
 	while true; do
@@ -13376,6 +13388,11 @@ shell::git::diff::fzf() {
 			--preview-window="right:65%:wrap" \
 			--bind="ctrl-d:preview-half-page-down,ctrl-u:preview-half-page-up")" || break
 		[ -z "$choice" ] && break
+
+		if [ "${choice%%$tab*}" = "$SHELL_FZF_BACK_LABEL" ]; then
+			shell::logger::info "Back — left the diff browser"
+			return "$RETURN_BACK"
+		fi
 
 		file="$(printf '%s' "$choice" | cut -f2)"
 		orig="$(printf '%s' "$choice" | cut -f3)"

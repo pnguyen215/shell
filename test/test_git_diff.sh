@@ -38,8 +38,9 @@ t_has "list: modified" "M  a.txt" "$list"
 t_has "list: added" "A  d.txt" "$list"
 t_has "list: deleted" "D  c.txt" "$list"
 t_has "list: renamed" "R  old.txt → new.txt" "$list"
-t_eq "list: overview + 4 files" "5" "$(printf '%s\n' "$list" | grep -c .)"
+t_eq "list: overview + 4 files + back" "6" "$(printf '%s\n' "$list" | grep -c .)"
 args="$(cat "$HOME/args.1")"
+t_has "list: back entry is last" "Back" "$(printf '%s' "$list" | tail -n 1)"
 t_has "header counts" "4 file(s): 1 added, 1 modified, 1 deleted, 1 renamed" "$args"
 t_has "preview shows the file diff" "git diff" "$args"
 t_has "preview has the stat for the overview" "--stat" "$args"
@@ -53,6 +54,14 @@ t_eq "select: list comes back until ESC" "2" "$(cat "$HOME/fzf.count")"
 reset_fzf; FAKE_FZF_ROW=1
 t_rc "select: overview" 0 shell::git::diff::fzf HEAD
 t_has "overview: diffstat" "4 files changed" "$T_OUT"
+FAKE_FZF_ROW=""
+
+# --- Back entry: leaves with RETURN_BACK (11), no diff shown
+reset_fzf; FAKE_FZF_ROW=6
+t_rc "back: returns RETURN_BACK" 11 shell::git::diff::fzf HEAD
+t_has "back: says so" "Back" "$T_OUT"
+t_eq "back: list not reopened" "1" "$(cat "$HOME/fzf.count")"
+reset_fzf; FAKE_FZF_ROW=""
 FAKE_FZF_ROW=""
 
 # --- root commit: the empty tree is the parent
@@ -81,4 +90,7 @@ t_rc "unknown option" 2 shell::git::diff::fzf --bogus
 t_rc "dry run" 0 shell::git::diff::fzf -n HEAD
 t_has "dry run: command" "git diff --name-status" "$T_OUT"
 t_rc "pick: ESC aborts" 0 shell::git::diff::fzf --pick
+reset_fzf; FAKE_FZF_ROW=3
+t_rc "pick: Back entry" 11 shell::git::diff::fzf --pick
+t_has "pick: back entry is offered last" "Back" "$(tail -n 1 "$HOME/stdin.1")"
 t_done
