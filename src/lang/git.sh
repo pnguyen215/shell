@@ -12895,19 +12895,24 @@ shell::git::commit::pick::fzf::abort() {
 
 # @description Writes every uncommitted change of the working tree into one `.patch` file:
 #   staged changes, unstaged changes and untracked files (binary files included), so the
-#   file can be applied to a clean checkout with `git apply`. Nothing in the repository
-#   is modified (the index is not touched).
+#   file can be applied to a clean checkout with `git apply`.
+#
+#   Once the patch is written and verified, the changes are removed from the working
+#   tree and the index (`git reset --hard` + removal of the saved untracked files), so
+#   the repository ends up clean. Ignored files are left alone. The removal only happens
+#   after `git apply --reverse --check` proves the patch really holds every change.
 #
 #   Step 1 — Verify the git repository and that something is uncommitted.
 #   Step 2 — Pick the file name (default `<repo>-<branch>-<YYYYmmdd-HHMMSS>.patch`).
 #   Step 3 — Collect tracked changes (`git diff HEAD --binary`) and untracked files.
 #   Step 4 — Write the patch; an existing file is never overwritten.
-# @option -n | --dry-run Optional. Print what would be written instead of writing it.
+#   Step 5 — Verify the patch reverses cleanly, then discard the saved changes.
+# @option -n | --dry-run Optional. Print what would be done instead of doing it.
 # @option -h | --help Show this help message.
 # @arg $1 string Optional. Output file; `.patch` is appended when missing.
 # @stdout Messages about the written file.
-# @exitcode 0 The patch was written (or dry-run printed, or nothing to save).
-# @exitcode 1 Writing the patch failed.
+# @exitcode 0 The patch was written and the changes removed (or dry-run printed, or nothing to save).
+# @exitcode 1 Writing or verifying the patch failed (the changes are then left in place).
 # @exitcode 2 Unknown option.
 # @exitcode 7 The output file already exists.
 # @example
@@ -12918,10 +12923,10 @@ shell::git::commit::pick::fzf::abort() {
 shell::git::patch::create() {
 	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
 		shell::logger::reset_options
-		shell::logger::info "Save all uncommitted changes (staged, unstaged, untracked) as a .patch file"
+		shell::logger::info "Save all uncommitted changes (staged, unstaged, untracked) as a .patch file, then clean the working tree"
 		shell::logger::usage "shell::git::patch::create [-n] [-h] [file]"
 		shell::logger::option "-h, --help" "Show this help message"
-		shell::logger::option "-n, --dry-run" "Print what would be written instead of writing it"
+		shell::logger::option "-n, --dry-run" "Print what would be done instead of doing it"
 		shell::logger::item "file" "Output file (default: <repo>-<branch>-<timestamp>.patch)"
 		shell::logger::example "shell::git::patch::create"
 		shell::logger::example "shell::git::patch::create my-work"
@@ -12986,6 +12991,10 @@ shell::git::patch::create() {
 		for file in "${untracked[@]}"; do
 			shell::logger::command_clip "git diff --no-index --binary -- /dev/null $(shell::git::commit::spec::quote "$file") >> $(shell::git::commit::spec::quote "$out")"
 		done
+		if [ "$base" = "HEAD" ]; then
+			shell::logger::command_clip "git reset --hard HEAD"
+			[ "${#untracked[@]}" -gt 0 ] && shell::logger::command_clip "git clean -fd -- <${#untracked[@]} untracked file(s)>"
+		fi
 		return "$RETURN_SUCCESS"
 	fi
 
@@ -13024,6 +13033,35 @@ shell::git::patch::create() {
 	fi
 
 	shell::logger::info "Patch saved: $out ($(git apply --numstat -- "$out" 2>/dev/null | wc -l | tr -d ' ') file(s))"
+
+	# Step 5 — discard what was saved. Without a first commit there is nothing to reset to.
+	if [ "$base" != "HEAD" ]; then
+		shell::logger::warn "No commit yet — the changes were saved but not removed"
+		return "$RETURN_SUCCESS"
+	fi
+
+	# Safety net: the patch must undo exactly the current state, or nothing is deleted.
+	local abs_out
+	abs_out="$(cd "$(dirname "$out")" && pwd -P)/$(basename "$out")"
+	if ! git -C "$root" apply --reverse --check -- "$abs_out" 2>/dev/null; then
+		shell::logger::error "The saved patch does not match the working tree — changes were NOT removed"
+		return "$RETURN_FAILURE"
+	fi
+
+	if ! git -C "$root" reset --hard HEAD >/dev/null; then
+		shell::logger::error "git reset --hard failed — the patch is saved, but the changes remain"
+		return "$RETURN_FAILURE"
+	fi
+	if [ "${#untracked[@]}" -gt 0 ]; then
+		# Pathspec = only the files that went into the patch, so the patch itself
+		# (when saved inside the repository) is never cleaned away.
+		if ! git -C "$root" clean -fdq -- "${untracked[@]}"; then
+			shell::logger::error "git clean failed — some untracked files remain"
+			return "$RETURN_FAILURE"
+		fi
+	fi
+
+	shell::logger::info "Working tree is clean — apply it again with shell::git::patch::apply::fzf"
 	return "$RETURN_SUCCESS"
 }
 
@@ -13034,35 +13072,49 @@ shell::git::patch::create() {
 #   Step 2 — Find `*.patch` files (up to 3 levels deep, `.git` and `node_modules` skipped).
 #   Step 3 — Pick one via shell::fzf::select.
 #   Step 4 — Check that it applies cleanly (`git apply --check`), then apply it.
-# @option -n | --dry-run Optional. Print the apply command instead of running it.
+#   Step 5 — With `-r`, delete the patch file once it was applied (never when it failed).
+# @option -n | --dry-run Optional. Print the commands instead of running them.
+# @option -r | --remove Optional. Delete the patch file after it was applied. Default: keep it.
 # @option -h | --help Show this help message.
 # @arg $1 string Optional. Directory to search (default: the current directory).
 # @exitcode 0 The patch was applied, or the user cancelled, or none was found.
 # @exitcode 1 The patch does not apply cleanly or git apply failed.
+# @exitcode 2 Unknown option.
 # @exitcode 3 The directory does not exist.
 # @example
 #   shell::git::patch::apply::fzf
 #   shell::git::patch::apply::fzf ~/patches
 #   shell::git::patch::apply::fzf -n
+#   shell::git::patch::apply::fzf -r
 #
 shell::git::patch::apply::fzf() {
 	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Pick a .patch file via fzf and apply it with git apply"
-		shell::logger::usage "shell::git::patch::apply::fzf [-n] [-h] [dir]"
+		shell::logger::usage "shell::git::patch::apply::fzf [-n] [-r] [-h] [dir]"
 		shell::logger::option "-h, --help" "Show this help message"
-		shell::logger::option "-n, --dry-run" "Print the git apply command instead of running it"
+		shell::logger::option "-n, --dry-run" "Print the commands instead of running them"
+		shell::logger::option "-r, --remove" "Delete the patch file after it was applied (default: keep it)"
 		shell::logger::item "dir" "Directory to search (default: current directory)"
 		shell::logger::example "shell::git::patch::apply::fzf"
 		shell::logger::example "shell::git::patch::apply::fzf -n"
+		shell::logger::example "shell::git::patch::apply::fzf -r"
 		return "$RETURN_SUCCESS"
 	fi
 
-	local dry_run="false"
-	if [ "${1-}" = "-n" ] || [ "${1-}" = "--dry-run" ]; then
-		dry_run="true"
+	local dry_run="false" remove="false"
+	while [ "$#" -gt 0 ]; do
+		case "$1" in
+		-n | --dry-run) dry_run="true" ;;
+		-r | --remove) remove="true" ;;
+		-*)
+			shell::logger::error "Unknown option: $1"
+			return "$RETURN_INVALID"
+			;;
+		*) break ;;
+		esac
 		shift
-	fi
+	done
 
 	# Step 1 — repository check.
 	if ! git rev-parse --git-dir >/dev/null 2>&1; then
@@ -13103,6 +13155,7 @@ shell::git::patch::apply::fzf() {
 
 	if [ "$dry_run" = "true" ]; then
 		shell::exec::command -n git apply -- "$picked"
+		[ "$remove" = "true" ] && shell::exec::command -n rm -f -- "$picked"
 		return "$RETURN_SUCCESS"
 	fi
 
@@ -13115,6 +13168,14 @@ shell::git::patch::apply::fzf() {
 
 	if shell::exec::command git apply -- "$picked"; then
 		shell::logger::info "Applied: $picked"
+		# Step 5 — only after a successful apply, and only when asked for.
+		if [ "$remove" = "true" ]; then
+			if shell::exec::command rm -f -- "$picked"; then
+				shell::logger::info "Removed patch file: $picked"
+			else
+				shell::logger::warn "Applied, but could not remove: $picked"
+			fi
+		fi
 		return "$RETURN_SUCCESS"
 	fi
 
