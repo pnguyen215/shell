@@ -148,6 +148,14 @@ alias sgstshp-n="shell::git::branch::stash::preview::fzf -n"
 alias sgstshpreview="shell::git::branch::stash::preview::fzf"
 alias sgstshpreview-n="shell::git::branch::stash::preview::fzf -n"
 
+# shell::git::patch::create
+alias sgpatch="shell::git::patch::create"
+alias sgpatch-n="shell::git::patch::create -n"
+
+# shell::git::patch::apply::fzf
+alias sgpatchaf="shell::git::patch::apply::fzf"
+alias sgpatchaf-n="shell::git::patch::apply::fzf -n"
+
 # shell::git::branch::stash::apply::fzf
 alias sgstshaf="shell::git::branch::stash::apply::fzf"
 alias sgstshaf-n="shell::git::branch::stash::apply::fzf -n"
