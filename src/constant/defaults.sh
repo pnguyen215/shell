@@ -75,6 +75,32 @@ silent changes|chore|:mute:
 deprecation|chore(deprecate)|:warning:
 release|chore(release)|:gem:"
 
+# `scope|description` per line: the second menu of shell::git::commit::create (sgcf).
+# Once a type is picked (feat) the list is shown as a table, one row per scope:
+# feat(docs), feat(git), ... plus "(no scope)", "custom" and "← Back". The same list
+# is offered for every type, except those whose header already carries a scope
+# (WIP → chore(wip), dependency → build(deps), ...). Extend or replace it from your
+# profile; an explicitly empty value (SHELL_GIT_COMMIT_SCOPES="") skips the step.
+: "${SHELL_GIT_COMMIT_SCOPES=api|Endpoints, handlers, request/response shapes
+auth|Authentication and authorization
+build|Build scripts, Makefile, packaging
+ci|CI/CD pipelines and workflows
+cli|Command-line interface, flags and help
+config|Configuration and settings
+core|Core logic and shared internals
+db|Database, schema and migrations
+deps|Dependencies and lockfiles
+docs|Documentation, README and guides
+git|Git helpers and hooks
+i18n|Localization and translations
+lib|Library and utility code
+logs|Logging and diagnostics
+perf|Performance
+release|Versioning, changelog and release
+security|Security hardening
+test|Tests and fixtures
+ui|User interface and styles}"
+
 # --- SSH ---------------------------------------------------------------------
 # Keep-alive for tunnels and long sessions: seconds between probes, and how many
 # unanswered probes are tolerated before ssh gives up (shell::ssh::tunnel::*).

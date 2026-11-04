@@ -4174,6 +4174,129 @@ shell::git::commit::types() {
 	printf '%s\n' "$SHELL_GIT_COMMIT_TYPES" | awk -F'|' '{ print $1 }'
 }
 
+# @description Tells whether the scope menu applies to a commit type. It does not when
+#   SHELL_GIT_COMMIT_SCOPES is empty, or when the header the type is committed with
+#   already carries a scope (`WIP` → `chore(wip)`, `dependency` → `build(deps)`):
+#   shell::git::commit::predict::format keeps that scope, so asking for another
+#   one would have no effect.
+# @internal
+# @arg $1 string Commit type label (feat, "initial source", ...).
+# @exitcode 0 The scope menu applies.
+# @exitcode 1 It does not.
+# @example
+#   shell::git::commit::scope::applies "feat"          # yes
+#   shell::git::commit::scope::applies "dependency"    # no: it is build(deps)
+#
+shell::git::commit::scope::applies() {
+	local header
+	if ! printf '%s' "${SHELL_GIT_COMMIT_SCOPES-}" | grep -q '[^[:space:]]'; then
+		return 1
+	fi
+	header="$(shell::git::commit::type::resolve "${1-}")"
+	case "$header" in
+	*\(*) return 1 ;;
+	esac
+	return 0
+}
+
+# @description Second menu of shell::git::commit::create: once the type is chosen it
+#   lists that type with every scope of SHELL_GIT_COMMIT_SCOPES as a table, one row
+#   per line, so it stays readable however long the list gets (type to filter):
+#
+#       feat              (no scope) plain "feat: ..."
+#       feat(docs)        Documentation, README and guides
+#       feat(git)         Git helpers and hooks
+#       ...
+#       feat(<custom>)    type your own scope
+#       ← Back  return to the commit type list
+#
+#   "(no scope)" comes first (Enter keeps the old behaviour), "← Back" last. For a
+#   type that is mapped onto another header (`improvement` → `perf`) the rows show
+#   the header that will be committed.
+# @internal
+# @arg $1 string Commit type label chosen in the first menu.
+# @stdout The chosen scope, or nothing for "(no scope)".
+# @exitcode 0 A scope (or no scope) was chosen.
+# @exitcode 9 ESC / Ctrl-C / end of input.
+# @exitcode 11 "← Back" was picked.
+# @see shell::git::commit::scope::applies
+# @example
+#   scope="$(shell::git::commit::scope::pick "feat")"
+#
+shell::git::commit::scope::pick() {
+	local label="${1-}" header rows picked kind value rc
+	header="$(shell::git::commit::type::resolve "$label")"
+
+	# Rows are `<kind><TAB><display>`; fzf shows the display column only. What
+	# comes back is the kind (`none`, `scope:<name>`, `custom`, `back`), so a scope
+	# that is called like the back label cannot be mistaken for it.
+	rows="$(printf '%s\n' "${SHELL_GIT_COMMIT_SCOPES-}" | awk -F'|' \
+		-v hdr="$header" -v back="$SHELL_FZF_BACK_LABEL" '
+		function pad(text, width,   out) {
+			out = text
+			while (length(out) < width) out = out " "
+			return out
+		}
+		function dim(text) { return "\033[2m" text "\033[0m" }
+		NF && $1 != "" {
+			n++; name[n] = $1; desc[n] = $2
+			if (length($1) > w) w = length($1)
+		}
+		END {
+			# ASCII only in the padded column: awk may count bytes, not characters.
+			custom = hdr "(<custom>)"
+			width = length(hdr) + w + 2
+			if (length(custom) > width) width = length(custom)
+			printf "none\t%s  %s\n", pad(hdr, width), dim("(no scope) plain \"" hdr ": ...\"")
+			for (i = 1; i <= n; i++)
+				printf "scope:%s\t%s  %s\n", name[i], pad(hdr "(" name[i] ")", width), dim(desc[i])
+			printf "custom\t%s  %s\n", pad(custom, width), dim("type your own scope")
+			printf "back\t%s  %s\n", back, dim("return to the commit type list")
+		}')"
+
+	while true; do
+		picked="$(printf '%s\n' "$rows" | shell::fzf::select \
+			--prompt="Scope for ${label}: " \
+			--header="${header}(<scope>): … — pick (no scope) for a plain '${header}:'" \
+			--delimiter=$'\t' \
+			--with-nth=2 \
+			--height=60%)"
+		rc=$?
+		if [ "$rc" -ne 0 ] || [ -z "$picked" ]; then
+			return "$RETURN_CANCELLED"
+		fi
+
+		kind="${picked%%$'\t'*}"
+		case "$kind" in
+		none) return "$RETURN_SUCCESS" ;;
+		back) return "$RETURN_BACK" ;;
+		scope:*)
+			printf '%s\n' "${kind#scope:}"
+			return "$RETURN_SUCCESS"
+			;;
+		custom)
+			value="$(shell::git::commit::input "Enter a scope for ${header} (e.g. api, ui)")"
+			rc=$?
+			case "$rc" in
+			0) ;;
+			"$RETURN_BACK") continue ;;
+			*) return "$RETURN_CANCELLED" ;;
+			esac
+			# A scope is one word: no spaces, no parentheses, no colon.
+			case "$value" in
+			*[!a-zA-Z0-9._/-]*)
+				shell::logger::warn "A scope may only contain letters, digits, '.', '_', '-' and '/' — please try again"
+				continue
+				;;
+			esac
+			printf '%s\n' "$value"
+			return "$RETURN_SUCCESS"
+			;;
+		*) return "$RETURN_CANCELLED" ;;
+		esac
+	done
+}
+
 # @description Prints the emoji code a commit type is committed with.
 #   Only looks the emoji up: whether it ends up in the message is decided by
 #   shell::git::commit::emoji::enabled.
@@ -5199,7 +5322,10 @@ shell::git::commit::predict::candidates() {
 #   entry. Every menu has "← Back" and the text prompts accept `:back`.
 #
 #   1. Pick a prediction, or "Enter manually (sgcf style)"      [Back = leave]
-#   2. (manual) type → description → issue                      [Back = previous step]
+#   2. (manual) type → scope → description → issue              [Back = previous step]
+#      The scope step is the table of shell::git::commit::scope::pick: (no scope),
+#      feat(docs), feat(git), …, a custom scope, or Back. It is skipped for a type whose
+#      header already has a scope (WIP → chore(wip)) and when SHELL_GIT_COMMIT_SCOPES is empty.
 #   3. Commit / Edit message / Abort                            [Back = step 1, or the issue]
 #   4. git commit -m "<message>", Telegram notification, push
 # @option -n | --dry-run Optional. Print the git commit command instead of executing it.
@@ -5215,6 +5341,7 @@ shell::git::commit::predict::candidates() {
 # @see shell::git::commit::create
 # @see shell::git::commit::predict::candidates
 # @see shell::git::commit::emoji::enabled
+# @see shell::git::commit::scope::pick
 # @example
 #   shell::git::commit::predict
 #   shell::git::commit::predict --list
@@ -5236,6 +5363,7 @@ shell::git::commit::predict() {
 		shell::logger::note "The message is predicted from the diff itself: the functions added or changed, headings added to docs, dependencies bumped, the kind of fix, the scope, and what your recent commits already say."
 		shell::logger::note "Emoji are off unless SHELL_GIT_COMMIT_EMOJI=true or --emoji is given. The type always stays the prefix (Conventional Commits)."
 		shell::logger::note "Pick '$SHELL_FZF_BACK_LABEL' in a menu, or type :back at a text prompt, to return to the previous step."
+		shell::logger::note "When you enter the message manually, a scope menu follows the type (feat(docs), feat(git), ...) or (no scope). The list is SHELL_GIT_COMMIT_SCOPES; set it empty to skip the step."
 		shell::logger::example "shell::git::commit::predict"
 		shell::logger::example "shell::git::commit::predict --list"
 		shell::logger::example "shell::git::commit::predict -n --count 5"
@@ -5363,6 +5491,7 @@ shell::git::commit::predict() {
 	local manual_label="Enter manually (sgcf style)"
 	local step origin="predict" rc choice value selected selected_type type_line
 	local commit_description="" issue_number="$issue" commit_message=""
+	local selected_scope="" format_type
 	local -a commit_types=()
 	while IFS= read -r type_line; do
 		commit_types+=("$type_line")
@@ -5414,7 +5543,31 @@ shell::git::commit::predict() {
 				return "$RETURN_SUCCESS"
 			fi
 			origin="manual"
-			step="description"
+
+			# A new type starts without a scope. The scope menu is skipped for the
+			# types whose header already has one (WIP, dependency, ...).
+			selected_scope=""
+			if shell::git::commit::scope::applies "$selected_type"; then
+				step="scope"
+			else
+				step="description"
+			fi
+			;;
+
+		scope)
+			value="$(shell::git::commit::scope::pick "$selected_type")"
+			rc=$?
+			case "$rc" in
+			0)
+				selected_scope="$value"
+				step="description"
+				;;
+			"$RETURN_BACK") step="type" ;;
+			*)
+				shell::logger::warn "No commit scope selected — aborting"
+				return "$RETURN_SUCCESS"
+				;;
+			esac
 			;;
 
 		description)
@@ -5425,7 +5578,13 @@ shell::git::commit::predict() {
 				commit_description="$value"
 				step="issue"
 				;;
-			"$RETURN_BACK") step="type" ;;
+			"$RETURN_BACK")
+				if shell::git::commit::scope::applies "$selected_type"; then
+					step="scope"
+				else
+					step="type"
+				fi
+				;;
 			*)
 				shell::logger::warn "Input cancelled — aborting"
 				return "$RETURN_SUCCESS"
@@ -5439,7 +5598,11 @@ shell::git::commit::predict() {
 			case "$rc" in
 			0)
 				issue_number="$value"
-				commit_message="$(shell::git::commit::predict::format "$selected_type" "$commit_description" "$issue_number" "$use_emoji")"
+				format_type="$selected_type"
+				if [ -n "$selected_scope" ]; then
+					format_type="${selected_type}(${selected_scope})"
+				fi
+				commit_message="$(shell::git::commit::predict::format "$format_type" "$commit_description" "$issue_number" "$use_emoji")"
 				step="confirm"
 				;;
 			"$RETURN_BACK") step="description" ;;
@@ -5528,12 +5691,16 @@ shell::git::commit::predict() {
 #
 #   Default mode (Back returns to the previous step; at step 1 it leaves):
 #   1. Select commit type (feat, fix, chore, …)            [Back = leave]
-#   2. Read commit description (kept when going back)       [:back = step 1]
-#   3. Read issue number (kept when going back)             [:back = step 2]
-#   4. Build `<type>[(scope)]: [<emoji> ]<description> <issue>`, then Commit / Abort [Back = step 3]
-#   5. git commit -m "<message>" (the message is passed to git verbatim)
-#   6. Send Telegram notification via shell::git::telegram::history::send
-#   7. git push origin <current_branch>
+#   2. Select the scope of that type from a table: (no scope), feat(docs), feat(git), …,
+#      a custom scope, or Back. Skipped for a type whose header already has a scope
+#      (WIP → chore(wip), dependency → build(deps)) and when SHELL_GIT_COMMIT_SCOPES
+#      is empty                                             [Back = step 1]
+#   3. Read commit description (kept when going back)       [:back = step 2, or 1 without step 2]
+#   4. Read issue number (kept when going back)             [:back = step 3]
+#   5. Build `<type>[(scope)]: [<emoji> ]<description> <issue>`, then Commit / Abort [Back = step 4]
+#   6. git commit -m "<message>" (the message is passed to git verbatim)
+#   7. Send Telegram notification via shell::git::telegram::history::send
+#   8. git push origin <current_branch>
 #
 #   Empty mode (--empty):
 #   1. Select category, then a message (shell::git::commit::message::base --back)
@@ -5551,6 +5718,7 @@ shell::git::commit::predict() {
 # @see shell::ask::option::back
 # @see shell::git::commit::message::base
 # @see shell::git::commit::emoji::enabled
+# @see shell::git::commit::scope::pick
 # @example
 #   shell::git::commit::create
 #   shell::git::commit::create --empty
@@ -5571,6 +5739,7 @@ shell::git::commit::create() {
 		shell::logger::note "The message is predicted from the diff itself: the functions added or changed, headings added to docs, dependencies bumped, the kind of fix, the scope, and what your recent commits already say."
 		shell::logger::note "Emoji are off unless SHELL_GIT_COMMIT_EMOJI=true or --emoji is given. The type always stays the prefix (Conventional Commits)."
 		shell::logger::note "Pick '$SHELL_FZF_BACK_LABEL' in a menu, or type :back at a text prompt, to return to the previous step."
+		shell::logger::note "After the type, pick a scope from a table (feat(docs), feat(git), ...) or (no scope). The list is SHELL_GIT_COMMIT_SCOPES; set it empty to skip the step."
 		shell::logger::example "shell::git::commit::create"
 		shell::logger::example "shell::git::commit::create --empty"
 		shell::logger::example "shell::git::commit::create -n"
@@ -5618,6 +5787,7 @@ shell::git::commit::create() {
 	# its value in zsh.
 	local rc choice value step
 	local selected_message selected_type commit_message type_line shown
+	local selected_scope="" format_type
 	local commit_description="" issue_number=""
 	local -a commit_types=() base_args=(--back)
 	local cmd_commit_empty empty_branch
@@ -5706,7 +5876,30 @@ shell::git::commit::create() {
 				return "$RETURN_SUCCESS"
 			fi
 
-			step="description"
+			# A new type starts without a scope. The scope menu is skipped for the
+			# types whose header already has one (WIP, dependency, ...).
+			selected_scope=""
+			if shell::git::commit::scope::applies "$selected_type"; then
+				step="scope"
+			else
+				step="description"
+			fi
+			;;
+
+		scope)
+			value="$(shell::git::commit::scope::pick "$selected_type")"
+			rc=$?
+			case "$rc" in
+			0)
+				selected_scope="$value"
+				step="description"
+				;;
+			"$RETURN_BACK") step="type" ;;
+			*)
+				shell::logger::warn "No commit scope selected — aborting"
+				return "$RETURN_SUCCESS"
+				;;
+			esac
 			;;
 
 		description)
@@ -5717,7 +5910,13 @@ shell::git::commit::create() {
 				commit_description="$value"
 				step="issue"
 				;;
-			"$RETURN_BACK") step="type" ;;
+			"$RETURN_BACK")
+				if shell::git::commit::scope::applies "$selected_type"; then
+					step="scope"
+				else
+					step="type"
+				fi
+				;;
 			*)
 				shell::logger::warn "Input cancelled — aborting"
 				return "$RETURN_SUCCESS"
@@ -5742,7 +5941,11 @@ shell::git::commit::create() {
 			;;
 
 		confirm)
-			commit_message="$(shell::git::commit::predict::format "$selected_type" "$commit_description" "$issue_number" "$use_emoji")"
+			format_type="$selected_type"
+			if [ -n "$selected_scope" ]; then
+				format_type="${selected_type}(${selected_scope})"
+			fi
+			commit_message="$(shell::git::commit::predict::format "$format_type" "$commit_description" "$issue_number" "$use_emoji")"
 			shell::logger::info "Commit message: ${commit_message}"
 
 			choice="$(shell::ask::option::back --prompt "Proceed with this commit? " "Commit" "Abort")"

@@ -218,7 +218,7 @@ t_eq "predict: -c 0 is invalid" "2" "$?"
 # --- no changes at all: straight to manual entry ----------------------------------------------
 run_predict "" "" --list >/dev/null
 t_eq "list: nothing to predict returns RETURN_EMPTY" "$RETURN_EMPTY" "$?"
-out="$(run_predict "feat${nl}Commit" "first thing${nl}#1${nl}" -n)"
+out="$(run_predict "feat${nl}none${nl}Commit" "first thing${nl}#1${nl}" -n)"
 t_has "no changes: says so" "No changes found to predict from" "$out"
 t_has "no changes: sgcf-style manual entry" 'git commit -m "feat: first thing #1"' "$out"
 t_eq "no changes: no predictions menu, so the type menu is the first" "feat" "$(head -n 1 "$HOME/stdin.1")"
@@ -285,13 +285,13 @@ out="$(run_predict "${first}${nl}Edit message${nl}Commit" ":back${nl}" -n)"
 t_has "edit: :back keeps the prediction" "git commit -m \"$first\"" "$out"
 
 # --- manual entry: exactly the sgcf steps ------------------------------------------------------
-out="$(run_predict "${M}${nl}fix${nl}Commit" "a real fix${nl}#99${nl}" -n)"
+out="$(run_predict "${M}${nl}fix${nl}none${nl}Commit" "a real fix${nl}#99${nl}" -n)"
 t_has "manual: sgcf-style message" 'git commit -m "fix: a real fix #99"' "$out"
 t_eq "manual: the type menu is sgcf's (feat first)" "feat" "$(head -n 1 "$HOME/stdin.2")"
 t_eq "manual: ...with all 26 types and Back" "27" "$(wc -l <"$HOME/stdin.2" | tr -d ' ')"
 t_has "manual: ...and a type prompt" "--prompt=Commit type: " "$(cat "$HOME/args.2")"
 
-out="$(run_predict "${M}${nl}feat${nl}Commit" "thing${nl}#7${nl}" -n --emoji)"
+out="$(run_predict "${M}${nl}feat${nl}none${nl}Commit" "thing${nl}#7${nl}" -n --emoji)"
 t_has "manual --emoji: the emoji is after the colon" 'git commit -m "feat: :sparkles: thing #7"' "$out"
 t_lacks "manual --emoji: ...never before the type" '-m ":sparkles:' "$out"
 out="$(run_predict "${M}${nl}initial source${nl}Commit" "first commit${nl}#1${nl}" -n)"
@@ -299,33 +299,57 @@ t_has "manual: a label that is not a type is mapped onto one" 'git commit -m "ch
 out="$(run_predict "${M}${nl}WIP${nl}Commit" "half done${nl}#1${nl}" -n --emoji)"
 t_has "manual: ...and keeps its emoji when they are on" 'git commit -m "chore(wip): :construction: half done #1"' "$out"
 
-out="$(run_predict "${M}${nl}feat${nl}Commit" "thing${nl}${nl}" -n)"
+out="$(run_predict "${M}${nl}feat${nl}none${nl}Commit" "thing${nl}${nl}" -n)"
 t_has "manual: Enter at the issue prompt keeps the branch's issue" 'git commit -m "feat: thing #7"' "$out"
-out="$(run_predict "${M}${nl}feat${nl}Commit" "thing${nl}ABC-1${nl}" -n)"
+out="$(run_predict "${M}${nl}feat${nl}none${nl}Commit" "thing${nl}ABC-1${nl}" -n)"
 t_has "manual: ...which can be overwritten" 'git commit -m "feat: thing ABC-1"' "$out"
-out="$(run_predict "${M}${nl}feat${nl}Commit" "${nl}real${nl}#2${nl}" -n)"
+out="$(run_predict "${M}${nl}feat${nl}none${nl}Commit" "${nl}real${nl}#2${nl}" -n)"
 t_has "manual: an empty description is refused" "This value cannot be empty" "$out"
 t_has "manual: ...and asked again" 'git commit -m "feat: real #2"' "$out"
 
 # Back through the manual steps.
 out="$(run_predict "${M}${nl}${B}${nl}${first}${nl}Commit" "" -n)"
 t_has "manual: Back at the type menu returns to the predictions" "git commit -m \"$first\"" "$out"
-out="$(run_predict "${M}${nl}feat${nl}fix${nl}Commit" ":back${nl}better${nl}#3${nl}" -n)"
-t_has "manual: :back at the description returns to the type menu" 'git commit -m "fix: better #3"' "$out"
-out="$(run_predict "${M}${nl}feat${nl}Commit" "first${nl}:back${nl}second${nl}#4${nl}" -n)"
+out="$(run_predict "${M}${nl}feat${nl}none${nl}scope:ui${nl}Commit" ":back${nl}better${nl}#3${nl}" -n)"
+t_has "manual: :back at the description returns to the scope menu" 'git commit -m "feat(ui): better #3"' "$out"
+out="$(run_predict "${M}${nl}dependency${nl}fix${nl}none${nl}Commit" ":back${nl}better${nl}#3${nl}" -n)"
+t_has "manual: ...or to the type menu when the type has no scope menu" 'git commit -m "fix: better #3"' "$out"
+out="$(run_predict "${M}${nl}feat${nl}none${nl}Commit" "first${nl}:back${nl}second${nl}#4${nl}" -n)"
 t_has "manual: :back at the issue returns to the description" 'git commit -m "feat: second #4"' "$out"
-out="$(run_predict "${M}${nl}feat${nl}${B}${nl}Commit" "kept${nl}#5${nl}${nl}" -n)"
+out="$(run_predict "${M}${nl}feat${nl}none${nl}${B}${nl}Commit" "kept${nl}#5${nl}${nl}" -n)"
 t_has "manual: Back at the confirmation returns to the issue (value kept)" 'git commit -m "feat: kept #5"' "$out"
-out="$(run_predict "${M}${nl}feat${nl}Edit message${nl}Commit" "kept${nl}#5${nl}tweaked: ok${nl}" -n)"
+out="$(run_predict "${M}${nl}feat${nl}none${nl}Edit message${nl}Commit" "kept${nl}#5${nl}tweaked: ok${nl}" -n)"
 t_has "manual: the message can still be edited" 'git commit -m "tweaked: ok"' "$out"
-out="$(run_predict "${M}${nl}feat" "" -n)"
+out="$(run_predict "${M}${nl}feat${nl}none${nl}none" "" -n)"
 t_has "manual: EOF at the description aborts" "Input cancelled" "$out"
 t_lacks "manual: ...without committing" "git commit" "$out"
 out="$(run_predict "${M}${nl}" "" -n)"
 t_has "manual: ESC at the type menu aborts" "No commit type selected" "$out"
 
+# The manual path has the same scope menu as sgcf (shell::git::commit::scope::pick).
+out="$(run_predict "${M}${nl}feat${nl}scope:docs${nl}Commit" "thing${nl}#7${nl}" -n)"
+t_has "manual scope: feat(docs) is committed" 'git commit -m "feat(docs): thing #7"' "$out"
+t_eq "manual scope: the menu follows the type menu (none first)" "none" "$(head -n 1 "$HOME/stdin.3" | cut -f1)"
+t_eq "manual scope: ...and ends with Back" "back" "$(tail -n 1 "$HOME/stdin.3" | cut -f1)"
+t_has "manual scope: ...shown as <type>(<scope>)" "feat(docs)" "$(cut -f2 "$HOME/stdin.3")"
+out="$(run_predict "${M}${nl}feat${nl}back${nl}fix${nl}scope:git${nl}Commit" "x${nl}#1${nl}" -n)"
+t_has "manual scope: Back returns to the type menu" 'git commit -m "fix(git): x #1"' "$out"
+out="$(run_predict "${M}${nl}feat" "" -n)"
+t_has "manual scope: ESC at the scope menu aborts" "No commit scope selected" "$out"
+t_lacks "manual scope: ...without committing" "git commit -m" "$out"
+out="$(run_predict "${M}${nl}WIP${nl}Commit" "half done${nl}#1${nl}" -n)"
+t_has "manual scope: WIP keeps chore(wip), without a scope menu" 'git commit -m "chore(wip): half done #1"' "$out"
+t_eq "manual scope: ...so the 3rd menu is the confirmation" "Commit${nl}Edit message${nl}Abort${nl}${B}" "$(cat "$HOME/stdin.3")"
+out="$(run_predict "${M}${nl}feat${nl}custom${nl}Commit" "api${nl}thing${nl}#7${nl}" -n)"
+t_has "manual scope: a custom scope is committed" 'git commit -m "feat(api): thing #7"' "$out"
+out="$(SHELL_GIT_COMMIT_SCOPES="" run_predict "${M}${nl}feat${nl}Commit" "thing${nl}#7${nl}" -n)"
+t_has "manual scope: an empty SHELL_GIT_COMMIT_SCOPES skips the menu" 'git commit -m "feat: thing #7"' "$out"
+# Predicted messages come from the engine and already carry their scope: no scope menu.
+out="$(run_predict "${first}${nl}Commit" "" -n)"
+t_eq "predicted: a prediction is confirmed straight away (no scope menu)" "Commit${nl}Edit message${nl}Abort${nl}${B}" "$(cat "$HOME/stdin.2")"
+
 # --- the dry-run command is shell-safe ---------------------------------------------------------
-out="$(run_predict "${M}${nl}feat${nl}Commit" 'say "hi" $HOME `id`'"${nl}#1${nl}" -n)"
+out="$(run_predict "${M}${nl}feat${nl}none${nl}Commit" 'say "hi" $HOME `id`'"${nl}#1${nl}" -n)"
 t_has "dry-run: quotes, \$ and backticks are escaped in the printed command" 'git commit -m "feat: say \"hi\" \$HOME \`id\` #1"' "$out"
 
 # --- a real commit -----------------------------------------------------------------------------
@@ -339,7 +363,7 @@ t_has "commit: ...then the Telegram + push step runs" "PUBLISHED<$first>" "$out"
 t_eq "commit: ...and it consumed the staged files" "" "$(git diff --cached --name-only)"
 
 echo 'echo x' >src/q.sh && git add src/q.sh
-out="$(run_predict "${M}${nl}fix${nl}Commit" 'quote " and $HOME and `id` and \ done'"${nl}#8${nl}")"
+out="$(run_predict "${M}${nl}fix${nl}none${nl}Commit" 'quote " and $HOME and `id` and \ done'"${nl}#8${nl}")"
 t_eq "commit: a nasty message is stored verbatim (no shell interpretation)" 'fix: quote " and $HOME and `id` and \ done #8' "$(git log -1 --format=%s)"
 t_has "commit: ...and still published" "PUBLISHED<" "$out"
 
@@ -349,9 +373,9 @@ mkdir "$HOME/nohooks"
 printf '#!/bin/sh\nexit 1\n' >"$HOME/nohooks/commit-msg"
 chmod +x "$HOME/nohooks/commit-msg"
 echo 'echo y' >src/r.sh && git add src/r.sh
-out="$(run_predict "${M}${nl}fix${nl}Commit" "will be rejected${nl}#1${nl}")"
+out="$(run_predict "${M}${nl}fix${nl}none${nl}Commit" "will be rejected${nl}#1${nl}")"
 t_lacks "commit: a rejected commit is not published" "PUBLISHED<" "$out"
-run_predict "${M}${nl}fix${nl}Commit" "will be rejected${nl}#1${nl}" >/dev/null
+run_predict "${M}${nl}fix${nl}none${nl}Commit" "will be rejected${nl}#1${nl}" >/dev/null
 t_eq "commit: ...and the failure is returned" "1" "$?"
 git config --local --unset core.hooksPath
 
@@ -367,7 +391,7 @@ t_eq "worktree: tracked and untracked files are both analysed" "feat: add untrac
 
 # --- sgcf still works on top of the shared helpers ---------------------------------------------
 reset_fzf
-out="$(printf 'my change\n#12\n' | FAKE_FZF_PICKS="feat${nl}Commit" shell::git::commit::create -n 2>&1)"
+out="$(printf 'my change\n#12\n' | FAKE_FZF_PICKS="feat${nl}none${nl}Commit" shell::git::commit::create -n 2>&1)"
 t_has "predict help documents the emoji switch" "--no-emoji" "$(shell::git::commit::predict -h 2>&1)"
 t_has "sgcf: unchanged by the refactor" 'git commit -m "feat: my change #12"' "$out"
 t_eq "sgcf: same type menu (26 types + Back)" "27" "$(wc -l <"$HOME/stdin.1" | tr -d ' ')"
