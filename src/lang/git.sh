@@ -13182,3 +13182,211 @@ shell::git::patch::apply::fzf() {
 	shell::logger::error "git apply failed for '$picked'"
 	return "$RETURN_FAILURE"
 }
+
+# @internal
+# @description Resolve the target of shell::git::diff::fzf into `git diff` arguments, one per line.
+#   A commit becomes `<parent> <commit>` (the empty tree stands in for a root commit,
+#   because `<commit>^!` is not reliable there), a range is passed as it is.
+# @arg $1 string Commit-ish or `<from>..<to>` / `<from>...<to>`.
+# @stdout The arguments, one per line.
+# @exitcode 0 The target was resolved.
+# @exitcode 1 The target is not a commit or range.
+# @example
+#   shell::git::diff::target "v1.0..HEAD"
+#
+shell::git::diff::target() {
+	local spec="${1-}" parent
+
+	case "$spec" in
+	*...* | *..*)
+		git rev-parse "$spec" >/dev/null 2>&1 || return "$RETURN_FAILURE"
+		printf '%s\n' "$spec"
+		;;
+	*)
+		git rev-parse --verify -q "${spec}^{commit}" >/dev/null 2>&1 || return "$RETURN_FAILURE"
+		parent="$(git rev-parse --verify -q "${spec}^" 2>/dev/null)" || parent="4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+		printf '%s\n%s\n' "$parent" "$(git rev-parse "${spec}^{commit}")"
+		;;
+	esac
+}
+
+# @description Browses the changed files of a commit, a range, the staged changes or the
+#   uncommitted changes in fzf, and shows the diff of the file under the cursor.
+#
+#   - The list shows every changed file with a coloured status: `A` added (green),
+#     `M` modified (yellow), `D` deleted (red), `R` renamed (cyan), `T`/`C` other.
+#   - The first row is an overview: its preview is `git diff --stat`, and the fzf header
+#     counts the files per status.
+#   - Move with the arrow keys: the preview follows the file under the cursor
+#     (Ctrl-D / Ctrl-U scroll it). Enter opens the full diff of that file in the pager and
+#     comes back to the list; ESC leaves.
+#   - Colours are used when the terminal supports them (and `NO_COLOR` is unset); the diff
+#     is syntax-highlighted through `delta` when it is installed, else with git's own colours.
+# @option -s | --staged Optional. Diff the staged changes (`git diff --cached`) instead.
+# @option -p | --pick Optional. Pick the commit in fzf first.
+# @option -n | --dry-run Optional. Print the git commands instead of opening the browser.
+# @option -h | --help Show this help message.
+# @arg $1 string Optional. Commit-ish or `<from>..<to>`. Default: uncommitted changes against HEAD.
+# @exitcode 0 Success, or the user left the picker.
+# @exitcode 1 Not a repository, no commits, or an unknown commit.
+# @exitcode 2 Unknown option.
+# @example
+#   shell::git::diff::fzf
+#   shell::git::diff::fzf HEAD~3
+#   shell::git::diff::fzf main..feature
+#   shell::git::diff::fzf --staged
+#   shell::git::diff::fzf --pick
+#
+shell::git::diff::fzf() {
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Browse changed files in fzf and view the diff of each one"
+		shell::logger::usage "shell::git::diff::fzf [-s] [-p] [-n] [-h] [commit | from..to]"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-s, --staged" "Diff the staged changes"
+		shell::logger::option "-p, --pick" "Pick the commit in fzf first"
+		shell::logger::option "-n, --dry-run" "Print the git commands instead of opening the browser"
+		shell::logger::item "commit | from..to" "What to diff (default: uncommitted changes against HEAD)"
+		shell::logger::example "shell::git::diff::fzf"
+		shell::logger::example "shell::git::diff::fzf HEAD~3"
+		shell::logger::example "shell::git::diff::fzf main..feature"
+		shell::logger::example "shell::git::diff::fzf --pick"
+		return "$RETURN_SUCCESS"
+	fi
+
+	local dry_run="false" staged="false" pick="false" target=""
+	while [ "$#" -gt 0 ]; do
+		case "$1" in
+		-n | --dry-run) dry_run="true" ;;
+		-s | --staged) staged="true" ;;
+		-p | --pick) pick="true" ;;
+		-*)
+			shell::logger::error "Unknown option: $1"
+			return "$RETURN_INVALID"
+			;;
+		*) target="$1" ;;
+		esac
+		shift
+	done
+
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return "$RETURN_FAILURE"
+	fi
+
+	# Step 1 — what to diff.
+	if [ "$pick" = "true" ]; then
+		local picked
+		picked="$(git log -n 500 --format='%h %s (%an, %ar)' 2>/dev/null | shell::fzf::select --prompt="Select commit: ")" || {
+			shell::logger::warn "No commit selected — aborting"
+			return "$RETURN_SUCCESS"
+		}
+		target="${picked%% *}"
+	fi
+
+	local -a diff_args=()
+	local line
+	if [ -n "$target" ]; then
+		while IFS= read -r line; do
+			[ -n "$line" ] && diff_args+=("$line")
+		done < <(shell::git::diff::target "$target")
+		if [ "${#diff_args[@]}" -eq 0 ]; then
+			shell::logger::error "Not a commit or range: $target"
+			return "$RETURN_FAILURE"
+		fi
+	elif [ "$staged" = "true" ]; then
+		diff_args=(--cached)
+	else
+		if ! git rev-parse --verify -q HEAD >/dev/null 2>&1; then
+			shell::logger::error "No commits yet — nothing to compare against"
+			return "$RETURN_FAILURE"
+		fi
+		diff_args=(HEAD)
+	fi
+
+	# Step 2 — colour: only on a terminal that supports it; delta adds syntax highlighting.
+	local color_flag="--color=never" use_color="false" pipe=""
+	shell::console::detect_colors
+	if [ -t 1 ] && [ "${_SHELL_CONSOLE_COLORS:-0}" -ge 8 ]; then
+		use_color="true"
+		color_flag="--color=always"
+		if command -v delta >/dev/null 2>&1; then
+			pipe=" | delta --paging=never"
+		fi
+	fi
+
+	local q_args="" arg
+	for arg in "${diff_args[@]}"; do
+		q_args="${q_args} $(shell::git::commit::spec::quote "$arg")"
+	done
+
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::command_clip "git diff --name-status -M${q_args}"
+		shell::logger::command_clip "git diff --stat${q_args}"
+		shell::logger::command_clip "git diff ${color_flag}${q_args} -- <file>${pipe}"
+		return "$RETURN_SUCCESS"
+	fi
+
+	# Step 3 — changed files. Row: <coloured status + path> TAB <path> TAB <old path>.
+	local esc=$'\033' tab=$'\t' st old file_new label code
+	local -i n_a=0 n_m=0 n_d=0 n_r=0 n_o=0
+	local rows="" c_on c_off
+	while IFS="$tab" read -r st old file_new; do
+		[ -z "$st" ] && continue
+		[ -z "$file_new" ] && file_new="$old"
+		code="${st%%[0-9]*}"
+		case "$code" in
+		A) n_a=$((n_a + 1)); c_on="${esc}[32m" ;;
+		M) n_m=$((n_m + 1)); c_on="${esc}[33m" ;;
+		D) n_d=$((n_d + 1)); c_on="${esc}[31m" ;;
+		R) n_r=$((n_r + 1)); c_on="${esc}[36m" ;;
+		*) n_o=$((n_o + 1)); c_on="${esc}[35m" ;;
+		esac
+		c_off="${esc}[0m"
+		if [ "$use_color" = "false" ]; then c_on=""; c_off=""; fi
+		label="${c_on}${code}${c_off}  ${file_new}"
+		[ "$code" = "R" ] && label="${c_on}${code}${c_off}  ${old} → ${file_new}"
+		rows="${rows}${label}${tab}${file_new}${tab}${old}"$'\n'
+	done < <(git diff --name-status -M "${diff_args[@]}" 2>/dev/null)
+
+	local total=$((n_a + n_m + n_d + n_r + n_o))
+	if [ "$total" -eq 0 ]; then
+		shell::logger::warn "No changed files to show"
+		return "$RETURN_SUCCESS"
+	fi
+
+	local header="${total} file(s): ${n_a} added, ${n_m} modified, ${n_d} deleted, ${n_r} renamed"
+	[ "$n_o" -gt 0 ] && header="${header}, ${n_o} other"
+	header="${header}  |  Enter: full diff  Ctrl-D/U: scroll  ESC: quit"
+	rows="Overview — all changed files (${total})${tab}${tab}"$'\n'"${rows}"
+
+	# Step 4 — the browser. Enter shows the diff in the pager, then the list comes back.
+	local preview
+	preview="if [ -z {2} ]; then git diff --stat=100 ${color_flag}${q_args}; else git diff ${color_flag}${q_args} -- {3} {2}${pipe}; fi"
+
+	local choice file orig
+	while true; do
+		choice="$(printf '%s' "$rows" | shell::fzf::select \
+			--ansi \
+			--prompt="Diff: " \
+			--header="$header" \
+			--delimiter="$tab" \
+			--with-nth=1 \
+			--preview="$preview" \
+			--preview-window="right:65%:wrap" \
+			--bind="ctrl-d:preview-half-page-down,ctrl-u:preview-half-page-up")" || break
+		[ -z "$choice" ] && break
+
+		file="$(printf '%s' "$choice" | cut -f2)"
+		orig="$(printf '%s' "$choice" | cut -f3)"
+		if [ -z "$file" ]; then
+			git diff --stat=100 "$color_flag" "${diff_args[@]}"
+		elif [ -n "$pipe" ]; then
+			git diff "$color_flag" "${diff_args[@]}" -- "$orig" "$file" | delta
+		else
+			git diff "$color_flag" "${diff_args[@]}" -- "$orig" "$file"
+		fi
+	done
+
+	return "$RETURN_SUCCESS"
+}
