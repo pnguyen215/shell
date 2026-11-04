@@ -38,6 +38,34 @@ The first rule that applies wins:
 | 2     | `SHELL_GIT_COMMIT_EMOJI`                | `true`, `1`, `yes` or `on` (any case) = on |
 | 3     | default                                 | off                                        |
 
+## Scope menu
+
+In `create`, and in the manual entry of `predict` ("Enter manually (sgcf style)"), after you pick a type, a second menu lists that type with its scopes, one row per line (type to filter; **← Back** is always the last row and returns to the type menu):
+
+```
+feat              (no scope) plain "feat: ..."
+feat(api)         Endpoints, handlers, request/response shapes
+feat(docs)        Documentation, README and guides
+feat(git)         Git helpers and hooks
+...
+feat(<custom>)    type your own scope
+← Back  return to the commit type list
+```
+
+- **(no scope)** is the first row, so Enter on it gives the same message as before.
+- **custom** asks for a one-word scope (letters, digits, `.`, `_`, `-`, `/`); `:back` returns to the menu.
+- The menu is skipped for a type whose header already has a scope (`WIP` → `chore(wip)`, `dependency` → `build(deps)`, ...), because that scope is kept. A label mapped onto another type shows the committed header: `improvement` lists `perf(docs)`, `perf(git)`, ...
+- `:back` at the description prompt returns to this menu (to the type menu when there was none).
+- The messages `predict` proposes itself already carry the scope it worked out from the diff (`feat(auth): ...`), so picking one goes straight to the confirmation.
+
+The list is `SHELL_GIT_COMMIT_SCOPES`, one `scope|description` per line. Replace it from your profile, or set it empty to skip the menu:
+
+```bash
+export SHELL_GIT_COMMIT_SCOPES="web|Web app
+worker|Background jobs"
+export SHELL_GIT_COMMIT_SCOPES=""       # no scope menu
+```
+
 ## Menu labels and the type they produce
 
 The type menu keeps its familiar labels. A label that is not a Conventional Commits type (`initial source` has a space, `WIP` is not a type) is committed as one that is, and the confirmation step shows the final message before anything is committed.
