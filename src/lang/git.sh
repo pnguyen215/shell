@@ -13294,6 +13294,20 @@ shell::git::diff::fzf() {
 		target="${picked%% *}"
 	fi
 
+	# Paths from `git diff --name-status` are relative to the repository root, not to the
+	# current directory, so every git call below runs with `-C <root>`; otherwise the
+	# file list is right but the per-file diff comes back empty from a subdirectory.
+	local root
+	root="$(git rev-parse --show-toplevel 2>/dev/null)" || {
+		shell::logger::error "Cannot locate the repository root"
+		return "$RETURN_FAILURE"
+	}
+	local q_root
+	q_root="$(shell::git::commit::spec::quote "$root")"
+
+	# New (untracked) files are invisible to `git diff HEAD`; they are only part of the
+	# "uncommitted changes" view, not of a commit, a range or the staged changes.
+	local with_untracked="false"
 	local -a diff_args=()
 	local line
 	if [ -n "$target" ]; then
@@ -13312,6 +13326,7 @@ shell::git::diff::fzf() {
 			return "$RETURN_FAILURE"
 		fi
 		diff_args=(HEAD)
+		with_untracked="true"
 	fi
 
 	# Step 2 — colour: only on a terminal that supports it; delta adds syntax highlighting.
@@ -13331,9 +13346,11 @@ shell::git::diff::fzf() {
 	done
 
 	if [ "$dry_run" = "true" ]; then
-		shell::logger::command_clip "git diff --name-status -M${q_args}"
-		shell::logger::command_clip "git diff --stat${q_args}"
-		shell::logger::command_clip "git diff ${color_flag}${q_args} -- <file>${pipe}"
+		shell::logger::command_clip "git -C ${q_root} diff --name-status -M${q_args}"
+		[ "$with_untracked" = "true" ] && shell::logger::command_clip "git -C ${q_root} ls-files --others --exclude-standard"
+		shell::logger::command_clip "git -C ${q_root} diff --stat${q_args}"
+		shell::logger::command_clip "git -C ${q_root} diff ${color_flag}${q_args} -- <file>${pipe}"
+		[ "$with_untracked" = "true" ] && shell::logger::command_clip "git -C ${q_root} diff --no-index ${color_flag} -- /dev/null <new file>${pipe}"
 		return "$RETURN_SUCCESS"
 	fi
 
@@ -13356,8 +13373,19 @@ shell::git::diff::fzf() {
 		if [ "$use_color" = "false" ]; then c_on=""; c_off=""; fi
 		label="${c_on}${code}${c_off}  ${file_new}"
 		[ "$code" = "R" ] && label="${c_on}${code}${c_off}  ${old} → ${file_new}"
-		rows="${rows}${label}${tab}${file_new}${tab}${old}"$'\n'
-	done < <(git diff --name-status -M "${diff_args[@]}" 2>/dev/null)
+		rows="${rows}${label}${tab}${file_new}${tab}${old}${tab}"$'\n'
+	done < <(git -C "$root" diff --name-status -M "${diff_args[@]}" 2>/dev/null)
+
+	# Untracked files: shown as `?` (new, not yet added), counted with the added files.
+	if [ "$with_untracked" = "true" ]; then
+		c_on="${esc}[32m" c_off="${esc}[0m"
+		if [ "$use_color" = "false" ]; then c_on=""; c_off=""; fi
+		while IFS= read -r file_new; do
+			[ -z "$file_new" ] && continue
+			n_a=$((n_a + 1))
+			rows="${rows}${c_on}?${c_off}  ${file_new}${tab}${file_new}${tab}${file_new}${tab}u"$'\n'
+		done < <(git -C "$root" ls-files --others --exclude-standard 2>/dev/null)
+	fi
 
 	local total=$((n_a + n_m + n_d + n_r + n_o))
 	if [ "$total" -eq 0 ]; then
@@ -13369,12 +13397,19 @@ shell::git::diff::fzf() {
 	[ "$n_o" -gt 0 ] && header="${header}, ${n_o} other"
 	header="${header}  |  Enter: full diff  Ctrl-D/U: scroll  ESC: quit"
 	# Overview first (empty path column); Back last, so Enter never lands on it by accident.
-	rows="Overview — all changed files (${total})${tab}${tab}"$'\n'"${rows}"
-	rows="${rows}${SHELL_FZF_BACK_LABEL}${tab}:back${tab}"$'\n'
+	rows="Overview — all changed files (${total})${tab}${tab}${tab}"$'\n'"${rows}"
+	rows="${rows}${SHELL_FZF_BACK_LABEL}${tab}:back${tab}${tab}"$'\n'
 
 	# Step 4 — the browser. Enter shows the diff in the pager, then the list comes back.
-	local preview
-	preview="case {2} in '') git diff --stat=100 ${color_flag}${q_args};; :back) echo 'Go back without viewing a diff';; *) git diff ${color_flag}${q_args} -- {3} {2}${pipe};; esac"
+	local preview overview_extra=""
+	[ "$with_untracked" = "true" ] && overview_extra="; git -C ${q_root} ls-files --others --exclude-standard | sed 's/^/ ? /'"
+	preview="case {2} in '') git -C ${q_root} diff --stat=100 ${color_flag}${q_args}${overview_extra};; :back) echo 'Go back without viewing a diff';; *) if [ {4} = u ]; then git -C ${q_root} diff --no-index ${color_flag} -- /dev/null {2}${pipe}; else git -C ${q_root} diff ${color_flag}${q_args} -- {3} {2}${pipe}; fi;; esac"
+
+	# Enter: the full diff in a pager that waits for the user (short output must not
+	# vanish when fzf redraws).
+	local viewer="${PAGER:-less}"
+	case "$viewer" in less | less\ *) viewer="less -R" ;; esac
+	local kind
 
 	local choice file orig
 	while true; do
@@ -13396,13 +13431,17 @@ shell::git::diff::fzf() {
 
 		file="$(printf '%s' "$choice" | cut -f2)"
 		orig="$(printf '%s' "$choice" | cut -f3)"
-		if [ -z "$file" ]; then
-			git diff --stat=100 "$color_flag" "${diff_args[@]}"
-		elif [ -n "$pipe" ]; then
-			git diff "$color_flag" "${diff_args[@]}" -- "$orig" "$file" | delta
-		else
-			git diff "$color_flag" "${diff_args[@]}" -- "$orig" "$file"
-		fi
+		kind="$(printf '%s' "$choice" | cut -f4)"
+		{
+			if [ -z "$file" ]; then
+				git -C "$root" diff --stat=100 "$color_flag" "${diff_args[@]}"
+				[ "$with_untracked" = "true" ] && git -C "$root" ls-files --others --exclude-standard | sed 's/^/ ? /'
+			elif [ "$kind" = "u" ]; then
+				git -C "$root" diff --no-index "$color_flag" -- /dev/null "$file"
+			else
+				git -C "$root" diff "$color_flag" "${diff_args[@]}" -- "$orig" "$file"
+			fi
+		} 2>&1 | if [ -n "$pipe" ]; then delta --paging=never | eval "$viewer"; else eval "$viewer"; fi
 	done
 
 	return "$RETURN_SUCCESS"
