@@ -13405,10 +13405,6 @@ shell::git::diff::fzf() {
 	[ "$with_untracked" = "true" ] && overview_extra="; git -C ${q_root} ls-files --others --exclude-standard | sed 's/^/ ? /'"
 	preview="case {2} in '') git -C ${q_root} diff --stat=100 ${color_flag}${q_args}${overview_extra};; :back) echo 'Go back without viewing a diff';; *) if [ {4} = u ]; then git -C ${q_root} diff --no-index ${color_flag} -- /dev/null {2}${pipe}; else git -C ${q_root} diff ${color_flag}${q_args} -- {3} {2}${pipe}; fi;; esac"
 
-	# Enter: the full diff in a pager that waits for the user (short output must not
-	# vanish when fzf redraws).
-	local viewer="${PAGER:-less}"
-	case "$viewer" in less | less\ *) viewer="less -R" ;; esac
 	local kind
 
 	local choice file orig
@@ -13441,7 +13437,7 @@ shell::git::diff::fzf() {
 			else
 				git -C "$root" diff "$color_flag" "${diff_args[@]}" -- "$orig" "$file"
 			fi
-		} 2>&1 | if [ -n "$pipe" ]; then delta --paging=never | eval "$viewer"; else eval "$viewer"; fi
+		} 2>&1 | if [ -n "$pipe" ]; then delta --paging=never | shell::git::history::page; else shell::git::history::page; fi
 	done
 
 	return "$RETURN_SUCCESS"
