@@ -42,7 +42,7 @@ t_eq "list: overview + 4 files + back" "6" "$(printf '%s\n' "$list" | grep -c .)
 args="$(cat "$HOME/args.1")"
 t_has "list: back entry is last" "Back" "$(printf '%s' "$list" | tail -n 1)"
 t_has "header counts" "4 file(s): 1 added, 1 modified, 1 deleted, 1 renamed" "$args"
-t_has "preview shows the file diff" "git diff" "$args"
+t_has "preview shows the file diff" "diff --color=never" "$args"
 t_has "preview has the stat for the overview" "--stat" "$args"
 t_lacks "no colour off a terminal" "\033[" "$list"
 
@@ -88,9 +88,30 @@ t_has "clean tree: message" "No changed files" "$T_OUT"
 t_rc "bad commit" 1 shell::git::diff::fzf nope-ref
 t_rc "unknown option" 2 shell::git::diff::fzf --bogus
 t_rc "dry run" 0 shell::git::diff::fzf -n HEAD
-t_has "dry run: command" "git diff --name-status" "$T_OUT"
+t_has "dry run: command" "diff --name-status" "$T_OUT"
 t_rc "pick: ESC aborts" 0 shell::git::diff::fzf --pick
 reset_fzf; FAKE_FZF_ROW=3
 t_rc "pick: Back entry" 11 shell::git::diff::fzf --pick
 t_has "pick: back entry is offered last" "Back" "$(tail -n 1 "$HOME/stdin.1")"
+# --- new (untracked) files are listed, and the diff works from a subdirectory
+git reset -q --hard
+mkdir -p sub && printf 'in sub\n' >sub/s.txt && git add sub/s.txt && git commit -q -m sub
+printf 'more\n' >>sub/s.txt
+printf 'brand new\n' >sub/fresh.txt
+reset_fzf
+t_rc "untracked: runs" 0 shell::git::diff::fzf
+t_has "untracked: modified file is listed" "M  sub/s.txt" "$(cat "$HOME/stdin.1")"
+t_has "untracked: new file is listed" "?  sub/fresh.txt" "$(cat "$HOME/stdin.1")"
+t_has "untracked: counted as added" "1 added, 1 modified" "$(cat "$HOME/args.1")"
+reset_fzf
+shell::git::diff::fzf HEAD >/dev/null 2>&1
+t_lacks "untracked: not part of a commit view" "fresh.txt" "$(cat "$HOME/stdin.1")"
+reset_fzf; FAKE_FZF_ROW=2
+(cd sub && shell::git::diff::fzf >"$HOME/out.txt" 2>&1)
+t_has "subdirectory: the modified file's diff is shown" "+more" "$(cat "$HOME/out.txt")"
+reset_fzf; FAKE_FZF_ROW=3
+(cd sub && shell::git::diff::fzf >"$HOME/out.txt" 2>&1)
+t_has "subdirectory: the new file's diff is shown" "+brand new" "$(cat "$HOME/out.txt")"
+FAKE_FZF_ROW=""
 t_done
+

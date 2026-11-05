@@ -153,6 +153,12 @@ Acked-by|Who acknowledged the change}"
 : "${SHELL_NET_CONNECT_TIMEOUT:=15}"
 : "${SHELL_NET_MAX_TIME:=300}"
 
+# --- Git history explorer ------------------------------------------------------
+# Most commits loaded by shell::git::history::fzf (override with --max).
+: "${SHELL_GIT_HISTORY_MAX:=500}"
+# Widest the dashboard box is drawn (it shrinks to the terminal when narrower).
+: "${SHELL_GIT_HISTORY_WIDTH:=72}"
+
 # --- Logger style --------------------------------------------------------------
 # Look of the level lines (debug / info / warn / error / fatal / success).
 # Pick one with shell::logger::style::set (or ::set::fzf); see core/logger_style.sh.

@@ -34,6 +34,10 @@ SHELL_GLYPH_FAIL="[✗]"
 SHELL_GLYPH_COPIED="✨"
 SHELL_GLYPH_POINTER="▶"
 SHELL_GLYPH_MARKER="✓"
+# Git history timeline (shell::git::history::*): commit, merge commit, vertical track.
+SHELL_GLYPH_COMMIT="●"
+SHELL_GLYPH_MERGE="◆"
+SHELL_GLYPH_TRACK="│"
 
 # --- Logger style "simple" -----------------------------------------------------
 # Mirrors scripts/lib.sh of pnguyen215/skills: a coloured `[tag]` followed by the

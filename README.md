@@ -110,6 +110,7 @@ shell::conf::key::get API_KEY
 shell::git::branch::create -n feature_x # -n = dry run: print commands without executing
 shell::net::port::kill 3000              # SIGTERM whatever is listening on :3000
 shell::fs::browse ~/docs                 # pick a file with fzf, then act on it
+shell::git::history::fzf --function Login src/auth/login.go   # how one function evolved, commit by commit (docs/GIT_HISTORY.md)
 ```
 
 - Every function supports `-h` / `--help`.
@@ -151,7 +152,7 @@ The only exceptions are the four lifecycle functions in [`src/shell.sh`](src/she
 ├── install.sh  upgrade.sh  uninstall.sh   # bootstrap scripts (curl-able)
 ├── Makefile                               # make test | lint | fmt | docs | doctor
 ├── docs/
-│   ├── ARCHITECTURE.md  CONVENTIONS.md  COMMIT_MESSAGES.md  HOMEBREW.md  NVM.md  SSH.md  RSYNC.md  MIGRATION.md
+│   ├── ARCHITECTURE.md  CONVENTIONS.md  COMMIT_MESSAGES.md  GIT_HISTORY.md  HOMEBREW.md  NVM.md  SSH.md  RSYNC.md  MIGRATION.md
 │   └── api/                               # generated reference (make docs)
 ├── scripts/                               # lint.sh, gen_docs.sh
 ├── test/                                  # run under bash and zsh
