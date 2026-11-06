@@ -11,7 +11,7 @@
 #   - Git data is retrieved once, as *commit records* (see shell::git::history::log), and every
 #     other layer reads those records from stdin. Nothing renders while it retrieves.
 #   - A record is one line, fields separated by US (0x1f, `$'\037'`) so empty fields survive:
-#       1 full hash   2 short hash   3 author   4 date (YYYY-MM-DD)
+#       1 full hash   2 short hash   3 author   4 date (YYYY-MM-DD HH:MM:SS)
 #       5 additions   6 deletions    7 files changed (in the scope)   8 merge (0|1)
 #       9 path at that commit   10 path before a rename   11-13 additions, deletions, files of
 #       the WHOLE commit   14 subject   15 body (newlines written as the two characters `\n`)
@@ -245,7 +245,7 @@ shell::git::history::function::resolve() {
 shell::git::history::log::args() {
 	local type="${1-}" file="${2-}" spec="${3-}" max="${4:-$SHELL_GIT_HISTORY_MAX}" merges="${5:-true}" rev="${6-}" branch="${7-}"
 
-	printf '%s\n' -c core.quotepath=off log --no-color --date=short "-n${max}" \
+	printf '%s\n' -c core.quotepath=off log --no-color "--date=format:%Y-%m-%d %H:%M:%S" "-n${max}" \
 		'--format=%x1e%H%x1f%h%x1f%an%x1f%ad%x1f%P%x1f%s%x1f%b%x1f'
 	[ "$merges" = "false" ] && printf '%s\n' --no-merges
 
@@ -885,7 +885,7 @@ shell::git::history::timeline() {
 		fi
 
 		if [ "$rows" = "true" ]; then
-			room=$((width * 45 / 100 - 36 - ${#author} - ${#branch_tag}))
+			room=$((width * 45 / 100 - 45 - ${#author} - ${#branch_tag}))
 			[ "$room" -lt 12 ] && room=12
 			subj="$(shell::git::history::fit "$subject" "$room")"
 			case "$type" in
@@ -914,7 +914,7 @@ shell::git::history::timeline() {
 			continue
 		fi
 
-		room=$((width - 28 - ${#branch_tag}))
+		room=$((width - 37 - ${#branch_tag}))
 		[ "$room" -lt 10 ] && room=10
 		subj="$(shell::git::history::fit "$subject" "$room")"
 		printf '%s%s%s %s%s%s  %s%s%s%s  %s\n' "$bold" "$glyph" "$off" "$yellow" "$date" "$off" "$cyan" "$short" "$branch_tag" "$off" "$subj"
@@ -1183,7 +1183,7 @@ shell::git::history::pick() {
 			printf '%s\n' "$whole"
 			git -C "$root" ls-files 2>/dev/null
 			printf '%s\n' "$back"
-		} | shell::fzf::select --prompt="History of: " --preview="git -C $(shell::git::commit::spec::quote "$root") log -n 8 --format='%h %ad %an  %s' --date=short -- {} 2>/dev/null")" || return "$RETURN_CANCELLED"
+		} | shell::fzf::select --prompt="History of: " --preview="git -C $(shell::git::commit::spec::quote "$root") log -n 8 --format='%h %ad %an  %s' --date=format:'%Y-%m-%d %H:%M:%S' -- {} 2>/dev/null")" || return "$RETURN_CANCELLED"
 		[ -n "$file" ] || return "$RETURN_CANCELLED"
 		[ "$file" = "$back" ] && return "$RETURN_BACK"
 
