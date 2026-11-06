@@ -706,18 +706,19 @@ shell::git::history::timeline() {
 	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Render commit records as a vertical timeline"
-		shell::logger::usage "<records> | shell::git::history::timeline [-r] [-c] [-w N] [-s hash] [-t type]"
+		shell::logger::usage "<records> | shell::git::history::timeline [-r] [-c] [-w N] [-s hash] [-t type] [-b branch]"
 		shell::logger::option "-r, --rows" "Print fzf rows instead of the multi-line timeline"
 		shell::logger::option "-c, --color" "Use ANSI colours"
 		shell::logger::option "-w, --width <n>" "Width to draw for"
 		shell::logger::option "-s, --selected <hash>" "Mark this commit"
 		shell::logger::option "-t, --type <type>" "Scope type (wording of the summary)"
+		shell::logger::option "-b, --branch <name>" "Show this branch in round brackets after each commit hash"
 		shell::logger::option "-h, --help" "Show this help message"
 		shell::logger::example "shell::git::history::log file src/a.sh | shell::git::history::timeline -c"
 		return "$RETURN_SUCCESS"
 	fi
 
-	local rows="false" color="false" width="" selected="" type="file"
+	local rows="false" color="false" width="" selected="" type="file" branch=""
 	while [ "$#" -gt 0 ]; do
 		case "$1" in
 		-r | --rows) rows="true" ;;
@@ -725,6 +726,7 @@ shell::git::history::timeline() {
 		-w | --width) width="${2-}"; shift ;;
 		-s | --selected) selected="${2-}"; shift ;;
 		-t | --type) type="${2-}"; shift ;;
+		-b | --branch) branch="${2-}"; shift ;;
 		*)
 			shell::logger::error "Unknown option: $1"
 			return "$RETURN_INVALID"
@@ -741,7 +743,8 @@ shell::git::history::timeline() {
 	width="$(shell::git::history::width "$width")"
 
 	local full short author date adds dels files merge fpath opath ra rd rf subject body
-	local glyph room subj summary track="${SHELL_GLYPH_TRACK:-│}"
+	local glyph room subj summary track="${SHELL_GLYPH_TRACK:-│}" branch_tag=""
+	[ -n "$branch" ] && branch_tag=" (${branch})"
 	# Read everything first so the last block can drop its connector.
 	local all
 	all="$(cat)"
@@ -759,7 +762,7 @@ shell::git::history::timeline() {
 		fi
 
 		if [ "$rows" = "true" ]; then
-			room=$((width * 45 / 100 - 36 - ${#author}))
+			room=$((width * 45 / 100 - 36 - ${#author} - ${#branch_tag}))
 			[ "$room" -lt 12 ] && room=12
 			subj="$(shell::git::history::fit "$subject" "$room")"
 			case "$type" in
@@ -782,16 +785,16 @@ shell::git::history::timeline() {
 			esac
 			[ "$merge" = "1" ] && summary="Merge commit | ${summary}"
 			printf '%s%s%s%s%s%s%s%s%s' "$full" "$tab" "${fpath:-.}" "$tab" "${opath:-${fpath:-.}}" "$tab" "$summary" "$tab" ""
-			printf '%s%s %s%s  %s%s%s  %s  %s%s%s  %s+%s%s %s-%s%s\n' \
-				"${yellow}" "$glyph" "${off}" "$date" "${cyan}" "$short" "${off}" "$subj" "${dim}" "$author" "${off}" \
+			printf '%s%s %s%s  %s%s%s%s  %s  %s%s%s  %s+%s%s %s-%s%s\n' \
+				"${yellow}" "$glyph" "${off}" "$date" "${cyan}" "$short" "$branch_tag" "${off}" "$subj" "${dim}" "$author" "${off}" \
 				"${green}" "$adds" "${off}" "${red}" "$dels" "${off}"
 			continue
 		fi
 
-		room=$((width - 28))
+		room=$((width - 28 - ${#branch_tag}))
 		[ "$room" -lt 10 ] && room=10
 		subj="$(shell::git::history::fit "$subject" "$room")"
-		printf '%s%s%s %s%s%s  %s%s%s  %s\n' "$bold" "$glyph" "$off" "$yellow" "$date" "$off" "$cyan" "$short" "$off" "$subj"
+		printf '%s%s%s %s%s%s  %s%s%s%s  %s\n' "$bold" "$glyph" "$off" "$yellow" "$date" "$off" "$cyan" "$short" "$branch_tag" "$off" "$subj"
 		if [ "$n" -lt "$total" ]; then
 			printf '%s%s%s %s%s%s  %s+%s%s %s-%s%s' "$dim" "$track" "$off" "$yellow" "$(shell::git::history::fit "$author" 18)" "$off" "$green" "$adds" "$off" "$red" "$dels" "$off"
 			[ "$merge" = "1" ] && printf '  %smerge%s' "$dim" "$off"
@@ -1301,7 +1304,7 @@ shell::git::history::fzf() {
 			printf '\nNo commits found for this scope.\n'
 		else
 			printf '\n'
-			printf '%s\n' "$records" | shell::git::history::timeline "${dash_flags[@]}" -t "$type"
+			printf '%s\n' "$records" | shell::git::history::timeline "${dash_flags[@]}" -t "$type" -b "$branch"
 		fi
 		return "$RETURN_SUCCESS"
 	fi
@@ -1321,7 +1324,7 @@ shell::git::history::fzf() {
 	dashboard="$(shell::git::history::dashboard "${dash_flags[@]}" "$name" "$branch" "$type" "$rel" "$spec" "$commits" "$adds" "$dels" "$first" "$last")"
 	shortcuts="Enter inspect  ^F whole commit  ^B blame  ^Y copy hash  ^O open on web  ^D/^U scroll  ESC quit"
 	header="${dashboard}"$'\n'"${shortcuts}"
-	rows="$(printf '%s\n' "$records" | shell::git::history::timeline -r "${dash_flags[@]}" -t "$type")"
+	rows="$(printf '%s\n' "$records" | shell::git::history::timeline -r "${dash_flags[@]}" -t "$type" -b "$branch")"
 	rows="${rows}"$'\n'"${SHELL_FZF_BACK_LABEL}${tab}:back${tab}${tab}${tab}"
 	preview="$(shell::git::history::preview::command "$root" "$type" "$spec" "$color_flag" "$hl")"
 
