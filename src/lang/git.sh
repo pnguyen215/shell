@@ -2696,6 +2696,328 @@ shell::git::branch::stash::apply::fzf() {
 }
 
 # @internal
+# @description Emit one display line per stash (every branch), each carrying the branch the
+#   stash was made on and that branch's state relative to origin.
+#
+#   Format: "M stash@{N} : [LABEL              ] : branch : message"
+#   M     — '*' when the stash belongs to the checked-out branch, ' ' otherwise
+#   LABEL — [LOCAL | synced] / [LOCAL | +A/-B] / [LOCAL | no-remote] (branch exists locally),
+#           [REMOTE] (only on origin), [DELETED] (branch no longer exists); padded to 20 chars.
+#   ' : ' is the field anchor — ':' is not allowed in branch names.
+# @stdout The display lines, newest stash first. Nothing when there are no stashes.
+# @exitcode 0 Always.
+#
+shell::git::branch::all::stash::lines() {
+	local current_branch
+	current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+
+	local ref subject branch msg marker status_str label la ra
+	while IFS=$'\t' read -r ref subject; do
+		[ -n "$ref" ] || continue
+		# Subject: "WIP on <branch>: <sha> <msg>" or "On <branch>: <msg>".
+		case "$subject" in
+		"WIP on "*) branch="${subject#WIP on }" ;;
+		"On "*) branch="${subject#On }" ;;
+		*) branch="" ;;
+		esac
+		if [ -n "$branch" ]; then
+			msg="${branch#*: }"
+			branch="${branch%%:*}"
+		else
+			msg="$subject"
+			branch="(unknown)"
+		fi
+
+		if git rev-parse --verify --quiet "refs/heads/${branch}" >/dev/null 2>&1; then
+			if git rev-parse --verify --quiet "refs/remotes/origin/${branch}" >/dev/null 2>&1; then
+				la=$(git rev-list "origin/${branch}..refs/heads/${branch}" --count 2>/dev/null || echo 0)
+				ra=$(git rev-list "refs/heads/${branch}..origin/${branch}" --count 2>/dev/null || echo 0)
+				if [ "$la" -eq 0 ] && [ "$ra" -eq 0 ]; then status_str="synced"; else status_str="+${la}/-${ra}"; fi
+			else
+				status_str="no-remote"
+			fi
+			label=$(printf "[LOCAL | %-10s]" "$status_str")
+		elif git rev-parse --verify --quiet "refs/remotes/origin/${branch}" >/dev/null 2>&1; then
+			label=$(printf "[%-18s]" "REMOTE")
+		else
+			label=$(printf "[%-18s]" "DELETED")
+		fi
+
+		marker=" "
+		[ "$branch" = "$current_branch" ] && marker="*"
+		printf '%s %s : %s : %s : %s\n' "$marker" "$ref" "$label" "$branch" "$msg"
+	done < <(git stash list --format='%gd%x09%gs' 2>/dev/null)
+}
+
+# @description Presents an fzf multi-select picker of the stashes of ALL branches, each line
+#   showing the stash's branch and that branch's state (synced, ahead/behind, no-remote,
+#   remote-only, deleted), then applies each selected stash. Continues on individual failures.
+#   Stashes are applied, not dropped, so the stash list is left intact.
+# @option -n | --dry-run Optional. Print the commands via shell::logger::command_clip instead of executing them.
+# @option -h | --help Show this help message.
+# @exitcode 0 Success.
+# @exitcode 1 The operation failed.
+# @example
+#   shell::git::branch::all::stash::apply::fzf
+#   shell::git::branch::all::stash::apply::fzf -n
+#
+shell::git::branch::all::stash::apply::fzf() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Multi-select stashes of all branches (with branch state) and apply them to the current branch"
+		shell::logger::usage "shell::git::branch::all::stash::apply::fzf [-n] [-h]"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the commands instead of executing them"
+		shell::logger::example "shell::git::branch::all::stash::apply::fzf"
+		shell::logger::example "shell::git::branch::all::stash::apply::fzf -n"
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return $RETURN_FAILURE
+	fi
+
+	local current_branch
+	current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+
+	local -a stash_lines
+	while IFS= read -r line; do
+		[ -n "$line" ] && stash_lines+=("$line")
+	done < <(shell::git::branch::all::stash::lines)
+
+	if [ "${#stash_lines[@]}" -eq 0 ]; then
+		shell::logger::warn "No stashes found — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	shell::logger::info "Found ${#stash_lines[@]} stash(es) across all branches (current: '${current_branch}')"
+
+	local selected_output
+	selected_output=$(shell::ask::options "${stash_lines[@]}")
+
+	if [ -z "$selected_output" ]; then
+		shell::logger::warn "No stashes selected — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	# Anchor on "stash@{N} : [" so a message mentioning another stash ref is ignored.
+	local -a stash_refs
+	while IFS= read -r ref; do
+		[ -n "$ref" ] && stash_refs+=("$ref")
+	done < <(printf '%s' "$selected_output" | grep -oE 'stash@\{[0-9]+\} : \[' | grep -oE 'stash@\{[0-9]+\}')
+
+	if [ "${#stash_refs[@]}" -eq 0 ]; then
+		shell::logger::warn "Could not extract stash references from selection — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	shell::logger::info "Selected ${#stash_refs[@]} stash(es) to apply onto '${current_branch}'"
+
+	local success_count=0 failure_count=0 ref cmd_apply
+	for ref in "${stash_refs[@]}"; do
+		cmd_apply="git stash apply \"${ref}\""
+
+		if [ "$dry_run" = "true" ]; then
+			shell::logger::command_clip "$cmd_apply"
+			continue
+		fi
+
+		if shell::logger::assert "$cmd_apply" \
+			"Applied ${ref} successfully" \
+			"Failed to apply ${ref} — continuing with remaining stashes"; then
+			success_count=$((success_count + 1))
+		else
+			failure_count=$((failure_count + 1))
+		fi
+	done
+
+	if [ "$dry_run" = "false" ]; then
+		shell::logger::info "Apply complete: ${success_count} succeeded, ${failure_count} failed"
+		if [ "${failure_count}" -gt 0 ]; then
+			shell::logger::warn "Resolve conflicts for failed applies, then run 'git stash drop <ref>' manually"
+		fi
+	fi
+
+	return $RETURN_SUCCESS
+}
+
+# @description Presents an fzf picker of the stashes of ALL branches, each line showing the
+#   stash's branch and that branch's state (synced, ahead/behind, no-remote, remote-only,
+#   deleted), then removes the selected stash after confirmation.
+# @option -n | --dry-run Optional. Print the command via shell::logger::command_clip instead of executing it.
+# @option -h | --help Show this help message.
+# @exitcode 0 Success.
+# @exitcode 1 The operation failed.
+# @example
+#   shell::git::branch::all::stash::remove::fzf
+#   shell::git::branch::all::stash::remove::fzf -n
+#
+shell::git::branch::all::stash::remove::fzf() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Select a stash of any branch (with branch state) via fzf and remove it"
+		shell::logger::usage "shell::git::branch::all::stash::remove::fzf [-n] [-h]"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
+		shell::logger::example "shell::git::branch::all::stash::remove::fzf"
+		shell::logger::example "shell::git::branch::all::stash::remove::fzf -n"
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return $RETURN_FAILURE
+	fi
+
+	local -a stash_lines
+	while IFS= read -r line; do
+		[ -n "$line" ] && stash_lines+=("$line")
+	done < <(shell::git::branch::all::stash::lines)
+
+	if [ "${#stash_lines[@]}" -eq 0 ]; then
+		shell::logger::warn "No stashes found — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	shell::logger::info "Found ${#stash_lines[@]} stash(es) across all branches"
+
+	local selected_output
+	selected_output=$(shell::ask::option "${stash_lines[@]}")
+
+	if [ -z "$selected_output" ]; then
+		shell::logger::warn "No stash selected — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	local stash_ref
+	stash_ref=$(printf '%s' "$selected_output" | grep -oE 'stash@\{[0-9]+\} : \[' | head -n 1 | grep -oE 'stash@\{[0-9]+\}')
+
+	if [ -z "$stash_ref" ]; then
+		shell::logger::warn "Could not extract stash reference from selection — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	shell::logger::info "Selected: ${stash_ref}"
+
+	if shell::ask::deny "Remove ${stash_ref}?"; then
+		shell::logger::info "Stash removal aborted"
+		return $RETURN_SUCCESS
+	fi
+
+	local cmd_drop="git stash drop \"${stash_ref}\""
+
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::command_clip "$cmd_drop"
+		return $RETURN_SUCCESS
+	fi
+
+	shell::logger::assert "$cmd_drop" \
+		"${stash_ref} removed successfully" \
+		"Failed to remove ${stash_ref}" || return $?
+
+	return $RETURN_SUCCESS
+}
+
+# @description Presents an fzf picker of the stashes of ALL branches, each line showing the
+#   stash's branch and that branch's state (synced, ahead/behind, no-remote, remote-only,
+#   deleted), then shows the diff of the selected stash. Read-only: nothing is modified.
+# @option -n | --dry-run Optional. Print the git stash show command via shell::logger::command_clip instead of executing it.
+# @option -h | --help Show this help message.
+# @exitcode 0 Success.
+# @exitcode 1 The operation failed.
+# @example
+#   shell::git::branch::all::stash::preview::fzf
+#   shell::git::branch::all::stash::preview::fzf -n
+#
+shell::git::branch::all::stash::preview::fzf() {
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Browse stashes of all branches (with branch state) via fzf and view their contents"
+		shell::logger::usage "shell::git::branch::all::stash::preview::fzf [-n] [-h]"
+		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::option "-n, --dry-run" "Print the git stash show command instead of executing it"
+		shell::logger::example "shell::git::branch::all::stash::preview::fzf"
+		shell::logger::example "shell::git::branch::all::stash::preview::fzf -n"
+		return $RETURN_SUCCESS
+	fi
+
+	local dry_run="false"
+	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
+		dry_run="true"
+		shift
+	fi
+
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		shell::logger::error "Not inside a Git repository"
+		return $RETURN_FAILURE
+	fi
+
+	local -a stash_lines
+	while IFS= read -r line; do
+		[ -n "$line" ] && stash_lines+=("$line")
+	done < <(shell::git::branch::all::stash::lines)
+
+	if [ "${#stash_lines[@]}" -eq 0 ]; then
+		shell::logger::warn "No stashes found — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	shell::logger::info "Found ${#stash_lines[@]} stash(es) across all branches"
+
+	local selected_output
+	selected_output=$(shell::ask::option "${stash_lines[@]}")
+
+	if [ -z "$selected_output" ]; then
+		shell::logger::warn "No stash selected — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	local stash_ref
+	stash_ref=$(printf '%s' "$selected_output" | grep -oE 'stash@\{[0-9]+\} : \[' | head -n 1 | grep -oE 'stash@\{[0-9]+\}')
+
+	if [ -z "$stash_ref" ]; then
+		shell::logger::warn "Could not extract stash reference from selection — aborting"
+		return $RETURN_SUCCESS
+	fi
+
+	shell::logger::info "Selected: ${stash_ref}"
+
+	# --include-untracked so files stashed with `git stash save --include-untracked` show up too.
+	local cmd_show="git stash show -p --include-untracked \"${stash_ref}\""
+
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::command_clip "$cmd_show"
+		return $RETURN_SUCCESS
+	fi
+
+	shell::logger::info "Showing diff for ${stash_ref}:"
+	if shell::command::exists delta; then
+		eval "$cmd_show" 2>/dev/null | delta --no-gitconfig --line-numbers --navigate --dark 2>/dev/null ||
+			eval "$cmd_show"
+	else
+		eval "$cmd_show"
+	fi
+
+	shell::clipboard::copy --best-effort "${stash_ref}"
+	shell::logger::info "Stash reference copied to clipboard: ${stash_ref}"
+
+	return $RETURN_SUCCESS
+}
+
+# @internal
 # @description Quote one argument so a printed command can be pasted back into a shell.
 #   Safe words are left as they are; anything else is wrapped in single quotes
 #   (an embedded `'` becomes `'\''`). Used for display only: the command itself
