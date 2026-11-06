@@ -459,6 +459,90 @@ shell::git::history::log::whole() {
 			  printf "%s\t%d\t%d\t%d\n", h, f, a, d }'
 }
 
+# @description Brings the remote's commits into the local clone, silently, so the history
+#   covers what was pushed by others.
+#
+#   Only remote-tracking refs are updated (`git fetch`). Local branches, the index and the
+#   working tree are never touched: this explorer is read-only, and every branch walk already
+#   includes `refs/remotes/*`, so a fetch is all it takes to see remote commits. (Unlike
+#   shell::git::branch::sync, it does not create or fast-forward local branches.)
+#
+#   Network cost is kept low: with a branch, only that branch is fetched from the remote it
+#   tracks (one refspec, `origin` by default); without one, `--all --prune` fetches every
+#   remote in parallel. Tags are skipped, background gc/maintenance is disabled for the call,
+#   credential and ssh passphrase prompts are turned off so it cannot hang, and a timeout
+#   (SHELL_GIT_HISTORY_SYNC_TIMEOUT seconds, default 60) bounds it when `timeout` exists.
+#
+#   Nothing is printed on success. On failure the git output is shown with the exit status.
+# @arg $1 string Optional. Branch to refresh (local name, `<remote>/<name>` or a name only the remote has).
+# @arg $2 string Optional. `true` prints the command instead of running it.
+# @env SHELL_GIT_HISTORY_SYNC_TIMEOUT Optional. Seconds before the fetch is abandoned (default: 60).
+# @stderr The reason when the sync fails.
+# @exitcode 0 Synced, or nothing to sync (no remote, or the branch has no remote counterpart).
+# @exitcode 1 The fetch failed or timed out.
+# @example
+#   shell::git::history::sync
+#   shell::git::history::sync feature/login
+#
+shell::git::history::sync() {
+	local branch="${1-}" dry_run="${2:-false}"
+	local remotes remote="" rbranch="" up first_remote
+	remotes="$(git remote 2>/dev/null)"
+	if [ -z "$remotes" ]; then
+		shell::logger::warn "No remote configured — nothing to sync"
+		return "$RETURN_SUCCESS"
+	fi
+	first_remote="$(printf '%s\n' "$remotes" | head -n 1)"
+
+	local -a args=(-c gc.auto=0 -c maintenance.auto=false -c fetch.parallel=0
+		fetch --quiet --no-tags --no-recurse-submodules)
+
+	if [ -n "$branch" ]; then
+		up="$(git rev-parse --abbrev-ref --symbolic-full-name "${branch}@{upstream}" 2>/dev/null)"
+		if [ -n "$up" ] && printf '%s\n' "$remotes" | grep -qxF "${up%%/*}"; then
+			remote="${up%%/*}" rbranch="${up#*/}"
+		elif printf '%s\n' "$remotes" | grep -qxF "${branch%%/*}" && [ "$branch" != "${branch%%/*}" ] &&
+			git rev-parse --verify -q "refs/remotes/${branch}" >/dev/null 2>&1; then
+			remote="${branch%%/*}" rbranch="${branch#*/}"
+		elif git rev-parse --verify -q "refs/heads/${branch}" >/dev/null 2>&1 &&
+			! git rev-parse --verify -q "refs/remotes/${first_remote}/${branch}" >/dev/null 2>&1; then
+			shell::logger::warn "Branch '${branch}' has no remote counterpart — nothing to sync"
+			return "$RETURN_SUCCESS"
+		else
+			remote="$first_remote" rbranch="$branch"
+		fi
+		args+=("$remote" "+refs/heads/${rbranch}:refs/remotes/${remote}/${rbranch}")
+	else
+		args+=(--all --prune)
+	fi
+
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::command_clip "git ${args[*]}"
+		return "$RETURN_SUCCESS"
+	fi
+
+	local -a runner=(env GIT_TERMINAL_PROMPT=0 "GIT_SSH_COMMAND=${GIT_SSH_COMMAND:-ssh} -o BatchMode=yes")
+	local seconds="$SHELL_GIT_HISTORY_SYNC_TIMEOUT"
+	if shell::command::exists timeout; then
+		runner+=(timeout "$seconds")
+	elif shell::command::exists gtimeout; then
+		runner+=(gtimeout "$seconds")
+	fi
+
+	local out rc=0
+	out="$("${runner[@]}" git "${args[@]}" 2>&1)" || rc=$?
+	if [ "$rc" -ne 0 ]; then
+		if [ "$rc" -eq 124 ]; then
+			shell::logger::error "Remote sync timed out after ${seconds}s (raise SHELL_GIT_HISTORY_SYNC_TIMEOUT)"
+		else
+			shell::logger::error "Remote sync failed (git fetch exit ${rc})"
+		fi
+		[ -n "$out" ] && printf '%s\n' "$out" >&2
+		return "$RETURN_FAILURE"
+	fi
+	return "$RETURN_SUCCESS"
+}
+
 # @description Appends the branch of every commit record as field 16.
 #   With a branch name every record gets that name. Without one (all branches walked) the
 #   branch is the nearest branch tip that reaches the commit (`git name-rev`): local branches
@@ -1215,12 +1299,14 @@ shell::git::history::fzf() {
 	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Explore the history of a file, function, line range or code"
-		shell::logger::usage "shell::git::history::fzf [-f name | -L start,end | -S text | -G regex] [-b branch] [-i] [-m N] [--no-merges] [-p] [-n] [-h] [file]"
+		shell::logger::usage "shell::git::history::fzf [-f name | -L start,end | -S text | -G regex] [-b branch] [-r] [-i] [-m N] [--no-merges] [-p] [-n] [-h] [file]"
 		shell::logger::option "-f, --function <name>" "Follow a function (git log -L)"
 		shell::logger::option "-L, --lines <start,end>" "Follow a line range (git log -L)"
 		shell::logger::option "-S, --search <text>" "Commits that added or removed the text (git log -S)"
 		shell::logger::option "-G, --regex <re>" "Commits whose diff matches the expression (git log -G)"
 		shell::logger::option "-b, --branch <name>" "Only this branch (default: all branches)"
+		shell::logger::option "-r, --sync" "Fetch the remote first, silently, so remote commits are included (default: off, or SHELL_GIT_HISTORY_SYNC=true)"
+		shell::logger::option "--no-sync" "Do not fetch (overrides SHELL_GIT_HISTORY_SYNC)"
 		shell::logger::option "-i, --interactive" "Pick the file and the scope in fzf first"
 		shell::logger::option "-m, --max <n>" "Most commits to load (default: 500)"
 		shell::logger::option "--no-merges" "Leave merge commits out"
@@ -1239,9 +1325,11 @@ shell::git::history::fzf() {
 		shell::logger::example "shell::git::history::fzf --lines 40,80 src/auth/login.go"
 		shell::logger::example "shell::git::history::fzf --search refreshToken"
 		shell::logger::example "shell::git::history::fzf --interactive"
+		shell::logger::example "shell::git::history::fzf --sync --branch main"
 		return "$RETURN_SUCCESS"
 	fi
 
+	local sync="$SHELL_GIT_HISTORY_SYNC"
 	local type="" spec="" file_arg="" branch_arg="" interactive="false" print_only="false" dry_run="false"
 	local max="${SHELL_GIT_HISTORY_MAX:-500}" merges="true"
 	while [ "$#" -gt 0 ]; do
@@ -1272,6 +1360,8 @@ shell::git::history::fzf() {
 			fi
 			shift
 			;;
+		-r | --sync) sync="true" ;;
+		--no-sync) sync="false" ;;
 		-i | --interactive) interactive="true" ;;
 		-m | --max)
 			max="${2-}"
@@ -1305,6 +1395,13 @@ shell::git::history::fzf() {
 	local us=$'\037' tab=$'\t' ctx root name branch rel
 	ctx="$(shell::git::history::context "$file_arg")" || return "$RETURN_FAILURE"
 	IFS="$us" read -r root name branch rel <<<"$ctx"
+	# Optional, silent remote sync (opt-in: it costs a network round trip). A failure is shown
+	# in full, then the history of what is already local is still explored.
+	if [ "$sync" = "true" ]; then
+		shell::git::history::sync "$branch_arg" "$dry_run" ||
+			shell::logger::warn "Continuing with the commits already in the local clone"
+	fi
+
 	if [ -n "$branch_arg" ]; then
 		if ! git rev-parse --verify -q "${branch_arg}^{commit}" >/dev/null 2>&1; then
 			shell::logger::error "Branch '${branch_arg}' does not exist"

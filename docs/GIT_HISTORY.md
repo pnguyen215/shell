@@ -40,7 +40,7 @@ shell::git::history::fzf --print --function Login src/a.go       # dashboard + t
 shell::git::history::fzf -n --function Login src/a.go            # print the git command only
 ```
 
-Other options: `--max <n>` (default 500, `SHELL_GIT_HISTORY_MAX`), `--no-merges`, `-h`.
+Other options: `--max <n>` (default 500, `SHELL_GIT_HISTORY_MAX`), `--no-merges`, `-b <branch>` (default: all branches), `-r`/`--sync` (fetch the remote first, silently; `SHELL_GIT_HISTORY_SYNC`, default off; `--no-sync` overrides; timeout `SHELL_GIT_HISTORY_SYNC_TIMEOUT`, default 60 s), `-h`.
 
 ## Keys
 
