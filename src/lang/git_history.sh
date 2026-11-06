@@ -15,6 +15,7 @@
 #       5 additions   6 deletions    7 files changed (in the scope)   8 merge (0|1)
 #       9 path at that commit   10 path before a rename   11-13 additions, deletions, files of
 #       the WHOLE commit   14 subject   15 body (newlines written as the two characters `\n`)
+#       16 branch (added by shell::git::history::branches; may be empty)
 #   - The scope kinds are told apart because Git tracks them differently: a file is followed
 #     with `git log --follow`, a function or a line range with `git log -L`, code with
 #     `git log -S` / `-G`. For function and line scopes the additions and deletions are those of
@@ -234,6 +235,7 @@ shell::git::history::function::resolve() {
 # @arg $4 integer Optional. Most commits (default: SHELL_GIT_HISTORY_MAX).
 # @arg $5 string Optional. `false` leaves merge commits out (default: true).
 # @arg $6 string Optional. Revision to start from (used to reach a function that was deleted).
+# @arg $7 string Optional. Branch to walk. Empty walks every branch (`--all`). Ignored when $6 is set.
 # @stdout The arguments, one per line.
 # @exitcode 0 Success.
 # @exitcode 1 Unsupported scope type.
@@ -241,7 +243,7 @@ shell::git::history::function::resolve() {
 #   shell::git::history::log::args file src/a.sh "" 50
 #
 shell::git::history::log::args() {
-	local type="${1-}" file="${2-}" spec="${3-}" max="${4:-$SHELL_GIT_HISTORY_MAX}" merges="${5:-true}" rev="${6-}"
+	local type="${1-}" file="${2-}" spec="${3-}" max="${4:-$SHELL_GIT_HISTORY_MAX}" merges="${5:-true}" rev="${6-}" branch="${7-}"
 
 	printf '%s\n' -c core.quotepath=off log --no-color --date=short "-n${max}" \
 		'--format=%x1e%H%x1f%h%x1f%an%x1f%ad%x1f%P%x1f%s%x1f%b%x1f'
@@ -260,7 +262,13 @@ shell::git::history::log::args() {
 	*) return "$RETURN_FAILURE" ;;
 	esac
 
-	[ -n "$rev" ] && printf '%s\n' "$rev"
+	if [ -n "$rev" ]; then
+		printf '%s\n' "$rev"
+	elif [ -n "$branch" ]; then
+		printf '%s\n' "$branch"
+	else
+		printf '%s\n' --all
+	fi
 	case "$type" in
 	file | search | regex) [ -n "$file" ] && printf '%s\n%s\n' -- "$file" ;;
 	esac
@@ -279,6 +287,7 @@ shell::git::history::log::args() {
 # @arg $3 string Function name, line range or search text.
 # @arg $4 integer Optional. Most commits (default: SHELL_GIT_HISTORY_MAX).
 # @arg $5 string Optional. `false` leaves merge commits out.
+# @arg $6 string Optional. Branch to walk (default: every branch).
 # @stdout The records. Empty when the scope has no history.
 # @stderr Diagnostics.
 # @exitcode 0 Success (an empty history is not an error).
@@ -287,20 +296,20 @@ shell::git::history::log::args() {
 #   shell::git::history::log function src/auth/login.go Login 100
 #
 shell::git::history::log() {
-	local type="${1-}" file="${2-}" spec="${3-}" max="${4-}" merges="${5-}"
+	local type="${1-}" file="${2-}" spec="${3-}" max="${4-}" merges="${5-}" branch="${6-}"
 	local us=$'\037' line removed rev="" raw shas
 	local -a args=()
 
 	git rev-parse --verify -q HEAD >/dev/null 2>&1 || return "$RETURN_SUCCESS"
 
 	if [ "$type" = "function" ]; then
-		while IFS= read -r line; do args+=("$line"); done < <(shell::git::history::log::args "$type" "$file" "$spec" 1 true)
+		while IFS= read -r line; do args+=("$line"); done < <(shell::git::history::log::args "$type" "$file" "$spec" 1 true "" "$branch")
 		if ! git "${args[@]}" >/dev/null 2>&1; then
 			# Gone at HEAD? Start from the commit before the one that removed it.
-			removed="$(git log -n 1 --format=%H "-S${spec}" -- "$file" 2>/dev/null)"
+			removed="$(git log -n 1 --format=%H "-S${spec}" ${branch:---all} -- "$file" 2>/dev/null)"
 			rev="${removed:+${removed}^}"
 			args=()
-			while IFS= read -r line; do args+=("$line"); done < <(shell::git::history::log::args "$type" "$file" "$spec" 1 true "$rev")
+			while IFS= read -r line; do args+=("$line"); done < <(shell::git::history::log::args "$type" "$file" "$spec" 1 true "$rev" "$branch")
 			if [ -z "$rev" ] || ! git "${args[@]}" >/dev/null 2>&1; then
 				shell::logger::error "Function '$spec' was not found in '$file' (Git matches function headers per language; try --lines)"
 				return "$RETURN_FAILURE"
@@ -310,7 +319,7 @@ shell::git::history::log() {
 	fi
 
 	args=()
-	while IFS= read -r line; do args+=("$line"); done < <(shell::git::history::log::args "$type" "$file" "$spec" "$max" "$merges" "$rev")
+	while IFS= read -r line; do args+=("$line"); done < <(shell::git::history::log::args "$type" "$file" "$spec" "$max" "$merges" "$rev" "$branch")
 	raw="$(git "${args[@]}" 2>/dev/null)" || {
 		shell::logger::error "git log failed for the $type scope"
 		return "$RETURN_FAILURE"
@@ -448,6 +457,37 @@ shell::git::history::log::whole() {
 			{ n = split($0, L, "\n"); h = L[1]; a = 0; d = 0; f = 0
 			  for (i = 2; i <= n; i++) if (L[i] ~ /^[0-9-]+\t[0-9-]+\t/) { split(L[i], t, "\t"); a += t[1] + 0; d += t[2] + 0; f++ }
 			  printf "%s\t%d\t%d\t%d\n", h, f, a, d }'
+}
+
+# @description Appends the branch of every commit record as field 16.
+#   With a branch name every record gets that name. Without one (all branches walked) the
+#   branch is the nearest branch tip that reaches the commit (`git name-rev`): local branches
+#   first, then remote-tracking ones. Commits reachable from no branch get an empty field.
+# @stdin Commit records (see shell::git::history::log).
+# @arg $1 string Optional. Branch every commit belongs to.
+# @stdout The records with the branch appended.
+# @exitcode 0 Always.
+# @example
+#   shell::git::history::log repo "" "" 100 | shell::git::history::branches
+#
+shell::git::history::branches() {
+	local fixed="${1-}" records hashes
+	records="$(cat)"
+	[ -n "$records" ] || return "$RETURN_SUCCESS"
+	if [ -n "$fixed" ]; then
+		printf '%s\n' "$records" | awk -v b="$fixed" 'BEGIN { FS = OFS = "\037" } { $16 = b; print }'
+		return "$RETURN_SUCCESS"
+	fi
+	hashes="$(printf '%s\n' "$records" | cut -d $'\037' -f1)"
+	awk 'BEGIN { FS = OFS = "\037" }
+		function clean(n) { sub(/^remotes\//, "", n); sub(/[~^].*$/, "", n); return (n == "undefined" || n ~ /(^|\/)HEAD$/) ? "" : n }
+		FILENAME == ARGV[1] { L[FNR] = clean($0); next }
+		FILENAME == ARGV[2] { R[FNR] = clean($0); next }
+		{ $16 = (L[FNR] != "" ? L[FNR] : R[FNR]); print }' \
+		<(printf '%s\n' "$hashes" | git name-rev --name-only --annotate-stdin --refs='refs/heads/*' 2>/dev/null) \
+		<(printf '%s\n' "$hashes" | git name-rev --name-only --annotate-stdin --refs='refs/remotes/*' 2>/dev/null) \
+		<(printf '%s\n' "$records")
+	return "$RETURN_SUCCESS"
 }
 
 # @description Calculates the statistics of a set of commit records for the dashboard.
@@ -706,19 +746,18 @@ shell::git::history::timeline() {
 	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Render commit records as a vertical timeline"
-		shell::logger::usage "<records> | shell::git::history::timeline [-r] [-c] [-w N] [-s hash] [-t type] [-b branch]"
+		shell::logger::usage "<records> | shell::git::history::timeline [-r] [-c] [-w N] [-s hash] [-t type]"
 		shell::logger::option "-r, --rows" "Print fzf rows instead of the multi-line timeline"
 		shell::logger::option "-c, --color" "Use ANSI colours"
 		shell::logger::option "-w, --width <n>" "Width to draw for"
 		shell::logger::option "-s, --selected <hash>" "Mark this commit"
 		shell::logger::option "-t, --type <type>" "Scope type (wording of the summary)"
-		shell::logger::option "-b, --branch <name>" "Show this branch in round brackets after each commit hash"
 		shell::logger::option "-h, --help" "Show this help message"
 		shell::logger::example "shell::git::history::log file src/a.sh | shell::git::history::timeline -c"
 		return "$RETURN_SUCCESS"
 	fi
 
-	local rows="false" color="false" width="" selected="" type="file" branch=""
+	local rows="false" color="false" width="" selected="" type="file"
 	while [ "$#" -gt 0 ]; do
 		case "$1" in
 		-r | --rows) rows="true" ;;
@@ -726,7 +765,6 @@ shell::git::history::timeline() {
 		-w | --width) width="${2-}"; shift ;;
 		-s | --selected) selected="${2-}"; shift ;;
 		-t | --type) type="${2-}"; shift ;;
-		-b | --branch) branch="${2-}"; shift ;;
 		*)
 			shell::logger::error "Unknown option: $1"
 			return "$RETURN_INVALID"
@@ -742,9 +780,8 @@ shell::git::history::timeline() {
 	fi
 	width="$(shell::git::history::width "$width")"
 
-	local full short author date adds dels files merge fpath opath ra rd rf subject body
-	local glyph room subj summary track="${SHELL_GLYPH_TRACK:-│}" branch_tag=""
-	[ -n "$branch" ] && branch_tag=" (${branch})"
+	local full short author date adds dels files merge fpath opath ra rd rf subject body cbranch
+	local glyph room subj summary track="${SHELL_GLYPH_TRACK:-│}" branch_tag="" cbranch
 	# Read everything first so the last block can drop its connector.
 	local all
 	all="$(cat)"
@@ -752,8 +789,10 @@ shell::git::history::timeline() {
 	local total
 	total="$(printf '%s\n' "$all" | wc -l | tr -d ' ')"
 	local n=0
-	while IFS="$us" read -r full short author date adds dels files merge fpath opath ra rd rf subject body; do
+	while IFS="$us" read -r full short author date adds dels files merge fpath opath ra rd rf subject body cbranch; do
 		[ -n "$full" ] || continue
+		branch_tag=""
+		[ -n "$cbranch" ] && branch_tag=" (${cbranch})"
 		n=$((n + 1))
 		glyph="${SHELL_GLYPH_COMMIT:-●}"
 		[ "$merge" = "1" ] && glyph="${SHELL_GLYPH_MERGE:-◆}"
@@ -1176,11 +1215,12 @@ shell::git::history::fzf() {
 	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Explore the history of a file, function, line range or code"
-		shell::logger::usage "shell::git::history::fzf [-f name | -L start,end | -S text | -G regex] [-i] [-m N] [--no-merges] [-p] [-n] [-h] [file]"
+		shell::logger::usage "shell::git::history::fzf [-f name | -L start,end | -S text | -G regex] [-b branch] [-i] [-m N] [--no-merges] [-p] [-n] [-h] [file]"
 		shell::logger::option "-f, --function <name>" "Follow a function (git log -L)"
 		shell::logger::option "-L, --lines <start,end>" "Follow a line range (git log -L)"
 		shell::logger::option "-S, --search <text>" "Commits that added or removed the text (git log -S)"
 		shell::logger::option "-G, --regex <re>" "Commits whose diff matches the expression (git log -G)"
+		shell::logger::option "-b, --branch <name>" "Only this branch (default: all branches)"
 		shell::logger::option "-i, --interactive" "Pick the file and the scope in fzf first"
 		shell::logger::option "-m, --max <n>" "Most commits to load (default: 500)"
 		shell::logger::option "--no-merges" "Leave merge commits out"
@@ -1202,7 +1242,7 @@ shell::git::history::fzf() {
 		return "$RETURN_SUCCESS"
 	fi
 
-	local type="" spec="" file_arg="" interactive="false" print_only="false" dry_run="false"
+	local type="" spec="" file_arg="" branch_arg="" interactive="false" print_only="false" dry_run="false"
 	local max="${SHELL_GIT_HISTORY_MAX:-500}" merges="true"
 	while [ "$#" -gt 0 ]; do
 		case "$1" in
@@ -1222,6 +1262,14 @@ shell::git::history::fzf() {
 			-G | --regex) type="regex" ;;
 			esac
 			spec="$2"
+			shift
+			;;
+		-b | --branch)
+			branch_arg="${2-}"
+			if [ -z "$branch_arg" ]; then
+				shell::logger::error "--branch needs a branch name"
+				return "$RETURN_INVALID"
+			fi
 			shift
 			;;
 		-i | --interactive) interactive="true" ;;
@@ -1257,6 +1305,15 @@ shell::git::history::fzf() {
 	local us=$'\037' tab=$'\t' ctx root name branch rel
 	ctx="$(shell::git::history::context "$file_arg")" || return "$RETURN_FAILURE"
 	IFS="$us" read -r root name branch rel <<<"$ctx"
+	if [ -n "$branch_arg" ]; then
+		if ! git rev-parse --verify -q "${branch_arg}^{commit}" >/dev/null 2>&1; then
+			shell::logger::error "Branch '${branch_arg}' does not exist"
+			return "$RETURN_FAILURE"
+		fi
+		branch="$branch_arg"
+	else
+		branch="all branches"
+	fi
 
 	local descriptor file
 	if [ "$interactive" = "true" ]; then
@@ -1277,7 +1334,7 @@ shell::git::history::fzf() {
 	if [ "$dry_run" = "true" ]; then
 		local -a dargs=()
 		local dline dcmd="git -C $(shell::git::commit::spec::quote "$root")"
-		while IFS= read -r dline; do dargs+=("$dline"); done < <(shell::git::history::log::args "$type" "$rel" "$spec" "$max" "$merges")
+		while IFS= read -r dline; do dargs+=("$dline"); done < <(shell::git::history::log::args "$type" "$rel" "$spec" "$max" "$merges" "" "$branch_arg")
 		for dline in "${dargs[@]}"; do dcmd="${dcmd} $(shell::git::commit::spec::quote "$dline")"; done
 		shell::logger::command_clip "$dcmd"
 		return "$RETURN_SUCCESS"
@@ -1285,7 +1342,8 @@ shell::git::history::fzf() {
 
 	# Retrieve once; everything below only reads the records.
 	local records
-	records="$(shell::git::history::log "$type" "$rel" "$spec" "$max" "$merges")" || return "$RETURN_FAILURE"
+	records="$(shell::git::history::log "$type" "$rel" "$spec" "$max" "$merges" "$branch_arg")" || return "$RETURN_FAILURE"
+	records="$(printf '%s\n' "$records" | shell::git::history::branches "$branch_arg")"
 
 	local commits=0 adds=0 dels=0 first="-" last="-"
 	if [ -n "$records" ]; then
@@ -1304,7 +1362,7 @@ shell::git::history::fzf() {
 			printf '\nNo commits found for this scope.\n'
 		else
 			printf '\n'
-			printf '%s\n' "$records" | shell::git::history::timeline "${dash_flags[@]}" -t "$type" -b "$branch"
+			printf '%s\n' "$records" | shell::git::history::timeline "${dash_flags[@]}" -t "$type"
 		fi
 		return "$RETURN_SUCCESS"
 	fi
@@ -1324,7 +1382,7 @@ shell::git::history::fzf() {
 	dashboard="$(shell::git::history::dashboard "${dash_flags[@]}" "$name" "$branch" "$type" "$rel" "$spec" "$commits" "$adds" "$dels" "$first" "$last")"
 	shortcuts="Enter inspect  ^F whole commit  ^B blame  ^Y copy hash  ^O open on web  ^D/^U scroll  ESC quit"
 	header="${dashboard}"$'\n'"${shortcuts}"
-	rows="$(printf '%s\n' "$records" | shell::git::history::timeline -r "${dash_flags[@]}" -t "$type" -b "$branch")"
+	rows="$(printf '%s\n' "$records" | shell::git::history::timeline -r "${dash_flags[@]}" -t "$type")"
 	rows="${rows}"$'\n'"${SHELL_FZF_BACK_LABEL}${tab}:back${tab}${tab}${tab}"
 	preview="$(shell::git::history::preview::command "$root" "$type" "$spec" "$color_flag" "$hl")"
 
