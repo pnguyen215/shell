@@ -2757,6 +2757,7 @@ shell::git::branch::all::stash::lines() {
 # @option -h | --help Show this help message.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was applied.
 # @example
 #   shell::git::branch::all::stash::apply::fzf
 #   shell::git::branch::all::stash::apply::fzf -n
@@ -2768,6 +2769,7 @@ shell::git::branch::all::stash::apply::fzf() {
 		shell::logger::usage "shell::git::branch::all::stash::apply::fzf [-n] [-h]"
 		shell::logger::option "-h, --help" "Show this help message"
 		shell::logger::option "-n, --dry-run" "Print the commands instead of executing them"
+		shell::logger::note "Pick '$SHELL_FZF_BACK_LABEL' in the list to leave without changes (returns ${RETURN_BACK})."
 		shell::logger::example "shell::git::branch::all::stash::apply::fzf"
 		shell::logger::example "shell::git::branch::all::stash::apply::fzf -n"
 		return $RETURN_SUCCESS
@@ -2799,12 +2801,20 @@ shell::git::branch::all::stash::apply::fzf() {
 
 	shell::logger::info "Found ${#stash_lines[@]} stash(es) across all branches (current: '${current_branch}')"
 
-	local selected_output
-	selected_output=$(shell::ask::options "${stash_lines[@]}")
+	# Multi-select with a trailing "← Back" entry; marking it (or Enter on it) steps back.
+	local selected_output rc
+	selected_output=$(printf '%s\n' "${stash_lines[@]}" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --multi \
+		--prompt="Select stashes to apply (Tab to select, Enter to confirm): ")
+	rc=$?
 
-	if [ -z "$selected_output" ]; then
+	if [ "$rc" -ne 0 ] || [ -z "$selected_output" ]; then
 		shell::logger::warn "No stashes selected — aborting"
 		return $RETURN_SUCCESS
+	fi
+
+	if printf '%s\n' "$selected_output" | grep -qxF "$SHELL_FZF_BACK_LABEL"; then
+		shell::logger::info "Back — nothing was applied"
+		return $RETURN_BACK
 	fi
 
 	# Anchor on "stash@{N} : [" so a message mentioning another stash ref is ignored.
@@ -2855,6 +2865,7 @@ shell::git::branch::all::stash::apply::fzf() {
 # @option -h | --help Show this help message.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::git::branch::all::stash::remove::fzf
 #   shell::git::branch::all::stash::remove::fzf -n
@@ -2866,6 +2877,7 @@ shell::git::branch::all::stash::remove::fzf() {
 		shell::logger::usage "shell::git::branch::all::stash::remove::fzf [-n] [-h]"
 		shell::logger::option "-h, --help" "Show this help message"
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
+		shell::logger::note "Pick '$SHELL_FZF_BACK_LABEL' in the list to leave without changes (returns ${RETURN_BACK})."
 		shell::logger::example "shell::git::branch::all::stash::remove::fzf"
 		shell::logger::example "shell::git::branch::all::stash::remove::fzf -n"
 		return $RETURN_SUCCESS
@@ -2894,10 +2906,16 @@ shell::git::branch::all::stash::remove::fzf() {
 
 	shell::logger::info "Found ${#stash_lines[@]} stash(es) across all branches"
 
-	local selected_output
-	selected_output=$(shell::ask::option "${stash_lines[@]}")
+	local selected_output rc
+	selected_output=$(shell::ask::option::back --prompt "Select a stash: " "${stash_lines[@]}")
+	rc=$?
 
-	if [ -z "$selected_output" ]; then
+	if [ "$rc" -eq "$RETURN_BACK" ]; then
+		shell::logger::info "Back — nothing was removed"
+		return $RETURN_BACK
+	fi
+
+	if [ "$rc" -ne 0 ] || [ -z "$selected_output" ]; then
 		shell::logger::warn "No stash selected — aborting"
 		return $RETURN_SUCCESS
 	fi
@@ -2938,6 +2956,7 @@ shell::git::branch::all::stash::remove::fzf() {
 # @option -h | --help Show this help message.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::git::branch::all::stash::preview::fzf
 #   shell::git::branch::all::stash::preview::fzf -n
@@ -2949,6 +2968,7 @@ shell::git::branch::all::stash::preview::fzf() {
 		shell::logger::usage "shell::git::branch::all::stash::preview::fzf [-n] [-h]"
 		shell::logger::option "-h, --help" "Show this help message"
 		shell::logger::option "-n, --dry-run" "Print the git stash show command instead of executing it"
+		shell::logger::note "Pick '$SHELL_FZF_BACK_LABEL' in the list to leave without changes (returns ${RETURN_BACK})."
 		shell::logger::example "shell::git::branch::all::stash::preview::fzf"
 		shell::logger::example "shell::git::branch::all::stash::preview::fzf -n"
 		return $RETURN_SUCCESS
@@ -2977,10 +2997,16 @@ shell::git::branch::all::stash::preview::fzf() {
 
 	shell::logger::info "Found ${#stash_lines[@]} stash(es) across all branches"
 
-	local selected_output
-	selected_output=$(shell::ask::option "${stash_lines[@]}")
+	local selected_output rc
+	selected_output=$(shell::ask::option::back --prompt "Select a stash: " "${stash_lines[@]}")
+	rc=$?
 
-	if [ -z "$selected_output" ]; then
+	if [ "$rc" -eq "$RETURN_BACK" ]; then
+		shell::logger::info "Back — nothing was shown"
+		return $RETURN_BACK
+	fi
+
+	if [ "$rc" -ne 0 ] || [ -z "$selected_output" ]; then
 		shell::logger::warn "No stash selected — aborting"
 		return $RETURN_SUCCESS
 	fi
@@ -3394,6 +3420,7 @@ shell::git::commit::all() {
 # @option -h | --help Show this help message.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::git::commit::spec::fzf
 #   shell::git::commit::spec::fzf -n
@@ -3466,6 +3493,7 @@ shell::git::commit::spec::fzf() {
 # @arg $1 string branch: Required. Branch name whose commits to browse and select from.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @exitcode 2 Invalid or missing arguments.
 # @example
 #   shell::git::commit::spec::search "main"
@@ -3548,6 +3576,7 @@ shell::git::commit::spec::search() {
 #   to present the commit multi-select for that branch. If not inside a Git repository, an error is logged and the function returns with failure.
 # @option -h | --help Show this help message.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::git::commit::spec::search::current
 #
@@ -3575,6 +3604,7 @@ shell::git::commit::spec::search::current() {
 # @option -h | --help Show this help message.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::git::commit::all::search
 #
@@ -3660,6 +3690,7 @@ shell::git::commit::all::search() {
 # @arg $1 string source_branch: Optional. Branch whose commits to browse and pick from. When omitted, commits from ALL refs are shown (--all).
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::git::commit::pick::local
 #   shell::git::commit::pick::local "feature/my-branch"
@@ -3814,6 +3845,7 @@ shell::git::commit::pick::local() {
 # @arg $1 string source_branch: Optional. Branch whose commits to browse and pick from. When omitted, commits from ALL refs are shown (--all).
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::git::commit::pick::remote
 #   shell::git::commit::pick::remote "feature/my-branch"
@@ -6231,6 +6263,7 @@ shell::git::commit::predict() {
 # @option --no-emoji Optional. Leave the emoji out, whatever SHELL_GIT_COMMIT_EMOJI says (the default).
 # @exitcode 0 Success, or the user backed out / cancelled.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @exitcode 2 Invalid option.
 # @see shell::ask::option::back
 # @see shell::git::commit::message::base
@@ -6593,6 +6626,7 @@ shell::git::commit::create() {
 # @arg $1 string commit_hash: Required. Full or short commit hash to checkout.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @exitcode 2 Invalid or missing arguments.
 # @example
 #   shell::git::commit::checkout "abc1234"
@@ -6691,6 +6725,7 @@ shell::git::commit::checkout() {
 # @option -b | --branch Optional. Create and checkout a new branch from the selected commit instead of detached HEAD.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::git::commit::checkout::fzf
 #   shell::git::commit::checkout::fzf -b "legacy-fix"
@@ -6803,6 +6838,7 @@ shell::git::commit::checkout::fzf() {
 # @arg $2 string tag: Annotated tag name/version to create (e.g. v1.2.3).
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @exitcode 2 Invalid or missing arguments.
 # @example
 #   shell::git::tag::create "main" "v1.0.0"
@@ -6910,6 +6946,7 @@ shell::git::tag::create() {
 # @arg $1 string tag: The tag name/version to delete (e.g. v1.2.3).
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @exitcode 2 Invalid or missing arguments.
 # @example
 #   shell::git::tag::remove "v1.0.0"
@@ -6992,6 +7029,7 @@ shell::git::tag::remove() {
 # @arg $1 string tag: Required. The tag name/version to checkout (e.g. v1.2.3).
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @exitcode 2 Invalid or missing arguments.
 # @example
 #   shell::git::tag::checkout "v1.0.0"
@@ -7096,6 +7134,7 @@ shell::git::tag::checkout() {
 # @option -b | --branch Optional. Create and checkout a new branch from the selected tag instead of detached HEAD.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::git::tag::checkout::fzf
 #   shell::git::tag::checkout::fzf -b "release-1.0"
@@ -7259,6 +7298,7 @@ shell::git::tag::checkout::fzf() {
 # @option -h | --help Show this help message.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::git::tag::all
 #   shell::git::tag::all -n
@@ -7429,6 +7469,7 @@ shell::git::tag::all() {
 # @option -h | --help Show this help message.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::git::tag::remove::fzf
 #   shell::git::tag::remove::fzf -n
@@ -7585,6 +7626,7 @@ shell::git::tag::remove::fzf() {
 # @option -h | --help Show this help message.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::git::commit::revert::fzf
 #   shell::git::commit::revert::fzf -n
@@ -7930,6 +7972,7 @@ shell::git::commit::revert::fzf() {
 # @arg $1 string branch: Optional. Branch to inspect. Defaults to current branch.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @exitcode 2 Invalid or missing arguments.
 # @example
 #   shell::git::commit::spec::history::fzf
@@ -8193,6 +8236,7 @@ shell::git::commit::spec::history::fzf() {
 # @option -h | --help Show this help message.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::git::commit::spec::history::fzf::current
 #   shell::git::commit::spec::history::fzf::current -n
@@ -10629,6 +10673,7 @@ EOF
 # @arg $@ string revision: One or more commits.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @exitcode 2 Invalid usage.
 # @see shell::git::commit::pick::apply
 # @example
@@ -10656,6 +10701,7 @@ shell::git::commit::pick::no_commit() {
 # @arg $@ string revision: One or more commits.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @exitcode 2 Invalid usage.
 # @see shell::git::commit::pick::apply
 # @example
@@ -10724,6 +10770,7 @@ shell::git::commit::pick::merge() {
 # @arg $@ string revision: One or more commits.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @exitcode 2 Invalid usage.
 # @see shell::git::commit::pick::apply
 # @example
@@ -10750,6 +10797,7 @@ shell::git::commit::pick::empty() {
 # @arg $@ string revision: One or more commits.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @exitcode 2 Invalid usage.
 # @see shell::git::commit::pick::apply
 # @example
@@ -10776,6 +10824,7 @@ shell::git::commit::pick::with_reference() {
 # @arg $@ string revision: One or more commits.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @exitcode 2 Invalid usage.
 # @see shell::git::commit::pick::apply
 # @example
