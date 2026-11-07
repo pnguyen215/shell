@@ -16,15 +16,37 @@ Files are `lower_snake_case.sh`, start with `#!/usr/bin/env bash` and an `@file`
 
 ## 2. Naming
 
-`shell::<category>::<name>` — lowercase, `::` separated, `_` inside words. Interactive (fzf) variants end in `::fzf`. The category is the module's domain (`git`, `conf`, `fs`, `net`...), not the file name. Private helpers use the same prefix and are marked `# @internal`.
+`shell::<category>::<name>` — lowercase, `::` separated, `_` inside words. Interactive (fzf) variants end in `::fzf`. The category is the module's domain (`git`, `conf`, `fs`, `net`...), not the file name.
+
+### Visibility: public vs private
+
+The prefix decides whether a function is part of the public API and whether it shows up in the interactive terminal. Typing `shell::` and pressing Tab must list **only** public functions.
+
+| Form                         | Visibility                | Exported | Shown on `shell::<Tab>` |
+| ---------------------------- | ------------------------- | -------- | ----------------------- |
+| `shell::<category>::<name>`  | Public (user-facing API)  | **yes**  | yes                     |
+| `_shell::<category>::<name>` | Private (internal helper) | **no**   | no                      |
+
+Rules:
+
+- **Public** functions keep the `shell::` prefix, are exported, and **must** have a full shdoc block (see §3). Renaming or removing one is a breaking change.
+- **Private** functions use the `_shell::` prefix (a leading underscore) and are **never** exported. They **must** also have a full shdoc block, and that block **must** include the `# @internal` annotation so shdoc keeps them out of the public `docs/api/` reference. They may change or disappear at any time; callers outside the library must not rely on them.
+- Never give a private helper the `shell::` prefix "just for convenience" — it would leak into autocomplete. Conversely, never call a `_shell::` function from the user's interactive session or from another script; call the public wrapper.
+- A function used by more than one file is still private unless users are meant to type it. Visibility is about the user, not about file boundaries.
+- When a helper becomes useful to users, promote it: rename `_shell::x::y` → `shell::x::y`, export it, add the full shdoc block and a test, and update every caller.
+- Every function, public or private, has shdoc. A `_shell::*` function without `# @internal`, or a `shell::*` function with it, is a bug.
+- Export only `shell::*` names. An exported `_shell::*` function is a bug.
 
 Local variables: `lower_snake_case`, always declared with `local`. **Never** use names that are special in zsh: `status path options commands functions aliases parameters argv reply pipestatus`.
 
 ## 3. Function template
 
+This template (shdoc block + `-h|--help` handling) applies to **public** (`shell::*`, exported) functions. Private `_shell::*` functions use the same shdoc block, plus `# @internal`; the `-h|--help` handling is optional for them.
+
 ```bash
 # @description One-sentence summary.
 #   Optional longer explanation, including any non-obvious behaviour or security note.
+# @internal   (private `_shell::*` functions only — omit on public ones)
 # @option -h | --help Show help and return.
 # @option -n | --dry-run Print the command instead of running it.
 # @arg $1 string Name of the thing.
@@ -99,4 +121,4 @@ Add a case to `test/test_*.sh` for every bug you fix. Tests run under bash **and
 
 ## 7. Documentation
 
-`make docs` builds `docs/api/` with [shdoc](https://github.com/reconquest/shdoc) (`gawk` required). To install it: `git clone https://github.com/reconquest/shdoc && sudo make -C shdoc install`.
+Every function carries shdoc. Private `_shell::*` functions are marked `# @internal`, so they do not appear in the public API docs. `make docs` builds `docs/api/` with [shdoc](https://github.com/reconquest/shdoc) (`gawk` required). To install it: `git clone https://github.com/reconquest/shdoc && sudo make -C shdoc install`.
