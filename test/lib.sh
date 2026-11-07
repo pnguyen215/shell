@@ -13,7 +13,10 @@ T_FAIL=0
 
 # Create an isolated HOME, then load the library into the current shell.
 t_setup() {
-	T_HOME="$(mktemp -d "${TMPDIR:-/tmp}/shell-test.XXXXXX")"
+	# Inside the runner's scratch tree ($SHELL_TEST_RUN, removed after the run); the fallback
+	# only matters when a test file is started by hand.
+	T_BASE="${SHELL_TEST_RUN:-${TMPDIR:-/tmp}}"
+	T_HOME="$(mktemp -d "$T_BASE/home.XXXXXX")"
 	# Canonicalise: on macOS $TMPDIR ends in "/" and /var is a symlink to /private/var,
 	# so the logical path ($PWD) and the mktemp path would otherwise differ.
 	T_HOME="$(cd "$T_HOME" && pwd -P)"
@@ -22,6 +25,14 @@ t_setup() {
 	# shellcheck source=/dev/null
 	. "$SHELL_TEST_ROOT/src/shell.sh"
 	cd "$T_HOME" || exit 1
+}
+
+# Remove the isolated HOME, but only a directory this file created inside the scratch tree.
+t_cleanup() {
+	case "${T_HOME-}" in
+	"${T_BASE:-/nonexistent-never}"/home.*) rm -rf "$T_HOME" 2>/dev/null ;;
+	esac
+	return 0
 }
 
 t_ok() {
@@ -58,7 +69,7 @@ t_rc() {
 }
 
 t_done() {
-	rm -rf "${T_HOME:-/nonexistent-never}" 2>/dev/null
+	t_cleanup
 	printf '  %s: %d passed, %d failed\n' "$(basename "${SHELL_TEST_FILE:-$0}")" "$T_PASS" "$T_FAIL"
 	[ "$T_FAIL" -eq 0 ]
 }

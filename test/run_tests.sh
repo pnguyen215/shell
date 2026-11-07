@@ -10,6 +10,12 @@
 #
 # Environment:
 #   SHELLS="bash"   shells to run under (default: bash, plus zsh when installed)
+#   SHELL_TEST_BASE where test scratch space lives (default: $HOME/shell-test)
+#
+# Everything a test creates (isolated HOMEs, temp files, fake repositories) lives under
+# $SHELL_TEST_BASE/run.<pid>, which is deleted when the run ends (also on Ctrl-C, kill or
+# a crash); $SHELL_TEST_BASE itself is removed when it is left empty. Nothing else is
+# written outside the repository's own checkout.
 #
 # <name> may also be a path (test/test_git_squash.sh); only its file name is used.
 # Kept to bash 3.2 syntax (macOS system bash): no arrays, no mapfile.
@@ -83,6 +89,33 @@ fi
 
 shells="${SHELLS:-bash}"
 if [ -z "${SHELLS:-}" ] && command -v zsh >/dev/null 2>&1; then shells="bash zsh"; fi
+
+# One scratch tree per run, always removed. The real $HOME is read once, here, and is never
+# modified except for this folder.
+SHELL_TEST_BASE="${SHELL_TEST_BASE:-$HOME/shell-test}"
+case "$SHELL_TEST_BASE" in
+/ | "" | "$HOME")
+	echo "run_tests: refusing to use '$SHELL_TEST_BASE' as the scratch directory" >&2
+	exit 2
+	;;
+esac
+SHELL_TEST_RUN="$SHELL_TEST_BASE/run.$$"
+mkdir -p "$SHELL_TEST_RUN/tmp" || {
+	echo "run_tests: cannot create $SHELL_TEST_RUN" >&2
+	exit 2
+}
+export SHELL_TEST_RUN
+export TMPDIR="$SHELL_TEST_RUN/tmp"
+
+cleanup() {
+	# Only this run's folder is removed; the base folder only when it is empty.
+	[ -n "${SHELL_TEST_RUN:-}" ] && [ "${SHELL_TEST_RUN%/run.*}" = "$SHELL_TEST_BASE" ] && rm -rf "$SHELL_TEST_RUN"
+	rmdir "$SHELL_TEST_BASE" 2>/dev/null
+	return 0
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM HUP
 
 failed=0
 for sh in $shells; do

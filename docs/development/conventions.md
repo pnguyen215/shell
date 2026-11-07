@@ -120,6 +120,8 @@ Use instead: `case` statements, parameter expansion, `printf`, `shell::fs::sed_i
 
 Add a case to `test/test_*.sh` for every bug you fix. Tests run under bash **and** zsh (`make test`); they use an isolated `HOME`, and a fake `curl` for anything networked.
 
+Scratch space: `test/run_tests.sh` creates one folder, `$HOME/shell-test/run.<pid>` (override the base with `SHELL_TEST_BASE`), exports it as `SHELL_TEST_RUN` and points `TMPDIR` into it. `t_setup` creates each file's isolated `HOME` there, and the runner deletes the whole folder when the run ends, even after Ctrl-C or a crash. A test must never write outside `$HOME` of its own `t_setup`, and must not call `mktemp` with a path of its own.
+
 ## 7. Documentation
 
 Every function carries shdoc. Private `_shell::*` functions are marked `# @internal`, so they do not appear in the public API docs. `make docs` builds `docs/api/` with [shdoc](https://github.com/reconquest/shdoc) (`gawk` required). To install it: `git clone https://github.com/reconquest/shdoc && sudo make -C shdoc install`.

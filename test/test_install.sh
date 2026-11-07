@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # install.sh / uninstall.sh against a local tarball (no network).
 . "$SHELL_TEST_ROOT/test/lib.sh"
-T_HOME="$(mktemp -d "${TMPDIR:-/tmp}/shell-inst.XXXXXX")"
+T_BASE="${SHELL_TEST_RUN:-${TMPDIR:-/tmp}}"
+T_HOME="$(mktemp -d "$T_BASE/home.XXXXXX")"
 T_HOME="$(cd "$T_HOME" && pwd -P)" # canonical path (macOS: /var -> /private/var)
 export HOME="$T_HOME"
 
