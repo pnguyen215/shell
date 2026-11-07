@@ -5,7 +5,7 @@ set -eu
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SHDOC="${SHDOC:-shdoc}"
 command -v "$SHDOC" >/dev/null 2>&1 || [ -x "$SHDOC" ] || {
-	echo "shdoc not found. Install it (see docs/CONVENTIONS.md) or set SHDOC=/path/to/shdoc" >&2
+	echo "shdoc not found. Install it (see docs/development/conventions.md) or set SHDOC=/path/to/shdoc" >&2
 	exit 1
 }
 

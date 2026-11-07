@@ -110,7 +110,7 @@ shell::conf::key::get API_KEY
 shell::git::branch::create -n feature_x # -n = dry run: print commands without executing
 shell::net::port::kill 3000              # SIGTERM whatever is listening on :3000
 shell::fs::browse ~/docs                 # pick a file with fzf, then act on it
-shell::git::history::fzf --function Login src/auth/login.go   # how one function evolved, commit by commit (docs/GIT_HISTORY.md)
+shell::git::history::fzf --function Login src/auth/login.go   # how one function evolved, commit by commit (docs/features/git-history.md)
 ```
 
 - Every function supports `-h` / `--help`.
@@ -143,7 +143,7 @@ shell::conf::key::get              shell::conf::key::get::fzf
 shell::fs::copy                    shell::fs::copy::fzf
 ```
 
-The only exceptions are the four lifecycle functions in [`src/shell.sh`](src/shell.sh) (`shell::version`, `shell::upgrade`, `shell::uninstall`, `shell::source_directory`). Upgrading from an older release? See [docs/MIGRATION.md](docs/MIGRATION.md) for the complete old → new table.
+The only exceptions are the four lifecycle functions in [`src/shell.sh`](src/shell.sh) (`shell::version`, `shell::upgrade`, `shell::uninstall`, `shell::source_directory`).
 
 ## Layout
 
@@ -152,7 +152,8 @@ The only exceptions are the four lifecycle functions in [`src/shell.sh`](src/she
 ├── install.sh  upgrade.sh  uninstall.sh   # bootstrap scripts (curl-able)
 ├── Makefile                               # make test | lint | fmt | docs | doctor
 ├── docs/
-│   ├── ARCHITECTURE.md  CONVENTIONS.md  COMMIT_MESSAGES.md  GIT_HISTORY.md  HOMEBREW.md  NVM.md  SSH.md  RSYNC.md  MIGRATION.md
+│   ├── development/                       # architecture, conventions, visibility audit
+│   ├── features/                          # commit-messages, git-history, homebrew, nvm, rsync, ssh
 │   └── api/                               # generated reference (make docs)
 ├── scripts/                               # lint.sh, gen_docs.sh
 ├── test/                                  # run under bash and zsh
@@ -183,7 +184,7 @@ export SHELL_GIT_COMMIT_EMOJI=true              # gitmoji in commit messages (de
 source "$HOME/shell/src/shell.sh"
 ```
 
-User data (keys, bookmarks, workspaces) lives under `SHELL_CONFIG_DIR` with mode 700/600. Settings of a single feature are documented in [`docs/`](docs), for example [commit messages](docs/COMMIT_MESSAGES.md), [Homebrew](docs/HOMEBREW.md), [nvm](docs/NVM.md), [SSH](docs/SSH.md) and [rsync](docs/RSYNC.md).
+User data (keys, bookmarks, workspaces) lives under `SHELL_CONFIG_DIR` with mode 700/600. Settings of a single feature are documented in [`docs/features/`](docs/features), for example [commit messages](docs/features/commit-messages.md), [Homebrew](docs/features/homebrew.md), [nvm](docs/features/nvm.md), [SSH](docs/features/ssh.md) and [rsync](docs/features/rsync.md).
 
 ## Dependencies
 
@@ -210,7 +211,7 @@ make doctor  # report installed dependencies
 SHELLS=bash make test T=squash               # skip zsh for a faster loop
 ```
 
-Read [docs/CONVENTIONS.md](docs/CONVENTIONS.md) before adding a function. For architecture details, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Read [docs/development/conventions.md](docs/development/conventions.md) before adding a function. For architecture details, see [docs/development/architecture.md](docs/development/architecture.md).
 
 ## License
 
