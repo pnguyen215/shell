@@ -15,7 +15,7 @@
 # @arg $1 string The token.
 # @stdout The masked token.
 # @exitcode 0 Always.
-shell::telegram::mask() {
+_shell::telegram::mask() {
 	local token="${1-}"
 	printf '%s****\n' "${token:0:4}"
 }
@@ -27,7 +27,7 @@ shell::telegram::mask() {
 # @arg $@ string Extra curl arguments (-d / -F / --data-urlencode ...).
 # @exitcode 0 Telegram answered `"ok":true`.
 # @exitcode 1 Transport error, HTTP error or `"ok":false`.
-shell::telegram::call() {
+_shell::telegram::call() {
 	local token="$1" method="$2"
 	shift 2
 
@@ -92,12 +92,12 @@ shell::telegram::send() {
 	}
 
 	if [ "$dry_run" = "true" ]; then
-		shell::logger::command_clip "curl -X POST ${SHELL_URL_TELEGRAM_API}/bot$(shell::telegram::mask "$token")/sendMessage -d chat_id=${chat_id} -d parse_mode=markdown --data-urlencode text=<message>"
+		shell::logger::command_clip "curl -X POST ${SHELL_URL_TELEGRAM_API}/bot$(_shell::telegram::mask "$token")/sendMessage -d chat_id=${chat_id} -d parse_mode=markdown --data-urlencode text=<message>"
 		return "$RETURN_SUCCESS"
 	fi
 
 	shell::dependency::curl::ensure || return "$RETURN_FAILURE"
-	shell::telegram::call "$token" sendMessage \
+	_shell::telegram::call "$token" sendMessage \
 		-d "chat_id=${chat_id}" -d "parse_mode=markdown" --data-urlencode "text=${message}" || {
 		shell::logger::error "Failed to send the Telegram message."
 		return "$RETURN_FAILURE"
@@ -165,12 +165,12 @@ shell::telegram::send_document() {
 			continue
 		fi
 		if [ "$dry_run" = "true" ]; then
-			shell::logger::command "curl -F chat_id=${chat_id} -F document=@\"${file}\" -F caption=\"${description} (${timestamp})\" ${SHELL_URL_TELEGRAM_API}/bot$(shell::telegram::mask "$token")/sendDocument"
+			shell::logger::command "curl -F chat_id=${chat_id} -F document=@\"${file}\" -F caption=\"${description} (${timestamp})\" ${SHELL_URL_TELEGRAM_API}/bot$(_shell::telegram::mask "$token")/sendDocument"
 			continue
 		fi
 		shell::dependency::curl::ensure || return "$RETURN_FAILURE"
 		# curl -F "document=@file": the leading @ makes curl upload the file content.
-		if shell::telegram::call "$token" sendDocument \
+		if _shell::telegram::call "$token" sendDocument \
 			-F "chat_id=${chat_id}" -F "document=@${file}" -F "caption=${description} (${timestamp})"; then
 			shell::logger::success "Sent '$file'."
 		else

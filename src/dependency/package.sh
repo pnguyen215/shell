@@ -56,7 +56,7 @@ shell::package::manager() {
 # @stdout "sudo" or an empty string.
 # @exitcode 0 Escalation is not needed or `sudo` exists.
 # @exitcode 3 Escalation is needed but `sudo` is not installed.
-shell::package::sudo_prefix() {
+_shell::package::sudo_prefix() {
 	# Homebrew refuses to run as root and never needs sudo.
 	if [ "${1-}" = "brew" ]; then
 		return "$RETURN_SUCCESS"
@@ -172,7 +172,7 @@ shell::package::install() {
 	fi
 
 	local sudo_cmd=""
-	sudo_cmd="$(shell::package::sudo_prefix "$manager")" || {
+	sudo_cmd="$(_shell::package::sudo_prefix "$manager")" || {
 		shell::logger::error "Root privileges are required but 'sudo' is not installed."
 		return "$RETURN_NOT_FOUND"
 	}
@@ -259,7 +259,7 @@ shell::package::uninstall() {
 	}
 
 	local sudo_cmd=""
-	sudo_cmd="$(shell::package::sudo_prefix "$manager")" || {
+	sudo_cmd="$(_shell::package::sudo_prefix "$manager")" || {
 		shell::logger::error "Root privileges are required but 'sudo' is not installed."
 		return "$RETURN_NOT_FOUND"
 	}

@@ -12,7 +12,7 @@
 # @stdout Tool name, or nothing when none is installed.
 # @exitcode 0 A tool was found.
 # @exitcode 3 No clipboard tool is available.
-shell::clipboard::tool() {
+_shell::clipboard::tool() {
 	local tool
 	for tool in pbcopy wl-copy xclip xsel clip.exe; do
 		if command -v "$tool" >/dev/null 2>&1; then
@@ -65,7 +65,7 @@ shell::clipboard::copy() {
 	fi
 
 	local tool
-	tool="$(shell::clipboard::tool)" || {
+	tool="$(_shell::clipboard::tool)" || {
 		if [ "$best_effort" = "true" ]; then
 			shell::logger::debug "Clipboard copy skipped: no clipboard tool installed."
 			return "$RETURN_SUCCESS"

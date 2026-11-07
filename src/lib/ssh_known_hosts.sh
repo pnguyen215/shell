@@ -26,9 +26,9 @@
 # @exitcode 0 It is safe.
 # @exitcode 1 It is not.
 # @example
-#   shell::ssh::known_hosts::host::valid "[example.com]:2222" && echo ok
+#   _shell::ssh::known_hosts::host::valid "[example.com]:2222" && echo ok
 #
-shell::ssh::known_hosts::host::valid() {
+_shell::ssh::known_hosts::host::valid() {
 	case "${1-}" in
 	'' | -* | *[!]A-Za-z0-9._:[-]*) return 1 ;;
 	esac
@@ -43,9 +43,9 @@ shell::ssh::known_hosts::host::valid() {
 # @stdout The name.
 # @exitcode 0 Always.
 # @example
-#   shell::ssh::known_hosts::name example.com 2222   # -> [example.com]:2222
+#   _shell::ssh::known_hosts::name example.com 2222   # -> [example.com]:2222
 #
-shell::ssh::known_hosts::name() {
+_shell::ssh::known_hosts::name() {
 	case "${2-}" in
 	'' | 22) printf '%s\n' "${1-}" ;;
 	*) printf '[%s]:%s\n' "${1-}" "$2" ;;
@@ -89,8 +89,8 @@ shell::ssh::known_hosts::find() {
 			shift
 			;;
 		-p | --port)
-			shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
-			if ! shell::net::port::valid "$2"; then
+			_shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
+			if ! _shell::net::port::valid "$2"; then
 				shell::logger::error "Invalid port: '$2' (1-65535)"
 				return "$RETURN_INVALID"
 			fi
@@ -98,7 +98,7 @@ shell::ssh::known_hosts::find() {
 			shift 2
 			;;
 		-f | --file)
-			shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
 			file="$2"
 			shift 2
 			;;
@@ -114,15 +114,15 @@ shell::ssh::known_hosts::find() {
 		esac
 	done
 
-	if [ "$#" -ne 1 ] || ! shell::ssh::known_hosts::host::valid "$1"; then
+	if [ "$#" -ne 1 ] || ! _shell::ssh::known_hosts::host::valid "$1"; then
 		shell::logger::error "Exactly one valid host is required"
 		return "$RETURN_INVALID"
 	fi
 	local name
-	name="$(shell::ssh::known_hosts::name "$1" "$port")"
+	name="$(_shell::ssh::known_hosts::name "$1" "$port")"
 
 	if [ "$dry_run" = "true" ]; then
-		shell::logger::command_clip "$(shell::ssh::quote ssh-keygen -F "$name" -f "$file")"
+		shell::logger::command_clip "$(_shell::ssh::quote ssh-keygen -F "$name" -f "$file")"
 		return "$RETURN_SUCCESS"
 	fi
 	shell::dependency::ensure ssh-keygen || return "$RETURN_NOT_FOUND"
@@ -176,8 +176,8 @@ shell::ssh::known_hosts::remove() {
 			shift
 			;;
 		-p | --port)
-			shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
-			if ! shell::net::port::valid "$2"; then
+			_shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
+			if ! _shell::net::port::valid "$2"; then
 				shell::logger::error "Invalid port: '$2' (1-65535)"
 				return "$RETURN_INVALID"
 			fi
@@ -185,7 +185,7 @@ shell::ssh::known_hosts::remove() {
 			shift 2
 			;;
 		-f | --file)
-			shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
 			file="$2"
 			shift 2
 			;;
@@ -201,12 +201,12 @@ shell::ssh::known_hosts::remove() {
 		esac
 	done
 
-	if [ "$#" -ne 1 ] || ! shell::ssh::known_hosts::host::valid "$1"; then
+	if [ "$#" -ne 1 ] || ! _shell::ssh::known_hosts::host::valid "$1"; then
 		shell::logger::error "Exactly one valid host is required"
 		return "$RETURN_INVALID"
 	fi
 	local name rc=0
-	name="$(shell::ssh::known_hosts::name "$1" "$port")"
+	name="$(_shell::ssh::known_hosts::name "$1" "$port")"
 
 	local -a run=()
 	if [ "$dry_run" = "true" ]; then
@@ -223,7 +223,7 @@ shell::ssh::known_hosts::remove() {
 			return "$RETURN_NOT_FOUND"
 		fi
 	fi
-	shell::ssh::invoke ${run[@]+"${run[@]}"} ssh-keygen -R "$name" -f "$file" || rc=$?
+	_shell::ssh::invoke ${run[@]+"${run[@]}"} ssh-keygen -R "$name" -f "$file" || rc=$?
 	return "$rc"
 }
 
@@ -279,8 +279,8 @@ shell::ssh::known_hosts::scan() {
 			shift
 			;;
 		-p | --port)
-			shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
-			if ! shell::net::port::valid "$2"; then
+			_shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
+			if ! _shell::net::port::valid "$2"; then
 				shell::logger::error "Invalid port: '$2' (1-65535)"
 				return "$RETURN_INVALID"
 			fi
@@ -288,7 +288,7 @@ shell::ssh::known_hosts::scan() {
 			shift 2
 			;;
 		-t | --type)
-			shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
 			case "$2" in
 			'' | -* | *[!a-z0-9,-]*)
 				shell::logger::error "Invalid key type list: '$2' (e.g. ed25519,rsa)"
@@ -299,7 +299,7 @@ shell::ssh::known_hosts::scan() {
 			shift 2
 			;;
 		-f | --file)
-			shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
 			file="$2"
 			shift 2
 			;;
@@ -321,7 +321,7 @@ shell::ssh::known_hosts::scan() {
 	fi
 	local host name tmp scanned parent rc=0
 	for host in "$@"; do
-		if ! shell::ssh::known_hosts::host::valid "$host"; then
+		if ! _shell::ssh::known_hosts::host::valid "$host"; then
 			shell::logger::error "Invalid host: '$host'"
 			return "$RETURN_INVALID"
 		fi
@@ -341,9 +341,9 @@ shell::ssh::known_hosts::scan() {
 	if [ "$dry_run" = "true" ]; then
 		for host in "$@"; do
 			if [ "$add" = "true" ]; then
-				shell::logger::command_clip "$(shell::ssh::quote "${scan[@]}" "$host") >> $(shell::ssh::quote "$file")"
+				shell::logger::command_clip "$(_shell::ssh::quote "${scan[@]}" "$host") >> $(_shell::ssh::quote "$file")"
 			else
-				shell::logger::command_clip "$(shell::ssh::quote "${scan[@]}" "$host")"
+				shell::logger::command_clip "$(_shell::ssh::quote "${scan[@]}" "$host")"
 			fi
 		done
 		return "$RETURN_SUCCESS"
@@ -371,7 +371,7 @@ shell::ssh::known_hosts::scan() {
 			continue
 		fi
 
-		name="$(shell::ssh::known_hosts::name "$host" "$port")"
+		name="$(_shell::ssh::known_hosts::name "$host" "$port")"
 		if [ -f "$file" ] && ssh-keygen -F "$name" -f "$file" >/dev/null 2>&1; then
 			shell::logger::info "$name is already in $file, left unchanged"
 			continue

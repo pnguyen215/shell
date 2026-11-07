@@ -99,37 +99,37 @@ fn "ls-remote --no-colors --lts" "        v20.9.0   (LTS: Iron)
        v20.11.1   (Latest LTS: Iron)"
 : >"$FAKE_NVM_LOG"
 
-# --- shell::nvm::fzf::pick ----------------------------------------------------------------------
-out="$(printf 'v20  x\nv22  y\n' | FAKE_FZF_PICKS="v22" shell::nvm::fzf::pick 2>&1)"
+# --- _shell::nvm::fzf::pick ----------------------------------------------------------------------
+out="$(printf 'v20  x\nv22  y\n' | FAKE_FZF_PICKS="v22" _shell::nvm::fzf::pick 2>&1)"
 t_eq "pick: prints the first word of the chosen row" "v22" "$out"
 reset_state
-out="$(printf 'v18  a\nv20  b\nv22  c\n' | FAKE_FZF_PICKS="v18;v22" shell::nvm::fzf::pick -m 2>&1)"
+out="$(printf 'v18  a\nv20  b\nv22  c\n' | FAKE_FZF_PICKS="v18;v22" _shell::nvm::fzf::pick -m 2>&1)"
 t_eq "pick -m: several rows, one value per line" "v18${nl}v22" "$out"
 t_has "pick -m: asks fzf for --multi" "--multi" "$(cat "$FAKE_FZF_DIR/args.1")"
 t_has "pick -m: ...and Ctrl-A to mark all" "--bind=ctrl-a:select-all" "$(cat "$FAKE_FZF_DIR/args.1")"
 reset_state
-printf 'a\n' | FAKE_FZF_PICKS="a" shell::nvm::fzf::pick >/dev/null 2>&1
+printf 'a\n' | FAKE_FZF_PICKS="a" _shell::nvm::fzf::pick >/dev/null 2>&1
 t_lacks "pick: single choice has no --multi" "--multi" "$(cat "$FAKE_FZF_DIR/args.1")"
 reset_state
-printf 'a\n' | FAKE_FZF_PICKS="a" shell::nvm::fzf::pick -p "Pick: " -P "ls {1}" -H "a header" >/dev/null 2>&1
+printf 'a\n' | FAKE_FZF_PICKS="a" _shell::nvm::fzf::pick -p "Pick: " -P "ls {1}" -H "a header" >/dev/null 2>&1
 t_has "pick: the prompt" "--prompt=Pick: " "$(cat "$FAKE_FZF_DIR/args.1")"
 t_has "pick: the preview" "--preview=ls {1}" "$(cat "$FAKE_FZF_DIR/args.1")"
 t_has "pick: the header" "--header=a header" "$(cat "$FAKE_FZF_DIR/args.1")"
 reset_state
-printf '' | FAKE_FZF_PICKS="a" shell::nvm::fzf::pick >/dev/null 2>&1
+printf '' | FAKE_FZF_PICKS="a" _shell::nvm::fzf::pick >/dev/null 2>&1
 t_eq "pick: no rows is RETURN_EMPTY" "8" "$?"
 t_eq "pick: ...and fzf is not even started" "0" "$(fzf_calls)"
 reset_state
-printf 'a\n' | FAKE_FZF_PICKS="" shell::nvm::fzf::pick >/dev/null 2>&1
+printf 'a\n' | FAKE_FZF_PICKS="" _shell::nvm::fzf::pick >/dev/null 2>&1
 t_eq "pick: ESC is RETURN_CANCELLED" "9" "$?"
-printf 'a\n' | shell::nvm::fzf::pick --bogus >/dev/null 2>&1
+printf 'a\n' | _shell::nvm::fzf::pick --bogus >/dev/null 2>&1
 t_eq "pick: unknown option" "2" "$?"
-printf 'a\n' | shell::nvm::fzf::pick -p >/dev/null 2>&1
+printf 'a\n' | _shell::nvm::fzf::pick -p >/dev/null 2>&1
 t_eq "pick: an option without a value" "2" "$?"
 
 # --- parsing what nvm prints -------------------------------------------------------------------------
-t_eq "installed: the versions, oldest first, no system / arrow / star" "v18.19.0 v20.9.0 v20.11.1 v22.2.0" "$(shell::nvm::versions::installed | tr '\n' ' ' | sed 's/ $//')"
-rows="$(shell::nvm::fzf::rows::installed)"
+t_eq "installed: the versions, oldest first, no system / arrow / star" "v18.19.0 v20.9.0 v20.11.1 v22.2.0" "$(_shell::nvm::versions::installed | tr '\n' ' ' | sed 's/ $//')"
+rows="$(_shell::nvm::fzf::rows::installed)"
 t_eq "rows: one per version" "4" "$(printf '%s\n' "$rows" | wc -l | tr -d ' ')"
 t_eq "rows: the first word is the version" "v18.19.0" "$(printf '%s\n' "$rows" | head -n 1 | awk '{ print $1 }')"
 t_has "rows: the version in use is marked" "[current]" "$(printf '%s\n' "$rows" | grep '^v22.2.0')"
@@ -140,7 +140,7 @@ t_lacks "rows: lts/* is nvm's, not listed" "lts" "$rows"
 t_eq "rows: a version no alias points at has none" "v20.9.0" "$(printf '%s\n' "$rows" | grep '^v20.9.0' | sed 's/  */ /g;s/ $//')"
 t_eq "rows: a prefix of another version is not a match (v20.1 vs v20.11.1)" "" "$(
 	fn "alias --no-colors" "work -> 20 (-> v20.11.1 *)"
-	shell::nvm::fzf::rows::installed | grep '^v20.9.0' | grep -c work | sed 's/^0$//'
+	_shell::nvm::fzf::rows::installed | grep '^v20.9.0' | grep -c work | sed 's/^0$//'
 )"
 fn "alias --no-colors" "default -> 22 (-> v22.2.0 *)
 work -> 18.19.0 (-> v18.19.0 *)
@@ -149,23 +149,23 @@ lts/* -> lts/iron (-> N/A)
 node -> stable (-> v22.2.0 *) (default)
 stable -> 22.2 (-> v22.2.0 *) (default)
 unstable -> N/A (default)"
-t_eq "aliases::user: only the ones you made" "default -> 22 (-> v22.2.0 *)${nl}work -> 18.19.0 (-> v18.19.0 *)" "$(shell::nvm::aliases::user)"
-remote="$(shell::nvm::versions::remote)"
+t_eq "aliases::user: only the ones you made" "default -> 22 (-> v22.2.0 *)${nl}work -> 18.19.0 (-> v18.19.0 *)" "$(_shell::nvm::aliases::user)"
+remote="$(_shell::nvm::versions::remote)"
 t_eq "remote: newest first, io.js and N/A left out" "v22.3.0 v22.2.0 v20.11.1 v20.9.0" "$(printf '%s\n' "$remote" | awk '{ print $1 }' | tr '\n' ' ' | sed 's/ $//')"
 t_has "remote: the LTS line is named" "(Latest LTS: Iron)" "$(printf '%s\n' "$remote" | grep '^v20.11.1')"
 t_has "remote: installed versions are tagged" "[installed]" "$(printf '%s\n' "$remote" | grep '^v22.2.0')"
 t_lacks "remote: ...and the others are not" "[installed]" "$(printf '%s\n' "$remote" | grep '^v22.3.0')"
 t_eq "remote --lts asks nvm for exactly that" "ls-remote --no-colors --lts" "$(
 	: >"$FAKE_NVM_LOG"
-	shell::nvm::versions::remote --lts >/dev/null
+	_shell::nvm::versions::remote --lts >/dev/null
 	grep '^ls-remote' "$FAKE_NVM_LOG"
 )"
-out="$(printf 'a\tx\t512\tw\nb\tx\t2048\tw\nc\tx\t3145728\tw\n' | shell::nvm::size::format)"
+out="$(printf 'a\tx\t512\tw\nb\tx\t2048\tw\nc\tx\t3145728\tw\n' | _shell::nvm::size::format)"
 t_eq "size::format: kilobytes" "512K" "$(printf '%s\n' "$out" | sed -n 1p | cut -f3)"
 t_eq "size::format: megabytes" "2.0M" "$(printf '%s\n' "$out" | sed -n 2p | cut -f3)"
 t_eq "size::format: gigabytes" "3.0G" "$(printf '%s\n' "$out" | sed -n 3p | cut -f3)"
 t_eq "size::format: other columns untouched" "c	x	3.0G	w" "$(printf '%s\n' "$out" | sed -n 3p)"
-pv="$(shell::nvm::fzf::preview)"
+pv="$(_shell::nvm::fzf::preview)"
 t_has "preview: lists the global npm packages of the focused version" "/lib/node_modules" "$pv"
 t_has "preview: ...under NVM_DIR" "$NVM_DIR/versions/node/" "$pv"
 t_has "preview: ...for the first word of the row" "{1}" "$pv"
@@ -433,7 +433,7 @@ fn "ls --no-colors --no-alias" "       v18.19.0 *
 names_of() { printf '%s\n' "$1" | cut -f1 | tr '\n' ' ' | sed 's/ $//'; }
 reason_of() { printf '%s\n' "$1" | awk -F'\t' -v n="$2" '$1 == n { print $2 }'; }
 cd "$HOME" || exit 1
-scan="$(shell::nvm::unused::scan)"
+scan="$(_shell::nvm::unused::scan)"
 t_eq "scan: current v22.2.0, default/node/stable -> 22, work -> 18.19.0: the two v20 are left" "v20.9.0 v20.11.1" "$(names_of "$scan")"
 t_eq "scan: a newer release of the same major is installed" "superseded" "$(reason_of "$scan" v20.9.0)"
 t_eq "scan: the newest of its major, but nothing uses it" "unreferenced" "$(reason_of "$scan" v20.11.1)"
@@ -443,20 +443,20 @@ t_eq "scan: four tab separated columns" "4" "$(printf '%s\n' "$scan" | head -n 1
 t_eq "scan: the size in KB comes from NVM_DIR" "1" "$(printf '%s\n' "$scan" | awk -F'\t' '$1 == "v20.11.1" && $3 >= 1200 { print 1 }')"
 t_lacks "scan: the version in use is kept" "v22.2.0" "$scan"
 t_lacks "scan: a version an alias of yours points at is kept" "v18.19.0" "$scan"
-t_eq "scan --superseded" "v20.9.0" "$(names_of "$(shell::nvm::unused::scan --superseded)")"
-t_eq "scan: -s is --superseded" "v20.9.0" "$(names_of "$(shell::nvm::unused::scan -s)")"
+t_eq "scan --superseded" "v20.9.0" "$(names_of "$(_shell::nvm::unused::scan --superseded)")"
+t_eq "scan: -s is --superseded" "v20.9.0" "$(names_of "$(_shell::nvm::unused::scan -s)")"
 t_eq "scan: an alias that resolves to a version keeps it (lts/*)" "v20.9.0" "$(
 	fn "alias --no-colors" "default -> 22 (-> v22.2.0 *)
 work -> 18.19.0 (-> v18.19.0 *)
 lts/* -> lts/iron (-> v20.11.1)
 node -> stable (-> v22.2.0 *) (default)"
-	names_of "$(shell::nvm::unused::scan)"
+	names_of "$(_shell::nvm::unused::scan)"
 )"
 t_eq "scan: an alias that points at a version in full keeps only it (not a v20.1 prefix)" "v20.9.0 v20.11.1" "$(
 	fn "alias --no-colors" "default -> 22 (-> v22.2.0 *)
 work -> 18.19.0 (-> v18.19.0 *)
 a -> x (-> v20.1.0 *)"
-	names_of "$(shell::nvm::unused::scan)"
+	names_of "$(_shell::nvm::unused::scan)"
 )"
 fn "alias --no-colors" "default -> 22 (-> v22.2.0 *)
 work -> 18.19.0 (-> v18.19.0 *)
@@ -467,7 +467,7 @@ stable -> 22.2 (-> v22.2.0 *) (default)
 unstable -> N/A (default)"
 t_eq "scan: when the shell uses a version it is kept" "v20.9.0" "$(
 	fn current v20.11.1
-	names_of "$(shell::nvm::unused::scan)"
+	names_of "$(_shell::nvm::unused::scan)"
 )"
 fn current v22.2.0
 
@@ -482,26 +482,26 @@ printf '20.11.1\n' >"$proj/web/node_modules/dep/.nvmrc"
 printf 'a;b\n' >"$proj/bad/.nvmrc"
 printf '99\n' >"$proj/stale/.nvmrc"
 printf '20.9.0\n' >"$proj/deep/a/b/c/d/e/.nvmrc"
-t_eq "scan: the .nvmrc of the current project keeps a version" "v20.9.0" "$(cd "$proj/web" && printf '20\n' >.nvmrc && names_of "$(shell::nvm::unused::scan)")"
+t_eq "scan: the .nvmrc of the current project keeps a version" "v20.9.0" "$(cd "$proj/web" && printf '20\n' >.nvmrc && names_of "$(_shell::nvm::unused::scan)")"
 rm -f "$proj/web/.nvmrc"
-t_eq "scan --projects: a project's .nvmrc keeps its version" "v20.11.1" "$(names_of "$(shell::nvm::unused::scan --projects "$proj")")"
-t_eq "scan -p is --projects" "v20.11.1" "$(names_of "$(shell::nvm::unused::scan -p "$proj")")"
-t_eq "scan: SHELL_NVM_PROJECT_ROOTS does the same" "v20.11.1" "$(SHELL_NVM_PROJECT_ROOTS="$proj" names_of "$(SHELL_NVM_PROJECT_ROOTS="$proj" shell::nvm::unused::scan)")"
-t_eq "scan: ...for several roots" "v20.9.0 v20.11.1" "$(names_of "$(shell::nvm::unused::scan -p "$proj/stale" -p "$proj/bad")")"
-t_eq "scan: node_modules is not searched" "v20.11.1" "$(names_of "$(shell::nvm::unused::scan -p "$proj/web")" | sed 's/^$/v20.11.1/;s/.*/v20.11.1/')"
-t_eq "scan: a .nvmrc deeper than four levels is not read" "v20.9.0 v20.11.1" "$(names_of "$(shell::nvm::unused::scan -p "$proj/deep")")"
+t_eq "scan --projects: a project's .nvmrc keeps its version" "v20.11.1" "$(names_of "$(_shell::nvm::unused::scan --projects "$proj")")"
+t_eq "scan -p is --projects" "v20.11.1" "$(names_of "$(_shell::nvm::unused::scan -p "$proj")")"
+t_eq "scan: SHELL_NVM_PROJECT_ROOTS does the same" "v20.11.1" "$(SHELL_NVM_PROJECT_ROOTS="$proj" names_of "$(SHELL_NVM_PROJECT_ROOTS="$proj" _shell::nvm::unused::scan)")"
+t_eq "scan: ...for several roots" "v20.9.0 v20.11.1" "$(names_of "$(_shell::nvm::unused::scan -p "$proj/stale" -p "$proj/bad")")"
+t_eq "scan: node_modules is not searched" "v20.11.1" "$(names_of "$(_shell::nvm::unused::scan -p "$proj/web")" | sed 's/^$/v20.11.1/;s/.*/v20.11.1/')"
+t_eq "scan: a .nvmrc deeper than four levels is not read" "v20.9.0 v20.11.1" "$(names_of "$(_shell::nvm::unused::scan -p "$proj/deep")")"
 t_eq "scan: an unsafe .nvmrc is ignored, not passed to nvm" "0" "$(
 	: >"$FAKE_NVM_LOG"
-	shell::nvm::unused::scan -p "$proj/bad" >/dev/null
+	_shell::nvm::unused::scan -p "$proj/bad" >/dev/null
 	grep -c 'a;b' "$FAKE_NVM_LOG"
 )"
-t_eq "scan: a .nvmrc for a version that is not installed keeps nothing" "v20.9.0 v20.11.1" "$(names_of "$(shell::nvm::unused::scan -p "$proj/stale")")"
-t_eq "scan: a root that does not exist is skipped" "v20.9.0 v20.11.1" "$(names_of "$(shell::nvm::unused::scan -p "$HOME/nowhere")")"
-t_eq "scan: -p needs a value" "2" "$(rc_of shell::nvm::unused::scan -p)"
-t_eq "scan: an unknown option" "2" "$(rc_of shell::nvm::unused::scan --bogus)"
+t_eq "scan: a .nvmrc for a version that is not installed keeps nothing" "v20.9.0 v20.11.1" "$(names_of "$(_shell::nvm::unused::scan -p "$proj/stale")")"
+t_eq "scan: a root that does not exist is skipped" "v20.9.0 v20.11.1" "$(names_of "$(_shell::nvm::unused::scan -p "$HOME/nowhere")")"
+t_eq "scan: -p needs a value" "2" "$(rc_of _shell::nvm::unused::scan -p)"
+t_eq "scan: an unknown option" "2" "$(rc_of _shell::nvm::unused::scan --bogus)"
 t_eq "scan: nothing installed, nothing found" "" "$(
 	fn "ls --no-colors --no-alias" ""
-	shell::nvm::unused::scan
+	_shell::nvm::unused::scan
 )"
 fn "ls --no-colors --no-alias" "       v18.19.0 *
         v20.9.0 *

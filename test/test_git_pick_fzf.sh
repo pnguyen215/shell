@@ -57,7 +57,7 @@ run() {
 }
 subject() { git log -1 --format=%s "${1:-HEAD}"; }
 branch() { git symbolic-ref --short -q HEAD; }
-busy() { shell::git::commit::pick::in_progress && echo yes || echo no; }
+busy() { _shell::git::commit::pick::in_progress && echo yes || echo no; }
 calls() { cat "$FAKE_FZF_STATE" 2>/dev/null || echo 0; }
 lines() { wc -l <"$1" | tr -d ' '; }
 

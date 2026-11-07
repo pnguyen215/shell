@@ -149,7 +149,7 @@ if [ "$have_keygen" -eq 1 ]; then
 	printf 'h ssh-ed25519 AAAA\n' >"$SHELL_SSH_DIR/known_hosts"
 	printf 'ssh-ed25519 AAAA\n' >"$SHELL_SSH_DIR/authorized_keys"
 	t_eq "candidates: private keys only" "$SHELL_SSH_DIR/id_ed25519
-$SHELL_SSH_DIR/work" "$(shell::ssh::key::candidates)"
+$SHELL_SSH_DIR/work" "$(_shell::ssh::key::candidates)"
 	chmod 755 "$SHELL_SSH_DIR"
 	chmod 644 "$key" "$SHELL_SSH_DIR/work" "$SHELL_SSH_DIR/config" "$SHELL_SSH_DIR/authorized_keys"
 	chmod 600 "$key.pub" "$SHELL_SSH_DIR/known_hosts"

@@ -14,7 +14,7 @@ r() {
 }
 subject() { git log -1 --format=%s "${1:-HEAD}"; }
 branch() { git symbolic-ref --short -q HEAD; }
-busy() { shell::git::commit::pick::in_progress && echo yes || echo no; }
+busy() { _shell::git::commit::pick::in_progress && echo yes || echo no; }
 
 # --- template: main with fixes, release/1.0 maintained separately, an origin -------------------------------
 tpl="$HOME/tpl"

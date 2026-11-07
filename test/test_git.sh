@@ -7,7 +7,7 @@ t_setup
 nl='
 '
 
-catalog="$(shell::git::commit::message::catalog)"
+catalog="$(_shell::git::commit::message::catalog)"
 
 # --- the built-in templates (src/data/git-commit-messages.txt) -----------------------------------------
 # The rules live in ONE place, shell::git::commit::message::validate; this is the guard that
@@ -73,8 +73,8 @@ t_lacks "--plain: ...with no emoji anywhere" ":sparkles:" "$(cat "$HOME/stdin.2"
 reset_fzf
 FAKE_FZF_PICKS="$cat" shell::git::commit::message::base >/dev/null 2>&1
 t_has "default: the message menu offers the emoji form" "feat: :sparkles: add user-facing support for the requested workflow" "$(cat "$HOME/stdin.2")"
-t_eq "render --plain: the emoji is dropped" "feat: add user-facing support for the requested workflow" "$(shell::git::commit::message::scan render "$cat" true | head -n 1)"
-t_eq "render: the emoji form" "feat: :sparkles: add user-facing support for the requested workflow" "$(shell::git::commit::message::scan render "$cat" false | head -n 1)"
+t_eq "render --plain: the emoji is dropped" "feat: add user-facing support for the requested workflow" "$(_shell::git::commit::message::scan render "$cat" true | head -n 1)"
+t_eq "render: the emoji form" "feat: :sparkles: add user-facing support for the requested workflow" "$(_shell::git::commit::message::scan render "$cat" false | head -n 1)"
 
 # The menus show the right lists.
 reset_fzf
@@ -120,8 +120,8 @@ out="$(v "$tdir/good.txt")"
 t_has "validate: a good file" "4 template(s) in 2 categories, 0 problem(s), 0 warning(s)" "$out"
 shell::git::commit::message::validate "$tdir/good.txt" >/dev/null 2>&1
 t_eq "validate: a good file exits 0" "0" "$?"
-t_eq "catalog: a repeated [Category] is merged into the first one" "First${nl}First${nl}First${nl}Second" "$(SHELL_GIT_COMMIT_MESSAGES_FILE="$tdir/good.txt" shell::git::commit::message::catalog | cut -d'|' -f1 | tr '\n' '~' | sed 's/~$//' | tr '~' "$nl")"
-t_eq "catalog: an empty emoji is allowed and kept empty" "First||feat(api)!|remove the deprecated endpoint from the public api" "$(SHELL_GIT_COMMIT_MESSAGES_FILE="$tdir/good.txt" shell::git::commit::message::catalog | sed -n 2p)"
+t_eq "catalog: a repeated [Category] is merged into the first one" "First${nl}First${nl}First${nl}Second" "$(SHELL_GIT_COMMIT_MESSAGES_FILE="$tdir/good.txt" _shell::git::commit::message::catalog | cut -d'|' -f1 | tr '\n' '~' | sed 's/~$//' | tr '~' "$nl")"
+t_eq "catalog: an empty emoji is allowed and kept empty" "First||feat(api)!|remove the deprecated endpoint from the public api" "$(SHELL_GIT_COMMIT_MESSAGES_FILE="$tdir/good.txt" _shell::git::commit::message::catalog | sed -n 2p)"
 
 cat >"$tdir/bad.txt" <<'BAD'
 # fixture: line numbers below are asserted
@@ -187,7 +187,7 @@ t_eq "validate --strict: exits 1" "1" "$?"
 
 printf '[Cat]\r\n:rocket:|ci|a template saved with windows line endings\r\n' >"$tdir/crlf.txt"
 t_has "validate: CRLF files are accepted" "1 template(s) in 1 categories, 0 problem(s)" "$(v "$tdir/crlf.txt")"
-t_eq "render: ...and no carriage return leaks into the message" "0" "$(SHELL_GIT_COMMIT_MESSAGES_FILE="$tdir/crlf.txt" shell::git::commit::message::scan render Cat false | grep -c "$(printf '\r')")"
+t_eq "render: ...and no carriage return leaks into the message" "0" "$(SHELL_GIT_COMMIT_MESSAGES_FILE="$tdir/crlf.txt" _shell::git::commit::message::scan render Cat false | grep -c "$(printf '\r')")"
 
 out="$(v "$tdir/good.txt" "$tdir/bad.txt")"
 t_has "validate: several files are checked together (4 + 1 valid templates, 4 categories)" "5 template(s) in 4 categories" "$out"
@@ -215,19 +215,19 @@ cat >"$tdir/user.txt" <<'USER'
 :tada:|feature|this one has an invalid type but is only skipped
 :tada:|chore|and this one is valid so it is kept in the menu
 USER
-cats="$(SHELL_GIT_COMMIT_MESSAGES_USER_FILE="$tdir/user.txt" shell::git::commit::message::scan categories 2>"$tdir/stderr")"
+cats="$(SHELL_GIT_COMMIT_MESSAGES_USER_FILE="$tdir/user.txt" _shell::git::commit::message::scan categories 2>"$tdir/stderr")"
 t_eq "user file: a new category is appended at the end" "Broken Section${nl}My Own Category" "$(printf '%s\n' "$cats" | tail -n 2 | sort)"
 t_eq "user file: the built-in category order is untouched" "$(printf '%s\n' "$catalog" | cut -d'|' -f1 | awk '!s[$1]++' | head -n 1)" "$(printf '%s\n' "$cats" | head -n 1)"
 t_has "user file: a bad line is reported once, with file and line" "user.txt:9: header \"feature\"" "$(cat "$tdir/stderr")"
 t_eq "user file: ...exactly one problem" "1" "$(grep -c . "$tdir/stderr")"
-out="$(SHELL_GIT_COMMIT_MESSAGES_USER_FILE="$tdir/user.txt" shell::git::commit::message::scan render "Feature and Product Development" false 2>&1)"
+out="$(SHELL_GIT_COMMIT_MESSAGES_USER_FILE="$tdir/user.txt" _shell::git::commit::message::scan render "Feature and Product Development" false 2>&1)"
 t_has "user file: your template joins an existing category" "feat(team): :sparkles: add the team specific onboarding checklist item" "$out"
 t_has "user file: ...after the built-in ones" "feat: :sparkles: support bulk actions for selected records" "$out"
 t_eq "user file: a template that duplicates a built-in one is kept once" "1" "$(printf '%s\n' "$out" | grep -c 'feat: :sparkles: add user-facing support for the requested workflow')"
 t_eq "user file: render stays quiet about bad lines (no repeated warnings)" "0" "$(printf '%s\n' "$out" | grep -c 'user.txt:')"
-t_has "user file: the valid line of a broken section is kept" "chore: :tada: and this one is valid so it is kept in the menu" "$(SHELL_GIT_COMMIT_MESSAGES_USER_FILE="$tdir/user.txt" shell::git::commit::message::scan render "Broken Section" false 2>&1)"
-t_eq "user file: the invalid line is not offered" "0" "$(SHELL_GIT_COMMIT_MESSAGES_USER_FILE="$tdir/user.txt" shell::git::commit::message::scan render "Broken Section" false 2>&1 | grep -c 'invalid type')"
-t_eq "user file: a missing file is simply ignored" "$catalog" "$(SHELL_GIT_COMMIT_MESSAGES_USER_FILE="$tdir/nope.txt" shell::git::commit::message::catalog)"
+t_has "user file: the valid line of a broken section is kept" "chore: :tada: and this one is valid so it is kept in the menu" "$(SHELL_GIT_COMMIT_MESSAGES_USER_FILE="$tdir/user.txt" _shell::git::commit::message::scan render "Broken Section" false 2>&1)"
+t_eq "user file: the invalid line is not offered" "0" "$(SHELL_GIT_COMMIT_MESSAGES_USER_FILE="$tdir/user.txt" _shell::git::commit::message::scan render "Broken Section" false 2>&1 | grep -c 'invalid type')"
+t_eq "user file: a missing file is simply ignored" "$catalog" "$(SHELL_GIT_COMMIT_MESSAGES_USER_FILE="$tdir/nope.txt" _shell::git::commit::message::catalog)"
 t_eq "user file: validate checks it too when no file is named" "1" "$(
 	SHELL_GIT_COMMIT_MESSAGES_USER_FILE="$tdir/user.txt" shell::git::commit::message::validate >/dev/null 2>&1
 	echo $?
@@ -250,14 +250,14 @@ t_eq "SHELL_GIT_COMMIT_MESSAGES_FILE: ...and an empty emoji renders without one"
 reset_fzf
 SHELL_GIT_COMMIT_MESSAGES_FILE="$tdir/good.txt" FAKE_FZF_PICKS="$(printf '%s\n%s' "First" "feat(api)!: remove the deprecated endpoint from the public api")" shell::git::commit::message::base >"$tdir/picked" 2>/dev/null
 t_eq "base: a template with no emoji is printed as it is" "feat(api)!: remove the deprecated endpoint from the public api" "$(cat "$tdir/picked")"
-t_eq "render: an unknown category prints nothing" "" "$(shell::git::commit::message::scan render "No Such Category" false)"
+t_eq "render: an unknown category prints nothing" "" "$(_shell::git::commit::message::scan render "No Such Category" false)"
 
 # missing data file
 out="$(SHELL_GIT_COMMIT_MESSAGES_FILE="$tdir/gone.txt" shell::git::commit::message::base 2>&1)"
 t_has "missing data file: says where it looked" "Commit message templates not found: $tdir/gone.txt" "$out"
 SHELL_GIT_COMMIT_MESSAGES_FILE="$tdir/gone.txt" shell::git::commit::message::base >/dev/null 2>&1
 t_eq "missing data file: base fails (exit 1)" "1" "$?"
-SHELL_GIT_COMMIT_MESSAGES_FILE="$tdir/gone.txt" shell::git::commit::message::catalog >/dev/null 2>&1
+SHELL_GIT_COMMIT_MESSAGES_FILE="$tdir/gone.txt" _shell::git::commit::message::catalog >/dev/null 2>&1
 t_eq "missing data file: catalog fails (exit 1)" "1" "$?"
 
 # the library does not load the data file as code
@@ -269,13 +269,13 @@ t_eq "SHELL_GIT_COMMIT_MESSAGES_USER_FILE is next to it" "$SHELL_CONFIG_DIR/git/
 
 # --- which file is read: the installed copy, else (default path only) the repository's --------------
 t_rc "setup: nothing is installed in this test home" 1 test -e "$SHELL_GIT_COMMIT_MESSAGES_INSTALLED"
-t_eq "not installed yet: the repository copy is read" "$catalog" "$(shell::git::commit::message::catalog)"
+t_eq "not installed yet: the repository copy is read" "$catalog" "$(_shell::git::commit::message::catalog)"
 mkdir -p "$SHELL_CONFIG_DIR/git"
 printf '[Installed Only]\n:rocket:|ci|trigger the pipeline from the installed copy\n' >"$SHELL_GIT_COMMIT_MESSAGES_INSTALLED"
-t_eq "installed: the installed copy wins over the repository's" "Installed Only|:rocket:|ci|trigger the pipeline from the installed copy" "$(shell::git::commit::message::catalog)"
-t_eq "installed: ...and the menu categories come from it" "Installed Only" "$(shell::git::commit::message::scan categories)"
+t_eq "installed: the installed copy wins over the repository's" "Installed Only|:rocket:|ci|trigger the pipeline from the installed copy" "$(_shell::git::commit::message::catalog)"
+t_eq "installed: ...and the menu categories come from it" "Installed Only" "$(_shell::git::commit::message::scan categories)"
 rm -rf "$SHELL_CONFIG_DIR/git"
-SHELL_GIT_COMMIT_MESSAGES_FILE="$tdir/not-the-default.txt" shell::git::commit::message::catalog >/dev/null 2>&1
+SHELL_GIT_COMMIT_MESSAGES_FILE="$tdir/not-the-default.txt" _shell::git::commit::message::catalog >/dev/null 2>&1
 t_eq "a path you set yourself never falls back to the repository copy" "1" "$?"
 
 # --- shell::git::commit::message::sync -------------------------------------------------------------------
@@ -354,14 +354,14 @@ calls() { cat "$HOME/awk.calls" 2>/dev/null | wc -l | tr -d ' '; }
 saved_path="$PATH"
 export PATH="$HOME/awkbin:$PATH"
 rm -f "$HOME/awk.calls"
-SHELL_GIT_COMMIT_MESSAGES_FILE="$tdir/big.txt" shell::git::commit::message::scan categories >/dev/null 2>&1
+SHELL_GIT_COMMIT_MESSAGES_FILE="$tdir/big.txt" _shell::git::commit::message::scan categories >/dev/null 2>&1
 t_eq "performance: listing categories of 1600 templates is ONE awk process" "1" "$(calls)"
 rm -f "$HOME/awk.calls"
-n="$(SHELL_GIT_COMMIT_MESSAGES_FILE="$tdir/big.txt" shell::git::commit::message::scan render Scaling false | wc -l | tr -d ' ')"
+n="$(SHELL_GIT_COMMIT_MESSAGES_FILE="$tdir/big.txt" _shell::git::commit::message::scan render Scaling false | wc -l | tr -d ' ')"
 t_eq "performance: rendering a category of 1600 templates is ONE awk process" "1" "$(calls)"
 t_eq "performance: ...and all 1600 come out" "1600" "$n"
 rm -f "$HOME/awk.calls"
-shell::git::commit::message::catalog >/dev/null 2>&1
+_shell::git::commit::message::catalog >/dev/null 2>&1
 t_eq "performance: the whole built-in catalog is ONE awk process" "1" "$(calls)"
 rm -f "$HOME/awk.calls"
 reset_fzf

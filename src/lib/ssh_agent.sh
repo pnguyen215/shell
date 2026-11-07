@@ -25,9 +25,9 @@
 # @exitcode 0 An agent answers.
 # @exitcode 1 None does.
 # @example
-#   shell::ssh::agent::reachable || shell::ssh::agent::start
+#   _shell::ssh::agent::reachable || shell::ssh::agent::start
 #
-shell::ssh::agent::reachable() {
+_shell::ssh::agent::reachable() {
 	local rc=0
 	command -v ssh-add >/dev/null 2>&1 || return 1
 	ssh-add -l >/dev/null 2>&1 || rc=$?
@@ -74,7 +74,7 @@ shell::ssh::agent::start() {
 	fi
 
 	shell::dependency::ensure ssh-agent || return "$RETURN_NOT_FOUND"
-	if shell::ssh::agent::reachable; then
+	if _shell::ssh::agent::reachable; then
 		shell::logger::info "An ssh agent is already available (SSH_AUTH_SOCK=${SSH_AUTH_SOCK-})"
 		return "$RETURN_SUCCESS"
 	fi
@@ -253,8 +253,8 @@ shell::ssh::agent::add() {
 			shift
 			;;
 		-t | --lifetime)
-			shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
-			shell::ssh::cmd::number "$1" "$2" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::number "$1" "$2" || return "$RETURN_INVALID"
 			lifetime="$2"
 			shift 2
 			;;
@@ -298,12 +298,12 @@ shell::ssh::agent::add() {
 			fi
 		done
 		shell::dependency::ensure ssh-add || return "$RETURN_NOT_FOUND"
-		if ! shell::ssh::agent::reachable; then
+		if ! _shell::ssh::agent::reachable; then
 			shell::logger::error "Cannot reach an ssh agent (start one with shell::ssh::agent::start)"
 			return "$RETURN_FAILURE"
 		fi
 	fi
-	shell::ssh::invoke ${run[@]+"${run[@]}"} ssh-add ${flags[@]+"${flags[@]}"} "$@"
+	_shell::ssh::invoke ${run[@]+"${run[@]}"} ssh-add ${flags[@]+"${flags[@]}"} "$@"
 }
 
 # @description Pick private keys with fzf and add them to the agent.
@@ -336,7 +336,7 @@ shell::ssh::agent::add::fzf() {
 	fi
 
 	local candidates picked key rc=0
-	candidates="$(shell::ssh::key::candidates)"
+	candidates="$(_shell::ssh::key::candidates)"
 	if [ -z "$candidates" ]; then
 		shell::logger::warn "No private key found in $SHELL_SSH_DIR"
 		return "$RETURN_EMPTY"
@@ -417,12 +417,12 @@ shell::ssh::agent::remove() {
 			fi
 		done
 		shell::dependency::ensure ssh-add || return "$RETURN_NOT_FOUND"
-		if ! shell::ssh::agent::reachable; then
+		if ! _shell::ssh::agent::reachable; then
 			shell::logger::error "Cannot reach an ssh agent (start one with shell::ssh::agent::start)"
 			return "$RETURN_FAILURE"
 		fi
 	fi
-	shell::ssh::invoke ${run[@]+"${run[@]}"} ssh-add -d "$@"
+	_shell::ssh::invoke ${run[@]+"${run[@]}"} ssh-add -d "$@"
 }
 
 # @description Remove every key from the agent (`ssh-add -D`).
@@ -463,10 +463,10 @@ shell::ssh::agent::clear() {
 		run+=(-n)
 	else
 		shell::dependency::ensure ssh-add || return "$RETURN_NOT_FOUND"
-		if ! shell::ssh::agent::reachable; then
+		if ! _shell::ssh::agent::reachable; then
 			shell::logger::error "Cannot reach an ssh agent (start one with shell::ssh::agent::start)"
 			return "$RETURN_FAILURE"
 		fi
 	fi
-	shell::ssh::invoke ${run[@]+"${run[@]}"} ssh-add -D
+	_shell::ssh::invoke ${run[@]+"${run[@]}"} ssh-add -D
 }

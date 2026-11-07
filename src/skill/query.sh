@@ -14,9 +14,9 @@
 # @stdout Absolute path (the file may not exist).
 # @exitcode 0 Always.
 # @example
-#   cat "$(shell::skill::manifest::file)"
+#   cat "$(_shell::skill::manifest::file)"
 #
-shell::skill::manifest::file() {
+_shell::skill::manifest::file() {
 	printf '%s/%s/manifest.tsv\n' "${XDG_STATE_HOME:-$HOME/.local/state}" "$SHELL_SKILL_STATE_NAME"
 }
 
@@ -26,9 +26,9 @@ shell::skill::manifest::file() {
 # @stdout The rows, as-is when piped, column-aligned on a terminal.
 # @exitcode 0 Always.
 # @example
-#   shell::skill::print::rows "$rows"
+#   _shell::skill::print::rows "$rows"
 #
-shell::skill::print::rows() {
+_shell::skill::print::rows() {
 	if [ -t 1 ] && command -v column >/dev/null 2>&1; then
 		printf '%s\n' "${1-}" | column -t -s "$(printf '\t')"
 	else
@@ -101,7 +101,7 @@ shell::skill::list() {
 		esac
 	done
 
-	if [ -n "$ref" ] && ! shell::skill::validate::ref "$ref"; then
+	if [ -n "$ref" ] && ! _shell::skill::validate::ref "$ref"; then
 		shell::logger::error "Invalid --ref '$ref'"
 		return "$RETURN_INVALID"
 	fi
@@ -142,7 +142,7 @@ shell::skill::list() {
 		fi
 	fi
 
-	shell::skill::print::rows "$rows"
+	_shell::skill::print::rows "$rows"
 }
 
 # @description List the skills installed by shell::skill::install.
@@ -215,17 +215,17 @@ shell::skill::installed() {
 		esac
 	done
 
-	if [ -n "$tool" ] && ! shell::skill::validate::choice "$tool" "claude opencode"; then
+	if [ -n "$tool" ] && ! _shell::skill::validate::choice "$tool" "claude opencode"; then
 		shell::logger::error "Invalid --tool '$tool' (expected: claude opencode)"
 		return "$RETURN_INVALID"
 	fi
-	if [ -n "$scope" ] && ! shell::skill::validate::choice "$scope" "personal project"; then
+	if [ -n "$scope" ] && ! _shell::skill::validate::choice "$scope" "personal project"; then
 		shell::logger::error "Invalid --scope '$scope' (expected: personal project)"
 		return "$RETURN_INVALID"
 	fi
 
 	local file
-	file="$(shell::skill::manifest::file)"
+	file="$(_shell::skill::manifest::file)"
 	if [ ! -s "$file" ]; then
 		shell::logger::warn "No skills installed yet (run shell::skill::install)"
 		return "$RETURN_EMPTY"
@@ -246,5 +246,5 @@ shell::skill::installed() {
 		return "$RETURN_EMPTY"
 	fi
 
-	shell::skill::print::rows "$rows"
+	_shell::skill::print::rows "$rows"
 }

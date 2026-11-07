@@ -71,33 +71,33 @@ i=0; : >big.txt; while [ "$i" -lt 3000 ]; do echo "line $i" >>big.txt; i=$((i + 
 commit "large diff"
 
 # --- context ------------------------------------------------------------------
-ctx="$(shell::git::history::context "$F")"
+ctx="$(_shell::git::history::context "$F")"
 t_eq "context: repo name" "repo" "$(field "$ctx" 2)"
 t_eq "context: branch" "main" "$(field "$ctx" 3)"
 t_eq "context: relative path" "$F" "$(field "$ctx" 4)"
-ctx="$(cd src && shell::git::history::context "auth/new login.go")"
+ctx="$(cd src && _shell::git::history::context "auth/new login.go")"
 t_eq "context: resolved from a subdirectory" "$F" "$(field "$ctx" 4)"
-ctx="$(shell::git::history::context "$HOME/repo/$F")"
+ctx="$(_shell::git::history::context "$HOME/repo/$F")"
 t_eq "context: absolute path" "$F" "$(field "$ctx" 4)"
-t_rc "context: unknown file" 1 shell::git::history::context nope.txt
+t_rc "context: unknown file" 1 _shell::git::history::context nope.txt
 t_has "context: says why" "not in this repository" "$T_OUT"
-t_rc "context: deleted file is still known" 0 shell::git::history::context "src/auth/login file.go"
+t_rc "context: deleted file is still known" 0 _shell::git::history::context "src/auth/login file.go"
 git checkout -q --detach HEAD
-t_has "context: detached HEAD" "(detached at " "$(shell::git::history::context)"
+t_has "context: detached HEAD" "(detached at " "$(_shell::git::history::context)"
 git checkout -q main
-t_eq "context: outside a repository fails" "1" "$(cd "$HOME" && shell::git::history::context >/dev/null 2>&1; echo $?)"
+t_eq "context: outside a repository fails" "1" "$(cd "$HOME" && _shell::git::history::context >/dev/null 2>&1; echo $?)"
 
 # --- scope --------------------------------------------------------------------
-t_eq "scope: lines are normalized" "lines${US}$F${US}3,5" "$(shell::git::history::scope lines "$F" 3-5)"
-t_eq "scope: START:END" "lines${US}$F${US}3,5" "$(shell::git::history::scope lines "$F" 3:5)"
-t_rc "scope: reversed range" 1 shell::git::history::scope lines "$F" 9,3
-t_rc "scope: range past the end" 1 shell::git::history::scope lines "$F" 1,9999
-t_rc "scope: range is not a number" 1 shell::git::history::scope lines "$F" a,b
-t_rc "scope: function needs a file" 1 shell::git::history::scope function "" Login
-t_rc "scope: bad function name" 1 shell::git::history::scope function "$F" 'a;b'
-t_rc "scope: unsupported type" 1 shell::git::history::scope blame "$F" x
-t_rc "scope: empty search" 1 shell::git::history::scope search "" ""
-t_eq "scope: repo needs nothing" "repo${US}${US}" "$(shell::git::history::scope repo "" "")"
+t_eq "scope: lines are normalized" "lines${US}$F${US}3,5" "$(_shell::git::history::scope lines "$F" 3-5)"
+t_eq "scope: START:END" "lines${US}$F${US}3,5" "$(_shell::git::history::scope lines "$F" 3:5)"
+t_rc "scope: reversed range" 1 _shell::git::history::scope lines "$F" 9,3
+t_rc "scope: range past the end" 1 _shell::git::history::scope lines "$F" 1,9999
+t_rc "scope: range is not a number" 1 _shell::git::history::scope lines "$F" a,b
+t_rc "scope: function needs a file" 1 _shell::git::history::scope function "" Login
+t_rc "scope: bad function name" 1 _shell::git::history::scope function "$F" 'a;b'
+t_rc "scope: unsupported type" 1 _shell::git::history::scope blame "$F" x
+t_rc "scope: empty search" 1 _shell::git::history::scope search "" ""
+t_eq "scope: repo needs nothing" "repo${US}${US}" "$(_shell::git::history::scope repo "" "")"
 
 # --- file history: --follow across the rename ---------------------------------
 recs="$(shell::git::history::log file "$F")"

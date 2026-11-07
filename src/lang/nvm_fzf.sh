@@ -49,9 +49,9 @@
 # @exitcode 9 The user cancelled (ESC) or nothing matched.
 # @exitcode 3 fzf is not installed.
 # @example
-#   v="$(shell::nvm::fzf::rows::installed | shell::nvm::fzf::pick -p "Version: ")"
+#   v="$(_shell::nvm::fzf::rows::installed | _shell::nvm::fzf::pick -p "Version: ")"
 #
-shell::nvm::fzf::pick() {
+_shell::nvm::fzf::pick() {
 	local multi="false" prompt="Select: " preview="" header=""
 	while [ "$#" -gt 0 ]; do
 		case "$1" in
@@ -112,9 +112,9 @@ shell::nvm::fzf::pick() {
 # @exitcode 1 The user answered no.
 # @exitcode 9 Input ended.
 # @example
-#   shell::nvm::fzf::confirm "$assume_yes" "Uninstall v18.19.0?" || return 0
+#   _shell::nvm::fzf::confirm "$assume_yes" "Uninstall v18.19.0?" || return 0
 #
-shell::nvm::fzf::confirm() {
+_shell::nvm::fzf::confirm() {
 	if [ "${1-}" = "true" ]; then
 		return "$RETURN_SUCCESS"
 	fi
@@ -129,9 +129,9 @@ shell::nvm::fzf::confirm() {
 # @exitcode 0 Success.
 # @exitcode 3 nvm is not installed.
 # @example
-#   --preview="$(shell::nvm::fzf::preview)"
+#   --preview="$(_shell::nvm::fzf::preview)"
 #
-shell::nvm::fzf::preview() {
+_shell::nvm::fzf::preview() {
 	shell::dependency::nvm::load >/dev/null 2>&1 || return "$RETURN_NOT_FOUND"
 	printf "echo 'Global npm packages:'; ls -1 '%s/versions/node/'{1}'/lib/node_modules' 2>/dev/null\n" "${NVM_DIR-}"
 }
@@ -145,10 +145,10 @@ shell::nvm::fzf::preview() {
 # @exitcode 0 Success (possibly nothing installed).
 # @exitcode 3 nvm is not installed.
 # @example
-#   shell::nvm::versions::installed
+#   _shell::nvm::versions::installed
 #
-shell::nvm::versions::installed() {
-	shell::nvm::query ls --no-colors --no-alias | awk '
+_shell::nvm::versions::installed() {
+	_shell::nvm::query ls --no-colors --no-alias | awk '
         { sub(/^[ \t]*(->)?[ \t]*/, "") }
         $1 ~ /^v[0-9]+\.[0-9]+\.[0-9]+$/ { print $1 }'
 }
@@ -162,12 +162,12 @@ shell::nvm::versions::installed() {
 # @exitcode 0 Success.
 # @exitcode 3 nvm is not installed.
 # @example
-#   shell::nvm::versions::remote --lts | head
+#   _shell::nvm::versions::remote --lts | head
 #
-shell::nvm::versions::remote() {
+_shell::nvm::versions::remote() {
 	local installed
-	installed="$(shell::nvm::versions::installed | tr '\n' ' ')"
-	shell::nvm::query ls-remote --no-colors "$@" | awk -v inst=" $installed " '
+	installed="$(_shell::nvm::versions::installed | tr '\n' ' ')"
+	_shell::nvm::query ls-remote --no-colors "$@" | awk -v inst=" $installed " '
         {
             line = $0
             sub(/^[ \t]*(->)?[ \t]*/, "", line)
@@ -192,16 +192,16 @@ shell::nvm::versions::remote() {
 # @exitcode 0 Success (possibly nothing installed).
 # @exitcode 3 nvm is not installed.
 # @example
-#   shell::nvm::fzf::rows::installed | shell::nvm::fzf::pick -m
+#   _shell::nvm::fzf::rows::installed | _shell::nvm::fzf::pick -m
 #
-shell::nvm::fzf::rows::installed() {
+_shell::nvm::fzf::rows::installed() {
 	local installed current aliases v labels mark
-	installed="$(shell::nvm::versions::installed)"
+	installed="$(_shell::nvm::versions::installed)"
 	if [ -z "$installed" ]; then
 		return "$RETURN_SUCCESS"
 	fi
-	current="$(shell::nvm::query current)"
-	aliases="$(shell::nvm::query alias --no-colors)"
+	current="$(_shell::nvm::query current)"
+	aliases="$(_shell::nvm::query alias --no-colors)"
 	while IFS= read -r v; do
 		[ -n "$v" ] || continue
 		labels="$(printf '%s\n' "$aliases" | awk -v v="$v" '
@@ -230,10 +230,10 @@ EOF
 # @exitcode 0 Success.
 # @exitcode 3 nvm is not installed.
 # @example
-#   shell::nvm::aliases::user
+#   _shell::nvm::aliases::user
 #
-shell::nvm::aliases::user() {
-	shell::nvm::query alias --no-colors | awk 'NF && $0 !~ /\(default\)$/ && $1 !~ /^lts\// { print }'
+_shell::nvm::aliases::user() {
+	_shell::nvm::query alias --no-colors | awk 'NF && $0 !~ /\(default\)$/ && $1 !~ /^lts\// { print }'
 }
 
 # @internal
@@ -243,9 +243,9 @@ shell::nvm::aliases::user() {
 # @stdout The same lines with a human size.
 # @exitcode 0 Always.
 # @example
-#   printf 'v20\tx\t2048\ty\n' | shell::nvm::size::format
+#   printf 'v20\tx\t2048\ty\n' | _shell::nvm::size::format
 #
-shell::nvm::size::format() {
+_shell::nvm::size::format() {
 	awk -F'\t' 'BEGIN { OFS = "\t" }
         {
             kb = $3 + 0
@@ -260,7 +260,7 @@ shell::nvm::size::format() {
 # @internal
 # @description Common failure of the interactive functions: nvm is missing.
 # @exitcode 3 Always.
-shell::nvm::fzf::missing() {
+_shell::nvm::fzf::missing() {
 	shell::logger::error "nvm is not installed (install it with: shell::dependency::nvm::install)"
 	return "$RETURN_NOT_FOUND"
 }
@@ -308,12 +308,12 @@ shell::nvm::use::fzf() {
 		shift
 	done
 	shell::dependency::nvm::load >/dev/null 2>&1 || {
-		shell::nvm::fzf::missing
+		_shell::nvm::fzf::missing
 		return $?
 	}
 
 	local picked rc
-	picked="$(shell::nvm::fzf::rows::installed | shell::nvm::fzf::pick -p "Use Node: " -P "$(shell::nvm::fzf::preview)" \
+	picked="$(_shell::nvm::fzf::rows::installed | _shell::nvm::fzf::pick -p "Use Node: " -P "$(_shell::nvm::fzf::preview)" \
 		-H "Enter: switch this shell   ESC: cancel")"
 	rc=$?
 	case "$rc" in
@@ -377,14 +377,14 @@ shell::nvm::install::fzf() {
 		shift
 	done
 	shell::dependency::nvm::load >/dev/null 2>&1 || {
-		shell::nvm::fzf::missing
+		_shell::nvm::fzf::missing
 		return $?
 	}
 
 	local picked rc line failed=0
 	local -a chosen=()
-	picked="$(shell::nvm::versions::remote ${list_opts[@]+"${list_opts[@]}"} |
-		shell::nvm::fzf::pick -m -p "Install Node: " -H "Tab: mark   Ctrl-A: mark all   Enter: install   ESC: cancel")"
+	picked="$(_shell::nvm::versions::remote ${list_opts[@]+"${list_opts[@]}"} |
+		_shell::nvm::fzf::pick -m -p "Install Node: " -H "Tab: mark   Ctrl-A: mark all   Enter: install   ESC: cancel")"
 	rc=$?
 	case "$rc" in
 	0) ;;
@@ -449,13 +449,13 @@ shell::nvm::uninstall::fzf() {
 		shift
 	done
 	shell::dependency::nvm::load >/dev/null 2>&1 || {
-		shell::nvm::fzf::missing
+		_shell::nvm::fzf::missing
 		return $?
 	}
 
 	local picked rc line current labels failed=0 note=""
 	local -a chosen=() removable=() opts=()
-	picked="$(shell::nvm::fzf::rows::installed | shell::nvm::fzf::pick -m -p "Uninstall Node: " -P "$(shell::nvm::fzf::preview)" \
+	picked="$(_shell::nvm::fzf::rows::installed | _shell::nvm::fzf::pick -m -p "Uninstall Node: " -P "$(_shell::nvm::fzf::preview)" \
 		-H "Tab: mark   Ctrl-A: mark all   Enter: uninstall   ESC: cancel")"
 	rc=$?
 	case "$rc" in
@@ -468,7 +468,7 @@ shell::nvm::uninstall::fzf() {
 	*) return "$rc" ;;
 	esac
 
-	current="$(shell::nvm::query current)"
+	current="$(_shell::nvm::query current)"
 	while IFS= read -r line; do
 		[ -n "$line" ] && chosen+=("$line")
 	done <<EOF
@@ -479,7 +479,7 @@ EOF
 			shell::logger::warn "Skipping $line: it is the version in use (switch first: shell::nvm::use)"
 			continue
 		fi
-		labels="$(shell::nvm::fzf::rows::installed | awk -v v="$line" '$1 == v { $1 = ""; sub(/^ +/, ""); sub(/^\[current\] */, ""); print }')"
+		labels="$(_shell::nvm::fzf::rows::installed | awk -v v="$line" '$1 == v { $1 = ""; sub(/^ +/, ""); sub(/^\[current\] */, ""); print }')"
 		if [ -n "$labels" ]; then
 			note="${note:+$note; }$line is the target of: $labels"
 		fi
@@ -490,7 +490,7 @@ EOF
 		return "$RETURN_SUCCESS"
 	fi
 
-	shell::nvm::fzf::confirm "$assume_yes" "Uninstall ${removable[*]}${note:+ ($note)}?" || {
+	_shell::nvm::fzf::confirm "$assume_yes" "Uninstall ${removable[*]}${note:+ ($note)}?" || {
 		shell::logger::info "Aborted"
 		return "$RETURN_SUCCESS"
 	}
@@ -542,7 +542,7 @@ shell::nvm::default::fzf() {
 		shift
 	done
 	shell::dependency::nvm::load >/dev/null 2>&1 || {
-		shell::nvm::fzf::missing
+		_shell::nvm::fzf::missing
 		return $?
 	}
 
@@ -550,8 +550,8 @@ shell::nvm::default::fzf() {
 	picked="$({
 		printf '%-12s %s\n' 'lts/*' '(the newest LTS installed; follows new installs)'
 		printf '%-12s %s\n' 'node' '(the newest version installed; follows new installs)'
-		shell::nvm::fzf::rows::installed
-	} | shell::nvm::fzf::pick -p "Default Node: " -P "$(shell::nvm::fzf::preview)" -H "Enter: set as default   ESC: cancel")"
+		_shell::nvm::fzf::rows::installed
+	} | _shell::nvm::fzf::pick -p "Default Node: " -P "$(_shell::nvm::fzf::preview)" -H "Enter: set as default   ESC: cancel")"
 	rc=$?
 	case "$rc" in
 	0) ;;
@@ -599,12 +599,12 @@ shell::nvm::alias::fzf() {
 		shift
 	done
 	shell::dependency::nvm::load >/dev/null 2>&1 || {
-		shell::nvm::fzf::missing
+		_shell::nvm::fzf::missing
 		return $?
 	}
 
 	local picked rc name
-	picked="$(shell::nvm::fzf::rows::installed | shell::nvm::fzf::pick -p "Alias for: " -P "$(shell::nvm::fzf::preview)" \
+	picked="$(_shell::nvm::fzf::rows::installed | _shell::nvm::fzf::pick -p "Alias for: " -P "$(_shell::nvm::fzf::preview)" \
 		-H "Enter: choose this version   ESC: cancel")"
 	rc=$?
 	case "$rc" in
@@ -618,7 +618,7 @@ shell::nvm::alias::fzf() {
 	esac
 
 	name="$(shell::ask::text "Alias name for $picked?")" || return "$RETURN_SUCCESS"
-	if ! shell::nvm::alias::valid "$name"; then
+	if ! _shell::nvm::alias::valid "$name"; then
 		shell::logger::error "Invalid alias name: '$name' (letters, digits, . _ / -)"
 		return "$RETURN_INVALID"
 	fi
@@ -665,13 +665,13 @@ shell::nvm::unalias::fzf() {
 		shift
 	done
 	shell::dependency::nvm::load >/dev/null 2>&1 || {
-		shell::nvm::fzf::missing
+		_shell::nvm::fzf::missing
 		return $?
 	}
 
 	local picked rc line failed=0
 	local -a chosen=() opts=()
-	picked="$(shell::nvm::aliases::user | shell::nvm::fzf::pick -m -p "Delete alias: " -H "Tab: mark   Enter: delete   ESC: cancel")"
+	picked="$(_shell::nvm::aliases::user | _shell::nvm::fzf::pick -m -p "Delete alias: " -H "Tab: mark   Enter: delete   ESC: cancel")"
 	rc=$?
 	case "$rc" in
 	0) ;;
@@ -688,7 +688,7 @@ shell::nvm::unalias::fzf() {
 	done <<EOF
 $picked
 EOF
-	shell::nvm::fzf::confirm "$assume_yes" "Delete the alias(es) ${chosen[*]}?" || {
+	_shell::nvm::fzf::confirm "$assume_yes" "Delete the alias(es) ${chosen[*]}?" || {
 		shell::logger::info "Aborted"
 		return "$RETURN_SUCCESS"
 	}
@@ -738,7 +738,7 @@ shell::nvm::nvmrc::fzf() {
 		shift
 	done
 	shell::dependency::nvm::load >/dev/null 2>&1 || {
-		shell::nvm::fzf::missing
+		_shell::nvm::fzf::missing
 		return $?
 	}
 
@@ -746,8 +746,8 @@ shell::nvm::nvmrc::fzf() {
 	picked="$({
 		printf '%-12s %s\n' 'lts/*' '(always the newest LTS)'
 		printf '%-12s %s\n' 'node' '(always the newest release)'
-		shell::nvm::fzf::rows::installed
-	} | shell::nvm::fzf::pick -p ".nvmrc: " -P "$(shell::nvm::fzf::preview)" -H "Enter: pin this version   ESC: cancel")"
+		_shell::nvm::fzf::rows::installed
+	} | _shell::nvm::fzf::pick -p ".nvmrc: " -P "$(_shell::nvm::fzf::preview)" -H "Enter: pin this version   ESC: cancel")"
 	rc=$?
 	case "$rc" in
 	0) ;;
@@ -770,7 +770,7 @@ shell::nvm::nvmrc::fzf() {
 # @exitcode 2 No command was given.
 # @exitcode 3 nvm or fzf is not installed.
 # @exitcode N Exit status of the command.
-shell::nvm::fzf::with_version() {
+_shell::nvm::fzf::with_version() {
 	local action="${1-}"
 	shift
 
@@ -794,12 +794,12 @@ shell::nvm::fzf::with_version() {
 		return "$RETURN_INVALID"
 	fi
 	shell::dependency::nvm::load >/dev/null 2>&1 || {
-		shell::nvm::fzf::missing
+		_shell::nvm::fzf::missing
 		return $?
 	}
 
 	local picked rc
-	picked="$(shell::nvm::fzf::rows::installed | shell::nvm::fzf::pick -p "Node for ${action}: " -P "$(shell::nvm::fzf::preview)" \
+	picked="$(_shell::nvm::fzf::rows::installed | _shell::nvm::fzf::pick -p "Node for ${action}: " -P "$(_shell::nvm::fzf::preview)" \
 		-H "Enter: run with this version   ESC: cancel")"
 	rc=$?
 	case "$rc" in
@@ -845,7 +845,7 @@ shell::nvm::exec::fzf() {
 		shell::logger::example "shell::nvm::exec::fzf npm test"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::nvm::fzf::with_version exec "$@"
+	_shell::nvm::fzf::with_version exec "$@"
 }
 
 # @description Pick an installed Node version and run `node` with it (`nvm run`).
@@ -874,7 +874,7 @@ shell::nvm::run::fzf() {
 		shell::logger::example "shell::nvm::run::fzf app.js"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::nvm::fzf::with_version run "$@"
+	_shell::nvm::fzf::with_version run "$@"
 }
 
 # @description Install a newer Node and carry your global npm packages over.
@@ -915,12 +915,12 @@ shell::nvm::migrate::fzf() {
 		shift
 	done
 	shell::dependency::nvm::load >/dev/null 2>&1 || {
-		shell::nvm::fzf::missing
+		_shell::nvm::fzf::missing
 		return $?
 	}
 
 	local from rc target choice
-	from="$(shell::nvm::fzf::rows::installed | shell::nvm::fzf::pick -p "Move packages from: " -P "$(shell::nvm::fzf::preview)" \
+	from="$(_shell::nvm::fzf::rows::installed | _shell::nvm::fzf::pick -p "Move packages from: " -P "$(_shell::nvm::fzf::preview)" \
 		-H "Enter: take the global npm packages of this version   ESC: cancel")"
 	rc=$?
 	case "$rc" in
@@ -951,7 +951,7 @@ shell::nvm::migrate::fzf() {
 		shell::nvm::install ${opts[@]+"${opts[@]}"} --reinstall-packages-from "$from" node
 		;;
 	*)
-		target="$(shell::nvm::versions::remote | shell::nvm::fzf::pick -p "Move to: " -H "Enter: install this version   ESC: cancel")"
+		target="$(_shell::nvm::versions::remote | _shell::nvm::fzf::pick -p "Move to: " -H "Enter: install this version   ESC: cancel")"
 		rc=$?
 		if [ "$rc" -ne 0 ]; then
 			return "$RETURN_SUCCESS"
@@ -995,14 +995,14 @@ shell::nvm::reinstall_packages::fzf() {
 		shift
 	done
 	shell::dependency::nvm::load >/dev/null 2>&1 || {
-		shell::nvm::fzf::missing
+		_shell::nvm::fzf::missing
 		return $?
 	}
 
 	local picked rc current
-	current="$(shell::nvm::query current)"
-	picked="$(shell::nvm::fzf::rows::installed | awk -v c="$current" '$1 != c' |
-		shell::nvm::fzf::pick -p "Copy packages from: " -P "$(shell::nvm::fzf::preview)" \
+	current="$(_shell::nvm::query current)"
+	picked="$(_shell::nvm::fzf::rows::installed | awk -v c="$current" '$1 != c' |
+		_shell::nvm::fzf::pick -p "Copy packages from: " -P "$(_shell::nvm::fzf::preview)" \
 			-H "Into the version in use (${current:-none}).   Enter: copy   ESC: cancel")"
 	rc=$?
 	case "$rc" in
@@ -1062,12 +1062,12 @@ shell::nvm::size() {
 		;;
 	esac
 	shell::dependency::nvm::load >/dev/null 2>&1 || {
-		shell::nvm::fzf::missing
+		_shell::nvm::fzf::missing
 		return $?
 	}
 
 	local v kb cache_dir cache_kb installed
-	installed="$(shell::nvm::versions::installed)"
+	installed="$(_shell::nvm::versions::installed)"
 	if [ -z "$installed" ]; then
 		shell::logger::info "No Node version is installed"
 		return "$RETURN_SUCCESS"
@@ -1076,13 +1076,13 @@ shell::nvm::size() {
 		[ -n "$v" ] || continue
 		kb="$(du -sk "${NVM_DIR-}/versions/node/$v" 2>/dev/null | awk '{ print $1 }')"
 		printf '%s\t\t%s\n' "$v" "${kb:-0}"
-	done <<EOF | sort -t "$(printf '\t')" -k3,3nr | head -n "$count" | shell::nvm::size::format | awk -F'\t' '{ printf "%8s  %s\n", $3, $1 }'
+	done <<EOF | sort -t "$(printf '\t')" -k3,3nr | head -n "$count" | _shell::nvm::size::format | awk -F'\t' '{ printf "%8s  %s\n", $3, $1 }'
 $installed
 EOF
-	cache_dir="$(shell::nvm::query cache dir)"
+	cache_dir="$(_shell::nvm::query cache dir)"
 	if [ -n "$cache_dir" ] && [ -d "$cache_dir" ]; then
 		cache_kb="$(du -sk "$cache_dir" 2>/dev/null | awk '{ print $1 }')"
-		printf '%s\t\t%s\n' "download cache" "${cache_kb:-0}" | shell::nvm::size::format | awk -F'\t' '{ printf "%8s  %s\n", $3, $1 }'
+		printf '%s\t\t%s\n' "download cache" "${cache_kb:-0}" | _shell::nvm::size::format | awk -F'\t' '{ printf "%8s  %s\n", $3, $1 }'
 	fi
 }
 
@@ -1097,9 +1097,9 @@ EOF
 # @exitcode 2 Invalid option.
 # @exitcode 3 nvm is not installed.
 # @example
-#   shell::nvm::unused::scan --projects ~/code | cut -f1
+#   _shell::nvm::unused::scan --projects ~/code | cut -f1
 #
-shell::nvm::unused::scan() {
+_shell::nvm::unused::scan() {
 	local only_superseded="false"
 	local -a roots=()
 	local root
@@ -1126,20 +1126,20 @@ shell::nvm::unused::scan() {
 	done
 
 	shell::dependency::nvm::load >/dev/null 2>&1 || {
-		shell::nvm::fzf::missing
+		_shell::nvm::fzf::missing
 		return $?
 	}
 
 	local installed current kept="" aliases rc_file wanted resolved line v reason size why name
-	installed="$(shell::nvm::versions::installed)"
+	installed="$(_shell::nvm::versions::installed)"
 	if [ -z "$installed" ]; then
 		return "$RETURN_SUCCESS"
 	fi
-	current="$(shell::nvm::query current)"
+	current="$(_shell::nvm::query current)"
 	kept=" $current "
 
 	# Every version an alias resolves to ("name -> target (-> v20.11.1 *)").
-	aliases="$(shell::nvm::query alias --no-colors)"
+	aliases="$(_shell::nvm::query alias --no-colors)"
 	kept="$kept$(printf '%s\n' "$aliases" | awk '
         {
             p = index($0, "(-> v")
@@ -1153,7 +1153,7 @@ shell::nvm::unused::scan() {
 	if rc_file="$(shell::nvm::nvmrc::find)"; then
 		wanted="$(shell::nvm::nvmrc::read 2>/dev/null)"
 		if [ -n "$wanted" ]; then
-			resolved="$(shell::nvm::query version "$wanted")"
+			resolved="$(_shell::nvm::query version "$wanted")"
 			kept="$kept $resolved "
 		fi
 	fi
@@ -1162,8 +1162,8 @@ shell::nvm::unused::scan() {
 		while IFS= read -r rc_file; do
 			[ -n "$rc_file" ] || continue
 			wanted="$(head -n 1 "$rc_file" | tr -d '\r' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
-			if [ -n "$wanted" ] && shell::nvm::version::valid "$wanted"; then
-				resolved="$(shell::nvm::query version "$wanted")"
+			if [ -n "$wanted" ] && _shell::nvm::version::valid "$wanted"; then
+				resolved="$(_shell::nvm::query version "$wanted")"
 				kept="$kept $resolved "
 			fi
 		done <<EOF
@@ -1257,7 +1257,7 @@ shell::nvm::unused() {
 	done
 
 	local found rc
-	found="$(shell::nvm::unused::scan ${scan_args[@]+"${scan_args[@]}"})"
+	found="$(_shell::nvm::unused::scan ${scan_args[@]+"${scan_args[@]}"})"
 	rc=$?
 	if [ "$rc" -ne 0 ]; then
 		return "$rc"
@@ -1272,12 +1272,12 @@ shell::nvm::unused() {
 	fi
 	{
 		printf 'VERSION\tREASON\tSIZE\tWHY\n'
-		printf '%s\n' "$found" | sort -t "$(printf '\t')" -k3,3nr | shell::nvm::size::format
+		printf '%s\n' "$found" | sort -t "$(printf '\t')" -k3,3nr | _shell::nvm::size::format
 	} | awk -F'\t' '{ printf "%-12s %-13s %8s  %s\n", $1, $2, $3, $4 }'
 }
 
 # @description Find unused Node versions, pick the ones to remove, and remove them.
-#   Runs shell::nvm::unused::scan, lists the candidates (version, reason, size,
+#   Runs _shell::nvm::unused::scan, lists the candidates (version, reason, size,
 #   why) with a preview of each version's global npm packages, and lets you mark
 #   the ones to uninstall. After a confirmation it runs `nvm uninstall` on each.
 #   Nothing is pre-selected and nothing is removed without your confirmation.
@@ -1331,7 +1331,7 @@ shell::nvm::unused::fzf() {
 
 	local found rc picked line failed=0
 	local -a chosen=() opts=()
-	found="$(shell::nvm::unused::scan ${scan_args[@]+"${scan_args[@]}"})"
+	found="$(_shell::nvm::unused::scan ${scan_args[@]+"${scan_args[@]}"})"
 	rc=$?
 	if [ "$rc" -ne 0 ]; then
 		return "$rc"
@@ -1341,9 +1341,9 @@ shell::nvm::unused::fzf() {
 		return "$RETURN_SUCCESS"
 	fi
 
-	picked="$(printf '%s\n' "$found" | sort -t "$(printf '\t')" -k3,3nr | shell::nvm::size::format |
+	picked="$(printf '%s\n' "$found" | sort -t "$(printf '\t')" -k3,3nr | _shell::nvm::size::format |
 		awk -F'\t' '{ printf "%-12s %-13s %8s  %s\n", $1, $2, $3, $4 }' |
-		shell::nvm::fzf::pick -m -p "Remove Node: " -P "$(shell::nvm::fzf::preview)" \
+		_shell::nvm::fzf::pick -m -p "Remove Node: " -P "$(_shell::nvm::fzf::preview)" \
 			-H "Tab: mark   Ctrl-A: mark all   Enter: uninstall   ESC: cancel")"
 	rc=$?
 	case "$rc" in
@@ -1357,7 +1357,7 @@ shell::nvm::unused::fzf() {
 	done <<EOF
 $picked
 EOF
-	shell::nvm::fzf::confirm "$assume_yes" "Uninstall ${chosen[*]}?" || {
+	_shell::nvm::fzf::confirm "$assume_yes" "Uninstall ${chosen[*]}?" || {
 		shell::logger::info "Aborted"
 		return "$RETURN_SUCCESS"
 	}
@@ -1418,7 +1418,7 @@ shell::nvm::manage() {
 		opts+=(-n)
 	fi
 	shell::dependency::nvm::load >/dev/null 2>&1 || {
-		shell::nvm::fzf::missing
+		_shell::nvm::fzf::missing
 		return $?
 	}
 

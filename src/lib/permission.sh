@@ -339,13 +339,13 @@ shell::permission::analyze() {
 	# Describe one rwx triplet and compute its octal digit; writes two globals
 	# to avoid subshells (kept local to this function through the names below).
 	local owner_desc group_desc others_desc owner_bits group_bits others_bits
-	shell::permission::describe "$owner"
+	_shell::permission::describe "$owner"
 	owner_desc="$_SHELL_PERM_DESC"
 	owner_bits="$_SHELL_PERM_BITS"
-	shell::permission::describe "$group"
+	_shell::permission::describe "$group"
 	group_desc="$_SHELL_PERM_DESC"
 	group_bits="$_SHELL_PERM_BITS"
-	shell::permission::describe "$others"
+	_shell::permission::describe "$others"
 	others_desc="$_SHELL_PERM_DESC"
 	others_bits="$_SHELL_PERM_BITS"
 
@@ -386,7 +386,7 @@ shell::permission::analyze() {
 # @set _SHELL_PERM_DESC string Human-readable description, e.g. "read, execute".
 # @set _SHELL_PERM_BITS integer Octal digit 0-7.
 # @exitcode 0 Always.
-shell::permission::describe() {
+_shell::permission::describe() {
 	local triplet="$1"
 	local words="" bits=0
 

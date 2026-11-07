@@ -33,9 +33,9 @@
 # @exitcode 0 Resolved.
 # @exitcode 1 Not a repository, or the file does not belong to it.
 # @example
-#   IFS=$'\037' read -r root name branch rel <<<"$(shell::git::history::context src/a.sh)"
+#   IFS=$'\037' read -r root name branch rel <<<"$(_shell::git::history::context src/a.sh)"
 #
-shell::git::history::context() {
+_shell::git::history::context() {
 	local file="${1-}" us=$'\037'
 	local root name branch rel="" prefix dir base canon
 
@@ -115,9 +115,9 @@ shell::git::history::context() {
 # @exitcode 0 Valid scope.
 # @exitcode 1 Unsupported type, missing argument, or invalid range / name.
 # @example
-#   shell::git::history::scope lines src/a.sh 10-40
+#   _shell::git::history::scope lines src/a.sh 10-40
 #
-shell::git::history::scope() {
+_shell::git::history::scope() {
 	local type="${1-}" file="${2-}" spec="${3-}" us=$'\037'
 	local start end total
 
@@ -203,9 +203,9 @@ shell::git::history::scope() {
 # @stdout The `-L` argument.
 # @exitcode 0 Always.
 # @example
-#   shell::git::history::function::resolve src/a.sh Login   # :Login:src/a.sh
+#   _shell::git::history::function::resolve src/a.sh Login   # :Login:src/a.sh
 #
-shell::git::history::function::resolve() {
+_shell::git::history::function::resolve() {
 	local file="${1-}" name="${2-}" re=""
 	local rest="$name"
 	while :; do
@@ -240,9 +240,9 @@ shell::git::history::function::resolve() {
 # @exitcode 0 Success.
 # @exitcode 1 Unsupported scope type.
 # @example
-#   shell::git::history::log::args file src/a.sh "" 50
+#   _shell::git::history::log::args file src/a.sh "" 50
 #
-shell::git::history::log::args() {
+_shell::git::history::log::args() {
 	local type="${1-}" file="${2-}" spec="${3-}" max="${4:-$SHELL_GIT_HISTORY_MAX}" merges="${5:-true}" rev="${6-}" branch="${7-}"
 
 	printf '%s\n' -c core.quotepath=off log --no-color "--date=format:%Y-%m-%d %H:%M:%S" "-n${max}" \
@@ -253,7 +253,7 @@ shell::git::history::log::args() {
 	repo) printf '%s\n' --numstat -M ;;
 	file) printf '%s\n' --follow --numstat -M ;;
 	function)
-		printf '%s\n' -L "$(shell::git::history::function::resolve "$file" "$spec")" \
+		printf '%s\n' -L "$(_shell::git::history::function::resolve "$file" "$spec")" \
 			-p --src-prefix=a/ --dst-prefix=b/
 		;;
 	lines) printf '%s\n' -L "${spec}:${file}" -p --src-prefix=a/ --dst-prefix=b/ ;;
@@ -303,13 +303,13 @@ shell::git::history::log() {
 	git rev-parse --verify -q HEAD >/dev/null 2>&1 || return "$RETURN_SUCCESS"
 
 	if [ "$type" = "function" ]; then
-		while IFS= read -r line; do args+=("$line"); done < <(shell::git::history::log::args "$type" "$file" "$spec" 1 true "" "$branch")
+		while IFS= read -r line; do args+=("$line"); done < <(_shell::git::history::log::args "$type" "$file" "$spec" 1 true "" "$branch")
 		if ! git "${args[@]}" >/dev/null 2>&1; then
 			# Gone at HEAD? Start from the commit before the one that removed it.
 			removed="$(git log -n 1 --format=%H "-S${spec}" ${branch:---all} -- "$file" 2>/dev/null)"
 			rev="${removed:+${removed}^}"
 			args=()
-			while IFS= read -r line; do args+=("$line"); done < <(shell::git::history::log::args "$type" "$file" "$spec" 1 true "$rev" "$branch")
+			while IFS= read -r line; do args+=("$line"); done < <(_shell::git::history::log::args "$type" "$file" "$spec" 1 true "$rev" "$branch")
 			if [ -z "$rev" ] || ! git "${args[@]}" >/dev/null 2>&1; then
 				shell::logger::error "Function '$spec' was not found in '$file' (Git matches function headers per language; try --lines)"
 				return "$RETURN_FAILURE"
@@ -319,7 +319,7 @@ shell::git::history::log() {
 	fi
 
 	args=()
-	while IFS= read -r line; do args+=("$line"); done < <(shell::git::history::log::args "$type" "$file" "$spec" "$max" "$merges" "$rev" "$branch")
+	while IFS= read -r line; do args+=("$line"); done < <(_shell::git::history::log::args "$type" "$file" "$spec" "$max" "$merges" "$rev" "$branch")
 	raw="$(git "${args[@]}" 2>/dev/null)" || {
 		shell::logger::error "git log failed for the $type scope"
 		return "$RETURN_FAILURE"
@@ -429,14 +429,14 @@ shell::git::history::log() {
 		awk 'BEGIN { FS = OFS = "\037" }
 			FNR == NR { split($0, p, "\t"); F[p[1]] = p[2]; A[p[1]] = p[3]; D[p[1]] = p[4]; next }
 			{ $11 = ($1 in A) ? A[$1] : $5; $12 = ($1 in D) ? D[$1] : $6; $13 = ($1 in F) ? F[$1] : $7; print }' \
-			<(shell::git::history::log::whole "$shas") <(printf '%s\n' "$records")
+			<(_shell::git::history::log::whole "$shas") <(printf '%s\n' "$records")
 		;;
 	*)
 		shas="$(printf '%s\n' "$records" | cut -d "$us" -f1)"
 		awk 'BEGIN { FS = OFS = "\037" }
 			FNR == NR { split($0, p, "\t"); F[p[1]] = p[2]; A[p[1]] = p[3]; D[p[1]] = p[4]; next }
 			{ $11 = ($1 in A) ? A[$1] : $5; $12 = ($1 in D) ? D[$1] : $6; $13 = ($1 in F) ? F[$1] : $7; print }' \
-			<(shell::git::history::log::whole "$shas") <(printf '%s\n' "$records")
+			<(_shell::git::history::log::whole "$shas") <(printf '%s\n' "$records")
 		;;
 	esac
 	return "$RETURN_SUCCESS"
@@ -448,9 +448,9 @@ shell::git::history::log() {
 # @stdout One line per commit, tab separated: hash, files, additions, deletions.
 # @exitcode 0 Always.
 # @example
-#   shell::git::history::log::whole "$shas"
+#   _shell::git::history::log::whole "$shas"
 #
-shell::git::history::log::whole() {
+_shell::git::history::log::whole() {
 	printf '%s\n' "${1-}" | git log --no-walk=unsorted --stdin --numstat --format='%x1e%H' 2>/dev/null |
 		awk 'BEGIN { FS = "\t"; RS = "\036" }
 			$0 == "" { next }
@@ -600,9 +600,9 @@ shell::git::history::stats() {
 # @stdout The width.
 # @exitcode 0 Always.
 # @example
-#   w="$(shell::git::history::width)"
+#   w="$(_shell::git::history::width)"
 #
-shell::git::history::width() {
+_shell::git::history::width() {
 	local w="${1-}"
 	# A value under 20 is "unknown" (zsh sets COLUMNS=0 when there is no terminal).
 	case "$w" in '' | *[!0-9]*) w="${COLUMNS-}" ;; esac
@@ -621,9 +621,9 @@ shell::git::history::width() {
 # @stdout The text, shortened when needed.
 # @exitcode 0 Always.
 # @example
-#   shell::git::history::fit "$long_path" 30 tail
+#   _shell::git::history::fit "$long_path" 30 tail
 #
-shell::git::history::fit() {
+_shell::git::history::fit() {
 	local text="${1-}" max="${2:-0}" mode="${3-}"
 	if [ "$max" -lt 2 ]; then
 		printf '%s\n' ""
@@ -648,9 +648,9 @@ shell::git::history::fit() {
 # @stdout The row.
 # @exitcode 0 Always.
 # @example
-#   shell::git::history::dashboard::row 60 "" "" "" "Branch: main"
+#   _shell::git::history::dashboard::row 60 "" "" "" "Branch: main"
 #
-shell::git::history::dashboard::row() {
+_shell::git::history::dashboard::row() {
 	local cw="${1:-0}" dim="${2-}" off="${3-}" paint="${4-}" text="${5-}" pad
 	pad=$((cw - ${#text}))
 	[ "$pad" -lt 0 ] && pad=0
@@ -712,7 +712,7 @@ shell::git::history::dashboard() {
 		bold="${esc}[1m" cyan="${esc}[36m" yellow="${esc}[33m" green="${esc}[32m" red="${esc}[31m" dim="${esc}[2m" off="${esc}[0m"
 	fi
 
-	width="$(shell::git::history::width "$width")"
+	width="$(_shell::git::history::width "$width")"
 	[ "$width" -gt "${SHELL_GIT_HISTORY_WIDTH:-72}" ] && width="${SHELL_GIT_HISTORY_WIDTH:-72}"
 
 	local scope_label
@@ -733,18 +733,18 @@ shell::git::history::dashboard() {
 	local cw=$((width - 4)) detail_label="" detail=""
 	[ "$cw" -lt 12 ] && cw=12
 	head_rows+=("t:GIT CHRONICLE")
-	head_rows+=("n:Repository: $(shell::git::history::fit "$repo" $((cw - 12)))")
-	head_rows+=("n:Branch: $(shell::git::history::fit "$branch" $((cw - 8)))")
+	head_rows+=("n:Repository: $(_shell::git::history::fit "$repo" $((cw - 12)))")
+	head_rows+=("n:Branch: $(_shell::git::history::fit "$branch" $((cw - 8)))")
 
 	scope_rows+=("s:SCOPE: $scope_label")
-	[ -n "$file" ] && scope_rows+=("n:File: $(shell::git::history::fit "$file" $((cw - 6)) tail)")
+	[ -n "$file" ] && scope_rows+=("n:File: $(_shell::git::history::fit "$file" $((cw - 6)) tail)")
 	case "$type" in
 	function) detail_label="Function" detail="${spec}()" ;;
 	lines) detail_label="Lines" detail="$spec" ;;
 	search | regex) detail_label="Pattern" detail="$spec" ;;
 	esac
 	if [ -n "$detail_label" ]; then
-		scope_rows+=("n:${detail_label}: $(shell::git::history::fit "$detail" $((cw - ${#detail_label} - 2)))")
+		scope_rows+=("n:${detail_label}: $(_shell::git::history::fit "$detail" $((cw - ${#detail_label} - 2)))")
 	fi
 	[ "$first" != "-" ] && scope_rows+=("d:Span: ${first} → ${last}")
 
@@ -768,13 +768,13 @@ shell::git::history::dashboard() {
 		for entry in "${head_rows[@]}"; do
 			style="${entry%%:*}" text="${entry#*:}"
 			case "$style" in t) paint="${bold}${cyan}" ;; *) paint="" ;; esac
-			shell::git::history::dashboard::row "$cw" "$dim" "$off" "$paint" "$text"
+			_shell::git::history::dashboard::row "$cw" "$dim" "$off" "$paint" "$text"
 		done
 		printf '%s├%s┤%s\n' "$dim" "$bar" "$off"
 		for entry in "${scope_rows[@]}"; do
 			style="${entry%%:*}" text="${entry#*:}"
 			case "$style" in s) paint="${bold}${yellow}" ;; d) paint="$dim" ;; *) paint="" ;; esac
-			shell::git::history::dashboard::row "$cw" "$dim" "$off" "$paint" "$text"
+			_shell::git::history::dashboard::row "$cw" "$dim" "$off" "$paint" "$text"
 		done
 		printf '%s├%s┤%s\n' "$dim" "$bar" "$off"
 		pad=$((cw - colw * 2 - ${#h3}))
@@ -862,7 +862,7 @@ shell::git::history::timeline() {
 	if [ "$color" = "true" ]; then
 		cyan="${esc}[36m" yellow="${esc}[33m" green="${esc}[32m" red="${esc}[31m" dim="${esc}[2m" bold="${esc}[1m" off="${esc}[0m"
 	fi
-	width="$(shell::git::history::width "$width")"
+	width="$(_shell::git::history::width "$width")"
 
 	local full short author date adds dels files merge fpath opath ra rd rf subject body cbranch
 	local glyph room subj summary track="${SHELL_GLYPH_TRACK:-│}" branch_tag="" cbranch
@@ -887,7 +887,7 @@ shell::git::history::timeline() {
 		if [ "$rows" = "true" ]; then
 			room=$((width * 45 / 100 - 45 - ${#author} - ${#branch_tag}))
 			[ "$room" -lt 12 ] && room=12
-			subj="$(shell::git::history::fit "$subject" "$room")"
+			subj="$(_shell::git::history::fit "$subject" "$room")"
 			case "$type" in
 			function | lines)
 				summary="Selected ${type}: +${adds} -${dels}"
@@ -916,14 +916,14 @@ shell::git::history::timeline() {
 
 		room=$((width - 37 - ${#branch_tag}))
 		[ "$room" -lt 10 ] && room=10
-		subj="$(shell::git::history::fit "$subject" "$room")"
+		subj="$(_shell::git::history::fit "$subject" "$room")"
 		printf '%s%s%s %s%s%s  %s%s%s%s  %s\n' "$bold" "$glyph" "$off" "$yellow" "$date" "$off" "$cyan" "$short" "$branch_tag" "$off" "$subj"
 		if [ "$n" -lt "$total" ]; then
-			printf '%s%s%s %s%s%s  %s+%s%s %s-%s%s' "$dim" "$track" "$off" "$yellow" "$(shell::git::history::fit "$author" 18)" "$off" "$green" "$adds" "$off" "$red" "$dels" "$off"
+			printf '%s%s%s %s%s%s  %s+%s%s %s-%s%s' "$dim" "$track" "$off" "$yellow" "$(_shell::git::history::fit "$author" 18)" "$off" "$green" "$adds" "$off" "$red" "$dels" "$off"
 			[ "$merge" = "1" ] && printf '  %smerge%s' "$dim" "$off"
 			printf '\n%s%s%s\n' "$dim" "$track" "$off"
 		else
-			printf '  %s%s%s  %s+%s%s %s-%s%s' "$yellow" "$(shell::git::history::fit "$author" 18)" "$off" "$green" "$adds" "$off" "$red" "$dels" "$off"
+			printf '  %s%s%s  %s+%s%s %s-%s%s' "$yellow" "$(_shell::git::history::fit "$author" 18)" "$off" "$green" "$adds" "$off" "$red" "$dels" "$off"
 			[ "$merge" = "1" ] && printf '  %smerge%s' "$dim" "$off"
 			printf '\n'
 		fi
@@ -936,9 +936,9 @@ shell::git::history::timeline() {
 # @stdout The name: delta, bat or git.
 # @exitcode 0 Always.
 # @example
-#   hl="$(shell::git::history::highlighter)"
+#   hl="$(_shell::git::history::highlighter)"
 #
-shell::git::history::highlighter() {
+_shell::git::history::highlighter() {
 	if command -v delta >/dev/null 2>&1; then
 		printf 'delta\n'
 	elif command -v bat >/dev/null 2>&1; then
@@ -954,9 +954,9 @@ shell::git::history::highlighter() {
 # @stdin Text to show.
 # @exitcode 0 Always.
 # @example
-#   git show HEAD | shell::git::history::page
+#   git show HEAD | _shell::git::history::page
 #
-shell::git::history::page() {
+_shell::git::history::page() {
 	if [ ! -t 1 ]; then
 		cat
 		return 0
@@ -983,9 +983,9 @@ shell::git::history::page() {
 # @stdout The header and the diff.
 # @exitcode 0 Always.
 # @example
-#   shell::git::history::show "$root" function Login "$sha" src/a.go src/a.go
+#   _shell::git::history::show "$root" function Login "$sha" src/a.go src/a.go
 #
-shell::git::history::show() {
+_shell::git::history::show() {
 	local root="${1-}" type="${2-}" spec="${3-}" sha="${4-}" fpath="${5:-.}" opath="${6-}" which="${7-}" color="${8:-never}"
 	local larg
 
@@ -999,7 +999,7 @@ shell::git::history::show() {
 	case "$type" in
 	function | lines)
 		if [ "$type" = "function" ]; then
-			larg="$(shell::git::history::function::resolve "$fpath" "$spec")"
+			larg="$(_shell::git::history::function::resolve "$fpath" "$spec")"
 		else
 			larg="${spec}:${fpath}"
 		fi
@@ -1075,7 +1075,7 @@ shell::git::history::inspect() {
 
 	local color="never" hl
 	if [ -t 1 ]; then color="always"; fi
-	hl="$(shell::git::history::highlighter)"
+	hl="$(_shell::git::history::highlighter)"
 
 	if [ "$blame" = "true" ]; then
 		local -a bargs=()
@@ -1087,7 +1087,7 @@ shell::git::history::inspect() {
 			shell::logger::warn "Blame needs a file: this commit changed several files"
 			return "$RETURN_FAILURE"
 		fi
-		git -C "$root" blame "${bargs[@]}" "$sha" -- "$fpath" 2>&1 | shell::git::history::page
+		git -C "$root" blame "${bargs[@]}" "$sha" -- "$fpath" 2>&1 | _shell::git::history::page
 		return "$RETURN_SUCCESS"
 	fi
 
@@ -1099,9 +1099,9 @@ shell::git::history::inspect() {
 	bat) [ -t 1 ] || hl="git" ;;
 	esac
 	case "$hl" in
-	delta) shell::git::history::show "$root" "$type" "$spec" "$sha" "$fpath" "$opath" "$which" "$color" | delta --paging=never | shell::git::history::page ;;
-	bat) shell::git::history::show "$root" "$type" "$spec" "$sha" "$fpath" "$opath" "$which" "$color" | bat -l diff --paging=never --style=plain --color=always | shell::git::history::page ;;
-	*) shell::git::history::show "$root" "$type" "$spec" "$sha" "$fpath" "$opath" "$which" "$color" | shell::git::history::page ;;
+	delta) _shell::git::history::show "$root" "$type" "$spec" "$sha" "$fpath" "$opath" "$which" "$color" | delta --paging=never | _shell::git::history::page ;;
+	bat) _shell::git::history::show "$root" "$type" "$spec" "$sha" "$fpath" "$opath" "$which" "$color" | bat -l diff --paging=never --style=plain --color=always | _shell::git::history::page ;;
+	*) _shell::git::history::show "$root" "$type" "$spec" "$sha" "$fpath" "$opath" "$which" "$color" | _shell::git::history::page ;;
 	esac
 	return "$RETURN_SUCCESS"
 }
@@ -1119,12 +1119,12 @@ shell::git::history::inspect() {
 # @stdout The command.
 # @exitcode 0 Always.
 # @example
-#   preview="$(shell::git::history::preview::command "$root" function Login always delta)"
+#   preview="$(_shell::git::history::preview::command "$root" function Login always delta)"
 #
-shell::git::history::preview::command() {
+_shell::git::history::preview::command() {
 	local root="${1-}" type="${2-}" spec="${3-}" color="${4:-never}" hl="${5:-git}"
 	local q_root head body larg pipe=""
-	q_root="$(shell::git::commit::spec::quote "$root")"
+	q_root="$(_shell::git::commit::spec::quote "$root")"
 	head="git -C ${q_root} show -s --color=${color} --date=iso --format='%C(yellow)commit %H%Creset%nParents: %p%nAuthor:  %an%nDate:    %ad%n%n    %s%n%n%b' {1}; printf '\\n%s\\n\\n' {4}"
 	case "$hl" in
 	delta) pipe=" | delta --paging=never" ;;
@@ -1132,12 +1132,12 @@ shell::git::history::preview::command() {
 	esac
 	case "$type" in
 	function)
-		larg="$(shell::git::history::function::resolve "@@" "$spec")"
+		larg="$(_shell::git::history::function::resolve "@@" "$spec")"
 		larg="${larg%:@@}"
-		body="{ git -C ${q_root} log -L $(shell::git::commit::spec::quote "$larg"):{2} -n 1 --format= --color=${color} {1} 2>/dev/null || git -C ${q_root} show --format= -M --color=${color} {1} -- {2} {3}; }"
+		body="{ git -C ${q_root} log -L $(_shell::git::commit::spec::quote "$larg"):{2} -n 1 --format= --color=${color} {1} 2>/dev/null || git -C ${q_root} show --format= -M --color=${color} {1} -- {2} {3}; }"
 		;;
 	lines)
-		body="{ git -C ${q_root} log -L $(shell::git::commit::spec::quote "$spec"):{2} -n 1 --format= --color=${color} {1} 2>/dev/null || git -C ${q_root} show --format= -M --color=${color} {1} -- {2} {3}; }"
+		body="{ git -C ${q_root} log -L $(_shell::git::commit::spec::quote "$spec"):{2} -n 1 --format= --color=${color} {1} 2>/dev/null || git -C ${q_root} show --format= -M --color=${color} {1} -- {2} {3}; }"
 		;;
 	*)
 		body="git -C ${q_root} show --format= -M --color=${color} {1} -- {2} {3}"
@@ -1155,9 +1155,9 @@ shell::git::history::preview::command() {
 # @stdout One name per line, in file order, without duplicates.
 # @exitcode 0 Always.
 # @example
-#   shell::git::history::function::candidates "$root" src/a.sh
+#   _shell::git::history::function::candidates "$root" src/a.sh
 #
-shell::git::history::function::candidates() {
+_shell::git::history::function::candidates() {
 	git -C "${1-}" show "HEAD:${2-}" 2>/dev/null | sed -nE \
 		-e 's/^[[:space:]]*(export[[:space:]]+)?(async[[:space:]]+)?(pub[[:space:]]+)?(function|def|func|fn|sub)[[:space:]]+(\([^)]*\)[[:space:]]*)?([A-Za-z_][A-Za-z0-9_.$:-]*).*/\6/p' \
 		-e 's/^[[:space:]]*([A-Za-z_][A-Za-z0-9_:.-]*)[[:space:]]*\(\)[[:space:]]*\{?.*/\1/p' | awk '!seen[$0]++'
@@ -1183,7 +1183,7 @@ shell::git::history::pick() {
 			printf '%s\n' "$whole"
 			git -C "$root" ls-files 2>/dev/null
 			printf '%s\n' "$back"
-		} | shell::fzf::select --prompt="History of: " --preview="git -C $(shell::git::commit::spec::quote "$root") log -n 8 --format='%h %ad %an  %s' --date=format:'%Y-%m-%d %H:%M:%S' -- {} 2>/dev/null")" || return "$RETURN_CANCELLED"
+		} | shell::fzf::select --prompt="History of: " --preview="git -C $(_shell::git::commit::spec::quote "$root") log -n 8 --format='%h %ad %an  %s' --date=format:'%Y-%m-%d %H:%M:%S' -- {} 2>/dev/null")" || return "$RETURN_CANCELLED"
 		[ -n "$file" ] || return "$RETURN_CANCELLED"
 		[ "$file" = "$back" ] && return "$RETURN_BACK"
 
@@ -1218,7 +1218,7 @@ shell::git::history::pick() {
 			;;
 		"Function history")
 			name="$({
-				shell::git::history::function::candidates "$root" "$file"
+				_shell::git::history::function::candidates "$root" "$file"
 				printf '%s\n' "(type a name)" "$back"
 			} | shell::fzf::select --prompt="Function: ")" || return "$RETURN_CANCELLED"
 			[ "$name" = "$back" ] && continue
@@ -1393,7 +1393,7 @@ shell::git::history::fzf() {
 	shell::dependency::git::ensure || return "$RETURN_FAILURE"
 
 	local us=$'\037' tab=$'\t' ctx root name branch rel
-	ctx="$(shell::git::history::context "$file_arg")" || return "$RETURN_FAILURE"
+	ctx="$(_shell::git::history::context "$file_arg")" || return "$RETURN_FAILURE"
 	IFS="$us" read -r root name branch rel <<<"$ctx"
 	# Optional, silent remote sync (opt-in: it costs a network round trip). A failure is shown
 	# in full, then the history of what is already local is still explored.
@@ -1425,14 +1425,14 @@ shell::git::history::fzf() {
 		if [ -n "$rel" ]; then type="file"; else type="repo"; fi
 	fi
 
-	descriptor="$(shell::git::history::scope "$type" "$rel" "$spec")" || return "$RETURN_FAILURE"
+	descriptor="$(_shell::git::history::scope "$type" "$rel" "$spec")" || return "$RETURN_FAILURE"
 	IFS="$us" read -r type rel spec <<<"$descriptor"
 
 	if [ "$dry_run" = "true" ]; then
 		local -a dargs=()
-		local dline dcmd="git -C $(shell::git::commit::spec::quote "$root")"
-		while IFS= read -r dline; do dargs+=("$dline"); done < <(shell::git::history::log::args "$type" "$rel" "$spec" "$max" "$merges" "" "$branch_arg")
-		for dline in "${dargs[@]}"; do dcmd="${dcmd} $(shell::git::commit::spec::quote "$dline")"; done
+		local dline dcmd="git -C $(_shell::git::commit::spec::quote "$root")"
+		while IFS= read -r dline; do dargs+=("$dline"); done < <(_shell::git::history::log::args "$type" "$rel" "$spec" "$max" "$merges" "" "$branch_arg")
+		for dline in "${dargs[@]}"; do dcmd="${dcmd} $(_shell::git::commit::spec::quote "$dline")"; done
 		shell::logger::command_clip "$dcmd"
 		return "$RETURN_SUCCESS"
 	fi
@@ -1472,7 +1472,7 @@ shell::git::history::fzf() {
 
 	# Interaction.
 	local hl color_flag="never"
-	hl="$(shell::git::history::highlighter)"
+	hl="$(_shell::git::history::highlighter)"
 	if [ "$use_color" = "true" ] && [ "$hl" != "bat" ]; then color_flag="always"; fi
 
 	local dashboard shortcuts header rows preview
@@ -1481,7 +1481,7 @@ shell::git::history::fzf() {
 	header="${dashboard}"$'\n'"${shortcuts}"
 	rows="$(printf '%s\n' "$records" | shell::git::history::timeline -r "${dash_flags[@]}" -t "$type")"
 	rows="${rows}"$'\n'"${SHELL_FZF_BACK_LABEL}${tab}:back${tab}${tab}${tab}"
-	preview="$(shell::git::history::preview::command "$root" "$type" "$spec" "$color_flag" "$hl")"
+	preview="$(_shell::git::history::preview::command "$root" "$type" "$spec" "$color_flag" "$hl")"
 
 	local out key sel full fpath opath
 	while true; do

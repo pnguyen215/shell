@@ -64,13 +64,13 @@ shell::logger::can() {
 # @internal
 # @description Format and print one log line if its level is enabled.
 #   The visible look comes from the active logger style
-#   (shell::logger::style::render); this function only applies the threshold.
+#   (_shell::logger::style::render); this function only applies the threshold.
 # @arg $1 string Level name: DEBUG, INFO, WARN, ERROR, FATAL, or SUCCESS (an INFO-level success line).
 # @arg $2 integer ANSI 256-colour code (used by styles that colour the whole line).
 # @arg $3 string Stream: "stdout" or "stderr".
 # @arg $@ string Message words, joined with single spaces.
 # @exitcode 0 Always (a filtered message is not an error).
-shell::logger::fmt() {
+_shell::logger::fmt() {
 	local level="$1"
 	local color="$2"
 	local stream="$3"
@@ -86,7 +86,7 @@ shell::logger::fmt() {
 		return "$RETURN_SUCCESS"
 	fi
 
-	shell::logger::style::render "${SHELL_LOGGER_STYLE:-$SHELL_LOGGER_STYLE_DEFAULT}" "$level" "$color" "$stream" "$@"
+	_shell::logger::style::render "${SHELL_LOGGER_STYLE:-$SHELL_LOGGER_STYLE_DEFAULT}" "$level" "$color" "$stream" "$@"
 	return "$RETURN_SUCCESS"
 }
 
@@ -125,7 +125,7 @@ shell::logger::level() {
 # @stderr "DEBUG: <message>"
 # @exitcode 0 Always.
 shell::logger::debug() {
-	shell::logger::fmt "DEBUG" "$SHELL_COLOR_DEBUG" "stderr" "$@"
+	_shell::logger::fmt "DEBUG" "$SHELL_COLOR_DEBUG" "stderr" "$@"
 }
 
 # @description Log an INFO message (stdout).
@@ -133,7 +133,7 @@ shell::logger::debug() {
 # @stdout "INFO: <message>"
 # @exitcode 0 Always.
 shell::logger::info() {
-	shell::logger::fmt "INFO" "$SHELL_COLOR_INFO" "stdout" "$@"
+	_shell::logger::fmt "INFO" "$SHELL_COLOR_INFO" "stdout" "$@"
 }
 
 # @description Log a WARN message (stderr).
@@ -141,7 +141,7 @@ shell::logger::info() {
 # @stderr "WARN: <message>"
 # @exitcode 0 Always.
 shell::logger::warn() {
-	shell::logger::fmt "WARN" "$SHELL_COLOR_WARN" "stderr" "$@"
+	_shell::logger::fmt "WARN" "$SHELL_COLOR_WARN" "stderr" "$@"
 }
 
 # @description Log an ERROR message (stderr).
@@ -149,7 +149,7 @@ shell::logger::warn() {
 # @stderr "ERROR: <message>"
 # @exitcode 0 Always.
 shell::logger::error() {
-	shell::logger::fmt "ERROR" "$SHELL_COLOR_ERROR" "stderr" "$@"
+	_shell::logger::fmt "ERROR" "$SHELL_COLOR_ERROR" "stderr" "$@"
 }
 
 # @description Log a FATAL message (stderr) and return a failure status.
@@ -161,7 +161,7 @@ shell::logger::error() {
 # @stderr "FATAL: <message>"
 # @exitcode 1 Always.
 shell::logger::fatal() {
-	shell::logger::fmt "FATAL" "$SHELL_COLOR_FATAL" "stderr" "$@"
+	_shell::logger::fmt "FATAL" "$SHELL_COLOR_FATAL" "stderr" "$@"
 	return "$RETURN_FAILURE"
 }
 
@@ -170,7 +170,7 @@ shell::logger::fatal() {
 # @stdout "[ok]    <message>" (style simple) or "INFO: <message>" (style classic)
 # @exitcode 0 Always.
 shell::logger::success() {
-	shell::logger::fmt "SUCCESS" "$SHELL_COLOR_SUCCESS" "stdout" "$@"
+	_shell::logger::fmt "SUCCESS" "$SHELL_COLOR_SUCCESS" "stdout" "$@"
 }
 
 # @description Print the "USAGE:" line of a help block.
@@ -479,3 +479,4 @@ shell::logger::evaluate() {
 
 	return "$exit_code"
 }
+

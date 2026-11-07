@@ -31,9 +31,9 @@
 # @exitcode 0 It is.
 # @exitcode 1 It is not (wildcards and spaces are refused on purpose).
 # @example
-#   shell::ssh::config::alias::valid "web-1" && echo ok
+#   _shell::ssh::config::alias::valid "web-1" && echo ok
 #
-shell::ssh::config::alias::valid() {
+_shell::ssh::config::alias::valid() {
 	case "${1-}" in
 	'' | [!A-Za-z0-9]* | *[!A-Za-z0-9._-]*) return 1 ;;
 	esac
@@ -47,9 +47,9 @@ shell::ssh::config::alias::valid() {
 # @exitcode 0 Success.
 # @exitcode 1 The value is empty, or holds a double quote or a control character.
 # @example
-#   shell::ssh::config::value "/home/me/my keys/id"   # -> "/home/me/my keys/id"
+#   _shell::ssh::config::value "/home/me/my keys/id"   # -> "/home/me/my keys/id"
 #
-shell::ssh::config::value() {
+_shell::ssh::config::value() {
 	case "${1-}" in
 	'' | *'"'* | *[[:cntrl:]]*) return 1 ;;
 	*[[:space:]]*) printf '"%s"\n' "$1" ;;
@@ -65,9 +65,9 @@ shell::ssh::config::value() {
 # @exitcode 0 Success (the list may be empty).
 # @exitcode 3 The file does not exist.
 # @example
-#   shell::ssh::config::aliases ~/.ssh/config
+#   _shell::ssh::config::aliases ~/.ssh/config
 #
-shell::ssh::config::aliases() {
+_shell::ssh::config::aliases() {
 	local file="${1-}"
 	if [ ! -f "$file" ]; then
 		return "$RETURN_NOT_FOUND"
@@ -97,9 +97,9 @@ shell::ssh::config::aliases() {
 # @exitcode 0 Backed up (or there was nothing to back up).
 # @exitcode 1 The copy failed.
 # @example
-#   shell::ssh::config::backup ~/.ssh/config
+#   _shell::ssh::config::backup ~/.ssh/config
 #
-shell::ssh::config::backup() {
+_shell::ssh::config::backup() {
 	local file="${1-}"
 	if [ ! -s "$file" ]; then
 		return "$RETURN_SUCCESS"
@@ -119,9 +119,9 @@ shell::ssh::config::backup() {
 # @exitcode 3 The alias is not in the file.
 # @exitcode 4 The alias shares its `Host` line with other names.
 # @example
-#   shell::ssh::config::block::remove ~/.ssh/config web1 > /tmp/new
+#   _shell::ssh::config::block::remove ~/.ssh/config web1 > /tmp/new
 #
-shell::ssh::config::block::remove() {
+_shell::ssh::config::block::remove() {
 	local rc=0
 	awk -v target="${2-}" '
 	function emit(l) {
@@ -187,9 +187,9 @@ shell::ssh::config::block::remove() {
 # @stdout The new content.
 # @exitcode 0 Success.
 # @example
-#   shell::ssh::config::block::insert ~/.ssh/config /tmp/block > /tmp/new
+#   _shell::ssh::config::block::insert ~/.ssh/config /tmp/block > /tmp/new
 #
-shell::ssh::config::block::insert() {
+_shell::ssh::config::block::insert() {
 	awk -v blockfile="${2-}" '
 	function dump(   l) {
 		while ((getline l < blockfile) > 0) print l
@@ -227,9 +227,9 @@ shell::ssh::config::block::insert() {
 # @exitcode 0 The file was rewritten.
 # @exitcode 1 A step failed; the file is unchanged.
 # @example
-#   shell::ssh::config::apply ~/.ssh/config "" "$block"
+#   _shell::ssh::config::apply ~/.ssh/config "" "$block"
 #
-shell::ssh::config::apply() {
+_shell::ssh::config::apply() {
 	local file="${1-}" replace="${2-}" block="${3-}" tmp_block tmp_old tmp_new rc=0 tmp_dir
 	tmp_dir="$(shell::os::temp_dir)"
 	tmp_block="$(mktemp "$tmp_dir/shell-ssh-block.XXXXXX")" || return "$RETURN_FAILURE"
@@ -238,12 +238,12 @@ shell::ssh::config::apply() {
 
 	printf '%s\n' "$block" >"$tmp_block"
 	if [ -n "$replace" ]; then
-		shell::ssh::config::block::remove "$file" "$replace" >"$tmp_old" || rc=$?
+		_shell::ssh::config::block::remove "$file" "$replace" >"$tmp_old" || rc=$?
 	else
 		cat "$file" >"$tmp_old" || rc=$?
 	fi
 	if [ "$rc" -eq 0 ]; then
-		shell::ssh::config::block::insert "$tmp_old" "$tmp_block" >"$tmp_new" || rc=$?
+		_shell::ssh::config::block::insert "$tmp_old" "$tmp_block" >"$tmp_new" || rc=$?
 	fi
 	if [ "$rc" -eq 0 ]; then
 		cat "$tmp_new" >"$file" || rc=$?
@@ -316,12 +316,12 @@ shell::ssh::config::add() {
 			shift
 			;;
 		-f | --file)
-			shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
 			file="$2"
 			shift 2
 			;;
 		-u | --user)
-			shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
 			case "$2" in
 			'' | -* | *[!A-Za-z0-9._+-]*)
 				shell::logger::error "Invalid user: '$2'"
@@ -332,8 +332,8 @@ shell::ssh::config::add() {
 			shift 2
 			;;
 		-p | --port)
-			shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
-			if ! shell::net::port::valid "$2"; then
+			_shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
+			if ! _shell::net::port::valid "$2"; then
 				shell::logger::error "Invalid port: '$2' (1-65535)"
 				return "$RETURN_INVALID"
 			fi
@@ -341,7 +341,7 @@ shell::ssh::config::add() {
 			shift 2
 			;;
 		-i | --identity)
-			shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
 			case "$2" in
 			'' | -*)
 				shell::logger::error "Invalid identity file: '$2'"
@@ -352,8 +352,8 @@ shell::ssh::config::add() {
 			shift 2
 			;;
 		-J | --jump)
-			shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
-			if ! shell::ssh::jump::valid "$2"; then
+			_shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
+			if ! _shell::ssh::jump::valid "$2"; then
 				shell::logger::error "Invalid jump host list: '$2' (use [user@]host[:port], comma separated)"
 				return "$RETURN_INVALID"
 			fi
@@ -361,8 +361,8 @@ shell::ssh::config::add() {
 			shift 2
 			;;
 		--keepalive)
-			shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
-			shell::ssh::cmd::number "$1" "$2" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::number "$1" "$2" || return "$RETURN_INVALID"
 			keepalive="$2"
 			shift 2
 			;;
@@ -395,7 +395,7 @@ shell::ssh::config::add() {
 		return "$RETURN_INVALID"
 	fi
 	local alias_name="$1" host="$2"
-	if ! shell::ssh::config::alias::valid "$alias_name"; then
+	if ! _shell::ssh::config::alias::valid "$alias_name"; then
 		shell::logger::error "Invalid alias: '$alias_name' (letters, digits, . _ - ; it must not start with -)"
 		return "$RETURN_INVALID"
 	fi
@@ -410,13 +410,13 @@ shell::ssh::config::add() {
 '
 	local identity_value="" socket_value=""
 	if [ -n "$identity" ]; then
-		identity_value="$(shell::ssh::config::value "$identity")" || {
+		identity_value="$(_shell::ssh::config::value "$identity")" || {
 			shell::logger::error "Invalid identity file: '$identity' (no double quotes or control characters)"
 			return "$RETURN_INVALID"
 		}
 	fi
 	if [ "$mux" = "true" ]; then
-		socket_value="$(shell::ssh::config::value "$SHELL_SSH_SOCKET_DIR/%C")" || {
+		socket_value="$(_shell::ssh::config::value "$SHELL_SSH_SOCKET_DIR/%C")" || {
 			shell::logger::error "SHELL_SSH_SOCKET_DIR cannot be used in an ssh config: $SHELL_SSH_SOCKET_DIR"
 			return "$RETURN_INVALID"
 		}
@@ -446,7 +446,7 @@ shell::ssh::config::add() {
 	fi
 
 	local replace=""
-	if [ -f "$file" ] && shell::ssh::config::aliases "$file" | grep -Fxq -- "$alias_name"; then
+	if [ -f "$file" ] && _shell::ssh::config::aliases "$file" | grep -Fxq -- "$alias_name"; then
 		if [ "$force" = "false" ]; then
 			shell::logger::warn "Host '$alias_name' already exists in $file (use --force to replace it)"
 			return "$RETURN_EXISTS"
@@ -477,11 +477,11 @@ shell::ssh::config::add() {
 		shell::fs::mkdir --private "$SHELL_SSH_SOCKET_DIR" || return "$RETURN_FAILURE"
 	fi
 	shell::fs::touch --private "$file" || return "$RETURN_FAILURE"
-	shell::ssh::config::backup "$file" || {
+	_shell::ssh::config::backup "$file" || {
 		shell::logger::error "Could not back up $file"
 		return "$RETURN_FAILURE"
 	}
-	shell::ssh::config::apply "$file" "$replace" "$block" || {
+	_shell::ssh::config::apply "$file" "$replace" "$block" || {
 		shell::logger::error "Could not update $file"
 		return "$RETURN_FAILURE"
 	}
@@ -498,9 +498,9 @@ shell::ssh::config::add() {
 # @stdout The table.
 # @exitcode 0 Success.
 # @example
-#   shell::ssh::config::table ~/.ssh/config
+#   _shell::ssh::config::table ~/.ssh/config
 #
-shell::ssh::config::table() {
+_shell::ssh::config::table() {
 	awk '
 function trim(s) { sub(/^[ \t]+/, "", s); sub(/[ \t]+$/, "", s); return s }
 function flush(   i) {
@@ -594,7 +594,7 @@ shell::ssh::config::list() {
 			shift
 			;;
 		-f | --file)
-			shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
 			file="$2"
 			shift 2
 			;;
@@ -612,9 +612,9 @@ shell::ssh::config::list() {
 
 	local out
 	if [ "$names" = "true" ]; then
-		out="$(shell::ssh::config::aliases "$file")"
+		out="$(_shell::ssh::config::aliases "$file")"
 	else
-		out="$(shell::ssh::config::table "$file")"
+		out="$(_shell::ssh::config::table "$file")"
 	fi
 
 	if [ -z "$out" ]; then
@@ -669,7 +669,7 @@ shell::ssh::config::show() {
 			shift
 			;;
 		-f | --file)
-			shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
 			file="$2"
 			shift 2
 			;;
@@ -685,7 +685,7 @@ shell::ssh::config::show() {
 		esac
 	done
 
-	if [ "$#" -ne 1 ] || ! shell::ssh::target::valid "$1"; then
+	if [ "$#" -ne 1 ] || ! _shell::ssh::target::valid "$1"; then
 		shell::logger::error "Exactly one valid alias or host is required"
 		return "$RETURN_INVALID"
 	fi
@@ -697,7 +697,7 @@ shell::ssh::config::show() {
 	cmd+=(-G "$1")
 
 	if [ "$dry_run" = "true" ]; then
-		shell::logger::command_clip "$(shell::ssh::quote "${cmd[@]}")"
+		shell::logger::command_clip "$(_shell::ssh::quote "${cmd[@]}")"
 		return "$RETURN_SUCCESS"
 	fi
 	shell::dependency::ensure ssh || return "$RETURN_NOT_FOUND"
@@ -764,7 +764,7 @@ shell::ssh::config::remove() {
 			shift
 			;;
 		-f | --file)
-			shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
 			file="$2"
 			shift 2
 			;;
@@ -780,7 +780,7 @@ shell::ssh::config::remove() {
 		esac
 	done
 
-	if [ "$#" -ne 1 ] || ! shell::ssh::config::alias::valid "$1"; then
+	if [ "$#" -ne 1 ] || ! _shell::ssh::config::alias::valid "$1"; then
 		shell::logger::error "Exactly one valid alias is required"
 		return "$RETURN_INVALID"
 	fi
@@ -792,7 +792,7 @@ shell::ssh::config::remove() {
 
 	local tmp rc=0
 	tmp="$(mktemp "$(shell::os::temp_dir)/shell-ssh-config.XXXXXX")" || return "$RETURN_FAILURE"
-	shell::ssh::config::block::remove "$file" "$alias_name" >"$tmp" || rc=$?
+	_shell::ssh::config::block::remove "$file" "$alias_name" >"$tmp" || rc=$?
 	case "$rc" in
 	0) ;;
 	3)
@@ -826,7 +826,7 @@ shell::ssh::config::remove() {
 	fi
 
 	rc=0
-	shell::ssh::config::backup "$file" && cat "$tmp" >"$file" || rc=$?
+	_shell::ssh::config::backup "$file" && cat "$tmp" >"$file" || rc=$?
 	rm -f "$tmp"
 	if [ "$rc" -ne 0 ]; then
 		shell::logger::error "Could not update $file"
@@ -846,20 +846,20 @@ shell::ssh::config::remove() {
 # @exitcode 8 The file has no alias.
 # @exitcode 9 The selection was cancelled.
 # @example
-#   alias_name="$(shell::ssh::config::pick "$SHELL_SSH_CONFIG_FILE" "Connect to: ")" || return
+#   alias_name="$(_shell::ssh::config::pick "$SHELL_SSH_CONFIG_FILE" "Connect to: ")" || return
 #
-shell::ssh::config::pick() {
+_shell::ssh::config::pick() {
 	local file="${1-}" prompt="${2:-Host: }" names preview
 	if [ ! -f "$file" ]; then
 		shell::logger::warn "No ssh config file at $file"
 		return "$RETURN_NOT_FOUND"
 	fi
-	names="$(shell::ssh::config::aliases "$file")"
+	names="$(_shell::ssh::config::aliases "$file")"
 	if [ -z "$names" ]; then
 		shell::logger::warn "No Host alias in $file (add one with shell::ssh::config::add)"
 		return "$RETURN_EMPTY"
 	fi
-	preview="$(shell::ssh::quote ssh -F "$file" -G) {} | grep -E '^(hostname|user|port|identityfile|proxyjump) '"
+	preview="$(_shell::ssh::quote ssh -F "$file" -G) {} | grep -E '^(hostname|user|port|identityfile|proxyjump) '"
 	printf '%s\n' "$names" | shell::fzf::select --prompt="$prompt" --preview="$preview"
 }
 
@@ -898,7 +898,7 @@ shell::ssh::config::remove::fzf() {
 		fi
 		prev="$arg"
 	done
-	alias_name="$(shell::ssh::config::pick "$file" "Remove host: ")" || rc=$?
+	alias_name="$(_shell::ssh::config::pick "$file" "Remove host: ")" || rc=$?
 	if [ "$rc" -ne 0 ]; then
 		return "$rc"
 	fi
@@ -945,7 +945,7 @@ shell::ssh::connect::fzf() {
 		fi
 		prev="$arg"
 	done
-	alias_name="$(shell::ssh::config::pick "$file" "Connect to: ")" || rc=$?
+	alias_name="$(_shell::ssh::config::pick "$file" "Connect to: ")" || rc=$?
 	if [ "$rc" -ne 0 ]; then
 		return "$rc"
 	fi

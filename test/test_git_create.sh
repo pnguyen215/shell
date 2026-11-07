@@ -194,15 +194,15 @@ out="$(SHELL_GIT_COMMIT_SCOPES="" run_create "feat${nl}Commit" "add login${nl}#1
 t_has "scope: an empty SHELL_GIT_COMMIT_SCOPES skips the menu" 'git commit -m "feat: add login #12"' "$out"
 
 # The helpers.
-shell::git::commit::scope::applies feat
+_shell::git::commit::scope::applies feat
 t_eq "scope::applies: feat" "0" "$?"
-shell::git::commit::scope::applies "silent changes"
+_shell::git::commit::scope::applies "silent changes"
 t_eq "scope::applies: a type with a plain header" "0" "$?"
-shell::git::commit::scope::applies WIP
+_shell::git::commit::scope::applies WIP
 t_eq "scope::applies: WIP is chore(wip), no" "1" "$?"
-shell::git::commit::scope::applies dependency
+_shell::git::commit::scope::applies dependency
 t_eq "scope::applies: dependency is build(deps), no" "1" "$?"
-SHELL_GIT_COMMIT_SCOPES="" shell::git::commit::scope::applies feat
+SHELL_GIT_COMMIT_SCOPES="" _shell::git::commit::scope::applies feat
 t_eq "scope::applies: an empty catalog, no" "1" "$?"
 
 # --- create: emoji (off by default; after the colon, never before the type) ------------------
@@ -234,7 +234,7 @@ t_has "create: the confirmation shows the final message" "Commit message: feat: 
 
 # --- create: a real commit is passed to git verbatim (it used to be eval'd) ----------------------
 git config user.email t@example.com && git config user.name Tester
-shell::git::commit::publish() { printf 'PUBLISHED<%s>\n' "$1"; }
+_shell::git::commit::publish() { printf 'PUBLISHED<%s>\n' "$1"; }
 echo one >one.txt && git add one.txt
 out="$(run_create "fix${nl}none${nl}Commit" 'quote " and $HOME and `id` and \ done'"${nl}#8${nl}")"
 t_eq "create: a nasty message is stored verbatim" 'fix: quote " and $HOME and `id` and \ done #8' "$(git log -1 --format=%s)"
@@ -354,23 +354,23 @@ run_create "feat${nl}none${nl}Add body${nl}Commit" "dollar${nl}#3${nl}"'cost $HO
 t_eq "real: a nasty body is stored verbatim" 'cost $HOME `id` "q"' "$(git log -1 --format=%b | sed '/^$/d')"
 
 # The helpers.
-t_eq "compose: header only" "fix: x" "$(shell::git::commit::compose "fix: x")"
-t_eq "compose: header, body, footers" "fix: x${nl}${nl}Why.${nl}${nl}Refs: #1" "$(shell::git::commit::compose "fix: x" "Why." "Refs: #1")"
-t_eq "compose: footers without a body" "fix: x${nl}${nl}Refs: #1" "$(shell::git::commit::compose "fix: x" "" "Refs: #1")"
-t_eq "footer::token: a plain token" "Acked-by" "$(shell::git::commit::footer::token "Acked-by")"
-t_eq "footer::token: BREAKING CHANGE, any case" "BREAKING CHANGE" "$(shell::git::commit::footer::token "breaking change")"
-t_eq "footer::token: BREAKING-CHANGE is a synonym" "BREAKING CHANGE" "$(shell::git::commit::footer::token "Breaking-Change")"
+t_eq "compose: header only" "fix: x" "$(_shell::git::commit::compose "fix: x")"
+t_eq "compose: header, body, footers" "fix: x${nl}${nl}Why.${nl}${nl}Refs: #1" "$(_shell::git::commit::compose "fix: x" "Why." "Refs: #1")"
+t_eq "compose: footers without a body" "fix: x${nl}${nl}Refs: #1" "$(_shell::git::commit::compose "fix: x" "" "Refs: #1")"
+t_eq "footer::token: a plain token" "Acked-by" "$(_shell::git::commit::footer::token "Acked-by")"
+t_eq "footer::token: BREAKING CHANGE, any case" "BREAKING CHANGE" "$(_shell::git::commit::footer::token "breaking change")"
+t_eq "footer::token: BREAKING-CHANGE is a synonym" "BREAKING CHANGE" "$(_shell::git::commit::footer::token "Breaking-Change")"
 for bad in "Acked by" "-x" "x-" "a:b" "" "a b c"; do
-	shell::git::commit::footer::token "$bad" >/dev/null
+	_shell::git::commit::footer::token "$bad" >/dev/null
 	t_eq "footer::token: [$bad] is refused" "1" "$?"
 done
-out="$(printf 'A\nB\n\nC\n\n\n' | shell::git::commit::body::read 2>/dev/null)"
+out="$(printf 'A\nB\n\nC\n\n\n' | _shell::git::commit::body::read 2>/dev/null)"
 t_eq "body::read: paragraphs are separated by a blank line" "A${nl}B${nl}${nl}C" "$out"
-out="$(printf '\n' | shell::git::commit::body::read 2>/dev/null)"
+out="$(printf '\n' | _shell::git::commit::body::read 2>/dev/null)"
 t_eq "body::read: an empty line first gives an empty body" "" "$out"
-printf ':back\n' | shell::git::commit::body::read >/dev/null 2>&1
+printf ':back\n' | _shell::git::commit::body::read >/dev/null 2>&1
 t_eq "body::read: :back returns RETURN_BACK" "$RETURN_BACK" "$?"
-printf 'A\n' | shell::git::commit::body::read >/dev/null 2>&1
+printf 'A\n' | _shell::git::commit::body::read >/dev/null 2>&1
 t_eq "body::read: end of input is a cancel" "$RETURN_CANCELLED" "$?"
 t_has "create -h documents the body and footers" "Add footer" "$(shell::git::commit::create -h 2>&1)"
 

@@ -17,7 +17,7 @@ t_run() {
 }
 
 # --- default: the simple style --------------------------------------------------
-shell::logger::style::load
+_shell::logger::style::load
 t_eq "default style is simple" "simple" "$(shell::logger::style::get)"
 t_eq "info" "[info]  hello world" "$(shell::logger::info hello world 2>&1)"
 t_eq "warn" "[warn]  careful" "$(shell::logger::warn careful 2>&1)"
@@ -59,7 +59,7 @@ t_eq "get reports the default for an unknown style" "simple" "$(shell::logger::s
 unset SHELL_LOGGER_STYLE
 
 # --- set: validation, dry-run, saving ------------------------------------------------------
-shell::logger::style::load
+_shell::logger::style::load
 t_run "unknown style" 2 shell::logger::style::set neon
 t_run "missing style" 2 shell::logger::style::set
 t_run "unknown option" 2 shell::logger::style::set --force classic
@@ -78,16 +78,16 @@ t_eq "no temp files left" "0" "$(find "$SHELL_CONFIG_DIR" -name 'logger.conf.tmp
 
 # A new session (variable unset) starts with the saved style...
 unset SHELL_LOGGER_STYLE
-shell::logger::style::load
+_shell::logger::style::load
 t_eq "saved style is loaded" "classic" "$(shell::logger::style::get)"
 # ...unless the user exported one, which wins.
 SHELL_LOGGER_STYLE=simple
-shell::logger::style::load
+_shell::logger::style::load
 t_eq "exported style wins over the saved one" "simple" "$(shell::logger::style::get)"
 # A corrupted file is ignored.
 unset SHELL_LOGGER_STYLE
 printf 'style=; rm -rf /\n' >"$SHELL_LOGGER_CONF_FILE"
-shell::logger::style::load
+_shell::logger::style::load
 t_eq "invalid saved value falls back to default" "simple" "$(shell::logger::style::get)"
 
 # --- saving can fail (unwritable / unusable config location) -----------------------------------

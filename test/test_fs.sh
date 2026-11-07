@@ -51,8 +51,8 @@ t_rc "ipv6 too short" 1 shell::validate::ip::address 1:2:3
 t_rc "ipv6 two ::" 1 shell::validate::ip::address 1::2::3
 
 # Ports
-t_rc "port valid" 0 shell::net::port::valid 8080
-t_rc "port zero invalid" 1 shell::net::port::valid 0
-t_rc "port non-numeric invalid" 1 shell::net::port::valid 80a
+t_rc "port valid" 0 _shell::net::port::valid 8080
+t_rc "port zero invalid" 1 _shell::net::port::valid 0
+t_rc "port non-numeric invalid" 1 _shell::net::port::valid 80a
 
 t_done

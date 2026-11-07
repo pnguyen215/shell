@@ -49,21 +49,21 @@ cand() {
 }
 
 # --- shared helpers (extracted from sgcf) -----------------------------------------------------
-t_eq "emoji: feat" ":sparkles:" "$(shell::git::commit::emoji feat)"
-t_eq "emoji: a type with a space" ":tada:" "$(shell::git::commit::emoji "initial source")"
-t_eq "emoji: unknown type is empty" "" "$(shell::git::commit::emoji nope)"
-t_eq "emoji: no prefix matching" "" "$(shell::git::commit::emoji fea)"
-t_eq "types: 26 of them" "26" "$(shell::git::commit::types | wc -l | tr -d ' ')"
-t_eq "types: feat first (menu order)" "feat" "$(shell::git::commit::types | head -n 1)"
-t_eq "types: release last" "release" "$(shell::git::commit::types | tail -n 1)"
-t_eq "types: every type has an emoji" "0" "$(shell::git::commit::types | while IFS= read -r ty; do [ -z "$(shell::git::commit::emoji "$ty")" ] && echo "$ty"; done | wc -l | tr -d ' ')"
-t_eq "format: sgcf style" "feat: add x #1" "$(shell::git::commit::predict::format feat "add x" "#1")"
-t_eq "format: issue is optional" "fix: y" "$(shell::git::commit::predict::format fix y)"
-t_eq "format: unknown type has no leading space" "nope: y" "$(shell::git::commit::predict::format nope y)"
+t_eq "emoji: feat" ":sparkles:" "$(_shell::git::commit::emoji feat)"
+t_eq "emoji: a type with a space" ":tada:" "$(_shell::git::commit::emoji "initial source")"
+t_eq "emoji: unknown type is empty" "" "$(_shell::git::commit::emoji nope)"
+t_eq "emoji: no prefix matching" "" "$(_shell::git::commit::emoji fea)"
+t_eq "types: 26 of them" "26" "$(_shell::git::commit::types | wc -l | tr -d ' ')"
+t_eq "types: feat first (menu order)" "feat" "$(_shell::git::commit::types | head -n 1)"
+t_eq "types: release last" "release" "$(_shell::git::commit::types | tail -n 1)"
+t_eq "types: every type has an emoji" "0" "$(_shell::git::commit::types | while IFS= read -r ty; do [ -z "$(_shell::git::commit::emoji "$ty")" ] && echo "$ty"; done | wc -l | tr -d ' ')"
+t_eq "format: sgcf style" "feat: add x #1" "$(_shell::git::commit::predict::format feat "add x" "#1")"
+t_eq "format: issue is optional" "fix: y" "$(_shell::git::commit::predict::format fix y)"
+t_eq "format: unknown type has no leading space" "nope: y" "$(_shell::git::commit::predict::format nope y)"
 
 # --- emoji: off by default, after the colon when on, never before the type (Conventional Commits) --
 t_eq "emoji setting: off by default" "false" "$(env -u SHELL_GIT_COMMIT_EMOJI SHELL_AUTO_INSTALL_DEPS=0 bash -c '. "$SHELL_TEST_ROOT/src/shell.sh" >/dev/null 2>&1; printf %s "$SHELL_GIT_COMMIT_EMOJI"')"
-emoji_on() { SHELL_GIT_COMMIT_EMOJI="$1" shell::git::commit::emoji::enabled "${2-}" && echo on || echo off; }
+emoji_on() { SHELL_GIT_COMMIT_EMOJI="$1" _shell::git::commit::emoji::enabled "${2-}" && echo on || echo off; }
 t_eq "enabled: false is off" "off" "$(emoji_on false)"
 t_eq "enabled: empty is off" "off" "$(emoji_on '')"
 t_eq "enabled: garbage is off" "off" "$(emoji_on maybe)"
@@ -73,46 +73,46 @@ t_eq "enabled: any case" "on on" "$(emoji_on TRUE) $(emoji_on Yes)"
 t_eq "enabled: an explicit true beats the setting" "on" "$(emoji_on false true)"
 t_eq "enabled: an explicit false beats the setting" "off" "$(emoji_on true false)"
 
-t_eq "resolve: a conventional label is unchanged" "feat" "$(shell::git::commit::type::resolve feat)"
-t_eq "resolve: a label with a space becomes a valid type" "chore(init)" "$(shell::git::commit::type::resolve "initial source")"
-t_eq "resolve: WIP" "chore(wip)" "$(shell::git::commit::type::resolve WIP)"
-t_eq "resolve: dependency" "build(deps)" "$(shell::git::commit::type::resolve dependency)"
-t_eq "resolve: an unknown type is returned unchanged" "ci" "$(shell::git::commit::type::resolve ci)"
+t_eq "resolve: a conventional label is unchanged" "feat" "$(_shell::git::commit::type::resolve feat)"
+t_eq "resolve: a label with a space becomes a valid type" "chore(init)" "$(_shell::git::commit::type::resolve "initial source")"
+t_eq "resolve: WIP" "chore(wip)" "$(_shell::git::commit::type::resolve WIP)"
+t_eq "resolve: dependency" "build(deps)" "$(_shell::git::commit::type::resolve dependency)"
+t_eq "resolve: an unknown type is returned unchanged" "ci" "$(_shell::git::commit::type::resolve ci)"
 # Every menu label must map to something shell::git::commit::message::validate accepts.
 map_file="$HOME/map.txt"
 {
 	echo "[Mapping]"
 	i=0
-	shell::git::commit::types | while IFS= read -r ty; do
+	_shell::git::commit::types | while IFS= read -r ty; do
 		i=$((i + 1))
-		printf '%s|%s|check mapping number %d here\n' "$(shell::git::commit::emoji "$ty")" "$(shell::git::commit::type::resolve "$ty")" "$i"
+		printf '%s|%s|check mapping number %d here\n' "$(_shell::git::commit::emoji "$ty")" "$(_shell::git::commit::type::resolve "$ty")" "$i"
 	done
 } >"$map_file"
 out="$(shell::git::commit::message::validate "$map_file" 2>&1)"
 t_has "resolve: all 26 labels map to a valid type, scope and emoji" "26 template(s) in 1 categories, 0 problem(s)" "$out"
 
-t_eq "format: the emoji goes after the colon" "feat: :sparkles: add x #1" "$(shell::git::commit::predict::format feat "add x" "#1" true)"
-t_eq "format: a mapped type keeps the type first" "chore(init): :tada: first commit" "$(shell::git::commit::predict::format "initial source" "first commit" "" true)"
-t_eq "format: off is plain, with a mapped type" "chore(init): first commit" "$(shell::git::commit::predict::format "initial source" "first commit")"
-t_eq "format: the setting turns the emoji on" "feat: :sparkles: add x" "$(SHELL_GIT_COMMIT_EMOJI=true shell::git::commit::predict::format feat "add x")"
-t_eq "format: an explicit false beats the setting" "feat: add x" "$(SHELL_GIT_COMMIT_EMOJI=true shell::git::commit::predict::format feat "add x" "" false)"
-t_eq "format: no known emoji, no emoji (and no stray space)" "nope: y" "$(shell::git::commit::predict::format nope y "" true)"
+t_eq "format: the emoji goes after the colon" "feat: :sparkles: add x #1" "$(_shell::git::commit::predict::format feat "add x" "#1" true)"
+t_eq "format: a mapped type keeps the type first" "chore(init): :tada: first commit" "$(_shell::git::commit::predict::format "initial source" "first commit" "" true)"
+t_eq "format: off is plain, with a mapped type" "chore(init): first commit" "$(_shell::git::commit::predict::format "initial source" "first commit")"
+t_eq "format: the setting turns the emoji on" "feat: :sparkles: add x" "$(SHELL_GIT_COMMIT_EMOJI=true _shell::git::commit::predict::format feat "add x")"
+t_eq "format: an explicit false beats the setting" "feat: add x" "$(SHELL_GIT_COMMIT_EMOJI=true _shell::git::commit::predict::format feat "add x" "" false)"
+t_eq "format: no known emoji, no emoji (and no stray space)" "nope: y" "$(_shell::git::commit::predict::format nope y "" true)"
 t_eq "format: every label is a Conventional Commits header, emoji on or off" "0" "$(
 	for on in true false; do
-		shell::git::commit::types | while IFS= read -r ty; do shell::git::commit::predict::format "$ty" "some description" "" "$on"; done
+		_shell::git::commit::types | while IFS= read -r ty; do _shell::git::commit::predict::format "$ty" "some description" "" "$on"; done
 	done | grep -cvE '^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\([a-z0-9.-]+\))?: (:[a-z0-9_+-]+: )?some description$'
 )"
 
 # --- branch → issue ---------------------------------------------------------------------------
-t_eq "issue: feat/123-login" "#123" "$(shell::git::commit::predict::issue feat/123-login)"
-t_eq "issue: fix/issue-45" "#45" "$(shell::git::commit::predict::issue fix/issue-45)"
-t_eq "issue: tracker key" "ABC-77" "$(shell::git::commit::predict::issue feature/ABC-77-thing)"
-t_eq "issue: #9 segment" "#9" "$(shell::git::commit::predict::issue 'chore/#9-cleanup')"
-t_eq "issue: main has none" "" "$(shell::git::commit::predict::issue main)"
-t_eq "issue: a version is not an issue" "" "$(shell::git::commit::predict::issue release/1.2.3)"
-t_eq "issue: a year is not an issue" "" "$(shell::git::commit::predict::issue 2024-cleanup)"
-t_eq "issue: 2fa is not an issue" "" "$(shell::git::commit::predict::issue feat/2fa-login)"
-t_eq "issue: empty branch" "" "$(shell::git::commit::predict::issue '')"
+t_eq "issue: feat/123-login" "#123" "$(_shell::git::commit::predict::issue feat/123-login)"
+t_eq "issue: fix/issue-45" "#45" "$(_shell::git::commit::predict::issue fix/issue-45)"
+t_eq "issue: tracker key" "ABC-77" "$(_shell::git::commit::predict::issue feature/ABC-77-thing)"
+t_eq "issue: #9 segment" "#9" "$(_shell::git::commit::predict::issue 'chore/#9-cleanup')"
+t_eq "issue: main has none" "" "$(_shell::git::commit::predict::issue main)"
+t_eq "issue: a version is not an issue" "" "$(_shell::git::commit::predict::issue release/1.2.3)"
+t_eq "issue: a year is not an issue" "" "$(_shell::git::commit::predict::issue 2024-cleanup)"
+t_eq "issue: 2fa is not an issue" "" "$(_shell::git::commit::predict::issue feat/2fa-login)"
+t_eq "issue: empty branch" "" "$(_shell::git::commit::predict::issue '')"
 
 # --- the engine: what is the change? ----------------------------------------------------------
 out="$(cand "" "" "A${tab}src/login.sh")"
@@ -326,7 +326,7 @@ t_lacks "manual: ...without committing" "git commit" "$out"
 out="$(run_predict "${M}${nl}" "" -n)"
 t_has "manual: ESC at the type menu aborts" "No commit type selected" "$out"
 
-# The manual path has the same scope menu as sgcf (shell::git::commit::scope::pick).
+# The manual path has the same scope menu as sgcf (_shell::git::commit::scope::pick).
 out="$(run_predict "${M}${nl}feat${nl}scope:docs${nl}Commit" "thing${nl}#7${nl}" -n)"
 t_has "manual scope: feat(docs) is committed" 'git commit -m "feat(docs): thing #7"' "$out"
 t_eq "manual scope: the menu follows the type menu (none first)" "none" "$(head -n 1 "$HOME/stdin.3" | cut -f1)"
@@ -354,7 +354,7 @@ t_has "dry-run: quotes, \$ and backticks are escaped in the printed command" 'gi
 
 # --- a real commit -----------------------------------------------------------------------------
 # The push / Telegram step is interactive and networked: stub it, and check it is reached.
-shell::git::commit::publish() { printf 'PUBLISHED<%s>\n' "$1"; }
+_shell::git::commit::publish() { printf 'PUBLISHED<%s>\n' "$1"; }
 
 out="$(run_predict "${first}${nl}Commit" "")"
 t_has "commit: the commit succeeds" "Commit created: $first" "$out"
@@ -395,13 +395,13 @@ out="$(printf 'my change\n#12\n' | FAKE_FZF_PICKS="feat${nl}none${nl}Commit" she
 t_has "predict help documents the emoji switch" "--no-emoji" "$(shell::git::commit::predict -h 2>&1)"
 t_has "sgcf: unchanged by the refactor" 'git commit -m "feat: my change #12"' "$out"
 t_eq "sgcf: same type menu (26 types + Back)" "27" "$(wc -l <"$HOME/stdin.1" | tr -d ' ')"
-t_eq "sgcf: ...in the same order" "$(shell::git::commit::types | head -n 3 | tr '\n' ',')" "$(head -n 3 "$HOME/stdin.1" | tr '\n' ',')"
+t_eq "sgcf: ...in the same order" "$(_shell::git::commit::types | head -n 3 | tr '\n' ',')" "$(head -n 3 "$HOME/stdin.1" | tr '\n' ',')"
 
 # --- format: type(scope) ----------------------------------------------------------------------
-t_eq "format: a scope goes after the type" "fix(auth): handle expired tokens #7" "$(shell::git::commit::predict::format 'fix(auth)' 'handle expired tokens' '#7')"
-t_eq "format: a menu label is resolved, the scope kept" "perf(git): improve x" "$(shell::git::commit::predict::format 'improvement(git)' 'improve x')"
-t_eq "format: a mapped type that has a scope keeps its own" "build(deps): bump x" "$(shell::git::commit::predict::format 'dependency(zzz)' 'bump x')"
-t_eq "format: the emoji is looked up for the type, not the scope" "feat(auth): :sparkles: add x" "$(shell::git::commit::predict::format 'feat(auth)' 'add x' '' true)"
+t_eq "format: a scope goes after the type" "fix(auth): handle expired tokens #7" "$(_shell::git::commit::predict::format 'fix(auth)' 'handle expired tokens' '#7')"
+t_eq "format: a menu label is resolved, the scope kept" "perf(git): improve x" "$(_shell::git::commit::predict::format 'improvement(git)' 'improve x')"
+t_eq "format: a mapped type that has a scope keeps its own" "build(deps): bump x" "$(_shell::git::commit::predict::format 'dependency(zzz)' 'bump x')"
+t_eq "format: the emoji is looked up for the type, not the scope" "feat(auth): :sparkles: add x" "$(_shell::git::commit::predict::format 'feat(auth)' 'add x' '' true)"
 
 # --- smart engine: the patch and the history say WHAT changed ---------------------------------
 SP="$HOME/smart"
@@ -532,17 +532,17 @@ list="$(shell::git::commit::predict --list -c 2 2>&1)"
 t_eq "e2e: a fix in a function of a real repository" "fix(auth): prevent crash in session::open" "$(first_of "$list")"
 t_eq "e2e: --list prints nothing but messages" "0" "$(printf '%s\n' "$list" | grep -vcE '^[a-z]+(\([a-z0-9.-]+\))?: ')"
 ev="$HOME/evidence"
-mkdir "$ev" && shell::git::commit::predict::evidence "$ev" false
+mkdir "$ev" && _shell::git::commit::predict::evidence "$ev" false
 t_has "evidence: the staged patch" "+++ b/lib/auth.sh" "$(cat "$ev/patch")"
 t_has "evidence: the recent subjects" "base" "$(cat "$ev/history")"
 git reset -q
 printf 'brand new\n' >lib/untracked.sh
-rm -rf "$ev" && mkdir "$ev" && shell::git::commit::predict::evidence "$ev" true
+rm -rf "$ev" && mkdir "$ev" && _shell::git::commit::predict::evidence "$ev" true
 t_has "evidence: the working tree diff" "+++ b/lib/auth.sh" "$(cat "$ev/patch")"
 t_has "evidence: ...and the untracked files, as new files" "+++ b/lib/untracked.sh" "$(cat "$ev/patch")"
-shell::git::commit::predict::evidence "$HOME/does-not-exist" false
+_shell::git::commit::predict::evidence "$HOME/does-not-exist" false
 t_eq "evidence: a missing directory is refused" "2" "$?"
-shell::git::commit::predict::evidence "" false
+_shell::git::commit::predict::evidence "" false
 t_eq "evidence: so is an empty one" "2" "$?"
 mkdir "$HOME/tmpcheck"
 TMPDIR="$HOME/tmpcheck" shell::git::commit::predict --list >/dev/null 2>&1

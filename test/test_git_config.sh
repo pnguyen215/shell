@@ -46,38 +46,38 @@ gg() { git config --global --get -- "$1" 2>/dev/null; }
 
 # =============================== validate ===============================================
 for ok in user.name core.autocrlf init.defaultBranch remote.origin.url branch.feature/x.remote "url.https://h.com/.insteadOf" a-b.c-d; do
-	shell::git::config::validate key "$ok"
+	_shell::git::config::validate key "$ok"
 	t_eq "valid key [$ok]" "0" "$?"
 done
 for bad in "" nodot "-x.y" ".a.b" "a.b." "a b.c" "a.1b" "a.b c" $'a.b\nc' "a;b.c" "a.b;c" "--global"; do
-	shell::git::config::validate key "$bad"
+	_shell::git::config::validate key "$bad"
 	t_eq "invalid key [$bad]" "1" "$?"
 done
 for ok in "a@b.co" "first.last+tag@sub.example.org"; do
-	shell::git::config::validate email "$ok"
+	_shell::git::config::validate email "$ok"
 	t_eq "valid email [$ok]" "0" "$?"
 done
 for bad in "" "a" "a@b" "@b.c" "a@" "a b@c.d" "a@b@c.d" "<a@b.c>"; do
-	shell::git::config::validate email "$bad"
+	_shell::git::config::validate email "$bad"
 	t_eq "invalid email [$bad]" "1" "$?"
 done
 for ok in main feature/x release-1.0; do
-	shell::git::config::validate branch "$ok"
+	_shell::git::config::validate branch "$ok"
 	t_eq "valid branch [$ok]" "0" "$?"
 done
 for bad in "" "-x" "bad name" "a..b" "x~1" "a:b"; do
-	shell::git::config::validate branch "$bad"
+	_shell::git::config::validate branch "$bad"
 	t_eq "invalid branch [$bad]" "1" "$?"
 done
 for ok in true input false; do
-	shell::git::config::validate autocrlf "$ok"
+	_shell::git::config::validate autocrlf "$ok"
 	t_eq "valid autocrlf [$ok]" "0" "$?"
 done
-shell::git::config::validate autocrlf maybe
+_shell::git::config::validate autocrlf maybe
 t_eq "invalid autocrlf" "1" "$?"
-shell::git::config::validate name "John <j@x.io>"
+_shell::git::config::validate name "John <j@x.io>"
 t_eq "name with <> rejected" "1" "$?"
-shell::git::config::validate nonsense x
+_shell::git::config::validate nonsense x
 t_eq "unknown kind rejected" "1" "$?"
 
 # =============================== list ===================================================

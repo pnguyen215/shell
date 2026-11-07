@@ -109,7 +109,7 @@ t_has "add: every setting is written" "Host web2
     ServerAliveInterval 20
     ServerAliveCountMax 3
     ForwardAgent yes" "$(cat "$C")"
-t_eq "add: order of Host lines" "old1 stage shared1 shared2 web2" "$(shell::ssh::config::aliases "$C" | tr '\n' ' ' | sed 's/ $//')"
+t_eq "add: order of Host lines" "old1 stage shared1 shared2 web2" "$(_shell::ssh::config::aliases "$C" | tr '\n' ' ' | sed 's/ $//')"
 host_star_line="$(grep -n '^Host \*' "$C" | cut -d: -f1)"
 web2_line="$(grep -n '^Host web2' "$C" | cut -d: -f1)"
 t_eq "add: web2 precedes Host *" "yes" "$([ "$web2_line" -lt "$host_star_line" ] && echo yes)"
@@ -199,7 +199,7 @@ t_rc "remove: no keeps the block" 0 grep -q '^Host stage$' "$C"
 printf 'y\n' | shell::ssh::config::remove stage >/dev/null 2>&1
 t_rc "remove: yes removes it" 1 grep -q '^Host stage$' "$C"
 t_eq "remove: the comment that sat above it is kept" "1" "$(grep -c '^# staging box' "$C")"
-t_eq "remove: neighbours are intact" "old1 shared1 shared2 web3 web2" "$(shell::ssh::config::aliases "$C" | tr '\n' ' ' | sed 's/ $//')"
+t_eq "remove: neighbours are intact" "old1 shared1 shared2 web3 web2" "$(_shell::ssh::config::aliases "$C" | tr '\n' ' ' | sed 's/ $//')"
 t_has "remove: Match and Host * are intact" "Match host *.corp" "$(cat "$C")"
 t_has "remove: Host * is intact" "Host *
     ServerAliveInterval 15" "$(cat "$C")"

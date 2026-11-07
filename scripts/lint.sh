@@ -3,7 +3,8 @@
 #
 # Checks (each prints PASS/FAIL):
 #   syntax       bash -n (and zsh -n when installed) on every .sh file
-#   naming       every function is shell::<category>::... (src/shell.sh exempt)
+#   naming       every function is shell::<category>::... or _shell::<category>::... (src/shell.sh exempt)
+#   visibility   _shell::* functions carry `# @internal`; shell::* functions do not
 #   shdoc        every function has an @description block; shdoc can render it
 #   zsh-names    no `local path|status|options|...` (read-only/special in zsh)
 #   portability  no bash>=4-only syntax, GNU-only flags, BASH_REMATCH, echo -e
@@ -40,8 +41,8 @@ if command -v zsh >/dev/null 2>&1; then for f in $src_files; do zsh -n "$f" 2>&1
 
 # naming
 # shellcheck disable=SC2046  # the file list is intentionally word-split
-out="$(grep -rhoE '^(function )?shell::[A-Za-z0-9_:]+\(\)' $(find src -name '*.sh' ! -path src/shell.sh) | sed 's/^function //; s/()//' |
-	grep -vE '^shell::[a-z0-9_]+::[a-z0-9_:]+$')"
+out="$(grep -rhoE '^(function )?_?shell::[A-Za-z0-9_:]+\(\)' $(find src -name '*.sh' ! -path src/shell.sh) | sed 's/^function //; s/()//' |
+	grep -vE '^_?shell::[a-z0-9_]+::[a-z0-9_:]+$')"
 [ -z "$out" ] && report naming ok || report naming fail "$out"
 out="$(grep -rnoE '^[A-Za-z_][A-Za-z0-9_]*\(\)' src --include=*.sh | grep -v 'shell::')"
 [ -z "$out" ] && report naming-global-funcs ok || report naming-global-funcs fail "$out"
@@ -50,12 +51,27 @@ out="$(grep -rnoE '^[A-Za-z_][A-Za-z0-9_]*\(\)' src --include=*.sh | grep -v 'sh
 out="$(
 	for f in $src_files; do
 		awk -v f="$f" '
-			/^shell::[A-Za-z0-9_:]+\(\)/ { if (!doc) print f ": " $1; doc = 0; next }
+			/^_?shell::[A-Za-z0-9_:]+\(\)/ { if (!doc) print f ": " $1; doc = 0; next }
 			/^# @description/ { doc = 1 }
 			!/^#/ { doc = 0 }' "$f"
 	done
 )"
 [ -z "$out" ] && report shdoc-coverage ok || report shdoc-coverage fail "$out"
+
+# visibility: private (_shell::*) <=> `# @internal`
+out="$(
+	for f in $src_files; do
+		awk -v f="$f" '
+			/^_?shell::[A-Za-z0-9_:]+\(\)/ {
+				priv = ($1 ~ /^_shell::/)
+				if (priv && !internal) print f ": " $1 " is private but has no # @internal"
+				if (!priv && internal) print f ": " $1 " is public but is marked # @internal"
+				internal = 0; next }
+			/^# @internal/ { internal = 1; next }
+			!/^#/ { internal = 0 }' "$f"
+	done
+)"
+[ -z "$out" ] && report visibility ok || report visibility fail "$out"
 
 # zsh-reserved names
 grep_fail zsh-names '^[[:space:]]*local (-[a-zA-Z]+ )?(path|status|options|commands|functions|aliases|parameters|argv|reply|pipestatus)([ =]|$)'

@@ -56,34 +56,34 @@ FAKE
 	[0-9]*.[0-9]*.[0-9]*) t_ok ;;
 	*) t_bad "real: shell::nvm::version prints nvm's version" "got [$(shell::nvm::version 2>&1)]" ;;
 	esac
-	t_eq "real: ...and loading it did not switch Node (--no-use)" "system" "$(shell::nvm::query current)"
+	t_eq "real: ...and loading it did not switch Node (--no-use)" "system" "$(_shell::nvm::query current)"
 
 	# What nvm prints, as the parsers read it.
-	t_eq "real: the installed versions" "v18.19.0 v20.9.0 v20.11.1 v22.2.0" "$(shell::nvm::versions::installed | tr '\n' ' ' | sed 's/ $//')"
+	t_eq "real: the installed versions" "v18.19.0 v20.9.0 v20.11.1 v22.2.0" "$(_shell::nvm::versions::installed | tr '\n' ' ' | sed 's/ $//')"
 	shell::nvm::default 22 >/dev/null 2>&1
 	shell::nvm::alias work 18.19.0 >/dev/null 2>&1
-	t_has "real: default and your alias, as nvm prints them" "work -> 18.19.0" "$(shell::nvm::aliases::user)"
-	t_lacks "real: nvm's own aliases are not yours" "iojs" "$(shell::nvm::aliases::user)"
-	t_has "real: the aliases of a version, in the rows" "default" "$(shell::nvm::fzf::rows::installed | grep '^v22.2.0')"
-	t_has "real: ...your alias" "work" "$(shell::nvm::fzf::rows::installed | grep '^v18.19.0')"
+	t_has "real: default and your alias, as nvm prints them" "work -> 18.19.0" "$(_shell::nvm::aliases::user)"
+	t_lacks "real: nvm's own aliases are not yours" "iojs" "$(_shell::nvm::aliases::user)"
+	t_has "real: the aliases of a version, in the rows" "default" "$(_shell::nvm::fzf::rows::installed | grep '^v22.2.0')"
+	t_has "real: ...your alias" "work" "$(_shell::nvm::fzf::rows::installed | grep '^v18.19.0')"
 
 	# `use` must change THIS shell.
 	shell::nvm::use --silent 20 >/dev/null 2>&1
 	t_eq "real: use changes the Node of this very shell" "$NVM_DIR/versions/node/v20.11.1/bin/node" "$(command -v node)"
 	t_eq "real: current agrees" "v20.11.1" "$(shell::nvm::current 2>/dev/null | tail -n 1)"
 	t_eq "real: which" "$NVM_DIR/versions/node/v22.2.0/bin/node" "$(shell::nvm::which 22 2>/dev/null | tail -n 1)"
-	t_eq "real: the rows mark the one in use" "v20.11.1" "$(shell::nvm::fzf::rows::installed | grep '\[current\]' | awk '{ print $1 }')"
+	t_eq "real: the rows mark the one in use" "v20.11.1" "$(_shell::nvm::fzf::rows::installed | grep '\[current\]' | awk '{ print $1 }')"
 	t_eq "real: version::local resolves a prefix" "v20.11.1" "$(shell::nvm::version::local 20 2>/dev/null | tail -n 1)"
 	shell::nvm::version::local 99 >/dev/null 2>&1
 	t_eq "real: ...and says N/A with status 3 for an unknown one" "3" "$?"
 	shell::nvm::deactivate --silent >/dev/null 2>&1
-	t_eq "real: deactivate gives the system Node back" "system" "$(shell::nvm::query current)"
+	t_eq "real: deactivate gives the system Node back" "system" "$(_shell::nvm::query current)"
 
 	# run / exec: what follows the version reaches the command untouched.
 	t_eq "real: run passes node's arguments, flags included" "node v18.19.0 args: app.js --port 3000" "$(shell::nvm::run --silent 18 app.js --port 3000 2>/dev/null | tail -n 1)"
 	t_eq "real: exec keeps the boundaries of its arguments" "a b|c|" "$(shell::nvm::exec --silent 22 sh -c 'printf "%s|" "$@"' x 'a b' c 2>/dev/null | tail -n 1)"
 	t_has "real: exec puts that version first on the PATH" "$NVM_DIR/versions/node/v22.2.0/bin:" "$(shell::nvm::exec --silent 22 sh -c 'echo $PATH' 2>/dev/null | tail -n 1)"
-	t_eq "real: ...without switching this shell" "system" "$(shell::nvm::query current)"
+	t_eq "real: ...without switching this shell" "system" "$(_shell::nvm::query current)"
 	shell::nvm::use --silent 20 >/dev/null 2>&1
 	t_eq "real: exec 'current' runs on the active version" "ok" "$(shell::nvm::exec --silent current sh -c 'echo ok' 2>/dev/null | tail -n 1)"
 
@@ -97,28 +97,28 @@ FAKE
 	local proj="$HOME/proj"
 	mkdir -p "$proj/sub"
 	(cd "$proj" && shell::nvm::nvmrc::write 18 >/dev/null 2>&1)
-	t_eq "real: use with no version follows the .nvmrc of the project" "v18.19.0" "$(cd "$proj/sub" && shell::nvm::use --silent >/dev/null 2>&1 && shell::nvm::query current)"
+	t_eq "real: use with no version follows the .nvmrc of the project" "v18.19.0" "$(cd "$proj/sub" && shell::nvm::use --silent >/dev/null 2>&1 && _shell::nvm::query current)"
 	shell::nvm::use --silent 22 >/dev/null 2>&1
 
 	# the unused versions, on what nvm really reports
 	local scan
-	scan="$(shell::nvm::unused::scan | cut -f1,2 | tr '\t' ':' | tr '\n' ' ' | sed 's/ $//')"
+	scan="$(_shell::nvm::unused::scan | cut -f1,2 | tr '\t' ':' | tr '\n' ' ' | sed 's/ $//')"
 	t_eq "real: 22 (in use, default, node, stable) and 18 (work) are kept; the v20s are not" "v20.9.0:superseded v20.11.1:unreferenced" "$scan"
-	t_eq "real: a project's .nvmrc keeps its version" "v20.11.1:unreferenced" "$(printf '20.9.0\n' >"$proj/sub/.nvmrc" && shell::nvm::unused::scan -p "$proj" | cut -f1,2 | tr '\t' ':' | tr '\n' ' ' | sed 's/ $//')"
+	t_eq "real: a project's .nvmrc keeps its version" "v20.11.1:unreferenced" "$(printf '20.9.0\n' >"$proj/sub/.nvmrc" && _shell::nvm::unused::scan -p "$proj" | cut -f1,2 | tr '\t' ':' | tr '\n' ' ' | sed 's/ $//')"
 	rm -f "$proj/sub/.nvmrc"
 	t_eq "real: shell::nvm::size sees every version" "4" "$(shell::nvm::size 2>/dev/null | grep -c ' v')"
 
 	# the pickers, on the real thing
 	rm -f "$FAKE_FZF_STATE"
 	FAKE_FZF_PICKS="v20.11.1" shell::nvm::use::fzf --silent >/dev/null 2>&1
-	t_eq "real: use::fzf switches this shell to the pick" "v20.11.1" "$(shell::nvm::query current)"
+	t_eq "real: use::fzf switches this shell to the pick" "v20.11.1" "$(_shell::nvm::query current)"
 	rm -f "$FAKE_FZF_STATE"
 	printf 'y\n' | FAKE_FZF_PICKS="v20.9.0" shell::nvm::unused::fzf >/dev/null 2>&1
 	t_eq "real: unused::fzf really uninstalls the pick" "no" "$([ -d "$NVM_DIR/versions/node/v20.9.0" ] && echo yes || echo no)"
 	t_eq "real: ...and only that" "yes" "$([ -d "$NVM_DIR/versions/node/v20.11.1" ] && [ -d "$NVM_DIR/versions/node/v22.2.0" ] && [ -d "$NVM_DIR/versions/node/v18.19.0" ] && echo yes || echo no)"
 	rm -f "$FAKE_FZF_STATE"
 	printf 'work\n' | FAKE_FZF_PICKS="v18.19.0" shell::nvm::alias::fzf >/dev/null 2>&1
-	t_has "real: alias::fzf created the alias, pointing at the version that was picked" "work -> v18.19.0" "$(shell::nvm::aliases::user)"
+	t_has "real: alias::fzf created the alias, pointing at the version that was picked" "work -> v18.19.0" "$(_shell::nvm::aliases::user)"
 
 	# automatic switching follows a cd
 	local a18="$HOME/auto18" a20="$HOME/auto20"
@@ -127,10 +127,10 @@ FAKE
 	printf '20\n' >"$a20/.nvmrc"
 	cd "$a18" || return 1
 	SHELL_NVM_AUTOUSE="" shell::nvm::autouse::on >/dev/null 2>&1
-	t_eq "real: autouse::on applies the .nvmrc of the directory you are in" "v18.19.0" "$(shell::nvm::query current)"
+	t_eq "real: autouse::on applies the .nvmrc of the directory you are in" "v18.19.0" "$(_shell::nvm::query current)"
 	cd "$a20" || return 1
-	SHELL_NVM_AUTOUSE_PWD="" shell::nvm::autouse::hook >/dev/null 2>&1
-	t_eq "real: ...and follows a cd (zsh by itself, bash at the prompt)" "v20.11.1" "$(shell::nvm::query current)"
+	SHELL_NVM_AUTOUSE_PWD="" _shell::nvm::autouse::hook >/dev/null 2>&1
+	t_eq "real: ...and follows a cd (zsh by itself, bash at the prompt)" "v20.11.1" "$(_shell::nvm::query current)"
 	shell::nvm::autouse::off >/dev/null 2>&1
 	cd "$HOME" || return 1
 

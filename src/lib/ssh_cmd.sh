@@ -6,7 +6,7 @@
 #   `-n | --dry-run` switch and argument validation, so that
 #   `ssh -p 2222 -i key user@host` is `shell::ssh::connect -p 2222 -i key user@host`.
 #
-#   The commands live in four files, all built on `shell::ssh::cmd` below:
+#   The commands live in four files, all built on `_shell::ssh::cmd` below:
 #
 #   * lib/ssh_cmd.sh       connect, exec, script, check, version, mux::check, mux::stop
 #   * lib/ssh_transfer.sh  scp::upload, scp::download, rsync::push, rsync::pull, sftp::connect
@@ -46,9 +46,9 @@
 # @exitcode 0 It is safe.
 # @exitcode 1 It is not.
 # @example
-#   shell::ssh::target::valid "deploy@10.0.0.5" && echo ok
+#   _shell::ssh::target::valid "deploy@10.0.0.5" && echo ok
 #
-shell::ssh::target::valid() {
+_shell::ssh::target::valid() {
 	case "${1-}" in
 	'' | -* | @* | *@ | *@*@* | *[!A-Za-z0-9._@+:-]*) return 1 ;;
 	esac
@@ -61,9 +61,9 @@ shell::ssh::target::valid() {
 # @exitcode 0 It is safe.
 # @exitcode 1 It is not.
 # @example
-#   shell::ssh::jump::valid "bastion1,ops@bastion2:2222" && echo ok
+#   _shell::ssh::jump::valid "bastion1,ops@bastion2:2222" && echo ok
 #
-shell::ssh::jump::valid() {
+_shell::ssh::jump::valid() {
 	case "${1-}" in
 	'' | -* | *[!A-Za-z0-9._@+:,-]*) return 1 ;;
 	esac
@@ -76,9 +76,9 @@ shell::ssh::jump::valid() {
 # @exitcode 0 A key of letters and digits, `=`, and a non-empty value.
 # @exitcode 1 It is not.
 # @example
-#   shell::ssh::option::valid "Compression=yes" && echo ok
+#   _shell::ssh::option::valid "Compression=yes" && echo ok
 #
-shell::ssh::option::valid() {
+_shell::ssh::option::valid() {
 	local key="${1%%=*}"
 	case "$key" in
 	'' | *[!A-Za-z0-9]*) return 1 ;;
@@ -98,9 +98,9 @@ shell::ssh::option::valid() {
 # @exitcode 0 It is safe.
 # @exitcode 1 It is not.
 # @example
-#   shell::ssh::forward::valid "8080:localhost:80" && echo ok
+#   _shell::ssh::forward::valid "8080:localhost:80" && echo ok
 #
-shell::ssh::forward::valid() {
+_shell::ssh::forward::valid() {
 	case "${1-}" in
 	'' | -* | *[!]A-Za-z0-9._:/*[-]*) return 1 ;;
 	esac
@@ -113,14 +113,14 @@ shell::ssh::forward::valid() {
 # @internal
 # @description Tell whether a string is a remote location `[user@]host:path`, as scp and rsync write it.
 #   The path may be empty (the home directory) and may contain anything but
-#   control characters. The host is checked with shell::ssh::target::valid.
+#   control characters. The host is checked with _shell::ssh::target::valid.
 # @arg $1 string The candidate.
 # @exitcode 0 It is a valid remote location.
 # @exitcode 1 It is not.
 # @example
-#   shell::ssh::spec::valid "deploy@web1:/var/www" && echo ok
+#   _shell::ssh::spec::valid "deploy@web1:/var/www" && echo ok
 #
-shell::ssh::spec::valid() {
+_shell::ssh::spec::valid() {
 	case "${1-}" in
 	*:*) ;;
 	*) return 1 ;;
@@ -128,7 +128,7 @@ shell::ssh::spec::valid() {
 	case "$1" in
 	*[[:cntrl:]]*) return 1 ;;
 	esac
-	shell::ssh::target::valid "${1%%:*}"
+	_shell::ssh::target::valid "${1%%:*}"
 }
 
 # @internal
@@ -139,9 +139,9 @@ shell::ssh::spec::valid() {
 # @stdout The path.
 # @exitcode 0 Always.
 # @example
-#   shell::ssh::path::local "backup:2024.tgz"   # -> ./backup:2024.tgz
+#   _shell::ssh::path::local "backup:2024.tgz"   # -> ./backup:2024.tgz
 #
-shell::ssh::path::local() {
+_shell::ssh::path::local() {
 	case "${1-}" in
 	/* | ./* | ../*) printf '%s\n' "$1" ;;
 	*:*)
@@ -163,9 +163,9 @@ shell::ssh::path::local() {
 # @stdout The words joined by a space, quoted where needed.
 # @exitcode 0 Always.
 # @example
-#   shell::ssh::quote scp "my file" host:/tmp   # -> scp 'my file' host:/tmp
+#   _shell::ssh::quote scp "my file" host:/tmp   # -> scp 'my file' host:/tmp
 #
-shell::ssh::quote() {
+_shell::ssh::quote() {
 	local word out="" sep=""
 	for word in "$@"; do
 		case "$word" in
@@ -195,9 +195,9 @@ shell::ssh::quote() {
 # @exitcode 3 The program is not installed and could not be installed.
 # @exitcode N Exit status of the program.
 # @example
-#   shell::ssh::invoke -n ssh -p 2222 deploy@web1
+#   _shell::ssh::invoke -n ssh -p 2222 deploy@web1
 #
-shell::ssh::invoke() {
+_shell::ssh::invoke() {
 	local dry_run="false" stdin_file=""
 	while [ "$#" -gt 0 ]; do
 		case "$1" in
@@ -219,9 +219,9 @@ shell::ssh::invoke() {
 	fi
 
 	local line
-	line="$(shell::ssh::quote "$@")"
+	line="$(_shell::ssh::quote "$@")"
 	if [ -n "$stdin_file" ]; then
-		line="$line < $(shell::ssh::quote "$stdin_file")"
+		line="$line < $(_shell::ssh::quote "$stdin_file")"
 	fi
 
 	if [ "$dry_run" = "true" ]; then
@@ -245,9 +245,9 @@ shell::ssh::invoke() {
 # @exitcode 0 There is a value.
 # @exitcode 2 There is not.
 # @example
-#   shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
+#   _shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
 #
-shell::ssh::cmd::need() {
+_shell::ssh::cmd::need() {
 	if [ "${2-0}" -lt 2 ]; then
 		shell::logger::error "Option ${1-} requires a value"
 		return "$RETURN_INVALID"
@@ -262,9 +262,9 @@ shell::ssh::cmd::need() {
 # @exitcode 0 It is 1, 2, 3 ...
 # @exitcode 2 It is not.
 # @example
-#   shell::ssh::cmd::number --timeout "$2" || return "$RETURN_INVALID"
+#   _shell::ssh::cmd::number --timeout "$2" || return "$RETURN_INVALID"
 #
-shell::ssh::cmd::number() {
+_shell::ssh::cmd::number() {
 	case "${2-}" in
 	'' | *[!0-9]* | 0*)
 		shell::logger::error "Invalid value for ${1-}: '${2-}' (a positive whole number is required)"
@@ -284,9 +284,9 @@ shell::ssh::cmd::number() {
 # @exitcode 0 The program takes it.
 # @exitcode 1 It does not.
 # @example
-#   shell::ssh::cmd::supports scp copy && echo yes
+#   _shell::ssh::cmd::supports scp copy && echo yes
 #
-shell::ssh::cmd::supports() {
+_shell::ssh::cmd::supports() {
 	case "${2-}" in
 	verbose) [ "${1-}" != "ssh-copy-id" ] && [ "${1-}" != "rsync" ] ;;
 	session) [ "${1-}" = "ssh" ] ;;
@@ -297,17 +297,17 @@ shell::ssh::cmd::supports() {
 }
 
 # @internal
-# @description Like shell::ssh::cmd::supports, but report the refusal.
+# @description Like _shell::ssh::cmd::supports, but report the refusal.
 # @arg $1 string The program.
 # @arg $2 string The family.
 # @arg $3 string The option the user typed.
 # @exitcode 0 The program takes it.
 # @exitcode 2 It does not (an error was printed).
 # @example
-#   shell::ssh::cmd::allow "$program" session "$1" || return "$RETURN_INVALID"
+#   _shell::ssh::cmd::allow "$program" session "$1" || return "$RETURN_INVALID"
 #
-shell::ssh::cmd::allow() {
-	if shell::ssh::cmd::supports "${1-}" "${2-}"; then
+_shell::ssh::cmd::allow() {
+	if _shell::ssh::cmd::supports "${1-}" "${2-}"; then
 		return "$RETURN_SUCCESS"
 	fi
 	shell::logger::error "Option ${3-} is not supported by '${1-}'"
@@ -321,9 +321,9 @@ shell::ssh::cmd::allow() {
 # @stdout The option lines.
 # @exitcode 0 Always.
 # @example
-#   shell::ssh::cmd::help ssh
+#   _shell::ssh::cmd::help ssh
 #
-shell::ssh::cmd::help() {
+_shell::ssh::cmd::help() {
 	local program="${1-ssh}"
 	shell::logger::option "-p, --port <n>" "Server port (1-65535)"
 	shell::logger::option "-i, --identity <file>" "Private key to use"
@@ -334,21 +334,21 @@ shell::ssh::cmd::help() {
 	shell::logger::option "--keepalive <sec>" "Send a keep-alive every this many seconds"
 	shell::logger::option "--batch" "Never ask for a password or passphrase"
 	shell::logger::option "--accept-new" "Trust an unknown host key once, refuse it if it changes"
-	if shell::ssh::cmd::supports "$program" verbose; then
+	if _shell::ssh::cmd::supports "$program" verbose; then
 		shell::logger::option "-v, --verbose" "Debug output (repeat for more)"
 		shell::logger::option "-q, --quiet" "Quiet mode"
 		shell::logger::option "-C, --compress" "Compress the data"
 	fi
-	if shell::ssh::cmd::supports "$program" session; then
+	if _shell::ssh::cmd::supports "$program" session; then
 		shell::logger::option "-A, --agent" "Forward the ssh agent"
 		shell::logger::option "-X, --x11" "Forward X11"
 		shell::logger::option "-t, --tty" "Force a terminal (needed for sudo, top ...)"
 	fi
-	if shell::ssh::cmd::supports "$program" copy; then
+	if _shell::ssh::cmd::supports "$program" copy; then
 		shell::logger::option "-r, --recursive" "Copy directories recursively"
 		shell::logger::option "--preserve" "Keep times and modes"
 	fi
-	if shell::ssh::cmd::supports "$program" sync; then
+	if _shell::ssh::cmd::supports "$program" sync; then
 		shell::logger::option "--delete" "Delete files at the destination that are not at the source"
 		shell::logger::option "--exclude <pattern>" "Skip matching files, repeatable"
 		shell::logger::option "--simulate" "Let rsync show what it would do (rsync -n), changing nothing"
@@ -409,10 +409,10 @@ shell::ssh::cmd::help() {
 # @exitcode 3 The program, a file given with -i, -F or as a source, is missing.
 # @exitcode N Exit status of the program (for `check`: 1 when it cannot connect).
 # @example
-#   shell::ssh::cmd ssh connect -p 2222 deploy@web1 uptime
-#   shell::ssh::cmd scp upload -r ./site deploy@web1:/var/www
+#   _shell::ssh::cmd ssh connect -p 2222 deploy@web1 uptime
+#   _shell::ssh::cmd scp upload -r ./site deploy@web1:/var/www
 #
-shell::ssh::cmd() {
+_shell::ssh::cmd() {
 	local program="${1-}" mode="${2-}"
 	shift 2
 
@@ -436,8 +436,8 @@ shell::ssh::cmd() {
 			break
 			;;
 		-p | --port)
-			shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
-			if ! shell::net::port::valid "$2"; then
+			_shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
+			if ! _shell::net::port::valid "$2"; then
 				shell::logger::error "Invalid port: '$2' (1-65535)"
 				return "$RETURN_INVALID"
 			fi
@@ -445,7 +445,7 @@ shell::ssh::cmd() {
 			shift 2
 			;;
 		-i | --identity)
-			shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
 			case "$2" in
 			'' | -*)
 				shell::logger::error "Invalid identity file: '$2'"
@@ -456,7 +456,7 @@ shell::ssh::cmd() {
 			shift 2
 			;;
 		-F | --config)
-			shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
 			case "$2" in
 			'' | -*)
 				shell::logger::error "Invalid config file: '$2'"
@@ -467,8 +467,8 @@ shell::ssh::cmd() {
 			shift 2
 			;;
 		-J | --jump)
-			shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
-			if ! shell::ssh::jump::valid "$2"; then
+			_shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
+			if ! _shell::ssh::jump::valid "$2"; then
 				shell::logger::error "Invalid jump host list: '$2' (use [user@]host[:port], comma separated)"
 				return "$RETURN_INVALID"
 			fi
@@ -476,8 +476,8 @@ shell::ssh::cmd() {
 			shift 2
 			;;
 		-o | --option)
-			shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
-			if ! shell::ssh::option::valid "$2"; then
+			_shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
+			if ! _shell::ssh::option::valid "$2"; then
 				shell::logger::error "Invalid ssh option: '$2' (expected Key=Value)"
 				return "$RETURN_INVALID"
 			fi
@@ -485,14 +485,14 @@ shell::ssh::cmd() {
 			shift 2
 			;;
 		--timeout)
-			shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
-			shell::ssh::cmd::number "$1" "$2" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::number "$1" "$2" || return "$RETURN_INVALID"
 			opts+=(-o "ConnectTimeout=$2")
 			shift 2
 			;;
 		--keepalive)
-			shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
-			shell::ssh::cmd::number "$1" "$2" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::number "$1" "$2" || return "$RETURN_INVALID"
 			opts+=(-o "ServerAliveInterval=$2" -o "ServerAliveCountMax=$SHELL_SSH_KEEPALIVE_COUNT")
 			shift 2
 			;;
@@ -505,7 +505,7 @@ shell::ssh::cmd() {
 			shift
 			;;
 		-v | --verbose | -q | --quiet | -C | --compress)
-			shell::ssh::cmd::allow "$program" verbose "$1" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::allow "$program" verbose "$1" || return "$RETURN_INVALID"
 			case "$1" in
 			-v | --verbose) opts+=(-v) ;;
 			-q | --quiet) opts+=(-q) ;;
@@ -514,7 +514,7 @@ shell::ssh::cmd() {
 			shift
 			;;
 		-A | --agent | -X | --x11 | -t | --tty)
-			shell::ssh::cmd::allow "$program" session "$1" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::allow "$program" session "$1" || return "$RETURN_INVALID"
 			case "$1" in
 			-A | --agent) opts+=(-A) ;;
 			-X | --x11) opts+=(-X) ;;
@@ -523,7 +523,7 @@ shell::ssh::cmd() {
 			shift
 			;;
 		-r | --recursive | --preserve)
-			shell::ssh::cmd::allow "$program" copy "$1" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::allow "$program" copy "$1" || return "$RETURN_INVALID"
 			case "$1" in
 			--preserve) opts+=(-p) ;;
 			*) opts+=(-r) ;;
@@ -531,7 +531,7 @@ shell::ssh::cmd() {
 			shift
 			;;
 		--delete | --simulate | --progress)
-			shell::ssh::cmd::allow "$program" sync "$1" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::allow "$program" sync "$1" || return "$RETURN_INVALID"
 			case "$1" in
 			--simulate) sync+=(-n) ;;
 			*) sync+=("$1") ;;
@@ -539,8 +539,8 @@ shell::ssh::cmd() {
 			shift
 			;;
 		--exclude)
-			shell::ssh::cmd::allow "$program" sync "$1" || return "$RETURN_INVALID"
-			shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::allow "$program" sync "$1" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
 			if [ -z "$2" ]; then
 				shell::logger::error "The --exclude pattern cannot be empty"
 				return "$RETURN_INVALID"
@@ -610,7 +610,7 @@ shell::ssh::cmd() {
 		fi
 		target="$1"
 		shift
-		if ! shell::ssh::target::valid "$target"; then
+		if ! _shell::ssh::target::valid "$target"; then
 			shell::logger::error "Invalid target: '$target'"
 			return "$RETURN_INVALID"
 		fi
@@ -624,7 +624,7 @@ shell::ssh::cmd() {
 		target="$1"
 		script="$2"
 		shift 2
-		if ! shell::ssh::target::valid "$target"; then
+		if ! _shell::ssh::target::valid "$target"; then
 			shell::logger::error "Invalid target: '$target'"
 			return "$RETURN_INVALID"
 		fi
@@ -634,7 +634,7 @@ shell::ssh::cmd() {
 		fi
 		remote="bash -s"
 		if [ "$#" -gt 0 ]; then
-			remote="bash -s -- $(shell::ssh::quote "$@")"
+			remote="bash -s -- $(_shell::ssh::quote "$@")"
 		fi
 		invocation=("$program" ${opts[@]+"${opts[@]}"} "$target" "$remote")
 		stdin_file="$script"
@@ -645,7 +645,7 @@ shell::ssh::cmd() {
 			return "$RETURN_INVALID"
 		fi
 		target="$1"
-		if ! shell::ssh::target::valid "$target"; then
+		if ! _shell::ssh::target::valid "$target"; then
 			shell::logger::error "Invalid target: '$target'"
 			return "$RETURN_INVALID"
 		fi
@@ -676,14 +676,14 @@ shell::ssh::cmd() {
 		done
 		case "$mode" in
 		upload | push)
-			if ! shell::ssh::spec::valid "$dest"; then
+			if ! _shell::ssh::spec::valid "$dest"; then
 				shell::logger::error "Invalid remote destination: '$dest' (expected [user@]host:path)"
 				return "$RETURN_INVALID"
 			fi
 			;;
 		*)
 			for arg in "${sources[@]}"; do
-				if ! shell::ssh::spec::valid "$arg"; then
+				if ! _shell::ssh::spec::valid "$arg"; then
 					shell::logger::error "Invalid remote source: '$arg' (expected [user@]host:path)"
 					return "$RETURN_INVALID"
 				fi
@@ -692,7 +692,7 @@ shell::ssh::cmd() {
 				shell::logger::error "Several sources need an existing local directory as destination: $dest"
 				return "$RETURN_INVALID"
 			fi
-			dest="$(shell::ssh::path::local "$dest")"
+			dest="$(_shell::ssh::path::local "$dest")"
 			;;
 		esac
 		case "$mode" in
@@ -703,7 +703,7 @@ shell::ssh::cmd() {
 					shell::logger::error "Not found: $arg"
 					return "$RETURN_NOT_FOUND"
 				fi
-				locals+=("$(shell::ssh::path::local "$arg")")
+				locals+=("$(_shell::ssh::path::local "$arg")")
 			done
 			sources=("${locals[@]}")
 			;;
@@ -712,7 +712,7 @@ shell::ssh::cmd() {
 		rsync)
 			e_cmd="ssh"
 			if [ "${#opts[@]}" -gt 0 ]; then
-				e_cmd="ssh $(shell::ssh::quote "${opts[@]}")"
+				e_cmd="ssh $(_shell::ssh::quote "${opts[@]}")"
 			fi
 			invocation=(rsync -avz ${sync[@]+"${sync[@]}"} -e "$e_cmd" -- "${sources[@]}" "$dest")
 			;;
@@ -726,7 +726,7 @@ shell::ssh::cmd() {
 				return "$RETURN_INVALID"
 			fi
 			spec="${2:-1080}"
-			if ! shell::net::port::valid "$spec"; then
+			if ! _shell::net::port::valid "$spec"; then
 				shell::logger::error "Invalid SOCKS port: '$spec' (1-65535)"
 				return "$RETURN_INVALID"
 			fi
@@ -737,7 +737,7 @@ shell::ssh::cmd() {
 				return "$RETURN_INVALID"
 			fi
 			spec="$2"
-			if ! shell::ssh::forward::valid "$spec"; then
+			if ! _shell::ssh::forward::valid "$spec"; then
 				shell::logger::error "Invalid forwarding spec: '$spec' (expected [bind:]port:host:hostport or [bind:]port:/socket)"
 				return "$RETURN_INVALID"
 			fi
@@ -747,7 +747,7 @@ shell::ssh::cmd() {
 			fi
 		fi
 		target="$1"
-		if ! shell::ssh::target::valid "$target"; then
+		if ! _shell::ssh::target::valid "$target"; then
 			shell::logger::error "Invalid target: '$target'"
 			return "$RETURN_INVALID"
 		fi
@@ -775,7 +775,7 @@ shell::ssh::cmd() {
 		fi
 	fi
 
-	shell::ssh::invoke ${run[@]+"${run[@]}"} "${invocation[@]}" || rc=$?
+	_shell::ssh::invoke ${run[@]+"${run[@]}"} "${invocation[@]}" || rc=$?
 
 	if [ "$dry_run" = "false" ]; then
 		case "$mode" in
@@ -817,7 +817,7 @@ shell::ssh::cmd() {
 # @exitcode 2 Unknown option, no target, or an unsafe argument.
 # @exitcode 3 ssh, or a file given with -i or -F, is missing.
 # @exitcode N Exit status of ssh (255 when it cannot connect).
-# @see shell::ssh::cmd
+# @see _shell::ssh::cmd
 # @see shell::ssh::connect::fzf
 # @example
 #   shell::ssh::connect deploy@10.0.0.5
@@ -831,14 +831,14 @@ shell::ssh::connect() {
 		shell::logger::usage "shell::ssh::connect [-n] [options] <[user@]host|alias> [command...]"
 		shell::logger::item "target" "user@host, host, or a Host alias of ~/.ssh/config"
 		shell::logger::item "command" "Optional remote command (joined and parsed by the remote shell, as ssh does)"
-		shell::ssh::cmd::help ssh
+		_shell::ssh::cmd::help ssh
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
 		shell::logger::option "-h, --help" "Display this help message"
 		shell::logger::example "shell::ssh::connect -p 2222 -i ~/.ssh/id_ed25519 deploy@10.0.0.5"
 		shell::logger::example "shell::ssh::connect -J bastion deploy@10.0.0.5 uptime"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::ssh::cmd ssh connect "$@"
+	_shell::ssh::cmd ssh connect "$@"
 }
 
 # @description Run a command on the server and return (`ssh [user@]host command`).
@@ -853,7 +853,7 @@ shell::ssh::connect() {
 # @exitcode 2 Unknown option, no target or no command, or an unsafe argument.
 # @exitcode 3 ssh, or a file given with -i or -F, is missing.
 # @exitcode N Exit status of the remote command (255 when ssh cannot connect).
-# @see shell::ssh::cmd
+# @see _shell::ssh::cmd
 # @example
 #   shell::ssh::exec deploy@web1 'df -h'
 #   shell::ssh::exec -t deploy@web1 sudo systemctl restart nginx
@@ -865,14 +865,14 @@ shell::ssh::exec() {
 		shell::logger::usage "shell::ssh::exec [-n] [options] <[user@]host|alias> <command...>"
 		shell::logger::item "target" "user@host, host, or a Host alias of ~/.ssh/config"
 		shell::logger::item "command" "Remote command (joined and parsed by the remote shell, as ssh does)"
-		shell::ssh::cmd::help ssh
+		_shell::ssh::cmd::help ssh
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
 		shell::logger::option "-h, --help" "Display this help message"
 		shell::logger::example "shell::ssh::exec deploy@web1 'df -h'"
 		shell::logger::example "shell::ssh::exec -t deploy@web1 sudo systemctl restart nginx"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::ssh::cmd ssh exec "$@"
+	_shell::ssh::cmd ssh exec "$@"
 }
 
 # @description Run a local script on the server (`ssh host bash -s < script.sh`).
@@ -888,7 +888,7 @@ shell::ssh::exec() {
 # @exitcode 2 Unknown option, missing arguments, or an unsafe argument.
 # @exitcode 3 ssh or the script is missing.
 # @exitcode N Exit status of the script (255 when ssh cannot connect).
-# @see shell::ssh::cmd
+# @see _shell::ssh::cmd
 # @example
 #   shell::ssh::script deploy@web1 ./bootstrap.sh
 #   shell::ssh::script deploy@web1 ./backup.sh daily "my database"
@@ -901,13 +901,13 @@ shell::ssh::script() {
 		shell::logger::item "target" "user@host, host, or a Host alias of ~/.ssh/config"
 		shell::logger::item "script" "Local script to run"
 		shell::logger::item "args" "Arguments for the script (\$1, \$2 ...)"
-		shell::ssh::cmd::help ssh
+		_shell::ssh::cmd::help ssh
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
 		shell::logger::option "-h, --help" "Display this help message"
 		shell::logger::example "shell::ssh::script deploy@web1 ./backup.sh daily"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::ssh::cmd ssh script "$@"
+	_shell::ssh::cmd ssh script "$@"
 }
 
 # @description Test that a server can be reached and accepts your login.
@@ -921,7 +921,7 @@ shell::ssh::script() {
 # @exitcode 1 It could not be reached, or refused the login.
 # @exitcode 2 Unknown option, no target, or an unsafe argument.
 # @exitcode 3 ssh is missing.
-# @see shell::ssh::cmd
+# @see _shell::ssh::cmd
 # @example
 #   shell::ssh::check deploy@web1
 #   shell::ssh::check --accept-new -p 2222 deploy@web1
@@ -932,14 +932,14 @@ shell::ssh::check() {
 		shell::logger::info "Test that a server can be reached and accepts your login"
 		shell::logger::usage "shell::ssh::check [-n] [options] <[user@]host|alias>"
 		shell::logger::item "target" "user@host, host, or a Host alias of ~/.ssh/config"
-		shell::ssh::cmd::help ssh
+		_shell::ssh::cmd::help ssh
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
 		shell::logger::option "-h, --help" "Display this help message"
 		shell::logger::example "shell::ssh::check deploy@web1"
 		shell::logger::example "shell::ssh::check --accept-new -p 2222 deploy@web1"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::ssh::cmd ssh check "$@"
+	_shell::ssh::cmd ssh check "$@"
 }
 
 # @description Print the version of the installed OpenSSH client (`ssh -V`).
@@ -988,13 +988,13 @@ shell::ssh::mux::check() {
 		shell::logger::info "Tell whether the shared connection to a host is alive (ssh -O check)"
 		shell::logger::usage "shell::ssh::mux::check [-n] [options] <[user@]host|alias>"
 		shell::logger::item "target" "The alias or user@host the connection was opened with"
-		shell::ssh::cmd::help ssh
+		_shell::ssh::cmd::help ssh
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
 		shell::logger::option "-h, --help" "Display this help message"
 		shell::logger::example "shell::ssh::mux::check web1"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::ssh::cmd ssh mux_check "$@"
+	_shell::ssh::cmd ssh mux_check "$@"
 }
 
 # @description Close the shared connection to a host (`ssh -O exit`).
@@ -1016,11 +1016,11 @@ shell::ssh::mux::stop() {
 		shell::logger::info "Close the shared connection to a host (ssh -O exit)"
 		shell::logger::usage "shell::ssh::mux::stop [-n] [options] <[user@]host|alias>"
 		shell::logger::item "target" "The alias or user@host the connection was opened with"
-		shell::ssh::cmd::help ssh
+		_shell::ssh::cmd::help ssh
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
 		shell::logger::option "-h, --help" "Display this help message"
 		shell::logger::example "shell::ssh::mux::stop web1"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::ssh::cmd ssh mux_exit "$@"
+	_shell::ssh::cmd ssh mux_exit "$@"
 }

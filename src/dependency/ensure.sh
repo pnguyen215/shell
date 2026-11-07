@@ -15,7 +15,7 @@
 # @arg $2 string Package manager (apt, dnf, yum, pacman, zypper, apk, brew).
 # @stdout Package name.
 # @exitcode 0 Always.
-shell::dependency::package_name() {
+_shell::dependency::package_name() {
 	local command="$1"
 	local manager="$2"
 
@@ -85,7 +85,7 @@ shell::dependency::ensure() {
 
 	local manager
 	manager="$(shell::package::manager)"
-	local package="${2:-$(shell::dependency::package_name "$command" "$manager")}"
+	local package="${2:-$(_shell::dependency::package_name "$command" "$manager")}"
 
 	# Policy switch: only report when auto-install is disabled.
 	if [ "${SHELL_AUTO_INSTALL_DEPS:-1}" != "1" ]; then
