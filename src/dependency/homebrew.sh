@@ -13,7 +13,7 @@
 # @stdout Absolute path to `brew`.
 # @exitcode 0 brew was found.
 # @exitcode 3 brew is not installed.
-shell::homebrew::path() {
+_shell::homebrew::path() {
 	local candidate
 	# PATH first, then the default prefixes: Apple Silicon, Intel, Linuxbrew.
 	if command -v brew >/dev/null 2>&1; then
@@ -38,7 +38,7 @@ shell::homebrew::path() {
 # @exitcode 3 brew is not installed.
 shell::homebrew::activate() {
 	local brew_bin
-	brew_bin="$(shell::homebrew::path)" || return "$RETURN_NOT_FOUND"
+	brew_bin="$(_shell::homebrew::path)" || return "$RETURN_NOT_FOUND"
 	eval "$("$brew_bin" shellenv)"
 }
 
@@ -68,7 +68,7 @@ shell::homebrew::install() {
 		shift
 	fi
 
-	if shell::homebrew::path >/dev/null 2>&1; then
+	if _shell::homebrew::path >/dev/null 2>&1; then
 		shell::logger::debug "Homebrew is already installed."
 		shell::homebrew::activate
 		return "$RETURN_SUCCESS"
@@ -124,7 +124,7 @@ shell::homebrew::uninstall() {
 		shift
 	done
 
-	if ! shell::homebrew::path >/dev/null 2>&1; then
+	if ! _shell::homebrew::path >/dev/null 2>&1; then
 		shell::logger::warn "Homebrew is not installed. Nothing to uninstall."
 		return "$RETURN_SUCCESS"
 	fi
@@ -153,3 +153,4 @@ shell::homebrew::uninstall() {
 
 	shell::logger::success "Homebrew uninstalled."
 }
+

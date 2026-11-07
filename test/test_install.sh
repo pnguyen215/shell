@@ -60,10 +60,10 @@ rm -f "$tpl_dst.bak" "$HOME/.shell-config/git/git-commit-messages.user.txt"
 
 # the library reads the installed copy, not the one inside the installation
 printf '[Installed Copy]\n:rocket:|ci|trigger the pipeline from the installed copy\n' >"$tpl_dst"
-out="$(bash -c "export HOME='$HOME' NO_COLOR=1; unset SHELL_DIR SHELL_CONFIG_DIR; . '$SHELL_INSTALL_DIR/src/shell.sh'; shell::git::commit::message::scan categories" 2>&1)"
+out="$(bash -c "export HOME='$HOME' NO_COLOR=1; unset SHELL_DIR SHELL_CONFIG_DIR; . '$SHELL_INSTALL_DIR/src/shell.sh'; _shell::git::commit::message::scan categories" 2>&1)"
 t_eq "the library reads ~/.shell-config/git/git-commit-messages.txt" "Installed Copy" "$out"
 rm -f "$tpl_dst"
-out="$(bash -c "export HOME='$HOME' NO_COLOR=1; unset SHELL_DIR SHELL_CONFIG_DIR; . '$SHELL_INSTALL_DIR/src/shell.sh'; shell::git::commit::message::scan categories | head -n 1" 2>&1)"
+out="$(bash -c "export HOME='$HOME' NO_COLOR=1; unset SHELL_DIR SHELL_CONFIG_DIR; . '$SHELL_INSTALL_DIR/src/shell.sh'; _shell::git::commit::message::scan categories | head -n 1" 2>&1)"
 t_eq "without the installed copy it reads the one inside the installation" "CI/CD Pipeline Triggers" "$out"
 bash "$SHELL_TEST_ROOT/install.sh" >/dev/null 2>&1
 t_rc "install: restores the deleted copy" 0 cmp -s "$tpl_src" "$tpl_dst"

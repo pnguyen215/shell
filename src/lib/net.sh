@@ -250,7 +250,7 @@ shell::net::run_remote_script() {
 # @stdout PIDs, one per line (nothing when the port is free).
 # @exitcode 0 At least one listener exists.
 # @exitcode 1 The port is free.
-shell::net::port::pids() {
+_shell::net::port::pids() {
 	local pids
 	pids="$(lsof -nP -iTCP:"$1" -sTCP:LISTEN -t 2>/dev/null | sort -u)"
 	[ -n "$pids" ] || return "$RETURN_FAILURE"
@@ -286,7 +286,7 @@ shell::net::port::check() {
 	fi
 
 	local port="${1-}"
-	if ! shell::net::port::valid "$port"; then
+	if ! _shell::net::port::valid "$port"; then
 		shell::logger::error "Usage: shell::net::port::check [-n] <port 1-65535>"
 		return "$RETURN_INVALID"
 	fi
@@ -306,7 +306,7 @@ shell::net::port::check() {
 # @arg $1 string Candidate port.
 # @exitcode 0 Integer in 1..65535.
 # @exitcode 1 Anything else.
-shell::net::port::valid() {
+_shell::net::port::valid() {
 	case "${1-}" in
 	'' | *[!0-9]*) return "$RETURN_FAILURE" ;;
 	esac
@@ -359,12 +359,12 @@ shell::net::port::kill() {
 
 	local port pid pids failed=0
 	for port in "$@"; do
-		if ! shell::net::port::valid "$port"; then
+		if ! _shell::net::port::valid "$port"; then
 			shell::logger::error "Invalid port: $port"
 			return "$RETURN_INVALID"
 		fi
 
-		pids="$(shell::net::port::pids "$port")" || {
+		pids="$(_shell::net::port::pids "$port")" || {
 			shell::logger::warn "No process is listening on port $port"
 			continue
 		}

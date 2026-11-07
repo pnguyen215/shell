@@ -27,9 +27,9 @@
 # @exitcode 0 Known style.
 # @exitcode 1 Empty, contains whitespace, or unknown.
 # @example
-#   shell::logger::style::valid classic
+#   _shell::logger::style::valid classic
 #
-shell::logger::style::valid() {
+_shell::logger::style::valid() {
 	case "${1-}" in
 	'' | *[[:space:]]*) return 1 ;;
 	esac
@@ -52,9 +52,9 @@ shell::logger::style::valid() {
 # @stderr The line, when the stream is stderr.
 # @exitcode 0 Always.
 # @example
-#   shell::logger::style::simple INFO 33 stdout "hello"
+#   _shell::logger::style::simple INFO 33 stdout "hello"
 #
-shell::logger::style::simple() {
+_shell::logger::style::simple() {
 	local level="${1-}" stream="${3-stdout}"
 	shift 3
 
@@ -126,9 +126,9 @@ shell::logger::style::simple() {
 # @stderr The line, when the stream is stderr.
 # @exitcode 0 Always.
 # @example
-#   shell::logger::style::classic ERROR 196 stderr "disk full"
+#   _shell::logger::style::classic ERROR 196 stderr "disk full"
 #
-shell::logger::style::classic() {
+_shell::logger::style::classic() {
 	local label="${1-}" color="${2-}" stream="${3-stdout}"
 	shift 3
 
@@ -154,19 +154,19 @@ shell::logger::style::classic() {
 # @arg $@ string Message words.
 # @exitcode 0 Always.
 # @example
-#   shell::logger::style::render classic WARN 11 stderr "careful"
+#   _shell::logger::style::render classic WARN 11 stderr "careful"
 #
-shell::logger::style::render() {
+_shell::logger::style::render() {
 	local style="${1-}"
 	shift
 
-	if ! shell::logger::style::valid "$style"; then
+	if ! _shell::logger::style::valid "$style"; then
 		style="$SHELL_LOGGER_STYLE_DEFAULT"
 	fi
 
 	case "$style" in
-	classic) shell::logger::style::classic "$@" ;;
-	*) shell::logger::style::simple "$@" ;;
+	classic) _shell::logger::style::classic "$@" ;;
+	*) _shell::logger::style::simple "$@" ;;
 	esac
 }
 
@@ -175,14 +175,14 @@ shell::logger::style::render() {
 # @stdout The saved style (nothing when none is saved or the file is invalid).
 # @exitcode 0 Always.
 # @example
-#   saved="$(shell::logger::style::read)"
+#   saved="$(_shell::logger::style::read)"
 #
-shell::logger::style::read() {
+_shell::logger::style::read() {
 	local key value
 	[ -r "$SHELL_LOGGER_CONF_FILE" ] || return "$RETURN_SUCCESS"
 
 	while IFS='=' read -r key value || [ -n "$key" ]; do
-		if [ "$key" = "style" ] && shell::logger::style::valid "$value"; then
+		if [ "$key" = "style" ] && _shell::logger::style::valid "$value"; then
 			printf '%s\n' "$value"
 			return "$RETURN_SUCCESS"
 		fi
@@ -198,9 +198,9 @@ shell::logger::style::read() {
 # @exitcode 0 Saved.
 # @exitcode 1 The file could not be written.
 # @example
-#   shell::logger::style::save classic
+#   _shell::logger::style::save classic
 #
-shell::logger::style::save() {
+_shell::logger::style::save() {
 	local style="${1-}"
 	local dir="${SHELL_LOGGER_CONF_FILE%/*}"
 	local tmp="$SHELL_LOGGER_CONF_FILE.tmp.$$"
@@ -210,7 +210,7 @@ shell::logger::style::save() {
 	fi
 
 	# Fail quietly: the shell would otherwise print a raw "permission denied"
-	# for the redirect. shell::logger::style::save_hint explains what to do.
+	# for the redirect. _shell::logger::style::save_hint explains what to do.
 	if ! { (umask 077 && printf 'style=%s\n' "$style" >"$tmp"); } 2>/dev/null; then
 		rm -f "$tmp" 2>/dev/null
 		return "$RETURN_FAILURE"
@@ -230,9 +230,9 @@ shell::logger::style::save() {
 # @stderr Warnings describing the problem.
 # @exitcode 0 Always.
 # @example
-#   shell::logger::style::save "$style" || shell::logger::style::save_hint
+#   _shell::logger::style::save "$style" || _shell::logger::style::save_hint
 #
-shell::logger::style::save_hint() {
+_shell::logger::style::save_hint() {
 	local dir="${SHELL_LOGGER_CONF_FILE%/*}"
 	local user
 	user="$(id -un 2>/dev/null)"
@@ -262,16 +262,16 @@ shell::logger::style::save_hint() {
 # @set SHELL_LOGGER_STYLE string The resolved style name.
 # @exitcode 0 Always.
 # @example
-#   shell::logger::style::load
+#   _shell::logger::style::load
 #
-shell::logger::style::load() {
-	if [ -n "${SHELL_LOGGER_STYLE-}" ] && shell::logger::style::valid "$SHELL_LOGGER_STYLE"; then
+_shell::logger::style::load() {
+	if [ -n "${SHELL_LOGGER_STYLE-}" ] && _shell::logger::style::valid "$SHELL_LOGGER_STYLE"; then
 		return "$RETURN_SUCCESS"
 	fi
 
 	local saved=""
 	if [ -r "$SHELL_LOGGER_CONF_FILE" ]; then
-		saved="$(shell::logger::style::read)"
+		saved="$(_shell::logger::style::read)"
 	fi
 	SHELL_LOGGER_STYLE="${saved:-$SHELL_LOGGER_STYLE_DEFAULT}"
 	return "$RETURN_SUCCESS"
@@ -295,7 +295,7 @@ shell::logger::style::get() {
 	fi
 
 	local style="${SHELL_LOGGER_STYLE:-$SHELL_LOGGER_STYLE_DEFAULT}"
-	if ! shell::logger::style::valid "$style"; then
+	if ! _shell::logger::style::valid "$style"; then
 		style="$SHELL_LOGGER_STYLE_DEFAULT"
 	fi
 	printf '%s\n' "$style"
@@ -346,17 +346,17 @@ shell::logger::style::preview() {
 	fi
 
 	local style="${1:-$(shell::logger::style::get)}"
-	if ! shell::logger::style::valid "$style"; then
+	if ! _shell::logger::style::valid "$style"; then
 		shell::logger::error "Unknown logger style '$style' (expected: $SHELL_LOGGER_STYLES)"
 		return "$RETURN_INVALID"
 	fi
 
-	shell::logger::style::render "$style" DEBUG "$SHELL_COLOR_DEBUG" stdout "Sample debug message"
-	shell::logger::style::render "$style" INFO "$SHELL_COLOR_INFO" stdout "Sample info message"
-	shell::logger::style::render "$style" WARN "$SHELL_COLOR_WARN" stdout "Sample warning message"
-	shell::logger::style::render "$style" ERROR "$SHELL_COLOR_ERROR" stdout "Sample error message"
-	shell::logger::style::render "$style" FATAL "$SHELL_COLOR_FATAL" stdout "Sample fatal message"
-	shell::logger::style::render "$style" SUCCESS "$SHELL_COLOR_SUCCESS" stdout "Sample success message"
+	_shell::logger::style::render "$style" DEBUG "$SHELL_COLOR_DEBUG" stdout "Sample debug message"
+	_shell::logger::style::render "$style" INFO "$SHELL_COLOR_INFO" stdout "Sample info message"
+	_shell::logger::style::render "$style" WARN "$SHELL_COLOR_WARN" stdout "Sample warning message"
+	_shell::logger::style::render "$style" ERROR "$SHELL_COLOR_ERROR" stdout "Sample error message"
+	_shell::logger::style::render "$style" FATAL "$SHELL_COLOR_FATAL" stdout "Sample fatal message"
+	_shell::logger::style::render "$style" SUCCESS "$SHELL_COLOR_SUCCESS" stdout "Sample success message"
 }
 
 # @description Apply a logger style, and save it for future sessions.
@@ -422,7 +422,7 @@ shell::logger::style::set() {
 		shell::logger::error "A style is required (expected: $SHELL_LOGGER_STYLES)"
 		return "$RETURN_INVALID"
 	fi
-	if ! shell::logger::style::valid "$style"; then
+	if ! _shell::logger::style::valid "$style"; then
 		shell::logger::error "Unknown logger style '$style' (expected: $SHELL_LOGGER_STYLES)"
 		return "$RETURN_INVALID"
 	fi
@@ -438,9 +438,9 @@ shell::logger::style::set() {
 	SHELL_LOGGER_STYLE="$style"
 
 	if [ "$save" = "true" ]; then
-		if ! shell::logger::style::save "$style"; then
+		if ! _shell::logger::style::save "$style"; then
 			shell::logger::warn "Logger style '$style' is active in this shell, but could not be saved"
-			shell::logger::style::save_hint
+			_shell::logger::style::save_hint
 			return "$RETURN_FAILURE"
 		fi
 		shell::logger::success "Logger style set to '$style' (saved)"
@@ -577,3 +577,4 @@ shell::logger::style::reset() {
 	}
 	shell::logger::success "Logger style reset to '$SHELL_LOGGER_STYLE_DEFAULT'"
 }
+

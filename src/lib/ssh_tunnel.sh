@@ -37,7 +37,7 @@
 # @exitcode 2 Unknown option, wrong arguments, or an unsafe argument.
 # @exitcode 3 ssh is missing.
 # @exitcode N Exit status of ssh (255 when it cannot connect or bind).
-# @see shell::ssh::cmd
+# @see _shell::ssh::cmd
 # @see shell::ssh::tunnel::open
 # @example
 #   shell::ssh::tunnel::local deploy@bastion 5432:db.internal:5432
@@ -50,7 +50,7 @@ shell::ssh::tunnel::local() {
 		shell::logger::usage "shell::ssh::tunnel::local [-n] [options] <[user@]host|alias> <[bind:]port:host:hostport>"
 		shell::logger::item "target" "The SSH server (user@host, host or an alias)"
 		shell::logger::item "spec" "local port, then the destination as seen from the server"
-		shell::ssh::cmd::help ssh
+		_shell::ssh::cmd::help ssh
 		shell::logger::option "--foreground" "Keep the tunnel in this terminal instead of the background"
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
 		shell::logger::option "-h, --help" "Display this help message"
@@ -58,7 +58,7 @@ shell::ssh::tunnel::local() {
 		shell::logger::example "shell::ssh::tunnel::local -J bastion deploy@app1 3307:127.0.0.1:3306"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::ssh::cmd ssh tunnel_local "$@"
+	_shell::ssh::cmd ssh tunnel_local "$@"
 }
 
 # @description Expose a local service on the server (`ssh -R`).
@@ -74,7 +74,7 @@ shell::ssh::tunnel::local() {
 # @exitcode 2 Unknown option, wrong arguments, or an unsafe argument.
 # @exitcode 3 ssh is missing.
 # @exitcode N Exit status of ssh (255 when it cannot connect or bind).
-# @see shell::ssh::cmd
+# @see _shell::ssh::cmd
 # @example
 #   shell::ssh::tunnel::remote deploy@web1 9090:localhost:3000
 #
@@ -85,14 +85,14 @@ shell::ssh::tunnel::remote() {
 		shell::logger::usage "shell::ssh::tunnel::remote [-n] [options] <[user@]host|alias> <[bind:]port:host:hostport>"
 		shell::logger::item "target" "The SSH server (user@host, host or an alias)"
 		shell::logger::item "spec" "port on the server, then the destination as seen from this machine"
-		shell::ssh::cmd::help ssh
+		_shell::ssh::cmd::help ssh
 		shell::logger::option "--foreground" "Keep the tunnel in this terminal instead of the background"
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
 		shell::logger::option "-h, --help" "Display this help message"
 		shell::logger::example "shell::ssh::tunnel::remote deploy@web1 9090:localhost:3000"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::ssh::cmd ssh tunnel_remote "$@"
+	_shell::ssh::cmd ssh tunnel_remote "$@"
 }
 
 # @description Start a SOCKS5 proxy that sends its traffic through the server (`ssh -D`).
@@ -107,7 +107,7 @@ shell::ssh::tunnel::remote() {
 # @exitcode 2 Unknown option, wrong arguments, or an unsafe argument.
 # @exitcode 3 ssh is missing.
 # @exitcode N Exit status of ssh (255 when it cannot connect or bind).
-# @see shell::ssh::cmd
+# @see _shell::ssh::cmd
 # @example
 #   shell::ssh::tunnel::socks deploy@web1
 #   shell::ssh::tunnel::socks deploy@web1 1081
@@ -119,7 +119,7 @@ shell::ssh::tunnel::socks() {
 		shell::logger::usage "shell::ssh::tunnel::socks [-n] [options] <[user@]host|alias> [port]"
 		shell::logger::item "target" "The SSH server (user@host, host or an alias)"
 		shell::logger::item "port" "Local port of the proxy (default 1080)"
-		shell::ssh::cmd::help ssh
+		_shell::ssh::cmd::help ssh
 		shell::logger::option "--foreground" "Keep the tunnel in this terminal instead of the background"
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
 		shell::logger::option "-h, --help" "Display this help message"
@@ -127,5 +127,5 @@ shell::ssh::tunnel::socks() {
 		shell::logger::example "shell::ssh::tunnel::socks -J bastion deploy@web1 1081"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::ssh::cmd ssh tunnel_socks "$@"
+	_shell::ssh::cmd ssh tunnel_socks "$@"
 }

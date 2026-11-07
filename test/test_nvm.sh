@@ -52,20 +52,20 @@ no_nvm() (
 
 # --- validation ---------------------------------------------------------------------------------
 for ok in 20 v20.11.1 node stable iojs system default 'lts/*' lts/iron my-alias work_1 20.11 a.b 'lts/hydrogen' 7zip; do
-	shell::nvm::version::valid "$ok"
+	_shell::nvm::version::valid "$ok"
 	t_eq "version: '$ok' is safe" "0" "$?"
 done
 for bad in '' -x --lts .hidden /abs 'a b' 'a;b' 'a|b' 'a&b' 'a$b' 'a`b`' 'a"b' "a'b" 'a(b)' 'a>b' '../x' 'a..b' 'a\b' '~x'; do
-	shell::nvm::version::valid "$bad"
+	_shell::nvm::version::valid "$bad"
 	t_eq "version: '$bad' is refused" "1" "$?"
 done
-t_eq "version: a newline is refused" "1" "$(shell::nvm::version::valid "a${nl}b" >/dev/null 2>&1 && echo 0 || echo 1)"
+t_eq "version: a newline is refused" "1" "$(_shell::nvm::version::valid "a${nl}b" >/dev/null 2>&1 && echo 0 || echo 1)"
 for ok in work default my-alias a.b lts/iron a_b 7z; do
-	shell::nvm::alias::valid "$ok"
+	_shell::nvm::alias::valid "$ok"
 	t_eq "alias: '$ok' is valid" "0" "$?"
 done
 for bad in '' -x 'a b' 'a;b' 'a*' 'a+b' '../x' '.x' 'a$b'; do
-	shell::nvm::alias::valid "$bad"
+	_shell::nvm::alias::valid "$bad"
 	t_eq "alias: '$bad' is refused" "1" "$?"
 done
 
@@ -118,29 +118,29 @@ t_eq "load: it is passed --no-use (checked on a loader that reports its argument
 	cat "$HOME/argdir/args"
 )"
 
-# --- shell::nvm::invoke --------------------------------------------------------------------------------
-t_eq "invoke: passes the arguments through" "use 20" "$(calls shell::nvm::invoke use 20)"
+# --- _shell::nvm::invoke --------------------------------------------------------------------------------
+t_eq "invoke: passes the arguments through" "use 20" "$(calls _shell::nvm::invoke use 20)"
 t_eq "invoke: an argument with spaces stays one argument" "2" "$(
 	: >"$FAKE_NVM_LOG.argc"
-	shell::nvm::invoke alias 'two words' >/dev/null 2>&1
+	_shell::nvm::invoke alias 'two words' >/dev/null 2>&1
 	cat "$FAKE_NVM_LOG.argc"
 )"
-t_eq "invoke: -n does not start nvm" "" "$(calls shell::nvm::invoke -n use 20)"
-t_has "invoke: -n prints the command" "nvm use 20" "$(say shell::nvm::invoke -n use 20)"
-t_has "invoke: echoes the command it runs" "nvm use 20" "$(say shell::nvm::invoke use 20)"
-t_eq "invoke: no sub-command is invalid" "2" "$(rc_of shell::nvm::invoke)"
-t_has "invoke: without nvm, says how to install it" "shell::dependency::nvm::install" "$(no_nvm shell::nvm::invoke use 20)"
-t_has "invoke: without nvm, rc 3" "rc=3" "$(no_nvm shell::nvm::invoke use 20)"
-t_has "invoke: -n needs no nvm" "nvm use 20" "$(no_nvm shell::nvm::invoke -n use 20)"
+t_eq "invoke: -n does not start nvm" "" "$(calls _shell::nvm::invoke -n use 20)"
+t_has "invoke: -n prints the command" "nvm use 20" "$(say _shell::nvm::invoke -n use 20)"
+t_has "invoke: echoes the command it runs" "nvm use 20" "$(say _shell::nvm::invoke use 20)"
+t_eq "invoke: no sub-command is invalid" "2" "$(rc_of _shell::nvm::invoke)"
+t_has "invoke: without nvm, says how to install it" "shell::dependency::nvm::install" "$(no_nvm _shell::nvm::invoke use 20)"
+t_has "invoke: without nvm, rc 3" "rc=3" "$(no_nvm _shell::nvm::invoke use 20)"
+t_has "invoke: -n needs no nvm" "nvm use 20" "$(no_nvm _shell::nvm::invoke -n use 20)"
 printf '3\n' >"$FAKE_NVM_DIR/use_99.rc"
-t_eq "invoke: nvm's exit status is returned" "3" "$(rc_of shell::nvm::invoke use 99)"
+t_eq "invoke: nvm's exit status is returned" "3" "$(rc_of _shell::nvm::invoke use 99)"
 rm -f "$FAKE_NVM_DIR/use_99.rc"
-t_eq "query: prints what nvm printed, quietly" "v20.11.1" "$(fn current v20.11.1 && shell::nvm::query current)"
-t_eq "query: and echoes nothing" "current" "$(calls shell::nvm::query current)"
+t_eq "query: prints what nvm printed, quietly" "v20.11.1" "$(fn current v20.11.1 && _shell::nvm::query current)"
+t_eq "query: and echoes nothing" "current" "$(calls _shell::nvm::query current)"
 t_eq "query: without nvm, rc 3" "3" "$(
 	unset -f nvm 2>/dev/null
 	shell::dependency::nvm::path() { return 3; }
-	shell::nvm::query current >/dev/null 2>&1
+	_shell::nvm::query current >/dev/null 2>&1
 	echo $?
 )"
 
@@ -388,20 +388,20 @@ t_eq "autouse::on: succeeds and switches once for the current directory" "use --
 t_eq "autouse::status: on" "on" "$(shell::nvm::autouse::status)"
 t_eq "autouse::status: on is rc 0" "0" "$(rc_of shell::nvm::autouse::status)"
 if [ -n "${ZSH_VERSION-}" ]; then
-	t_has "autouse::on: zsh gets a chpwd hook" "shell::nvm::autouse::hook" "${chpwd_functions[*]-}"
+	t_has "autouse::on: zsh gets a chpwd hook" "_shell::nvm::autouse::hook" "${chpwd_functions[*]-}"
 else
-	t_has "autouse::on: bash gets a PROMPT_COMMAND hook" "shell::nvm::autouse::hook" "${PROMPT_COMMAND-}"
+	t_has "autouse::on: bash gets a PROMPT_COMMAND hook" "_shell::nvm::autouse::hook" "${PROMPT_COMMAND-}"
 fi
 # hook_in <dir>: enter <dir> (zsh runs the hook by itself on cd; bash does not) and run it from a clean state
 hook_in() {
 	cd "$1" || exit 1
 	SHELL_NVM_AUTOUSE_PWD=""
 	: >"$FAKE_NVM_LOG"
-	shell::nvm::autouse::hook 2>&1
+	_shell::nvm::autouse::hook 2>&1
 }
 hook_in "$auto/with" >/dev/null
 : >"$FAKE_NVM_LOG"
-shell::nvm::autouse::hook
+_shell::nvm::autouse::hook
 t_eq "hook: the same directory again does nothing" "" "$(cat "$FAKE_NVM_LOG")"
 hook_in "$auto/without" >/dev/null
 t_eq "hook: a directory without .nvmrc leaves the version alone" "" "$(cat "$FAKE_NVM_LOG")"
@@ -414,9 +414,9 @@ t_has "autouse::on: twice says it is on already" "already on" "$(shell::nvm::aut
 shell::nvm::autouse::off >/dev/null 2>&1
 t_eq "autouse::off: status is off" "off" "$(shell::nvm::autouse::status)"
 if [ -n "${ZSH_VERSION-}" ]; then
-	t_lacks "autouse::off: the zsh hook is gone" "shell::nvm::autouse::hook" "${chpwd_functions[*]-}"
+	t_lacks "autouse::off: the zsh hook is gone" "_shell::nvm::autouse::hook" "${chpwd_functions[*]-}"
 else
-	t_lacks "autouse::off: the PROMPT_COMMAND hook is gone" "shell::nvm::autouse::hook" "${PROMPT_COMMAND-}"
+	t_lacks "autouse::off: the PROMPT_COMMAND hook is gone" "_shell::nvm::autouse::hook" "${PROMPT_COMMAND-}"
 fi
 t_eq "autouse::on: without nvm, rc 3" "3" "$(
 	unset -f nvm 2>/dev/null

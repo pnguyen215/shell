@@ -41,9 +41,9 @@
 # @exitcode 0 The name is safe.
 # @exitcode 1 The name is not safe.
 # @example
-#   shell::brew::name::valid "node@20" && echo ok
+#   _shell::brew::name::valid "node@20" && echo ok
 #
-shell::brew::name::valid() {
+_shell::brew::name::valid() {
 	case "${1-}" in
 	'' | [!A-Za-z0-9]* | *..* | *[!A-Za-z0-9@+._/-]*) return 1 ;;
 	esac
@@ -56,9 +56,9 @@ shell::brew::name::valid() {
 # @exitcode 0 It is `user/repo` made of `A-Z a-z 0-9 . _ -`.
 # @exitcode 1 It is not.
 # @example
-#   shell::brew::tap::valid "homebrew/cask-versions" && echo ok
+#   _shell::brew::tap::valid "homebrew/cask-versions" && echo ok
 #
-shell::brew::tap::valid() {
+_shell::brew::tap::valid() {
 	case "${1-}" in
 	'' | [!A-Za-z0-9]* | */ | /* | */*/* | *..* | *[!A-Za-z0-9._/-]*) return 1 ;;
 	*/*) return 0 ;;
@@ -76,11 +76,11 @@ shell::brew::tap::valid() {
 # @exitcode 3 Homebrew is not installed.
 # @exitcode N Exit status of brew.
 # @example
-#   shell::brew::query list --formula -1
+#   _shell::brew::query list --formula -1
 #
-shell::brew::query() {
+_shell::brew::query() {
 	local brew_bin
-	brew_bin="$(shell::homebrew::path)" || return "$RETURN_NOT_FOUND"
+	brew_bin="$(_shell::homebrew::path)" || return "$RETURN_NOT_FOUND"
 	HOMEBREW_NO_AUTO_UPDATE=1 "$brew_bin" "$@" 2>/dev/null
 }
 
@@ -117,7 +117,7 @@ shell::brew::run() {
 	fi
 
 	local brew_bin
-	brew_bin="$(shell::homebrew::path)" || {
+	brew_bin="$(_shell::homebrew::path)" || {
 		shell::logger::error "Homebrew is not installed (install it with: shell::homebrew::install)"
 		return "$RETURN_NOT_FOUND"
 	}
@@ -148,9 +148,9 @@ shell::brew::run() {
 # @exitcode 3 Homebrew is not installed.
 # @exitcode N Exit status of brew.
 # @example
-#   shell::brew::pkgcmd install 1 -1 pkg "package name" "-c|--cask|--cask" "$@"
+#   _shell::brew::pkgcmd install 1 -1 pkg "package name" "-c|--cask|--cask" "$@"
 #
-shell::brew::pkgcmd() {
+_shell::brew::pkgcmd() {
 	local verb="${1-}" min="${2-0}" max="${3--1}" mode="${4-pkg}" what="${5-package name}" spec="${6-}"
 	shift 6
 
@@ -243,7 +243,7 @@ EOF
 		index_name=$((index_name + 1))
 		case "$mode" in
 		pkg)
-			if ! shell::brew::name::valid "$arg"; then
+			if ! _shell::brew::name::valid "$arg"; then
 				shell::logger::error "Invalid $what: '$arg'"
 				return "$RETURN_INVALID"
 			fi
@@ -264,7 +264,7 @@ EOF
 			;;
 		tap)
 			if [ "$index_name" -eq 1 ]; then
-				if ! shell::brew::tap::valid "$arg"; then
+				if ! _shell::brew::tap::valid "$arg"; then
 					shell::logger::error "Invalid tap '$arg' (expected user/repo)"
 					return "$RETURN_INVALID"
 				fi
@@ -278,7 +278,7 @@ EOF
 			fi
 			;;
 		taprepo)
-			if ! shell::brew::tap::valid "$arg"; then
+			if ! _shell::brew::tap::valid "$arg"; then
 				shell::logger::error "Invalid tap '$arg' (expected user/repo)"
 				return "$RETURN_INVALID"
 			fi
@@ -326,7 +326,7 @@ shell::brew::version() {
 		shell::logger::example "shell::brew::version"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::brew::pkgcmd --version 0 0 pkg "argument" "" "$@"
+	_shell::brew::pkgcmd --version 0 0 pkg "argument" "" "$@"
 }
 
 # @description Print help for Homebrew or for one brew sub-command (`brew help [cmd]`).
@@ -351,7 +351,7 @@ shell::brew::help() {
 		shell::logger::example "shell::brew::help install"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::brew::pkgcmd help 0 1 sub "sub-command" "" "$@"
+	_shell::brew::pkgcmd help 0 1 sub "sub-command" "" "$@"
 }
 
 # @description Check the system for potential problems (`brew doctor`).
@@ -372,7 +372,7 @@ shell::brew::doctor() {
 		shell::logger::example "shell::brew::doctor"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::brew::pkgcmd doctor 0 0 pkg "argument" "" "$@"
+	_shell::brew::pkgcmd doctor 0 0 pkg "argument" "" "$@"
 }
 
 # @description Show the Homebrew configuration (`brew config`): prefix, versions, taps ...
@@ -393,7 +393,7 @@ shell::brew::config() {
 		shell::logger::example "shell::brew::config"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::brew::pkgcmd config 0 0 pkg "argument" "" "$@"
+	_shell::brew::pkgcmd config 0 0 pkg "argument" "" "$@"
 }
 
 # @description Print the Homebrew prefix, or the prefix of one package (`brew --prefix [name]`).
@@ -419,7 +419,7 @@ shell::brew::prefix() {
 		shell::logger::example "shell::brew::prefix openssl@3"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::brew::pkgcmd --prefix 0 1 pkg "package name" "" "$@"
+	_shell::brew::pkgcmd --prefix 0 1 pkg "package name" "" "$@"
 }
 
 # @description Print the download cache directory (`brew --cache`).
@@ -441,7 +441,7 @@ shell::brew::cache() {
 		shell::logger::example "du -sh \"\$(shell::brew::cache)\""
 		return "$RETURN_SUCCESS"
 	fi
-	shell::brew::pkgcmd --cache 0 0 pkg "argument" "" "$@"
+	_shell::brew::pkgcmd --cache 0 0 pkg "argument" "" "$@"
 }
 
 # --------------------------------------------------------------------------
@@ -468,7 +468,7 @@ shell::brew::update() {
 		shell::logger::example "shell::brew::update"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::brew::pkgcmd update 0 0 pkg "argument" "-f|--force|--force" "$@"
+	_shell::brew::pkgcmd update 0 0 pkg "argument" "-f|--force|--force" "$@"
 }
 
 # @description List packages that have a newer version (`brew outdated`).
@@ -508,7 +508,7 @@ shell::brew::outdated() {
 -g|--greedy|--greedy
 -q|--quiet|--quiet
 -v|--verbose|--verbose"
-	shell::brew::pkgcmd outdated 0 -1 pkg "package name" "$spec" "$@"
+	_shell::brew::pkgcmd outdated 0 -1 pkg "package name" "$spec" "$@"
 }
 
 # @description Upgrade outdated packages, or only the named ones (`brew upgrade`).
@@ -546,7 +546,7 @@ shell::brew::upgrade() {
 |--formula|--formula
 -g|--greedy|--greedy
 -f|--force|--force"
-	shell::brew::pkgcmd upgrade 0 -1 pkg "package name" "$spec" "$@"
+	_shell::brew::pkgcmd upgrade 0 -1 pkg "package name" "$spec" "$@"
 }
 
 # @description Prevent packages from being upgraded (`brew pin`).
@@ -577,7 +577,7 @@ shell::brew::pin() {
 	fi
 	local spec="-c|--cask|--cask
 |--formula|--formula"
-	shell::brew::pkgcmd pin 1 -1 pkg "package name" "$spec" "$@"
+	_shell::brew::pkgcmd pin 1 -1 pkg "package name" "$spec" "$@"
 }
 
 # @description Allow pinned packages to be upgraded again (`brew unpin`).
@@ -608,7 +608,7 @@ shell::brew::unpin() {
 	fi
 	local spec="-c|--cask|--cask
 |--formula|--formula"
-	shell::brew::pkgcmd unpin 1 -1 pkg "package name" "$spec" "$@"
+	_shell::brew::pkgcmd unpin 1 -1 pkg "package name" "$spec" "$@"
 }
 
 # @description List the pinned packages (`brew list --pinned`).
@@ -629,7 +629,7 @@ shell::brew::pinned() {
 		shell::logger::example "shell::brew::pinned"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::brew::pkgcmd list 0 0 pkg "argument" "|--pinned|--pinned" --pinned "$@"
+	_shell::brew::pkgcmd list 0 0 pkg "argument" "|--pinned|--pinned" --pinned "$@"
 }
 
 # --------------------------------------------------------------------------
@@ -664,7 +664,7 @@ shell::brew::tap() {
 		shell::logger::example "shell::brew::tap homebrew/cask-versions"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::brew::pkgcmd tap 0 2 tap "tap argument" "" "$@"
+	_shell::brew::pkgcmd tap 0 2 tap "tap argument" "" "$@"
 }
 
 # @description Remove one or more taps (`brew untap`).
@@ -692,7 +692,7 @@ shell::brew::untap() {
 		shell::logger::example "shell::brew::untap acme/tools"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::brew::pkgcmd untap 1 -1 taprepo "tap" "-f|--force|--force" "$@"
+	_shell::brew::pkgcmd untap 1 -1 taprepo "tap" "-f|--force|--force" "$@"
 }
 
 # --------------------------------------------------------------------------
@@ -732,7 +732,7 @@ shell::brew::available() {
 		*) rest+=("$arg") ;;
 		esac
 	done
-	shell::brew::pkgcmd "$verb" 0 0 pkg "argument" "" ${rest[@]+"${rest[@]}"}
+	_shell::brew::pkgcmd "$verb" 0 0 pkg "argument" "" ${rest[@]+"${rest[@]}"}
 }
 
 # @description Search formulae and casks by name, or by description (`brew search`).
@@ -767,7 +767,7 @@ shell::brew::search() {
 	local spec="-c|--cask|--cask
 |--formula|--formula
 -d|--desc|--desc"
-	shell::brew::pkgcmd search 1 1 text "search text" "$spec" "$@"
+	_shell::brew::pkgcmd search 1 1 text "search text" "$spec" "$@"
 }
 
 # @description Show information about packages (`brew info`).
@@ -805,7 +805,7 @@ shell::brew::info() {
 |--formula|--formula
 -j|--json|--json=v2
 -i|--installed|--installed"
-	shell::brew::pkgcmd info 0 -1 pkg "package name" "$spec" "$@"
+	_shell::brew::pkgcmd info 0 -1 pkg "package name" "$spec" "$@"
 }
 
 # @description List installed packages (`brew list`).
@@ -852,7 +852,7 @@ shell::brew::list() {
 |--multiple|--multiple
 |--pinned|--pinned
 -1|-1|-1"
-	shell::brew::pkgcmd list 0 -1 pkg "package name" "$spec" "$@"
+	_shell::brew::pkgcmd list 0 -1 pkg "package name" "$spec" "$@"
 }
 
 # @description Show the installed versions of packages (`brew list --versions <name>`).
@@ -880,7 +880,7 @@ shell::brew::versions() {
 	fi
 	local spec="-c|--cask|--cask
 |--versions|--versions"
-	shell::brew::pkgcmd list 1 -1 pkg "package name" "$spec" --versions "$@"
+	_shell::brew::pkgcmd list 1 -1 pkg "package name" "$spec" --versions "$@"
 }
 
 # @description List installed formulae that nothing else depends on (`brew leaves`).
@@ -910,7 +910,7 @@ shell::brew::leaves() {
 	fi
 	local spec="-r|--requested|--installed-on-request
 -d|--dependency|--installed-as-dependency"
-	shell::brew::pkgcmd leaves 0 0 pkg "argument" "$spec" "$@"
+	_shell::brew::pkgcmd leaves 0 0 pkg "argument" "$spec" "$@"
 }
 
 # @description Show which formulae a package depends on (`brew deps`).
@@ -943,7 +943,7 @@ shell::brew::deps() {
 	local spec="-t|--tree|--tree
 -i|--installed|--installed
 -1|--direct|--direct"
-	shell::brew::pkgcmd deps 0 -1 pkg "package name" "$spec" "$@"
+	_shell::brew::pkgcmd deps 0 -1 pkg "package name" "$spec" "$@"
 }
 
 # @description Show which formulae depend on a package (`brew uses`).
@@ -985,9 +985,9 @@ shell::brew::uses() {
 	local spec="-r|--recursive|--recursive
 -i|--installed|--installed"
 	if [ "$all" = "true" ]; then
-		shell::brew::pkgcmd uses 1 -1 pkg "package name" "$spec" ${rest[@]+"${rest[@]}"}
+		_shell::brew::pkgcmd uses 1 -1 pkg "package name" "$spec" ${rest[@]+"${rest[@]}"}
 	else
-		shell::brew::pkgcmd uses 1 -1 pkg "package name" "$spec" --installed ${rest[@]+"${rest[@]}"}
+		_shell::brew::pkgcmd uses 1 -1 pkg "package name" "$spec" --installed ${rest[@]+"${rest[@]}"}
 	fi
 }
 
@@ -1012,7 +1012,7 @@ shell::brew::missing() {
 		shell::logger::example "shell::brew::missing"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::brew::pkgcmd missing 0 -1 pkg "package name" "" "$@"
+	_shell::brew::pkgcmd missing 0 -1 pkg "package name" "" "$@"
 }
 
 # --------------------------------------------------------------------------
@@ -1053,7 +1053,7 @@ shell::brew::install() {
 	local spec="-c|--cask|--cask
 |--formula|--formula
 -f|--force|--force"
-	shell::brew::pkgcmd install 1 -1 pkg "package name" "$spec" "$@"
+	_shell::brew::pkgcmd install 1 -1 pkg "package name" "$spec" "$@"
 }
 
 # @description Reinstall formulae or casks (`brew reinstall`).
@@ -1086,7 +1086,7 @@ shell::brew::reinstall() {
 	local spec="-c|--cask|--cask
 |--formula|--formula
 -f|--force|--force"
-	shell::brew::pkgcmd reinstall 1 -1 pkg "package name" "$spec" "$@"
+	_shell::brew::pkgcmd reinstall 1 -1 pkg "package name" "$spec" "$@"
 }
 
 # @description Uninstall formulae or casks (`brew uninstall`).
@@ -1138,10 +1138,10 @@ shell::brew::uninstall() {
 		esac
 	done
 	if [ "$has_zap" = "true" ] && [ "$has_cask" = "false" ]; then
-		shell::brew::pkgcmd uninstall 1 -1 pkg "package name" "$spec" --cask "$@"
+		_shell::brew::pkgcmd uninstall 1 -1 pkg "package name" "$spec" --cask "$@"
 		return $?
 	fi
-	shell::brew::pkgcmd uninstall 1 -1 pkg "package name" "$spec" "$@"
+	_shell::brew::pkgcmd uninstall 1 -1 pkg "package name" "$spec" "$@"
 }
 
 # --------------------------------------------------------------------------
@@ -1181,7 +1181,7 @@ shell::brew::link() {
 	local spec="-f|--force|--force
 -o|--overwrite|--overwrite
 -p|--preview|--dry-run"
-	shell::brew::pkgcmd link 1 -1 pkg "formula name" "$spec" "$@"
+	_shell::brew::pkgcmd link 1 -1 pkg "formula name" "$spec" "$@"
 }
 
 # @description Remove the symlinks of installed formulae from the prefix (`brew unlink`).
@@ -1210,7 +1210,7 @@ shell::brew::unlink() {
 		return "$RETURN_SUCCESS"
 	fi
 	local spec="-p|--preview|--dry-run"
-	shell::brew::pkgcmd unlink 1 -1 pkg "formula name" "$spec" "$@"
+	_shell::brew::pkgcmd unlink 1 -1 pkg "formula name" "$spec" "$@"
 }
 
 # @description Make another installed version of a formula the active one.
@@ -1255,7 +1255,7 @@ shell::brew::switch() {
 	fi
 
 	local formula="$1" version="$2" target
-	if ! shell::brew::name::valid "$formula" || [ "${formula#*@}" != "$formula" ]; then
+	if ! _shell::brew::name::valid "$formula" || [ "${formula#*@}" != "$formula" ]; then
 		shell::logger::error "Invalid formula name: '$formula' (give the plain name, e.g. node)"
 		return "$RETURN_INVALID"
 	fi
@@ -1270,10 +1270,10 @@ shell::brew::switch() {
 	local -a run_opts=()
 	if [ "$dry_run" = "true" ]; then
 		run_opts=(-n)
-	elif ! shell::homebrew::path >/dev/null 2>&1; then
+	elif ! _shell::homebrew::path >/dev/null 2>&1; then
 		shell::logger::error "Homebrew is not installed (install it with: shell::homebrew::install)"
 		return "$RETURN_NOT_FOUND"
-	elif ! shell::brew::query list --versions "$target" | grep -q .; then
+	elif ! _shell::brew::query list --versions "$target" | grep -q .; then
 		shell::logger::error "$target is not installed (install it with: shell::brew::install $target)"
 		return "$RETURN_NOT_FOUND"
 	fi
@@ -1338,7 +1338,7 @@ shell::brew::cleanup() {
 			;;
 		esac
 	done
-	shell::brew::pkgcmd cleanup 0 -1 pkg "package name" "$spec" "$@"
+	_shell::brew::pkgcmd cleanup 0 -1 pkg "package name" "$spec" "$@"
 }
 
 # @description Uninstall formulae that were only installed as a dependency and are
@@ -1366,7 +1366,7 @@ shell::brew::autoremove() {
 		return "$RETURN_SUCCESS"
 	fi
 	local spec="-p|--preview|--dry-run"
-	shell::brew::pkgcmd autoremove 0 0 pkg "argument" "$spec" "$@"
+	_shell::brew::pkgcmd autoremove 0 0 pkg "argument" "$spec" "$@"
 }
 
 # --------------------------------------------------------------------------
@@ -1449,7 +1449,7 @@ shell::brew::services() {
 	esac
 
 	for arg in ${names[@]+"${names[@]}"}; do
-		if ! shell::brew::name::valid "$arg"; then
+		if ! _shell::brew::name::valid "$arg"; then
 			shell::logger::error "Invalid service name: '$arg'"
 			return "$RETURN_INVALID"
 		fi
@@ -1477,7 +1477,7 @@ shell::brew::services() {
 # @exitcode 2 Invalid option or file name.
 # @exitcode 3 Homebrew is not installed, or the Brewfile to read does not exist.
 # @exitcode N Exit status of brew.
-shell::brew::bundle::run() {
+_shell::brew::bundle::run() {
 	local action="${1-}"
 	shift
 
@@ -1565,7 +1565,7 @@ shell::brew::bundle::dump() {
 		shell::logger::example "shell::brew::bundle::dump --force ~/dotfiles/Brewfile"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::brew::bundle::run dump "$@"
+	_shell::brew::bundle::run dump "$@"
 }
 
 # @description Install everything listed in a Brewfile (`brew bundle install`).
@@ -1590,7 +1590,7 @@ shell::brew::bundle::install() {
 		shell::logger::example "shell::brew::bundle::install ~/dotfiles/Brewfile"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::brew::bundle::run install "$@"
+	_shell::brew::bundle::run install "$@"
 }
 
 # @description Find, or remove, what is installed but not listed in a Brewfile
@@ -1620,5 +1620,5 @@ shell::brew::bundle::cleanup() {
 		shell::logger::example "shell::brew::bundle::cleanup ~/dotfiles/Brewfile"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::brew::bundle::run cleanup "$@"
+	_shell::brew::bundle::run cleanup "$@"
 }

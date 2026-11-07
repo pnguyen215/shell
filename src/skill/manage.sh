@@ -11,7 +11,7 @@
 #   | OpenCode    | `~/.config/opencode/skills/<name>`  | `<project>/.opencode/skills/<name>`|
 #
 #   Every function validates its options, downloads the matching script and
-#   runs it with bash (see shell::skill::run). Restart your Claude Code /
+#   runs it with bash (see _shell::skill::run). Restart your Claude Code /
 #   OpenCode session afterwards so the new skills are loaded.
 #
 #   The upstream repository can be changed with `SHELL_SKILL_REPO_SLUG` and
@@ -46,14 +46,14 @@ shell::skill::install() {
 		shell::logger::reset_options
 		shell::logger::info "Install agent skills into Claude Code and/or OpenCode"
 		shell::logger::usage "shell::skill::install [options]"
-		shell::skill::help::options install
+		_shell::skill::help::options install
 		shell::logger::example "shell::skill::install --tool claude --yes"
 		shell::logger::example "shell::skill::install -t all -s project -k golang,security-secure-coding"
 		shell::logger::example "shell::skill::install -n --tool opencode"
 		return "$RETURN_SUCCESS"
 	fi
 
-	shell::skill::run install "$@"
+	_shell::skill::run install "$@"
 }
 
 # @description Upgrade installed skills to the latest content.
@@ -90,14 +90,14 @@ shell::skill::upgrade() {
 		shell::logger::reset_options
 		shell::logger::info "Upgrade installed agent skills to the latest content"
 		shell::logger::usage "shell::skill::upgrade [options]"
-		shell::skill::help::options upgrade
+		_shell::skill::help::options upgrade
 		shell::logger::example "shell::skill::upgrade --yes"
 		shell::logger::example "shell::skill::upgrade -k golang --yes"
 		shell::logger::example "shell::skill::upgrade -n --no-new"
 		return "$RETURN_SUCCESS"
 	fi
 
-	shell::skill::run upgrade "$@"
+	_shell::skill::run upgrade "$@"
 }
 
 # @description Uninstall skills that shell::skill::install placed.
@@ -129,14 +129,14 @@ shell::skill::uninstall() {
 		shell::logger::reset_options
 		shell::logger::info "Uninstall agent skills installed by shell::skill::install"
 		shell::logger::usage "shell::skill::uninstall [options]"
-		shell::skill::help::options uninstall
+		_shell::skill::help::options uninstall
 		shell::logger::example "shell::skill::uninstall --tool all --scope all --yes"
 		shell::logger::example "shell::skill::uninstall -k golang --yes"
 		shell::logger::example "shell::skill::uninstall -n --purge"
 		return "$RETURN_SUCCESS"
 	fi
 
-	shell::skill::run uninstall "$@"
+	_shell::skill::run uninstall "$@"
 }
 
 # @description Make one tool's skills directory mirror the repository exactly.
@@ -170,7 +170,7 @@ shell::skill::sync() {
 		shell::logger::info "Mirror one tool's skills directory to the repository"
 		shell::logger::usage "shell::skill::sync <claude|opencode> [options]"
 		shell::logger::item "claude | opencode" "Tool whose skills directory is synced"
-		shell::skill::help::options sync
+		_shell::skill::help::options sync
 		shell::logger::example "shell::skill::sync claude --yes"
 		shell::logger::example "shell::skill::sync opencode -s project --no-prune --yes"
 		shell::logger::example "shell::skill::sync claude -n"
@@ -186,5 +186,5 @@ shell::skill::sync() {
 		;;
 	esac
 
-	shell::skill::run "sync_$target" "$@"
+	_shell::skill::run "sync_$target" "$@"
 }

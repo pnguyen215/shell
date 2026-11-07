@@ -10,7 +10,7 @@
 # @exitcode 3 No tool is available and none could be installed.
 # @see shell::clipboard::copy
 shell::dependency::clipboard::ensure() {
-	if shell::clipboard::tool >/dev/null 2>&1; then
+	if _shell::clipboard::tool >/dev/null 2>&1; then
 		return "$RETURN_SUCCESS"
 	fi
 

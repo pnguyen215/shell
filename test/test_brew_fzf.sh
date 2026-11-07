@@ -89,53 +89,53 @@ vlc 3.0.21"
 fb "list --cask --pinned" ""
 : >"$FAKE_BREW_LOG"
 
-# --- shell::brew::fzf::pick ----------------------------------------------------------------------
-out="$(printf 'git  2.45\njq  1.7\n' | FAKE_FZF_PICKS="jq" shell::brew::fzf::pick 2>&1)"
+# --- _shell::brew::fzf::pick ----------------------------------------------------------------------
+out="$(printf 'git  2.45\njq  1.7\n' | FAKE_FZF_PICKS="jq" _shell::brew::fzf::pick 2>&1)"
 t_eq "pick: prints the first word of the chosen row" "jq" "$out"
 reset_state
-out="$(printf 'git  2.45\njq  1.7\nwget  1\n' | FAKE_FZF_PICKS="git;wget" shell::brew::fzf::pick -m 2>&1)"
+out="$(printf 'git  2.45\njq  1.7\nwget  1\n' | FAKE_FZF_PICKS="git;wget" _shell::brew::fzf::pick -m 2>&1)"
 t_eq "pick -m: several rows, one name per line" "git${nl}wget" "$out"
 t_has "pick -m: asks fzf for --multi" "--multi" "$(cat "$FAKE_FZF_DIR/args.1")"
 t_has "pick -m: ...and Ctrl-A to mark all" "--bind=ctrl-a:select-all" "$(cat "$FAKE_FZF_DIR/args.1")"
 reset_state
-printf 'a\n' | FAKE_FZF_PICKS="a" shell::brew::fzf::pick >/dev/null 2>&1
+printf 'a\n' | FAKE_FZF_PICKS="a" _shell::brew::fzf::pick >/dev/null 2>&1
 t_lacks "pick: single choice has no --multi" "--multi" "$(cat "$FAKE_FZF_DIR/args.1")"
 reset_state
-printf 'a\n' | FAKE_FZF_PICKS="a" shell::brew::fzf::pick -p "Pick: " -P "info {1}" -H "a header" >/dev/null 2>&1
+printf 'a\n' | FAKE_FZF_PICKS="a" _shell::brew::fzf::pick -p "Pick: " -P "info {1}" -H "a header" >/dev/null 2>&1
 t_has "pick: the prompt" "--prompt=Pick: " "$(cat "$FAKE_FZF_DIR/args.1")"
 t_has "pick: the preview" "--preview=info {1}" "$(cat "$FAKE_FZF_DIR/args.1")"
 t_has "pick: the header" "--header=a header" "$(cat "$FAKE_FZF_DIR/args.1")"
 reset_state
-printf '' | FAKE_FZF_PICKS="a" shell::brew::fzf::pick >/dev/null 2>&1
+printf '' | FAKE_FZF_PICKS="a" _shell::brew::fzf::pick >/dev/null 2>&1
 t_eq "pick: no rows is RETURN_EMPTY" "8" "$?"
 t_eq "pick: ...and fzf is not even started" "0" "$(fzf_calls)"
 reset_state
-printf 'a\n' | FAKE_FZF_PICKS="" shell::brew::fzf::pick >/dev/null 2>&1
+printf 'a\n' | FAKE_FZF_PICKS="" _shell::brew::fzf::pick >/dev/null 2>&1
 t_eq "pick: ESC is RETURN_CANCELLED" "9" "$?"
-printf 'a\n' | shell::brew::fzf::pick --bogus >/dev/null 2>&1
+printf 'a\n' | _shell::brew::fzf::pick --bogus >/dev/null 2>&1
 t_eq "pick: unknown option" "2" "$?"
-printf 'a\n' | shell::brew::fzf::pick -p >/dev/null 2>&1
+printf 'a\n' | _shell::brew::fzf::pick -p >/dev/null 2>&1
 t_eq "pick: an option without a value" "2" "$?"
 
 # --- preview, rows, sizes -----------------------------------------------------------------------------
-pv="$(shell::brew::fzf::preview)"
+pv="$(_shell::brew::fzf::preview)"
 t_has "preview: runs brew info on the focused row" " info {1}" "$pv"
 t_has "preview: ...with the brew that was found, quoted" "'$HOME/bin/brew'" "$pv"
-t_has "preview: --cask" " info --cask {1}" "$(shell::brew::fzf::preview --cask)"
+t_has "preview: --cask" " info --cask {1}" "$(_shell::brew::fzf::preview --cask)"
 t_eq "preview: without Homebrew" "3" "$(
-	shell::homebrew::path() { return 3; }
-	shell::brew::fzf::preview >/dev/null 2>&1
+	_shell::homebrew::path() { return 3; }
+	_shell::brew::fzf::preview >/dev/null 2>&1
 	echo $?
 )"
-rows="$(shell::brew::fzf::rows::installed)"
+rows="$(_shell::brew::fzf::rows::installed)"
 t_eq "rows: one per package" "4" "$(printf '%s\n' "$rows" | wc -l | tr -d ' ')"
 t_has "rows: name and version" "git" "$(printf '%s\n' "$rows" | grep '^git ')"
 t_has "rows: more than one version is flagged" "1.7.1+1" "$rows"
 t_has "rows: a pinned package is marked" "[pinned]" "$(printf '%s\n' "$rows" | grep '^wget ')"
 t_lacks "rows: ...and only that one" "[pinned]" "$(printf '%s\n' "$rows" | grep '^git ')"
-t_has "rows: casks" "firefox" "$(shell::brew::fzf::rows::installed --cask)"
+t_has "rows: casks" "firefox" "$(_shell::brew::fzf::rows::installed --cask)"
 t_eq "rows: first word is the name" "git" "$(printf '%s\n' "$rows" | head -n 1 | awk '{ print $1 }')"
-out="$(printf 'a\tx\t512\tw\nb\tx\t2048\tw\nc\tx\t3145728\tw\n' | shell::brew::size::format)"
+out="$(printf 'a\tx\t512\tw\nb\tx\t2048\tw\nc\tx\t3145728\tw\n' | _shell::brew::size::format)"
 t_eq "size::format: kilobytes" "512K" "$(printf '%s\n' "$out" | sed -n 1p | cut -f3)"
 t_eq "size::format: megabytes" "2.0M" "$(printf '%s\n' "$out" | sed -n 2p | cut -f3)"
 t_eq "size::format: gigabytes" "3.0G" "$(printf '%s\n' "$out" | sed -n 3p | cut -f3)"
@@ -155,7 +155,7 @@ for fn in install::fzf uninstall::fzf upgrade::fzf info::fzf pin::fzf unpin::fzf
 	size unused unused::fzf tidy manage; do
 	reset_state
 	out="$(
-		shell::homebrew::path() { return 3; }
+		_shell::homebrew::path() { return 3; }
 		shell::brew::$fn 2>&1
 		echo "rc=$?"
 	)"
@@ -385,7 +385,7 @@ printf 'cd /tmp\n' >"$HOME/.bash_history"
 names_of() { printf '%s\n' "$1" | cut -f1 | tr '\n' ' ' | sed 's/ $//'; }
 reason_of() { printf '%s\n' "$1" | awk -F'\t' -v n="$2" '$1 == n { print $2 }'; }
 
-scan="$(shell::brew::unused::scan)"
+scan="$(_shell::brew::unused::scan)"
 t_eq "scan: orphans first, then the stale formulae" "orph1 orph2 foo lib1" "$(names_of "$scan")"
 t_eq "scan: an orphan" "orphan" "$(reason_of "$scan" orph1)"
 t_eq "scan: a stale formula" "stale" "$(reason_of "$scan" foo)"
@@ -396,33 +396,33 @@ t_has "scan: the reason names the history" "none of its commands in your shell h
 t_has "scan: a formula without commands says so" "no commands (a library?)" "$(printf '%s\n' "$scan" | grep '^lib1')"
 t_eq "scan: the size in KB" "1" "$(printf '%s\n' "$scan" | awk -F'\t' '$1 == "foo" && $3 >= 300 { print 1 }')"
 t_eq "scan: four tab separated columns" "4" "$(printf '%s\n' "$scan" | head -n 1 | awk -F'\t' '{ print NF }')"
-t_eq "scan --orphans" "orph1 orph2" "$(names_of "$(shell::brew::unused::scan --orphans)")"
-t_eq "scan --stale" "foo lib1" "$(names_of "$(shell::brew::unused::scan --stale)")"
-t_eq "scan --days 30: the formula touched 40 days ago is stale too" "orph1 orph2 foo fresh lib1" "$(names_of "$(shell::brew::unused::scan --days 30)")"
-t_eq "scan --days 90 is the default" "$scan" "$(shell::brew::unused::scan --days 90)"
-t_eq "scan: SHELL_BREW_STALE_DAYS is the default period" "orph1 orph2 foo fresh lib1" "$(names_of "$(SHELL_BREW_STALE_DAYS=30 shell::brew::unused::scan)")"
-nohist="$(shell::brew::unused::scan --no-history)"
+t_eq "scan --orphans" "orph1 orph2" "$(names_of "$(_shell::brew::unused::scan --orphans)")"
+t_eq "scan --stale" "foo lib1" "$(names_of "$(_shell::brew::unused::scan --stale)")"
+t_eq "scan --days 30: the formula touched 40 days ago is stale too" "orph1 orph2 foo fresh lib1" "$(names_of "$(_shell::brew::unused::scan --days 30)")"
+t_eq "scan --days 90 is the default" "$scan" "$(_shell::brew::unused::scan --days 90)"
+t_eq "scan: SHELL_BREW_STALE_DAYS is the default period" "orph1 orph2 foo fresh lib1" "$(names_of "$(SHELL_BREW_STALE_DAYS=30 _shell::brew::unused::scan)")"
+nohist="$(_shell::brew::unused::scan --no-history)"
 t_eq "scan --no-history: age only, so the used command counts too" "orph1 orph2 foo bar lib1" "$(names_of "$nohist")"
 t_has "scan --no-history: ...and the reason says history was not checked" "shell history not checked" "$(printf '%s\n' "$nohist" | grep '^foo')"
 mv "$HOME/.zsh_history" "$HOME/.zsh_history.off"
 mv "$HOME/.bash_history" "$HOME/.bash_history.off"
-t_has "scan: with no history to read, says so rather than claiming 'unused'" "shell history not checked" "$(shell::brew::unused::scan --stale | grep '^bar')"
+t_has "scan: with no history to read, says so rather than claiming 'unused'" "shell history not checked" "$(_shell::brew::unused::scan --stale | grep '^bar')"
 mv "$HOME/.zsh_history.off" "$HOME/.zsh_history"
 mv "$HOME/.bash_history.off" "$HOME/.bash_history"
 printf 'foo --version\n' >"$HOME/hist_custom"
-t_lacks "scan: \$HISTFILE is read too" "foo" "$(HISTFILE="$HOME/hist_custom" shell::brew::unused::scan --stale)"
-t_eq "scan: SHELL_BREW_PROTECTED is configurable" "orph1 orph2 lib1" "$(names_of "$(SHELL_BREW_PROTECTED="fzf foo" shell::brew::unused::scan)")"
-t_eq "scan: ...and protects orphans too" "orph2 foo lib1" "$(names_of "$(SHELL_BREW_PROTECTED="fzf orph1" shell::brew::unused::scan)")"
-t_eq "scan: an invalid number of days" "2" "$(rc_of shell::brew::unused::scan --days abc)"
-t_eq "scan: zero days" "2" "$(rc_of shell::brew::unused::scan --days 0)"
-t_eq "scan: --days needs a value" "2" "$(rc_of shell::brew::unused::scan --days)"
-t_eq "scan: an unknown option" "2" "$(rc_of shell::brew::unused::scan --bogus)"
+t_lacks "scan: \$HISTFILE is read too" "foo" "$(HISTFILE="$HOME/hist_custom" _shell::brew::unused::scan --stale)"
+t_eq "scan: SHELL_BREW_PROTECTED is configurable" "orph1 orph2 lib1" "$(names_of "$(SHELL_BREW_PROTECTED="fzf foo" _shell::brew::unused::scan)")"
+t_eq "scan: ...and protects orphans too" "orph2 foo lib1" "$(names_of "$(SHELL_BREW_PROTECTED="fzf orph1" _shell::brew::unused::scan)")"
+t_eq "scan: an invalid number of days" "2" "$(rc_of _shell::brew::unused::scan --days abc)"
+t_eq "scan: zero days" "2" "$(rc_of _shell::brew::unused::scan --days 0)"
+t_eq "scan: --days needs a value" "2" "$(rc_of _shell::brew::unused::scan --days)"
+t_eq "scan: an unknown option" "2" "$(rc_of _shell::brew::unused::scan --bogus)"
 t_eq "scan: a leaf that is not in the Cellar is ignored" "orph1 orph2 foo lib1" "$(
 	fb "leaves --installed-on-request" "foo
 ghost
 bar
 lib1"
-	names_of "$(shell::brew::unused::scan)"
+	names_of "$(_shell::brew::unused::scan)"
 )"
 fb "leaves --installed-on-request" "foo
 bar
@@ -431,14 +431,14 @@ lib1
 fzf"
 t_eq "scan: brew autoremove output of another shape yields no orphans" "foo lib1" "$(
 	fb "autoremove --dry-run" "Nothing to do"
-	names_of "$(shell::brew::unused::scan)"
+	names_of "$(_shell::brew::unused::scan)"
 )"
 fb "autoremove --dry-run" "==> Would autoremove 2 unneeded formulae:
 orph1
 orph2"
 t_eq "scan: no leftover temp file" "0" "$(
 	mkdir "$HOME/tmpscan"
-	TMPDIR="$HOME/tmpscan" shell::brew::unused::scan >/dev/null 2>&1
+	TMPDIR="$HOME/tmpscan" _shell::brew::unused::scan >/dev/null 2>&1
 	find "$HOME/tmpscan" -mindepth 1 | wc -l | tr -d ' '
 )"
 

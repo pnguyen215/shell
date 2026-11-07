@@ -73,7 +73,7 @@ In the viewer, the row summary (and the preview) separates what belongs to the s
 ### Limits you should know
 
 - **Function tracking is not AST tracking.** Git finds a function with per-language header patterns (a generic "line starts with a letter" rule when a language has none; add `*.ext diff=<lang>` in `.gitattributes` for better patterns). A renamed function starts a new history under its new name; the file rename itself is followed. Function names may contain `: . $ ~ # @ -` (a `::` is escaped for Git).
-- `shell::git::history::function::resolve` is the single place that turns a name into Git's `-L` argument. Redefine it (for example with a tree-sitter lookup printing `START,END:<file>`) to improve function resolution without touching the rest.
+- `_shell::git::history::function::resolve` is the single place that turns a name into Git's `-L` argument. Redefine it (for example with a tree-sitter lookup printing `START,END:<file>`) to improve function resolution without touching the rest.
 - **Deleted function:** if the function no longer exists at HEAD, its history is shown up to the commit _before_ the one that removed it (a `git log -L` walk cannot start from a revision where the function is gone). The removing commit is still inspectable from the file or repository scope; in the viewer a commit that removed the function falls back to the file diff, with a note.
 - `git log --follow` and `-L` do not list merge commits that only combine two sides; the repository, `--search` and `--regex` scopes do, marked `◆`.
 - A line range must exist at HEAD.
@@ -89,13 +89,13 @@ context → scope → log → stats → dashboard / timeline → fzf → preview
 
 | Function                                  | Responsibility                                                                                                                                         |
 | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `shell::git::history::context`            | Repo root, name, branch (detached HEAD), file → repo-relative path, validation                                                                         |
-| `shell::git::history::scope`              | Normalize and validate the scope (range → `S,E`, function name charset)                                                                                |
+| `_shell::git::history::context`           | Repo root, name, branch (detached HEAD), file → repo-relative path, validation                                                                         |
+| `_shell::git::history::scope`             | Normalize and validate the scope (range → `S,E`, function name charset)                                                                                |
 | `shell::git::history::log`                | Retrieve **commit records**: full/short hash, author, date, scoped +/-, files, merge flag, path (and pre-rename path), whole-commit +/-, subject, body |
 | `shell::git::history::stats`              | Commits, additions, deletions, earliest/latest, authors — from records                                                                                 |
 | `shell::git::history::dashboard`          | The box (plain list under 44 columns)                                                                                                                  |
 | `shell::git::history::timeline`           | The vertical timeline, or `--rows` for fzf                                                                                                             |
-| `shell::git::history::preview::command`   | The fzf preview command (plain `git`, quoted, no `eval`)                                                                                               |
+| `_shell::git::history::preview::command`  | The fzf preview command (plain `git`, quoted, no `eval`)                                                                                               |
 | `shell::git::history::inspect` / `::show` | Pager view of one commit: scope diff, `--full`, `--blame`                                                                                              |
 | `shell::git::history::pick`               | Interactive file → scope selection                                                                                                                     |
 | `shell::git::history::fzf`                | The command: options, loop, key handling                                                                                                               |

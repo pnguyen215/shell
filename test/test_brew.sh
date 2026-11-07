@@ -4,7 +4,7 @@
 #
 # brew is faked: every call is appended to $FAKE_BREW_LOG, so a test can assert what brew received
 # (and, for the refusals, that it was never started). The real brew is never run: the one test of
-# "Homebrew is not installed" overrides shell::homebrew::path.
+# "Homebrew is not installed" overrides _shell::homebrew::path.
 . "$SHELL_TEST_ROOT/test/lib.sh"
 t_setup
 
@@ -41,36 +41,36 @@ say() { "$@" 2>&1; }
 
 # --- name validation ---------------------------------------------------------------------------
 for ok in git node@20 python@3.12 'c++' openssl@3 user/repo/name gcc@13 a_b a-b a.b 7zip; do
-	shell::brew::name::valid "$ok"
+	_shell::brew::name::valid "$ok"
 	t_eq "name: '$ok' is safe" "0" "$?"
 done
 for bad in '' -rf --force -x .hidden '/abs' 'a b' 'a;b' 'a|b' 'a&b' 'a$b' 'a`b`' 'a"b' "a'b" 'a(b)' 'a*b' 'a>b' '../x' 'a..b' 'a\b' '~x'; do
-	shell::brew::name::valid "$bad"
+	_shell::brew::name::valid "$bad"
 	t_eq "name: '$bad' is refused" "1" "$?"
 done
-t_eq "name: a newline is refused" "1" "$(shell::brew::name::valid "a${nl}b" >/dev/null 2>&1 && echo 0 || echo 1)"
+t_eq "name: a newline is refused" "1" "$(_shell::brew::name::valid "a${nl}b" >/dev/null 2>&1 && echo 0 || echo 1)"
 for ok in homebrew/cask-versions acme/tools a.b/c_d x/y; do
-	shell::brew::tap::valid "$ok"
+	_shell::brew::tap::valid "$ok"
 	t_eq "tap: '$ok' is valid" "0" "$?"
 done
 for bad in '' git acme/ /tools a/b/c ../x acme/..x 'a b/c' 'a;b/c' -x/y .x/y; do
-	shell::brew::tap::valid "$bad"
+	_shell::brew::tap::valid "$bad"
 	t_eq "tap: '$bad' is refused" "1" "$?"
 done
 
 # --- brew is not installed ---------------------------------------------------------------------
 out="$(
-	shell::homebrew::path() { return 3; }
+	_shell::homebrew::path() { return 3; }
 	shell::brew::run list 2>&1
 )"
 t_has "run: without Homebrew, says how to install it" "shell::homebrew::install" "$out"
 t_eq "run: ...and returns RETURN_NOT_FOUND" "3" "$(
-	shell::homebrew::path() { return 3; }
+	_shell::homebrew::path() { return 3; }
 	shell::brew::run list >/dev/null 2>&1
 	echo $?
 )"
 t_has "dry-run needs no Homebrew" "brew install git" "$(
-	shell::homebrew::path() { return 3; }
+	_shell::homebrew::path() { return 3; }
 	shell::brew::install -n git 2>&1
 )"
 
@@ -255,7 +255,7 @@ t_eq "switch: a failing unlink stops before linking" "list --versions node@20${n
 t_eq "switch: ...and its status is returned" "1" "$(rc_of shell::brew::switch node 20)"
 rm -f "$FAKE_BREW_DIR/unlink_node.rc"
 t_eq "switch: without Homebrew, says so (not 'not installed')" "3" "$(
-	shell::homebrew::path() { return 3; }
+	_shell::homebrew::path() { return 3; }
 	shell::brew::switch node 20 >/dev/null 2>&1
 	echo $?
 )"

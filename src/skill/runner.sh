@@ -22,9 +22,9 @@
 # @exitcode 0 The value is in the list.
 # @exitcode 1 The value is empty, contains whitespace, or is not in the list.
 # @example
-#   shell::skill::validate::choice "claude" "$SHELL_SKILL_TOOLS"
+#   _shell::skill::validate::choice "claude" "$SHELL_SKILL_TOOLS"
 #
-shell::skill::validate::choice() {
+_shell::skill::validate::choice() {
 	case "${1-}" in
 	'' | *[[:space:]]*) return 1 ;;
 	esac
@@ -42,9 +42,9 @@ shell::skill::validate::choice() {
 # @exitcode 0 Valid.
 # @exitcode 1 Invalid.
 # @example
-#   shell::skill::validate::slugs "golang,security-secure-coding"
+#   _shell::skill::validate::slugs "golang,security-secure-coding"
 #
-shell::skill::validate::slugs() {
+_shell::skill::validate::slugs() {
 	case "${1-}" in
 	'' | -* | *[!a-z0-9,-]*) return 1 ;;
 	esac
@@ -57,9 +57,9 @@ shell::skill::validate::slugs() {
 # @exitcode 0 Valid.
 # @exitcode 1 Invalid (empty, starts with `-`, or has unusual characters).
 # @example
-#   shell::skill::validate::ref "v1.2.0"
+#   _shell::skill::validate::ref "v1.2.0"
 #
-shell::skill::validate::ref() {
+_shell::skill::validate::ref() {
 	case "${1-}" in
 	'' | -* | *[!A-Za-z0-9._/-]*) return 1 ;;
 	esac
@@ -74,9 +74,9 @@ shell::skill::validate::ref() {
 # @stdout The option lines of a help block.
 # @exitcode 0 Always.
 # @example
-#   shell::skill::help::options install
+#   _shell::skill::help::options install
 #
-shell::skill::help::options() {
+_shell::skill::help::options() {
 	local kind="${1-}"
 
 	if [ "$kind" != "sync" ]; then
@@ -132,10 +132,10 @@ shell::skill::help::options() {
 # @exitcode 2 Invalid or unknown option, or invalid value.
 # @exitcode 3 A required directory or prerequisite was not found.
 # @example
-#   shell::skill::run install --tool claude --yes
-#   shell::skill::run upgrade -n --scope project --project-dir "$PWD"
+#   _shell::skill::run install --tool claude --yes
+#   _shell::skill::run upgrade -n --scope project --project-dir "$PWD"
 #
-shell::skill::run() {
+_shell::skill::run() {
 	local script="${1-}"
 	if [ -z "$script" ]; then
 		shell::logger::error "A skills script name is required"
@@ -220,24 +220,24 @@ shell::skill::run() {
 			return "$RETURN_INVALID"
 			;;
 		esac
-		if ! shell::skill::validate::choice "$tool" "$SHELL_SKILL_TOOLS"; then
+		if ! _shell::skill::validate::choice "$tool" "$SHELL_SKILL_TOOLS"; then
 			shell::logger::error "Invalid --tool '$tool' (expected: $SHELL_SKILL_TOOLS)"
 			return "$RETURN_INVALID"
 		fi
 	fi
-	if [ -n "$scope" ] && ! shell::skill::validate::choice "$scope" "$SHELL_SKILL_SCOPES"; then
+	if [ -n "$scope" ] && ! _shell::skill::validate::choice "$scope" "$SHELL_SKILL_SCOPES"; then
 		shell::logger::error "Invalid --scope '$scope' (expected: $SHELL_SKILL_SCOPES)"
 		return "$RETURN_INVALID"
 	fi
-	if [ -n "$mode" ] && ! shell::skill::validate::choice "$mode" "$SHELL_SKILL_MODES"; then
+	if [ -n "$mode" ] && ! _shell::skill::validate::choice "$mode" "$SHELL_SKILL_MODES"; then
 		shell::logger::error "Invalid --mode '$mode' (expected: $SHELL_SKILL_MODES)"
 		return "$RETURN_INVALID"
 	fi
-	if [ -n "$skills" ] && ! shell::skill::validate::slugs "$skills"; then
+	if [ -n "$skills" ] && ! _shell::skill::validate::slugs "$skills"; then
 		shell::logger::error "Invalid --skills '$skills' (use comma-separated kebab-case slugs)"
 		return "$RETURN_INVALID"
 	fi
-	if [ -n "$ref" ] && ! shell::skill::validate::ref "$ref"; then
+	if [ -n "$ref" ] && ! _shell::skill::validate::ref "$ref"; then
 		shell::logger::error "Invalid --ref '$ref'"
 		return "$RETURN_INVALID"
 	fi

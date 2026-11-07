@@ -44,9 +44,9 @@
 # @exitcode 0 It is safe.
 # @exitcode 1 It is not.
 # @example
-#   shell::nvm::version::valid "lts/*" && echo ok
+#   _shell::nvm::version::valid "lts/*" && echo ok
 #
-shell::nvm::version::valid() {
+_shell::nvm::version::valid() {
 	case "${1-}" in
 	'' | [!A-Za-z0-9]* | *..* | *[!A-Za-z0-9._/*+-]*) return 1 ;;
 	esac
@@ -59,9 +59,9 @@ shell::nvm::version::valid() {
 # @exitcode 0 It is `A-Z a-z 0-9 . _ / -`, starts with a letter or digit, and has no `..`.
 # @exitcode 1 It is not.
 # @example
-#   shell::nvm::alias::valid "work" && echo ok
+#   _shell::nvm::alias::valid "work" && echo ok
 #
-shell::nvm::alias::valid() {
+_shell::nvm::alias::valid() {
 	case "${1-}" in
 	'' | [!A-Za-z0-9]* | *..* | *[!A-Za-z0-9._/-]*) return 1 ;;
 	esac
@@ -80,9 +80,9 @@ shell::nvm::alias::valid() {
 # @exitcode 3 nvm is not installed.
 # @exitcode N Exit status of nvm.
 # @example
-#   shell::nvm::invoke use 20
+#   _shell::nvm::invoke use 20
 #
-shell::nvm::invoke() {
+_shell::nvm::invoke() {
 	local dry_run="false"
 	if [ "${1-}" = "-n" ] || [ "${1-}" = "--dry-run" ]; then
 		dry_run="true"
@@ -116,9 +116,9 @@ shell::nvm::invoke() {
 # @exitcode 3 nvm is not installed.
 # @exitcode N Exit status of nvm.
 # @example
-#   shell::nvm::query ls --no-colors --no-alias
+#   _shell::nvm::query ls --no-colors --no-alias
 #
-shell::nvm::query() {
+_shell::nvm::query() {
 	shell::dependency::nvm::load >/dev/null 2>&1 || return "$RETURN_NOT_FOUND"
 	nvm "$@" 2>/dev/null
 }
@@ -149,9 +149,9 @@ shell::nvm::query() {
 # @exitcode 3 nvm is not installed.
 # @exitcode N Exit status of nvm.
 # @example
-#   shell::nvm::cmd use 0 1 ver version "--silent|--silent|--silent" "$@"
+#   _shell::nvm::cmd use 0 1 ver version "--silent|--silent|--silent" "$@"
 #
-shell::nvm::cmd() {
+_shell::nvm::cmd() {
 	local verb="${1-}" min="${2-0}" max="${3--1}" mode="${4-ver}" what="${5-version}" spec="${6-}"
 	shift 6
 
@@ -268,18 +268,18 @@ EOF
 		index_name=$((index_name + 1))
 		case "$mode" in
 		ver)
-			if ! shell::nvm::version::valid "$arg"; then
+			if ! _shell::nvm::version::valid "$arg"; then
 				shell::logger::error "Invalid $what: '$arg'"
 				return "$RETURN_INVALID"
 			fi
 			;;
 		alias)
 			if [ "$index_name" -eq 1 ]; then
-				if ! shell::nvm::alias::valid "$arg"; then
+				if ! _shell::nvm::alias::valid "$arg"; then
 					shell::logger::error "Invalid alias name: '$arg'"
 					return "$RETURN_INVALID"
 				fi
-			elif ! shell::nvm::version::valid "$arg"; then
+			elif ! _shell::nvm::version::valid "$arg"; then
 				shell::logger::error "Invalid version: '$arg'"
 				return "$RETURN_INVALID"
 			fi
@@ -300,7 +300,7 @@ EOF
 			esac
 			;;
 		rest)
-			if [ "$index_name" -eq 1 ] && [ "$lts_seen" = "false" ] && ! shell::nvm::version::valid "$arg"; then
+			if [ "$index_name" -eq 1 ] && [ "$lts_seen" = "false" ] && ! _shell::nvm::version::valid "$arg"; then
 				shell::logger::error "Invalid version: '$arg'"
 				return "$RETURN_INVALID"
 			fi
@@ -311,7 +311,7 @@ EOF
 	if [ "$dry_run" = "true" ]; then
 		run_opts=(-n)
 	fi
-	shell::nvm::invoke ${run_opts[@]+"${run_opts[@]}"} "$verb" ${flags[@]+"${flags[@]}"} ${names[@]+"${names[@]}"}
+	_shell::nvm::invoke ${run_opts[@]+"${run_opts[@]}"} "$verb" ${flags[@]+"${flags[@]}"} ${names[@]+"${names[@]}"}
 }
 
 # @internal
@@ -321,9 +321,9 @@ EOF
 # @exitcode 0 A version or `--lts` is among them.
 # @exitcode 1 Neither is.
 # @example
-#   shell::nvm::has_target "$@" || return 2
+#   _shell::nvm::has_target "$@" || return 2
 #
-shell::nvm::has_target() {
+_shell::nvm::has_target() {
 	local arg
 	for arg in "$@"; do
 		case "$arg" in
@@ -359,7 +359,7 @@ shell::nvm::version() {
 		shell::logger::example "shell::nvm::version"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::nvm::cmd --version 0 0 none "argument" "" "$@"
+	_shell::nvm::cmd --version 0 0 none "argument" "" "$@"
 }
 
 # @description Show nvm's own help (`nvm --help`).
@@ -380,7 +380,7 @@ shell::nvm::help() {
 		shell::logger::example "shell::nvm::help"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::nvm::cmd --help 0 0 none "argument" "" "$@"
+	_shell::nvm::cmd --help 0 0 none "argument" "" "$@"
 }
 
 # @description Print the Node version this shell uses (`nvm current`).
@@ -402,7 +402,7 @@ shell::nvm::current() {
 		shell::logger::example "shell::nvm::current"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::nvm::cmd current 0 0 none "argument" "" "$@"
+	_shell::nvm::cmd current 0 0 none "argument" "" "$@"
 }
 
 # @description Print the path of an installed Node (`nvm which`).
@@ -431,7 +431,7 @@ shell::nvm::which() {
 		shell::logger::example "shell::nvm::which 22"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::nvm::cmd which 0 1 ver version "|--silent|--silent" "$@"
+	_shell::nvm::cmd which 0 1 ver version "|--silent|--silent" "$@"
 }
 
 # @description List the installed Node versions (`nvm ls`).
@@ -464,7 +464,7 @@ shell::nvm::ls() {
 	fi
 	local spec="|--no-colors|--no-colors
 |--no-alias|--no-alias"
-	shell::nvm::cmd ls 0 1 ver version "$spec" "$@"
+	_shell::nvm::cmd ls 0 1 ver version "$spec" "$@"
 }
 
 # @description List the Node versions that can be installed (`nvm ls-remote`).
@@ -500,7 +500,7 @@ shell::nvm::ls::remote() {
 	fi
 	local spec="|--lts|--lts?
 |--no-colors|--no-colors"
-	shell::nvm::cmd ls-remote 0 1 ver version "$spec" "$@"
+	_shell::nvm::cmd ls-remote 0 1 ver version "$spec" "$@"
 }
 
 # @description Resolve a description to one installed version (`nvm version`).
@@ -526,7 +526,7 @@ shell::nvm::version::local() {
 		shell::logger::example "shell::nvm::version::local 20"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::nvm::cmd version 1 1 ver version "" "$@"
+	_shell::nvm::cmd version 1 1 ver version "" "$@"
 }
 
 # @description Resolve a description to one version that can be installed (`nvm version-remote`).
@@ -557,11 +557,11 @@ shell::nvm::version::remote() {
 		shell::logger::example "shell::nvm::version::remote --lts=iron"
 		return "$RETURN_SUCCESS"
 	fi
-	if ! shell::nvm::has_target "$@"; then
+	if ! _shell::nvm::has_target "$@"; then
 		shell::logger::error "A version or --lts is required"
 		return "$RETURN_INVALID"
 	fi
-	shell::nvm::cmd version-remote 0 1 ver version "|--lts|--lts?" "$@"
+	_shell::nvm::cmd version-remote 0 1 ver version "|--lts|--lts?" "$@"
 }
 
 # --------------------------------------------------------------------------
@@ -623,7 +623,7 @@ shell::nvm::install() {
 |--no-progress|--no-progress
 |--alias|--alias=
 |--default|--default"
-	shell::nvm::cmd install 0 1 ver version "$spec" "$@"
+	_shell::nvm::cmd install 0 1 ver version "$spec" "$@"
 }
 
 # @description Remove an installed Node version (`nvm uninstall`).
@@ -655,11 +655,11 @@ shell::nvm::uninstall() {
 		shell::logger::example "shell::nvm::uninstall 18.19.0"
 		return "$RETURN_SUCCESS"
 	fi
-	if ! shell::nvm::has_target "$@"; then
+	if ! _shell::nvm::has_target "$@"; then
 		shell::logger::error "A version or --lts is required"
 		return "$RETURN_INVALID"
 	fi
-	shell::nvm::cmd uninstall 0 1 ver version "|--lts|--lts?" "$@"
+	_shell::nvm::cmd uninstall 0 1 ver version "|--lts|--lts?" "$@"
 }
 
 # --------------------------------------------------------------------------
@@ -702,7 +702,7 @@ shell::nvm::use() {
 	fi
 	local spec="|--silent|--silent
 |--lts|--lts?"
-	shell::nvm::cmd use 0 1 ver version "$spec" "$@"
+	_shell::nvm::cmd use 0 1 ver version "$spec" "$@"
 }
 
 # @description Run `node` on a given version with the arguments you pass (`nvm run`).
@@ -741,7 +741,7 @@ shell::nvm::run() {
 	fi
 	local spec="|--silent|--silent
 |--lts|--lts?"
-	shell::nvm::cmd run 1 -1 rest version "$spec" "$@"
+	_shell::nvm::cmd run 1 -1 rest version "$spec" "$@"
 }
 
 # @description Run any command with a given Node on the PATH (`nvm exec`).
@@ -781,7 +781,7 @@ shell::nvm::exec() {
 	fi
 	local spec="|--silent|--silent
 |--lts|--lts?"
-	shell::nvm::cmd exec 2 -1 rest "version and a command" "$spec" "$@"
+	_shell::nvm::cmd exec 2 -1 rest "version and a command" "$spec" "$@"
 }
 
 # @description Undo nvm's effect on this shell (`nvm deactivate`): the system Node is back.
@@ -805,7 +805,7 @@ shell::nvm::deactivate() {
 		shell::logger::example "shell::nvm::deactivate"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::nvm::cmd deactivate 0 0 none "argument" "|--silent|--silent" "$@"
+	_shell::nvm::cmd deactivate 0 0 none "argument" "|--silent|--silent" "$@"
 }
 
 # @description Remove nvm from this shell session (`nvm unload`): the `nvm` function is gone.
@@ -827,7 +827,7 @@ shell::nvm::unload() {
 		shell::logger::example "shell::nvm::unload"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::nvm::cmd unload 0 0 none "argument" "" "$@"
+	_shell::nvm::cmd unload 0 0 none "argument" "" "$@"
 }
 
 # --------------------------------------------------------------------------
@@ -864,7 +864,7 @@ shell::nvm::alias() {
 		shell::logger::example "shell::nvm::alias work 20.11.1"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::nvm::cmd alias 0 2 alias "alias argument" "|--no-colors|--no-colors" "$@"
+	_shell::nvm::cmd alias 0 2 alias "alias argument" "|--no-colors|--no-colors" "$@"
 }
 
 # @description Show, or set, the default version new shells start with (`nvm alias default`).
@@ -891,7 +891,7 @@ shell::nvm::default() {
 		shell::logger::example "shell::nvm::default 22"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::nvm::cmd alias 0 2 alias "version" "" default "$@"
+	_shell::nvm::cmd alias 0 2 alias "version" "" default "$@"
 }
 
 # @description Delete an alias (`nvm unalias`).
@@ -916,7 +916,7 @@ shell::nvm::unalias() {
 		shell::logger::example "shell::nvm::unalias work"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::nvm::cmd unalias 1 1 alias "alias name" "" "$@"
+	_shell::nvm::cmd unalias 1 1 alias "alias name" "" "$@"
 }
 
 # --------------------------------------------------------------------------
@@ -942,7 +942,7 @@ shell::nvm::install::latest_npm() {
 		shell::logger::example "shell::nvm::install::latest_npm"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::nvm::cmd install-latest-npm 0 0 none "argument" "" "$@"
+	_shell::nvm::cmd install-latest-npm 0 0 none "argument" "" "$@"
 }
 
 # @description Copy the global npm packages of another version into the current one
@@ -968,7 +968,7 @@ shell::nvm::reinstall_packages() {
 		shell::logger::example "shell::nvm::reinstall_packages 20"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::nvm::cmd reinstall-packages 1 1 ver version "" "$@"
+	_shell::nvm::cmd reinstall-packages 1 1 ver version "" "$@"
 }
 
 # @description Show or empty nvm's download cache (`nvm cache dir` / `nvm cache clear`).
@@ -1017,9 +1017,9 @@ shell::nvm::cache() {
 		esac
 	done
 	if [ "$dry_run" = "true" ]; then
-		shell::nvm::cmd cache 1 1 text "action" "" -n "${action:-dir}"
+		_shell::nvm::cmd cache 1 1 text "action" "" -n "${action:-dir}"
 	else
-		shell::nvm::cmd cache 1 1 text "action" "" "${action:-dir}"
+		_shell::nvm::cmd cache 1 1 text "action" "" "${action:-dir}"
 	fi
 }
 
@@ -1046,7 +1046,7 @@ shell::nvm::set_colors() {
 		shell::logger::example "shell::nvm::set_colors cgYmW"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::nvm::cmd set-colors 0 1 colors "colour letters" "" "$@"
+	_shell::nvm::cmd set-colors 0 1 colors "colour letters" "" "$@"
 }
 
 # --------------------------------------------------------------------------
@@ -1181,7 +1181,7 @@ shell::nvm::nvmrc::write() {
 		return "$RETURN_INVALID"
 	fi
 	if [ -z "$version" ]; then
-		version="$(shell::nvm::query current)"
+		version="$(_shell::nvm::query current)"
 		case "$version" in
 		v[0-9]*) ;;
 		*)
@@ -1190,7 +1190,7 @@ shell::nvm::nvmrc::write() {
 			;;
 		esac
 	fi
-	if ! shell::nvm::version::valid "$version"; then
+	if ! _shell::nvm::version::valid "$version"; then
 		shell::logger::error "Invalid version: '$version'"
 		return "$RETURN_INVALID"
 	fi
@@ -1220,9 +1220,9 @@ shell::nvm::nvmrc::write() {
 # @noargs
 # @exitcode 0 Always.
 # @example
-#   shell::nvm::autouse::hook
+#   _shell::nvm::autouse::hook
 #
-shell::nvm::autouse::hook() {
+_shell::nvm::autouse::hook() {
 	if [ "$PWD" = "${SHELL_NVM_AUTOUSE_PWD-}" ]; then
 		return "$RETURN_SUCCESS"
 	fi
@@ -1270,16 +1270,16 @@ shell::nvm::autouse::on() {
 	fi
 	if [ -n "${ZSH_VERSION-}" ]; then
 		autoload -Uz add-zsh-hook
-		add-zsh-hook chpwd shell::nvm::autouse::hook
+		add-zsh-hook chpwd _shell::nvm::autouse::hook
 	else
 		case "${PROMPT_COMMAND-}" in
-		*shell::nvm::autouse::hook*) ;;
-		*) PROMPT_COMMAND="shell::nvm::autouse::hook${PROMPT_COMMAND:+;$PROMPT_COMMAND}" ;;
+		*_shell::nvm::autouse::hook*) ;;
+		*) PROMPT_COMMAND="_shell::nvm::autouse::hook${PROMPT_COMMAND:+;$PROMPT_COMMAND}" ;;
 		esac
 	fi
 	SHELL_NVM_AUTOUSE="on"
 	SHELL_NVM_AUTOUSE_PWD=""
-	shell::nvm::autouse::hook
+	_shell::nvm::autouse::hook
 	shell::logger::success "Automatic switching is on: Node follows the .nvmrc of the directory you are in"
 }
 
@@ -1301,10 +1301,10 @@ shell::nvm::autouse::off() {
 	fi
 	if [ -n "${ZSH_VERSION-}" ]; then
 		autoload -Uz add-zsh-hook
-		add-zsh-hook -d chpwd shell::nvm::autouse::hook 2>/dev/null
+		add-zsh-hook -d chpwd _shell::nvm::autouse::hook 2>/dev/null
 	else
-		PROMPT_COMMAND="${PROMPT_COMMAND//shell::nvm::autouse::hook;/}"
-		PROMPT_COMMAND="${PROMPT_COMMAND//shell::nvm::autouse::hook/}"
+		PROMPT_COMMAND="${PROMPT_COMMAND//_shell::nvm::autouse::hook;/}"
+		PROMPT_COMMAND="${PROMPT_COMMAND//_shell::nvm::autouse::hook/}"
 	fi
 	SHELL_NVM_AUTOUSE="off"
 	shell::logger::success "Automatic switching is off"
@@ -1370,16 +1370,16 @@ shell::nvm::doctor() {
 		printf 'fail  nvm.sh was found (%s) but could not be loaded\n' "$nvm_sh"
 		return "$RETURN_FAILURE"
 	}
-	printf 'ok    nvm %s (%s)\n' "$(shell::nvm::query --version)" "$nvm_sh"
+	printf 'ok    nvm %s (%s)\n' "$(_shell::nvm::query --version)" "$nvm_sh"
 	printf 'ok    NVM_DIR=%s\n' "${NVM_DIR-}"
 
-	current="$(shell::nvm::query current)"
+	current="$(_shell::nvm::query current)"
 	case "$current" in
 	v[0-9]*) printf 'ok    in use: %s\n' "$current" ;;
 	*) printf 'warn  no nvm-managed Node is active in this shell (in use: %s); try shell::nvm::use --lts\n' "${current:-none}" ;;
 	esac
 
-	default="$(shell::nvm::query alias default | head -n 1)"
+	default="$(_shell::nvm::query alias default | head -n 1)"
 	if [ -n "$default" ]; then
 		printf 'ok    default: %s\n' "$default"
 	else
@@ -1388,7 +1388,7 @@ shell::nvm::doctor() {
 
 	if rc_file="$(shell::nvm::nvmrc::find)"; then
 		wanted="$(shell::nvm::nvmrc::read)"
-		resolved="$(shell::nvm::query version "$wanted")"
+		resolved="$(_shell::nvm::query version "$wanted")"
 		if [ -n "$resolved" ] && [ "$resolved" != "N/A" ]; then
 			if [ "$resolved" = "$current" ]; then
 				printf 'ok    %s asks for %s, which is the one in use\n' "$rc_file" "$wanted"

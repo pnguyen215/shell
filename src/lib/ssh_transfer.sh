@@ -40,7 +40,7 @@
 # @exitcode 2 Unknown option, missing arguments, or an unsafe argument.
 # @exitcode 3 scp, or a local source, is missing.
 # @exitcode N Exit status of scp.
-# @see shell::ssh::cmd
+# @see _shell::ssh::cmd
 # @see shell::ssh::rsync::push
 # @example
 #   shell::ssh::scp::upload notes.txt deploy@web1:/home/deploy/
@@ -53,14 +53,14 @@ shell::ssh::scp::upload() {
 		shell::logger::usage "shell::ssh::scp::upload [-n] [options] <local>... <[user@]host:path>"
 		shell::logger::item "local" "One or more local files or directories"
 		shell::logger::item "destination" "Remote location, written [user@]host:path"
-		shell::ssh::cmd::help scp
+		_shell::ssh::cmd::help scp
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
 		shell::logger::option "-h, --help" "Display this help message"
 		shell::logger::example "shell::ssh::scp::upload notes.txt deploy@web1:/home/deploy/"
 		shell::logger::example "shell::ssh::scp::upload -r -p 2222 ./site deploy@web1:/var/www"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::ssh::cmd scp upload "$@"
+	_shell::ssh::cmd scp upload "$@"
 }
 
 # @description Copy files or directories from a server to this machine (`scp user@host:/path dest/`).
@@ -77,7 +77,7 @@ shell::ssh::scp::upload() {
 # @exitcode 2 Unknown option, missing arguments, or an unsafe argument.
 # @exitcode 3 scp is missing.
 # @exitcode N Exit status of scp.
-# @see shell::ssh::cmd
+# @see _shell::ssh::cmd
 # @see shell::ssh::rsync::pull
 # @example
 #   shell::ssh::scp::download deploy@web1:/var/log/app.log .
@@ -90,14 +90,14 @@ shell::ssh::scp::download() {
 		shell::logger::usage "shell::ssh::scp::download [-n] [options] <[user@]host:path>... <local>"
 		shell::logger::item "source" "One or more remote locations, written [user@]host:path"
 		shell::logger::item "local" "Local destination (an existing directory when there are several sources)"
-		shell::ssh::cmd::help scp
+		_shell::ssh::cmd::help scp
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
 		shell::logger::option "-h, --help" "Display this help message"
 		shell::logger::example "shell::ssh::scp::download deploy@web1:/var/log/app.log ."
 		shell::logger::example "shell::ssh::scp::download -r deploy@web1:/etc/nginx ./backup/"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::ssh::cmd scp download "$@"
+	_shell::ssh::cmd scp download "$@"
 }
 
 # @description Sync local files to a server (`rsync -avz -e ssh src user@host:dst`).
@@ -113,7 +113,7 @@ shell::ssh::scp::download() {
 # @exitcode 2 Unknown option, missing arguments, or an unsafe argument.
 # @exitcode 3 rsync, ssh, or a local source, is missing.
 # @exitcode N Exit status of rsync.
-# @see shell::ssh::cmd
+# @see _shell::ssh::cmd
 # @see shell::ssh::rsync::pull
 # @see shell::rsync::sync
 # @example
@@ -127,14 +127,14 @@ shell::ssh::rsync::push() {
 		shell::logger::usage "shell::ssh::rsync::push [-n] [options] <local>... <[user@]host:path>"
 		shell::logger::item "local" "One or more local files or directories (a trailing / copies the contents)"
 		shell::logger::item "destination" "Remote location, written [user@]host:path"
-		shell::ssh::cmd::help rsync
+		_shell::ssh::cmd::help rsync
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
 		shell::logger::option "-h, --help" "Display this help message"
 		shell::logger::example "shell::ssh::rsync::push ./site/ deploy@web1:/var/www/site/"
 		shell::logger::example "shell::ssh::rsync::push --delete --simulate ./site/ deploy@web1:/var/www/site/"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::ssh::cmd rsync push "$@"
+	_shell::ssh::cmd rsync push "$@"
 }
 
 # @description Sync files from a server to this machine (`rsync -avz -e ssh user@host:src dst`).
@@ -150,7 +150,7 @@ shell::ssh::rsync::push() {
 # @exitcode 2 Unknown option, missing arguments, or an unsafe argument.
 # @exitcode 3 rsync or ssh is missing.
 # @exitcode N Exit status of rsync.
-# @see shell::ssh::cmd
+# @see _shell::ssh::cmd
 # @see shell::ssh::rsync::push
 # @see shell::rsync::sync
 # @example
@@ -164,14 +164,14 @@ shell::ssh::rsync::pull() {
 		shell::logger::usage "shell::ssh::rsync::pull [-n] [options] <[user@]host:path>... <local>"
 		shell::logger::item "source" "One or more remote locations (a trailing / copies the contents)"
 		shell::logger::item "local" "Local destination"
-		shell::ssh::cmd::help rsync
+		_shell::ssh::cmd::help rsync
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
 		shell::logger::option "-h, --help" "Display this help message"
 		shell::logger::example "shell::ssh::rsync::pull deploy@web1:/var/www/site/ ./site/"
 		shell::logger::example "shell::ssh::rsync::pull --progress -p 2222 deploy@web1:/var/backups/ ./backups/"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::ssh::cmd rsync pull "$@"
+	_shell::ssh::cmd rsync pull "$@"
 }
 
 # @description Open an interactive SFTP session (`sftp [user@]host`).
@@ -186,7 +186,7 @@ shell::ssh::rsync::pull() {
 # @exitcode 2 Unknown option, no target, or an unsafe argument.
 # @exitcode 3 sftp is missing.
 # @exitcode N Exit status of sftp.
-# @see shell::ssh::cmd
+# @see _shell::ssh::cmd
 # @example
 #   shell::ssh::sftp::connect deploy@web1
 #   shell::ssh::sftp::connect -p 2222 deploy@web1
@@ -197,12 +197,12 @@ shell::ssh::sftp::connect() {
 		shell::logger::info "Open an interactive SFTP session (sftp)"
 		shell::logger::usage "shell::ssh::sftp::connect [-n] [options] <[user@]host|alias>"
 		shell::logger::item "target" "user@host, host, or a Host alias of ~/.ssh/config"
-		shell::ssh::cmd::help sftp
+		_shell::ssh::cmd::help sftp
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
 		shell::logger::option "-h, --help" "Display this help message"
 		shell::logger::example "shell::ssh::sftp::connect deploy@web1"
 		shell::logger::example "shell::ssh::sftp::connect -p 2222 deploy@web1"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::ssh::cmd sftp target "$@"
+	_shell::ssh::cmd sftp target "$@"
 }

@@ -58,9 +58,9 @@
 # @stdout local, ssh or daemon.
 # @exitcode 0 Always.
 # @example
-#   shell::rsync::spec::kind "deploy@web1:/var/www"   # -> ssh
+#   _shell::rsync::spec::kind "deploy@web1:/var/www"   # -> ssh
 #
-shell::rsync::spec::kind() {
+_shell::rsync::spec::kind() {
 	local before
 	case "${1-}" in
 	rsync://*)
@@ -88,21 +88,21 @@ shell::rsync::spec::kind() {
 # @internal
 # @description Tell whether a string is a location this module accepts.
 #   A local path is any non-empty string; an ssh location is checked like in scp
-#   (shell::ssh::spec::valid); a daemon location needs a safe `[user@]host[:port]`.
+#   (_shell::ssh::spec::valid); a daemon location needs a safe `[user@]host[:port]`.
 # @arg $1 string The candidate.
 # @exitcode 0 It is valid.
 # @exitcode 1 It is not.
 # @example
-#   shell::rsync::spec::valid "rsync://mirror.example.com/pub/" && echo ok
+#   _shell::rsync::spec::valid "rsync://mirror.example.com/pub/" && echo ok
 #
-shell::rsync::spec::valid() {
+_shell::rsync::spec::valid() {
 	local location="${1-}" authority
 	if [ -z "$location" ]; then
 		return 1
 	fi
-	case "$(shell::rsync::spec::kind "$location")" in
+	case "$(_shell::rsync::spec::kind "$location")" in
 	local) return 0 ;;
-	ssh) shell::ssh::spec::valid "$location" ;;
+	ssh) _shell::ssh::spec::valid "$location" ;;
 	*)
 		case "$location" in
 		*[[:cntrl:]]*) return 1 ;;
@@ -112,7 +112,7 @@ shell::rsync::spec::valid() {
 			;;
 		*) authority="${location%%::*}" ;;
 		esac
-		shell::ssh::target::valid "$authority"
+		_shell::ssh::target::valid "$authority"
 		;;
 	esac
 }
@@ -125,9 +125,9 @@ shell::rsync::spec::valid() {
 # @exitcode 0 It is valid.
 # @exitcode 1 It is not.
 # @example
-#   shell::rsync::rate::valid "5m" && echo ok
+#   _shell::rsync::rate::valid "5m" && echo ok
 #
-shell::rsync::rate::valid() {
+_shell::rsync::rate::valid() {
 	case "${1-}" in
 	'' | *[!0-9.KkMmGg]* | [!0-9]* | *.*.* | *[KkMmGg]*[0-9.KkMmGg]*) return 1 ;;
 	esac
@@ -142,9 +142,9 @@ shell::rsync::rate::valid() {
 # @exitcode 0 It is valid.
 # @exitcode 1 It is not.
 # @example
-#   shell::rsync::chmod::valid "D755,F644" && echo ok
+#   _shell::rsync::chmod::valid "D755,F644" && echo ok
 #
-shell::rsync::chmod::valid() {
+_shell::rsync::chmod::valid() {
 	case "${1-}" in
 	'' | -* | *[!DFugoarwxXst0-9,=+-]*) return 1 ;;
 	esac
@@ -162,9 +162,9 @@ shell::rsync::chmod::valid() {
 # @exitcode 0 The mode takes it.
 # @exitcode 1 It does not.
 # @example
-#   shell::rsync::cmd::supports mirror limit && echo yes
+#   _shell::rsync::cmd::supports mirror limit && echo yes
 #
-shell::rsync::cmd::supports() {
+_shell::rsync::cmd::supports() {
 	case "${2-}" in
 	data | sim)
 		case "${1-}" in
@@ -191,17 +191,17 @@ shell::rsync::cmd::supports() {
 }
 
 # @internal
-# @description Like shell::rsync::cmd::supports, but report the refusal.
+# @description Like _shell::rsync::cmd::supports, but report the refusal.
 # @arg $1 string The mode.
 # @arg $2 string The family.
 # @arg $3 string The option the user typed.
 # @exitcode 0 The mode takes it.
 # @exitcode 2 It does not (an error was printed).
 # @example
-#   shell::rsync::cmd::allow "$mode" data "$1" || return "$RETURN_INVALID"
+#   _shell::rsync::cmd::allow "$mode" data "$1" || return "$RETURN_INVALID"
 #
-shell::rsync::cmd::allow() {
-	if shell::rsync::cmd::supports "${1-}" "${2-}"; then
+_shell::rsync::cmd::allow() {
+	if _shell::rsync::cmd::supports "${1-}" "${2-}"; then
 		return "$RETURN_SUCCESS"
 	fi
 	shell::logger::error "Option ${3-} is not supported by '${1-}'"
@@ -217,9 +217,9 @@ shell::rsync::cmd::allow() {
 # @exitcode 0 The mode has it.
 # @exitcode 2 It does not (an error was printed).
 # @example
-#   shell::rsync::cmd::only "$mode" resume "$1" || return "$RETURN_INVALID"
+#   _shell::rsync::cmd::only "$mode" resume "$1" || return "$RETURN_INVALID"
 #
-shell::rsync::cmd::only() {
+_shell::rsync::cmd::only() {
 	if [ "${1-}" = "${2-}" ]; then
 		return "$RETURN_SUCCESS"
 	fi
@@ -234,9 +234,9 @@ shell::rsync::cmd::only() {
 # @stdout The option lines.
 # @exitcode 0 Always.
 # @example
-#   shell::rsync::cmd::help sync
+#   _shell::rsync::cmd::help sync
 #
-shell::rsync::cmd::help() {
+_shell::rsync::cmd::help() {
 	local mode="${1-sync}"
 	case "$mode" in
 	list) shell::logger::option "-r, --recursive" "Go into directories" ;;
@@ -244,16 +244,16 @@ shell::rsync::cmd::help() {
 	resume) shell::logger::option "--retries <n>" "Start again up to n times after a network failure (default $SHELL_RSYNC_RETRIES)" ;;
 	diff) shell::logger::option "--no-delete" "Do not report files that exist only at the destination" ;;
 	esac
-	if shell::rsync::cmd::supports "$mode" delete; then
+	if _shell::rsync::cmd::supports "$mode" delete; then
 		shell::logger::option "--delete" "Delete at the destination what is not at the source (after the transfer)"
 	fi
-	if shell::rsync::cmd::supports "$mode" limit; then
+	if _shell::rsync::cmd::supports "$mode" limit; then
 		shell::logger::option "--max-delete <n>" "Stop after deleting n files (rsync exits 25)"
 	fi
-	if shell::rsync::cmd::supports "$mode" sim; then
+	if _shell::rsync::cmd::supports "$mode" sim; then
 		shell::logger::option "--simulate" "Let rsync show what it would do (rsync -n), changing nothing"
 	fi
-	if shell::rsync::cmd::supports "$mode" compare; then
+	if _shell::rsync::cmd::supports "$mode" compare; then
 		shell::logger::option "--exclude <pattern>" "Skip matching files, repeatable (first matching rule wins)"
 		shell::logger::option "--include <pattern>" "Do not skip matching files, repeatable"
 		shell::logger::option "--exclude-from <file>" "Read exclude patterns from a file"
@@ -264,7 +264,7 @@ shell::rsync::cmd::help() {
 		shell::logger::option "-H, --hard-links" "Keep hard links"
 		shell::logger::option "--omit-dir-times" "Do not set times on directories (NFS, FAT)"
 	fi
-	if shell::rsync::cmd::supports "$mode" data; then
+	if _shell::rsync::cmd::supports "$mode" data; then
 		shell::logger::option "-z, --compress" "Compress the data on the wire"
 		shell::logger::option "--bwlimit <rate>" "Limit the speed: 5m, 1.5M, 10240 (KiB/s)"
 		shell::logger::option "--timeout <sec>" "Give up when no data moves for this long (rsync I/O timeout)"
@@ -298,9 +298,9 @@ shell::rsync::cmd::help() {
 # @stderr A hint for 23, 24 and 25.
 # @exitcode 0 Always.
 # @example
-#   shell::rsync::hint 25
+#   _shell::rsync::hint 25
 #
-shell::rsync::hint() {
+_shell::rsync::hint() {
 	case "${1-}" in
 	23) shell::logger::warn "Some files or attributes were not transferred (status 23); see the errors above. The rest was transferred." ;;
 	24) shell::logger::warn "Some source files vanished while rsync was running (status 24); the rest was transferred." ;;
@@ -331,9 +331,9 @@ shell::rsync::hint() {
 # @exitcode 8 A mirror source is empty.
 # @exitcode N Exit status of rsync.
 # @example
-#   shell::rsync::cmd sync -z --exclude .git ./site/ deploy@web1:/var/www/site/
+#   _shell::rsync::cmd sync -z --exclude .git ./site/ deploy@web1:/var/www/site/
 #
-shell::rsync::cmd() {
+_shell::rsync::cmd() {
 	local mode="${1-}"
 	case "$mode" in
 	sync | mirror | move | resume | diff | list) ;;
@@ -362,7 +362,7 @@ shell::rsync::cmd() {
 			break
 			;;
 		--simulate)
-			shell::rsync::cmd::allow "$mode" sim "$1" || return "$RETURN_INVALID"
+			_shell::rsync::cmd::allow "$mode" sim "$1" || return "$RETURN_INVALID"
 			simulate="true"
 			shift
 			;;
@@ -387,38 +387,38 @@ shell::rsync::cmd() {
 			shift
 			;;
 		-z | --compress)
-			shell::rsync::cmd::allow "$mode" data "$1" || return "$RETURN_INVALID"
+			_shell::rsync::cmd::allow "$mode" data "$1" || return "$RETURN_INVALID"
 			flags+=(-z)
 			shift
 			;;
 		--progress | --stats)
-			shell::rsync::cmd::allow "$mode" data "$1" || return "$RETURN_INVALID"
+			_shell::rsync::cmd::allow "$mode" data "$1" || return "$RETURN_INVALID"
 			flags+=("$1")
 			shift
 			;;
 		--total-progress)
-			shell::rsync::cmd::allow "$mode" data "$1" || return "$RETURN_INVALID"
+			_shell::rsync::cmd::allow "$mode" data "$1" || return "$RETURN_INVALID"
 			flags+=(--info=progress2)
 			shift
 			;;
 		--itemize)
-			shell::rsync::cmd::allow "$mode" data "$1" || return "$RETURN_INVALID"
+			_shell::rsync::cmd::allow "$mode" data "$1" || return "$RETURN_INVALID"
 			flags+=(-i)
 			shift
 			;;
 		--partial)
-			shell::rsync::cmd::allow "$mode" data "$1" || return "$RETURN_INVALID"
+			_shell::rsync::cmd::allow "$mode" data "$1" || return "$RETURN_INVALID"
 			partial="true"
 			shift
 			;;
 		--append)
-			shell::rsync::cmd::allow "$mode" data "$1" || return "$RETURN_INVALID"
+			_shell::rsync::cmd::allow "$mode" data "$1" || return "$RETURN_INVALID"
 			append="true"
 			shift
 			;;
 		--partial-dir)
-			shell::rsync::cmd::allow "$mode" data "$1" || return "$RETURN_INVALID"
-			shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
+			_shell::rsync::cmd::allow "$mode" data "$1" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
 			case "$2" in
 			'' | -* | *[[:cntrl:]]*)
 				shell::logger::error "Invalid partial directory: '$2'"
@@ -429,9 +429,9 @@ shell::rsync::cmd() {
 			shift 2
 			;;
 		--bwlimit)
-			shell::rsync::cmd::allow "$mode" data "$1" || return "$RETURN_INVALID"
-			shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
-			if ! shell::rsync::rate::valid "$2"; then
+			_shell::rsync::cmd::allow "$mode" data "$1" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
+			if ! _shell::rsync::rate::valid "$2"; then
 				shell::logger::error "Invalid bandwidth limit: '$2' (e.g. 5m, 1.5M, 10240)"
 				return "$RETURN_INVALID"
 			fi
@@ -439,16 +439,16 @@ shell::rsync::cmd() {
 			shift 2
 			;;
 		--timeout)
-			shell::rsync::cmd::allow "$mode" data "$1" || return "$RETURN_INVALID"
-			shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
-			shell::ssh::cmd::number "$1" "$2" || return "$RETURN_INVALID"
+			_shell::rsync::cmd::allow "$mode" data "$1" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::number "$1" "$2" || return "$RETURN_INVALID"
 			timeout="$2"
 			shift 2
 			;;
 		--chmod)
-			shell::rsync::cmd::allow "$mode" data "$1" || return "$RETURN_INVALID"
-			shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
-			if ! shell::rsync::chmod::valid "$2"; then
+			_shell::rsync::cmd::allow "$mode" data "$1" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
+			if ! _shell::rsync::chmod::valid "$2"; then
 				shell::logger::error "Invalid permission spec: '$2' (e.g. D755,F644 or Du=rwx,go=rx)"
 				return "$RETURN_INVALID"
 			fi
@@ -456,7 +456,7 @@ shell::rsync::cmd() {
 			shift 2
 			;;
 		-c | --checksum | -u | --update | --ignore-existing | -L | --copy-links | -H | --hard-links | --omit-dir-times)
-			shell::rsync::cmd::allow "$mode" compare "$1" || return "$RETURN_INVALID"
+			_shell::rsync::cmd::allow "$mode" compare "$1" || return "$RETURN_INVALID"
 			case "$1" in
 			-c | --checksum) flags+=(-c) ;;
 			-u | --update) flags+=(-u) ;;
@@ -467,8 +467,8 @@ shell::rsync::cmd() {
 			shift
 			;;
 		--exclude | --include)
-			shell::rsync::cmd::allow "$mode" compare "$1" || return "$RETURN_INVALID"
-			shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
+			_shell::rsync::cmd::allow "$mode" compare "$1" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
 			if [ -z "$2" ]; then
 				shell::logger::error "The $1 pattern cannot be empty"
 				return "$RETURN_INVALID"
@@ -477,8 +477,8 @@ shell::rsync::cmd() {
 			shift 2
 			;;
 		--exclude-from)
-			shell::rsync::cmd::allow "$mode" compare "$1" || return "$RETURN_INVALID"
-			shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
+			_shell::rsync::cmd::allow "$mode" compare "$1" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
 			case "$2" in
 			'' | -*)
 				shell::logger::error "Invalid exclude file: '$2'"
@@ -490,37 +490,37 @@ shell::rsync::cmd() {
 			shift 2
 			;;
 		--delete)
-			shell::rsync::cmd::allow "$mode" delete "$1" || return "$RETURN_INVALID"
+			_shell::rsync::cmd::allow "$mode" delete "$1" || return "$RETURN_INVALID"
 			delete="true"
 			shift
 			;;
 		--max-delete)
-			shell::rsync::cmd::allow "$mode" limit "$1" || return "$RETURN_INVALID"
-			shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
-			shell::ssh::cmd::number "$1" "$2" || return "$RETURN_INVALID"
+			_shell::rsync::cmd::allow "$mode" limit "$1" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::number "$1" "$2" || return "$RETURN_INVALID"
 			max_delete="$2"
 			shift 2
 			;;
 		--no-delete)
-			shell::rsync::cmd::only "$mode" diff "$1" || return "$RETURN_INVALID"
+			_shell::rsync::cmd::only "$mode" diff "$1" || return "$RETURN_INVALID"
 			no_delete="true"
 			shift
 			;;
 		--allow-empty)
-			shell::rsync::cmd::only "$mode" mirror "$1" || return "$RETURN_INVALID"
+			_shell::rsync::cmd::only "$mode" mirror "$1" || return "$RETURN_INVALID"
 			allow_empty="true"
 			shift
 			;;
 		--retries)
-			shell::rsync::cmd::only "$mode" resume "$1" || return "$RETURN_INVALID"
-			shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
-			shell::ssh::cmd::number "$1" "$2" || return "$RETURN_INVALID"
+			_shell::rsync::cmd::only "$mode" resume "$1" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::number "$1" "$2" || return "$RETURN_INVALID"
 			retries="$2"
 			shift 2
 			;;
 		-p | --port)
-			shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
-			if ! shell::net::port::valid "$2"; then
+			_shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
+			if ! _shell::net::port::valid "$2"; then
 				shell::logger::error "Invalid port: '$2' (1-65535)"
 				return "$RETURN_INVALID"
 			fi
@@ -528,7 +528,7 @@ shell::rsync::cmd() {
 			shift 2
 			;;
 		-i | --identity | -F | --config)
-			shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
 			case "$2" in
 			'' | -*)
 				shell::logger::error "Invalid file for $1: '$2'"
@@ -542,8 +542,8 @@ shell::rsync::cmd() {
 			shift 2
 			;;
 		-J | --jump)
-			shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
-			if ! shell::ssh::jump::valid "$2"; then
+			_shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
+			if ! _shell::ssh::jump::valid "$2"; then
 				shell::logger::error "Invalid jump host list: '$2' (use [user@]host[:port], comma separated)"
 				return "$RETURN_INVALID"
 			fi
@@ -551,8 +551,8 @@ shell::rsync::cmd() {
 			shift 2
 			;;
 		-o | --option)
-			shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
-			if ! shell::ssh::option::valid "$2"; then
+			_shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
+			if ! _shell::ssh::option::valid "$2"; then
 				shell::logger::error "Invalid ssh option: '$2' (expected Key=Value)"
 				return "$RETURN_INVALID"
 			fi
@@ -572,7 +572,7 @@ shell::rsync::cmd() {
 			shift
 			;;
 		--rsync-path)
-			shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
 			case "$2" in
 			'' | -* | *[[:cntrl:]]*)
 				shell::logger::error "Invalid rsync path: '$2'"
@@ -628,11 +628,11 @@ shell::rsync::cmd() {
 	fi
 
 	for arg in "${sources[@]}"; do
-		if ! shell::rsync::spec::valid "$arg"; then
+		if ! _shell::rsync::spec::valid "$arg"; then
 			shell::logger::error "Invalid location: '$arg' (a path, [user@]host:path, [user@]host::module or rsync://[user@]host[:port]/module)"
 			return "$RETURN_INVALID"
 		fi
-		kind="$(shell::rsync::spec::kind "$arg")"
+		kind="$(_shell::rsync::spec::kind "$arg")"
 		if [ -z "$src_kind" ]; then
 			src_kind="$kind"
 		elif [ "$kind" != "$src_kind" ]; then
@@ -642,11 +642,11 @@ shell::rsync::cmd() {
 	done
 	remote_kind="$src_kind"
 	if [ -n "$dest" ]; then
-		if ! shell::rsync::spec::valid "$dest"; then
+		if ! _shell::rsync::spec::valid "$dest"; then
 			shell::logger::error "Invalid destination: '$dest' (a path, [user@]host:path, [user@]host::module or rsync://[user@]host[:port]/module)"
 			return "$RETURN_INVALID"
 		fi
-		dest_kind="$(shell::rsync::spec::kind "$dest")"
+		dest_kind="$(_shell::rsync::spec::kind "$dest")"
 		if [ "$src_kind" != "local" ] && [ "$dest_kind" != "local" ]; then
 			shell::logger::error "Source and destination are both remote: rsync cannot copy from one server to another. Run it on one of them, or go through this machine in two steps"
 			return "$RETURN_INVALID"
@@ -734,7 +734,7 @@ shell::rsync::cmd() {
 		fi
 		if [ -z "$max_delete" ]; then
 			max_delete="$SHELL_RSYNC_MAX_DELETE"
-			shell::ssh::cmd::number SHELL_RSYNC_MAX_DELETE "$max_delete" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::number SHELL_RSYNC_MAX_DELETE "$max_delete" || return "$RETURN_INVALID"
 		fi
 	fi
 	if [ -n "$max_delete" ] && [ "$mode" != "mirror" ] && [ "$delete" = "false" ]; then
@@ -760,7 +760,7 @@ shell::rsync::cmd() {
 	resume)
 		base=(-a)
 		retries="${retries:-$SHELL_RSYNC_RETRIES}"
-		shell::ssh::cmd::number SHELL_RSYNC_RETRIES "$retries" || return "$RETURN_INVALID"
+		_shell::ssh::cmd::number SHELL_RSYNC_RETRIES "$retries" || return "$RETURN_INVALID"
 		case "$SHELL_RSYNC_RETRY_DELAY" in
 		'' | *[!0-9]*)
 			shell::logger::error "Invalid SHELL_RSYNC_RETRY_DELAY: '$SHELL_RSYNC_RETRY_DELAY' (seconds, a whole number)"
@@ -769,7 +769,7 @@ shell::rsync::cmd() {
 		esac
 		if [ -z "$timeout" ]; then
 			timeout="$SHELL_RSYNC_TIMEOUT"
-			shell::ssh::cmd::number SHELL_RSYNC_TIMEOUT "$timeout" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::number SHELL_RSYNC_TIMEOUT "$timeout" || return "$RETURN_INVALID"
 		fi
 		if [ "$append" = "true" ]; then
 			partial="true"
@@ -826,7 +826,7 @@ shell::rsync::cmd() {
 			ssh_opts+=(-p "$port")
 		fi
 		if [ "${#ssh_opts[@]}" -gt 0 ]; then
-			e_cmd="ssh $(shell::ssh::quote "${ssh_opts[@]}")"
+			e_cmd="ssh $(_shell::ssh::quote "${ssh_opts[@]}")"
 			invocation+=(-e "$e_cmd")
 		fi
 		if [ "$sudo" = "true" ]; then
@@ -854,7 +854,7 @@ shell::rsync::cmd() {
 
 	while :; do
 		rc=0
-		shell::ssh::invoke ${run[@]+"${run[@]}"} "${invocation[@]}" || rc=$?
+		_shell::ssh::invoke ${run[@]+"${run[@]}"} "${invocation[@]}" || rc=$?
 		if [ "$mode" != "resume" ] || [ "$dry_run" = "true" ] || [ "$rc" -eq 0 ]; then
 			break
 		fi
@@ -873,7 +873,7 @@ shell::rsync::cmd() {
 	done
 
 	if [ "$dry_run" = "false" ]; then
-		shell::rsync::hint "$rc"
+		_shell::rsync::hint "$rc"
 		if [ "$rc" -eq 0 ] && [ "$mode" = "move" ] && [ "$simulate" = "false" ]; then
 			shell::logger::note "Moved files are gone from the source; its empty directories are left in place."
 		fi
@@ -916,14 +916,14 @@ shell::rsync::sync() {
 		shell::logger::usage "shell::rsync::sync [-n] [options] <source>... <destination>"
 		shell::logger::item "source" "One or more paths or remote locations (a trailing / copies the contents)"
 		shell::logger::item "destination" "A path, [user@]host:path, [user@]host::module or rsync://host/module"
-		shell::rsync::cmd::help sync
+		_shell::rsync::cmd::help sync
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
 		shell::logger::option "-h, --help" "Display this help message"
 		shell::logger::example "shell::rsync::sync ./site/ /mnt/backup/site/"
 		shell::logger::example "shell::rsync::sync -z --exclude .git -p 2222 ./app/ deploy@web1:/srv/app/"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::rsync::cmd sync "$@"
+	_shell::rsync::cmd sync "$@"
 }
 
 # @description Make the destination identical to the source (`rsync -a --delete-after --max-delete=N`).
@@ -958,14 +958,14 @@ shell::rsync::mirror() {
 		shell::logger::usage "shell::rsync::mirror [-n] [options] <source-dir> <destination>"
 		shell::logger::item "source-dir" "The directory whose contents are mirrored (a trailing / is added)"
 		shell::logger::item "destination" "A path, [user@]host:path, [user@]host::module or rsync://host/module"
-		shell::rsync::cmd::help mirror
+		_shell::rsync::cmd::help mirror
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
 		shell::logger::option "-h, --help" "Display this help message"
 		shell::logger::example "shell::rsync::mirror --simulate ./build deploy@web1:/var/www/releases/new"
 		shell::logger::example "shell::rsync::mirror --max-delete 50 ./photos /mnt/backup/photos"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::rsync::cmd mirror "$@"
+	_shell::rsync::cmd mirror "$@"
 }
 
 # @description Move files: copy them, then remove them from the source (`rsync -a --remove-source-files`).
@@ -992,14 +992,14 @@ shell::rsync::move() {
 		shell::logger::usage "shell::rsync::move [-n] [options] <source>... <destination>"
 		shell::logger::item "source" "One or more paths or remote locations (a trailing / moves the contents)"
 		shell::logger::item "destination" "A path, [user@]host:path, [user@]host::module or rsync://host/module"
-		shell::rsync::cmd::help move
+		_shell::rsync::cmd::help move
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
 		shell::logger::option "-h, --help" "Display this help message"
 		shell::logger::example "shell::rsync::move ./incoming/ /mnt/archive/"
 		shell::logger::example "shell::rsync::move --simulate --exclude '*.part' ./downloads/ nas:/volume1/inbox/"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::rsync::cmd move "$@"
+	_shell::rsync::cmd move "$@"
 }
 
 # @description Copy over an unreliable link and pick up where it stopped.
@@ -1033,14 +1033,14 @@ shell::rsync::resume() {
 		shell::logger::usage "shell::rsync::resume [-n] [options] <source>... <destination>"
 		shell::logger::item "source" "One or more paths or remote locations (a trailing / copies the contents)"
 		shell::logger::item "destination" "A path, [user@]host:path, [user@]host::module or rsync://host/module"
-		shell::rsync::cmd::help resume
+		_shell::rsync::cmd::help resume
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
 		shell::logger::option "-h, --help" "Display this help message"
 		shell::logger::example "shell::rsync::resume --total-progress ./backup.tar.gz deploy@web1:/srv/backups/"
 		shell::logger::example "shell::rsync::resume --retries 10 --bwlimit 2m -p 2222 ./build/ deploy@web1:/srv/app/"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::rsync::cmd resume "$@"
+	_shell::rsync::cmd resume "$@"
 }
 
 # @description Show what a sync would change, changing nothing (`rsync -a -n -i --delete`).
@@ -1073,14 +1073,14 @@ shell::rsync::diff() {
 		shell::logger::item "source" "The source, as for sync (a trailing / compares the contents)"
 		shell::logger::item "destination" "The destination, as for sync"
 		shell::logger::item "output" ">f+++++++++ new file, >f.st...... size or time differs, *deleting only at the destination"
-		shell::rsync::cmd::help diff
+		_shell::rsync::cmd::help diff
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
 		shell::logger::option "-h, --help" "Display this help message"
 		shell::logger::example "shell::rsync::diff ./build/ deploy@web1:/var/www/current/"
 		shell::logger::example "shell::rsync::diff --no-delete --exclude .git ./a/ ./b/"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::rsync::cmd diff "$@"
+	_shell::rsync::cmd diff "$@"
 }
 
 # @description List a source without copying anything (`rsync --list-only`).
@@ -1105,14 +1105,14 @@ shell::rsync::list() {
 		shell::logger::info "List a source without copying anything (rsync --list-only)"
 		shell::logger::usage "shell::rsync::list [-n] [options] <location>"
 		shell::logger::item "location" "A path, [user@]host:path, [user@]host::module or rsync://host/ (the modules of a daemon)"
-		shell::rsync::cmd::help list
+		_shell::rsync::cmd::help list
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
 		shell::logger::option "-h, --help" "Display this help message"
 		shell::logger::example "shell::rsync::list deploy@web1:/var/www/"
 		shell::logger::example "shell::rsync::list -r --human rsync://mirror.example.com/pub/"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::rsync::cmd list "$@"
+	_shell::rsync::cmd list "$@"
 }
 
 # @description Print the version of the installed rsync (`rsync --version`, first line).

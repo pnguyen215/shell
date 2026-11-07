@@ -17,7 +17,7 @@
 # @stdout The trimmed line the user typed.
 # @exitcode 0 A line was read.
 # @exitcode 9 EOF / Ctrl-D (cancelled).
-shell::ask::read_line() {
+_shell::ask::read_line() {
 	local tag="$1"
 	local question="$2"
 	local mode="${3-}"
@@ -94,7 +94,7 @@ shell::ask::deny() {
 
 	local answer
 	while true; do
-		answer="$(shell::ask::read_line "q" "$1 (y/n)")" || return "$RETURN_CANCELLED"
+		answer="$(_shell::ask::read_line "q" "$1 (y/n)")" || return "$RETURN_CANCELLED"
 		case "$answer" in
 		[Yy] | [Yy][Ee][Ss]) return "$RETURN_FAILURE" ;;
 		[Nn] | [Nn][Oo]) return "$RETURN_SUCCESS" ;;
@@ -132,7 +132,7 @@ shell::ask::accept() {
 
 	local answer
 	while true; do
-		answer="$(shell::ask::read_line "q" "$1 (y/n)")" || return "$RETURN_CANCELLED"
+		answer="$(_shell::ask::read_line "q" "$1 (y/n)")" || return "$RETURN_CANCELLED"
 		case "$answer" in
 		[Yy] | [Yy][Ee][Ss]) return "$RETURN_SUCCESS" ;;
 		[Nn] | [Nn][Oo]) return "$RETURN_FAILURE" ;;
@@ -168,7 +168,7 @@ shell::ask::text() {
 
 	local value
 	while true; do
-		value="$(shell::ask::read_line "e" "$1")" || return "$RETURN_CANCELLED"
+		value="$(_shell::ask::read_line "e" "$1")" || return "$RETURN_CANCELLED"
 		if [ -n "$value" ]; then
 			printf '%s\n' "$value"
 			return "$RETURN_SUCCESS"
@@ -200,7 +200,7 @@ shell::ask::password() {
 
 	local value
 	while true; do
-		value="$(shell::ask::read_line "p" "$1" secret)" || return "$RETURN_CANCELLED"
+		value="$(_shell::ask::read_line "p" "$1" secret)" || return "$RETURN_CANCELLED"
 		if [ -n "$value" ]; then
 			printf '%s\n' "$value"
 			return "$RETURN_SUCCESS"
@@ -232,7 +232,7 @@ shell::ask::number() {
 
 	local value
 	while true; do
-		value="$(shell::ask::read_line "n" "$1")" || return "$RETURN_CANCELLED"
+		value="$(_shell::ask::read_line "n" "$1")" || return "$RETURN_CANCELLED"
 		# Optional minus, digits, optional fractional part.
 		if [[ "$value" =~ ^-?[0-9]+(\.[0-9]+)?$ ]]; then
 			printf '%s\n' "$value"
@@ -304,7 +304,7 @@ shell::ask::path() {
 
 	local value
 	while true; do
-		value="$(shell::ask::read_line "p" "$1")" || return "$RETURN_CANCELLED"
+		value="$(_shell::ask::read_line "p" "$1")" || return "$RETURN_CANCELLED"
 
 		if [ -z "$value" ]; then
 			shell::logger::error "Path cannot be empty. Please enter a valid path."

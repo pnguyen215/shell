@@ -28,9 +28,9 @@
 # @exitcode 0 The directory exists (the list may be empty).
 # @exitcode 3 The directory does not exist.
 # @example
-#   shell::ssh::key::candidates
+#   _shell::ssh::key::candidates
 #
-shell::ssh::key::candidates() {
+_shell::ssh::key::candidates() {
 	local dir="${1:-$SHELL_SSH_DIR}" file name
 	if [ ! -d "$dir" ]; then
 		return "$RETURN_NOT_FOUND"
@@ -61,7 +61,7 @@ EOF
 # @exitcode 2 Unknown option, no target, or an unsafe argument.
 # @exitcode 3 ssh-copy-id, or the key given with -i, is missing.
 # @exitcode N Exit status of ssh-copy-id.
-# @see shell::ssh::cmd
+# @see _shell::ssh::cmd
 # @see shell::ssh::key::generate
 # @example
 #   shell::ssh::key::copy_id deploy@web1
@@ -73,14 +73,14 @@ shell::ssh::key::copy_id() {
 		shell::logger::info "Install your public key on a server (ssh-copy-id)"
 		shell::logger::usage "shell::ssh::key::copy_id [-n] [options] <[user@]host|alias>"
 		shell::logger::item "target" "user@host, host, or a Host alias of ~/.ssh/config"
-		shell::ssh::cmd::help ssh-copy-id
+		_shell::ssh::cmd::help ssh-copy-id
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
 		shell::logger::option "-h, --help" "Display this help message"
 		shell::logger::example "shell::ssh::key::copy_id deploy@web1"
 		shell::logger::example "shell::ssh::key::copy_id -i ~/.ssh/id_ed25519.pub -p 2222 deploy@web1"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::ssh::cmd ssh-copy-id target "$@"
+	_shell::ssh::cmd ssh-copy-id target "$@"
 }
 
 # @description Print the public key of a private key (`ssh-keygen -y -f key`).
@@ -145,9 +145,9 @@ shell::ssh::key::public() {
 	local pub="$key.pub"
 	if [ "$dry_run" = "true" ]; then
 		local line
-		line="$(shell::ssh::quote ssh-keygen -y -f "$key")"
+		line="$(_shell::ssh::quote ssh-keygen -y -f "$key")"
 		if [ "$save" = "true" ]; then
-			line="$line > $(shell::ssh::quote "$pub")"
+			line="$line > $(_shell::ssh::quote "$pub")"
 		fi
 		shell::logger::command_clip "$line"
 		return "$RETURN_SUCCESS"
@@ -264,7 +264,7 @@ EOF
 	fi
 	for key in "${keys[@]}"; do
 		if [ "$dry_run" = "true" ]; then
-			shell::logger::command_clip "$(shell::ssh::quote ssh-keygen "${flags[@]}" -f "$key")"
+			shell::logger::command_clip "$(_shell::ssh::quote ssh-keygen "${flags[@]}" -f "$key")"
 			continue
 		fi
 		if [ ! -f "$key" ]; then
@@ -322,7 +322,7 @@ shell::ssh::key::passphrase() {
 	if [ "$dry_run" = "true" ]; then
 		run+=(-n)
 	fi
-	shell::ssh::invoke ${run[@]+"${run[@]}"} ssh-keygen -p -f "$1"
+	_shell::ssh::invoke ${run[@]+"${run[@]}"} ssh-keygen -p -f "$1"
 }
 
 # @description Change the comment stored in a key (`ssh-keygen -c -C comment -f key`).
@@ -376,7 +376,7 @@ shell::ssh::key::comment() {
 	if [ "$dry_run" = "true" ]; then
 		run+=(-n)
 	fi
-	shell::ssh::invoke ${run[@]+"${run[@]}"} ssh-keygen -c -C "$2" -f "$1"
+	_shell::ssh::invoke ${run[@]+"${run[@]}"} ssh-keygen -c -C "$2" -f "$1"
 }
 
 # --------------------------------------------------------------------------
@@ -393,9 +393,9 @@ shell::ssh::key::comment() {
 # @exitcode 0 The mode was changed (or would be).
 # @exitcode 1 Nothing to do: the path is absent, a link, or already right.
 # @example
-#   shell::ssh::permission::set false 600 ~/.ssh/config
+#   _shell::ssh::permission::set false 600 ~/.ssh/config
 #
-shell::ssh::permission::set() {
+_shell::ssh::permission::set() {
 	local dry_run="${1-false}" mode="${2-}" target_path="${3-}" current
 	if [ ! -e "$target_path" ] || [ -L "$target_path" ]; then
 		return 1
@@ -423,7 +423,7 @@ shell::ssh::permission::set() {
 # @exitcode 0 Done (also when nothing needed changing).
 # @exitcode 2 Unknown option.
 # @exitcode 3 The SSH directory does not exist.
-# @see shell::ssh::key::candidates
+# @see _shell::ssh::key::candidates
 # @example
 #   shell::ssh::permission::fix
 #   shell::ssh::permission::fix -n
@@ -449,7 +449,7 @@ shell::ssh::permission::fix() {
 			shift
 			;;
 		-d | --dir)
-			shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
+			_shell::ssh::cmd::need "$1" "$#" || return "$RETURN_INVALID"
 			dir="$2"
 			shift 2
 			;;
@@ -466,35 +466,35 @@ shell::ssh::permission::fix() {
 	fi
 
 	local changed=0 file name
-	if shell::ssh::permission::set "$dry_run" 700 "$dir"; then
+	if _shell::ssh::permission::set "$dry_run" 700 "$dir"; then
 		changed=$((changed + 1))
 	fi
-	if shell::ssh::permission::set "$dry_run" 700 "$dir/sockets"; then
+	if _shell::ssh::permission::set "$dry_run" 700 "$dir/sockets"; then
 		changed=$((changed + 1))
 	fi
 	for name in config authorized_keys authorized_keys2; do
-		if shell::ssh::permission::set "$dry_run" 600 "$dir/$name"; then
+		if _shell::ssh::permission::set "$dry_run" 600 "$dir/$name"; then
 			changed=$((changed + 1))
 		fi
 	done
-	if shell::ssh::permission::set "$dry_run" 644 "$dir/known_hosts"; then
+	if _shell::ssh::permission::set "$dry_run" 644 "$dir/known_hosts"; then
 		changed=$((changed + 1))
 	fi
 	while IFS= read -r file; do
 		if [ -z "$file" ]; then
 			continue
 		fi
-		if shell::ssh::permission::set "$dry_run" 600 "$file"; then
+		if _shell::ssh::permission::set "$dry_run" 600 "$file"; then
 			changed=$((changed + 1))
 		fi
 	done <<EOF
-$(shell::ssh::key::candidates "$dir")
+$(_shell::ssh::key::candidates "$dir")
 EOF
 	while IFS= read -r file; do
 		if [ -z "$file" ]; then
 			continue
 		fi
-		if shell::ssh::permission::set "$dry_run" 644 "$file"; then
+		if _shell::ssh::permission::set "$dry_run" 644 "$file"; then
 			changed=$((changed + 1))
 		fi
 	done <<EOF

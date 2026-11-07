@@ -2707,7 +2707,7 @@ shell::git::branch::stash::apply::fzf() {
 # @stdout The display lines, newest stash first. Nothing when there are no stashes.
 # @exitcode 0 Always.
 #
-shell::git::branch::all::stash::lines() {
+_shell::git::branch::all::stash::lines() {
 	local current_branch
 	current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
 
@@ -2792,7 +2792,7 @@ shell::git::branch::all::stash::apply::fzf() {
 	local -a stash_lines
 	while IFS= read -r line; do
 		[ -n "$line" ] && stash_lines+=("$line")
-	done < <(shell::git::branch::all::stash::lines)
+	done < <(_shell::git::branch::all::stash::lines)
 
 	if [ "${#stash_lines[@]}" -eq 0 ]; then
 		shell::logger::warn "No stashes found — aborting"
@@ -2897,7 +2897,7 @@ shell::git::branch::all::stash::remove::fzf() {
 	local -a stash_lines
 	while IFS= read -r line; do
 		[ -n "$line" ] && stash_lines+=("$line")
-	done < <(shell::git::branch::all::stash::lines)
+	done < <(_shell::git::branch::all::stash::lines)
 
 	if [ "${#stash_lines[@]}" -eq 0 ]; then
 		shell::logger::warn "No stashes found — aborting"
@@ -2988,7 +2988,7 @@ shell::git::branch::all::stash::preview::fzf() {
 	local -a stash_lines
 	while IFS= read -r line; do
 		[ -n "$line" ] && stash_lines+=("$line")
-	done < <(shell::git::branch::all::stash::lines)
+	done < <(_shell::git::branch::all::stash::lines)
 
 	if [ "${#stash_lines[@]}" -eq 0 ]; then
 		shell::logger::warn "No stashes found — aborting"
@@ -3052,9 +3052,9 @@ shell::git::branch::all::stash::preview::fzf() {
 # @stdout The quoted argument.
 # @exitcode 0 Always.
 # @example
-#   shell::git::commit::spec::quote "John Doe"   # 'John Doe'
+#   _shell::git::commit::spec::quote "John Doe"   # 'John Doe'
 #
-shell::git::commit::spec::quote() {
+_shell::git::commit::spec::quote() {
 	local value="${1-}"
 
 	case "$value" in
@@ -3279,7 +3279,7 @@ shell::git::commit::spec() {
 	# What is shown (and copied) is a quoted, pasteable rendering of that list.
 	local display="git" arg
 	for arg in "${log_args[@]}"; do
-		display="${display} $(shell::git::commit::spec::quote "$arg")"
+		display="${display} $(_shell::git::commit::spec::quote "$arg")"
 	done
 
 	if [ "$dry_run" = "true" ]; then
@@ -4019,9 +4019,9 @@ shell::git::commit::pick::remote() {
 # @exitcode 0 Success (validate: no problem).
 # @exitcode 1 The template file is missing, or (validate) a problem was found.
 # @example
-#   shell::git::commit::message::scan render "Release and Versioning" false
+#   _shell::git::commit::message::scan render "Release and Versioning" false
 #
-shell::git::commit::message::scan() {
+_shell::git::commit::message::scan() {
 	local mode="${1-}"
 	shift
 
@@ -4236,7 +4236,7 @@ shell::git::commit::message::validate() {
 		fi
 	done
 
-	shell::git::commit::message::scan validate ${strict:+"$strict"} "$@"
+	_shell::git::commit::message::scan validate ${strict:+"$strict"} "$@"
 }
 
 # @description Copies the commit message templates from the repository to the config directory.
@@ -4330,7 +4330,7 @@ shell::git::commit::message::sync() {
 # @description Print the commit message catalog, one record per line:
 #   `category|emoji|header|description`.
 #
-#   A thin view over shell::git::commit::message::scan: the templates live in a
+#   A thin view over _shell::git::commit::message::scan: the templates live in a
 #   data file (`~/.shell-config/git/git-commit-messages.txt`, installed from
 #   `src/data/`) and the optional user file, not in this source file. Every record renders to a header that follows
 #   Conventional Commits 1.0.0, `<type>[(scope)][!]: <description>`; the rules are
@@ -4339,15 +4339,15 @@ shell::git::commit::message::sync() {
 # @exitcode 0 Success.
 # @exitcode 1 The template file is missing.
 # @example
-#   shell::git::commit::message::catalog | cut -d'|' -f1 | sort -u
+#   _shell::git::commit::message::catalog | cut -d'|' -f1 | sort -u
 #
-shell::git::commit::message::catalog() {
-	shell::git::commit::message::scan records
+_shell::git::commit::message::catalog() {
+	_shell::git::commit::message::scan records
 }
 
 # @description Pick a pre-defined commit message from a categorized menu and print it.
 #   A two-level fzf menu (category, then message) over the catalog of
-#   shell::git::commit::message::catalog. Meant for scripted or empty commits
+#   _shell::git::commit::message::catalog. Meant for scripted or empty commits
 #   (`git commit --allow-empty`); shell::git::commit::create --empty uses it.
 #
 #   Every message follows Conventional Commits 1.0.0, `<type>[(scope)][!]: <description>`,
@@ -4410,7 +4410,7 @@ shell::git::commit::message::base() {
 
 	# Fail early (the scan has already said why) instead of showing an empty menu.
 	local catalog
-	if ! catalog="$(shell::git::commit::message::catalog)"; then
+	if ! catalog="$(_shell::git::commit::message::catalog)"; then
 		return "$RETURN_FAILURE"
 	fi
 
@@ -4486,9 +4486,9 @@ shell::git::commit::message::base() {
 # @exitcode 9 End of input (Ctrl-D).
 # @exitcode 11 The user typed `:back`.
 # @example
-#   value="$(shell::git::commit::input "Issue number" "$issue")"
+#   value="$(_shell::git::commit::input "Issue number" "$issue")"
 #
-shell::git::commit::input() {
+_shell::git::commit::input() {
 	local prompt="${1-}" current="${2-}" value=""
 
 	while true; do
@@ -4524,29 +4524,29 @@ shell::git::commit::input() {
 # @internal
 # @stdout One label per line, in menu order (see SHELL_GIT_COMMIT_TYPES).
 # @exitcode 0 Always.
-shell::git::commit::types() {
+_shell::git::commit::types() {
 	printf '%s\n' "$SHELL_GIT_COMMIT_TYPES" | awk -F'|' '{ print $1 }'
 }
 
 # @description Tells whether the scope menu applies to a commit type. It does not when
 #   SHELL_GIT_COMMIT_SCOPES is empty, or when the header the type is committed with
 #   already carries a scope (`WIP` → `chore(wip)`, `dependency` → `build(deps)`):
-#   shell::git::commit::predict::format keeps that scope, so asking for another
+#   _shell::git::commit::predict::format keeps that scope, so asking for another
 #   one would have no effect.
 # @internal
 # @arg $1 string Commit type label (feat, "initial source", ...).
 # @exitcode 0 The scope menu applies.
 # @exitcode 1 It does not.
 # @example
-#   shell::git::commit::scope::applies "feat"          # yes
-#   shell::git::commit::scope::applies "dependency"    # no: it is build(deps)
+#   _shell::git::commit::scope::applies "feat"          # yes
+#   _shell::git::commit::scope::applies "dependency"    # no: it is build(deps)
 #
-shell::git::commit::scope::applies() {
+_shell::git::commit::scope::applies() {
 	local header
 	if ! printf '%s' "${SHELL_GIT_COMMIT_SCOPES-}" | grep -q '[^[:space:]]'; then
 		return 1
 	fi
-	header="$(shell::git::commit::type::resolve "${1-}")"
+	header="$(_shell::git::commit::type::resolve "${1-}")"
 	case "$header" in
 	*\(*) return 1 ;;
 	esac
@@ -4573,13 +4573,13 @@ shell::git::commit::scope::applies() {
 # @exitcode 0 A scope (or no scope) was chosen.
 # @exitcode 9 ESC / Ctrl-C / end of input.
 # @exitcode 11 "← Back" was picked.
-# @see shell::git::commit::scope::applies
+# @see _shell::git::commit::scope::applies
 # @example
-#   scope="$(shell::git::commit::scope::pick "feat")"
+#   scope="$(_shell::git::commit::scope::pick "feat")"
 #
-shell::git::commit::scope::pick() {
+_shell::git::commit::scope::pick() {
 	local label="${1-}" header rows picked kind value rc
-	header="$(shell::git::commit::type::resolve "$label")"
+	header="$(_shell::git::commit::type::resolve "$label")"
 
 	# Rows are `<kind><TAB><display>`; fzf shows the display column only. What
 	# comes back is the kind (`none`, `scope:<name>`, `custom`, `back`), so a scope
@@ -4629,7 +4629,7 @@ shell::git::commit::scope::pick() {
 			return "$RETURN_SUCCESS"
 			;;
 		custom)
-			value="$(shell::git::commit::input "Enter a scope for ${header} (e.g. api, ui)")"
+			value="$(_shell::git::commit::input "Enter a scope for ${header} (e.g. api, ui)")"
 			rc=$?
 			case "$rc" in
 			0) ;;
@@ -4668,9 +4668,9 @@ shell::git::commit::scope::pick() {
 # @stdout The whole message.
 # @exitcode 0 Always.
 # @example
-#   shell::git::commit::compose "fix: x" "Why." "Refs: #1"
+#   _shell::git::commit::compose "fix: x" "Why." "Refs: #1"
 #
-shell::git::commit::compose() {
+_shell::git::commit::compose() {
 	local out="${1-}"
 	if [ -n "${2-}" ]; then
 		out="${out}"$'\n\n'"${2}"
@@ -4692,9 +4692,9 @@ shell::git::commit::compose() {
 # @exitcode 9 End of input (Ctrl-D).
 # @exitcode 11 The user typed `:back`: nothing was added.
 # @example
-#   body="$(shell::git::commit::body::read)"
+#   body="$(_shell::git::commit::body::read)"
 #
-shell::git::commit::body::read() {
+_shell::git::commit::body::read() {
 	local line paragraph="" body="" nl=$'\n'
 
 	printf 'Body — type a paragraph; an empty line ends it, an empty line after that finishes (:back cancels)\n' >&2
@@ -4739,10 +4739,10 @@ shell::git::commit::body::read() {
 # @exitcode 0 The token is valid.
 # @exitcode 1 It is not (empty, a space, a colon, a leading or trailing `-`, ...).
 # @example
-#   shell::git::commit::footer::token "breaking change"   # → BREAKING CHANGE
-#   shell::git::commit::footer::token "Acked by"          # fails: use Acked-by
+#   _shell::git::commit::footer::token "breaking change"   # → BREAKING CHANGE
+#   _shell::git::commit::footer::token "Acked by"          # fails: use Acked-by
 #
-shell::git::commit::footer::token() {
+_shell::git::commit::footer::token() {
 	local token="${1-}" upper
 	upper="$(printf '%s' "$token" | tr '[:lower:]' '[:upper:]')"
 	case "$upper" in
@@ -4766,15 +4766,15 @@ shell::git::commit::footer::token() {
 # @exitcode 0 A footer was read.
 # @exitcode 9 ESC / Ctrl-C / end of input.
 # @exitcode 11 "← Back" was picked: no more footers.
-# @see shell::git::commit::footer::token
+# @see _shell::git::commit::footer::token
 # @example
-#   footer="$(shell::git::commit::footer::read)"
+#   footer="$(_shell::git::commit::footer::read)"
 #
-shell::git::commit::footer::read() {
+_shell::git::commit::footer::read() {
 	local rows picked kind token value rc
 
 	# Rows are `<kind><TAB><display>`; fzf shows the display column only (see
-	# shell::git::commit::scope::pick).
+	# _shell::git::commit::scope::pick).
 	rows="$(printf '%s\n' "${SHELL_GIT_COMMIT_FOOTERS-}" | awk -F'|' -v back="$SHELL_FZF_BACK_LABEL" '
 		function pad(text, width,   out) {
 			out = text
@@ -4812,14 +4812,14 @@ shell::git::commit::footer::read() {
 		back) return "$RETURN_BACK" ;;
 		footer:*) token="${kind#footer:}" ;;
 		custom)
-			value="$(shell::git::commit::input "Enter a footer token (e.g. Acked-by, BREAKING CHANGE)")"
+			value="$(_shell::git::commit::input "Enter a footer token (e.g. Acked-by, BREAKING CHANGE)")"
 			rc=$?
 			case "$rc" in
 			0) ;;
 			"$RETURN_BACK") continue ;;
 			*) return "$RETURN_CANCELLED" ;;
 			esac
-			if ! token="$(shell::git::commit::footer::token "$value")"; then
+			if ! token="$(_shell::git::commit::footer::token "$value")"; then
 				shell::logger::warn "A footer token is one word, with '-' instead of spaces (Acked-by) — or BREAKING CHANGE"
 				continue
 			fi
@@ -4827,7 +4827,7 @@ shell::git::commit::footer::read() {
 		*) return "$RETURN_CANCELLED" ;;
 		esac
 
-		value="$(shell::git::commit::input "Value for ${token}")"
+		value="$(_shell::git::commit::input "Value for ${token}")"
 		rc=$?
 		case "$rc" in
 		0) ;;
@@ -4842,12 +4842,12 @@ shell::git::commit::footer::read() {
 
 # @description Prints the emoji code a commit type is committed with.
 #   Only looks the emoji up: whether it ends up in the message is decided by
-#   shell::git::commit::emoji::enabled.
+#   _shell::git::commit::emoji::enabled.
 # @internal
 # @arg $1 string Commit type (feat, fix, "initial source", ...).
 # @stdout The emoji code (e.g. `:sparkles:`), or nothing for an unknown type.
 # @exitcode 0 Always.
-shell::git::commit::emoji() {
+_shell::git::commit::emoji() {
 	printf '%s\n' "$SHELL_GIT_COMMIT_TYPES" | awk -F'|' -v wanted="${1-}" '$1 == wanted { print $3; exit }'
 }
 
@@ -4860,9 +4860,9 @@ shell::git::commit::emoji() {
 # @exitcode 0 Emoji are on.
 # @exitcode 1 Emoji are off.
 # @example
-#   if shell::git::commit::emoji::enabled "$use_emoji"; then ...; fi
+#   if _shell::git::commit::emoji::enabled "$use_emoji"; then ...; fi
 #
-shell::git::commit::emoji::enabled() {
+_shell::git::commit::emoji::enabled() {
 	local value="${1:-${SHELL_GIT_COMMIT_EMOJI:-false}}"
 	value="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')"
 	case "$value" in
@@ -4880,9 +4880,9 @@ shell::git::commit::emoji::enabled() {
 # @stdout The header type, e.g. `chore(init)`.
 # @exitcode 0 Always.
 # @example
-#   shell::git::commit::type::resolve "initial source"   # → chore(init)
+#   _shell::git::commit::type::resolve "initial source"   # → chore(init)
 #
-shell::git::commit::type::resolve() {
+_shell::git::commit::type::resolve() {
 	printf '%s\n' "$SHELL_GIT_COMMIT_TYPES" | awk -F'|' -v wanted="${1-}" '
 		$1 == wanted { print $2; found = 1; exit }
 		END { if (!found) print wanted }'
@@ -4894,7 +4894,7 @@ shell::git::commit::type::resolve() {
 # @internal
 # @arg $1 string The commit message that was committed.
 # @exitcode 0 Always (the notification and the push report their own errors).
-shell::git::commit::publish() {
+_shell::git::commit::publish() {
 	local commit_message="${1-}"
 
 	local git_username
@@ -4931,9 +4931,9 @@ shell::git::commit::publish() {
 # @stdout The issue reference, or nothing.
 # @exitcode 0 Always.
 # @example
-#   shell::git::commit::predict::issue "feat/123-login"   # → #123
+#   _shell::git::commit::predict::issue "feat/123-login"   # → #123
 #
-shell::git::commit::predict::issue() {
+_shell::git::commit::predict::issue() {
 	printf '%s\n' "${1-}" | awk '
 		{
 			if (match($0, "[A-Z][A-Z0-9]+-[0-9]+")) {
@@ -4954,22 +4954,22 @@ shell::git::commit::predict::issue() {
 
 # @description Builds the message of `sgcf` and `predict` as a Conventional Commits 1.0.0
 #   header: `<type>[(scope)]: [<emoji> ]<description>[ <issue>]`. The type is always
-#   the prefix (see shell::git::commit::type::resolve); the emoji, when it is on,
+#   the prefix (see _shell::git::commit::type::resolve); the emoji, when it is on,
 #   sits after the colon, as part of the description, so the header stays valid.
 #   The issue part is optional.
 # @internal
 # @arg $1 string Commit type (a menu label or a Conventional Commits type), optionally with a scope: `fix(auth)`. The type is resolved, the scope added (unless the mapped type has one already, as `build(deps)`).
 # @arg $2 string Description.
 # @arg $3 string Optional issue reference.
-# @arg $4 string Optional. `true` / `false` overrides SHELL_GIT_COMMIT_EMOJI (see shell::git::commit::emoji::enabled).
+# @arg $4 string Optional. `true` / `false` overrides SHELL_GIT_COMMIT_EMOJI (see _shell::git::commit::emoji::enabled).
 # @stdout The formatted message.
 # @exitcode 0 Always.
 # @example
-#   shell::git::commit::predict::format feat "add login" "#12"          # feat: add login #12
-#   shell::git::commit::predict::format feat "add login" "#12" true     # feat: :sparkles: add login #12
-#   shell::git::commit::predict::format "fix(auth)" "handle expired tokens" "#7"   # fix(auth): handle expired tokens #7
+#   _shell::git::commit::predict::format feat "add login" "#12"          # feat: add login #12
+#   _shell::git::commit::predict::format feat "add login" "#12" true     # feat: :sparkles: add login #12
+#   _shell::git::commit::predict::format "fix(auth)" "handle expired tokens" "#7"   # fix(auth): handle expired tokens #7
 #
-shell::git::commit::predict::format() {
+_shell::git::commit::predict::format() {
 	local label base scope header emoji out
 	label="${1-}"
 	base="$label"
@@ -4982,7 +4982,7 @@ shell::git::commit::predict::format() {
 		scope="${scope%\)}"
 		;;
 	esac
-	header="$(shell::git::commit::type::resolve "$base")"
+	header="$(_shell::git::commit::type::resolve "$base")"
 	if [ -n "$scope" ]; then
 		case "$header" in
 		*\(*) ;; # the mapped type has a scope already (build(deps), chore(wip)): keep it
@@ -4990,8 +4990,8 @@ shell::git::commit::predict::format() {
 		esac
 	fi
 	out="${header}: "
-	if shell::git::commit::emoji::enabled "${4-}"; then
-		emoji="$(shell::git::commit::emoji "$base")"
+	if _shell::git::commit::emoji::enabled "${4-}"; then
+		emoji="$(_shell::git::commit::emoji "$base")"
 		if [ -n "$emoji" ]; then
 			out="${out}${emoji} "
 		fi
@@ -5013,9 +5013,9 @@ shell::git::commit::predict::format() {
 # @exitcode 0 The files were written (they may be empty).
 # @exitcode 2 No directory given.
 # @example
-#   shell::git::commit::predict::evidence "$dir" false
+#   _shell::git::commit::predict::evidence "$dir" false
 #
-shell::git::commit::predict::evidence() {
+_shell::git::commit::predict::evidence() {
 	local dir="${1-}" from_tree="${2-false}" untracked_file=""
 	if [ -z "$dir" ] || [ ! -d "$dir" ]; then
 		return "$RETURN_INVALID"
@@ -5866,7 +5866,7 @@ shell::git::commit::predict::candidates() {
 #
 #   1. Pick a prediction, or "Enter manually (sgcf style)"      [Back = leave]
 #   2. (manual) type → scope → description → issue              [Back = previous step]
-#      The scope step is the table of shell::git::commit::scope::pick: (no scope),
+#      The scope step is the table of _shell::git::commit::scope::pick: (no scope),
 #      feat(docs), feat(git), …, a custom scope, or Back. It is skipped for a type whose
 #      header already has a scope (WIP → chore(wip)) and when SHELL_GIT_COMMIT_SCOPES is empty.
 #   3. Commit / Edit message / Abort                            [Back = step 1, or the issue]
@@ -5883,8 +5883,8 @@ shell::git::commit::predict::candidates() {
 # @exitcode 8 --list: there was nothing to predict from.
 # @see shell::git::commit::create
 # @see shell::git::commit::predict::candidates
-# @see shell::git::commit::emoji::enabled
-# @see shell::git::commit::scope::pick
+# @see _shell::git::commit::emoji::enabled
+# @see _shell::git::commit::scope::pick
 # @example
 #   shell::git::commit::predict
 #   shell::git::commit::predict --list
@@ -5984,7 +5984,7 @@ shell::git::commit::predict() {
 		initial="true"
 	fi
 	branch="$(git symbolic-ref --short -q HEAD 2>/dev/null)"
-	issue="$(shell::git::commit::predict::issue "$branch")"
+	issue="$(_shell::git::commit::predict::issue "$branch")"
 
 	# ---------------------------------------------------------------------------
 	# Predict. Declared once, before any loop (zsh prints re-declared locals).
@@ -5995,13 +5995,13 @@ shell::git::commit::predict() {
 		# The patch and the recent history let the engine say what changed, not just which files.
 		evidence_dir="$(mktemp -d 2>/dev/null || mktemp -d -t 'git_predict')"
 		if [ -n "$evidence_dir" ]; then
-			shell::git::commit::predict::evidence "$evidence_dir" "$from_tree"
+			_shell::git::commit::predict::evidence "$evidence_dir" "$from_tree"
 		fi
 		while IFS='|' read -r ptype pdesc; do
 			if [ -z "$ptype" ]; then
 				continue
 			fi
-			predictions+=("$(shell::git::commit::predict::format "$ptype" "$pdesc" "$issue" "$use_emoji")")
+			predictions+=("$(_shell::git::commit::predict::format "$ptype" "$pdesc" "$issue" "$use_emoji")")
 		done < <(printf '%s\n' "$changes" | shell::git::commit::predict::candidates \
 			--branch "$branch" --hint "$hint" --initial "$initial" --count "$count" \
 			--patch-file "${evidence_dir:+$evidence_dir/patch}" --history-file "${evidence_dir:+$evidence_dir/history}")
@@ -6038,7 +6038,7 @@ shell::git::commit::predict() {
 	local -a commit_types=()
 	while IFS= read -r type_line; do
 		commit_types+=("$type_line")
-	done < <(shell::git::commit::types)
+	done < <(_shell::git::commit::types)
 
 	step="predict"
 	if [ "$have_predictions" = "false" ]; then
@@ -6090,7 +6090,7 @@ shell::git::commit::predict() {
 			# A new type starts without a scope. The scope menu is skipped for the
 			# types whose header already has one (WIP, dependency, ...).
 			selected_scope=""
-			if shell::git::commit::scope::applies "$selected_type"; then
+			if _shell::git::commit::scope::applies "$selected_type"; then
 				step="scope"
 			else
 				step="description"
@@ -6098,7 +6098,7 @@ shell::git::commit::predict() {
 			;;
 
 		scope)
-			value="$(shell::git::commit::scope::pick "$selected_type")"
+			value="$(_shell::git::commit::scope::pick "$selected_type")"
 			rc=$?
 			case "$rc" in
 			0)
@@ -6114,7 +6114,7 @@ shell::git::commit::predict() {
 			;;
 
 		description)
-			value="$(shell::git::commit::input "Enter a concise and clear commit description" "$commit_description")"
+			value="$(_shell::git::commit::input "Enter a concise and clear commit description" "$commit_description")"
 			rc=$?
 			case "$rc" in
 			0)
@@ -6122,7 +6122,7 @@ shell::git::commit::predict() {
 				step="issue"
 				;;
 			"$RETURN_BACK")
-				if shell::git::commit::scope::applies "$selected_type"; then
+				if _shell::git::commit::scope::applies "$selected_type"; then
 					step="scope"
 				else
 					step="type"
@@ -6136,7 +6136,7 @@ shell::git::commit::predict() {
 			;;
 
 		issue)
-			value="$(shell::git::commit::input "Enter issue number (e.g. #1)" "$issue_number")"
+			value="$(_shell::git::commit::input "Enter issue number (e.g. #1)" "$issue_number")"
 			rc=$?
 			case "$rc" in
 			0)
@@ -6145,7 +6145,7 @@ shell::git::commit::predict() {
 				if [ -n "$selected_scope" ]; then
 					format_type="${selected_type}(${selected_scope})"
 				fi
-				commit_message="$(shell::git::commit::predict::format "$format_type" "$commit_description" "$issue_number" "$use_emoji")"
+				commit_message="$(_shell::git::commit::predict::format "$format_type" "$commit_description" "$issue_number" "$use_emoji")"
 				step="confirm"
 				;;
 			"$RETURN_BACK") step="description" ;;
@@ -6165,7 +6165,7 @@ shell::git::commit::predict() {
 				case "$choice" in
 				"Commit") break ;;
 				"Edit message")
-					value="$(shell::git::commit::input "Edit the commit message" "$commit_message")"
+					value="$(_shell::git::commit::input "Edit the commit message" "$commit_message")"
 					rc=$?
 					case "$rc" in
 					0) commit_message="$value" ;;
@@ -6212,7 +6212,7 @@ shell::git::commit::predict() {
 	shell::exec::command git commit -m "$commit_message" || return $?
 	shell::logger::success "Commit created: ${commit_message}"
 
-	shell::git::commit::publish "$commit_message"
+	_shell::git::commit::publish "$commit_message"
 
 	return "$RETURN_SUCCESS"
 }
@@ -6267,10 +6267,10 @@ shell::git::commit::predict() {
 # @exitcode 2 Invalid option.
 # @see shell::ask::option::back
 # @see shell::git::commit::message::base
-# @see shell::git::commit::emoji::enabled
-# @see shell::git::commit::scope::pick
-# @see shell::git::commit::body::read
-# @see shell::git::commit::footer::read
+# @see _shell::git::commit::emoji::enabled
+# @see _shell::git::commit::scope::pick
+# @see _shell::git::commit::body::read
+# @see _shell::git::commit::footer::read
 # @example
 #   shell::git::commit::create
 #   shell::git::commit::create --empty
@@ -6352,7 +6352,7 @@ shell::git::commit::create() {
 	# ===========================================================================
 	if [ "$empty_mode" = "true" ]; then
 		# The catalog carries an emoji per template: show it only when emoji are on.
-		if ! shell::git::commit::emoji::enabled "$use_emoji"; then
+		if ! _shell::git::commit::emoji::enabled "$use_emoji"; then
 			base_args+=(--plain)
 		fi
 
@@ -6412,7 +6412,7 @@ shell::git::commit::create() {
 	# ===========================================================================
 	while IFS= read -r type_line; do
 		commit_types+=("$type_line")
-	done < <(shell::git::commit::types)
+	done < <(_shell::git::commit::types)
 
 	step="type"
 	while true; do
@@ -6434,7 +6434,7 @@ shell::git::commit::create() {
 			# A new type starts without a scope. The scope menu is skipped for the
 			# types whose header already has one (WIP, dependency, ...).
 			selected_scope=""
-			if shell::git::commit::scope::applies "$selected_type"; then
+			if _shell::git::commit::scope::applies "$selected_type"; then
 				step="scope"
 			else
 				step="description"
@@ -6442,7 +6442,7 @@ shell::git::commit::create() {
 			;;
 
 		scope)
-			value="$(shell::git::commit::scope::pick "$selected_type")"
+			value="$(_shell::git::commit::scope::pick "$selected_type")"
 			rc=$?
 			case "$rc" in
 			0)
@@ -6458,7 +6458,7 @@ shell::git::commit::create() {
 			;;
 
 		description)
-			value="$(shell::git::commit::input "Enter a concise and clear commit description" "$commit_description")"
+			value="$(_shell::git::commit::input "Enter a concise and clear commit description" "$commit_description")"
 			rc=$?
 			case "$rc" in
 			0)
@@ -6466,7 +6466,7 @@ shell::git::commit::create() {
 				step="issue"
 				;;
 			"$RETURN_BACK")
-				if shell::git::commit::scope::applies "$selected_type"; then
+				if _shell::git::commit::scope::applies "$selected_type"; then
 					step="scope"
 				else
 					step="type"
@@ -6480,7 +6480,7 @@ shell::git::commit::create() {
 			;;
 
 		issue)
-			value="$(shell::git::commit::input "Enter issue number (e.g. #1)" "$issue_number")"
+			value="$(_shell::git::commit::input "Enter issue number (e.g. #1)" "$issue_number")"
 			rc=$?
 			case "$rc" in
 			0)
@@ -6500,8 +6500,8 @@ shell::git::commit::create() {
 			if [ -n "$selected_scope" ]; then
 				format_type="${selected_type}(${selected_scope})"
 			fi
-			commit_message="$(shell::git::commit::predict::format "$format_type" "$commit_description" "$issue_number" "$use_emoji")"
-			full_message="$(shell::git::commit::compose "$commit_message" "$commit_body" "$commit_footers")"
+			commit_message="$(_shell::git::commit::predict::format "$format_type" "$commit_description" "$issue_number" "$use_emoji")"
+			full_message="$(_shell::git::commit::compose "$commit_message" "$commit_body" "$commit_footers")"
 			shell::logger::info "Commit message: ${full_message}"
 
 			# The body and the footers are optional: Commit stays the first entry, so
@@ -6522,7 +6522,7 @@ shell::git::commit::create() {
 				case "$choice" in
 				"Commit") break ;;
 				"Add body")
-					value="$(shell::git::commit::body::read)"
+					value="$(_shell::git::commit::body::read)"
 					rc=$?
 					case "$rc" in
 					0)
@@ -6540,7 +6540,7 @@ shell::git::commit::create() {
 				"Add footer")
 					# One footer per round; Back in the table ends the loop.
 					while true; do
-						value="$(shell::git::commit::footer::read)"
+						value="$(_shell::git::commit::footer::read)"
 						rc=$?
 						case "$rc" in
 						0)
@@ -6602,7 +6602,7 @@ shell::git::commit::create() {
 	shell::logger::success "Commit created: ${commit_message}"
 
 	# Telegram notification, then push the current branch.
-	shell::git::commit::publish "$commit_message"
+	_shell::git::commit::publish "$commit_message"
 
 	return "$RETURN_SUCCESS"
 }
@@ -8277,9 +8277,9 @@ shell::git::commit::spec::history::fzf::current() {
 # @stdout The encoded path, without a trailing newline.
 # @exitcode 0 Always.
 # @example
-#   shell::git::open::encode_path "feature/a b#1"   # feature/a%20b%231
+#   _shell::git::open::encode_path "feature/a b#1"   # feature/a%20b%231
 #
-shell::git::open::encode_path() {
+_shell::git::open::encode_path() {
 	printf '%s' "${1-}" | LC_ALL=C awk '
 		BEGIN { for (i = 1; i < 256; i++) hex[sprintf("%c", i)] = sprintf("%%%02X", i) }
 		{
@@ -8308,9 +8308,9 @@ shell::git::open::encode_path() {
 # @exitcode 0 A web URL was produced.
 # @exitcode 1 The remote is not a web-hostable URL (local path, `file://`, empty ...).
 # @example
-#   shell::git::open::web_base "git@github.com:owner/repo.git"   # https://github.com/owner/repo
+#   _shell::git::open::web_base "git@github.com:owner/repo.git"   # https://github.com/owner/repo
 #
-shell::git::open::web_base() {
+_shell::git::open::web_base() {
 	local url="${1-}"
 	local web_scheme="https" authority="" host="" port="" repo_path=""
 	local scheme rest before
@@ -8381,7 +8381,7 @@ shell::git::open::web_base() {
 	if [ -n "$port" ]; then
 		host="$host:$port"
 	fi
-	printf '%s://%s/%s\n' "$web_scheme" "$host" "$(shell::git::open::encode_path "$repo_path")"
+	printf '%s://%s/%s\n' "$web_scheme" "$host" "$(_shell::git::open::encode_path "$repo_path")"
 }
 
 # @internal
@@ -8389,14 +8389,14 @@ shell::git::open::web_base() {
 #   Taken from the host (`github`, `gitlab`, `bitbucket` anywhere in it, so
 #   GitHub Enterprise and self-hosted GitLab work). When the host gives no hint,
 #   `git config shell.provider <github|gitlab|bitbucket>` decides.
-# @arg $1 string Web base URL (from shell::git::open::web_base).
+# @arg $1 string Web base URL (from _shell::git::open::web_base).
 # @stdout `github`, `gitlab` or `bitbucket`.
 # @exitcode 0 The provider is known.
 # @exitcode 1 Unknown provider (or an invalid `shell.provider` value).
 # @example
-#   shell::git::open::provider "https://gitlab.example.com/group/repo"   # gitlab
+#   _shell::git::open::provider "https://gitlab.example.com/group/repo"   # gitlab
 #
-shell::git::open::provider() {
+_shell::git::open::provider() {
 	local host="${1-}"
 	host="${host#*://}"
 	host="${host%%/*}"
@@ -8437,13 +8437,13 @@ shell::git::open::provider() {
 # @exitcode 0 URL printed.
 # @exitcode 1 Unknown provider or kind.
 # @example
-#   shell::git::open::url github "https://github.com/o/r" branch feature/x
+#   _shell::git::open::url github "https://github.com/o/r" branch feature/x
 #
-shell::git::open::url() {
+_shell::git::open::url() {
 	local provider="${1-}" base="${2-}" kind="${3-}" ref="${4-}"
 	local encoded=""
 	if [ "$kind" = "branch" ]; then
-		encoded="$(shell::git::open::encode_path "$ref")"
+		encoded="$(_shell::git::open::encode_path "$ref")"
 	else
 		encoded="$ref"
 	fi
@@ -8481,9 +8481,9 @@ shell::git::open::url() {
 # @exitcode 0 A remote was chosen.
 # @exitcode 1 No remote, an unknown remote, or several remotes and no `origin`.
 # @example
-#   remote="$(shell::git::open::remote "" "$branch")"
+#   remote="$(_shell::git::open::remote "" "$branch")"
 #
-shell::git::open::remote() {
+_shell::git::open::remote() {
 	local wanted="${1-}" branch="${2-}"
 	local remotes tracked count
 
@@ -8659,19 +8659,19 @@ shell::git::open::browser() {
 
 	# Step 1 — remote and provider.
 	local remote_name remote_url base provider
-	remote_name="$(shell::git::open::remote "$remote" "$branch")" || return "$RETURN_FAILURE"
+	remote_name="$(_shell::git::open::remote "$remote" "$branch")" || return "$RETURN_FAILURE"
 
 	remote_url="$(git remote get-url "$remote_name" 2>/dev/null)"
 	if [ -z "$remote_url" ]; then
 		remote_url="$(git config --get "remote.$remote_name.url" 2>/dev/null)"
 	fi
 
-	if ! base="$(shell::git::open::web_base "$remote_url")"; then
+	if ! base="$(_shell::git::open::web_base "$remote_url")"; then
 		shell::logger::error "Remote '$remote_name' is not a web-hostable URL (local path or unsupported scheme)"
 		return "$RETURN_FAILURE"
 	fi
 
-	if ! provider="$(shell::git::open::provider "$base")"; then
+	if ! provider="$(_shell::git::open::provider "$base")"; then
 		local web_host="${base#*://}"
 		web_host="${web_host%%/*}"
 		shell::logger::error "Unknown provider for '$web_host'; run: git config shell.provider <github|gitlab|bitbucket>"
@@ -8698,7 +8698,7 @@ shell::git::open::browser() {
 	fi
 
 	local url
-	url="$(shell::git::open::url "$provider" "$base" "$kind" "$ref")" || return "$RETURN_FAILURE"
+	url="$(_shell::git::open::url "$provider" "$base" "$kind" "$ref")" || return "$RETURN_FAILURE"
 
 	if [ "$print_only" = "true" ]; then
 		printf '%s\n' "$url"
@@ -8728,9 +8728,9 @@ shell::git::open::browser() {
 # @exitcode 0 Safe to squash.
 # @exitcode 1 Not safe (the reason is printed).
 # @example
-#   shell::git::commit::squash::preflight || return $?
+#   _shell::git::commit::squash::preflight || return $?
 #
-shell::git::commit::squash::preflight() {
+_shell::git::commit::squash::preflight() {
 	if ! git rev-parse --git-dir >/dev/null 2>&1; then
 		shell::logger::error "Not inside a Git repository"
 		return "$RETURN_FAILURE"
@@ -8769,9 +8769,9 @@ shell::git::commit::squash::preflight() {
 # @stdout The message (ends with a newline).
 # @exitcode 0 Always.
 # @example
-#   shell::git::commit::squash::message "$base_hash"
+#   _shell::git::commit::squash::message "$base_hash"
 #
-shell::git::commit::squash::message() {
+_shell::git::commit::squash::message() {
 	local base="${1-}" body folded
 	body="$(git log -1 --format=%B "$base" 2>/dev/null)"
 	folded="$(git log --first-parent --reverse --format='- %s' "$base..HEAD" 2>/dev/null)"
@@ -8794,9 +8794,9 @@ shell::git::commit::squash::message() {
 # @exitcode 0 History restored.
 # @exitcode 1 Restoring failed (the hash is printed so it can be done by hand).
 # @example
-#   shell::git::commit::squash::restore "$old_head" "$parent_hash"
+#   _shell::git::commit::squash::restore "$old_head" "$parent_hash"
 #
-shell::git::commit::squash::restore() {
+_shell::git::commit::squash::restore() {
 	local old_head="${1-}" parent="${2-}"
 
 	if [ -n "$parent" ]; then
@@ -8847,7 +8847,7 @@ shell::git::commit::squash::restore() {
 # @exitcode 1 The operation failed or canceled.
 # @exitcode 2 Invalid usage (bad option or --count).
 # @see shell::ask::option::back
-# @see shell::git::commit::input
+# @see _shell::git::commit::input
 # @example
 #   shell::git::commit::squash::fzf
 #   shell::git::commit::squash::fzf -n
@@ -8905,7 +8905,7 @@ shell::git::commit::squash::fzf() {
 		return "$RETURN_INVALID"
 	fi
 
-	shell::git::commit::squash::preflight || return "$RETURN_FAILURE"
+	_shell::git::commit::squash::preflight || return "$RETURN_FAILURE"
 
 	if [ "$(git rev-list --first-parent --count HEAD 2>/dev/null)" -lt 2 ]; then
 		shell::logger::error "Squashing needs at least two commits on this branch"
@@ -8986,17 +8986,17 @@ shell::git::commit::squash::fzf() {
 
 			case "$choice" in
 			"Combined messages")
-				message="$(shell::git::commit::squash::message "$base_hash")"
+				message="$(_shell::git::commit::squash::message "$base_hash")"
 				use_editor="false"
 				step="confirm"
 				;;
 			"Edit combined messages in my editor")
-				message="$(shell::git::commit::squash::message "$base_hash")"
+				message="$(_shell::git::commit::squash::message "$base_hash")"
 				use_editor="true"
 				step="confirm"
 				;;
 			"Write a new message")
-				value="$(shell::git::commit::input "Enter the new commit message" "$custom_message")"
+				value="$(_shell::git::commit::input "Enter the new commit message" "$custom_message")"
 				rc=$?
 				case "$rc" in
 				0)
@@ -9093,7 +9093,7 @@ shell::git::commit::squash::fzf() {
 	msg_file="$(mktemp "$(shell::os::temp_dir)/squash-msg.XXXXXX")" || msg_file=""
 	if [ -z "$msg_file" ]; then
 		shell::logger::error "Could not create a temporary file for the message"
-		shell::git::commit::squash::restore "$old_head" "$parent_hash"
+		_shell::git::commit::squash::restore "$old_head" "$parent_hash"
 		return "$RETURN_FAILURE"
 	fi
 	printf '%s\n' "$message" >"$msg_file"
@@ -9108,7 +9108,7 @@ shell::git::commit::squash::fzf() {
 
 	if [ "$rc" -ne 0 ]; then
 		shell::logger::error "The commit failed (hook, identity or empty message)"
-		shell::git::commit::squash::restore "$old_head" "$parent_hash"
+		_shell::git::commit::squash::restore "$old_head" "$parent_hash"
 		return "$RETURN_FAILURE"
 	fi
 
@@ -9132,9 +9132,9 @@ shell::git::commit::squash::fzf() {
 # @exitcode 0 A target was printed.
 # @exitcode 1 No remote, several remotes and none is `origin`, or a name that looks like an option.
 # @example
-#   target="$(shell::git::commit::amend::push_target "$branch")" || return $?
+#   target="$(_shell::git::commit::amend::push_target "$branch")" || return $?
 #
-shell::git::commit::amend::push_target() {
+_shell::git::commit::amend::push_target() {
 	local branch="${1-}" remote merge remotes
 
 	remote="$(git config --get "branch.$branch.remote" 2>/dev/null)"
@@ -9297,7 +9297,7 @@ shell::git::commit::amend() {
 			shell::logger::error "--push needs a branch, but HEAD is detached"
 			return "$RETURN_FAILURE"
 		fi
-		target="$(shell::git::commit::amend::push_target "$branch")" || return "$RETURN_FAILURE"
+		target="$(_shell::git::commit::amend::push_target "$branch")" || return "$RETURN_FAILURE"
 		remote_name="${target%%$'\n'*}"
 		remote_branch="${target#*$'\n'}"
 	fi
@@ -9342,7 +9342,7 @@ shell::git::commit::amend() {
 	if [ "$push" != "true" ] && [ "$published" = "true" ]; then
 		choice="$(shell::ask::option "Push with --force-with-lease" "Don't push")"
 		if [ "$choice" = "Push with --force-with-lease" ]; then
-			target="$(shell::git::commit::amend::push_target "$branch")" || return "$RETURN_FAILURE"
+			target="$(_shell::git::commit::amend::push_target "$branch")" || return "$RETURN_FAILURE"
 			remote_name="${target%%$'\n'*}"
 			remote_branch="${target#*$'\n'}"
 			push="true"
@@ -9377,9 +9377,9 @@ shell::git::commit::amend() {
 # @exitcode 0 Valid.
 # @exitcode 1 Invalid (or unknown kind).
 # @example
-#   shell::git::config::validate key "user.email" && echo ok
+#   _shell::git::config::validate key "user.email" && echo ok
 #
-shell::git::config::validate() {
+_shell::git::config::validate() {
 	local kind="${1-}" value="${2-}" section leaf
 
 	case "$kind" in
@@ -9435,9 +9435,9 @@ shell::git::config::validate() {
 # @exitcode 0 Usable.
 # @exitcode 1 git is missing, or `local` outside a repository.
 # @example
-#   shell::git::config::preflight local || return $?
+#   _shell::git::config::preflight local || return $?
 #
-shell::git::config::preflight() {
+_shell::git::config::preflight() {
 	local scope="${1-}"
 
 	if ! command -v git >/dev/null 2>&1; then
@@ -9460,9 +9460,9 @@ shell::git::config::preflight() {
 # @stdout The number of values (0 when the key is absent).
 # @exitcode 0 Always.
 # @example
-#   [ "$(shell::git::config::count local remote.origin.fetch)" -gt 1 ]
+#   [ "$(_shell::git::config::count local remote.origin.fetch)" -gt 1 ]
 #
-shell::git::config::count() {
+_shell::git::config::count() {
 	git config "--${1-}" --get-all -z -- "${2-}" 2>/dev/null | tr -cd '\000' | wc -c | tr -d ' '
 }
 
@@ -9473,14 +9473,14 @@ shell::git::config::count() {
 #   input (Ctrl-D) cancels.
 # @arg $1 string Prompt label.
 # @arg $2 string Default value (may be empty: the answer is then required).
-# @arg $3 string Validation kind for shell::git::config::validate (optional).
+# @arg $3 string Validation kind for _shell::git::config::validate (optional).
 # @stdout The accepted value, trimmed.
 # @exitcode 0 A value was accepted.
 # @exitcode 9 End of input (Ctrl-D).
 # @example
-#   email="$(shell::git::config::prompt "user.email" "$current" email)" || return $?
+#   email="$(_shell::git::config::prompt "user.email" "$current" email)" || return $?
 #
-shell::git::config::prompt() {
+_shell::git::config::prompt() {
 	local label="${1-}" default="${2-}" kind="${3-}" value=""
 
 	while true; do
@@ -9505,7 +9505,7 @@ shell::git::config::prompt() {
 			shell::logger::warn "A value is required"
 			continue
 		fi
-		if [ -n "$kind" ] && ! shell::git::config::validate "$kind" "$value"; then
+		if [ -n "$kind" ] && ! _shell::git::config::validate "$kind" "$value"; then
 			shell::logger::warn "'${value}' is not a valid ${kind}; try again"
 			continue
 		fi
@@ -9564,7 +9564,7 @@ shell::git::config::list() {
 		esac
 	done
 
-	shell::git::config::preflight "$scope" || return "$RETURN_FAILURE"
+	_shell::git::config::preflight "$scope" || return "$RETURN_FAILURE"
 
 	if [ "$dry_run" = "true" ]; then
 		shell::exec::command -n git config "--$scope" --list --show-origin
@@ -9656,7 +9656,7 @@ shell::git::config::get() {
 		shell::logger::error "A key is required, e.g. user.email"
 		return "$RETURN_INVALID"
 	fi
-	if ! shell::git::config::validate key "$key"; then
+	if ! _shell::git::config::validate key "$key"; then
 		shell::logger::error "Invalid key: '$key' (expected section.name, e.g. user.email)"
 		return "$RETURN_INVALID"
 	fi
@@ -9761,14 +9761,14 @@ shell::git::config::set() {
 		shell::logger::error "Usage: shell::git::config::set [-g] [-n] <key> <value>"
 		return "$RETURN_INVALID"
 	fi
-	if ! shell::git::config::validate key "$key"; then
+	if ! _shell::git::config::validate key "$key"; then
 		shell::logger::error "Invalid key: '$key' (expected section.name, e.g. user.email)"
 		return "$RETURN_INVALID"
 	fi
 
-	shell::git::config::preflight "$scope" || return "$RETURN_FAILURE"
+	_shell::git::config::preflight "$scope" || return "$RETURN_FAILURE"
 
-	count="$(shell::git::config::count "$scope" "$key")"
+	count="$(_shell::git::config::count "$scope" "$key")"
 	if [ "${count:-0}" -gt 1 ]; then
 		shell::logger::error "'${key}' has ${count} values in the ${scope} configuration; refusing to collapse them (use git config --replace-all)"
 		return "$RETURN_FAILURE"
@@ -9863,14 +9863,14 @@ shell::git::config::unset() {
 		shell::logger::error "A key is required, e.g. user.signingkey"
 		return "$RETURN_INVALID"
 	fi
-	if ! shell::git::config::validate key "$key"; then
+	if ! _shell::git::config::validate key "$key"; then
 		shell::logger::error "Invalid key: '$key' (expected section.name, e.g. user.signingkey)"
 		return "$RETURN_INVALID"
 	fi
 
-	shell::git::config::preflight "$scope" || return "$RETURN_FAILURE"
+	_shell::git::config::preflight "$scope" || return "$RETURN_FAILURE"
 
-	count="$(shell::git::config::count "$scope" "$key")"
+	count="$(_shell::git::config::count "$scope" "$key")"
 	if [ "${count:-0}" -eq 0 ]; then
 		shell::logger::warn "Key not found in the ${scope} configuration: ${key}"
 		return "$RETURN_FAILURE"
@@ -9954,7 +9954,7 @@ shell::git::config::user::setup() {
 		esac
 	done
 
-	shell::git::config::preflight "$scope" || return "$RETURN_FAILURE"
+	_shell::git::config::preflight "$scope" || return "$RETURN_FAILURE"
 
 	# Declared once (re-declaring a local in a loop prints its value in zsh).
 	local name email branch crlf
@@ -9985,19 +9985,19 @@ shell::git::config::user::setup() {
 
 	shell::logger::info "Configuring the ${scope} Git settings (Enter accepts the value in brackets, Ctrl-D cancels)"
 
-	name="$(shell::git::config::prompt "user.name" "$def_name" name)" || {
+	name="$(_shell::git::config::prompt "user.name" "$def_name" name)" || {
 		shell::logger::warn "Setup cancelled — nothing was changed"
 		return "$RETURN_FAILURE"
 	}
-	email="$(shell::git::config::prompt "user.email" "$def_email" email)" || {
+	email="$(_shell::git::config::prompt "user.email" "$def_email" email)" || {
 		shell::logger::warn "Setup cancelled — nothing was changed"
 		return "$RETURN_FAILURE"
 	}
-	branch="$(shell::git::config::prompt "init.defaultBranch" "$def_branch" branch)" || {
+	branch="$(_shell::git::config::prompt "init.defaultBranch" "$def_branch" branch)" || {
 		shell::logger::warn "Setup cancelled — nothing was changed"
 		return "$RETURN_FAILURE"
 	}
-	crlf="$(shell::git::config::prompt "core.autocrlf (true | input | false)" "$def_crlf" autocrlf)" || {
+	crlf="$(_shell::git::config::prompt "core.autocrlf (true | input | false)" "$def_crlf" autocrlf)" || {
 		shell::logger::warn "Setup cancelled — nothing was changed"
 		return "$RETURN_FAILURE"
 	}
@@ -10122,7 +10122,7 @@ shell::git::config::fzf() {
 		esac
 	done
 
-	shell::git::config::preflight "$scope" || return "$RETURN_FAILURE"
+	_shell::git::config::preflight "$scope" || return "$RETURN_FAILURE"
 
 	# Declared once, before the loop.
 	local keys choice key action current new_value confirm rc preview
@@ -10162,7 +10162,7 @@ shell::git::config::fzf() {
 		case "$action" in
 		"Edit value")
 			current="$(git config "--$scope" --get -- "$key" 2>/dev/null)"
-			new_value="$(shell::git::config::prompt "New value for ${key}" "$current")"
+			new_value="$(_shell::git::config::prompt "New value for ${key}" "$current")"
 			rc=$?
 			if [ "$rc" -ne 0 ]; then
 				shell::logger::info "Edit cancelled"
@@ -10210,9 +10210,9 @@ shell::git::config::fzf() {
 # @exitcode 0 A cherry-pick is in progress.
 # @exitcode 1 None is in progress (or not in a repository).
 # @example
-#   shell::git::commit::pick::in_progress && echo "busy"
+#   _shell::git::commit::pick::in_progress && echo "busy"
 #
-shell::git::commit::pick::in_progress() {
+_shell::git::commit::pick::in_progress() {
 	local head_file todo_file
 	head_file="$(git rev-parse --git-path CHERRY_PICK_HEAD 2>/dev/null)"
 	todo_file="$(git rev-parse --git-path sequencer/todo 2>/dev/null)"
@@ -10237,9 +10237,9 @@ shell::git::commit::pick::in_progress() {
 # @exitcode 0 Safe to start.
 # @exitcode 1 Not safe (the reason is printed).
 # @example
-#   shell::git::commit::pick::guard commit || return $?
+#   _shell::git::commit::pick::guard commit || return $?
 #
-shell::git::commit::pick::guard() {
+_shell::git::commit::pick::guard() {
 	local mode="${1:-commit}" marker
 
 	if ! git rev-parse --git-dir >/dev/null 2>&1; then
@@ -10250,7 +10250,7 @@ shell::git::commit::pick::guard() {
 		shell::logger::error "This repository has no commits yet"
 		return "$RETURN_FAILURE"
 	fi
-	if shell::git::commit::pick::in_progress; then
+	if _shell::git::commit::pick::in_progress; then
 		shell::logger::error "A cherry-pick is already in progress; finish it (shell::git::commit::pick::continue / skip) or cancel it (abort / quit)"
 		return "$RETURN_FAILURE"
 	fi
@@ -10288,9 +10288,9 @@ shell::git::commit::pick::guard() {
 # @exitcode 0 At least one commit remains.
 # @exitcode 1 An error, or nothing is left to apply.
 # @example
-#   hashes="$(shell::git::commit::pick::plan "" false HEAD "$h1" "$h2")" || return $?
+#   hashes="$(_shell::git::commit::pick::plan "" false HEAD "$h1" "$h2")" || return $?
 #
-shell::git::commit::pick::plan() {
+_shell::git::commit::pick::plan() {
 	local mainline="${1-}" allow_empty="${2-false}" base="${3-HEAD}"
 	shift 3
 
@@ -10456,9 +10456,9 @@ shell::git::commit::pick::validate() {
 # @stdout The unmerged paths.
 # @exitcode 0 Always.
 # @example
-#   [ -n "$(shell::git::commit::pick::conflict_files)" ] && echo "still conflicted"
+#   [ -n "$(_shell::git::commit::pick::conflict_files)" ] && echo "still conflicted"
 #
-shell::git::commit::pick::conflict_files() {
+_shell::git::commit::pick::conflict_files() {
 	git -c core.quotepath=off diff --name-only --diff-filter=U 2>/dev/null
 }
 
@@ -10602,7 +10602,7 @@ shell::git::commit::pick::apply() {
 
 	local guard_mode="commit"
 	if [ "$no_commit" = "true" ]; then guard_mode="stage"; fi
-	shell::git::commit::pick::guard "$guard_mode" || return "$RETURN_FAILURE"
+	_shell::git::commit::pick::guard "$guard_mode" || return "$RETURN_FAILURE"
 
 	# Resolve, then keep only what can really be applied.
 	local resolved planned hash branch count=0
@@ -10614,7 +10614,7 @@ shell::git::commit::pick::apply() {
 $resolved
 EOF
 
-	planned="$(shell::git::commit::pick::plan "$mainline" "$allow_empty" HEAD "${hashes[@]}")" || return "$RETURN_FAILURE"
+	planned="$(_shell::git::commit::pick::plan "$mainline" "$allow_empty" HEAD "${hashes[@]}")" || return "$RETURN_FAILURE"
 	hashes=()
 	while IFS= read -r hash; do
 		if [ -n "$hash" ]; then hashes+=("$hash"); fi
@@ -10651,8 +10651,8 @@ EOF
 		return "$RETURN_SUCCESS"
 	fi
 
-	if shell::git::commit::pick::in_progress; then
-		if [ -z "$(shell::git::commit::pick::conflict_files)" ] && git diff --cached --quiet 2>/dev/null; then
+	if _shell::git::commit::pick::in_progress; then
+		if [ -z "$(_shell::git::commit::pick::conflict_files)" ] && git diff --cached --quiet 2>/dev/null; then
 			shell::logger::warn "The last commit became empty here (its changes are already in the branch); drop it with shell::git::commit::pick::skip, or stop with abort / quit"
 		else
 			shell::logger::warn "Stopped; resolve it with shell::git::commit::pick::status, conflicts, resolve, then continue (or skip / abort)"
@@ -11202,9 +11202,9 @@ EOF
 # @stdout The to-do entries.
 # @exitcode 0 Always (nothing printed when there is no to-do list).
 # @example
-#   shell::git::commit::pick::todo | head -n 1
+#   _shell::git::commit::pick::todo | head -n 1
 #
-shell::git::commit::pick::todo() {
+_shell::git::commit::pick::todo() {
 	local todo_file line rest hash subject
 	todo_file="$(git rev-parse --git-path sequencer/todo 2>/dev/null)"
 	if [ -z "$todo_file" ] || [ ! -s "$todo_file" ]; then
@@ -11232,9 +11232,9 @@ shell::git::commit::pick::todo() {
 # @exitcode 0 A commit is being picked.
 # @exitcode 1 There is no `CHERRY_PICK_HEAD`.
 # @example
-#   hash="$(shell::git::commit::pick::head_hash)" || return $?
+#   hash="$(_shell::git::commit::pick::head_hash)" || return $?
 #
-shell::git::commit::pick::head_hash() {
+_shell::git::commit::pick::head_hash() {
 	local head_file hash
 	head_file="$(git rev-parse --git-path CHERRY_PICK_HEAD 2>/dev/null)"
 	if [ -z "$head_file" ] || [ ! -e "$head_file" ]; then
@@ -11295,7 +11295,7 @@ shell::git::commit::pick::status() {
 		if [ "$quiet" = "false" ]; then shell::logger::error "Not inside a Git repository"; fi
 		return "$RETURN_FAILURE"
 	fi
-	if ! shell::git::commit::pick::in_progress; then
+	if ! _shell::git::commit::pick::in_progress; then
 		if [ "$quiet" = "false" ]; then shell::logger::info "No cherry-pick in progress"; fi
 		return "$RETURN_FAILURE"
 	fi
@@ -11307,7 +11307,7 @@ shell::git::commit::pick::status() {
 	local first="true"
 
 	branch="$(git symbolic-ref --short -q HEAD 2>/dev/null)"
-	current="$(shell::git::commit::pick::head_hash)" || current=""
+	current="$(_shell::git::commit::pick::head_hash)" || current=""
 	if [ -n "$current" ]; then
 		current_line="$(git log -1 --format='%h %s' "$current" 2>/dev/null)"
 	fi
@@ -11322,10 +11322,10 @@ shell::git::commit::pick::status() {
 		fi
 		remaining=$((remaining + 1))
 	done <<EOF
-$(shell::git::commit::pick::todo)
+$(_shell::git::commit::pick::todo)
 EOF
 
-	conflicts="$(shell::git::commit::pick::conflict_files)"
+	conflicts="$(_shell::git::commit::pick::conflict_files)"
 	if [ -n "$conflicts" ]; then
 		conflict_count="$(printf '%s\n' "$conflicts" | wc -l | tr -d ' ')"
 	fi
@@ -11398,7 +11398,7 @@ shell::git::commit::pick::current() {
 		shell::logger::error "Not inside a Git repository"
 		return "$RETURN_FAILURE"
 	fi
-	if ! hash="$(shell::git::commit::pick::head_hash)"; then
+	if ! hash="$(_shell::git::commit::pick::head_hash)"; then
 		shell::logger::warn "No commit is being cherry-picked (CHERRY_PICK_HEAD not found)"
 		return "$RETURN_FAILURE"
 	fi
@@ -11443,7 +11443,7 @@ shell::git::commit::pick::conflicts() {
 	fi
 
 	local files
-	files="$(shell::git::commit::pick::conflict_files)"
+	files="$(_shell::git::commit::pick::conflict_files)"
 	if [ -z "$files" ]; then
 		shell::logger::info "No conflicted files" >&2
 		return "$RETURN_FAILURE"
@@ -11519,7 +11519,7 @@ shell::git::commit::pick::resolve() {
 		shell::logger::error "Not inside a Git repository"
 		return "$RETURN_FAILURE"
 	fi
-	conflicts="$(shell::git::commit::pick::conflict_files)"
+	conflicts="$(_shell::git::commit::pick::conflict_files)"
 	if [ -z "$conflicts" ]; then
 		shell::logger::warn "There are no conflicted files"
 		return "$RETURN_FAILURE"
@@ -11565,7 +11565,7 @@ EOF
 		return "$RETURN_FAILURE"
 	fi
 
-	left="$(shell::git::commit::pick::conflict_files)"
+	left="$(_shell::git::commit::pick::conflict_files)"
 	if [ -n "$left" ]; then
 		marked="$(printf '%s\n' "$left" | wc -l | tr -d ' ')"
 		shell::logger::success "Marked ${#files[@]} file(s) as resolved; ${marked} still in conflict"
@@ -11606,7 +11606,7 @@ shell::git::commit::pick::remaining() {
 		shell::logger::error "Not inside a Git repository"
 		return "$RETURN_FAILURE"
 	fi
-	if ! shell::git::commit::pick::in_progress; then
+	if ! _shell::git::commit::pick::in_progress; then
 		shell::logger::info "No cherry-pick in progress" >&2
 		return "$RETURN_FAILURE"
 	fi
@@ -11623,7 +11623,7 @@ shell::git::commit::pick::remaining() {
 		printf '%s %s\n' "$hash" "$subject"
 		count=$((count + 1))
 	done <<EOF
-$(shell::git::commit::pick::todo)
+$(_shell::git::commit::pick::todo)
 EOF
 
 	if [ "$count" -eq 0 ]; then
@@ -11645,9 +11645,9 @@ EOF
 # @exitcode 1 Nothing in progress, conflicts left, stopped again, or git failed.
 # @exitcode 2 Invalid usage.
 # @example
-#   shell::git::commit::pick::control continue --no-edit
+#   _shell::git::commit::pick::control continue --no-edit
 #
-shell::git::commit::pick::control() {
+_shell::git::commit::pick::control() {
 	local action="${1-}"
 	shift
 
@@ -11677,13 +11677,13 @@ shell::git::commit::pick::control() {
 		shell::logger::error "Not inside a Git repository"
 		return "$RETURN_FAILURE"
 	fi
-	if ! shell::git::commit::pick::in_progress; then
+	if ! _shell::git::commit::pick::in_progress; then
 		shell::logger::warn "No cherry-pick in progress; nothing to ${action}"
 		return "$RETURN_FAILURE"
 	fi
 
 	if [ "$action" = "continue" ]; then
-		conflicts="$(shell::git::commit::pick::conflict_files)"
+		conflicts="$(_shell::git::commit::pick::conflict_files)"
 		if [ -n "$conflicts" ]; then
 			count="$(printf '%s\n' "$conflicts" | wc -l | tr -d ' ')"
 			shell::logger::error "${count} file(s) are still in conflict; resolve them first (shell::git::commit::pick::resolve):"
@@ -11720,7 +11720,7 @@ EOF
 		return "$RETURN_SUCCESS"
 	fi
 
-	if shell::git::commit::pick::in_progress; then
+	if _shell::git::commit::pick::in_progress; then
 		shell::logger::warn "Stopped again (another conflict); see shell::git::commit::pick::status"
 	else
 		shell::logger::error "git cherry-pick --${action} failed"
@@ -11755,7 +11755,7 @@ shell::git::commit::pick::continue() {
 		shell::logger::example "shell::git::commit::pick::continue --no-edit"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::git::commit::pick::control continue "$@"
+	_shell::git::commit::pick::control continue "$@"
 }
 
 # @description Skips the commit git is stopped on and goes on with the sequence.
@@ -11780,7 +11780,7 @@ shell::git::commit::pick::skip() {
 		shell::logger::example "shell::git::commit::pick::skip"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::git::commit::pick::control skip "$@"
+	_shell::git::commit::pick::control skip "$@"
 }
 
 # @description Cancels the cherry-pick in progress and restores the branch.
@@ -11809,7 +11809,7 @@ shell::git::commit::pick::abort() {
 		shell::logger::example "shell::git::commit::pick::abort"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::git::commit::pick::control abort "$@"
+	_shell::git::commit::pick::control abort "$@"
 }
 
 # @description Stops the cherry-pick but keeps everything as it is now.
@@ -11835,7 +11835,7 @@ shell::git::commit::pick::quit() {
 		shell::logger::example "shell::git::commit::pick::quit"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::git::commit::pick::control quit "$@"
+	_shell::git::commit::pick::control quit "$@"
 }
 
 # @description Applies commits onto a release or maintenance branch (a backport).
@@ -11979,7 +11979,7 @@ shell::git::commit::pick::backport() {
 	fi
 
 	# Step 1 — state.
-	shell::git::commit::pick::guard commit || return "$RETURN_FAILURE"
+	_shell::git::commit::pick::guard commit || return "$RETURN_FAILURE"
 	local dirty
 	dirty="$(git status --porcelain --untracked-files=no 2>/dev/null | wc -l | tr -d ' ')"
 	if [ "${dirty:-0}" -gt 0 ]; then
@@ -12002,7 +12002,7 @@ $resolved
 EOF
 
 	# Step 2 — what is really missing from the target.
-	planned="$(shell::git::commit::pick::plan "" "$allow_empty" "$target_hash" "${hashes[@]}")" || return "$RETURN_FAILURE"
+	planned="$(_shell::git::commit::pick::plan "" "$allow_empty" "$target_hash" "${hashes[@]}")" || return "$RETURN_FAILURE"
 	hashes=()
 	while IFS= read -r hash; do
 		if [ -n "$hash" ]; then hashes+=("$hash"); fi
@@ -12076,7 +12076,7 @@ EOF
 		return "$RETURN_SUCCESS"
 	fi
 
-	if shell::git::commit::pick::in_progress; then
+	if _shell::git::commit::pick::in_progress; then
 		shell::logger::warn "Stopped on '${name}'. Resolve and continue, or cancel everything: shell::git::commit::pick::abort, then git checkout ${orig_branch:-${orig_hash}}$([ "$in_place" = "false" ] && printf ' and git branch -D %s' "$name")"
 		return "$RETURN_FAILURE"
 	fi
@@ -12103,9 +12103,9 @@ EOF
 # @stdout One branch name per line.
 # @exitcode 0 Always.
 # @example
-#   shell::git::commit::pick::branches true
+#   _shell::git::commit::pick::branches true
 #
-shell::git::commit::pick::branches() {
+_shell::git::commit::pick::branches() {
 	local current
 	local -a refs=(refs/heads)
 	if [ "${1-false}" = "true" ]; then
@@ -12127,9 +12127,9 @@ shell::git::commit::pick::branches() {
 # @stdout The picker lines.
 # @exitcode 0 Always.
 # @example
-#   shell::git::commit::pick::fzf::candidates 500 --all --not HEAD
+#   _shell::git::commit::pick::fzf::candidates 500 --all --not HEAD
 #
-shell::git::commit::pick::fzf::candidates() {
+_shell::git::commit::pick::fzf::candidates() {
 	local count="${1-500}"
 	shift
 	git log --topo-order --no-merges "--max-count=${count}" --color=always \
@@ -12142,15 +12142,15 @@ shell::git::commit::pick::fzf::candidates() {
 #   Multi-select (Tab marks), with a preview of the highlighted commit. The
 #   hashes come back in dependency order (parents before children), which is the
 #   order a cherry-pick must replay them in, whatever order they were marked in.
-# @arg $1 string The candidate lines from shell::git::commit::pick::fzf::candidates.
+# @arg $1 string The candidate lines from _shell::git::commit::pick::fzf::candidates.
 # @arg $2 string Prompt text.
 # @stdout The selected full hashes, one per line, oldest first.
 # @exitcode 0 At least one commit was selected.
 # @exitcode 9 Cancelled (ESC) or nothing selected.
 # @example
-#   hashes="$(shell::git::commit::pick::fzf::choose "$candidates" "Pick: ")" || return $?
+#   hashes="$(_shell::git::commit::pick::fzf::choose "$candidates" "Pick: ")" || return $?
 #
-shell::git::commit::pick::fzf::choose() {
+_shell::git::commit::pick::fzf::choose() {
 	local candidates="${1-}" prompt="${2-Select commits: }" selected hashes
 	local tab
 	tab="$(printf '\t')"
@@ -12184,17 +12184,17 @@ shell::git::commit::pick::fzf::choose() {
 # @exitcode 0 The commits were applied (or the dry-run commands printed).
 # @exitcode 1 Cancelled, nothing to pick, or the apply failed or stopped on a conflict.
 # @example
-#   shell::git::commit::pick::fzf::engine false 500 "Pick: " --all --not HEAD
+#   _shell::git::commit::pick::fzf::engine false 500 "Pick: " --all --not HEAD
 #
-shell::git::commit::pick::fzf::engine() {
+_shell::git::commit::pick::fzf::engine() {
 	local dry_run="${1-false}" count="${2-500}" prompt="${3-Select commits: }"
 	shift 3
 
-	shell::git::commit::pick::guard stage || return "$RETURN_FAILURE"
+	_shell::git::commit::pick::guard stage || return "$RETURN_FAILURE"
 
 	local candidates step choice rc hash
 	local -a hashes=() flags=()
-	candidates="$(shell::git::commit::pick::fzf::candidates "$count" "$@")"
+	candidates="$(_shell::git::commit::pick::fzf::candidates "$count" "$@")"
 	if [ -z "$candidates" ]; then
 		shell::logger::warn "No commits to pick from"
 		return "$RETURN_FAILURE"
@@ -12204,7 +12204,7 @@ shell::git::commit::pick::fzf::engine() {
 	while true; do
 		case "$step" in
 		pick)
-			choice="$(shell::git::commit::pick::fzf::choose "$candidates" "$prompt")"
+			choice="$(_shell::git::commit::pick::fzf::choose "$candidates" "$prompt")"
 			rc=$?
 			if [ "$rc" -ne 0 ] || [ -z "$choice" ]; then
 				shell::logger::info "Cancelled — nothing was applied"
@@ -12264,9 +12264,9 @@ EOF
 # @exitcode 0 Parsed.
 # @exitcode 2 Invalid usage.
 # @example
-#   shell::git::commit::pick::fzf::parse "$@" || return $?
+#   _shell::git::commit::pick::fzf::parse "$@" || return $?
 #
-shell::git::commit::pick::fzf::parse() {
+_shell::git::commit::pick::fzf::parse() {
 	fzf_dry_run="false"
 	fzf_count="500"
 	fzf_rest=""
@@ -12365,7 +12365,7 @@ shell::git::commit::pick::fzf() {
 
 	local fzf_dry_run fzf_count fzf_rest include_head="false" source="" item
 	local fzf_extra_ok="true"
-	shell::git::commit::pick::fzf::parse "$@" || return $?
+	_shell::git::commit::pick::fzf::parse "$@" || return $?
 
 	local -a rest=() log_args=()
 	while IFS= read -r item; do
@@ -12403,7 +12403,7 @@ EOF
 	fi
 	if [ "$include_head" = "false" ]; then log_args+=(--not HEAD); fi
 
-	shell::git::commit::pick::fzf::engine "$fzf_dry_run" "$fzf_count" "Cherry-pick (Tab to mark): " "${log_args[@]}"
+	_shell::git::commit::pick::fzf::engine "$fzf_dry_run" "$fzf_count" "Cherry-pick (Tab to mark): " "${log_args[@]}"
 }
 
 # @description Picks commits from the local branches and cherry-picks them.
@@ -12440,7 +12440,7 @@ shell::git::commit::pick::fzf::local() {
 
 	local fzf_dry_run fzf_count fzf_rest include_head="false" pattern="" item
 	local fzf_extra_ok="true"
-	shell::git::commit::pick::fzf::parse "$@" || return $?
+	_shell::git::commit::pick::fzf::parse "$@" || return $?
 	while IFS= read -r item; do
 		case "$item" in
 		'') ;;
@@ -12484,7 +12484,7 @@ EOF
 	fi
 	if [ "$include_head" = "false" ]; then log_args+=(--not HEAD); fi
 
-	shell::git::commit::pick::fzf::engine "$fzf_dry_run" "$fzf_count" "Cherry-pick from local branches: " "${log_args[@]}"
+	_shell::git::commit::pick::fzf::engine "$fzf_dry_run" "$fzf_count" "Cherry-pick from local branches: " "${log_args[@]}"
 }
 
 # @description Picks commits from the remote-tracking branches and cherry-picks them.
@@ -12521,7 +12521,7 @@ shell::git::commit::pick::fzf::remote() {
 
 	local fzf_dry_run fzf_count fzf_rest include_head="false" remote="" item
 	local fzf_extra_ok="true"
-	shell::git::commit::pick::fzf::parse "$@" || return $?
+	_shell::git::commit::pick::fzf::parse "$@" || return $?
 	while IFS= read -r item; do
 		case "$item" in
 		'') ;;
@@ -12554,7 +12554,7 @@ EOF
 	fi
 	if [ "$include_head" = "false" ]; then log_args+=(--not HEAD); fi
 
-	shell::git::commit::pick::fzf::engine "$fzf_dry_run" "$fzf_count" "Cherry-pick from remote branches: " "${log_args[@]}"
+	_shell::git::commit::pick::fzf::engine "$fzf_dry_run" "$fzf_count" "Cherry-pick from remote branches: " "${log_args[@]}"
 }
 
 # @description Picks a local branch first, then the commits to cherry-pick from it.
@@ -12585,15 +12585,15 @@ shell::git::commit::pick::fzf::branch() {
 
 	local fzf_dry_run fzf_count fzf_rest
 	local fzf_extra_ok="false"
-	shell::git::commit::pick::fzf::parse "$@" || return $?
+	_shell::git::commit::pick::fzf::parse "$@" || return $?
 	if [ -n "$fzf_rest" ]; then
 		shell::logger::error "Unexpected argument: ${fzf_rest%%$'\n'*}"
 		return "$RETURN_INVALID"
 	fi
-	shell::git::commit::pick::guard stage || return "$RETURN_FAILURE"
+	_shell::git::commit::pick::guard stage || return "$RETURN_FAILURE"
 
 	local branches picked
-	branches="$(shell::git::commit::pick::branches false)"
+	branches="$(_shell::git::commit::pick::branches false)"
 	if [ -z "$branches" ]; then
 		shell::logger::warn "There is no other local branch"
 		return "$RETURN_FAILURE"
@@ -12608,7 +12608,7 @@ shell::git::commit::pick::fzf::branch() {
 		return "$RETURN_FAILURE"
 	fi
 
-	shell::git::commit::pick::fzf::engine "$fzf_dry_run" "$fzf_count" "Cherry-pick from ${picked}: " "$picked" --not HEAD
+	_shell::git::commit::pick::fzf::engine "$fzf_dry_run" "$fzf_count" "Cherry-pick from ${picked}: " "$picked" --not HEAD
 }
 
 # @description Picks commits from the current branch's own history.
@@ -12642,22 +12642,22 @@ shell::git::commit::pick::fzf::current() {
 
 	local fzf_dry_run fzf_count fzf_rest
 	local fzf_extra_ok="false"
-	shell::git::commit::pick::fzf::parse "$@" || return $?
+	_shell::git::commit::pick::fzf::parse "$@" || return $?
 	if [ -n "$fzf_rest" ]; then
 		shell::logger::error "Unexpected argument: ${fzf_rest%%$'\n'*}"
 		return "$RETURN_INVALID"
 	fi
-	shell::git::commit::pick::guard stage || return "$RETURN_FAILURE"
+	_shell::git::commit::pick::guard stage || return "$RETURN_FAILURE"
 
 	local current candidates branches step choice rc hash target
 	local -a hashes=() backport_args=() branch_list=()
 	current="$(git symbolic-ref --short -q HEAD 2>/dev/null)"
-	candidates="$(shell::git::commit::pick::fzf::candidates "$fzf_count" HEAD)"
+	candidates="$(_shell::git::commit::pick::fzf::candidates "$fzf_count" HEAD)"
 	if [ -z "$candidates" ]; then
 		shell::logger::warn "No commits to pick from"
 		return "$RETURN_FAILURE"
 	fi
-	branches="$(shell::git::commit::pick::branches false)"
+	branches="$(_shell::git::commit::pick::branches false)"
 	if [ -z "$branches" ]; then
 		shell::logger::warn "There is no other local branch to apply the commits onto"
 		return "$RETURN_FAILURE"
@@ -12672,7 +12672,7 @@ EOF
 	while true; do
 		case "$step" in
 		pick)
-			choice="$(shell::git::commit::pick::fzf::choose "$candidates" "Commits of ${current:-HEAD} (Tab to mark): ")"
+			choice="$(_shell::git::commit::pick::fzf::choose "$candidates" "Commits of ${current:-HEAD} (Tab to mark): ")"
 			rc=$?
 			if [ "$rc" -ne 0 ] || [ -z "$choice" ]; then
 				shell::logger::info "Cancelled — nothing was applied"
@@ -12763,7 +12763,7 @@ shell::git::commit::pick::fzf::range() {
 
 	local fzf_dry_run fzf_count fzf_rest range side
 	local fzf_extra_ok="false"
-	shell::git::commit::pick::fzf::parse "$@" || return $?
+	_shell::git::commit::pick::fzf::parse "$@" || return $?
 	range="${fzf_rest%%$'\n'*}"
 	if [ -z "$range" ]; then
 		shell::logger::error "A range is required, e.g. main..feature"
@@ -12795,7 +12795,7 @@ shell::git::commit::pick::fzf::range() {
 		fi
 	done
 
-	shell::git::commit::pick::fzf::engine "$fzf_dry_run" "$fzf_count" "Cherry-pick from ${range}: " "$range"
+	_shell::git::commit::pick::fzf::engine "$fzf_dry_run" "$fzf_count" "Cherry-pick from ${range}: " "$range"
 }
 
 # @description Picks commits with fzf and backports them to a release branch.
@@ -12893,7 +12893,7 @@ shell::git::commit::pick::fzf::backport() {
 		esac
 	done
 
-	shell::git::commit::pick::guard stage || return "$RETURN_FAILURE"
+	_shell::git::commit::pick::guard stage || return "$RETURN_FAILURE"
 	if [ -n "$source" ]; then
 		shell::git::commit::pick::validate -q -- "$source" || {
 			shell::logger::error "Not a valid source revision: '${source}'"
@@ -12909,7 +12909,7 @@ shell::git::commit::pick::fzf::backport() {
 
 	local targets candidates step choice rc hash
 	local -a hashes=() backport_args=() log_args=() target_list=()
-	targets="$(shell::git::commit::pick::branches true)"
+	targets="$(_shell::git::commit::pick::branches true)"
 	while IFS= read -r hash; do
 		if [ -n "$hash" ]; then target_list+=("$hash"); fi
 	done <<EOF
@@ -12943,12 +12943,12 @@ EOF
 			log_args=()
 			if [ -n "$source" ]; then log_args+=("$source"); else log_args+=(--all); fi
 			log_args+=(--not "$target")
-			candidates="$(shell::git::commit::pick::fzf::candidates "$count" "${log_args[@]}")"
+			candidates="$(_shell::git::commit::pick::fzf::candidates "$count" "${log_args[@]}")"
 			if [ -z "$candidates" ]; then
 				shell::logger::warn "Every commit is already in '${target}'; nothing to backport"
 				return "$RETURN_FAILURE"
 			fi
-			choice="$(shell::git::commit::pick::fzf::choose "$candidates" "Backport to ${target} (Tab to mark): ")"
+			choice="$(_shell::git::commit::pick::fzf::choose "$candidates" "Backport to ${target} (Tab to mark): ")"
 			rc=$?
 			if [ "$rc" -ne 0 ] || [ -z "$choice" ]; then
 				shell::logger::info "Cancelled — nothing was applied"
@@ -13047,7 +13047,7 @@ shell::git::commit::pick::fzf::conflicts() {
 	if [ "$dry_run" = "true" ]; then res_flags+=(-n); fi
 
 	while true; do
-		files="$(shell::git::commit::pick::conflict_files)"
+		files="$(_shell::git::commit::pick::conflict_files)"
 		if [ -z "$files" ]; then
 			shell::logger::info "No conflicted files"
 			break
@@ -13073,7 +13073,7 @@ shell::git::commit::pick::fzf::conflicts() {
 		"Open in editor")
 			editor="${VISUAL:-${EDITOR:-vi}}"
 			if [ "$dry_run" = "true" ]; then
-				shell::logger::command_clip "${editor} $(shell::git::commit::spec::quote "$file")"
+				shell::logger::command_clip "${editor} $(_shell::git::commit::spec::quote "$file")"
 				handled=$((handled + 1))
 			elif sh -c "${editor} \"\$1\"" _ "$file"; then
 				handled=$((handled + 1))
@@ -13201,12 +13201,12 @@ shell::git::commit::pick::fzf::skip() {
 		esac
 	done
 
-	if ! shell::git::commit::pick::in_progress; then
+	if ! _shell::git::commit::pick::in_progress; then
 		shell::logger::warn "No cherry-pick in progress; nothing to skip"
 		return "$RETURN_FAILURE"
 	fi
 	local hash choice
-	if hash="$(shell::git::commit::pick::head_hash)"; then
+	if hash="$(_shell::git::commit::pick::head_hash)"; then
 		shell::logger::info "Commit that will be skipped:"
 		git show --format=fuller --stat "$hash"
 	fi
@@ -13358,9 +13358,9 @@ shell::git::patch::create() {
 	done < <(git -C "$root" ls-files --others --exclude-standard -z)
 
 	if [ "$dry_run" = "true" ]; then
-		shell::logger::command_clip "git diff ${base} --binary > $(shell::git::commit::spec::quote "$out")"
+		shell::logger::command_clip "git diff ${base} --binary > $(_shell::git::commit::spec::quote "$out")"
 		for file in "${untracked[@]}"; do
-			shell::logger::command_clip "git diff --no-index --binary -- /dev/null $(shell::git::commit::spec::quote "$file") >> $(shell::git::commit::spec::quote "$out")"
+			shell::logger::command_clip "git diff --no-index --binary -- /dev/null $(_shell::git::commit::spec::quote "$file") >> $(_shell::git::commit::spec::quote "$out")"
 		done
 		if [ "$base" = "HEAD" ]; then
 			shell::logger::command_clip "git reset --hard HEAD"
@@ -13563,9 +13563,9 @@ shell::git::patch::apply::fzf() {
 # @exitcode 0 The target was resolved.
 # @exitcode 1 The target is not a commit or range.
 # @example
-#   shell::git::diff::target "v1.0..HEAD"
+#   _shell::git::diff::target "v1.0..HEAD"
 #
-shell::git::diff::target() {
+_shell::git::diff::target() {
 	local spec="${1-}" parent
 
 	case "$spec" in
@@ -13674,7 +13674,7 @@ shell::git::diff::fzf() {
 		return "$RETURN_FAILURE"
 	}
 	local q_root
-	q_root="$(shell::git::commit::spec::quote "$root")"
+	q_root="$(_shell::git::commit::spec::quote "$root")"
 
 	# New (untracked) files are invisible to `git diff HEAD`; they are only part of the
 	# "uncommitted changes" view, not of a commit, a range or the staged changes.
@@ -13684,7 +13684,7 @@ shell::git::diff::fzf() {
 	if [ -n "$target" ]; then
 		while IFS= read -r line; do
 			[ -n "$line" ] && diff_args+=("$line")
-		done < <(shell::git::diff::target "$target")
+		done < <(_shell::git::diff::target "$target")
 		if [ "${#diff_args[@]}" -eq 0 ]; then
 			shell::logger::error "Not a commit or range: $target"
 			return "$RETURN_FAILURE"
@@ -13713,7 +13713,7 @@ shell::git::diff::fzf() {
 
 	local q_args="" arg
 	for arg in "${diff_args[@]}"; do
-		q_args="${q_args} $(shell::git::commit::spec::quote "$arg")"
+		q_args="${q_args} $(_shell::git::commit::spec::quote "$arg")"
 	done
 
 	if [ "$dry_run" = "true" ]; then
@@ -13808,7 +13808,7 @@ shell::git::diff::fzf() {
 			else
 				git -C "$root" diff "$color_flag" "${diff_args[@]}" -- "$orig" "$file"
 			fi
-		} 2>&1 | if [ -n "$pipe" ]; then delta --paging=never | shell::git::history::page; else shell::git::history::page; fi
+		} 2>&1 | if [ -n "$pipe" ]; then delta --paging=never | _shell::git::history::page; else _shell::git::history::page; fi
 	done
 
 	return "$RETURN_SUCCESS"

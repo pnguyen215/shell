@@ -98,7 +98,7 @@ unset _shell_group
 shell::os::type >/dev/null 2>&1
 
 # Resolve the logger style once (exported SHELL_LOGGER_STYLE > saved > default).
-shell::logger::style::load >/dev/null 2>&1
+_shell::logger::style::load >/dev/null 2>&1
 
 SHELL_LOADED=1
 

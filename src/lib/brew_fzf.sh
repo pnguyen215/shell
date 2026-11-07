@@ -45,9 +45,9 @@
 # @exitcode 9 The user cancelled (ESC) or nothing matched.
 # @exitcode 3 fzf is not installed.
 # @example
-#   names="$(shell::brew::list -1 | shell::brew::fzf::pick -m -p "Remove: ")"
+#   names="$(shell::brew::list -1 | _shell::brew::fzf::pick -m -p "Remove: ")"
 #
-shell::brew::fzf::pick() {
+_shell::brew::fzf::pick() {
 	local multi="false" prompt="Select: " preview="" header=""
 	while [ "$#" -gt 0 ]; do
 		case "$1" in
@@ -107,11 +107,11 @@ shell::brew::fzf::pick() {
 # @exitcode 0 Success.
 # @exitcode 3 Homebrew is not installed.
 # @example
-#   --preview="$(shell::brew::fzf::preview --cask)"
+#   --preview="$(_shell::brew::fzf::preview --cask)"
 #
-shell::brew::fzf::preview() {
+_shell::brew::fzf::preview() {
 	local brew_bin
-	brew_bin="$(shell::homebrew::path)" || return "$RETURN_NOT_FOUND"
+	brew_bin="$(_shell::homebrew::path)" || return "$RETURN_NOT_FOUND"
 	printf "'%s' info %s{1}\n" "$brew_bin" "${1:+$1 }"
 }
 
@@ -123,9 +123,9 @@ shell::brew::fzf::preview() {
 # @exitcode 1 The user answered no.
 # @exitcode 9 Input ended.
 # @example
-#   shell::brew::fzf::confirm "$assume_yes" "Uninstall git?" || return 0
+#   _shell::brew::fzf::confirm "$assume_yes" "Uninstall git?" || return 0
 #
-shell::brew::fzf::confirm() {
+_shell::brew::fzf::confirm() {
 	if [ "${1-}" = "true" ]; then
 		return "$RETURN_SUCCESS"
 	fi
@@ -139,16 +139,16 @@ shell::brew::fzf::confirm() {
 # @exitcode 0 Success.
 # @exitcode 3 Homebrew is not installed.
 # @example
-#   shell::brew::fzf::rows::installed --cask | shell::brew::fzf::pick -m
+#   _shell::brew::fzf::rows::installed --cask | _shell::brew::fzf::pick -m
 #
-shell::brew::fzf::rows::installed() {
+_shell::brew::fzf::rows::installed() {
 	local kind="--formula" pinned
 	if [ "${1-}" = "--cask" ]; then
 		kind="--cask"
 	fi
-	shell::homebrew::path >/dev/null 2>&1 || return "$RETURN_NOT_FOUND"
-	pinned="$(shell::brew::query list "$kind" --pinned | tr '\n' ' ')"
-	shell::brew::query list "$kind" --versions | awk -v pinned=" $pinned " '
+	_shell::homebrew::path >/dev/null 2>&1 || return "$RETURN_NOT_FOUND"
+	pinned="$(_shell::brew::query list "$kind" --pinned | tr '\n' ' ')"
+	_shell::brew::query list "$kind" --versions | awk -v pinned=" $pinned " '
 		NF {
 			v = $2
 			if (NF > 2) v = v "+" (NF - 2)
@@ -163,9 +163,9 @@ shell::brew::fzf::rows::installed() {
 # @stdout The same lines with a human size.
 # @exitcode 0 Always.
 # @example
-#   printf 'git\tstale\t2048\tx\n' | shell::brew::size::format
+#   printf 'git\tstale\t2048\tx\n' | _shell::brew::size::format
 #
-shell::brew::size::format() {
+_shell::brew::size::format() {
 	awk -F'\t' 'BEGIN { OFS = "\t" }
 		{
 			kb = $3 + 0
@@ -219,7 +219,7 @@ shell::brew::install::fzf() {
 		shift
 	done
 
-	shell::homebrew::path >/dev/null 2>&1 || {
+	_shell::homebrew::path >/dev/null 2>&1 || {
 		shell::logger::error "Homebrew is not installed (install it with: shell::homebrew::install)"
 		return "$RETURN_NOT_FOUND"
 	}
@@ -236,12 +236,12 @@ shell::brew::install::fzf() {
 		opts+=(-n)
 	fi
 
-	installed="$(shell::brew::query list "$kind" -1 | tr '\n' ' ')"
+	installed="$(_shell::brew::query list "$kind" -1 | tr '\n' ' ')"
 	local names rc line
-	names="$(shell::brew::query "$list_verb" | awk -v inst="$installed" '
+	names="$(_shell::brew::query "$list_verb" | awk -v inst="$installed" '
 		BEGIN { n = split(inst, a, " "); for (i = 1; i <= n; i++) have[a[i]] = 1 }
 		NF { print $1 (($1 in have) ? "  [installed]" : "") }' |
-		shell::brew::fzf::pick -m -p "Install: " -P "$(shell::brew::fzf::preview "$kind_arg")" \
+		_shell::brew::fzf::pick -m -p "Install: " -P "$(_shell::brew::fzf::preview "$kind_arg")" \
 			-H "Tab: mark   Ctrl-A: mark all   Enter: install   ESC: cancel")"
 	rc=$?
 	case "$rc" in
@@ -313,7 +313,7 @@ shell::brew::uninstall::fzf() {
 		shift
 	done
 
-	shell::homebrew::path >/dev/null 2>&1 || {
+	_shell::homebrew::path >/dev/null 2>&1 || {
 		shell::logger::error "Homebrew is not installed (install it with: shell::homebrew::install)"
 		return "$RETURN_NOT_FOUND"
 	}
@@ -324,8 +324,8 @@ shell::brew::uninstall::fzf() {
 	fi
 
 	local names rc
-	names="$(shell::brew::fzf::rows::installed ${kind_arg:+"$kind_arg"} |
-		shell::brew::fzf::pick -m -p "Uninstall: " -P "$(shell::brew::fzf::preview "$kind_arg")" \
+	names="$(_shell::brew::fzf::rows::installed ${kind_arg:+"$kind_arg"} |
+		_shell::brew::fzf::pick -m -p "Uninstall: " -P "$(_shell::brew::fzf::preview "$kind_arg")" \
 			-H "Tab: mark   Ctrl-A: mark all   Enter: uninstall   ESC: cancel")"
 	rc=$?
 	case "$rc" in
@@ -352,7 +352,7 @@ EOF
 	else
 		local picked=" ${chosen[*]} "
 		for line in ${chosen[@]+"${chosen[@]}"}; do
-			dependents="$(shell::brew::query uses --installed "$line")"
+			dependents="$(_shell::brew::query uses --installed "$line")"
 			blocking=""
 			while IFS= read -r dep; do
 				[ -n "$dep" ] || continue
@@ -380,7 +380,7 @@ EOF
 	if [ "$zap" = "true" ]; then
 		question="Uninstall ${removable[*]} and DELETE their data and settings?"
 	fi
-	shell::brew::fzf::confirm "$assume_yes" "$question" || {
+	_shell::brew::fzf::confirm "$assume_yes" "$question" || {
 		shell::logger::info "Aborted"
 		return "$RETURN_SUCCESS"
 	}
@@ -444,14 +444,14 @@ shell::brew::upgrade::fzf() {
 		shift
 	done
 
-	shell::homebrew::path >/dev/null 2>&1 || {
+	_shell::homebrew::path >/dev/null 2>&1 || {
 		shell::logger::error "Homebrew is not installed (install it with: shell::homebrew::install)"
 		return "$RETURN_NOT_FOUND"
 	}
 
 	local names rc
-	names="$(shell::brew::query outdated --verbose ${kind_opts[@]+"${kind_opts[@]}"} |
-		shell::brew::fzf::pick -m -p "Upgrade: " -P "$(shell::brew::fzf::preview)" \
+	names="$(_shell::brew::query outdated --verbose ${kind_opts[@]+"${kind_opts[@]}"} |
+		_shell::brew::fzf::pick -m -p "Upgrade: " -P "$(_shell::brew::fzf::preview)" \
 			-H "Tab: mark   Ctrl-A: mark all   Enter: upgrade   ESC: cancel")"
 	rc=$?
 	case "$rc" in
@@ -511,15 +511,15 @@ shell::brew::info::fzf() {
 		shift
 	done
 
-	shell::homebrew::path >/dev/null 2>&1 || {
+	_shell::homebrew::path >/dev/null 2>&1 || {
 		shell::logger::error "Homebrew is not installed (install it with: shell::homebrew::install)"
 		return "$RETURN_NOT_FOUND"
 	}
 
 	local name rc
 	while true; do
-		name="$(shell::brew::fzf::rows::installed ${kind_arg:+"$kind_arg"} |
-			shell::brew::fzf::pick -p "Package: " -P "$(shell::brew::fzf::preview "$kind_arg")" \
+		name="$(_shell::brew::fzf::rows::installed ${kind_arg:+"$kind_arg"} |
+			_shell::brew::fzf::pick -p "Package: " -P "$(_shell::brew::fzf::preview "$kind_arg")" \
 				-H "Enter: show full info   ESC: leave")"
 		rc=$?
 		case "$rc" in
@@ -561,7 +561,7 @@ shell::brew::pin::fzf() {
 		shell::logger::example "shell::brew::pin::fzf"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::brew::pin::apply pin "$@"
+	_shell::brew::pin::apply pin "$@"
 }
 
 # @description Pick pinned packages and unpin them, so `brew upgrade` upgrades them again.
@@ -586,7 +586,7 @@ shell::brew::unpin::fzf() {
 		shell::logger::example "shell::brew::unpin::fzf"
 		return "$RETURN_SUCCESS"
 	fi
-	shell::brew::pin::apply unpin "$@"
+	_shell::brew::pin::apply unpin "$@"
 }
 
 # @internal
@@ -596,7 +596,7 @@ shell::brew::unpin::fzf() {
 # @exitcode 0 Done, or nothing to do.
 # @exitcode 2 Unknown option.
 # @exitcode 3 Homebrew or fzf is not installed.
-shell::brew::pin::apply() {
+_shell::brew::pin::apply() {
 	local action="${1-}"
 	shift
 
@@ -616,18 +616,18 @@ shell::brew::pin::apply() {
 		shift
 	done
 
-	shell::homebrew::path >/dev/null 2>&1 || {
+	_shell::homebrew::path >/dev/null 2>&1 || {
 		shell::logger::error "Homebrew is not installed (install it with: shell::homebrew::install)"
 		return "$RETURN_NOT_FOUND"
 	}
 
 	local rows names rc
 	if [ "$action" = "pin" ]; then
-		rows="$(shell::brew::fzf::rows::installed ${kind_arg:+"$kind_arg"} | grep -v '\[pinned\]$')"
+		rows="$(_shell::brew::fzf::rows::installed ${kind_arg:+"$kind_arg"} | grep -v '\[pinned\]$')"
 	else
-		rows="$(shell::brew::query list "$kind" --pinned)"
+		rows="$(_shell::brew::query list "$kind" --pinned)"
 	fi
-	names="$(printf '%s\n' "$rows" | shell::brew::fzf::pick -m -p "${action}: " -P "$(shell::brew::fzf::preview "$kind_arg")" \
+	names="$(printf '%s\n' "$rows" | _shell::brew::fzf::pick -m -p "${action}: " -P "$(_shell::brew::fzf::preview "$kind_arg")" \
 		-H "Tab: mark   Enter: ${action}   ESC: cancel")"
 	rc=$?
 	case "$rc" in
@@ -709,14 +709,14 @@ shell::brew::untap::fzf() {
 		shift
 	done
 
-	shell::homebrew::path >/dev/null 2>&1 || {
+	_shell::homebrew::path >/dev/null 2>&1 || {
 		shell::logger::error "Homebrew is not installed (install it with: shell::homebrew::install)"
 		return "$RETURN_NOT_FOUND"
 	}
 
 	local names rc
-	names="$(shell::brew::query tap | grep -v -E '^homebrew/(core|cask)$' |
-		shell::brew::fzf::pick -m -p "Untap: " -H "Tab: mark   Enter: untap   ESC: cancel")"
+	names="$(_shell::brew::query tap | grep -v -E '^homebrew/(core|cask)$' |
+		_shell::brew::fzf::pick -m -p "Untap: " -H "Tab: mark   Enter: untap   ESC: cancel")"
 	rc=$?
 	case "$rc" in
 	0) ;;
@@ -735,7 +735,7 @@ shell::brew::untap::fzf() {
 	done <<EOF
 $names
 EOF
-	shell::brew::fzf::confirm "$assume_yes" "Untap ${chosen[*]}?" || {
+	_shell::brew::fzf::confirm "$assume_yes" "Untap ${chosen[*]}?" || {
 		shell::logger::info "Aborted"
 		return "$RETURN_SUCCESS"
 	}
@@ -784,15 +784,15 @@ shell::brew::services::fzf() {
 		opts+=(-n)
 	fi
 
-	shell::homebrew::path >/dev/null 2>&1 || {
+	_shell::homebrew::path >/dev/null 2>&1 || {
 		shell::logger::error "Homebrew is not installed (install it with: shell::homebrew::install)"
 		return "$RETURN_NOT_FOUND"
 	}
 
 	local name action rc
 	while true; do
-		name="$(shell::brew::query services list | awk 'NR > 1 && NF' |
-			shell::brew::fzf::pick -p "Service: " -H "Enter: choose an action   ESC: leave")"
+		name="$(_shell::brew::query services list | awk 'NR > 1 && NF' |
+			_shell::brew::fzf::pick -p "Service: " -H "Enter: choose an action   ESC: leave")"
 		rc=$?
 		case "$rc" in
 		0) ;;
@@ -872,12 +872,12 @@ shell::brew::size() {
 		;;
 	esac
 
-	shell::homebrew::path >/dev/null 2>&1 || {
+	_shell::homebrew::path >/dev/null 2>&1 || {
 		shell::logger::error "Homebrew is not installed (install it with: shell::homebrew::install)"
 		return "$RETURN_NOT_FOUND"
 	}
 	local root
-	root="$(shell::brew::query "$root_verb")"
+	root="$(_shell::brew::query "$root_verb")"
 	if [ -z "$root" ] || [ ! -d "$root" ]; then
 		shell::logger::info "Nothing is installed"
 		return "$RETURN_SUCCESS"
@@ -886,7 +886,7 @@ shell::brew::size() {
 	find "$root" -mindepth 1 -maxdepth 1 -exec du -sk {} + 2>/dev/null |
 		sort -k1,1nr | head -n "$count" |
 		awk -F'\t' 'BEGIN { OFS = "\t" } { n = split($2, p, "/"); print n ? p[n] : $2, "", $1 }' |
-		shell::brew::size::format |
+		_shell::brew::size::format |
 		awk -F'\t' '{ printf "%8s  %s\n", $3, $1 }'
 }
 
@@ -905,9 +905,9 @@ shell::brew::size() {
 # @exitcode 2 Invalid option or day count.
 # @exitcode 3 Homebrew is not installed.
 # @example
-#   shell::brew::unused::scan --days 30 | cut -f1
+#   _shell::brew::unused::scan --days 30 | cut -f1
 #
-shell::brew::unused::scan() {
+_shell::brew::unused::scan() {
 	local days="${SHELL_BREW_STALE_DAYS:-90}" use_history="true" want_orphans="true" want_stale="true"
 	while [ "$#" -gt 0 ]; do
 		case "$1" in
@@ -936,19 +936,19 @@ shell::brew::unused::scan() {
 		;;
 	esac
 
-	shell::homebrew::path >/dev/null 2>&1 || {
+	_shell::homebrew::path >/dev/null 2>&1 || {
 		shell::logger::error "Homebrew is not installed (install it with: shell::homebrew::install)"
 		return "$RETURN_NOT_FOUND"
 	}
 
 	local protected=" ${SHELL_BREW_PROTECTED-} "
 	local cellar prefix name size exes recent detail orphans="" words="" leaves hist_file
-	cellar="$(shell::brew::query --cellar)"
-	prefix="$(shell::brew::query --prefix)"
+	cellar="$(_shell::brew::query --cellar)"
+	prefix="$(_shell::brew::query --prefix)"
 
 	# `brew autoremove --dry-run` prints "==> Would autoremove N unneeded formulae:"
 	# and then one name per line.
-	orphans="$(shell::brew::query autoremove --dry-run |
+	orphans="$(_shell::brew::query autoremove --dry-run |
 		awk '/^==>/ { on = ($0 ~ /unneeded/); next } on && NF == 1 { print $1 }')"
 
 	if [ "$want_orphans" = "true" ]; then
@@ -984,7 +984,7 @@ EOF
 		fi
 	fi
 
-	leaves="$(shell::brew::query leaves --installed-on-request)"
+	leaves="$(_shell::brew::query leaves --installed-on-request)"
 	while IFS= read -r name; do
 		[ -n "$name" ] || continue
 		case "$protected" in
@@ -1090,7 +1090,7 @@ shell::brew::unused() {
 	done
 
 	local found rc
-	found="$(shell::brew::unused::scan ${scan_args[@]+"${scan_args[@]}"})"
+	found="$(_shell::brew::unused::scan ${scan_args[@]+"${scan_args[@]}"})"
 	rc=$?
 	if [ "$rc" -ne 0 ]; then
 		return "$rc"
@@ -1107,12 +1107,12 @@ shell::brew::unused() {
 
 	{
 		printf 'PACKAGE\tREASON\tSIZE\tWHY\n'
-		printf '%s\n' "$found" | sort -t "$(printf '\t')" -k3,3nr | shell::brew::size::format
+		printf '%s\n' "$found" | sort -t "$(printf '\t')" -k3,3nr | _shell::brew::size::format
 	} | awk -F'\t' '{ printf "%-30s %-8s %8s  %s\n", $1, $2, $3, $4 }'
 }
 
 # @description Find unused packages, pick the ones to remove, and remove them.
-#   Runs shell::brew::unused::scan, lists the candidates (package, reason, size,
+#   Runs _shell::brew::unused::scan, lists the candidates (package, reason, size,
 #   why) with a preview of `brew info` and of what depends on each, and lets you
 #   mark the ones to uninstall (Tab marks, Ctrl-A marks all). After a
 #   confirmation it uninstalls them, then offers `brew autoremove` for the
@@ -1174,7 +1174,7 @@ shell::brew::unused::fzf() {
 	done
 
 	local found rc
-	found="$(shell::brew::unused::scan ${scan_args[@]+"${scan_args[@]}"})"
+	found="$(_shell::brew::unused::scan ${scan_args[@]+"${scan_args[@]}"})"
 	rc=$?
 	if [ "$rc" -ne 0 ]; then
 		return "$rc"
@@ -1185,11 +1185,11 @@ shell::brew::unused::fzf() {
 	fi
 
 	local brew_bin preview names
-	brew_bin="$(shell::homebrew::path)"
+	brew_bin="$(_shell::homebrew::path)"
 	preview="'$brew_bin' info {1}; echo; echo 'Needed by:'; '$brew_bin' uses --installed {1}"
-	names="$(printf '%s\n' "$found" | sort -t "$(printf '\t')" -k3,3nr | shell::brew::size::format |
+	names="$(printf '%s\n' "$found" | sort -t "$(printf '\t')" -k3,3nr | _shell::brew::size::format |
 		awk -F'\t' '{ printf "%-30s %-8s %8s  %s\n", $1, $2, $3, $4 }' |
-		shell::brew::fzf::pick -m -p "Remove: " -P "$preview" \
+		_shell::brew::fzf::pick -m -p "Remove: " -P "$preview" \
 			-H "Tab: mark   Ctrl-A: mark all   Enter: uninstall   ESC: cancel")"
 	rc=$?
 	case "$rc" in
@@ -1205,7 +1205,7 @@ shell::brew::unused::fzf() {
 	done <<EOF
 $names
 EOF
-	shell::brew::fzf::confirm "$assume_yes" "Uninstall ${chosen[*]}?" || {
+	_shell::brew::fzf::confirm "$assume_yes" "Uninstall ${chosen[*]}?" || {
 		shell::logger::info "Aborted"
 		return "$RETURN_SUCCESS"
 	}
@@ -1217,7 +1217,7 @@ EOF
 
 	# Removing a leaf can orphan its own dependencies.
 	if [ "$dry_run" = "false" ]; then
-		if shell::brew::fzf::confirm "$assume_yes" "Also run 'brew autoremove' for dependencies nothing needs now?"; then
+		if _shell::brew::fzf::confirm "$assume_yes" "Also run 'brew autoremove' for dependencies nothing needs now?"; then
 			shell::brew::autoremove
 		fi
 	fi
@@ -1267,20 +1267,20 @@ shell::brew::tidy() {
 		opts+=(-n)
 	fi
 
-	shell::homebrew::path >/dev/null 2>&1 || {
+	_shell::homebrew::path >/dev/null 2>&1 || {
 		shell::logger::error "Homebrew is not installed (install it with: shell::homebrew::install)"
 		return "$RETURN_NOT_FOUND"
 	}
 
 	shell::logger::section "1/2 Dependencies nothing needs"
 	shell::brew::autoremove --preview
-	if shell::brew::fzf::confirm "$assume_yes" "Run brew autoremove?"; then
+	if _shell::brew::fzf::confirm "$assume_yes" "Run brew autoremove?"; then
 		shell::brew::autoremove ${opts[@]+"${opts[@]}"}
 	fi
 
 	shell::logger::section "2/2 Old versions and stale downloads"
 	shell::brew::cleanup --preview
-	if shell::brew::fzf::confirm "$assume_yes" "Run brew cleanup?"; then
+	if _shell::brew::fzf::confirm "$assume_yes" "Run brew cleanup?"; then
 		shell::brew::cleanup ${opts[@]+"${opts[@]}"}
 	fi
 	return "$RETURN_SUCCESS"
@@ -1332,7 +1332,7 @@ shell::brew::manage() {
 		opts+=(-n)
 	fi
 
-	shell::homebrew::path >/dev/null 2>&1 || {
+	_shell::homebrew::path >/dev/null 2>&1 || {
 		shell::logger::error "Homebrew is not installed (install it with: shell::homebrew::install)"
 		return "$RETURN_NOT_FOUND"
 	}

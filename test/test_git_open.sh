@@ -8,7 +8,7 @@ t_setup
 git config --global user.email "t@example.com"
 git config --global user.name "Test"
 
-web() { shell::git::open::web_base "$1"; }
+web() { _shell::git::open::web_base "$1"; }
 
 # --- remote URL -> web base ------------------------------------------------------------
 t_eq "scp-like ssh" "https://github.com/owner/repo" "$(web 'git@github.com:owner/repo.git')"
@@ -40,7 +40,7 @@ done
 
 # --- provider ------------------------------------------------------------------------------
 mkdir "$HOME/p" && git -C "$HOME/p" init -q && cd "$HOME/p" || exit 1
-prov() { shell::git::open::provider "$1"; }
+prov() { _shell::git::open::provider "$1"; }
 t_eq "github.com" "github" "$(prov https://github.com/o/r)"
 t_eq "GitHub Enterprise host" "github" "$(prov https://github.mycorp.com/o/r)"
 t_eq "gitlab.com" "gitlab" "$(prov https://gitlab.com/o/r)"
@@ -56,7 +56,7 @@ t_eq "invalid shell.provider is an error" "1" "$?"
 git config --unset shell.provider
 
 # --- URL building ----------------------------------------------------------------------------
-u() { shell::git::open::url "$@"; }
+u() { _shell::git::open::url "$@"; }
 b="https://github.com/o/r"
 t_eq "github repo" "$b" "$(u github $b repo)"
 t_eq "github branch" "$b/tree/main" "$(u github $b branch main)"
