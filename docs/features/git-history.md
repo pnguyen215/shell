@@ -81,24 +81,26 @@ In the viewer, the row summary (and the preview) separates what belongs to the s
 
 ## Design (for contributors)
 
+Only `shell::git::history::fzf` is public (exported). Every other function below is a private `_shell::git::history::*` helper marked `# @internal`: it may change without notice, and it does not show up when you type `shell::` in the terminal.
+
 The layers are separate and talk through one record format on stdin/stdout, so each is testable alone:
 
 ```
 context → scope → log → stats → dashboard / timeline → fzf → preview / inspect
 ```
 
-| Function                                  | Responsibility                                                                                                                                         |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `_shell::git::history::context`           | Repo root, name, branch (detached HEAD), file → repo-relative path, validation                                                                         |
-| `_shell::git::history::scope`             | Normalize and validate the scope (range → `S,E`, function name charset)                                                                                |
-| `shell::git::history::log`                | Retrieve **commit records**: full/short hash, author, date, scoped +/-, files, merge flag, path (and pre-rename path), whole-commit +/-, subject, body |
-| `shell::git::history::stats`              | Commits, additions, deletions, earliest/latest, authors — from records                                                                                 |
-| `shell::git::history::dashboard`          | The box (plain list under 44 columns)                                                                                                                  |
-| `shell::git::history::timeline`           | The vertical timeline, or `--rows` for fzf                                                                                                             |
-| `_shell::git::history::preview::command`  | The fzf preview command (plain `git`, quoted, no `eval`)                                                                                               |
-| `shell::git::history::inspect` / `::show` | Pager view of one commit: scope diff, `--full`, `--blame`                                                                                              |
-| `shell::git::history::pick`               | Interactive file → scope selection                                                                                                                     |
-| `shell::git::history::fzf`                | The command: options, loop, key handling                                                                                                               |
+| Function                                   | Responsibility                                                                                                                                         |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `_shell::git::history::context`            | Repo root, name, branch (detached HEAD), file → repo-relative path, validation                                                                         |
+| `_shell::git::history::scope`              | Normalize and validate the scope (range → `S,E`, function name charset)                                                                                |
+| `_shell::git::history::log`                | Retrieve **commit records**: full/short hash, author, date, scoped +/-, files, merge flag, path (and pre-rename path), whole-commit +/-, subject, body |
+| `_shell::git::history::stats`              | Commits, additions, deletions, earliest/latest, authors — from records                                                                                 |
+| `_shell::git::history::dashboard`          | The box (plain list under 44 columns)                                                                                                                  |
+| `_shell::git::history::timeline`           | The vertical timeline, or `--rows` for fzf                                                                                                             |
+| `_shell::git::history::preview::command`   | The fzf preview command (plain `git`, quoted, no `eval`)                                                                                               |
+| `_shell::git::history::inspect` / `::show` | Pager view of one commit: scope diff, `--full`, `--blame`                                                                                              |
+| `_shell::git::history::pick`               | Interactive file → scope selection                                                                                                                     |
+| `shell::git::history::fzf`                 | The command: options, loop, key handling                                                                                                               |
 
 A commit record is one line, fields separated by `$'\037'`: `full short author date adds dels files merge path oldpath whole_adds whole_dels whole_files subject body` (newlines in the body are written `\n`). Git is called with a fixed `--format` and `--numstat` (`-p` for `-L`, which supports nothing else); nothing parses human-readable output.
 

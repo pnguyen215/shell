@@ -8,14 +8,14 @@
 #     context  -> scope   -> log  -> stats -> dashboard / timeline -> fzf -> preview / inspect
 #     (where)    (what)      (git)   (numbers)  (render)                (interact)  (show a commit)
 #
-#   - Git data is retrieved once, as *commit records* (see shell::git::history::log), and every
+#   - Git data is retrieved once, as *commit records* (see _shell::git::history::log), and every
 #     other layer reads those records from stdin. Nothing renders while it retrieves.
 #   - A record is one line, fields separated by US (0x1f, `$'\037'`) so empty fields survive:
 #       1 full hash   2 short hash   3 author   4 date (YYYY-MM-DD HH:MM:SS)
 #       5 additions   6 deletions    7 files changed (in the scope)   8 merge (0|1)
 #       9 path at that commit   10 path before a rename   11-13 additions, deletions, files of
 #       the WHOLE commit   14 subject   15 body (newlines written as the two characters `\n`)
-#       16 branch (added by shell::git::history::branches; may be empty)
+#       16 branch (added by _shell::git::history::branches; may be empty)
 #   - The scope kinds are told apart because Git tracks them differently: a file is followed
 #     with `git log --follow`, a function or a line range with `git log -L`, code with
 #     `git log -S` / `-G`. For function and line scopes the additions and deletions are those of
@@ -282,6 +282,7 @@ _shell::git::history::log::args() {
 #   of a `git log -L` walk). Whole-commit numbers (fields 11-13) come from a second, batched
 #   `git log --no-walk`, so a commit that touched other code can be told apart from the part
 #   that touched the scope.
+# @internal
 # @arg $1 string Scope type: repo, file, function, lines, search or regex.
 # @arg $2 string File relative to the repository root (may be empty).
 # @arg $3 string Function name, line range or search text.
@@ -293,9 +294,9 @@ _shell::git::history::log::args() {
 # @exitcode 0 Success (an empty history is not an error).
 # @exitcode 1 Git failed (unknown function, bad range ...).
 # @example
-#   shell::git::history::log function src/auth/login.go Login 100
+#   _shell::git::history::log function src/auth/login.go Login 100
 #
-shell::git::history::log() {
+_shell::git::history::log() {
 	local type="${1-}" file="${2-}" spec="${3-}" max="${4-}" merges="${5-}" branch="${6-}"
 	local us=$'\037' line removed rev="" raw shas
 	local -a args=()
@@ -474,6 +475,7 @@ _shell::git::history::log::whole() {
 #   (SHELL_GIT_HISTORY_SYNC_TIMEOUT seconds, default 60) bounds it when `timeout` exists.
 #
 #   Nothing is printed on success. On failure the git output is shown with the exit status.
+# @internal
 # @arg $1 string Optional. Branch to refresh (local name, `<remote>/<name>` or a name only the remote has).
 # @arg $2 string Optional. `true` prints the command instead of running it.
 # @env SHELL_GIT_HISTORY_SYNC_TIMEOUT Optional. Seconds before the fetch is abandoned (default: 60).
@@ -481,10 +483,10 @@ _shell::git::history::log::whole() {
 # @exitcode 0 Synced, or nothing to sync (no remote, or the branch has no remote counterpart).
 # @exitcode 1 The fetch failed or timed out.
 # @example
-#   shell::git::history::sync
-#   shell::git::history::sync feature/login
+#   _shell::git::history::sync
+#   _shell::git::history::sync feature/login
 #
-shell::git::history::sync() {
+_shell::git::history::sync() {
 	local branch="${1-}" dry_run="${2:-false}"
 	local remotes remote="" rbranch="" up first_remote
 	remotes="$(git remote 2>/dev/null)"
@@ -547,14 +549,15 @@ shell::git::history::sync() {
 #   With a branch name every record gets that name. Without one (all branches walked) the
 #   branch is the nearest branch tip that reaches the commit (`git name-rev`): local branches
 #   first, then remote-tracking ones. Commits reachable from no branch get an empty field.
-# @stdin Commit records (see shell::git::history::log).
+# @stdin Commit records (see _shell::git::history::log).
+# @internal
 # @arg $1 string Optional. Branch every commit belongs to.
 # @stdout The records with the branch appended.
 # @exitcode 0 Always.
 # @example
-#   shell::git::history::log repo "" "" 100 | shell::git::history::branches
+#   _shell::git::history::log repo "" "" 100 | _shell::git::history::branches
 #
-shell::git::history::branches() {
+_shell::git::history::branches() {
 	local fixed="${1-}" records hashes
 	records="$(cat)"
 	[ -n "$records" ] || return "$RETURN_SUCCESS"
@@ -577,14 +580,15 @@ shell::git::history::branches() {
 # @description Calculates the statistics of a set of commit records for the dashboard.
 #   Only what the records say is counted, so the numbers describe the selected scope: for a
 #   function or a line range they are the lines of that function or range, not of the commit.
-# @stdin Commit records (see shell::git::history::log).
+# @stdin Commit records (see _shell::git::history::log).
+# @internal
 # @stdout One line, tab separated: commits, additions, deletions, earliest date, latest date, authors.
 #   Dates are `-` when there is no commit.
 # @exitcode 0 Always.
 # @example
-#   shell::git::history::log file src/a.sh | shell::git::history::stats
+#   _shell::git::history::log file src/a.sh | _shell::git::history::stats
 #
-shell::git::history::stats() {
+_shell::git::history::stats() {
 	awk 'BEGIN { FS = "\037"; c = 0; a = 0; d = 0; lo = ""; hi = "" }
 		NF < 8 { next }
 		{ c++; a += $5; d += $6
@@ -660,6 +664,7 @@ _shell::git::history::dashboard::row() {
 # @description Renders the history dashboard: repository, scope and totals.
 #   A rounded box on a terminal that is wide enough; a plain list when the width is under 44
 #   columns. Long paths are shortened from the left. Colours only with `--color`.
+# @internal
 # @option -w | --width Width to draw for (default: the terminal, at most SHELL_GIT_HISTORY_WIDTH).
 # @option -c | --color Use ANSI colours.
 # @option -h | --help Show this help message.
@@ -677,17 +682,17 @@ _shell::git::history::dashboard::row() {
 # @exitcode 0 Success.
 # @exitcode 2 Unknown option.
 # @example
-#   shell::git::history::dashboard -c my-project develop function src/a.go Login 18 248 132
+#   _shell::git::history::dashboard -c my-project develop function src/a.go Login 18 248 132
 #
-shell::git::history::dashboard() {
+_shell::git::history::dashboard() {
 	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Render the history dashboard"
-		shell::logger::usage "shell::git::history::dashboard [-w N] [-c] <repo> <branch> <type> <file> <spec> <commits> <adds> <dels> [first] [last]"
+		shell::logger::usage "_shell::git::history::dashboard [-w N] [-c] <repo> <branch> <type> <file> <spec> <commits> <adds> <dels> [first] [last]"
 		shell::logger::option "-w, --width <n>" "Width to draw for"
 		shell::logger::option "-c, --color" "Use ANSI colours"
 		shell::logger::option "-h, --help" "Show this help message"
-		shell::logger::example "shell::git::history::dashboard -c my-project develop file src/a.sh '' 18 248 132"
+		shell::logger::example "_shell::git::history::dashboard -c my-project develop file src/a.sh '' 18 248 132"
 		return "$RETURN_SUCCESS"
 	fi
 
@@ -813,31 +818,32 @@ shell::git::history::dashboard() {
 #   full hash, path, path before rename, summary, display line. The path columns are never
 #   empty (`.` and the path), so they are safe in a pathspec; the summary says how much of the
 #   commit belongs to the scope.
+# @internal
 # @option -r | --rows Print fzf rows instead of the multi-line timeline.
 # @option -c | --color Use ANSI colours.
 # @option -w | --width Width to draw for (default: the terminal).
 # @option -s | --selected Mark the commit with this (short or full) hash with `▶`.
 # @option -t | --type Scope type, used to word the summary (default: file).
 # @option -h | --help Show this help message.
-# @stdin Commit records (see shell::git::history::log).
+# @stdin Commit records (see _shell::git::history::log).
 # @stdout The timeline or the rows.
 # @exitcode 0 Success.
 # @exitcode 2 Unknown option.
 # @example
-#   shell::git::history::log file src/a.sh | shell::git::history::timeline -c
+#   _shell::git::history::log file src/a.sh | _shell::git::history::timeline -c
 #
-shell::git::history::timeline() {
+_shell::git::history::timeline() {
 	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Render commit records as a vertical timeline"
-		shell::logger::usage "<records> | shell::git::history::timeline [-r] [-c] [-w N] [-s hash] [-t type]"
+		shell::logger::usage "<records> | _shell::git::history::timeline [-r] [-c] [-w N] [-s hash] [-t type]"
 		shell::logger::option "-r, --rows" "Print fzf rows instead of the multi-line timeline"
 		shell::logger::option "-c, --color" "Use ANSI colours"
 		shell::logger::option "-w, --width <n>" "Width to draw for"
 		shell::logger::option "-s, --selected <hash>" "Mark this commit"
 		shell::logger::option "-t, --type <type>" "Scope type (wording of the summary)"
 		shell::logger::option "-h, --help" "Show this help message"
-		shell::logger::example "shell::git::history::log file src/a.sh | shell::git::history::timeline -c"
+		shell::logger::example "_shell::git::history::log file src/a.sh | _shell::git::history::timeline -c"
 		return "$RETURN_SUCCESS"
 	fi
 
@@ -1023,6 +1029,7 @@ _shell::git::history::show() {
 #   Shows the header (hashes, parents, author, date, message) and the diff that belongs to the
 #   scope, or the whole commit with `full`; `blame` shows the lines of the scope as they were at
 #   that commit. Read-only: it never changes the repository.
+# @internal
 # @option -f | --full Show the complete commit, not only the scope.
 # @option -b | --blame Show `git blame` of the scope at that commit.
 # @option -h | --help Show this help message.
@@ -1038,17 +1045,17 @@ _shell::git::history::show() {
 # @exitcode 1 No commit given.
 # @exitcode 2 Unknown option.
 # @example
-#   shell::git::history::inspect "$root" function src/a.go Login "$sha" src/a.go
+#   _shell::git::history::inspect "$root" function src/a.go Login "$sha" src/a.go
 #
-shell::git::history::inspect() {
+_shell::git::history::inspect() {
 	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Inspect one commit of a history in a pager"
-		shell::logger::usage "shell::git::history::inspect [-f] [-b] <root> <type> <file> <spec> <commit> [path] [old path]"
+		shell::logger::usage "_shell::git::history::inspect [-f] [-b] <root> <type> <file> <spec> <commit> [path] [old path]"
 		shell::logger::option "-f, --full" "Show the complete commit, not only the scope"
 		shell::logger::option "-b, --blame" "Show git blame of the scope at that commit"
 		shell::logger::option "-h, --help" "Show this help message"
-		shell::logger::example "shell::git::history::inspect \"\$root\" function src/a.go Login \"\$sha\""
+		shell::logger::example "_shell::git::history::inspect \"\$root\" function src/a.go Login \"\$sha\""
 		return "$RETURN_SUCCESS"
 	fi
 
@@ -1167,15 +1174,16 @@ _shell::git::history::function::candidates() {
 #   Step 1 — pick a file (or the whole repository). Step 2 — pick the scope: file history,
 #   function history (a function chosen from the file, or typed), line range, or a code search.
 #   Every step has a "← Back" entry.
+# @internal
 # @arg $1 string Repository root.
 # @stdout One line, fields separated by US: type, file, spec.
 # @exitcode 0 A scope was chosen.
 # @exitcode 9 The user cancelled.
 # @exitcode 11 The user picked "← Back" at the first step.
 # @example
-#   IFS=$'\037' read -r type file spec <<<"$(shell::git::history::pick "$root")"
+#   IFS=$'\037' read -r type file spec <<<"$(_shell::git::history::pick "$root")"
 #
-shell::git::history::pick() {
+_shell::git::history::pick() {
 	local root="${1-}" us=$'\037' back="$SHELL_FZF_BACK_LABEL"
 	local whole="(whole repository)" file choice name spec
 	while true; do
@@ -1285,7 +1293,7 @@ shell::git::history::pick() {
 # @exitcode 1 Not a repository, unknown file, invalid scope, or Git failed.
 # @exitcode 2 Invalid usage.
 # @exitcode 11 The user picked "← Back".
-# @see shell::git::history::log
+# @see _shell::git::history::log
 # @example
 #   shell::git::history::fzf src/auth/login.go
 #   shell::git::history::fzf --function Login src/auth/login.go
@@ -1398,7 +1406,7 @@ shell::git::history::fzf() {
 	# Optional, silent remote sync (opt-in: it costs a network round trip). A failure is shown
 	# in full, then the history of what is already local is still explored.
 	if [ "$sync" = "true" ]; then
-		shell::git::history::sync "$branch_arg" "$dry_run" ||
+		_shell::git::history::sync "$branch_arg" "$dry_run" ||
 			shell::logger::warn "Continuing with the commits already in the local clone"
 	fi
 
@@ -1418,7 +1426,7 @@ shell::git::history::fzf() {
 			shell::logger::error "--interactive cannot be combined with --print or --dry-run"
 			return "$RETURN_INVALID"
 		fi
-		descriptor="$(shell::git::history::pick "$root")" || return "$?"
+		descriptor="$(_shell::git::history::pick "$root")" || return "$?"
 		IFS="$us" read -r type file spec <<<"$descriptor"
 		rel="$file"
 	elif [ -z "$type" ]; then
@@ -1439,12 +1447,12 @@ shell::git::history::fzf() {
 
 	# Retrieve once; everything below only reads the records.
 	local records
-	records="$(shell::git::history::log "$type" "$rel" "$spec" "$max" "$merges" "$branch_arg")" || return "$RETURN_FAILURE"
-	records="$(printf '%s\n' "$records" | shell::git::history::branches "$branch_arg")"
+	records="$(_shell::git::history::log "$type" "$rel" "$spec" "$max" "$merges" "$branch_arg")" || return "$RETURN_FAILURE"
+	records="$(printf '%s\n' "$records" | _shell::git::history::branches "$branch_arg")"
 
 	local commits=0 adds=0 dels=0 first="-" last="-"
 	if [ -n "$records" ]; then
-		IFS="$tab" read -r commits adds dels first last _ <<<"$(printf '%s\n' "$records" | shell::git::history::stats)"
+		IFS="$tab" read -r commits adds dels first last _ <<<"$(printf '%s\n' "$records" | _shell::git::history::stats)"
 	fi
 
 	local use_color="false"
@@ -1454,18 +1462,18 @@ shell::git::history::fzf() {
 	[ "$use_color" = "true" ] && dash_flags+=(-c)
 
 	if [ "$print_only" = "true" ]; then
-		shell::git::history::dashboard "${dash_flags[@]}" "$name" "$branch" "$type" "$rel" "$spec" "$commits" "$adds" "$dels" "$first" "$last"
+		_shell::git::history::dashboard "${dash_flags[@]}" "$name" "$branch" "$type" "$rel" "$spec" "$commits" "$adds" "$dels" "$first" "$last"
 		if [ -z "$records" ]; then
 			printf '\nNo commits found for this scope.\n'
 		else
 			printf '\n'
-			printf '%s\n' "$records" | shell::git::history::timeline "${dash_flags[@]}" -t "$type"
+			printf '%s\n' "$records" | _shell::git::history::timeline "${dash_flags[@]}" -t "$type"
 		fi
 		return "$RETURN_SUCCESS"
 	fi
 
 	if [ -z "$records" ]; then
-		shell::git::history::dashboard "${dash_flags[@]}" "$name" "$branch" "$type" "$rel" "$spec" 0 0 0
+		_shell::git::history::dashboard "${dash_flags[@]}" "$name" "$branch" "$type" "$rel" "$spec" 0 0 0
 		shell::logger::warn "No commits found for this scope"
 		return "$RETURN_SUCCESS"
 	fi
@@ -1476,10 +1484,10 @@ shell::git::history::fzf() {
 	if [ "$use_color" = "true" ] && [ "$hl" != "bat" ]; then color_flag="always"; fi
 
 	local dashboard shortcuts header rows preview
-	dashboard="$(shell::git::history::dashboard "${dash_flags[@]}" "$name" "$branch" "$type" "$rel" "$spec" "$commits" "$adds" "$dels" "$first" "$last")"
+	dashboard="$(_shell::git::history::dashboard "${dash_flags[@]}" "$name" "$branch" "$type" "$rel" "$spec" "$commits" "$adds" "$dels" "$first" "$last")"
 	shortcuts="Enter inspect  ^F whole commit  ^B blame  ^Y copy hash  ^O open on web  ^D/^U scroll  ESC quit"
 	header="${dashboard}"$'\n'"${shortcuts}"
-	rows="$(printf '%s\n' "$records" | shell::git::history::timeline -r "${dash_flags[@]}" -t "$type")"
+	rows="$(printf '%s\n' "$records" | _shell::git::history::timeline -r "${dash_flags[@]}" -t "$type")"
 	rows="${rows}"$'\n'"${SHELL_FZF_BACK_LABEL}${tab}:back${tab}${tab}${tab}"
 	preview="$(_shell::git::history::preview::command "$root" "$type" "$spec" "$color_flag" "$hl")"
 
@@ -1521,9 +1529,9 @@ shell::git::history::fzf() {
 			shell::git::open::browser "$full" || shell::logger::warn "Could not open the commit on the web"
 			[ -t 0 ] && sleep 1
 			;;
-		ctrl-f) shell::git::history::inspect --full "$root" "$type" "$rel" "$spec" "$full" "$fpath" "$opath" ;;
-		ctrl-b) shell::git::history::inspect --blame "$root" "$type" "$rel" "$spec" "$full" "$fpath" "$opath" ;;
-		*) shell::git::history::inspect "$root" "$type" "$rel" "$spec" "$full" "$fpath" "$opath" ;;
+		ctrl-f) _shell::git::history::inspect --full "$root" "$type" "$rel" "$spec" "$full" "$fpath" "$opath" ;;
+		ctrl-b) _shell::git::history::inspect --blame "$root" "$type" "$rel" "$spec" "$full" "$fpath" "$opath" ;;
+		*) _shell::git::history::inspect "$root" "$type" "$rel" "$spec" "$full" "$fpath" "$opath" ;;
 		esac
 	done
 

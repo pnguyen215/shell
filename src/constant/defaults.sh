@@ -158,7 +158,7 @@ Acked-by|Who acknowledged the change}"
 : "${SHELL_GIT_HISTORY_MAX:=500}"
 # Widest the dashboard box is drawn (it shrinks to the terminal when narrower).
 : "${SHELL_GIT_HISTORY_WIDTH:=72}"
-# Fetch the remote before exploring (shell::git::history::sync): "true" or "false".
+# Fetch the remote before exploring (_shell::git::history::sync): "true" or "false".
 # Off by default because it costs a network round trip (override with --sync / --no-sync).
 : "${SHELL_GIT_HISTORY_SYNC:=false}"
 # Seconds before that fetch is abandoned (needs `timeout` or `gtimeout`).
