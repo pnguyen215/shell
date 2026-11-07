@@ -152,8 +152,8 @@ The only exceptions are the four lifecycle functions in [`src/shell.sh`](src/she
 ├── install.sh  upgrade.sh  uninstall.sh   # bootstrap scripts (curl-able)
 ├── Makefile                               # make test | lint | fmt | docs | doctor
 ├── docs/
-│   ├── development/                       # architecture, conventions, visibility audit
-│   ├── features/                          # commit-messages, git-history, homebrew, nvm, rsync, ssh
+│   ├── development/                       # architecture, conventions
+│   ├── features/                          # git-commit-messages, git-history, homebrew, nvm, rsync, ssh
 │   └── api/                               # generated reference (make docs)
 ├── scripts/                               # lint.sh, gen_docs.sh
 ├── test/                                  # run under bash and zsh
@@ -164,6 +164,7 @@ The only exceptions are the four lifecycle functions in [`src/shell.sh`](src/she
     ├── core/           # console, logger, os, exec, clipboard, fzf, ask (prompts)
     ├── dependency/     # one installer per external tool (fzf, jq, curl, git, ...), package manager, Homebrew, nvm, Oh My Zsh
     ├── lib/            # fs, net, process, permission, strings, conf, ini, profile, bookmark, goto, ssh, workspace, brew (Homebrew packages + fzf)
+    ├── markdown/       # Markdown / Telegram MarkdownV2 builder (docs/features/markdown.md)
     ├── skill/          # agent skills for Claude Code / OpenCode: install, upgrade, uninstall, sync
     ├── lang/           # git, go, python, java, nodejs, nvm, angular
     ├── devops/         # GitHub Actions scaffolding
@@ -184,7 +185,7 @@ export SHELL_GIT_COMMIT_EMOJI=true              # gitmoji in commit messages (de
 source "$HOME/shell/src/shell.sh"
 ```
 
-User data (keys, bookmarks, workspaces) lives under `SHELL_CONFIG_DIR` with mode 700/600. Settings of a single feature are documented in [`docs/features/`](docs/features), for example [commit messages](docs/features/commit-messages.md), [Homebrew](docs/features/homebrew.md), [nvm](docs/features/nvm.md), [SSH](docs/features/ssh.md) and [rsync](docs/features/rsync.md).
+User data (keys, bookmarks, workspaces) lives under `SHELL_CONFIG_DIR` with mode 700/600. Settings of a single feature are documented in [`docs/features/`](docs/features), for example [commit messages](docs/features/git-commit-messages.md), [Homebrew](docs/features/homebrew.md), [Markdown builder](docs/features/markdown.md), [nvm](docs/features/nvm.md), [SSH](docs/features/ssh.md) and [rsync](docs/features/rsync.md).
 
 ## Dependencies
 
