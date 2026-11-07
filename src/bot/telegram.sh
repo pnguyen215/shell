@@ -45,37 +45,60 @@ _shell::telegram::call() {
 }
 
 # @description Send a text message through the Telegram Bot API.
-#   The message is sent with `parse_mode=markdown`.
+#   By default the message is sent with `parse_mode=markdown` (the legacy mode). Pass
+#   `--parse-mode markdownv2` for text built with `shell::markdown::*` in the `telegram`
+#   format: MarkdownV2 has different escaping, so text written for one mode is not valid
+#   in the other.
 # @option -h | --help Show help and return.
 # @option -n | --dry-run Print the command (token masked) instead of sending.
+# @option -m | --parse-mode Parse mode of the text: `markdown` (default) or `markdownv2`.
 # @arg $1 string Bot token.
 # @arg $2 string Chat ID.
 # @arg $3 string Message text.
 # @exitcode 0 The message was delivered (or dry-run printed).
 # @exitcode 1 Delivery failed.
-# @exitcode 2 A required argument is missing.
+# @exitcode 2 A required argument is missing, or the parse mode is unknown.
 # @example
 #   shell::telegram::send "$TOKEN" "$CHAT_ID" "Deployment finished"
 #   shell::telegram::send -n "$TOKEN" "$CHAT_ID" "Hello"
+#   shell::telegram::send -m markdownv2 "$TOKEN" "$CHAT_ID" "*Done* in 3\.2s"
 shell::telegram::send() {
 	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Send a message via the Telegram Bot API"
-		shell::logger::usage "shell::telegram::send [-n] <token> <chat_id> <message>"
+		shell::logger::usage "shell::telegram::send [-n] [-m <markdown|markdownv2>] <token> <chat_id> <message>"
 		shell::logger::item "token" "Telegram Bot API token"
 		shell::logger::item "chat_id" "Chat identifier that receives the message"
-		shell::logger::item "message" "Message text (markdown)"
+		shell::logger::item "message" "Message text (in the selected parse mode)"
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
+		shell::logger::option "-m, --parse-mode" "markdown (default) or markdownv2"
 		shell::logger::option "-h, --help" "Display this help message"
 		shell::logger::example "shell::telegram::send \"\$TOKEN\" \"\$CHAT_ID\" \"Hello\""
 		return "$RETURN_SUCCESS"
 	fi
 
-	local dry_run="false"
-	if [ "${1-}" = "-n" ] || [ "${1-}" = "--dry-run" ]; then
-		dry_run="true"
-		shift
-	fi
+	local dry_run="false" parse_mode="markdown"
+	while [ "$#" -gt 0 ]; do
+		case "$1" in
+		-n | --dry-run)
+			dry_run="true"
+			shift
+			;;
+		-m | --parse-mode)
+			parse_mode="${2-}"
+			shift 2 2>/dev/null || shift "$#"
+			;;
+		*) break ;;
+		esac
+	done
+	case "$parse_mode" in
+	markdown) ;;
+	markdownv2) parse_mode="MarkdownV2" ;;
+	*)
+		shell::logger::error "Unknown parse mode '${parse_mode}' (use markdown or markdownv2)"
+		return "$RETURN_INVALID"
+		;;
+	esac
 
 	local token="${1-}" chat_id="${2-}" message="${3-}"
 	[ -n "$token" ] || {
@@ -92,13 +115,13 @@ shell::telegram::send() {
 	}
 
 	if [ "$dry_run" = "true" ]; then
-		shell::logger::command_clip "curl -X POST ${SHELL_URL_TELEGRAM_API}/bot$(_shell::telegram::mask "$token")/sendMessage -d chat_id=${chat_id} -d parse_mode=markdown --data-urlencode text=<message>"
+		shell::logger::command_clip "curl -X POST ${SHELL_URL_TELEGRAM_API}/bot$(_shell::telegram::mask "$token")/sendMessage -d chat_id=${chat_id} -d parse_mode=${parse_mode} --data-urlencode text=<message>"
 		return "$RETURN_SUCCESS"
 	fi
 
 	shell::dependency::curl::ensure || return "$RETURN_FAILURE"
 	_shell::telegram::call "$token" sendMessage \
-		-d "chat_id=${chat_id}" -d "parse_mode=markdown" --data-urlencode "text=${message}" || {
+		-d "chat_id=${chat_id}" -d "parse_mode=${parse_mode}" --data-urlencode "text=${message}" || {
 		shell::logger::error "Failed to send the Telegram message."
 		return "$RETURN_FAILURE"
 	}

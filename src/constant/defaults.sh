@@ -183,3 +183,10 @@ SHELL_PROTECTED_KEYS=(
 	"SHELL_HISTORICAL_GH_TELEGRAM_BOT_TOKEN"
 	"SHELL_HISTORICAL_GH_TELEGRAM_CHAT_ID"
 )
+
+# Telegram notifications of the git module (_shell::git::telegram::notify): labels whose value is an
+# identifier (branch, hash, tag ...) and is shown as inline code. Space separated.
+: "${SHELL_GIT_NOTIFY_CODE_LABELS:=Branch Source Target Backup Old New Hash Commit Tag Strategy}"
+
+# Longest value sent in a notification field; longer values are cut (Telegram caps a message at 4096).
+: "${SHELL_GIT_NOTIFY_VALUE_MAX:=500}"

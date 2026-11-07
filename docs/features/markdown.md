@@ -2,7 +2,7 @@
 
 `shell::markdown::*` builds Markdown documents from Bash: a title, paragraphs, lists, tables, code blocks. The same calls produce standard Markdown, **Telegram MarkdownV2** (for `sendMessage` with `parse_mode=MarkdownV2`) or plain text. Code lives in `src/markdown/`; the defaults are in `src/constant/markdown.sh`.
 
-It is the library's only Markdown/MarkdownV2 converter. (`shell::telegram::send` still sends the legacy `parse_mode=markdown`; see [Telegram](#telegram-markdownv2) below.)
+It is the library's only Markdown/MarkdownV2 converter. The git notifications (backup, rename, merge, commit, tag, revert) are built with it and sent as MarkdownV2; see [Used by the git module](#used-by-the-git-module).
 
 ## Loading
 
@@ -143,7 +143,27 @@ What is verified: the escaping and syntax are covered by `test/test_markdown.sh`
 - An entity cannot be nested inside the same kind, and italic directly around underline (or the reverse) is ambiguous (`___`). Avoid both.
 - A bold fragment inside a heading or a table header nests bold in bold.
 - Telegram limits a message to 4096 characters; the builder does not split.
-- `shell::telegram::send` still uses `parse_mode=markdown` (the legacy mode, which has different escaping). Sending builder output needs `parse_mode=MarkdownV2`; there is no option for it yet.
+- `shell::telegram::send` defaults to the legacy `parse_mode=markdown`, which has different escaping. Send builder output with `shell::telegram::send -m markdownv2 <token> <chat_id> <text>` (`shell::git::telegram::history::send -m markdownv2 <text>` does the same with the stored keys).
+
+## Used by the git module
+
+`_shell::git::telegram::notify <title> [<label> <value>]...` (`src/lang/git.sh`) builds every git notification in one layout and sends it with `parse_mode=MarkdownV2`:
+
+```text
+*Branch renamed*
+
+*Old:* `feat/a`
+*New:* `feat/b`
+
+*Repository:* [widget](https://github.com/acme/widget)
+*User:* Jane Doe
+*Time:* 2026\-11\-07 22:30:00
+```
+
+- The title is bold; each field is `*Label:* value`; identifiers (labels in `SHELL_GIT_NOTIFY_CODE_LABELS`: branch, hash, tag ...) are inline code, everything else is escaped text.
+- The repository links to its web page when the remote is web-hostable. Credentials in the remote URL are never sent.
+- Values are cut at `SHELL_GIT_NOTIFY_VALUE_MAX` (500) characters; empty values are left out.
+- The message is built in a subshell, so a document you are building with `shell::markdown::*` is not touched.
 
 ## Examples
 
