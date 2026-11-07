@@ -152,7 +152,7 @@ The type menu keeps its familiar labels. A label that is not a Conventional Comm
 | `deprecation`    | `chore(deprecate)`   | `:warning:`                  |
 | `release`        | `chore(release)`     | `:gem:`                      |
 
-The mapping is the `SHELL_GIT_COMMIT_TYPES` constant in [`src/constant/defaults.sh`](../src/constant/defaults.sh), one `label|type|emoji` per line. The type must be one of `build chore ci docs feat fix perf refactor revert style test`, with an optional lower-case scope; `make test` fails if a label maps to anything else.
+The mapping is the `SHELL_GIT_COMMIT_TYPES` constant in [`src/constant/defaults.sh`](../../src/constant/defaults.sh), one `label|type|emoji` per line. The type must be one of `build chore ci docs feat fix perf refactor revert style test`, with an optional lower-case scope; `make test` fails if a label maps to anything else.
 
 ## How `predict` decides
 
@@ -193,4 +193,4 @@ No code from other projects is included. While designing this, the open-source t
 
 ## Empty commits
 
-`shell::git::commit::create --empty` picks a ready-made message from the templates and runs `git commit --allow-empty`. It follows the same switch: templates are shown without their emoji unless emoji are on. The templates live in `~/.shell-config/git/git-commit-messages.txt` (installed from [`src/data/`](../src/data/git-commit-messages.txt)); add your own in `git-commit-messages.user.txt` next to it, and check either file with `shell::git::commit::message::validate`.
+`shell::git::commit::create --empty` picks a ready-made message from the templates and runs `git commit --allow-empty`. It follows the same switch: templates are shown without their emoji unless emoji are on. The templates live in `~/.shell-config/git/git-commit-messages.txt` (installed from [`src/data/`](../../src/data/git-commit-messages.txt)); add your own in `git-commit-messages.user.txt` next to it, and check either file with `shell::git::commit::message::validate`.
