@@ -11,6 +11,7 @@
 - [git-commit-messages.md](features/git-commit-messages.md) — Conventional Commits, `create` and `predict`
 - [git-history.md](features/git-history.md) — history explorer for files, functions and line ranges
 - [homebrew.md](features/homebrew.md) — `shell::brew::*`
+- [markdown.md](features/markdown.md) — `shell::markdown::*`: Markdown, Telegram MarkdownV2 and plain-text builder
 - [nvm.md](features/nvm.md) — `shell::nvm::*`
 - [ssh.md](features/ssh.md) — `shell::ssh::*` (see also [rsync.md](features/rsync.md))
 - [rsync.md](features/rsync.md) — `shell::rsync::*`
