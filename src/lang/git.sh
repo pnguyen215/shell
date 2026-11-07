@@ -10,33 +10,45 @@
 #   to prompt the user to add it using shell::conf::key::add. If both keys exist, it retrieves their values and
 #   calls shell::telegram::send (with the dry-run flag, if enabled) to send the message.
 # @option -n Optional dry-run flag. If provided, the command will be printed using shell::logger::command_clip instead of executed.
+# @option -m | --parse-mode Optional. `markdown` (default) or `markdownv2` (for text built with shell::markdown::*).
 # @arg $1 string message: The message text to send.
 # @exitcode 0 Success.
 # @exitcode 2 Invalid or missing arguments.
 # @example
 #   shell::git::telegram::history::send "Historical message text"
 #   shell::git::telegram::history::send -n "Dry-run historical message text"
+#   shell::git::telegram::history::send -m markdownv2 "*Bold* text"
 #
 shell::git::telegram::history::send() {
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Send historical GitHub message via Telegram"
-		shell::logger::usage "shell::git::telegram::history::send [-n] [-h] <message>"
+		shell::logger::usage "shell::git::telegram::history::send [-n] [-m <markdown|markdownv2>] [-h] <message>"
 		shell::logger::item "message" "The message text to send"
 		shell::logger::option "-h, --help" "Show this help message"
 		shell::logger::option "-n, --dry-run" "Print the command instead of executing it"
+		shell::logger::option "-m, --parse-mode" "markdown (default) or markdownv2"
 		shell::logger::example "shell::git::telegram::history::send \"Hello, World!\""
 		shell::logger::example "shell::git::telegram::history::send -n \"Hello, World!\""
 		return $RETURN_SUCCESS
 	fi
 
-	local dry_run="false"
-	if [ "$1" = "-n" ] || [ "$1" = "--dry-run" ]; then
-		dry_run="true"
-		shift
-	fi
+	local dry_run="false" parse_mode="markdown"
+	while [ "$#" -gt 0 ]; do
+		case "$1" in
+		-n | --dry-run)
+			dry_run="true"
+			shift
+			;;
+		-m | --parse-mode)
+			parse_mode="${2-}"
+			shift 2 2>/dev/null || shift "$#"
+			;;
+		*) break ;;
+		esac
+	done
 
-	local message="$1"
+	local message="${1-}"
 
 	if [ -z "$message" ]; then
 		shell::logger::error "Message is required"
@@ -68,10 +80,102 @@ shell::git::telegram::history::send() {
 	chatID=$(shell::conf::key::get "SHELL_HISTORICAL_GH_TELEGRAM_CHAT_ID")
 
 	if [ "$dry_run" = "true" ]; then
-		shell::telegram::send -n "$token" "$chatID" "$message"
+		shell::telegram::send -n -m "$parse_mode" "$token" "$chatID" "$message"
 	else
-		shell::telegram::send "$token" "$chatID" "$message"
+		shell::telegram::send -m "$parse_mode" "$token" "$chatID" "$message"
 	fi
+}
+
+# @description Build and send a structured Telegram notification for a git event.
+#   The message is written with `shell::markdown::*` (format `telegram`) and sent as
+#   MarkdownV2, so every value is escaped correctly. Layout:
+#
+#       *Branch renamed*                      title (bold)
+#
+#       *Old:* `feat/a`                       event fields, one per line
+#       *New:* `feat/b`
+#
+#       *Repository:* [name](web url)         context: repository, user, time
+#       *User:* Jane Doe
+#       *Time:* 2026-01-31 10:00:00
+#
+#   Identifiers (labels in SHELL_GIT_NOTIFY_CODE_LABELS: branch, hash, tag ...) are shown as
+#   inline code. The repository links to its web page when the remote is web-hostable
+#   (credentials in the remote URL are never sent); otherwise only its name is shown.
+#   Values longer than SHELL_GIT_NOTIFY_VALUE_MAX characters are cut. A field with an empty
+#   value is left out. The message is built in a subshell, so a document the caller is
+#   building with shell::markdown::* is not touched.
+# @internal
+# @arg $1 string Event title (for example `Branch renamed`).
+# @arg $@ string Event fields as `<label> <value>` pairs.
+# @exitcode 0 The notification was sent.
+# @exitcode 1 The message could not be built or sent.
+# @exitcode 2 A missing title, or a label without a value argument.
+# @example
+#   _shell::git::telegram::notify "Branch renamed" Old "feat/a" New "feat/b"
+#
+_shell::git::telegram::notify() {
+	local title="${1-}"
+	if [ -z "$title" ]; then
+		shell::logger::error "A notification title is required"
+		return "$RETURN_INVALID"
+	fi
+	shift
+	if [ $(($# % 2)) -ne 0 ]; then
+		shell::logger::error "Notification fields must be <label> <value> pairs"
+		return "$RETURN_INVALID"
+	fi
+
+	local repo_path repo_name remote_url web_url git_user stamp
+	repo_path=$(git rev-parse --show-toplevel 2>/dev/null)
+	repo_name=$(basename "${repo_path:-.}")
+	remote_url=$(git config --get remote.origin.url 2>/dev/null)
+	web_url=$(_shell::git::open::web_base "$remote_url" 2>/dev/null)
+	git_user=$(git config user.name 2>/dev/null)
+	stamp=$(date "+%Y-%m-%d %H:%M:%S")
+
+	local message
+	message="$(
+		labels=()
+		cells=()
+		max="$SHELL_GIT_NOTIFY_VALUE_MAX"
+		while [ "$#" -ge 2 ]; do
+			label="$1"
+			value="$2"
+			shift 2
+			[ -n "$value" ] || continue
+			if [ "${#value}" -gt "$max" ]; then
+				value="${value:0:$((max - 3))}..."
+			fi
+			case " $SHELL_GIT_NOTIFY_CODE_LABELS " in
+			*" $label "*) value="$(shell::markdown::code "$value")" ;;
+			esac
+			labels+=("$label")
+			cells+=("$value")
+		done
+
+		shell::markdown::init -f telegram || return 1
+		shell::markdown::heading 2 "$title"
+		if [ "${#labels[@]}" -gt 0 ]; then
+			shell::markdown::table_header "${labels[@]}"
+			shell::markdown::table_row "${cells[@]}"
+			shell::markdown::table
+		fi
+		repo_cell="$repo_name"
+		if [ -n "$web_url" ]; then
+			repo_cell="$(shell::markdown::link "$repo_name" "$web_url")"
+		fi
+		shell::markdown::table_header Repository User Time
+		shell::markdown::table_row "$repo_cell" "$git_user" "$stamp"
+		shell::markdown::table
+		shell::markdown::render
+	)" || message=""
+
+	if [ -z "$message" ]; then
+		shell::logger::error "Could not build the Telegram notification"
+		return "$RETURN_FAILURE"
+	fi
+	shell::git::telegram::history::send -m markdownv2 "$message"
 }
 
 # @description Displays comprehensive statistics for a Git repository — works both for a
@@ -1480,21 +1584,9 @@ shell::git::branch::backup() {
 	# Step 5 — copy the backup branch name to the clipboard for easy reference.
 	shell::clipboard::copy --best-effort "${backup_name}"
 
-	# Collect metadata for the Telegram notification.
-	local repository_path
-	local repository_name
-	local git_username
-	local server_remote_url
-	local notify_timestamp
-
-	repository_path=$(git rev-parse --show-toplevel 2>/dev/null)
-	repository_name=$(basename "${repository_path}")
-	git_username=$(git config user.name 2>/dev/null)
-	server_remote_url=$(git config --get remote.origin.url 2>/dev/null)
-	notify_timestamp=$(date "+%Y-%m-%d %H:%M:%S")
-
-	local telegram_message="Branch Backup Successfully (Local & Remote) | source: ${branch} | backup: ${backup_name} | repository: ${repository_name} (${server_remote_url}) | username: ${git_username} | timestamp: ${notify_timestamp}"
-	shell::git::telegram::history::send "${telegram_message}"
+	# Telegram notification.
+	_shell::git::telegram::notify "Branch backup completed" \
+		Source "${branch}" Backup "${backup_name}" Scope "Local and remote"
 
 	return $RETURN_SUCCESS
 }
@@ -1630,20 +1722,7 @@ shell::git::branch::rename() {
 	fi
 
 	# Step 5 — Telegram notification.
-	local repository_path
-	local repository_name
-	local git_username
-	local server_remote_url
-	local notify_timestamp
-
-	repository_path=$(git rev-parse --show-toplevel 2>/dev/null)
-	repository_name=$(basename "${repository_path}")
-	git_username=$(git config user.name 2>/dev/null)
-	server_remote_url=$(git config --get remote.origin.url 2>/dev/null)
-	notify_timestamp=$(date "+%Y-%m-%d %H:%M:%S")
-
-	local telegram_message="Branch Renamed Successfully | old: ${old_name} | new: ${new_name} | repository: ${repository_name} (${server_remote_url}) | username: ${git_username} | timestamp: ${notify_timestamp}"
-	shell::git::telegram::history::send "${telegram_message}"
+	_shell::git::telegram::notify "Branch renamed" Old "${old_name}" New "${new_name}"
 
 	return $RETURN_SUCCESS
 }
@@ -2204,15 +2283,7 @@ shell::git::branch::merge() {
 	# ---------------------------------------------------------------------------
 	# Step 8 — Send Telegram notification.
 	# ---------------------------------------------------------------------------
-	local git_username repo_path repo_name remote_url timestamp
-	git_username=$(git config user.name 2>/dev/null)
-	repo_path=$(git rev-parse --show-toplevel 2>/dev/null)
-	repo_name=$(basename "${repo_path}")
-	remote_url=$(git config --get remote.origin.url 2>/dev/null)
-	timestamp=$(date "+%Y-%m-%d %H:%M:%S")
-
-	local telegram_message="Merge | source: ${source_branch} → target: ${target_branch} | repository: ${repo_name} (${remote_url}) | username: ${git_username} | timestamp: ${timestamp}"
-	shell::git::telegram::history::send "${telegram_message}"
+	_shell::git::telegram::notify "Merge completed" Source "${source_branch}" Target "${target_branch}"
 
 	return $RETURN_SUCCESS
 }
@@ -4897,24 +4968,14 @@ _shell::git::commit::type::resolve() {
 _shell::git::commit::publish() {
 	local commit_message="${1-}"
 
-	local git_username
 	local current_branch
 	local commit_hash
-	local repository_path
-	local repository_name
-	local server_remote_url
-	local timestamp
 
-	git_username=$(git config user.name 2>/dev/null)
 	current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
 	commit_hash=$(git rev-parse HEAD 2>/dev/null)
-	repository_path=$(git rev-parse --show-toplevel 2>/dev/null)
-	repository_name=$(basename "${repository_path}")
-	server_remote_url=$(git config --get remote.origin.url 2>/dev/null)
-	timestamp=$(date "+%Y-%m-%d %H:%M:%S")
 
-	local telegram_message="username: ${git_username} | repository: ${repository_name} (${server_remote_url}) | branch: ${current_branch} | hash: ${commit_hash} | message: ${commit_message} | timestamp: ${timestamp}"
-	shell::git::telegram::history::send "${telegram_message}"
+	_shell::git::telegram::notify "Commit created" \
+		Branch "${current_branch}" Hash "${commit_hash}" Message "${commit_message}"
 
 	# Push current branch to origin via interactive push command picker.
 	shell::git::branch::push "${current_branch}"
@@ -6929,8 +6990,9 @@ shell::git::tag::create() {
 		"Restored original branch '${current_branch}'" "Branch restore aborted" || return $?
 
 	# Step 6 — send Telegram activity notification.
-	local telegram_message="Branch: ${branch} | Commit: ${current_commit} | Author: ${commit_author} | Date: ${commit_date} | Tag ${tag} has been successfully created and pushed."
-	shell::git::telegram::history::send "${telegram_message}"
+	_shell::git::telegram::notify "Tag created and pushed" \
+		Tag "${tag}" Branch "${branch}" Commit "${current_commit}" \
+		"Commit author" "${commit_author}" Date "${commit_date}"
 
 	return $RETURN_SUCCESS
 }
@@ -7004,7 +7066,7 @@ shell::git::tag::remove() {
 		"Tag '${tag}' deleted on origin" "Remote tag delete aborted" || return $?
 
 	# Step 3 — send Telegram activity notification.
-	shell::git::telegram::history::send "Tag ${tag} has been removed from local and origin."
+	_shell::git::telegram::notify "Tag removed" Tag "${tag}" Scope "Local and origin"
 
 	return $RETURN_SUCCESS
 }
@@ -7657,18 +7719,6 @@ shell::git::commit::revert::fzf() {
 	local current_branch
 	current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
 
-	local repository_path
-	local repository_name
-	local git_username
-	local server_remote_url
-	local notify_timestamp
-
-	repository_path=$(git rev-parse --show-toplevel 2>/dev/null)
-	repository_name=$(basename "${repository_path}")
-	git_username=$(git config user.name 2>/dev/null)
-	server_remote_url=$(git config --get remote.origin.url 2>/dev/null)
-	notify_timestamp=$(date "+%Y-%m-%d %H:%M:%S")
-
 	# ---------------------------------------------------------------------------
 	# Step 1 — Build coloured commit list via git log --all.
 	# ---------------------------------------------------------------------------
@@ -7927,8 +7977,8 @@ shell::git::commit::revert::fzf() {
 	# ---------------------------------------------------------------------------
 	# Step 10 — Send Telegram notification.
 	# ---------------------------------------------------------------------------
-	local telegram_message="Revert Executed | branch: ${revert_branch} | strategy: ${action} | ${revert_description} | repository: ${repository_name} (${server_remote_url}) | username: ${git_username} | timestamp: ${notify_timestamp}"
-	shell::git::telegram::history::send "${telegram_message}"
+	_shell::git::telegram::notify "Revert executed" \
+		Branch "${revert_branch}" Strategy "${action}" Details "${revert_description}"
 
 	# ---------------------------------------------------------------------------
 	# Step 11 — Offer to return to original branch.
