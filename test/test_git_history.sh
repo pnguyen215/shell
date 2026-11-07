@@ -28,7 +28,7 @@ mkdir "$HOME/empty" && cd "$HOME/empty" || exit 1
 git init -q .
 t_rc "no commits: repo scope is not an error" 0 shell::git::history::fzf --print
 t_has "no commits: empty state" "No commits found" "$T_OUT"
-t_eq "no commits: log is empty" "" "$(shell::git::history::log repo "" "")"
+t_eq "no commits: log is empty" "" "$(_shell::git::history::log repo "" "")"
 
 # --- the repository -----------------------------------------------------------
 mkdir "$HOME/repo" && cd "$HOME/repo" || exit 1
@@ -100,7 +100,7 @@ t_rc "scope: empty search" 1 _shell::git::history::scope search "" ""
 t_eq "scope: repo needs nothing" "repo${US}${US}" "$(_shell::git::history::scope repo "" "")"
 
 # --- file history: --follow across the rename ---------------------------------
-recs="$(shell::git::history::log file "$F")"
+recs="$(_shell::git::history::log file "$F")"
 subjects="$(printf '%s\n' "$recs" | cut -d "$US" -f14)"
 t_has "file: follows the rename (oldest commit)" "init" "$subjects"
 t_has "file: has the rename commit" "rename file" "$subjects"
@@ -110,7 +110,7 @@ t_eq "file: path at the oldest commit is the old name" "src/auth/login file.go" 
 t_eq "file: path at the newest commit is the new name" "$F" "$(field "$(printf '%s\n' "$recs" | head -n 1)" 9)"
 t_eq "file: records are one line each" "$(printf '%s\n' "$recs" | grep -c .)" "$(printf '%s\n' "$recs" | wc -l | tr -d ' ')"
 # git log --follow drops merge commits (a Git limitation); the repository scope keeps them.
-all="$(shell::git::history::log repo "" "")"
+all="$(_shell::git::history::log repo "" "")"
 t_has "repo: merge commit is listed" "Merge feat" "$(printf '%s\n' "$all" | cut -d "$US" -f14)"
 merge_line="$(printf '%s\n' "$all" | grep "Merge feat" | head -n 1)"
 t_eq "repo: merge flag" "1" "$(field "$merge_line" 8)"
@@ -118,10 +118,10 @@ t_eq "repo: a commit that is not a merge" "0" "$(field "$(printf '%s\n' "$all" |
 long_line="$(printf '%s\n' "$recs" | grep "very long subject" | head -n 1)"
 t_has "file: body is kept, newlines escaped" 'Body line one\n\nBody line two' "$(field "$long_line" 15)"
 t_has "file: long subject is intact in the record" "very long subject very long subject" "$(field "$long_line" 14)"
-t_eq "file: stats count the commits" "$(printf '%s\n' "$recs" | grep -c .)" "$(printf '%s\n' "$recs" | shell::git::history::stats | cut -f1)"
+t_eq "file: stats count the commits" "$(printf '%s\n' "$recs" | grep -c .)" "$(printf '%s\n' "$recs" | _shell::git::history::stats | cut -f1)"
 
 # --- function history: only the function's own lines are counted --------------
-recs="$(shell::git::history::log function "$F" Logout)"
+recs="$(_shell::git::history::log function "$F" Logout)"
 subj="$(printf '%s\n' "$recs" | cut -d "$US" -f14)"
 t_has "function: commit that changed only Logout" "change logout" "$subj"
 t_has "function: commit that changed both" "change both" "$subj"
@@ -137,17 +137,17 @@ init_line="$(printf '%s\n' "$recs" | tail -n 1)"
 t_eq "function: creation adds the 3 lines of the function" "3" "$(field "$init_line" 5)"
 t_eq "function: follows the file rename (old path)" "src/auth/login file.go" "$(field "$init_line" 9)"
 # a function rename is not AST tracking: the new name starts its own history at the rename
-recs2="$(shell::git::history::log function "$F" SignIn)"
+recs2="$(_shell::git::history::log function "$F" SignIn)"
 t_has "function: renamed function has its commits" "rename function" "$(printf '%s\n' "$recs2" | cut -d "$US" -f14)"
 # deleted function: Helper is gone at HEAD, its history is still reachable
-t_rc "function: deleted function" 0 shell::git::history::log function "$F" Helper
-t_has "function: deleted function keeps its history" "init" "$(shell::git::history::log function "$F" Helper 2>/dev/null | cut -d "$US" -f14)"
-t_has "function: deleted function is announced" "no longer at HEAD" "$(shell::git::history::log function "$F" Helper 2>&1 >/dev/null)"
-t_rc "function: unknown function" 1 shell::git::history::log function "$F" DoesNotExist
+t_rc "function: deleted function" 0 _shell::git::history::log function "$F" Helper
+t_has "function: deleted function keeps its history" "init" "$(_shell::git::history::log function "$F" Helper 2>/dev/null | cut -d "$US" -f14)"
+t_has "function: deleted function is announced" "no longer at HEAD" "$(_shell::git::history::log function "$F" Helper 2>&1 >/dev/null)"
+t_rc "function: unknown function" 1 _shell::git::history::log function "$F" DoesNotExist
 
 # --- line range: follows the lines while the numbers shift --------------------
 # Login is on lines 5-7 at HEAD (two header lines were added above it).
-recs="$(shell::git::history::log lines "$F" 5,7)"
+recs="$(_shell::git::history::log lines "$F" 5,7)"
 subj="$(printf '%s\n' "$recs" | cut -d "$US" -f14)"
 t_has "lines: the creation" "init" "$subj"
 t_has "lines: a change inside the range" "change login" "$subj"
@@ -155,32 +155,32 @@ t_lacks "lines: shifting the lines is not a change of them" "shift lines" "$subj
 t_lacks "lines: a change outside the range" "change logout" "$subj"
 
 # --- code search: -S and -G ---------------------------------------------------
-recs="$(shell::git::history::log search "" "b := 7")"
+recs="$(_shell::git::history::log search "" "b := 7")"
 t_eq "search -S: one commit introduced the text" "1" "$(printf '%s\n' "$recs" | grep -c .)"
 t_eq "search -S: it is the right commit" "feature change" "$(field "$recs" 14)"
-t_eq "search -S with a file" "1" "$(shell::git::history::log search "$F" "b := 7" | grep -c .)"
-t_eq "search -S: whole-commit numbers differ from the scope's when other files changed" "1" "$(shell::git::history::log search "$F" "b := 7" | awk -F"$US" '$11 >= $5 {c++} END {print c + 0}')"
-recs="$(shell::git::history::log regex "" 'b := [23]')"
+t_eq "search -S with a file" "1" "$(_shell::git::history::log search "$F" "b := 7" | grep -c .)"
+t_eq "search -S: whole-commit numbers differ from the scope's when other files changed" "1" "$(_shell::git::history::log search "$F" "b := 7" | awk -F"$US" '$11 >= $5 {c++} END {print c + 0}')"
+recs="$(_shell::git::history::log regex "" 'b := [23]')"
 t_eq "search -G: same commits as git itself" "$(git log -G'b := [23]' --format=%h | wc -l | tr -d ' ')" "$(printf '%s\n' "$recs" | grep -c .)"
-t_eq "search: nothing matches" "" "$(shell::git::history::log search "" "text that never existed")"
+t_eq "search: nothing matches" "" "$(_shell::git::history::log search "" "text that never existed")"
 
 # --- statistics describe the scope, not the repository ------------------------
-stats="$(shell::git::history::log function "$F" Logout | shell::git::history::stats)"
+stats="$(_shell::git::history::log function "$F" Logout | _shell::git::history::stats)"
 t_eq "stats: commits of the function" "4" "$(printf '%s' "$stats" | cut -f1)"
 t_eq "stats: additions of the function only" "6" "$(printf '%s' "$stats" | cut -f2)"
 t_eq "stats: deletions of the function only" "3" "$(printf '%s' "$stats" | cut -f3)"
 t_eq "stats: single author" "1" "$(printf '%s' "$stats" | cut -f6)"
-t_eq "stats: empty input" "0	0	0	-	-	0" "$(printf '' | shell::git::history::stats)"
-repo_stats="$(shell::git::history::log repo "" "" | shell::git::history::stats)"
+t_eq "stats: empty input" "0	0	0	-	-	0" "$(printf '' | _shell::git::history::stats)"
+repo_stats="$(_shell::git::history::log repo "" "" | _shell::git::history::stats)"
 t_eq "stats: the large diff counts for the repository scope" "1" "$([ "$(printf '%s' "$repo_stats" | cut -f2)" -ge 3000 ] && echo 1 || echo 0)"
 
 # --- max and no-merges --------------------------------------------------------
-t_eq "max: limits the commits" "2" "$(shell::git::history::log file "$F" "" 2 | grep -c .)"
-t_lacks "no-merges: merge left out" "Merge feat" "$(shell::git::history::log repo "" "" 500 false | cut -d "$US" -f14)"
+t_eq "max: limits the commits" "2" "$(_shell::git::history::log file "$F" "" 2 | grep -c .)"
+t_lacks "no-merges: merge left out" "Merge feat" "$(_shell::git::history::log repo "" "" 500 false | cut -d "$US" -f14)"
 
 # --- timeline -----------------------------------------------------------------
-tl="$(shell::git::history::log file "$F" | shell::git::history::timeline -w 80)"
-tl_repo="$(shell::git::history::log repo "" "" | shell::git::history::timeline -w 80)"
+tl="$(_shell::git::history::log file "$F" | _shell::git::history::timeline -w 80)"
+tl_repo="$(_shell::git::history::log repo "" "" | _shell::git::history::timeline -w 80)"
 t_has "timeline: commit glyph" "● " "$tl"
 t_has "timeline: merge glyph" "◆ " "$tl_repo"
 t_has "timeline: merge is labelled" "merge" "$tl_repo"
@@ -188,21 +188,21 @@ t_has "timeline: connector" "│ tester" "$tl"
 t_has "timeline: additions and deletions" "+1 -1" "$tl"
 case "$(printf '%s\n' "$tl" | tail -n 1)" in "  tester  +"*) t_ok ;; *) t_bad "timeline: the last block has no connector" "$(printf '%s\n' "$tl" | tail -n 2)" ;; esac
 t_lacks "timeline: no colour off a terminal" "$(printf '\033')" "$tl"
-narrow="$(shell::git::history::log file "$F" | shell::git::history::timeline -w 30 | head -n 1)"
+narrow="$(_shell::git::history::log file "$F" | _shell::git::history::timeline -w 30 | head -n 1)"
 t_eq "timeline: narrow width cuts the subject" "1" "$([ "${#narrow}" -le 40 ] && echo 1 || echo 0)"
-colored="$(shell::git::history::log file "$F" | shell::git::history::timeline -c -w 80)"
+colored="$(_shell::git::history::log file "$F" | _shell::git::history::timeline -c -w 80)"
 t_has "timeline: green additions" "$(printf '\033[32m')" "$colored"
 t_has "timeline: red deletions" "$(printf '\033[31m')" "$colored"
 t_has "timeline: cyan hashes" "$(printf '\033[36m')" "$colored"
-sel="$(shell::git::history::log file "$F" | head -n 1 | cut -d "$US" -f2)"
-t_has "timeline: selected commit is marked" "▶" "$(shell::git::history::log file "$F" | shell::git::history::timeline -s "$sel")"
-rows="$(shell::git::history::log file "$F" | shell::git::history::timeline -r -w 100)"
-t_eq "rows: one row per commit" "$(shell::git::history::log file "$F" | grep -c .)" "$(printf '%s\n' "$rows" | grep -c .)"
+sel="$(_shell::git::history::log file "$F" | head -n 1 | cut -d "$US" -f2)"
+t_has "timeline: selected commit is marked" "▶" "$(_shell::git::history::log file "$F" | _shell::git::history::timeline -s "$sel")"
+rows="$(_shell::git::history::log file "$F" | _shell::git::history::timeline -r -w 100)"
+t_eq "rows: one row per commit" "$(_shell::git::history::log file "$F" | grep -c .)" "$(printf '%s\n' "$rows" | grep -c .)"
 t_eq "rows: five tab separated columns" "5" "$(printf '%s\n' "$rows" | head -n 1 | awk -F'\t' '{print NF}')"
 t_eq "rows: path column is never empty" "0" "$(printf '%s\n' "$rows" | awk -F'\t' '$2 == "" || $3 == "" {c++} END {print c + 0}')"
 
 # --- dashboard ----------------------------------------------------------------
-d="$(shell::git::history::dashboard -w 60 my-project develop function "src/auth/login.go" Login 18 248 132 2026-09-30 2026-10-28)"
+d="$(_shell::git::history::dashboard -w 60 my-project develop function "src/auth/login.go" Login 18 248 132 2026-09-30 2026-10-28)"
 t_has "dashboard: title" "GIT CHRONICLE" "$d"
 t_has "dashboard: repository" "Repository: my-project" "$d"
 t_has "dashboard: branch" "Branch: develop" "$d"
@@ -213,14 +213,14 @@ t_has "dashboard: totals deletions" "-132" "$d"
 widths=""
 while IFS= read -r l; do widths="$widths ${#l}"; done <<<"$d"
 t_eq "dashboard: every row has the same width" "1" "$(printf '%s\n' $widths | sort -u | wc -l | tr -d ' ')"
-dl="$(shell::git::history::dashboard -w 60 r b lines "$F" 1,5 1 1 1)"
+dl="$(_shell::git::history::dashboard -w 60 r b lines "$F" 1,5 1 1 1)"
 t_has "dashboard: line range" "Lines: 1,5" "$dl"
-dn="$(shell::git::history::dashboard -w 30 r b file src/a.go "" 1 1 1)"
+dn="$(_shell::git::history::dashboard -w 30 r b file src/a.go "" 1 1 1)"
 t_lacks "dashboard: narrow width has no box" "╭" "$dn"
 t_has "dashboard: narrow width keeps the numbers" "COMMITS" "$dn"
-dp="$(shell::git::history::dashboard -w 50 r b file "$(printf 'dir/%.0s' 1 2 3 4 5 6 7 8 9 10 11 12)file.go" "" 1 1 1)"
+dp="$(_shell::git::history::dashboard -w 50 r b file "$(printf 'dir/%.0s' 1 2 3 4 5 6 7 8 9 10 11 12)file.go" "" 1 1 1)"
 t_has "dashboard: long paths keep their tail" "…" "$dp"
-t_rc "dashboard: unknown option" 2 shell::git::history::dashboard --bogus
+t_rc "dashboard: unknown option" 2 _shell::git::history::dashboard --bogus
 
 # --- print mode, dry run, usage -----------------------------------------------
 t_rc "print: file" 0 shell::git::history::fzf --print "$F"
@@ -255,7 +255,7 @@ reset_fzf
 t_rc "fzf: file history runs" 0 shell::git::history::fzf "$F"
 list="$(cat "$HOME/stdin.1")"
 args="$(cat "$HOME/args.1")"
-t_eq "fzf: one row per commit plus Back" "$(($(shell::git::history::log file "$F" | grep -c .) + 1))" "$(printf '%s\n' "$list" | grep -c .)"
+t_eq "fzf: one row per commit plus Back" "$(($(_shell::git::history::log file "$F" | grep -c .) + 1))" "$(printf '%s\n' "$list" | grep -c .)"
 t_has "fzf: Back is last" "Back" "$(printf '%s\n' "$list" | tail -n 1)"
 t_has "fzf: dashboard in the header" "GIT CHRONICLE" "$args"
 t_has "fzf: shortcuts in the header" "^Y copy hash" "$args"
@@ -270,7 +270,7 @@ t_has "fzf: function preview" "log -L" "$(cat "$HOME/args.1")"
 t_has "fzf: function preview falls back, never blank" "||" "$(cat "$HOME/args.1")"
 
 # Enter: the scoped diff of the commit (output is not a terminal: plain, no pager).
-both_row="$(shell::git::history::log function "$F" Logout | cut -d "$US" -f14 | grep -n 'change both' | cut -d: -f1)"
+both_row="$(_shell::git::history::log function "$F" Logout | cut -d "$US" -f14 | grep -n 'change both' | cut -d: -f1)"
 reset_fzf; FAKE_FZF_ROW="$both_row"
 t_rc "fzf: Enter inspects" 0 shell::git::history::fzf --function Logout "$F"
 t_has "fzf: inspect shows the message" "change both" "$T_OUT"
@@ -293,11 +293,11 @@ FAKE
 chmod +x "$HOME/bin/pbcopy" "$HOME/bin/xclip" 2>/dev/null
 reset_fzf; FAKE_FZF_ROW=1; FAKE_FZF_KEY=ctrl-y
 t_rc "fzf: Ctrl-Y runs" 0 shell::git::history::fzf "$F"
-want="$(shell::git::history::log file "$F" | head -n 1 | cut -d "$US" -f1)"
+want="$(_shell::git::history::log file "$F" | head -n 1 | cut -d "$US" -f1)"
 if [ "$(shell::os::type)" = "macos" ] && [ -f "$HOME/clipboard" ]; then t_eq "fzf: Ctrl-Y copies the full hash" "$want" "$(cat "$HOME/clipboard")"; else t_has "fzf: Ctrl-Y copies the hash" "Copied" "$T_OUT"; fi
 FAKE_FZF_KEY=""
 # Back entry
-n="$(($(shell::git::history::log file "$F" | grep -c .) + 1))"
+n="$(($(_shell::git::history::log file "$F" | grep -c .) + 1))"
 reset_fzf; FAKE_FZF_ROW="$n"
 t_rc "fzf: Back returns RETURN_BACK" 11 shell::git::history::fzf "$F"
 t_eq "fzf: Back does not reopen the list" "1" "$(cat "$HOME/fzf.count")"
@@ -310,14 +310,14 @@ t_eq "fzf: empty history: fzf not called" "" "$(cat "$HOME/fzf.count" 2>/dev/nul
 
 # --- inspect directly ---------------------------------------------------------
 sha="$(git log -n 1 --format=%H --grep='change login')"
-t_rc "inspect: needs a commit" 1 shell::git::history::inspect /tmp function "$F" Login
-t_rc "inspect: unknown option" 2 shell::git::history::inspect --bogus
-t_rc "inspect: file scope" 0 shell::git::history::inspect "$HOME/repo" file "$F" "" "$sha" "src/auth/login file.go"
+t_rc "inspect: needs a commit" 1 _shell::git::history::inspect /tmp function "$F" Login
+t_rc "inspect: unknown option" 2 _shell::git::history::inspect --bogus
+t_rc "inspect: file scope" 0 _shell::git::history::inspect "$HOME/repo" file "$F" "" "$sha" "src/auth/login file.go"
 t_has "inspect: parents are shown" "Parents:" "$T_OUT"
 t_has "inspect: the diff" "+	a := 2" "$T_OUT"
 # commit that deleted a function: the scope cannot be resolved there, the file diff is shown
 del="$(git log -n 1 --format=%H --grep='delete helper')"
-t_rc "inspect: scope gone at that commit" 0 shell::git::history::inspect "$HOME/repo" function "$F" Helper "$del" "$F" ""
+t_rc "inspect: scope gone at that commit" 0 _shell::git::history::inspect "$HOME/repo" function "$F" Helper "$del" "$F" ""
 t_has "inspect: says what it shows instead" "showing the whole file diff" "$T_OUT"
 
 # --- interactive scope picking ------------------------------------------------
@@ -331,17 +331,17 @@ sed -n "${n}p" "$FAKE_FZF_DIR/picks"
 FAKE
 reset_fzf
 printf '%s\n' "$F" "Function history" "Logout" >"$HOME/picks"
-t_eq "pick: file, function, name" "function${US}$F${US}Logout" "$(shell::git::history::pick "$HOME/repo" 2>/dev/null)"
+t_eq "pick: file, function, name" "function${US}$F${US}Logout" "$(_shell::git::history::pick "$HOME/repo" 2>/dev/null)"
 t_has "pick: function candidates come from the file" "Logout" "$(cat "$HOME/stdin.3")"
 reset_fzf
 printf '%s\n' "(whole repository)" "All commits" >"$HOME/picks"
-t_eq "pick: whole repository" "repo${US}${US}" "$(shell::git::history::pick "$HOME/repo" 2>/dev/null)"
+t_eq "pick: whole repository" "repo${US}${US}" "$(_shell::git::history::pick "$HOME/repo" 2>/dev/null)"
 reset_fzf
 printf '%s\n' "← Back" >"$HOME/picks"
-t_rc "pick: Back at the first step" 11 shell::git::history::pick "$HOME/repo"
+t_rc "pick: Back at the first step" 11 _shell::git::history::pick "$HOME/repo"
 reset_fzf
 printf '%s\n' "$F" "Line range" >"$HOME/picks"
-t_eq "pick: line range asks for the range" "lines${US}$F${US}5,7" "$(printf '5,7\n' | shell::git::history::pick "$HOME/repo" 2>/dev/null)"
+t_eq "pick: line range asks for the range" "lines${US}$F${US}5,7" "$(printf '5,7\n' | _shell::git::history::pick "$HOME/repo" 2>/dev/null)"
 
 # --- the repository is never modified ------------------------------------------
 before="$(git status --porcelain; git rev-parse HEAD; git for-each-ref)"
