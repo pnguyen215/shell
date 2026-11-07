@@ -182,4 +182,3 @@ shell::markdown::ordered_list() {
 		_shell::markdown::item ol 0 "$entry" || return "$?"
 	done
 }
-

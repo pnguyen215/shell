@@ -13784,14 +13784,32 @@ shell::git::diff::fzf() {
 		[ -z "$file_new" ] && file_new="$old"
 		code="${st%%[0-9]*}"
 		case "$code" in
-		A) n_a=$((n_a + 1)); c_on="${esc}[32m" ;;
-		M) n_m=$((n_m + 1)); c_on="${esc}[33m" ;;
-		D) n_d=$((n_d + 1)); c_on="${esc}[31m" ;;
-		R) n_r=$((n_r + 1)); c_on="${esc}[36m" ;;
-		*) n_o=$((n_o + 1)); c_on="${esc}[35m" ;;
+		A)
+			n_a=$((n_a + 1))
+			c_on="${esc}[32m"
+			;;
+		M)
+			n_m=$((n_m + 1))
+			c_on="${esc}[33m"
+			;;
+		D)
+			n_d=$((n_d + 1))
+			c_on="${esc}[31m"
+			;;
+		R)
+			n_r=$((n_r + 1))
+			c_on="${esc}[36m"
+			;;
+		*)
+			n_o=$((n_o + 1))
+			c_on="${esc}[35m"
+			;;
 		esac
 		c_off="${esc}[0m"
-		if [ "$use_color" = "false" ]; then c_on=""; c_off=""; fi
+		if [ "$use_color" = "false" ]; then
+			c_on=""
+			c_off=""
+		fi
 		label="${c_on}${code}${c_off}  ${file_new}"
 		[ "$code" = "R" ] && label="${c_on}${code}${c_off}  ${old} → ${file_new}"
 		rows="${rows}${label}${tab}${file_new}${tab}${old}${tab}"$'\n'
@@ -13800,7 +13818,10 @@ shell::git::diff::fzf() {
 	# Untracked files: shown as `?` (new, not yet added), counted with the added files.
 	if [ "$with_untracked" = "true" ]; then
 		c_on="${esc}[32m" c_off="${esc}[0m"
-		if [ "$use_color" = "false" ]; then c_on=""; c_off=""; fi
+		if [ "$use_color" = "false" ]; then
+			c_on=""
+			c_off=""
+		fi
 		while IFS= read -r file_new; do
 			[ -z "$file_new" ] && continue
 			n_a=$((n_a + 1))

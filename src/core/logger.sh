@@ -479,4 +479,3 @@ shell::logger::evaluate() {
 
 	return "$exit_code"
 }
-
