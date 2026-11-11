@@ -163,7 +163,7 @@ The only exceptions are the four lifecycle functions in [`src/shell.sh`](src/she
     ├── constant/       # ALL configuration: paths, URLs, colours, defaults, return codes
     ├── core/           # console, logger, os, exec, clipboard, fzf, ask (prompts)
     ├── dependency/     # one installer per external tool (fzf, jq, curl, git, ...), package manager, Homebrew, nvm, Oh My Zsh
-    ├── lib/            # fs, net, process, permission, strings, conf, ini, profile, bookmark, goto, ssh, workspace, brew (Homebrew packages + fzf)
+    ├── lib/            # fs, net, process, permission, strings, conf, ini, profile, bookmark, goto, ssh, workspace, brew (Homebrew packages + fzf), system_stats (disk / memory / swap, docs/features/system-stats.md)
     ├── markdown/       # Markdown / Telegram MarkdownV2 builder (docs/features/markdown.md)
     ├── skill/          # agent skills for Claude Code / OpenCode: install, upgrade, uninstall, sync
     ├── lang/           # git, go, python, java, nodejs, nvm, angular
@@ -185,7 +185,7 @@ export SHELL_GIT_COMMIT_EMOJI=true              # gitmoji in commit messages (de
 source "$HOME/shell/src/shell.sh"
 ```
 
-User data (keys, bookmarks, workspaces) lives under `SHELL_CONFIG_DIR` with mode 700/600. Settings of a single feature are documented in [`docs/features/`](docs/features), for example [commit messages](docs/features/git-commit-messages.md), [Homebrew](docs/features/homebrew.md), [Markdown builder](docs/features/markdown.md), [nvm](docs/features/nvm.md), [SSH](docs/features/ssh.md) and [rsync](docs/features/rsync.md).
+User data (keys, bookmarks, workspaces) lives under `SHELL_CONFIG_DIR` with mode 700/600. Settings of a single feature are documented in [`docs/features/`](docs/features), for example [commit messages](docs/features/git-commit-messages.md), [Homebrew](docs/features/homebrew.md), [Markdown builder](docs/features/markdown.md), [nvm](docs/features/nvm.md), [system statistics](docs/features/system-stats.md), [SSH](docs/features/ssh.md) and [rsync](docs/features/rsync.md).
 
 ## Dependencies
 
@@ -209,7 +209,6 @@ make test-list F=shell::git::commit::squash # just list which files would run
 make lint    # naming, shdoc coverage, portability, shellcheck, shfmt
 make docs    # regenerate docs/api (requires shdoc: https://github.com/reconquest/shdoc)
 make doctor  # report installed dependencies
-make hooks   # install the git commit-msg hook (Conventional Commits check)
 SHELLS=bash make test T=squash               # skip zsh for a faster loop
 ```
 
