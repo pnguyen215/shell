@@ -4,13 +4,58 @@
 
 It is the library's only Markdown/MarkdownV2 converter. The git notifications (backup, rename, merge, commit, tag, revert) are built with it and sent as MarkdownV2; see [Used by the git module](#used-by-the-git-module).
 
+| Property    | Value                                                                         |
+| ----------- | ----------------------------------------------------------------------------- |
+| Audience    | Script authors who build reports, README files or chat messages in shell      |
+| Last review | 2026-11-11 (library commit `ffccb24`)                                         |
+| Shells      | bash 3.2+ and zsh; output is identical in both                                |
+| Source      | `src/markdown/`, `src/constant/markdown.sh`; tests in `test/test_markdown.sh` |
+
 ## Loading
 
-Nothing to do: `src/shell.sh` loads the `markdown` group with the others. Works in bash 3.2+ and zsh, with no external tool and no `eval`.
+Source the library once, for example from `~/.bashrc` or `~/.zshrc`. This loads the `markdown` group with the others. No external tool and no `eval` are needed.
+
+```bash
+source "$HOME/shell/src/shell.sh"
+```
+
+## Quick start
+
+Build a document in four steps: `init`, add blocks, `render`. Each inline helper (`bold`, `code`, `link` ...) goes inside `$( ... )` and returns a fragment for the text of a block.
+
+```bash
+shell::markdown::init                                   # 1. new document (format: markdown)
+shell::markdown::h1 "Release notes"                     # 2. add blocks
+shell::markdown::paragraph "Version $(shell::markdown::bold v1.4.0) is out."
+shell::markdown::list "Faster startup" "Fixed $(shell::markdown::code 'git rebase') hang"
+shell::markdown::render                                 # 3. print the document
+```
+
+Output:
+
+```markdown
+# Release notes
+
+Version **v1.4.0** is out.
+
+- Faster startup
+- Fixed `git rebase` hang
+```
+
+Write it to a file instead of printing it with `shell::markdown::to_file release-notes.md` (step 4). Change only the first line to `shell::markdown::init -f telegram` and the same calls produce Telegram MarkdownV2; see [Recipes](#recipes).
 
 ## Lifecycle
 
+```mermaid
+flowchart LR
+    A["init [-f format]"] --> B["blocks: h1, paragraph,<br>list, table, code_block ..."]
+    B --> C["render (stdout)"]
+    B --> D["to_file (file)"]
+    I["inline: bold, code, link ...<br>print a fragment"] -.->|"$( ... )"| B
+    B -->|"reset"| A
 ```
+
+```text
 init  ->  append blocks  ->  render  ->  to_file
 ```
 
@@ -233,6 +278,139 @@ Commits of `src/lib/git.sh` since v1\.2\.0 \- see [the repo](https://github.com/
 git log --oneline -n 2
 ```
 ````
+
+## Recipes
+
+Every output below was produced by running the code in bash and zsh (2026-11-11).
+
+### 1. Send a Telegram message
+
+Select `telegram` first, build the message, then send it with the `markdownv2` parse mode. The default parse mode of `shell::telegram::send` is the legacy `markdown`, which escapes differently.
+
+```bash
+shell::markdown::init -f telegram
+shell::markdown::h1 "Deploy finished"
+shell::markdown::paragraph "Version $(shell::markdown::bold 1.4.0) took 3.2s - $(shell::markdown::link 'logs' 'https://ci.example.com/run/42')"
+message=$(shell::markdown::render)
+shell::telegram::send -m markdownv2 "$TOKEN" "$CHAT_ID" "$message"
+```
+
+`$message` is:
+
+```text
+*Deploy finished*
+
+Version *1\.4\.0* took 3\.2s \- [logs](https://ci.example.com/run/42)
+```
+
+### 2. Put untrusted text in a document
+
+Pass text from users, commits, filenames or command output as a plain argument. The block escapes it for the selected format; do not escape it yourself first and do not use `raw` for it.
+
+```bash
+msg='Fix: a_b *c* [x](y) 1.5!'
+
+shell::markdown::init -f telegram
+shell::markdown::paragraph "$msg"
+shell::markdown::render      # Fix: a\_b \*c\* \[x\]\(y\) 1\.5\!
+
+shell::markdown::init
+shell::markdown::paragraph "$msg"
+shell::markdown::render      # Fix: a\_b \*c\* \[x\](y) 1.5!
+```
+
+### 3. One table, two formats
+
+```bash
+shell::markdown::init
+shell::markdown::table_header "Name" "Status" "Ms"
+shell::markdown::table_align left center right
+shell::markdown::table_row "api" "ok" "12"
+shell::markdown::table_row "db" "slow" "840"
+shell::markdown::table
+shell::markdown::render
+```
+
+```markdown
+| Name | Status |  Ms |
+| :--- | :----: | --: |
+| api  |   ok   |  12 |
+| db   |  slow  | 840 |
+```
+
+With `init -f plain` (plus `h1 "Report"` before the table) the same table prints as:
+
+```text
+Report
+======
+
+Name: api
+Status: ok
+
+Name: db
+Status: slow
+```
+
+### 4. Build a document inside a function
+
+Call the builder inside the function and capture only the final `render`. The function runs in a subshell when you write `text=$(build ...)`, so the buffer it fills is discarded afterwards and one document never leaks into the next.
+
+```bash
+build() {
+  shell::markdown::init -f "$1"
+  shell::markdown::h2 "Status"
+  shell::markdown::blockquote "all green"
+  shell::markdown::render
+}
+text=$(build telegram)
+printf '%s\n' "$text"
+```
+
+```text
+*Status*
+
+>all green
+```
+
+### 5. Write to a file, safely
+
+```bash
+shell::markdown::init
+shell::markdown::h1 "Saved"
+shell::markdown::to_file -n ./out.md   # prints "shell::markdown::render > ./out.md", writes nothing
+shell::markdown::to_file ./out.md      # writes the file (replaces it)
+```
+
+`to_file` returns 3 and writes nothing when the directory does not exist, and 2 when the path is a directory.
+
+### 6. Add Markdown you wrote yourself
+
+`raw` adds one trusted block without escaping; `code_block` adds code without escaping and without letting it close its own fence.
+
+```bash
+shell::markdown::code_block bash 'echo "hi"'
+shell::markdown::raw '<details><summary>More</summary></details>'
+```
+
+````markdown
+```bash
+echo "hi"
+```
+
+<details><summary>More</summary></details>
+````
+
+## Troubleshooting
+
+| Symptom                                               | Cause                                                                       | Fix                                                                                   |
+| ----------------------------------------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `render` prints nothing after a block call            | the block ran in a subshell (`$( ... )`, a pipe)                            | call block functions in the current shell; use `$( ... )` only for inline functions   |
+| Telegram rejects the message (`can't parse entities`) | sent with the legacy `markdown` parse mode, or text was escaped twice       | use `shell::telegram::send -m markdownv2`; pass plain text and let the builder escape |
+| Earlier blocks keep the old format                    | `set_format` does not convert the buffer                                    | select the format with `init -f <format>` before adding blocks                        |
+| Text such as `1.5` shows `1\.5` in the output         | `telegram` escapes `.`; `markdown` escapes `1.` at the start of a line only | expected: renderers remove the backslash                                              |
+| `Unknown format 'x'`                                  | format is not `markdown`, `telegram` or `plain`                             | use one of the three names                                                            |
+| `Start a table with table_header first`               | `table_row`, `table_align` or `table` called before `table_header`          | call `table_header` first; `table` clears the table, so start a new one for the next  |
+| Table header looks nested-bold on Telegram            | a `bold` fragment was used as a header cell                                 | pass plain text as header cells                                                       |
 
 ## Design notes
 
