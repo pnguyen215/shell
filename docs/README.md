@@ -13,6 +13,7 @@
 - [homebrew.md](features/homebrew.md) — `shell::brew::*`
 - [markdown.md](features/markdown.md) — `shell::markdown::*`: Markdown, Telegram MarkdownV2 and plain-text builder
 - [nvm.md](features/nvm.md) — `shell::nvm::*`
+- [system-stats.md](features/system-stats.md) — `shell::system::stats::*`: disk, memory and swap usage on macOS and Linux
 - [ssh.md](features/ssh.md) — `shell::ssh::*` (see also [rsync.md](features/rsync.md))
 - [rsync.md](features/rsync.md) — `shell::rsync::*`
 
@@ -22,5 +23,6 @@ Recommended reading order for contributors:
 
 1. [architecture.md](development/architecture.md) — load sequence, layers, data layout
 2. [conventions.md](development/conventions.md) — coding rules checklist (`make lint` enforces them)
+3. [commit-messages.md](development/commit-messages.md) — the git commit rules (commit-msg hook, CI gate)
 
 New feature guides go in `features/` as `lower-kebab-case.md`; contributor docs go in `development/`. `api/` is generated: do not edit it by hand.
