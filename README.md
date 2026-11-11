@@ -212,7 +212,7 @@ make doctor  # report installed dependencies
 SHELLS=bash make test T=squash               # skip zsh for a faster loop
 ```
 
-Read [docs/development/conventions.md](docs/development/conventions.md) before adding a function. For architecture details, see [docs/development/architecture.md](docs/development/architecture.md). Commit messages follow Conventional Commits — run `make hooks` to check them locally, and see [docs/development/commit-messages.md](docs/development/commit-messages.md).
+Read [docs/development/conventions.md](docs/development/conventions.md) before adding a function. For architecture details, see [docs/development/architecture.md](docs/development/architecture.md).
 
 ## License
 
