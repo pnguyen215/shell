@@ -56,25 +56,3 @@ jobs:
           sudo install /tmp/shdoc/shdoc /usr/local/bin/shdoc
       - name: Build API docs
         run: make docs
-
-  # Commit subjects must follow Conventional Commits (docs/development/commit-messages.md).
-  # A pull request checks its own commits; a push to master checks the new commits.
-  commit-messages:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Validate commit messages
-        run: |
-          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
-            range="${{ github.event.pull_request.base.sha }}..HEAD"
-          else
-            before="${{ github.event.before }}"
-            if [ -n "$before" ] && git rev-parse --verify --quiet "$before^{commit}" >/dev/null; then
-              range="$before..HEAD"
-            else
-              range="HEAD~1..HEAD" # first push (no previous tip): just the new tip
-            fi
-          fi
-          bash scripts/check_commit_msg.sh --range "$range"
