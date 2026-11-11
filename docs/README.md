@@ -22,5 +22,6 @@ Recommended reading order for contributors:
 
 1. [architecture.md](development/architecture.md) — load sequence, layers, data layout
 2. [conventions.md](development/conventions.md) — coding rules checklist (`make lint` enforces them)
+3. [commit-messages.md](development/commit-messages.md) — the git commit rules (commit-msg hook, CI gate)
 
 New feature guides go in `features/` as `lower-kebab-case.md`; contributor docs go in `development/`. `api/` is generated: do not edit it by hand.

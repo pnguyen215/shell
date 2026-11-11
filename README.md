@@ -209,10 +209,11 @@ make test-list F=shell::git::commit::squash # just list which files would run
 make lint    # naming, shdoc coverage, portability, shellcheck, shfmt
 make docs    # regenerate docs/api (requires shdoc: https://github.com/reconquest/shdoc)
 make doctor  # report installed dependencies
+make hooks   # install the git commit-msg hook (Conventional Commits check)
 SHELLS=bash make test T=squash               # skip zsh for a faster loop
 ```
 
-Read [docs/development/conventions.md](docs/development/conventions.md) before adding a function. For architecture details, see [docs/development/architecture.md](docs/development/architecture.md).
+Read [docs/development/conventions.md](docs/development/conventions.md) before adding a function. For architecture details, see [docs/development/architecture.md](docs/development/architecture.md). Commit messages follow Conventional Commits — run `make hooks` to check them locally, and see [docs/development/commit-messages.md](docs/development/commit-messages.md).
 
 ## License
 
