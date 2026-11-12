@@ -19,7 +19,8 @@ core       console → logger → os/command → exec → clipboard → fzf → 
 dependency package manager, ensure(), one file per tool, Homebrew, Oh My Zsh
 lib        fs, net, process, permission, strings, conf, ini, profile, bookmark, goto, ssh, workspace
 markdown   Markdown / Telegram MarkdownV2 / plain-text document builder (no dependencies besides core)
-skill      agent-skills installer (install, upgrade, uninstall, sync, list), built on lib/net
+skill      agent-skills installer (install, upgrade, uninstall, sync, list), built on lib/net;
+           audit.sh links Cloudflare's security-audit skill from a managed git clone
 lang · devops · shield · bot   domain modules built on lib
 alias      aliases onto documented functions
 ```

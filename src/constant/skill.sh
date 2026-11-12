@@ -35,3 +35,35 @@ SHELL_SKILL_TABLE_END="<!-- skills-table:end -->"
 SHELL_SKILL_TOOLS="claude opencode all"
 SHELL_SKILL_SCOPES="personal project all"
 SHELL_SKILL_MODES="auto symlink copy"
+
+# --- Cloudflare security-audit skill (shell::skill::audit::*) -----------------
+# https://github.com/cloudflare/security-audit-skill is NOT vendored here. It is
+# cloned into SHELL_SKILL_AUDIT_DIR and the skill folder inside it is linked into
+# each tool's skills directory, so shell::skill::audit::upgrade only has to
+# fast-forward that one clone. Override before sourcing `src/shell.sh`:
+#
+#       export SHELL_SKILL_AUDIT_REPO_SLUG="yourname/security-audit-skill"
+#       export SHELL_SKILL_AUDIT_REPO_URL="file:///path/to/mirror.git"
+
+: "${SHELL_SKILL_AUDIT_REPO_SLUG:=cloudflare/security-audit-skill}"
+: "${SHELL_SKILL_AUDIT_REPO_BRANCH:=main}"
+: "${SHELL_SKILL_AUDIT_REPO_URL:=https://github.com/${SHELL_SKILL_AUDIT_REPO_SLUG}.git}"
+
+# Folder name the skill gets in a tool's skills directory (must equal the
+# `name:` in its SKILL.md), and where that folder lives inside the clone.
+: "${SHELL_SKILL_AUDIT_NAME:=security-audit}"
+: "${SHELL_SKILL_AUDIT_SUBDIR:=skills/security-audit}"
+
+# Managed clone. Only this directory is ever fetched into or reset.
+: "${SHELL_SKILL_AUDIT_DIR:=${SHELL_CONFIG_DIR:-$HOME/.shell-config}/skill/security-audit-skill}"
+
+# Marker written into a copied (--mode copy) skill so it is recognised as ours.
+SHELL_SKILL_AUDIT_MARKER=".shell-skill-audit"
+
+# Skills directories, relative to $HOME (personal) or the project root (project).
+SHELL_SKILL_AUDIT_CLAUDE_PERSONAL=".claude/skills"
+SHELL_SKILL_AUDIT_CLAUDE_PROJECT=".claude/skills"
+SHELL_SKILL_AUDIT_OPENCODE_PERSONAL=".config/opencode/skills"
+SHELL_SKILL_AUDIT_OPENCODE_PROJECT=".opencode/skills"
+
+SHELL_SKILL_AUDIT_MODES="symlink copy"

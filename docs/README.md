@@ -13,6 +13,7 @@
 - [homebrew.md](features/homebrew.md) — `shell::brew::*`
 - [markdown.md](features/markdown.md) — `shell::markdown::*`: Markdown, Telegram MarkdownV2 and plain-text builder
 - [nvm.md](features/nvm.md) — `shell::nvm::*`
+- [skill-audit.md](features/skill-audit.md) — `shell::skill::audit::*`: Cloudflare's security-audit skill for Claude Code and OpenCode
 - [system-stats.md](features/system-stats.md) — `shell::system::stats::*`: disk, memory and swap usage on macOS and Linux
 - [ssh.md](features/ssh.md) — `shell::ssh::*` (see also [rsync.md](features/rsync.md))
 - [rsync.md](features/rsync.md) — `shell::rsync::*`
