@@ -133,6 +133,21 @@ shell::skill::uninstall --tool all --scope all --yes
 
 Add `-n` to print the download command instead of running it, or `--preview` to let the installer show what it would change. Restart your Claude Code / OpenCode session afterwards. Use a fork with `SHELL_SKILL_REPO_SLUG` / `SHELL_SKILL_REPO_BRANCH`. Full reference: [`docs/api/skill-manage.md`](docs/api/skill-manage.md), [`skill-query.md`](docs/api/skill-query.md). Aliases: `ssk-in`, `ssk-up`, `ssk-rm`, `ssk-sync`, `ssk-ls`, `ssk-lsi`.
 
+### Cloudflare security-audit skill
+
+[`cloudflare/security-audit-skill`](https://github.com/cloudflare/security-audit-skill) is **used in place, not copied**: it is cloned once into `~/.shell-config/skill/security-audit-skill` and its `skills/security-audit` folder is symlinked into Claude Code and OpenCode, so upgrading is a single fetch.
+
+```bash
+shell::skill::audit::install                       # Claude Code + OpenCode, personal scope
+shell::skill::audit::install -t claude -s project  # only this project's .claude/skills
+shell::skill::audit::status --check                # where it is installed, and is there a newer commit?
+shell::skill::audit::upgrade                       # fetch the latest upstream (copies are refreshed too)
+shell::skill::audit::upgrade --ref <40-char-sha>   # pin a reviewed commit; later upgrades keep it
+shell::skill::audit::uninstall --scope all --purge
+```
+
+Then ask your agent to "security audit this codebase". A skill of the same name that you wrote is never overwritten (`--force` backs it up first). The skill is third-party instructions your agent follows, so pin a reviewed `--ref` if you do not want to track `main`. Details: [`docs/features/skill-audit.md`](docs/features/skill-audit.md). Aliases: `ssk-au-in`, `ssk-au-up`, `ssk-au-rm`, `ssk-au-st`.
+
 ## Naming
 
 Every function is named **`shell::<category>::<name>`**, with an optional `::fzf` suffix for the interactive variant:

@@ -516,6 +516,15 @@ alias ssk-sync-n="shell::skill::sync -n"
 alias ssk-ls="shell::skill::list"
 alias ssk-lsi="shell::skill::installed"
 
+# shell::skill::audit::* (Cloudflare security-audit skill)
+alias ssk-au-in="shell::skill::audit::install"
+alias ssk-au-in-n="shell::skill::audit::install -n"
+alias ssk-au-up="shell::skill::audit::upgrade"
+alias ssk-au-up-n="shell::skill::audit::upgrade -n"
+alias ssk-au-rm="shell::skill::audit::uninstall"
+alias ssk-au-rm-n="shell::skill::audit::uninstall -n"
+alias ssk-au-st="shell::skill::audit::status"
+
 # ///////////////////////////
 # Shell logger style aliases
 # //////////////////////////
