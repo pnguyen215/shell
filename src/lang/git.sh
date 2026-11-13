@@ -4638,6 +4638,7 @@ _shell::git::commit::scope::applies() {
 #   "(no scope)" comes first (Enter keeps the old behaviour), "← Back" last. For a
 #   type that is mapped onto another header (`improvement` → `perf`) the rows show
 #   the header that will be committed.
+#   The list keeps the cursor on the item chosen last when it is shown again (shell::fzf::select --initial).
 # @internal
 # @arg $1 string Commit type label chosen in the first menu.
 # @stdout The chosen scope, or nothing for "(no scope)".
@@ -4835,6 +4836,7 @@ _shell::git::commit::footer::token() {
 #   A table lists the tokens of SHELL_GIT_COMMIT_FOOTERS (BREAKING CHANGE, Refs,
 #   Reviewed-by, ...), then "(custom token)" and "← Back". The value is typed on one
 #   line. `:back` at the value prompt returns to the table.
+#   The list keeps the cursor on the item chosen last when it is shown again (shell::fzf::select --initial).
 # @internal
 # @stdout The footer, `Token: value`.
 # @exitcode 0 A footer was read.
@@ -10134,6 +10136,7 @@ shell::git::config::user::setup() {
 #   changed by accident. Returns 0 when at least one change was made (or
 #   planned, with -n) and nothing failed, 1 otherwise.
 #
+#   The list keeps the cursor on the item chosen last when it is shown again (shell::fzf::select --initial).
 # @option -g | --global Optional. Manage global configuration instead of local.
 # @option -n | --dry-run Optional. Print the planned git commands instead of executing.
 # @option -h | --help Show this help message.
@@ -13060,6 +13063,7 @@ EOF
 #   version (the commit being picked) and stage it, or mark it resolved. Taking
 #   a side overwrites the file, so it asks first. The list is shown again after
 #   each action until no conflict is left; leave with ESC or the back entry.
+#   The list keeps the cursor on the item chosen last when it is shown again (shell::fzf::select --initial).
 # @option -n | --dry-run Optional. Print the git commands instead of executing them.
 # @option -h | --help Show this help message.
 # @exitcode 0 At least one file was handled.
@@ -13656,6 +13660,7 @@ _shell::git::diff::target() {
 #     RETURN_BACK, so a caller that opened it as a step can step back. ESC just quits.
 #   - Colours are used when the terminal supports them (and `NO_COLOR` is unset); the diff
 #     is syntax-highlighted through `delta` when it is installed, else with git's own colours.
+#   The list keeps the cursor on the item chosen last when it is shown again (shell::fzf::select --initial).
 # @option -s | --staged Optional. Diff the staged changes (`git diff --cached`) instead.
 # @option -p | --pick Optional. Pick the commit in fzf first.
 # @option -n | --dry-run Optional. Print the git commands instead of opening the browser.

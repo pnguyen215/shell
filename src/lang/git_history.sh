@@ -1174,6 +1174,7 @@ _shell::git::history::function::candidates() {
 #   Step 1 — pick a file (or the whole repository). Step 2 — pick the scope: file history,
 #   function history (a function chosen from the file, or typed), line range, or a code search.
 #   Every step has a "← Back" entry.
+#   The list keeps the cursor on the item chosen last when it is shown again (shell::fzf::select --initial).
 # @internal
 # @arg $1 string Repository root.
 # @stdout One line, fields separated by US: type, file, spec.
@@ -1279,6 +1280,7 @@ _shell::git::history::pick() {
 #   Ctrl-B git blame of the scope at that commit, Ctrl-Y copy the hash, Ctrl-O open it on
 #   GitHub/GitLab/Bitbucket, Ctrl-D / Ctrl-U scroll the preview, ESC quit. The repository is
 #   never modified.
+#   The list keeps the cursor on the item chosen last when it is shown again (shell::fzf::select --initial).
 # @option -f | --function Follow this function (needs a file).
 # @option -L | --lines Follow this line range, START,END (needs a file).
 # @option -S | --search Commits that added or removed this text (file optional).
