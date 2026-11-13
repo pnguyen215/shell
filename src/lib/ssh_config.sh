@@ -845,6 +845,7 @@ shell::ssh::config::remove() {
 # @exitcode 3 The file does not exist, or fzf is missing.
 # @exitcode 8 The file has no alias.
 # @exitcode 9 The selection was cancelled.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was chosen.
 # @example
 #   alias_name="$(_shell::ssh::config::pick "$SHELL_SSH_CONFIG_FILE" "Connect to: ")" || return
 #
@@ -860,7 +861,18 @@ _shell::ssh::config::pick() {
 		return "$RETURN_EMPTY"
 	fi
 	preview="$(_shell::ssh::quote ssh -F "$file" -G) {} | grep -E '^(hostname|user|port|identityfile|proxyjump) '"
-	printf '%s\n' "$names" | shell::fzf::select --prompt="$prompt" --preview="$preview"
+	local picked rc
+	# The back entry comes last so that Enter never lands on it by accident.
+	picked="$(printf '%s\n%s\n' "$names" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --prompt="$prompt" --preview="$preview")"
+	rc=$?
+	if [ "$rc" -ne 0 ]; then
+		return "$rc"
+	fi
+	if [ "$picked" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — no host was chosen"
+		return "$RETURN_BACK"
+	fi
+	printf '%s\n' "$picked"
 }
 
 # @description Pick a Host alias with fzf and remove it.
@@ -874,6 +886,7 @@ _shell::ssh::config::pick() {
 # @exitcode 3 The file does not exist.
 # @exitcode 8 The file has no alias.
 # @exitcode 9 The selection or the confirmation was cancelled.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @see shell::ssh::config::remove
 # @example
 #   shell::ssh::config::remove::fzf
@@ -916,6 +929,7 @@ shell::ssh::config::remove::fzf() {
 # @exitcode 3 The config file does not exist, or ssh or fzf is missing.
 # @exitcode 8 The config file has no alias.
 # @exitcode 9 The selection was cancelled.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @exitcode N Exit status of shell::ssh::connect.
 # @see shell::ssh::connect
 # @see shell::ssh::config::add

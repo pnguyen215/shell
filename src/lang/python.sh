@@ -793,10 +793,12 @@ shell::python::venv::pkg::uninstall::fzf() {
 #
 #   Notes:
 #   - Requires fzf.
+#   - The last entry is "← Back" (SHELL_FZF_BACK_LABEL): picking it returns RETURN_BACK.
 # @option -n Optional dry-run flag. If provided, commands are printed using shell::logger::command_clip instead of executed.
 # @option -p <path> Optional. Specifies the parent path to search for virtual environments (defaults to current directory).
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was activated.
 # @example
 #   shell::python::venv::activate::fzf          # Select and activate a venv from the current directory.
 #   shell::python::venv::activate::fzf -n -p ~/projects  # Prints activation command for a venv in ~/projects without executing.
@@ -841,12 +843,19 @@ shell::python::venv::activate::fzf() {
 	local venv_dirs=$(find "$parent_path" -type d -name "bin" -print0 | xargs -0 -I {} dirname {} | grep -v "__pycache__")
 
 	# Use fzf to select a virtual environment
-	local selected_venv=$(echo "$venv_dirs" | fzf --prompt="Select a virtual environment: ")
+	local selected_venv=""
+	if [ -n "$venv_dirs" ]; then
+		selected_venv=$(printf '%s\n%s\n' "$venv_dirs" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --prompt="Select a virtual environment: ")
+	fi
 
 	# Handle no selection
 	if [ -z "$selected_venv" ]; then
 		shell::logger::warn "No virtual environment selected."
 		return $RETURN_SUCCESS
+	fi
+	if [ "$selected_venv" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — no virtual environment was activated"
+		return "$RETURN_BACK"
 	fi
 
 	# Construct the activation command

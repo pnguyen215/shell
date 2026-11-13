@@ -460,6 +460,7 @@ shell::logger::style::set() {
 # @exitcode 1 Applied, but saving failed.
 # @exitcode 3 fzf is not installed and could not be installed.
 # @exitcode 9 The user cancelled.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @see shell::logger::style::set
 # @example
 #   shell::logger::style::set::fzf
@@ -509,10 +510,15 @@ shell::logger::style::set::fzf() {
 	done < <(shell::logger::style::list)
 
 	local selection rc
-	selection="$(printf '%s' "$rows" | shell::fzf::select --prompt="Logger style: ")"
+	# The back entry comes last so that Enter never lands on it by accident.
+	selection="$(printf '%s%s\n' "$rows" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --prompt="Logger style: ")"
 	rc=$?
 	if [ "$rc" -ne 0 ]; then
 		return "$rc"
+	fi
+	if [ "$selection" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — the logger style was not changed"
+		return "$RETURN_BACK"
 	fi
 
 	# The name is the first word of the chosen row.

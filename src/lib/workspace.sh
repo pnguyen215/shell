@@ -406,9 +406,11 @@ shell::workspace::ssh::add() {
 #
 #   This function uses fzf to select a workspace and a missing SSH configuration file.
 #   It then calls shell::workspace::ssh::add to add the selected file if it does not exist.
+#   Every menu ends with a "← Back" entry (SHELL_FZF_BACK_LABEL); picking it steps back one level and changes nothing.
 # @option -n Optional dry-run flag. If provided, commands are printed using shell::logger::command_clip instead of executed.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::workspace::ssh::add::fzf
 #   shell::workspace::ssh::add::fzf -n
@@ -445,53 +447,65 @@ shell::workspace::ssh::add::fzf() {
 	# List all workspace directories and use fzf to select one
 	# We use find to locate directories under the workspace directory
 	# We use xargs to get the basename of each directory
-	# We use fzf to allow the user to select a workspace interactively
-	local workspace
-	workspace=$(find "$base" -mindepth 1 -maxdepth 1 -type d | xargs -n 1 basename | fzf --prompt="Select workspace: ")
-
-	# If no workspace was selected, we print an error message and return
-	# This ensures the user knows they need to select a workspace
-	if [ -z "$workspace" ]; then
-		shell::logger::error "No workspace selected."
-		return 1
-	fi
-
-	# Check if the selected workspace has a .ssh directory
-	# We construct the path to the .ssh directory for the selected workspace
-	local ssh_dir="$base/$workspace/.ssh"
-	if [ ! -d "$ssh_dir" ]; then
-		shell::logger::error "Workspace '$workspace' has no .ssh directory."
-		return 1
-	fi
-
-	# List all possible SSH config files and check which ones are missing
-	# We define an array of all possible SSH config files
+	# Two levels: "Back" at the SSH config menu returns to the workspace menu,
+	# "Back" at the workspace menu leaves the function.
+	local workspace ws_list ssh_dir selected_conf
 	local all_files=("server.conf" "db.conf" "redis.conf" "rmq.conf" "ast.conf" "kafka.conf" "zookeeper.conf" "nginx.conf" "web.conf" "app.conf" "api.conf" "cache.conf" "search.conf" "mysql.conf")
-	local missing_files=()
-	for f in "${all_files[@]}"; do
-		[ ! -f "$ssh_dir/$f" ] && missing_files+=("$f")
+	local missing_files=() f
+	while true; do
+		ws_list=$(find "$base" -mindepth 1 -maxdepth 1 -type d | xargs -n 1 basename)
+
+		# If no workspace was selected, we print an error message and return
+		# This ensures the user knows they need to select a workspace
+		if [ -z "$ws_list" ]; then
+			shell::logger::error "No workspace selected."
+			return 1
+		fi
+		workspace=$(printf '%s\n%s\n' "$ws_list" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --prompt="Select workspace: ")
+		if [ -z "$workspace" ]; then
+			shell::logger::error "No workspace selected."
+			return 1
+		fi
+		if [ "$workspace" = "$SHELL_FZF_BACK_LABEL" ]; then
+			shell::logger::info "Back — nothing was added"
+			return "$RETURN_BACK"
+		fi
+
+		# Check if the selected workspace has a .ssh directory
+		ssh_dir="$base/$workspace/.ssh"
+		if [ ! -d "$ssh_dir" ]; then
+			shell::logger::error "Workspace '$workspace' has no .ssh directory."
+			return 1
+		fi
+
+		# List all possible SSH config files and check which ones are missing
+		missing_files=()
+		for f in "${all_files[@]}"; do
+			[ ! -f "$ssh_dir/$f" ] && missing_files+=("$f")
+		done
+
+		# If no files are missing, we print a message and return
+		# This means all SSH config files already exist in the workspace
+		if [ ${#missing_files[@]} -eq 0 ]; then
+			shell::logger::success "All SSH config files already exist in workspace '$workspace'."
+			return 0
+		fi
+
+		# Use fzf to select one of the missing SSH config files
+		selected_conf=$(printf '%s\n' "${missing_files[@]}" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --prompt="Select SSH config to add: ")
+
+		# If no SSH config was selected, we print an error message and return
+		if [ -z "$selected_conf" ]; then
+			shell::logger::error "No SSH config selected."
+			return 1
+		fi
+
+		# Back to the workspace menu
+		if [ "$selected_conf" = "$SHELL_FZF_BACK_LABEL" ]; then
+			continue
+		fi
+		break
 	done
-
-	# If no files are missing, we print a message and return
-	# This means all SSH config files already exist in the workspace
-	if [ ${#missing_files[@]} -eq 0 ]; then
-		shell::logger::success "All SSH config files already exist in workspace '$workspace'."
-		return 0
-	fi
-
-	# Use fzf to select one of the missing SSH config files
-	# We use printf to list the missing files and pipe it to fzf
-	# The user can select one of the missing files to add to the workspace
-	local selected_conf
-	selected_conf=$(printf "%s\n" "${missing_files[@]}" | fzf --prompt="Select SSH config to add: ")
-
-	# If no SSH config was selected, we print an error message and return
-	# This ensures the user knows they need to select a file
-	# If the user did not select a file, we print an error message and return
-	if [ -z "$selected_conf" ]; then
-		shell::logger::error "No SSH config selected."
-		return 1
-	fi
 
 	# Check if the dry run mode is enabled
 	# If dry_run is true, we print the command to add the SSH config file
@@ -582,9 +596,11 @@ shell::workspace::remove() {
 #   This function locates all .conf files under $SHELL_WORKSPACE_DIR/<workspace_name>/.ssh/,
 #   and uses fzf to let the user select one. The selected file is then passed to shell::ini::view::fzf
 #   for real-time preview of all decoded values.
+#   Every menu ends with a "← Back" entry (SHELL_FZF_BACK_LABEL); picking it steps back one level and changes nothing.
 # @arg $1 string workspace_name: The name of the workspace to view.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::workspace::view::fzf dxc
 #
@@ -634,13 +650,18 @@ shell::workspace::view::fzf() {
 
 	# Use fzf to select one of the .conf files
 	local selected_file
-	selected_file=$(echo "$conf_files" | fzf --prompt="Select a config file to view: ")
+	selected_file=$(printf '%s\n%s\n' "$conf_files" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --prompt="Select a config file to view: ")
 
 	# If no file was selected, we print an error message and return
 	# This ensures the user knows they need to select a file
 	if [ -z "$selected_file" ]; then
 		shell::logger::error "No file selected."
 		return 1
+	fi
+
+	if [ "$selected_file" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — nothing was opened"
+		return "$RETURN_BACK"
 	fi
 
 	shell::ini::view::fzf "$selected_file"
@@ -651,9 +672,11 @@ shell::workspace::view::fzf() {
 #   This function locates all .conf files under $SHELL_WORKSPACE_DIR/<workspace_name>/.ssh/,
 #   and uses fzf to let the user select one. The selected file is then passed to shell::ini::edit::fzf
 #   for editing.
+#   Every menu ends with a "← Back" entry (SHELL_FZF_BACK_LABEL); picking it steps back one level and changes nothing.
 # @arg $1 string workspace_name: The name of the workspace to edit.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::workspace::edit::fzf dxc
 #
@@ -703,12 +726,17 @@ shell::workspace::edit::fzf() {
 
 	# Use fzf to select one of the .conf files for editing
 	local selected_file
-	selected_file=$(echo "$conf_files" | fzf --prompt="Select a config file to edit: ")
+	selected_file=$(printf '%s\n%s\n' "$conf_files" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --prompt="Select a config file to edit: ")
 
 	# If no file was selected, we print an error message and return
 	if [ -z "$selected_file" ]; then
 		shell::logger::error "No file selected."
 		return 1
+	fi
+
+	if [ "$selected_file" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — nothing was changed"
+		return "$RETURN_BACK"
 	fi
 
 	# Call shell::ini::edit::fzf to edit the selected file
@@ -719,9 +747,11 @@ shell::workspace::edit::fzf() {
 #
 #   This function lists all workspace directories under $SHELL_WORKSPACE_DIR,
 #   uses fzf to let the user select one, and then calls shell::workspace::remove to delete it.
+#   Every menu ends with a "← Back" entry (SHELL_FZF_BACK_LABEL); picking it steps back one level and changes nothing.
 # @option -n Optional dry-run flag. If provided, the removal command is printed using shell::logger::command_clip instead of executed.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::workspace::remove::fzf
 #
@@ -755,15 +785,23 @@ shell::workspace::remove::fzf() {
 
 	# List all workspace directories and use fzf to select one
 	# We use find to locate directories under the workspace directory
-	local selected
-	selected=$(find "$workspace_dir" -mindepth 1 -maxdepth 1 -type d |
-		xargs -n 1 basename |
-		fzf --prompt="Select workspace to remove: ")
+	local selected ws_list
+	ws_list=$(find "$workspace_dir" -mindepth 1 -maxdepth 1 -type d | xargs -n 1 basename)
+	if [ -z "$ws_list" ]; then
+		shell::logger::error "No workspace selected."
+		return 1
+	fi
+	selected=$(printf '%s\n%s\n' "$ws_list" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --prompt="Select workspace to remove: ")
 
 	# If no workspace was selected, we print an error message and return
 	if [ -z "$selected" ]; then
 		shell::logger::error "No workspace selected."
 		return 1
+	fi
+
+	if [ "$selected" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — nothing was removed"
+		return "$RETURN_BACK"
 	fi
 
 	# If the dry mode is enabled, we print the command to remove the workspace
@@ -866,9 +904,11 @@ shell::workspace::rename() {
 #   This function lists all workspace directories under $SHELL_WORKSPACE_DIR,
 #   uses fzf to let the user select one, prompts for a new name, and then calls shell::workspace::rename
 #   to rename the selected workspace.
+#   Every menu ends with a "← Back" entry (SHELL_FZF_BACK_LABEL); picking it steps back one level and changes nothing.
 # @option -n Optional dry-run flag. If provided, the rename command is printed using shell::logger::command_clip instead of executed.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::workspace::rename::fzf
 #
@@ -901,10 +941,13 @@ shell::workspace::rename::fzf() {
 	shell::dependency::fzf::ensure
 
 	# List all workspace directories and use fzf to select one
-	local selected
-	selected=$(find "$workspace_dir" -mindepth 1 -maxdepth 1 -type d |
-		xargs -n 1 basename |
-		fzf --prompt="Select workspace to rename: ")
+	local selected ws_list
+	ws_list=$(find "$workspace_dir" -mindepth 1 -maxdepth 1 -type d | xargs -n 1 basename)
+	if [ -z "$ws_list" ]; then
+		shell::logger::error "No workspace selected."
+		return 1
+	fi
+	selected=$(printf '%s\n%s\n' "$ws_list" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --prompt="Select workspace to rename: ")
 
 	# Check if a workspace was selected
 	# If no workspace was selected, we print an error message and return
@@ -914,6 +957,11 @@ shell::workspace::rename::fzf() {
 	if [ -z "$selected" ]; then
 		shell::logger::error "No workspace selected."
 		return 1
+	fi
+
+	if [ "$selected" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — nothing was renamed"
+		return "$RETURN_BACK"
 	fi
 
 	shell::console::print "[e] Enter new name for workspace '$selected':" 208
@@ -941,9 +989,11 @@ shell::workspace::rename::fzf() {
 #   This function lists all workspace directories under $SHELL_WORKSPACE_DIR,
 #   uses fzf to let the user select one, then presents a list of actions to perform on the selected workspace.
 #   Supported actions include: view, edit, rename, and remove.
+#   Every menu ends with a "← Back" entry (SHELL_FZF_BACK_LABEL); picking it steps back one level and changes nothing.
 # @option -n Optional dry-run flag. If provided, actions that support dry-run will be executed in dry-run mode.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::workspace::manage::fzf
 #
@@ -979,36 +1029,49 @@ shell::workspace::manage::fzf() {
 	# We use find to locate directories under the workspace directory
 	# We use xargs to convert the output of find into a list of directory names
 	# We use fzf to let the user select one of the directories
-	local selected
-	selected=$(find "$base" -mindepth 1 -maxdepth 1 -type d |
-		xargs -n 1 basename |
-		fzf --prompt="Select workspace: ")
+	# Two levels: "Back" at the action menu returns to the workspace menu,
+	# "Back" at the workspace menu leaves the function.
+	local selected action ws_list
+	while true; do
+		ws_list=$(find "$base" -mindepth 1 -maxdepth 1 -type d | xargs -n 1 basename)
 
-	# Check if a workspace was selected
-	# If no workspace was selected, we print an error message and return
-	# This ensures the user knows they need to select a workspace
-	if [ -z "$selected" ]; then
-		shell::logger::error "No workspace selected."
-		return 1
-	fi
+		# Check if a workspace exists / was selected
+		# If no workspace was selected, we print an error message and return
+		# This ensures the user knows they need to select a workspace
+		if [ -z "$ws_list" ]; then
+			shell::logger::error "No workspace selected."
+			return 1
+		fi
+		selected=$(printf '%s\n%s\n' "$ws_list" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --prompt="Select workspace: ")
+		if [ -z "$selected" ]; then
+			shell::logger::error "No workspace selected."
+			return 1
+		fi
+		if [ "$selected" = "$SHELL_FZF_BACK_LABEL" ]; then
+			shell::logger::info "Back — nothing was changed"
+			return "$RETURN_BACK"
+		fi
 
-	# Prompt for action to perform on the selected workspace
-	# We present a list of actions to the user using fzf
-	# The actions include: view, edit, rename, and remove
-	# We use printf to create a list of actions, which is then piped into fzf
-	local action
-	action=$(printf "view\nedit\nrename\nremove\nclone" |
-		fzf --prompt="Action for workspace '$selected': ")
+		# Prompt for action to perform on the selected workspace
+		# The actions include: view, edit, rename, remove and clone
+		action=$(printf '%s\n%s\n' "view
+edit
+rename
+remove
+clone" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --prompt="Action for workspace '$selected': ")
 
-	# Check if an action was selected
-	# If no action was selected, we print an error message and return
-	# This ensures the user knows they need to select an action
-	# We check if the action variable is empty
-	# If it is empty, we print an error message and return
-	if [ -z "$action" ]; then
-		shell::logger::error "No action selected."
-		return 1
-	fi
+		# If no action was selected, we print an error message and return
+		if [ -z "$action" ]; then
+			shell::logger::error "No action selected."
+			return 1
+		fi
+
+		# Back to the workspace menu
+		if [ "$action" = "$SHELL_FZF_BACK_LABEL" ]; then
+			continue
+		fi
+		break
+	done
 
 	# Perform the selected action on the workspace
 	# We use a case statement to determine which action was selected
@@ -1170,9 +1233,11 @@ shell::workspace::clone() {
 #   This function lists all workspace directories under $SHELL_WORKSPACE_DIR,
 #   uses fzf to let the user select one, prompts for a new name, and then calls shell::workspace::clone
 #   to clone the selected workspace.
+#   Every menu ends with a "← Back" entry (SHELL_FZF_BACK_LABEL); picking it steps back one level and changes nothing.
 # @option -n Optional dry-run flag. If provided, the clone command is printed using shell::logger::command_clip instead of executed.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::workspace::clone::fzf
 #
@@ -1208,10 +1273,13 @@ shell::workspace::clone::fzf() {
 	# We use find to locate directories under the workspace directory
 	# We use xargs to convert the output of find into a list of directory names
 	# We use fzf to let the user select one of the directories
-	local selected
-	selected=$(find "$base" -mindepth 1 -maxdepth 1 -type d |
-		xargs -n 1 basename |
-		fzf --prompt="Select workspace to clone: ")
+	local selected ws_list
+	ws_list=$(find "$base" -mindepth 1 -maxdepth 1 -type d | xargs -n 1 basename)
+	if [ -z "$ws_list" ]; then
+		shell::logger::error "No workspace selected."
+		return 1
+	fi
+	selected=$(printf '%s\n%s\n' "$ws_list" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --prompt="Select workspace to clone: ")
 
 	# Check if a workspace was selected
 	# If no workspace was selected, we print an error message and return
@@ -1221,6 +1289,11 @@ shell::workspace::clone::fzf() {
 	if [ -z "$selected" ]; then
 		shell::logger::error "No workspace selected."
 		return 1
+	fi
+
+	if [ "$selected" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — nothing was cloned"
+		return "$RETURN_BACK"
 	fi
 
 	shell::console::print "[e] Enter new name for cloned workspace of '$selected':" 208
@@ -1248,9 +1321,11 @@ shell::workspace::clone::fzf() {
 #   This function uses fzf to let the user select a workspace, then a section (e.g., [dev], [uat]),
 #   and then one or more fields to export. It reads values from .ssh/*.conf files and outputs a JSON
 #   structure to the terminal and copies it to the clipboard.
+#   Every menu ends with a "← Back" entry (SHELL_FZF_BACK_LABEL); picking it steps back one level and changes nothing.
 # @option -h Show help message.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::workspace::dump::json
 #
@@ -1278,46 +1353,54 @@ shell::workspace::dump::json() {
 	# List all workspace directories and use fzf to select one
 	# We use find to locate directories under the workspace directory
 	# We use xargs to convert the output of find into a list of directory names
-	# We use fzf to let the user select one of the directories
-	local workspace
-	workspace=$(find "$base" -mindepth 1 -maxdepth 1 -type d |
-		xargs -n 1 basename |
-		fzf --prompt="Select workspace: ")
+	# Two levels: "Back" at the .conf menu returns to the workspace menu,
+	# "Back" at the workspace menu leaves the function.
+	local workspace conf_file ws_list conf_list ssh_dir
+	while true; do
+		ws_list=$(find "$base" -mindepth 1 -maxdepth 1 -type d | xargs -n 1 basename)
 
-	# Check if a workspace was selected
-	# If no workspace was selected, we print an error message and return
-	# This ensures the user knows they need to select a workspace
-	# We check if the workspace variable is empty
-	# If it is empty, we print an error message and return
-	if [ -z "$workspace" ]; then
-		shell::logger::error "No workspace selected."
-		return 1
-	fi
+		# If no workspace was selected, we print an error message and return
+		if [ -z "$ws_list" ]; then
+			shell::logger::error "No workspace selected."
+			return 1
+		fi
+		workspace=$(printf '%s\n%s\n' "$ws_list" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --prompt="Select workspace: ")
+		if [ -z "$workspace" ]; then
+			shell::logger::error "No workspace selected."
+			return 1
+		fi
+		if [ "$workspace" = "$SHELL_FZF_BACK_LABEL" ]; then
+			shell::logger::info "Back — nothing was exported"
+			return "$RETURN_BACK"
+		fi
 
-	# Check if the selected workspace has a .ssh directory
-	# We check if the .ssh directory exists under the selected workspace
-	# If the .ssh directory does not exist, we print an error message and return
-	local ssh_dir="$base/$workspace/.ssh"
-	if [ ! -d "$ssh_dir" ]; then
-		shell::logger::error "Workspace '$workspace' has no .ssh directory."
-		return 1
-	fi
+		# Check if the selected workspace has a .ssh directory
+		ssh_dir="$base/$workspace/.ssh"
+		if [ ! -d "$ssh_dir" ]; then
+			shell::logger::error "Workspace '$workspace' has no .ssh directory."
+			return 1
+		fi
 
-	# Find all .conf files in the .ssh directory
-	# We use find to locate all .conf files under the .ssh directory
-	local conf_file
-	conf_file=$(find "$ssh_dir" -type f -name "*.conf" |
-		fzf --prompt="Select .conf file to export: ")
+		# Find all .conf files in the .ssh directory
+		conf_list=$(find "$ssh_dir" -type f -name "*.conf")
+		if [ -z "$conf_list" ]; then
+			shell::logger::error "No .conf file selected."
+			return 1
+		fi
+		conf_file=$(printf '%s\n%s\n' "$conf_list" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --prompt="Select .conf file to export: ")
 
-	# Check if a .conf file was selected
-	# If no .conf file was selected, we print an error message and return
-	# This ensures the user knows they need to select a .conf file
-	# We check if the conf_file variable is empty
-	# If it is empty, we print an error message and return
-	if [ -z "$conf_file" ]; then
-		shell::logger::error "No .conf file selected."
-		return 1
-	fi
+		# If no .conf file was selected, we print an error message and return
+		if [ -z "$conf_file" ]; then
+			shell::logger::error "No .conf file selected."
+			return 1
+		fi
+
+		# Back to the workspace menu
+		if [ "$conf_file" = "$SHELL_FZF_BACK_LABEL" ]; then
+			continue
+		fi
+		break
+	done
 
 	# Check if the selected .conf file exists
 	# We check if the conf_file exists
@@ -1560,8 +1643,10 @@ shell::workspace::ssh::tunnel::open() {
 #
 #   Uses fzf to select a workspace and a .conf file, then selects a section (dev or uat),
 #   and opens an SSH tunnel using shell::workspace::ssh::tunnel::open.
+#   Every menu ends with a "← Back" entry (SHELL_FZF_BACK_LABEL); picking it steps back one level and changes nothing.
 # @option -n Optional dry-run flag. If provided, the command is printed using shell::logger::command_clip.
 # @exitcode 0 Success.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::workspace::ssh::tunnel::open::fzf
 #   shell::workspace::ssh::tunnel::open::fzf -n
@@ -1587,49 +1672,74 @@ shell::workspace::ssh::tunnel::open::fzf() {
 	# Ensure the fzf package is installed
 	shell::dependency::fzf::ensure
 
-	# Check if the workspace directory exists
-	local workspace
-	workspace=$(find "$SHELL_WORKSPACE_DIR" -mindepth 1 -maxdepth 1 -type d |
-		xargs -n 1 basename |
-		fzf --border=rounded --ansi --layout=reverse --pointer="▶" --marker="✓" --prompt="Select workspace: ")
+	# Three levels: "Back" at the section menu returns to the .conf menu, "Back" at
+	# the .conf menu returns to the workspace menu, "Back" at the workspace menu
+	# leaves the function.
+	local workspace conf_file section ws_list conf_list ssh_dir picked step="workspace"
+	while true; do
+		case "$step" in
+		workspace)
+			ws_list=$(find "$SHELL_WORKSPACE_DIR" -mindepth 1 -maxdepth 1 -type d | xargs -n 1 basename)
 
-	# Check if a workspace was selected
-	# If no workspace was selected, we print an error message and return
-	# This ensures the user knows they need to select a workspace
-	if [ -z "$workspace" ]; then
-		shell::logger::error "No workspace selected."
-		return 0
-	fi
+			# If no workspace was selected, we print an error message and return
+			# This ensures the user knows they need to select a workspace
+			if [ -z "$ws_list" ]; then
+				shell::logger::error "No workspace selected."
+				return 0
+			fi
+			picked=$(printf '%s\n%s\n' "$ws_list" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --prompt="Select workspace: ")
+			if [ -z "$picked" ]; then
+				shell::logger::error "No workspace selected."
+				return 0
+			fi
+			if [ "$picked" = "$SHELL_FZF_BACK_LABEL" ]; then
+				shell::logger::info "Back — no tunnel was changed"
+				return "$RETURN_BACK"
+			fi
+			workspace="$picked"
 
-	# Check if the selected workspace has a .ssh directory
-	# We check if the .ssh directory exists under the selected workspace
-	# If the .ssh directory does not exist, we print an error message and return
-	local ssh_dir="$SHELL_WORKSPACE_DIR/$workspace/.ssh"
-	if [ ! -d "$ssh_dir" ]; then
-		shell::logger::error "Workspace '$workspace' has no .ssh directory."
-		return 0
-	fi
-
-	# Find all .conf files in the .ssh directory
-	# We use find to locate all .conf files under the .ssh directory
-	# We use xargs to convert the output of find into a list of file names
-	local conf_file
-	conf_file=$(find "$ssh_dir" -type f -name "*.conf" |
-		xargs -n 1 basename |
-		fzf --border=rounded --ansi --layout=reverse --pointer="▶" --marker="✓" --prompt="Select SSH config file: ")
-
-	if [ -z "$conf_file" ]; then
-		shell::logger::error "No config file selected."
-		return 0
-	fi
-
-	# Check if the selected .conf file exists
-	local section
-	section=$(printf "dev\nuat" | fzf --prompt="Select section: ")
-	if [ -z "$section" ]; then
-		shell::logger::error "No section selected."
-		return 0
-	fi
+			# Check if the selected workspace has a .ssh directory
+			ssh_dir="$SHELL_WORKSPACE_DIR/$workspace/.ssh"
+			if [ ! -d "$ssh_dir" ]; then
+				shell::logger::error "Workspace '$workspace' has no .ssh directory."
+				return 0
+			fi
+			step="conf"
+			;;
+		conf)
+			# Find all .conf files in the .ssh directory
+			conf_list=$(find "$ssh_dir" -type f -name "*.conf" | xargs -n 1 basename)
+			if [ -z "$conf_list" ]; then
+				shell::logger::error "No config file selected."
+				return 0
+			fi
+			picked=$(printf '%s\n%s\n' "$conf_list" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --prompt="Select SSH config file: ")
+			if [ -z "$picked" ]; then
+				shell::logger::error "No config file selected."
+				return 0
+			fi
+			if [ "$picked" = "$SHELL_FZF_BACK_LABEL" ]; then
+				step="workspace"
+				continue
+			fi
+			conf_file="$picked"
+			step="section"
+			;;
+		section)
+			picked=$(printf '%s\n%s\n%s\n' "dev" "uat" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --prompt="Select section: ")
+			if [ -z "$picked" ]; then
+				shell::logger::error "No section selected."
+				return 0
+			fi
+			if [ "$picked" = "$SHELL_FZF_BACK_LABEL" ]; then
+				step="conf"
+				continue
+			fi
+			section="$picked"
+			break
+			;;
+		esac
+	done
 
 	# Check if the dry-mode is enabled
 	# If dry-run mode is enabled, we print the command instead of executing it
@@ -1741,8 +1851,10 @@ shell::workspace::ssh::tunnel::tune() {
 #
 #   Uses fzf to select a workspace and a .conf file, then selects a section (dev or uat),
 #   and tunes an SSH tunnel using shell::workspace::ssh::tunnel::tune.
+#   Every menu ends with a "← Back" entry (SHELL_FZF_BACK_LABEL); picking it steps back one level and changes nothing.
 # @option -n Optional dry-run flag. If provided, the command is printed using shell::logger::command_clip.
 # @exitcode 0 Success.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::workspace::ssh::tunnel::tune::fzf
 #
@@ -1765,49 +1877,74 @@ shell::workspace::ssh::tunnel::tune::fzf() {
 	# Ensure the fzf package is installed
 	shell::dependency::fzf::ensure
 
-	# Check if the workspace directory exists
-	local workspace
-	workspace=$(find "$SHELL_WORKSPACE_DIR" -mindepth 1 -maxdepth 1 -type d |
-		xargs -n 1 basename |
-		fzf --border=rounded --ansi --layout=reverse --pointer="▶" --marker="✓" --prompt="Select workspace: ")
+	# Three levels: "Back" at the section menu returns to the .conf menu, "Back" at
+	# the .conf menu returns to the workspace menu, "Back" at the workspace menu
+	# leaves the function.
+	local workspace conf_file section ws_list conf_list ssh_dir picked step="workspace"
+	while true; do
+		case "$step" in
+		workspace)
+			ws_list=$(find "$SHELL_WORKSPACE_DIR" -mindepth 1 -maxdepth 1 -type d | xargs -n 1 basename)
 
-	# Check if a workspace was selected
-	# If no workspace was selected, we print an error message and return
-	# This ensures the user knows they need to select a workspace
-	if [ -z "$workspace" ]; then
-		shell::logger::error "No workspace selected."
-		return 0
-	fi
+			# If no workspace was selected, we print an error message and return
+			# This ensures the user knows they need to select a workspace
+			if [ -z "$ws_list" ]; then
+				shell::logger::error "No workspace selected."
+				return 0
+			fi
+			picked=$(printf '%s\n%s\n' "$ws_list" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --prompt="Select workspace: ")
+			if [ -z "$picked" ]; then
+				shell::logger::error "No workspace selected."
+				return 0
+			fi
+			if [ "$picked" = "$SHELL_FZF_BACK_LABEL" ]; then
+				shell::logger::info "Back — no tunnel was changed"
+				return "$RETURN_BACK"
+			fi
+			workspace="$picked"
 
-	# Check if the selected workspace has a .ssh directory
-	# We check if the .ssh directory exists under the selected workspace
-	# If the .ssh directory does not exist, we print an error message and return
-	local ssh_dir="$SHELL_WORKSPACE_DIR/$workspace/.ssh"
-	if [ ! -d "$ssh_dir" ]; then
-		shell::logger::error "Workspace '$workspace' has no .ssh directory."
-		return 0
-	fi
-
-	# Find all .conf files in the .ssh directory
-	# We use find to locate all .conf files under the .ssh directory
-	# We use xargs to convert the output of find into a list of file names
-	local conf_file
-	conf_file=$(find "$ssh_dir" -type f -name "*.conf" |
-		xargs -n 1 basename |
-		fzf --border=rounded --ansi --layout=reverse --pointer="▶" --marker="✓" --prompt="Select SSH config file: ")
-
-	if [ -z "$conf_file" ]; then
-		shell::logger::error "No config file selected."
-		return 0
-	fi
-
-	# Check if the selected .conf file exists
-	local section
-	section=$(printf "dev\nuat" | fzf --prompt="Select section: ")
-	if [ -z "$section" ]; then
-		shell::logger::error "No section selected."
-		return 0
-	fi
+			# Check if the selected workspace has a .ssh directory
+			ssh_dir="$SHELL_WORKSPACE_DIR/$workspace/.ssh"
+			if [ ! -d "$ssh_dir" ]; then
+				shell::logger::error "Workspace '$workspace' has no .ssh directory."
+				return 0
+			fi
+			step="conf"
+			;;
+		conf)
+			# Find all .conf files in the .ssh directory
+			conf_list=$(find "$ssh_dir" -type f -name "*.conf" | xargs -n 1 basename)
+			if [ -z "$conf_list" ]; then
+				shell::logger::error "No config file selected."
+				return 0
+			fi
+			picked=$(printf '%s\n%s\n' "$conf_list" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --prompt="Select SSH config file: ")
+			if [ -z "$picked" ]; then
+				shell::logger::error "No config file selected."
+				return 0
+			fi
+			if [ "$picked" = "$SHELL_FZF_BACK_LABEL" ]; then
+				step="workspace"
+				continue
+			fi
+			conf_file="$picked"
+			step="section"
+			;;
+		section)
+			picked=$(printf '%s\n%s\n%s\n' "dev" "uat" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --prompt="Select section: ")
+			if [ -z "$picked" ]; then
+				shell::logger::error "No section selected."
+				return 0
+			fi
+			if [ "$picked" = "$SHELL_FZF_BACK_LABEL" ]; then
+				step="conf"
+				continue
+			fi
+			section="$picked"
+			break
+			;;
+		esac
+	done
 
 	# Check if the dry-mode is enabled
 	# If dry-run mode is enabled, we print the command instead of executing it

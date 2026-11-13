@@ -1027,11 +1027,13 @@ shell::ini::section::remove() {
 #   and then removes the chosen key-value pair from the specified section in the INI file.
 #   It handles cases where the file or section does not exist and provides feedback
 #   using shell::console::print.
+#   The last entry of each fzf menu is "← Back" (SHELL_FZF_BACK_LABEL): picking it returns RETURN_BACK.
 # @option -n Optional dry-run flag. If provided, commands are printed using shell::logger::command_clip instead of executed.
 # @arg $1 string file: The path to the INI file.
 # @arg $2 string section: The section within the INI file from which to remove a key.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was removed.
 # @example
 #   shell::ini::key::remove::fzf config.ini "Database"  # Interactively remove a key from the Database section.
 #   shell::ini::key::remove::fzf -n settings.ini "API"  # Dry-run: show commands to remove a key from the API section.
@@ -1084,13 +1086,20 @@ shell::ini::key::remove::fzf() {
 	}
 
 	# Get the list of keys in the specified section and use fzf to select one.
-	local selected_key
-	selected_key=$(shell::ini::key::list "$file" "$section" | fzf --prompt="Select key to remove from section '$section': ")
+	local selected_key key_list
+	key_list=$(shell::ini::key::list "$file" "$section")
+	if [ -n "$key_list" ]; then
+		selected_key=$(printf '%s\n%s\n' "$key_list" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --prompt="Select key to remove from section '$section': ")
+	fi
 
 	# Check if a key was selected.
 	if [ -z "$selected_key" ]; then
 		shell::logger::error "No key selected. Aborting removal."
 		return 1
+	fi
+	if [ "$selected_key" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — nothing was removed"
+		return "$RETURN_BACK"
 	fi
 
 	shell::logger::debug "Selected key for removal: '$selected_key'"
@@ -2193,11 +2202,13 @@ shell::ini::section::rename() {
 #   Notes:
 #   - Relies on shell::console::print, shell::package::install, shell::ini::section::list,
 #   and shell::ini::section::rename.
+#   The last entry of each fzf menu is "← Back" (SHELL_FZF_BACK_LABEL): picking it returns RETURN_BACK.
 # @option -n Optional dry-run flag. If provided, commands are printed using shell::logger::command_clip instead of executed.
 # @option -h Optional help flag. Displays this help message.
 # @arg $1 string file: The path to the INI file.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was renamed.
 # @example
 #   shell::ini::section::rename::fzf config.ini  # Interactively rename a section in config.ini.
 #   shell::ini::section::rename::fzf -n settings.ini # Dry-run: show commands to rename a section.
@@ -2260,13 +2271,20 @@ shell::ini::section::rename::fzf() {
 	}
 
 	# Get the list of sections and use fzf to select one.
-	local selected_section
-	selected_section=$(shell::ini::section::list "$file" | fzf --prompt="Select section to rename: ")
+	local selected_section section_list
+	section_list=$(shell::ini::section::list "$file")
+	if [ -n "$section_list" ]; then
+		selected_section=$(printf '%s\n%s\n' "$section_list" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --prompt="Select section to rename: ")
+	fi
 
 	# Check if a section was selected.
 	if [ -z "$selected_section" ]; then
 		shell::logger::error "No section selected. Aborting rename."
 		return 1
+	fi
+	if [ "$selected_section" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — nothing was renamed"
+		return "$RETURN_BACK"
 	fi
 
 	shell::console::print "Selected section for renaming: '$selected_section'" 33
@@ -2464,10 +2482,12 @@ shell::ini::section::clone() {
 #   - Relies on shell::console::print, shell::package::install, shell::ini::section::list,
 #   shell::ini::section::clone, and shell::logger::command_clip.
 #   - Provides interactive selection and auto-suggestion for the cloned section name.
+#   The last entry of each fzf menu is "← Back" (SHELL_FZF_BACK_LABEL): picking it returns RETURN_BACK.
 # @option -n Optional dry-run flag. If provided, commands are printed using shell::logger::command_clip instead of executed.
 # @arg $1 string file: The path to the INI file.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was cloned.
 # @example
 #   shell::ini::section::clone::fzf config.ini   # Interactively clone a section.
 #   shell::ini::section::clone::fzf -n config.ini # Dry-run: show commands to clone a section.
@@ -2513,13 +2533,20 @@ shell::ini::section::clone::fzf() {
 	}
 
 	# Get the list of sections and use fzf to select one.
-	local selected_section
-	selected_section=$(shell::ini::section::list "$file" | fzf --prompt="Select section to clone: ")
+	local selected_section section_list
+	section_list=$(shell::ini::section::list "$file")
+	if [ -n "$section_list" ]; then
+		selected_section=$(printf '%s\n%s\n' "$section_list" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --prompt="Select section to clone: ")
+	fi
 
 	# Check if a section was selected.
 	if [ -z "$selected_section" ]; then
 		shell::logger::error "No section selected. Aborting clone."
 		return 1
+	fi
+	if [ "$selected_section" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — nothing was cloned"
+		return "$RETURN_BACK"
 	fi
 
 	shell::logger::debug "Selected section for cloning: '$selected_section'"
@@ -2654,9 +2681,11 @@ shell::ini::section::remove::fzf() {
 #   This function lists all sections in the specified INI file using shell::ini::section::list,
 #   and uses fzf to preview all key-value pairs in each section in real-time.
 #   The preview window wraps lines and simulates a tree-like layout for readability.
+#   The last entry of the section menu is "← Back" (SHELL_FZF_BACK_LABEL): picking it returns RETURN_BACK; in the key menu it goes back to the section menu.
 # @arg $1 string file: The path to the INI file.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was copied.
 # @example
 #   shell::ini::view::fzf config.ini
 #   shell::ini::view::fzf -n config.ini
@@ -2708,7 +2737,7 @@ shell::ini::view::fzf() {
 	# The preview command uses awk to format the output in a tree-like structure.
 	# It highlights keys and values with colors for better visibility.
 	# The preview window is set to wrap lines and display up to 60 lines.
-	local section
+	local section sections key key_list
 	# section=$(shell::ini::section::list "$file" |
 	#     awk -v y="$yellow" -v n="$normal" '{print y $0 n}' |
 	#     fzf --ansi \
@@ -2728,47 +2757,65 @@ shell::ini::view::fzf() {
 	#     ' \"$file\"" \
 	#         --preview-window=up:wrap:60%)
 
-	section=$(shell::ini::section::list "$file" |
-		awk -v y="$yellow" -v n="$normal" '{print y $0 n}' |
-		fzf --ansi \
-			--prompt="Select section: " \
-			--preview="bash -c '
-        section=\"{}\"; in_section=0
-        while IFS= read -r line; do
-          [[ \"\$line\" =~ ^\\[.*\\]$ ]] && {
-            [[ \"\$line\" == \"[\$section]\" ]] && in_section=1 || in_section=0
-            continue
-          }
-          [[ \$in_section -eq 1 && \"\$line\" =~ = ]] && {
-            key=\${line%%=*}
-            val=\${line#*=}
-            decoded=\$(echo \"\$val\" | $decode_cmd 2>/dev/null)
-            printf \"  \033[36m%s\033[0m: \033[32m%s\033[0m\n\" \"\$key\" \"\$decoded\"
-          }
-        done < \"$file\"
-      '" \
-			--preview-window=up:wrap:60%)
+	while true; do
+		sections=$(shell::ini::section::list "$file")
+		section=""
+		[ -n "$sections" ] && section=$({
+			printf '%s\n' "$sections" | awk -v y="$yellow" -v n="$normal" '{print y $0 n}'
+			printf '%s\n' "$SHELL_FZF_BACK_LABEL"
+		} |
+			shell::fzf::select \
+				--prompt="Select section: " \
+				--preview="bash -c '
+	        section=\"{}\"; in_section=0
+	        while IFS= read -r line; do
+	          [[ \"\$line\" =~ ^\\[.*\\]$ ]] && {
+	            [[ \"\$line\" == \"[\$section]\" ]] && in_section=1 || in_section=0
+	            continue
+	          }
+	          [[ \$in_section -eq 1 && \"\$line\" =~ = ]] && {
+	            key=\${line%%=*}
+	            val=\${line#*=}
+	            decoded=\$(echo \"\$val\" | $decode_cmd 2>/dev/null)
+	            printf \"  \033[36m%s\033[0m: \033[32m%s\033[0m\n\" \"\$key\" \"\$decoded\"
+	          }
+	        done < \"$file\"
+	      '" \
+				--preview-window=up:wrap:60%)
 
-	# Check if a section was selected.
-	# If not, print an error message and return.
-	section=$(echo "$section" | sed "s/$(printf '\033')[0-9;]*m//g")
-	if [ -z "$section" ]; then
-		shell::logger::error "No section selected."
-		return 1
-	fi
+		# Check if a section was selected.
+		# If not, print an error message and return.
+		section=$(echo "$section" | sed "s/$(printf '\033')[0-9;]*m//g")
+		if [ -z "$section" ]; then
+			shell::logger::error "No section selected."
+			return 1
+		fi
+		if [ "$section" = "$SHELL_FZF_BACK_LABEL" ]; then
+			shell::logger::info "Back — nothing was copied"
+			return "$RETURN_BACK"
+		fi
 
-	# Read all keys in the selected section and display them using fzf.
-	# The keys are colored for better visibility.
-	local key
-	key=$(shell::ini::key::list "$file" "$section" |
-		awk -v c="$cyan" -v n="$normal" '{print c $0 n}' |
-		fzf --ansi --prompt="Select key in [$section]: ")
+		# Read all keys in the selected section and display them using fzf.
+		# The keys are colored for better visibility.
+		key_list=$(shell::ini::key::list "$file" "$section")
+		key=""
+		[ -n "$key_list" ] && key=$({
+			printf '%s\n' "$key_list" | awk -v c="$cyan" -v n="$normal" '{print c $0 n}'
+			printf '%s\n' "$SHELL_FZF_BACK_LABEL"
+		} | shell::fzf::select --prompt="Select key in [$section]: ")
 
-	key=$(echo "$key" | sed "s/$(printf '\033')[0-9;]*m//g")
-	if [ -z "$key" ]; then
-		shell::logger::error "No key selected."
-		return 1
-	fi
+		key=$(echo "$key" | sed "s/$(printf '\033')[0-9;]*m//g")
+		if [ -z "$key" ]; then
+			shell::logger::error "No key selected."
+			return 1
+		fi
+		if [ "$key" = "$SHELL_FZF_BACK_LABEL" ]; then
+			# Back to the section menu.
+			continue
+		fi
+		break
+
+	done
 
 	# Read the value of the selected key in the specified section.
 	# The value is colored for better visibility.
@@ -2792,12 +2839,14 @@ shell::ini::view::fzf() {
 #   and uses fzf to preview all key-value pairs in each section in real-time.
 #   The preview window wraps lines and simulates a tree-like layout for readability.
 #   It supports exporting the selected section as JSON or YAML, or selecting multiple keys for export.
+#   The last entry of the section menu is "← Back" (SHELL_FZF_BACK_LABEL): picking it returns RETURN_BACK; in the key menu it goes back to the section menu. (Multi-key mode keeps its plain fzf menu.)
 # @arg $1 string file: The path to the INI file.
 # @option --json Optional. Export the selected section as JSON.
 # @option --yaml Optional. Export the selected section as YAML.
 # @option --multi Optional. Allow multi-key selection and export.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was copied.
 # @example
 #   shell::ini::view::super::fzf config.ini
 #   shell::ini::view::super::fzf config.ini --json
@@ -2862,95 +2911,111 @@ shell::ini::view::super::fzf() {
 	# List sections and use fzf to select one.
 	# The preview command uses awk to format the output in a tree-like structure.
 	# It highlights keys and values with colors for better visibility.
-	local section
-	section=$(shell::ini::section::list "$file" |
-		awk -v y="$yellow" -v n="$normal" '{print y $0 n}' |
-		fzf --ansi \
-			--prompt="Select section: " \
-			--preview="awk -v s='{}' '
-          BEGIN { in_section=0 }
-          /^\[.*\]/ {
-            in_section = (\$0 == \"[\" s \"]\") ? 1 : 0
-            next
-          }
-          in_section && /^[^#;]/ && /=/ {
-            split(\$0, kv, \"=\")
-            gsub(/^[ \t]+|[ \t]+$/, \"\", kv[1])
-            gsub(/^[ \t]+|[ \t]+$/, \"\", kv[2])
-            printf(\" %s%s%s: %s%s%s\\n\", \"\033[36m\", kv[1], \"\033[0m\", \"\033[32m\", kv[2], \"\033[0m\")
-          }
-        ' \"$file\"" \
-			--preview-window=up:wrap:60%)
+	local section sections keys key_selection
+	while true; do
+		sections=$(shell::ini::section::list "$file")
+		section=""
+		[ -n "$sections" ] && section=$({
+			printf '%s\n' "$sections" | awk -v y="$yellow" -v n="$normal" '{print y $0 n}'
+			printf '%s\n' "$SHELL_FZF_BACK_LABEL"
+		} |
+			shell::fzf::select \
+				--prompt="Select section: " \
+				--preview="awk -v s='{}' '
+	          BEGIN { in_section=0 }
+	          /^\[.*\]/ {
+	            in_section = (\$0 == \"[\" s \"]\") ? 1 : 0
+	            next
+	          }
+	          in_section && /^[^#;]/ && /=/ {
+	            split(\$0, kv, \"=\")
+	            gsub(/^[ \t]+|[ \t]+$/, \"\", kv[1])
+	            gsub(/^[ \t]+|[ \t]+$/, \"\", kv[2])
+	            printf(\" %s%s%s: %s%s%s\\n\", \"\033[36m\", kv[1], \"\033[0m\", \"\033[32m\", kv[2], \"\033[0m\")
+	          }
+	        ' \"$file\"" \
+				--preview-window=up:wrap:60%)
 
-	# Check if a section was selected.
-	# If not, print an error message and return.
-	section=$(echo "$section" | sed "s/$(printf '\033')[0-9;]*m//g")
-	if [ -z "$section" ]; then
-		shell::logger::error "No section selected."
-		return 1
-	fi
+		# Check if a section was selected.
+		# If not, print an error message and return.
+		section=$(echo "$section" | sed "s/$(printf '\033')[0-9;]*m//g")
+		if [ -z "$section" ]; then
+			shell::logger::error "No section selected."
+			return 1
+		fi
+		if [ "$section" = "$SHELL_FZF_BACK_LABEL" ]; then
+			shell::logger::info "Back — nothing was copied"
+			return "$RETURN_BACK"
+		fi
 
-	# Read all keys in the selected section and display them using fzf.
-	# The keys are colored for better visibility.
-	local keys
-	keys=$(shell::ini::key::list "$file" "$section")
-	if [ -z "$keys" ]; then
-		shell::logger::warn "No keys found in section '$section'."
-		return 1
-	fi
+		# Read all keys in the selected section and display them using fzf.
+		# The keys are colored for better visibility.
+		keys=$(shell::ini::key::list "$file" "$section")
+		if [ -z "$keys" ]; then
+			shell::logger::warn "No keys found in section '$section'."
+			return 1
+		fi
 
-	# If --json mode is specified, format the output as JSON.
-	# --json: Export as JSON format.
-	if [ "$mode" = "--json" ]; then
-		local output="{"
-		local first=1
-		while IFS= read -r key; do
-			local val
-			val=$(shell::ini::read "$file" "$section" "$key")
-			val=$(echo "$val" | sed 's/"/\\"/g') # escape double quotes
-			key=$(shell::strings::sanitize::lower "$key")
-			if [ $first -eq 1 ]; then
-				output="$output\n  \"$key\": \"$val\""
-				first=0
-			else
-				output="$output,\n  \"$key\": \"$val\""
-			fi
-		done <<<"$keys"
-		output="$output\n}"
-		printf '%b\n' "$output"
-		shell::clipboard::copy --best-effort "$output"
-		return 0
-	fi
+		# If --json mode is specified, format the output as JSON.
+		# --json: Export as JSON format.
+		if [ "$mode" = "--json" ]; then
+			local output="{"
+			local first=1
+			while IFS= read -r key; do
+				local val
+				val=$(shell::ini::read "$file" "$section" "$key")
+				val=$(echo "$val" | sed 's/"/\\"/g') # escape double quotes
+				key=$(shell::strings::sanitize::lower "$key")
+				if [ $first -eq 1 ]; then
+					output="$output\n  \"$key\": \"$val\""
+					first=0
+				else
+					output="$output,\n  \"$key\": \"$val\""
+				fi
+			done <<<"$keys"
+			output="$output\n}"
+			printf '%b\n' "$output"
+			shell::clipboard::copy --best-effort "$output"
+			return 0
+		fi
 
-	# If --yaml mode is specified, format the output as YAML.
-	# --yaml: Export as YAML format.
-	if [ "$mode" = "--yaml" ]; then
-		local output=""
-		while IFS= read -r key; do
-			local val
-			val=$(shell::ini::read "$file" "$section" "$key")
-			key=$(shell::strings::sanitize::lower "$key")
-			output="${output}$key: $val\n"
-		done <<<"$keys"
-		printf '%b\n' "$output"
-		shell::clipboard::copy --best-effort "$output"
-		return 0
-	fi
+		# If --yaml mode is specified, format the output as YAML.
+		# --yaml: Export as YAML format.
+		if [ "$mode" = "--yaml" ]; then
+			local output=""
+			while IFS= read -r key; do
+				local val
+				val=$(shell::ini::read "$file" "$section" "$key")
+				key=$(shell::strings::sanitize::lower "$key")
+				output="${output}$key: $val\n"
+			done <<<"$keys"
+			printf '%b\n' "$output"
+			shell::clipboard::copy --best-effort "$output"
+			return 0
+		fi
 
-	# If --multi is specified, allow multi-key selection.
-	# Use fzf to select one or more keys from the section.
-	# The selected keys are then read and their values are displayed.
-	local key_selection
-	if [ "$multi" = "true" ]; then
-		key_selection=$(echo "$keys" | fzf --ansi --multi --prompt="Select key(s) in [$section]: ")
-	else
-		key_selection=$(echo "$keys" | fzf --ansi --prompt="Select key in [$section]: ")
-	fi
+		# If --multi is specified, allow multi-key selection.
+		# Use fzf to select one or more keys from the section.
+		# The selected keys are then read and their values are displayed.
+		if [ "$multi" = "true" ]; then
+			key_selection=$(echo "$keys" | fzf --ansi --multi --prompt="Select key(s) in [$section]: ")
+		else
+			key_selection=$({
+				printf '%s\n' "$keys"
+				printf '%s\n' "$SHELL_FZF_BACK_LABEL"
+			} | shell::fzf::select --prompt="Select key in [$section]: ")
+		fi
 
-	if [ -z "$key_selection" ]; then
-		shell::logger::error "No key selected."
-		return 1
-	fi
+		if [ -z "$key_selection" ]; then
+			shell::logger::error "No key selected."
+			return 1
+		fi
+		if [ "$multi" != "true" ] && [ "$key_selection" = "$SHELL_FZF_BACK_LABEL" ]; then
+			# Back to the section menu.
+			continue
+		fi
+		break
+	done
 
 	# Process the selected keys and read their values.
 	# The values are colored for better visibility.
@@ -2978,12 +3043,14 @@ shell::ini::view::super::fzf() {
 #   The preview window wraps lines and simulates a tree-like layout for readability.
 #   It supports exporting the selected section as JSON or YAML, or selecting multiple keys for export.
 #   A [Previous Section] option is included to allow users to return to section selection.
+#   The last entry of the section menu is "← Back" (SHELL_FZF_BACK_LABEL): picking it returns RETURN_BACK. (The key menu keeps its multi-select fzf and "[Previous Section]" entry.)
 # @arg $1 string file: The path to the INI file.
 # @option --json Optional. Export the selected section as JSON.
 # @option --yaml Optional. Export the selected section as YAML.
 # @option --multi Optional. Allow multi-key selection and export.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was copied.
 # @example
 #   shell::ini::view::control::fzf config.ini
 #   shell::ini::view::control::fzf config.ini --json
@@ -3045,10 +3112,14 @@ shell::ini::view::control::fzf() {
 	while true; do
 		# List sections and use fzf to select one.
 		# The preview command uses awk to format the output in a tree-like structure.
-		local section
-		section=$(shell::ini::section::list "$file" |
-			awk -v y="$yellow" -v n="$normal" '{print y $0 n}' |
-			fzf --ansi \
+		local section sections
+		sections=$(shell::ini::section::list "$file")
+		section=""
+		[ -n "$sections" ] && section=$({
+			printf '%s\n' "$sections" | awk -v y="$yellow" -v n="$normal" '{print y $0 n}'
+			printf '%s\n' "$SHELL_FZF_BACK_LABEL"
+		} |
+			shell::fzf::select \
 				--prompt="Select section: " \
 				--preview="awk -v s='{}' '
                   BEGIN { in_section=0 }
@@ -3070,6 +3141,10 @@ shell::ini::view::control::fzf() {
 		if [ -z "$section" ]; then
 			shell::logger::error "No section selected."
 			return 1
+		fi
+		if [ "$section" = "$SHELL_FZF_BACK_LABEL" ]; then
+			shell::logger::info "Back — nothing was selected"
+			return "$RETURN_BACK"
 		fi
 
 		# Read all keys in the selected section.
@@ -3162,8 +3237,11 @@ shell::ini::view::control::fzf() {
 #   This function allows the user to select a section and a key from an INI file,
 #   then choose to either edit the value of the key or rename the key.
 #   It uses fzf for interactive selection and sed for in-place editing.
+#   Every menu ends with a "← Back" entry (SHELL_FZF_BACK_LABEL) that returns to the previous level;
+#   only the first (section) menu leaves the function with RETURN_BACK.
 # @arg $1 string file: The path to the INI file.
 # @exitcode 0 Success.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL) on the first menu; nothing was changed.
 # @example
 #   shell::ini::edit::fzf config.ini
 #
@@ -3191,26 +3269,9 @@ shell::ini::edit::fzf() {
 	# Ensure fzf is installed.
 	shell::dependency::fzf::ensure
 
-	# Get the list of sections in the specified file and use fzf to select one.
-	local section
-	section=$(shell::ini::section::list "$file" | fzf --border=rounded --ansi --layout=reverse --pointer="▶" --marker="✓" --prompt="Select section to edit: ")
-	if [ -z "$section" ]; then
-		shell::logger::error "No section selected."
-		return 0
-	fi
-
-	# Get the list of keys in the selected section and use fzf to select one.
-	# The keys are colored for better visibility.
-	local key
-	key=$(shell::ini::key::list "$file" "$section" | fzf --border=rounded --ansi --layout=reverse --pointer="▶" --marker="✓" --prompt="Select key to edit/rename: ")
-	if [ -z "$key" ]; then
-		shell::logger::error "No key selected."
-		return 0
-	fi
-
-	local menu_options
-	local selected_key
-	menu_options=(
+	local section key
+	local selected_key menu_label menu_entry rc
+	local menu_options=(
 		"Add Key:add_key"
 		"Edit Key:edit_key"
 		"Remove Key:remove_key"
@@ -3218,12 +3279,65 @@ shell::ini::edit::fzf() {
 		"Remove Section:remove_section"
 		"Rename Section:rename_section"
 	)
-	selected_key=$(shell::ask::option::value "${menu_options[@]}")
-	shell::logger::debug "You have selected the '$selected_key'."
-	if [ -z "$selected_key" ]; then
-		shell::logger::error "No action selected."
-		return 0
-	fi
+	local menu_labels=()
+	for menu_entry in "${menu_options[@]}"; do
+		menu_labels+=("${menu_entry%%:*}")
+	done
+	local sections keys stage="section"
+
+	# Three levels: section -> key -> action. "Back" returns to the previous level;
+	# only the section level leaves the function (RETURN_BACK).
+	while true; do
+		if [ "$stage" = "section" ]; then
+			# Get the list of sections in the specified file and use fzf to select one.
+			sections=$(shell::ini::section::list "$file")
+			section=""
+			[ -n "$sections" ] && section=$(printf '%s\n%s\n' "$sections" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --prompt="Select section to edit: ")
+			if [ -z "$section" ]; then
+				shell::logger::error "No section selected."
+				return 0
+			fi
+			if [ "$section" = "$SHELL_FZF_BACK_LABEL" ]; then
+				shell::logger::info "Back — nothing was changed"
+				return "$RETURN_BACK"
+			fi
+			stage="key"
+		elif [ "$stage" = "key" ]; then
+			# Get the list of keys in the selected section and use fzf to select one.
+			keys=$(shell::ini::key::list "$file" "$section")
+			key=""
+			[ -n "$keys" ] && key=$(printf '%s\n%s\n' "$keys" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --prompt="Select key to edit/rename: ")
+			if [ -z "$key" ]; then
+				shell::logger::error "No key selected."
+				return 0
+			fi
+			if [ "$key" = "$SHELL_FZF_BACK_LABEL" ]; then
+				stage="section"
+				continue
+			fi
+			stage="action"
+		else
+			menu_label=$(shell::ask::option::back --prompt "Select an action: " "${menu_labels[@]}")
+			rc=$?
+			if [ "$rc" -eq "$RETURN_BACK" ]; then
+				stage="key"
+				continue
+			fi
+			selected_key=""
+			for menu_entry in "${menu_options[@]}"; do
+				if [ "${menu_entry%%:*}" = "$menu_label" ]; then
+					selected_key="${menu_entry#*:}"
+					break
+				fi
+			done
+			shell::logger::debug "You have selected the '$selected_key'."
+			if [ -z "$selected_key" ]; then
+				shell::logger::error "No action selected."
+				return 0
+			fi
+			break
+		fi
+	done
 	# Perform the action based on the selected key.
 	if [ "$selected_key" = "add_key" ]; then
 		local new_key_name
