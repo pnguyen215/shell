@@ -94,7 +94,7 @@ if [ -z "${SHELLS:-}" ] && command -v zsh >/dev/null 2>&1; then shells="bash zsh
 # modified except for this folder.
 SHELL_TEST_BASE="${SHELL_TEST_BASE:-$HOME/shell-test}"
 case "$SHELL_TEST_BASE" in
-/ | "" | "$HOME")
+/ | "" | "$HOME" | [!/]*) # CHANGED: also refuse a relative path
 	echo "run_tests: refusing to use '$SHELL_TEST_BASE' as the scratch directory" >&2
 	exit 2
 	;;
@@ -106,6 +106,16 @@ mkdir -p "$SHELL_TEST_RUN/tmp" || {
 }
 export SHELL_TEST_RUN
 export TMPDIR="$SHELL_TEST_RUN/tmp"
+
+# CHANGED: variables of the user's real shell that point into the real home would make the library
+# write there even though HOME is redirected (the library keeps a pre-set SHELL_CONFIG_DIR, nvm keeps
+# NVM_DIR, ...). Tests that need them set their own.
+unset NVM_DIR NVM_BIN NVM_INC NVM_CD_FLAGS SHELL_CONFIG_DIR SHELL_INSTALL_DIR SHELL_SSH_DIR \
+	XDG_CONFIG_HOME XDG_DATA_HOME XDG_CACHE_HOME XDG_STATE_HOME
+
+# CHANGED: leak check, part 1. Top-level entries of the REAL home before the run.
+REAL_HOME="$HOME"
+home_before="$(ls -A "$REAL_HOME" 2>/dev/null)"
 
 cleanup() {
 	# Only this run's folder is removed; the base folder only when it is empty.
@@ -126,4 +136,21 @@ for sh in $shells; do
 done
 
 printf '\nFailed suites: %d\n' "$failed"
+
+# CHANGED: leak check, part 2. Anything new at the top level of the real home (other than the scratch
+# folder) was created by a test or by the library it exercises; list it and fail. Nothing is deleted.
+leaked=""
+home_after="$(ls -A "$REAL_HOME" 2>/dev/null)"
+while IFS= read -r entry; do
+	[ -n "$entry" ] || continue
+	[ "$REAL_HOME/$entry" = "$SHELL_TEST_BASE" ] && continue
+	if ! printf '%s\n' "$home_before" | grep -qxF -- "$entry"; then leaked="$leaked  $REAL_HOME/$entry"$'\n'; fi
+done <<LEAKEOF
+$home_after
+LEAKEOF
+if [ -n "$leaked" ]; then
+	printf '\nLEAK: the tests created entries outside %s (remove them by hand):\n%s' "$SHELL_TEST_BASE" "$leaked" >&2
+	failed=$((failed + 1))
+fi
+
 [ "$failed" -eq 0 ]
