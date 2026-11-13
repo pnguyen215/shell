@@ -114,7 +114,8 @@ shell::fzf::select() {
 				# Lines are counted as fzf counts them (empty lines included), 1-based.
 				pos="$(printf '%s\n' "$candidates" | SHELL_FZF_INITIAL="$initial" awk \
 					${delimiter:+-F "$delimiter"} -v f="$initial_field" '
-					{ v = (f > 0 ? $f : $0) }
+					# fzf --ansi prints the selection without color codes, so strip them from the list too.
+					{ line = $0; gsub(/\033\[[0-9;]*[A-Za-z]/, "", line); $0 = line; v = (f > 0 ? $f : $0) }
 					v == ENVIRON["SHELL_FZF_INITIAL"] { print NR; exit }')"
 			fi
 			case "$pos" in
