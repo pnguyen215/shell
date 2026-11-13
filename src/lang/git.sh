@@ -13640,7 +13640,8 @@ _shell::git::diff::target() {
 #     counts the files per status.
 #   - Move with the arrow keys: the preview follows the file under the cursor
 #     (Ctrl-D / Ctrl-U scroll it). Enter opens the full diff of that file in the pager and
-#     comes back to the list; ESC leaves.
+#     comes back to the list; ESC leaves. The cursor returns to the file you just viewed
+#     (tracked by its path, so you keep reviewing in context instead of starting at the top).
 #   - The last entry is "← Back" (SHELL_FZF_BACK_LABEL): picking it leaves the browser with
 #     RETURN_BACK, so a caller that opened it as a step can step back. ESC just quits.
 #   - Colours are used when the terminal supports them (and `NO_COLOR` is unset); the diff
@@ -13829,8 +13830,16 @@ shell::git::diff::fzf() {
 	local kind
 
 	local choice file orig
+
+	# Cursor memory (CHANGED): 1-based fzf position of the row last opened, kept in a local
+	# variable. fzf starts at the top on every invocation, so it is re-applied through pos().
+	# --sync makes fzf read the whole list before `start` fires, so pos() works on every fzf
+	# version that has it (unlike `load`, which needs fzf >= 0.36; Ubuntu 22.04 ships 0.29).
+	local pos=1 found
 	while true; do
+		# CHANGED: --sync + start:pos($pos) restores the cursor.
 		choice="$(printf '%s' "$rows" | shell::fzf::select \
+			--sync \
 			--ansi \
 			--prompt="Diff: " \
 			--header="$header" \
@@ -13838,7 +13847,8 @@ shell::git::diff::fzf() {
 			--with-nth=1 \
 			--preview="$preview" \
 			--preview-window="right:65%:wrap" \
-			--bind="ctrl-d:preview-half-page-down,ctrl-u:preview-half-page-up")" || break
+			--bind="ctrl-d:preview-half-page-down,ctrl-u:preview-half-page-up" \
+			--bind="start:pos(${pos})")" || break
 		[ -z "$choice" ] && break
 
 		if [ "${choice%%$tab*}" = "$SHELL_FZF_BACK_LABEL" ]; then
@@ -13849,6 +13859,16 @@ shell::git::diff::fzf() {
 		file="$(printf '%s' "$choice" | cut -f2)"
 		orig="$(printf '%s' "$choice" | cut -f3)"
 		kind="$(printf '%s' "$choice" | cut -f4)"
+
+		# CHANGED: remember the selected row by path (ENVIRON, not awk -v, so backslashes and
+		# spaces survive). If the lookup fails, the previous position is kept; pos() clamps to
+		# the list length, so a stale value can never loop or error.
+		found="$(printf '%s' "$rows" | SHELL_DIFF_FZF_FILE="$file" SHELL_DIFF_FZF_KIND="$kind" \
+			awk -F"$tab" '$2 == ENVIRON["SHELL_DIFF_FZF_FILE"] && $4 == ENVIRON["SHELL_DIFF_FZF_KIND"] { print NR; exit }')"
+		case "$found" in
+		'' | *[!0-9]*) ;;
+		*) pos="$found" ;;
+		esac
 		{
 			if [ -z "$file" ]; then
 				git -C "$root" diff --stat=100 "$color_flag" "${diff_args[@]}"
