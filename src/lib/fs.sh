@@ -998,7 +998,8 @@ shell::encode::file::base64() {
 # @description Pick a file with fzf and run an action on it.
 #   Replaces `shell::editor`. Actions: cat, less, more, vim, nano, remove,
 #   base64, clip-base64, path, clip, unlock, permissions, ex-permissions,
-#   mime-type.
+#   mime-type. The action list ends with "← Back", which returns to the file
+#   list (the cursor stays on the file) without running anything.
 # @option -h | --help Show help and return.
 # @option -n | --dry-run Print the chosen command instead of running it.
 # @arg $1 string Directory whose files are offered (default: current directory).
@@ -1037,16 +1038,25 @@ shell::fs::browse() {
 	local base
 	base="$(cd "$folder" && pwd -P)" || return "$RETURN_FAILURE"
 
-	local selected
-	selected="$(find "$base" -type f 2>/dev/null | shell::fzf::select --prompt="Select a file: ")" || return "$RETURN_CANCELLED"
-	if [ -z "$selected" ]; then
-		shell::logger::error "No files found in '$folder'."
-		return "$RETURN_NOT_FOUND"
-	fi
+	local selected action
+	local -a initial_args=() # CHANGED: cursor memory when Back returns to the file list
+	while true; do
+		selected="$(find "$base" -type f 2>/dev/null | shell::fzf::select ${initial_args[@]+"${initial_args[@]}"} --prompt="Select a file: ")" || return "$RETURN_CANCELLED"
+		if [ -z "$selected" ]; then
+			shell::logger::error "No files found in '$folder'."
+			return "$RETURN_NOT_FOUND"
+		fi
 
-	local action
-	action="$(printf '%s\n' cat less more vim nano remove base64 clip-base64 path clip unlock permissions ex-permissions mime-type |
-		shell::fzf::select --prompt="Select an action: ")" || return "$RETURN_CANCELLED"
+		# CHANGED: back entry (last) steps back to the file list; nothing runs.
+		action="$(printf '%s\n' cat less more vim nano remove base64 clip-base64 path clip unlock permissions ex-permissions mime-type "$SHELL_FZF_BACK_LABEL" |
+			shell::fzf::select --prompt="Select an action: ")" || return "$RETURN_CANCELLED"
+		if [ "$action" = "$SHELL_FZF_BACK_LABEL" ]; then
+			shell::logger::info "Back — nothing was run on '$selected'"
+			initial_args=(--initial "$selected")
+			continue
+		fi
+		break
+	done
 
 	local -a flag=()
 	[ "$dry_run" = "true" ] && flag=(-n)

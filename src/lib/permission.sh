@@ -197,6 +197,7 @@ shell::permission::set() {
 }
 
 # @description Pick owner/group/others permissions with fzf and apply them.
+#   The group and others steps end with "← Back", which returns to the previous step.
 # @option -h | --help Show help and return.
 # @option -n | --dry-run Print the command instead of running it.
 # @arg $1 string File or directory.
@@ -240,10 +241,30 @@ read,execute
 write,execute
 read,write,execute"
 
-	local owner group others
-	owner="$(printf '%s\n' "$choices" | shell::fzf::select --prompt="Select owner permissions: ")" || return "$RETURN_CANCELLED"
-	group="$(printf '%s\n' "$choices" | shell::fzf::select --prompt="Select group permissions: ")" || return "$RETURN_CANCELLED"
-	others="$(printf '%s\n' "$choices" | shell::fzf::select --prompt="Select others permissions: ")" || return "$RETURN_CANCELLED"
+	# CHANGED: three steps; steps 2 and 3 end with a back entry that returns to the previous step.
+	local owner="" group="" others="" step=1 who value
+	while [ "$step" -le 3 ]; do
+		case "$step" in
+		1) who="owner" ;;
+		2) who="group" ;;
+		*) who="others" ;;
+		esac
+		if [ "$step" -eq 1 ]; then
+			value="$(printf '%s\n' "$choices" | shell::fzf::select --prompt="Select ${who} permissions: ")" || return "$RETURN_CANCELLED"
+		else
+			value="$(printf '%s\n%s\n' "$choices" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --prompt="Select ${who} permissions: ")" || return "$RETURN_CANCELLED"
+			if [ "$value" = "$SHELL_FZF_BACK_LABEL" ]; then
+				step=$((step - 1))
+				continue
+			fi
+		fi
+		case "$step" in
+		1) owner="$value" ;;
+		2) group="$value" ;;
+		*) others="$value" ;;
+		esac
+		step=$((step + 1))
+	done
 
 	local -a flag=()
 	[ "$dry_run" = "true" ] && flag=(-n)
