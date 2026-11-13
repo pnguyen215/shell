@@ -22,6 +22,7 @@ markdown   Markdown / Telegram MarkdownV2 / plain-text document builder (no depe
 skill      agent-skills installer (install, upgrade, uninstall, sync, list), built on lib/net;
            audit.sh links Cloudflare's security-audit skill from a managed git clone
 lang · devops · shield · bot   domain modules built on lib
+                                (shield: crypto, and the security investigation modules security_*.sh, docs/features/security.md)
 alias      aliases onto documented functions
 ```
 

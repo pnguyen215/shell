@@ -148,6 +148,15 @@ shell::skill::audit::uninstall --scope all --purge
 
 Then ask your agent to "security audit this codebase". A skill of the same name that you wrote is never overwritten (`--force` backs it up first). The skill is third-party instructions your agent follows, so pin a reviewed `--ref` if you do not want to track `main`. Details: [`docs/features/skill-audit.md`](docs/features/skill-audit.md). Aliases: `ssk-au-in`, `ssk-au-up`, `ssk-au-rm`, `ssk-au-st`.
 
+## Security & Diagnostics (in progress)
+
+Read-only host triage for machines you are authorised to investigate: `shell::security::capabilities`, `shell::security::host::{info,users}` and `shell::security::hunt::{processes,network,connections}`. Every detection is a **finding** (severity, confidence, evidence source, rationale, investigation and remediation steps) printed as text, JSON, Markdown or CSV; secrets are masked, nothing is changed, and an indicator is never presented as proof. Forensics, RCA, integrity monitoring, SSH audit and hardening are planned. Details and limits: [`docs/features/security.md`](docs/features/security.md).
+
+```bash
+shell::security::hunt::processes --min-severity MEDIUM
+shell::security::hunt::network --format json
+```
+
 ## Naming
 
 Every function is named **`shell::<category>::<name>`**, with an optional `::fzf` suffix for the interactive variant:
@@ -168,7 +177,7 @@ The only exceptions are the four lifecycle functions in [`src/shell.sh`](src/she
 ├── Makefile                               # make test | lint | fmt | docs | doctor
 ├── docs/
 │   ├── development/                       # architecture, conventions
-│   ├── features/                          # git-commit-messages, git-history, homebrew, nvm, rsync, ssh
+│   ├── features/                          # git-commit-messages, git-history, homebrew, nvm, rsync, security, ssh
 │   └── api/                               # generated reference (make docs)
 ├── scripts/                               # lint.sh, gen_docs.sh
 ├── test/                                  # run under bash and zsh
