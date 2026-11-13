@@ -221,7 +221,8 @@ t_eq "connect::fzf: the pick is connected to" "ssh [web2]" "$(last)"
 t_eq "connect::fzf: candidates are the plain aliases" "old1
 shared1
 shared2
-web2" "$(cat "$FAKE_FZF_DIR/stdin.1")"
+web2
+$SHELL_FZF_BACK_LABEL" "$(cat "$FAKE_FZF_DIR/stdin.1")"
 t_has "connect::fzf: the preview is ssh -G" "ssh -F $C -G {}" "$(cat "$FAKE_FZF_DIR/args.1")"
 reset_fzf
 FAKE_FZF_PICKS="web2" nostdin shell::ssh::connect::fzf -p 2222 -A >/dev/null 2>&1
@@ -234,7 +235,8 @@ FAKE_FZF_PICKS="" t_rc "connect::fzf: ESC cancels" 9 nostdin shell::ssh::connect
 t_eq "connect::fzf: and nothing ran" "" "$(cat "$FAKE_LOG")"
 reset_fzf
 FAKE_FZF_PICKS="x" nostdin shell::ssh::connect::fzf -F "$HOME/other.cfg" >/dev/null 2>&1
-t_eq "connect::fzf -F: the list comes from that file" "x" "$(cat "$FAKE_FZF_DIR/stdin.1")"
+t_eq "connect::fzf -F: the list comes from that file" "x
+$SHELL_FZF_BACK_LABEL" "$(cat "$FAKE_FZF_DIR/stdin.1")"
 t_rc "connect::fzf: a config without alias" 8 nostdin shell::ssh::connect::fzf -F "$HOME/empty.cfg"
 t_rc "connect::fzf: no config file" 3 nostdin shell::ssh::connect::fzf -F "$HOME/nope"
 reset_fzf
@@ -245,6 +247,13 @@ printf 'y\n' | FAKE_FZF_PICKS="old1" shell::ssh::config::remove::fzf >/dev/null 
 t_eq "remove::fzf: the pick is removed" "0" "$(grep -c '^Host old1' "$C")"
 reset_fzf
 FAKE_FZF_PICKS="" t_rc "remove::fzf: ESC cancels" 9 nostdin shell::ssh::config::remove::fzf
+reset_fzf
+FAKE_FZF_PICKS="$SHELL_FZF_BACK_LABEL" t_rc "connect::fzf: Back returns RETURN_BACK" 11 nostdin shell::ssh::connect::fzf
+t_eq "connect::fzf: Back ran nothing" "" "$(cat "$FAKE_LOG")"
+reset_fzf
+printf 'y\n' | FAKE_FZF_PICKS="$SHELL_FZF_BACK_LABEL" shell::ssh::config::remove::fzf >/dev/null 2>&1
+t_eq "remove::fzf: Back returns RETURN_BACK" "11" "$?"
+t_eq "remove::fzf: Back removed nothing" "1" "$(grep -c '^Host web2' "$C")"
 
 # --- agent::add::fzf ------------------------------------------------------------
 t_rc "agent add::fzf: no private key" 8 nostdin shell::ssh::agent::add::fzf

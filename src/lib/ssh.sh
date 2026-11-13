@@ -216,9 +216,11 @@ shell::ssh::tunnel::list() {
 #   It filters out common non-key files and then uses fzf to provide an interactive selection interface.
 #   Once a file is selected, its absolute path is determined, displayed to the user,
 #   and automatically copied to the system clipboard using the shell::clipboard::copy function.
+#   The last list entry is "← Back"; picking it leaves the function without changing anything.
 # @option -h Optional. Displays this help message.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::ssh::key::cwd::fzf # Launch fzf to select an SSH key and copy its path.
 #
@@ -259,7 +261,13 @@ shell::ssh::key::cwd::fzf() {
 
 	# Use fzf to select a key file interactively.
 	local selected_key
-	selected_key=$(echo "$key_files" | fzf --border=rounded --ansi --layout=reverse --pointer="▶" --marker="✓" --prompt="Select an SSH key file: ")
+	selected_key=$(printf '%s\n%s\n' "$key_files" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --prompt="Select an SSH key file: ")
+
+	# The user picked the trailing back entry: nothing to do.
+	if [ "$selected_key" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — nothing was changed"
+		return "$RETURN_BACK"
+	fi
 
 	# Check if a file was selected.
 	if [ -z "$selected_key" ]; then
@@ -287,9 +295,11 @@ shell::ssh::key::cwd::fzf() {
 #   This function searches for SSH key files in ~/.ssh, filters out public keys and config files,
 #   and presents them via fzf for selection. Once selected, the contents of the file
 #   are copied to the clipboard using shell::clipboard::copy.
+#   The last list entry is "← Back"; picking it leaves the function without changing anything.
 # @option -h Optional help flag. Displays this help message.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::ssh::key::copy::fzf
 #
@@ -326,7 +336,13 @@ shell::ssh::key::copy::fzf() {
 
 	# Use fzf to select a key file interactively.
 	local selected_key
-	selected_key=$(echo "$key_files" | fzf --border=rounded --ansi --layout=reverse --pointer="▶" --marker="✓" --prompt="Select an SSH key file to copy: ")
+	selected_key=$(printf '%s\n%s\n' "$key_files" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --prompt="Select an SSH key file to copy: ")
+
+	# The user picked the trailing back entry: nothing is copied.
+	if [ "$selected_key" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — nothing was changed"
+		return "$RETURN_BACK"
+	fi
 
 	# Check if a file was selected.
 	if [ ! -f "$selected_key" ]; then
@@ -705,9 +721,11 @@ shell::ssh::key::generate() {
 #   excluding common non-key files. It uses fzf to provide an interactive
 #   selection interface with a preview window that shows the contents of
 #   each file in real-time. The preview is wrapped for readability.
+#   The last list entry is "← Back"; picking it leaves the function without changing anything.
 # @option -n Optional dry-run flag. If provided, the preview command is printed using shell::logger::command_clip instead of executed.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::ssh::key::view::fzf       # Launch fzf to preview SSH key files.
 #   shell::ssh::key::view::fzf -n    # Dry-run: show the preview command without executing.
@@ -758,7 +776,7 @@ shell::ssh::key::view::fzf() {
 	# Using --preview-window=up:wrap to show the preview above the selection.
 	# Using echo to pass the key files to fzf.
 	local fzf_cmd
-	fzf_cmd="echo \"$key_files\" | fzf --ansi --prompt='Preview SSH key file: ' --preview='cat {}' --preview-window=up:wrap"
+	fzf_cmd="{ echo \"$key_files\"; printf '%s\\n' \"\$SHELL_FZF_BACK_LABEL\"; } | shell::fzf::select --prompt='Preview SSH key file: ' --preview='cat {}' --preview-window=up:wrap"
 
 	# If dry-run is enabled, print the command instead of executing it
 	# This allows the user to see what would happen without making changes.
@@ -767,7 +785,17 @@ shell::ssh::key::view::fzf() {
 		shell::logger::command_clip "$fzf_cmd"
 		return 0
 	else
-		eval "$fzf_cmd"
+		local selected_key
+		selected_key=$({
+			echo "$key_files"
+			printf '%s\n' "$SHELL_FZF_BACK_LABEL"
+		} | shell::fzf::select --prompt='Preview SSH key file: ' --preview='cat {}' --preview-window=up:wrap)
+		# The user picked the trailing back entry: nothing to show.
+		if [ "$selected_key" = "$SHELL_FZF_BACK_LABEL" ]; then
+			shell::logger::info "Back — nothing was changed"
+			return "$RETURN_BACK"
+		fi
+		[ -n "$selected_key" ] && echo "$selected_key"
 	fi
 }
 
@@ -991,9 +1019,11 @@ shell::ssh::tunnel::open() {
 #
 #   This function prompts the user to enter each required field for an SSH tunnel connection.
 #   It uses fzf to select the SSH private key file from $HOME/.ssh and then calls shell::ssh::tunnel::open.
+#   The last list entry is "← Back"; picking it leaves the function without changing anything.
 # @option -n Optional dry-run flag. If provided, the command is printed using shell::logger::command_clip.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::ssh::tunnel::open::builder
 #   shell::ssh::tunnel::open::builder -n
@@ -1032,11 +1062,17 @@ shell::ssh::tunnel::open::builder() {
 	# Use find to get full paths for fzf.
 	local key_file=""
 	while [ -z "$key_file" ] || [ ! -f "$key_file" ]; do
-		key_file=$(find "$ssh_dir" -type f \
-			! -name "*.pub" \
-			! -name "known_hosts" \
-			! -name "known_hosts.old" |
-			fzf --prompt="Select SSH private key: ")
+		key_file=$({
+			find "$ssh_dir" -type f \
+				! -name "*.pub" \
+				! -name "known_hosts" \
+				! -name "known_hosts.old"
+			printf '%s\n' "$SHELL_FZF_BACK_LABEL"
+		} | shell::fzf::select --prompt="Select SSH private key: ")
+		if [ "$key_file" = "$SHELL_FZF_BACK_LABEL" ]; then
+			shell::logger::info "Back — nothing was changed"
+			return "$RETURN_BACK"
+		fi
 		[ -z "$key_file" ] && shell::logger::error "SSH key is required."
 	done
 
@@ -1246,9 +1282,11 @@ shell::ssh::tunnel::tune() {
 #
 #   This function prompts the user to enter each required field for an SSH tunnel connection.
 #   It uses fzf to select the SSH private key file from $HOME/.ssh and then calls shell::ssh::tunnel::tune.
+#   The last list entry is "← Back"; picking it leaves the function without changing anything.
 # @option -n Optional dry-run flag. If provided, the command is printed using shell::logger::command_clip.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::ssh::tunnel::tune::builder
 #   shell::ssh::tunnel::tune::builder -n
@@ -1283,11 +1321,17 @@ shell::ssh::tunnel::tune::builder() {
 
 	local key_file=""
 	while [ -z "$key_file" ] || [ ! -f "$key_file" ]; do
-		key_file=$(find "$ssh_dir" -type f \
-			! -name "*.pub" \
-			! -name "known_hosts" \
-			! -name "known_hosts.old" |
-			fzf --prompt="Select SSH private key: ")
+		key_file=$({
+			find "$ssh_dir" -type f \
+				! -name "*.pub" \
+				! -name "known_hosts" \
+				! -name "known_hosts.old"
+			printf '%s\n' "$SHELL_FZF_BACK_LABEL"
+		} | shell::fzf::select --prompt="Select SSH private key: ")
+		if [ "$key_file" = "$SHELL_FZF_BACK_LABEL" ]; then
+			shell::logger::info "Back — nothing was changed"
+			return "$RETURN_BACK"
+		fi
 		[ -z "$key_file" ] && shell::logger::error "SSH key is required."
 	done
 
@@ -1427,9 +1471,11 @@ shell::ssh::key::rename() {
 #   excluding common non-key files. It uses fzf to provide an interactive selection interface
 #   for renaming an SSH key file. The user is prompted to enter a new name for the selected key.
 #   If the dry-run flag is set, it prints the rename command instead of executing it.
+#   The last list entry is "← Back"; picking it leaves the function without changing anything.
 # @option -n Optional dry-run flag. If provided, the rename command is printed using shell::logger::command_clip.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::ssh::key::rename::fzf
 #
@@ -1473,7 +1519,13 @@ shell::ssh::key::rename::fzf() {
 
 	# Use fzf to select a key file interactively.
 	local selected
-	selected=$(echo "$key_files" | fzf --prompt="Select an SSH key file to rename: ")
+	selected=$(printf '%s\n%s\n' "$key_files" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --prompt="Select an SSH key file to rename: ")
+
+	# The user picked the trailing back entry: nothing is renamed.
+	if [ "$selected" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — nothing was changed"
+		return "$RETURN_BACK"
+	fi
 
 	# Check if a file was selected.
 	if [ ! -f "$selected" ]; then

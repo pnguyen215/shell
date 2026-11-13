@@ -443,7 +443,7 @@ shell::profile::conf::add() {
 	fi
 }
 
-# @description Retrieves a configuration profile value by prompting the user to select a config key from the profile's configuration file.
+# @description Retrieves a configuration profile value by prompting the user to select a config key from the profile's configuration file. Picking the trailing "← Back" entry returns RETURN_BACK.
 #
 #   This function locates the profile directory and its configuration file, verifies that the profile exists,
 #   and then ensures that the interactive fuzzy finder (fzf) is installed. It uses fzf to let the user select a configuration key,
@@ -452,6 +452,7 @@ shell::profile::conf::add() {
 # @arg $1 string profile_name: The name of the configuration profile.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was read.
 # @example
 #   shell::profile::conf::get my_profile          # Retrieves and processes the 'my_profile' profile.
 #   shell::profile::conf::get -n my_profile       # Dry-run mode: prints the commands without executing them.
@@ -487,10 +488,17 @@ shell::profile::conf::get() {
 	fi
 	shell::dependency::fzf::ensure
 	local selected_key
-	selected_key=$(cut -d '=' -f 1 "$profile_conf" | fzf --prompt="Select config key for profile '$profile_name': ")
+	selected_key=$({
+		cut -d '=' -f 1 "$profile_conf"
+		printf '%s\n' "$SHELL_FZF_BACK_LABEL"
+	} | shell::fzf::select --prompt="Select config key for profile '$profile_name': ")
 	if [ -z "$selected_key" ]; then
 		shell::logger::error "No configuration selected."
 		return 1
+	fi
+	if [ "$selected_key" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — nothing was read"
+		return "$RETURN_BACK"
 	fi
 	local selected_line
 	selected_line=$(grep "^${selected_key}=" "$profile_conf")
@@ -579,7 +587,7 @@ shell::profile::conf::value() {
 	echo "$decoded_value"
 }
 
-# @description Removes a configuration key from a given profile's configuration file.
+# @description Removes a configuration key from a given profile's configuration file. Picking the trailing "← Back" entry returns RETURN_BACK.
 #
 #   This function locates the profile directory and its configuration file, verifies their existence,
 #   and then uses fzf to let the user select a configuration key to remove.
@@ -589,6 +597,7 @@ shell::profile::conf::value() {
 # @arg $1 string profile_name: The name of the configuration profile.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was removed.
 # @example
 #   shell::profile::conf::remove my_profile
 #   shell::profile::conf::remove -n my_profile   # Dry-run: prints the removal command without executing.
@@ -630,10 +639,17 @@ shell::profile::conf::remove() {
 	fi
 	shell::dependency::fzf::ensure
 	local selected_key
-	selected_key=$(cut -d '=' -f 1 "$profile_conf" | fzf --prompt="Select config key to remove from profile '$profile_name': ")
+	selected_key=$({
+		cut -d '=' -f 1 "$profile_conf"
+		printf '%s\n' "$SHELL_FZF_BACK_LABEL"
+	} | shell::fzf::select --prompt="Select config key to remove from profile '$profile_name': ")
 	if [ -z "$selected_key" ]; then
 		shell::logger::error "No configuration selected."
 		return 1
+	fi
+	if [ "$selected_key" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — nothing was removed"
+		return "$RETURN_BACK"
 	fi
 	local os_type
 	os_type=$(shell::os::type)
@@ -651,7 +667,7 @@ shell::profile::conf::remove() {
 	fi
 }
 
-# @description Updates a specified configuration key in a given profile by replacing its value.
+# @description Updates a specified configuration key in a given profile by replacing its value. Picking the trailing "← Back" entry returns RETURN_BACK.
 #
 #   The function retrieves the profile configuration file, prompts the user to select a key (using fzf),
 #   asks for the new value, encodes it in base64, and constructs a sed command to update the key.
@@ -660,6 +676,7 @@ shell::profile::conf::remove() {
 # @arg $1 string profile_name: The name of the profile to update.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was updated.
 # @example
 #   shell::profile::conf::update my_profile
 #   shell::profile::conf::update -n my_profile   # dry-run mode
@@ -701,10 +718,17 @@ shell::profile::conf::update() {
 	fi
 	shell::dependency::fzf::ensure
 	local selected_key
-	selected_key=$(cut -d '=' -f 1 "$profile_conf" | fzf --prompt="Select config key to update in profile '$profile_name': ")
+	selected_key=$({
+		cut -d '=' -f 1 "$profile_conf"
+		printf '%s\n' "$SHELL_FZF_BACK_LABEL"
+	} | shell::fzf::select --prompt="Select config key to update in profile '$profile_name': ")
 	if [ -z "$selected_key" ]; then
 		shell::logger::error "No configuration selected."
 		return 1
+	fi
+	if [ "$selected_key" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — nothing was updated"
+		return "$RETURN_BACK"
 	fi
 	shell::console::print ">> Enter new value for key '$selected_key' in profile '$profile_name':" 33
 	read -r new_value
@@ -783,7 +807,7 @@ shell::profile::conf::exists() {
 	fi
 }
 
-# @description Renames an existing configuration key in a given profile.
+# @description Renames an existing configuration key in a given profile. Picking the trailing "← Back" entry returns RETURN_BACK.
 #
 #   The function checks that the profile directory and configuration file exist.
 #   It then uses fzf to allow the user to select the existing key to rename.
@@ -794,6 +818,7 @@ shell::profile::conf::exists() {
 # @arg $1 string profile_name: The name of the profile whose key should be renamed.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was renamed.
 # @example
 #   shell::profile::conf::rename my_profile
 #   shell::profile::conf::rename -n my_profile   # dry-run mode
@@ -835,10 +860,17 @@ shell::profile::conf::rename() {
 	fi
 	shell::dependency::fzf::ensure
 	local old_key
-	old_key=$(cut -d '=' -f 1 "$profile_conf" | fzf --prompt="Select a key to rename in profile '$profile_name': ")
+	old_key=$({
+		cut -d '=' -f 1 "$profile_conf"
+		printf '%s\n' "$SHELL_FZF_BACK_LABEL"
+	} | shell::fzf::select --prompt="Select a key to rename in profile '$profile_name': ")
 	if [ -z "$old_key" ]; then
 		shell::logger::error "No key selected. Aborting rename."
 		return 1
+	fi
+	if [ "$old_key" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — nothing was renamed"
+		return "$RETURN_BACK"
 	fi
 	shell::console::print "Enter new key name for '$old_key' in profile '$profile_name':" 33
 	read -r new_key

@@ -9,9 +9,11 @@
 #   1. A source file (from the current directory and subdirectories).
 #   2. A destination directory (from the current directory and subdirectories).
 #   It then copies the source file to the destination directory using the original filename.
+#   The last list entry is "← Back"; picking it leaves the function without changing anything.
 # @option -h Optional. Displays this help message.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::fs::copy::fzf
 #
@@ -30,7 +32,16 @@ shell::fs::copy::fzf() {
 
 	# Use find and fzf to select the source file.
 	local source_file
-	source_file=$(find . -type f | fzf --prompt="Select source file: ")
+	source_file=$({
+		find . -type f
+		printf '%s\n' "$SHELL_FZF_BACK_LABEL"
+	} | shell::fzf::select --prompt="Select source file: ")
+
+	# The user picked the trailing back entry: nothing is copied/moved.
+	if [ "$source_file" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — nothing was changed"
+		return "$RETURN_BACK"
+	fi
 	if [ -z "$source_file" ]; then
 		shell::logger::error "No source file selected."
 		return 1
@@ -38,7 +49,16 @@ shell::fs::copy::fzf() {
 
 	# Use find and fzf to select the destination directory.
 	local dest_dir
-	dest_dir=$(find . -type d | fzf --prompt="Select destination directory: ")
+	dest_dir=$({
+		find . -type d
+		printf '%s\n' "$SHELL_FZF_BACK_LABEL"
+	} | shell::fzf::select --prompt="Select destination directory: ")
+
+	# The user picked the trailing back entry: leave without any side effect.
+	if [ "$dest_dir" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — nothing was changed"
+		return "$RETURN_BACK"
+	fi
 	if [ -z "$dest_dir" ]; then
 		shell::logger::error "No destination directory selected."
 		return 1
@@ -71,9 +91,11 @@ shell::fs::copy::fzf() {
 #   1. A source file (from the current directory and subdirectories).
 #   2. A destination directory (from the current directory and subdirectories).
 #   It then moves the source file to the destination directory using the original filename.
+#   The last list entry is "← Back"; picking it leaves the function without changing anything.
 # @option -h Optional. Displays this help message.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::fs::move::fzf
 #
@@ -92,7 +114,16 @@ shell::fs::move::fzf() {
 
 	# Use find and fzf to select the source file.
 	local source_file
-	source_file=$(find . -type f | fzf --prompt="Select source file: ")
+	source_file=$({
+		find . -type f
+		printf '%s\n' "$SHELL_FZF_BACK_LABEL"
+	} | shell::fzf::select --prompt="Select source file: ")
+
+	# The user picked the trailing back entry: nothing is copied/moved.
+	if [ "$source_file" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — nothing was changed"
+		return "$RETURN_BACK"
+	fi
 	if [ -z "$source_file" ]; then
 		shell::logger::error "No source file selected."
 		return 1
@@ -100,7 +131,16 @@ shell::fs::move::fzf() {
 
 	# Use find and fzf to select the destination directory.
 	local dest_dir
-	dest_dir=$(find . -type d | fzf --prompt="Select destination directory: ")
+	dest_dir=$({
+		find . -type d
+		printf '%s\n' "$SHELL_FZF_BACK_LABEL"
+	} | shell::fzf::select --prompt="Select destination directory: ")
+
+	# The user picked the trailing back entry: leave without any side effect.
+	if [ "$dest_dir" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — nothing was changed"
+		return "$RETURN_BACK"
+	fi
 	if [ -z "$dest_dir" ]; then
 		shell::logger::error "No destination directory selected."
 		return 1
@@ -132,9 +172,11 @@ shell::fs::move::fzf() {
 #   This function leverages fzf to provide an interactive interface for choosing:
 #   1. A file or directory (from the current directory and subdirectories).
 #   It then removes the selected file or directory using the original path.
+#   The last list entry is "← Back"; picking it leaves the function without changing anything.
 # @option -h Optional. Displays this help message.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::fs::remove::fzf
 #
@@ -153,7 +195,16 @@ shell::fs::remove::fzf() {
 
 	# Use find and fzf to select the target file or directory.
 	local target
-	target=$(find . -mindepth 1 | fzf --prompt="Select file/directory to remove: ")
+	target=$({
+		find . -mindepth 1
+		printf '%s\n' "$SHELL_FZF_BACK_LABEL"
+	} | shell::fzf::select --prompt="Select file/directory to remove: ")
+
+	# The user picked the trailing back entry: nothing is removed.
+	if [ "$target" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — nothing was changed"
+		return "$RETURN_BACK"
+	fi
 	if [ -z "$target" ]; then
 		shell::logger::error "No file or directory selected."
 		return 1

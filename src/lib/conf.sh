@@ -220,9 +220,11 @@ shell::conf::key::comment() {
 #   for interactive selection. Once a key is selected, it looks up the full entry,
 #   decodes the Base64-encoded value (using -D on macOS and -d on Linux), and then displays the key
 #   and its decoded value.
+#   A trailing "← Back" entry lets you leave without changing anything.
 # @option -h Optional. Displays this help message.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::conf::key::get::fzf      # Interactively select a key and display its decoded value.
 #
@@ -246,10 +248,21 @@ shell::conf::key::get::fzf() {
 	# Extract only the keys from the configuration file and select one using fzf.
 	local selected_key
 	# selected_key=$(cut -d '=' -f 1 "$SHELL_KEY_FILE" | fzf --prompt="Select config key: ")
-	selected_key=$(grep -v '^\s*#' "$SHELL_KEY_FILE" | cut -d '=' -f 1 | fzf --prompt="Select config key: ")
+	local key_list
+	key_list=$(grep -v '^\s*#' "$SHELL_KEY_FILE" | cut -d '=' -f 1)
+	if [ -z "$key_list" ]; then
+		shell::logger::error "No configuration selected."
+		return 1
+	fi
+	selected_key=$(printf '%s\n%s\n' "$key_list" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --prompt="Select config key: ")
 	if [ -z "$selected_key" ]; then
 		shell::logger::error "No configuration selected."
 		return 1
+	fi
+
+	if [ "$selected_key" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — nothing was displayed"
+		return "$RETURN_BACK"
 	fi
 
 	# Retrieve the full line corresponding to the selected key.
@@ -344,9 +357,11 @@ shell::conf::key::get() {
 #   Once a key is selected, it constructs a command to remove the line that starts with "key=" from the configuration file.
 #   The command uses sed with different options depending on the operating system (macOS or Linux).
 #   In dry-run mode, the command is printed using shell::logger::command_clip; otherwise, it is executed using shell::exec::shell.
+#   A trailing "← Back" entry lets you leave without changing anything.
 # @option -n Optional dry-run flag. If provided, the removal command is printed using shell::logger::command_clip instead of executed.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::conf::key::remove::fzf         # Interactively select a key and remove its configuration entry.
 #   shell::conf::key::remove::fzf -n      # Prints the removal command without executing it.
@@ -382,10 +397,21 @@ shell::conf::key::remove::fzf() {
 	# Extract only the keys from the configuration file and select one using fzf.
 	local selected_key
 	# selected_key=$(cut -d '=' -f 1 "$SHELL_KEY_FILE" | fzf --prompt="Select config key to remove: ")
-	selected_key=$(grep -v '^\s*#' "$SHELL_KEY_FILE" | cut -d '=' -f 1 | fzf --prompt="Select config key to remove: ")
+	local key_list
+	key_list=$(grep -v '^\s*#' "$SHELL_KEY_FILE" | cut -d '=' -f 1)
+	if [ -z "$key_list" ]; then
+		shell::logger::error "No configuration selected."
+		return 1
+	fi
+	selected_key=$(printf '%s\n%s\n' "$key_list" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --prompt="Select config key to remove: ")
 	if [ -z "$selected_key" ]; then
 		shell::logger::error "No configuration selected."
 		return 1
+	fi
+
+	if [ "$selected_key" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — nothing was removed"
+		return "$RETURN_BACK"
 	fi
 
 	if [ "$(shell::conf::protected::is "$selected_key")" = "true" ]; then
@@ -428,9 +454,11 @@ shell::conf::key::remove::fzf() {
 #   Once a key is selected, the function prompts for a new value, encodes it using Base64 (with newlines removed),
 #   and then updates the corresponding configuration entry in the file by replacing the line starting with "key=".
 #   The sed command used for in-place update differs between macOS and Linux.
+#   A trailing "← Back" entry lets you leave without changing anything.
 # @option -n Optional dry-run flag. If provided, the update command is printed using shell::logger::command_clip instead of executed.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::conf::key::update::fzf       # Interactively select a key, enter a new value, and update its entry.
 #   shell::conf::key::update::fzf -n    # Prints the update command without executing it.
@@ -466,10 +494,21 @@ shell::conf::key::update::fzf() {
 	# Extract only the keys from the configuration file and select one using fzf.
 	local selected_key
 	# selected_key=$(cut -d '=' -f 1 "$SHELL_KEY_FILE" | fzf --prompt="Select config key to update: ")
-	selected_key=$(grep -v '^\s*#' "$SHELL_KEY_FILE" | cut -d '=' -f 1 | fzf --prompt="Select config key to update: ")
+	local key_list
+	key_list=$(grep -v '^\s*#' "$SHELL_KEY_FILE" | cut -d '=' -f 1)
+	if [ -z "$key_list" ]; then
+		shell::logger::error "No configuration selected."
+		return 1
+	fi
+	selected_key=$(printf '%s\n%s\n' "$key_list" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --prompt="Select config key to update: ")
 	if [ -z "$selected_key" ]; then
 		shell::logger::error "No configuration selected."
 		return 1
+	fi
+
+	if [ "$selected_key" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — nothing was updated"
+		return "$RETURN_BACK"
 	fi
 
 	# Prompt the user for the new value.
@@ -576,9 +615,11 @@ shell::conf::key::exists() {
 #   If the new key does not exist, it constructs a sed command to replace the old key with the new key in the file.
 #   The sed command uses in-place editing options appropriate for macOS (sed -i '') or Linux (sed -i).
 #   In dry-run mode, the command is printed via shell::logger::command_clip; otherwise, it is executed using shell::exec::shell.
+#   A trailing "← Back" entry lets you leave without changing anything.
 # @option -n Optional dry-run flag. If provided, the renaming command is printed using shell::logger::command_clip instead of executed.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::conf::key::rename::fzf         # Interactively select a key and rename it.
 #   shell::conf::key::rename::fzf -n      # Prints the renaming command without executing it.
@@ -612,10 +653,21 @@ shell::conf::key::rename::fzf() {
 	# Use fzf to select an existing key.
 	local old_key
 	# old_key=$(cut -d '=' -f 1 "$SHELL_KEY_FILE" | fzf --prompt="Select a key to rename: ")
-	old_key=$(grep -v '^\s*#' "$SHELL_KEY_FILE" | cut -d '=' -f 1 | fzf --prompt="Select config key to rename: ")
+	local key_list
+	key_list=$(grep -v '^\s*#' "$SHELL_KEY_FILE" | cut -d '=' -f 1)
+	if [ -z "$key_list" ]; then
+		shell::logger::error "No key selected. Aborting rename."
+		return 1
+	fi
+	old_key=$(printf '%s\n%s\n' "$key_list" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --prompt="Select config key to rename: ")
 	if [ -z "$old_key" ]; then
 		shell::logger::error "No key selected. Aborting rename."
 		return 1
+	fi
+
+	if [ "$old_key" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — nothing was renamed"
+		return "$RETURN_BACK"
 	fi
 
 	if [ "$(shell::conf::protected::is "$old_key")" = "true" ]; then
@@ -930,9 +982,11 @@ shell::conf::group::read() {
 #   Once a group is selected, it constructs a sed command (with appropriate in-place options for macOS or Linux)
 #   to remove the line that starts with "group_name=".
 #   If the file is not writable, sudo is prepended. In dry-run mode, the command is printed via shell::logger::command_clip.
+#   A trailing "← Back" entry lets you leave without changing anything.
 # @option -n Optional dry-run flag. If provided, the removal command is printed using shell::logger::command_clip instead of executed.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::conf::group::remove::fzf         # Interactively select a group and remove its entry.
 #   shell::conf::group::remove::fzf -n      # Prints the removal command without executing it.
@@ -963,10 +1017,21 @@ shell::conf::group::remove::fzf() {
 	shell::dependency::fzf::ensure
 
 	local selected_group
-	selected_group=$(cut -d '=' -f 1 "$SHELL_KEY_GROUP_FILE" | fzf --prompt="Select a group to remove: ")
+	local group_list
+	group_list=$(cut -d '=' -f 1 "$SHELL_KEY_GROUP_FILE")
+	if [ -z "$group_list" ]; then
+		shell::logger::error "No group selected."
+		return 1
+	fi
+	selected_group=$(printf '%s\n%s\n' "$group_list" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --prompt="Select a group to remove: ")
 	if [ -z "$selected_group" ]; then
 		shell::logger::error "No group selected."
 		return 1
+	fi
+
+	if [ "$selected_group" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — nothing was removed"
+		return "$RETURN_BACK"
 	fi
 
 	local os_type
@@ -993,9 +1058,11 @@ shell::conf::group::remove::fzf() {
 #   It then presents all available keys from SHELL_KEY_FILE (via fzf with multi-select) for you to choose the new group membership.
 #   The selected keys are converted into a comma-separated list, and the group entry is updated in SHELL_KEY_GROUP_FILE
 #   (using sed with options appropriate for macOS or Linux). If the file is not writable, sudo is used.
+#   A trailing "← Back" entry lets you leave without changing anything.
 # @option -n Optional dry-run flag. If provided, the update command is printed using shell::logger::command_clip instead of executed.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::conf::group::update::fzf         # Interactively select a group, update its keys, and update the group entry.
 #   shell::conf::group::update::fzf -n      # Prints the update command without executing it.
@@ -1027,10 +1094,21 @@ shell::conf::group::update::fzf() {
 
 	# Select the group to update.
 	local selected_group
-	selected_group=$(cut -d '=' -f 1 "$SHELL_KEY_GROUP_FILE" | fzf --prompt="Select a group to update: ")
+	local group_list
+	group_list=$(cut -d '=' -f 1 "$SHELL_KEY_GROUP_FILE")
+	if [ -z "$group_list" ]; then
+		shell::logger::error "No group selected."
+		return 1
+	fi
+	selected_group=$(printf '%s\n%s\n' "$group_list" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --prompt="Select a group to update: ")
 	if [ -z "$selected_group" ]; then
 		shell::logger::error "No group selected."
 		return 1
+	fi
+
+	if [ "$selected_group" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — nothing was updated"
+		return "$RETURN_BACK"
 	fi
 
 	# Ensure the individual configuration file exists.
@@ -1079,9 +1157,11 @@ shell::conf::group::update::fzf() {
 #   It then constructs a sed command to replace the old group name with the new one in the configuration file.
 #   The sed command uses in-place editing options appropriate for macOS (sed -i '') or Linux (sed -i).
 #   In dry-run mode, the command is printed using shell::logger::command_clip; otherwise, it is executed using shell::exec::shell.
+#   A trailing "← Back" entry lets you leave without changing anything.
 # @option -n Optional dry-run flag. If provided, the renaming command is printed using shell::logger::command_clip instead of executed.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::conf::group::rename::fzf         # Interactively select a group and rename it.
 #   shell::conf::group::rename::fzf -n      # Prints the renaming command without executing it.
@@ -1113,10 +1193,21 @@ shell::conf::group::rename::fzf() {
 
 	# Use fzf to let the user select an existing group.
 	local old_group
-	old_group=$(cut -d '=' -f 1 "$SHELL_KEY_GROUP_FILE" | fzf --prompt="Select group to rename: ")
+	local group_list
+	group_list=$(cut -d '=' -f 1 "$SHELL_KEY_GROUP_FILE")
+	if [ -z "$group_list" ]; then
+		shell::logger::error "No group selected. Aborting rename."
+		return 1
+	fi
+	old_group=$(printf '%s\n%s\n' "$group_list" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --prompt="Select group to rename: ")
 	if [ -z "$old_group" ]; then
 		shell::logger::error "No group selected. Aborting rename."
 		return 1
+	fi
+
+	if [ "$old_group" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — nothing was renamed"
+		return "$RETURN_BACK"
 	fi
 
 	# Prompt for the new group name.
@@ -1200,9 +1291,11 @@ shell::conf::group::list() {
 #   converts them into a list (one per line), and uses fzf again to let you choose one key.
 #   It then retrieves the corresponding configuration entry from SHELL_KEY_FILE (which stores entries as key=encoded_value),
 #   decodes the Base64-encoded value (using -D on macOS and -d on Linux), and displays the group name, key, and decoded value.
+#   A trailing "← Back" entry lets you leave without changing anything.
 # @option -h Optional. Displays this help message.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::conf::group::view::fzf   # Prompts to select a group, then a key within that group, and displays the decoded value.
 #
@@ -1226,36 +1319,53 @@ shell::conf::group::view::fzf() {
 	# Extract group names from SHELL_KEY_GROUP_FILE and let the user select one.
 	local groups
 	groups=$(cut -d '=' -f 1 "$SHELL_KEY_GROUP_FILE")
-	local selected_group
-	selected_group=$(echo "$groups" | fzf --prompt="Select a group name: ")
-	if [ -z "$selected_group" ]; then
+	if [ -z "$groups" ]; then
 		shell::logger::error "No group selected."
 		return 1
 	fi
 
-	# Retrieve the group entry for the selected group.
-	local group_entry
-	group_entry=$(grep "^${selected_group}=" "$SHELL_KEY_GROUP_FILE")
-	if [ -z "$group_entry" ]; then
-		shell::logger::error "Group '$selected_group' not found in configuration."
-		return 1
-	fi
+	local selected_group group_entry keys_csv selected_key
+	# Two-level menu: "Back" in the key menu returns to the group menu,
+	# "Back" in the group menu leaves the function.
+	while true; do
+		selected_group=$(printf '%s\n%s\n' "$groups" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --prompt="Select a group name: ")
+		if [ -z "$selected_group" ]; then
+			shell::logger::error "No group selected."
+			return 1
+		fi
+		if [ "$selected_group" = "$SHELL_FZF_BACK_LABEL" ]; then
+			shell::logger::info "Back — nothing was displayed"
+			return "$RETURN_BACK"
+		fi
 
-	# Extract the comma-separated list of keys.
-	local keys_csv
-	keys_csv=$(echo "$group_entry" | cut -d '=' -f 2-)
-	if [ -z "$keys_csv" ]; then
-		shell::logger::error "No keys defined in group '$selected_group'."
-		return 1
-	fi
+		# Retrieve the group entry for the selected group.
+		group_entry=$(grep "^${selected_group}=" "$SHELL_KEY_GROUP_FILE")
+		if [ -z "$group_entry" ]; then
+			shell::logger::error "Group '$selected_group' not found in configuration."
+			return 1
+		fi
 
-	# Convert the comma-separated keys into a list (one per line) and use fzf to select one key.
-	local selected_key
-	selected_key=$(echo "$keys_csv" | tr ',' '\n' | fzf --prompt="Select a key from group '$selected_group': ")
-	if [ -z "$selected_key" ]; then
-		shell::logger::error "No key selected from group '$selected_group'."
-		return 1
-	fi
+		# Extract the comma-separated list of keys.
+		keys_csv=$(echo "$group_entry" | cut -d '=' -f 2-)
+		if [ -z "$keys_csv" ]; then
+			shell::logger::error "No keys defined in group '$selected_group'."
+			return 1
+		fi
+
+		# Convert the comma-separated keys into a list (one per line) and use fzf to select one key.
+		selected_key=$({
+			echo "$keys_csv" | tr ',' '\n'
+			printf '%s\n' "$SHELL_FZF_BACK_LABEL"
+		} | shell::fzf::select --prompt="Select a key from group '$selected_group': ")
+		if [ -z "$selected_key" ]; then
+			shell::logger::error "No key selected from group '$selected_group'."
+			return 1
+		fi
+		if [ "$selected_key" = "$SHELL_FZF_BACK_LABEL" ]; then
+			continue
+		fi
+		break
+	done
 
 	# Ensure the individual configuration file exists.
 	if [ ! -f "$SHELL_KEY_FILE" ]; then
@@ -1299,9 +1409,11 @@ shell::conf::group::view::fzf() {
 #   The new group entry is then constructed with the new group name and the same comma-separated keys
 #   as the selected group, and appended to SHELL_KEY_GROUP_FILE.
 #   In dry-run mode, the final command is printed using shell::logger::command_clip; otherwise, it is executed using shell::exec::shell.
+#   A trailing "← Back" entry lets you leave without changing anything.
 # @option -n Optional dry-run flag. If provided, the cloning command is printed using shell::logger::command_clip instead of executed.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::conf::group::clone::fzf         # Interactively select a group and create a clone with a new group name.
 #   shell::conf::group::clone::fzf -n      # Prints the cloning command without executing it.
@@ -1332,10 +1444,21 @@ shell::conf::group::clone::fzf() {
 
 	# Use fzf to let the user select an existing group.
 	local selected_group
-	selected_group=$(cut -d '=' -f 1 "$SHELL_KEY_GROUP_FILE" | fzf --prompt="Select a group to clone: ")
+	local group_list
+	group_list=$(cut -d '=' -f 1 "$SHELL_KEY_GROUP_FILE")
+	if [ -z "$group_list" ]; then
+		shell::logger::error "No group selected. Aborting clone."
+		return 1
+	fi
+	selected_group=$(printf '%s\n%s\n' "$group_list" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --prompt="Select a group to clone: ")
 	if [ -z "$selected_group" ]; then
 		shell::logger::error "No group selected. Aborting clone."
 		return 1
+	fi
+
+	if [ "$selected_group" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — nothing was cloned"
+		return "$RETURN_BACK"
 	fi
 
 	# Retrieve the group entry to get the keys.
@@ -1494,10 +1617,12 @@ shell::conf::group::sync() {
 #   - Compatible with both macOS and Linux.
 #   - Uses ANSI color codes for formatting (yellow for key, cyan for value).
 #   - The configuration file is expected to contain key=value pairs with Base64-encoded values.
+#   A trailing "← Back" entry lets you leave without changing anything.
 # @option -n Optional dry-run flag. If provided, the clipboard copy command is printed instead of executed.
 # @option -h Optional help flag. Displays this help message.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::conf::key::view::fzf         # Select a key and copy its decoded value.
 #   shell::conf::key::view::fzf -n      # Dry-run: print the clipboard copy command.
@@ -1566,8 +1691,17 @@ shell::conf::key::view::fzf() {
 	#         --preview="grep -v '^\s*#' \"$SHELL_KEY_FILE\" | grep '^{}=' | cut -d '=' -f 2- | $base64_decode_cmd 2>/dev/null || echo 'Invalid Base64'" \
 	#         --preview-window=up:3:wrap)
 
-	selected_key=$(grep -v '^\s*#' "$SHELL_KEY_FILE" | cut -d '=' -f 1 | awk -v yellow="$yellow" -v normal="$normal" '{print yellow $0 normal}' |
-		fzf --ansi \
+	local key_list
+	key_list=$(grep -v '^\s*#' "$SHELL_KEY_FILE" | cut -d '=' -f 1 | awk -v yellow="$yellow" -v normal="$normal" '{print yellow $0 normal}')
+	if [ -z "$key_list" ]; then
+		shell::logger::error "No configuration key selected."
+		return 1
+	fi
+	selected_key=$({
+		printf '%s\n' "$key_list"
+		printf '%s\n' "$SHELL_FZF_BACK_LABEL"
+	} |
+		shell::fzf::select \
 			--prompt="Select config key: " \
 			--preview="grep -v '^\s*#' \"$SHELL_KEY_FILE\" | grep '^{}=' | cut -d '=' -f 2- | $base64_decode_cmd 2>/dev/null || echo 'Invalid Base64'" \
 			--preview-window=up:3:wrap)
@@ -1578,6 +1712,11 @@ shell::conf::key::view::fzf() {
 	if [ -z "$selected_key" ]; then
 		shell::logger::error "No configuration key selected."
 		return 1
+	fi
+
+	if [ "$selected_key" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — nothing was copied"
+		return "$RETURN_BACK"
 	fi
 	shell::logger::success "Selected key: $selected_key"
 	shell::clipboard::copy "$(shell::conf::key::get "$selected_key")"
@@ -1663,10 +1802,12 @@ shell::conf::protected::add() {
 #
 #   This function uses fzf to select a key from the configuration file (excluding comments),
 #   and adds it to the protected.conf file.
+#   A trailing "← Back" entry lets you leave without changing anything.
 # @option -n Optional. Dry-run mode. Prints the command without executing it.
 # @option -h Optional. Displays this help message.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::conf::protected::add::fzf
 #
@@ -1702,9 +1843,12 @@ shell::conf::protected::add::fzf() {
 	# Use grep to filter out comments and then cut to get the key names.
 	# Use awk to color the selected key.
 	local selected_key_colored
-	selected_key_colored=$(grep -v '^\s*#' "$SHELL_KEY_FILE" | cut -d '=' -f 1 |
-		awk -v yellow="$yellow" -v normal="$normal" '{print yellow $0 normal}' |
-		fzf --ansi --prompt="Select key to protect: ")
+	local key_list
+	key_list=$(grep -v '^\s*#' "$SHELL_KEY_FILE" | cut -d '=' -f 1 |
+		awk -v yellow="$yellow" -v normal="$normal" '{print yellow $0 normal}')
+	if [ -n "$key_list" ]; then
+		selected_key_colored=$(printf '%s\n%s\n' "$key_list" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --prompt="Select key to protect: ")
+	fi
 
 	local selected_key
 	selected_key=$(echo "$selected_key_colored" | sed "s/$(printf '\033')[0-9;]*m//g")
@@ -1714,6 +1858,11 @@ shell::conf::protected::add::fzf() {
 	if [ -z "$selected_key" ]; then
 		shell::logger::error "No key selected."
 		return 1
+	fi
+
+	if [ "$selected_key" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — nothing was protected"
+		return "$RETURN_BACK"
 	fi
 
 	# Verify dry-run mode.
@@ -1730,9 +1879,11 @@ shell::conf::protected::add::fzf() {
 #
 #   This function reads the protected.conf file, uses fzf to let the user select a key,
 #   and removes the selected key using sed. In dry-run mode, the command is printed instead of executed.
+#   A trailing "← Back" entry lets you leave without changing anything.
 # @option -n Optional dry-run flag. If provided, the removal command is printed using shell::logger::command_clip instead of executed.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::conf::protected::remove::fzf
 #
@@ -1767,11 +1918,22 @@ shell::conf::protected::remove::fzf() {
 	# Exclude comments and use fzf to let the user select a key.
 	# Use grep to filter out comments and then use fzf to select a key.
 	local selected_key
-	selected_key=$(grep -v '^\s*#' "$file" | fzf --prompt="Select protected key to remove: ")
+	local key_list
+	key_list=$(grep -v '^\s*#' "$file")
+	if [ -z "$key_list" ]; then
+		shell::logger::error "No key selected."
+		return 1
+	fi
+	selected_key=$(printf '%s\n%s\n' "$key_list" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --prompt="Select protected key to remove: ")
 
 	if [ -z "$selected_key" ]; then
 		shell::logger::error "No key selected."
 		return 1
+	fi
+
+	if [ "$selected_key" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — nothing was removed"
+		return "$RETURN_BACK"
 	fi
 
 	local os_type

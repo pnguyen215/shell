@@ -34,6 +34,7 @@
 #   Candidate rows come from **stdin**; the first word of a row is the package
 #   name, the rest is information shown to the user.
 # @option -m | --multi Allow several picks (Tab to mark, Ctrl-A to mark all).
+#   Without it the list ends with a "← Back" entry (SHELL_FZF_BACK_LABEL).
 # @option -p | --prompt Text of the fzf prompt.
 # @option -P | --preview Command shown in the preview pane; `{1}` is the package name.
 # @option -H | --header Line of help shown above the list.
@@ -43,6 +44,7 @@
 # @exitcode 2 Unknown option.
 # @exitcode 8 There were no rows.
 # @exitcode 9 The user cancelled (ESC) or nothing matched.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); only without `--multi`.
 # @exitcode 3 fzf is not installed.
 # @example
 #   names="$(shell::brew::list -1 | _shell::brew::fzf::pick -m -p "Remove: ")"
@@ -91,11 +93,19 @@ _shell::brew::fzf::pick() {
 		fzf_args+=("--header=$header")
 	fi
 
+	# Single pick: the "back" entry comes last so that Enter never lands on it by accident.
+	if [ "$multi" != "true" ]; then
+		rows="${rows}"$'\n'"${SHELL_FZF_BACK_LABEL}"
+	fi
+
 	local picked rc
 	picked="$(printf '%s\n' "$rows" | shell::fzf::select "${fzf_args[@]}")"
 	rc=$?
 	if [ "$rc" -ne 0 ]; then
 		return "$rc"
+	fi
+	if [ "$multi" != "true" ] && [ "$picked" = "$SHELL_FZF_BACK_LABEL" ]; then
+		return "$RETURN_BACK"
 	fi
 	printf '%s\n' "$picked" | awk 'NF { print $1 }'
 }

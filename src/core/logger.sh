@@ -108,14 +108,22 @@ shell::logger::reset_options() {
 }
 
 # @description Interactively choose the log threshold with fzf.
+#   The list ends with a "← Back" entry (SHELL_FZF_BACK_LABEL); picking it changes nothing.
 # @noargs
-# @set SHELL_LOGGER_LEVEL string The selected level (unchanged when cancelled).
+# @set SHELL_LOGGER_LEVEL string The selected level (unchanged when cancelled or on back).
 # @exitcode 0 Level updated.
 # @exitcode 9 Selection cancelled.
-# @see shell::ask::option
+# @exitcode 11 The user picked the "← Back" entry; the level is unchanged.
+# @see shell::ask::option::back
 shell::logger::level() {
-	local selected
-	selected="$(shell::ask::option "DEBUG" "INFO" "WARN" "ERROR" "FATAL")" || return "$RETURN_CANCELLED"
+	local selected rc=0
+	selected="$(shell::ask::option::back "DEBUG" "INFO" "WARN" "ERROR" "FATAL")" || rc=$?
+	if [ "$rc" -eq "$RETURN_BACK" ]; then
+		shell::logger::info "Back — the log level was not changed"
+		return "$RETURN_BACK"
+	elif [ "$rc" -ne 0 ]; then
+		return "$RETURN_CANCELLED"
+	fi
 	SHELL_LOGGER_LEVEL="${selected:-DEBUG}"
 	return "$RETURN_SUCCESS"
 }
@@ -479,4 +487,3 @@ shell::logger::evaluate() {
 
 	return "$exit_code"
 }
-

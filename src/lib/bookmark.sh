@@ -249,10 +249,12 @@ shell::bookmark::list() {
 #   Once a bookmark is selected, it extracts the target directory.
 #   In dry-run mode, it prints the 'cd' command that would be executed.
 #   Otherwise, it changes the current working directory to the selected path.
+#   The last list entry is "← Back"; picking it leaves the function without changing anything.
 # @option -h Optional help flag. Displays this help message.
 # @option -n Optional dry-run flag. If provided, the navigation command is printed instead of executed.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::bookmark::list::fzf         # Interactively select a bookmark and navigate to it.
 #   shell::bookmark::list::fzf -n      # Dry-run: print the navigation command without executing.
@@ -288,7 +290,16 @@ shell::bookmark::list::fzf() {
 	local selected_display_line
 	# Display bookmarks in the format "name (path)" for fzf.
 	# The original full line from the file is also passed through so we can easily grep for it.
-	selected_display_line=$(awk -F'|' '{print $2 " (" $1 ")"}' "$SHELL_BOOKMARK_FILE" | fzf --pointer="▶" --marker="✓" --border=rounded --layout=reverse --prompt="Select a bookmarked path: ")
+	selected_display_line=$({
+		awk -F'|' '{print $2 " (" $1 ")"}' "$SHELL_BOOKMARK_FILE"
+		printf '%s\n' "$SHELL_FZF_BACK_LABEL"
+	} | shell::fzf::select --prompt="Select a bookmarked path: ")
+
+	# The user picked the trailing back entry: do not change directory.
+	if [ "$selected_display_line" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — nothing was changed"
+		return "$RETURN_BACK"
+	fi
 
 	if [ -z "$selected_display_line" ]; then
 		shell::logger::error "No bookmark selected. Aborting."
@@ -336,9 +347,11 @@ shell::bookmark::list::fzf() {
 #   The user can then interactively select a bookmark, and the function will display
 #   the selected bookmark's name, path, and its active/inactive status.
 #   In dry-run mode, it will print the commands that would be used to check directory existence.
+#   The last list entry is "← Back"; picking it leaves the function without changing anything.
 # @option -n Optional dry-run flag. If provided, the verification commands are printed instead of executing checks.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::bookmark::list::up::fzf         # Interactively select a bookmark and verify its path.
 #   shell::bookmark::list::up::fzf -n      # Dry-run: print verification commands without executing.
@@ -381,9 +394,18 @@ shell::bookmark::list::up::fzf() {
 	local selected_display_line
 	# Display bookmarks in the format "name (path) [status]" with colors for fzf.
 	# Check each path's existence and append [active] or [inactive] with appropriate color.
-	selected_display_line=$(awk -F'|' -v yellow="$yellow" -v cyan="$cyan" -v green="$green" -v red="$red" -v normal="$normal" \
-		'{status = system("[ -d \"" $1 "\" ]") == 0 ? green "[active]" normal : red "[inactive]" normal; print yellow $2 normal " (" cyan $1 normal ") " status}' \
-		"$SHELL_BOOKMARK_FILE" | fzf --ansi --bind 'tab:toggle' --bind 'shift-tab:toggle+up' --pointer="▶" --marker="✓" --border=rounded --layout=reverse --prompt="Select a bookmarked path: ")
+	selected_display_line=$({
+		awk -F'|' -v yellow="$yellow" -v cyan="$cyan" -v green="$green" -v red="$red" -v normal="$normal" \
+			'{status = system("[ -d \"" $1 "\" ]") == 0 ? green "[active]" normal : red "[inactive]" normal; print yellow $2 normal " (" cyan $1 normal ") " status}' \
+			"$SHELL_BOOKMARK_FILE"
+		printf '%s\n' "$SHELL_FZF_BACK_LABEL"
+	} | shell::fzf::select --bind 'tab:toggle' --bind 'shift-tab:toggle+up' --prompt="Select a bookmarked path: ")
+
+	# The user picked the trailing back entry: nothing to check.
+	if [ "$selected_display_line" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — nothing was changed"
+		return "$RETURN_BACK"
+	fi
 
 	if [ -z "$selected_display_line" ]; then
 		shell::logger::error "No bookmark selected. Aborting."
@@ -543,10 +565,12 @@ shell::bookmark::remove::down::fzf() {
 #   It then reads all bookmarks, formats them for fzf display, and allows the user to
 #   interactively select a bookmark to remove. The selected bookmark is removed from
 #   the bookmarks file using a secure temporary file.
+#   The last list entry is "← Back"; picking it leaves the function without changing anything.
 # @option -n Optional dry-run flag. If provided, the removal command is printed instead of executed.
 # @option -h Optional help flag. Displays this help message.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::bookmark::remove::fzf       # Interactively select and remove a bookmark.
 #   shell::bookmark::remove::fzf -n    # Dry-run: print removal command without executing.
@@ -594,9 +618,18 @@ shell::bookmark::remove::fzf() {
 	local selected_display_line
 	# Display bookmarks in the format "name (path) [status]" with colors for fzf.
 	# Check each path's existence and append [active] or [inactive] with appropriate color.
-	selected_display_line=$(awk -F'|' -v yellow="$yellow" -v cyan="$cyan" -v green="$green" -v red="$red" -v normal="$normal" \
-		'{status = system("[ -d \"" $1 "\" ]") == 0 ? green "[active]" normal : red "[inactive]" normal; print yellow $2 normal " (" cyan $1 normal ") " status}' \
-		"$SHELL_BOOKMARK_FILE" | fzf --ansi --pointer="▶" --marker="✓" --border=rounded --layout=reverse --prompt="Select a bookmarked path: ")
+	selected_display_line=$({
+		awk -F'|' -v yellow="$yellow" -v cyan="$cyan" -v green="$green" -v red="$red" -v normal="$normal" \
+			'{status = system("[ -d \"" $1 "\" ]") == 0 ? green "[active]" normal : red "[inactive]" normal; print yellow $2 normal " (" cyan $1 normal ") " status}' \
+			"$SHELL_BOOKMARK_FILE"
+		printf '%s\n' "$SHELL_FZF_BACK_LABEL"
+	} | shell::fzf::select --prompt="Select a bookmarked path: ")
+
+	# The user picked the trailing back entry: nothing is removed.
+	if [ "$selected_display_line" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — nothing was changed"
+		return "$RETURN_BACK"
+	fi
 
 	if [ -z "$selected_display_line" ]; then
 		shell::logger::error "No bookmark selected. Aborting."
@@ -746,10 +779,12 @@ shell::bookmark::rename() {
 #   It then reads all bookmarks, formats them for fzf display, and allows the user to
 #   interactively select a bookmark to rename. The user is prompted to enter a new name,
 #   and the shell::bookmark::rename function is called to perform the rename.
+#   The last list entry is "← Back"; picking it leaves the function without changing anything.
 # @option -n Optional dry-run flag. If provided, the rename command is printed instead of executed.
 # @option -h Optional help flag. Displays this help message.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::bookmark::rename::fzf       # Interactively select and rename a bookmark.
 #   shell::bookmark::rename::fzf -n    # Dry-run: print rename command without executing.
@@ -792,9 +827,17 @@ shell::bookmark::rename::fzf() {
 	# The original full line from the file is also passed through so we can easily grep for it.
 	# This uses awk to format the output with colors.
 	local selected_display_line
-	selected_display_line=$(awk -F'|' -v yellow="$yellow" -v cyan="$cyan" -v normal="$normal" \
-		'{print yellow $2 normal " (" cyan $1 normal ")"}' "$SHELL_BOOKMARK_FILE" |
-		fzf --ansi --pointer="▶" --marker="✓" --border=rounded --layout=reverse --prompt="Select bookmark to rename: ")
+	selected_display_line=$({
+		awk -F'|' -v yellow="$yellow" -v cyan="$cyan" -v normal="$normal" \
+			'{print yellow $2 normal " (" cyan $1 normal ")"}' "$SHELL_BOOKMARK_FILE"
+		printf '%s\n' "$SHELL_FZF_BACK_LABEL"
+	} | shell::fzf::select --prompt="Select bookmark to rename: ")
+
+	# The user picked the trailing back entry: nothing is renamed.
+	if [ "$selected_display_line" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — nothing was changed"
+		return "$RETURN_BACK"
+	fi
 
 	# Check if a bookmark was selected
 	# This checks if the user selected a bookmark. If not, it displays an error and returns.
@@ -946,10 +989,12 @@ shell::bookmark::rename_dir() {
 #   It then reads all bookmarks, formats them for fzf display, and allows the user to
 #   interactively select a bookmark. The user is prompted to enter a new directory name,
 #   and the shell::bookmark::rename_dir function is called to perform the rename.
+#   The last list entry is "← Back"; picking it leaves the function without changing anything.
 # @option -n Optional dry-run flag. If provided, the rename command is printed instead of executed.
 # @option -h Optional help flag. Displays this help message.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked the "← Back" entry (SHELL_FZF_BACK_LABEL); nothing was changed.
 # @example
 #   shell::bookmark::rename_dir::fzf       # Interactively select and rename a directory.
 #   shell::bookmark::rename_dir::fzf -n    # Dry-run: print rename command without executing.
@@ -999,10 +1044,19 @@ shell::bookmark::rename_dir::fzf() {
 	#     '{print yellow $2 normal " (" cyan $1 normal ")"}' "$SHELL_BOOKMARK_FILE" |
 	#     fzf --ansi --prompt="Select bookmark to rename its directory: ")
 
-	selected_display_line=$(awk -F'|' -v yellow="$yellow" -v cyan="$cyan" -v normal="$normal" -v home="$home_prefix" '
+	selected_display_line=$({
+		awk -F'|' -v yellow="$yellow" -v cyan="$cyan" -v normal="$normal" -v home="$home_prefix" '
         $1 !~ "^" home {
             print yellow $2 normal " (" cyan $1 normal ")"
-        }' "$SHELL_BOOKMARK_FILE" | fzf --ansi --pointer="▶" --marker="✓" --border=rounded --layout=reverse --prompt="Select bookmark to rename its directory: ")
+        }' "$SHELL_BOOKMARK_FILE"
+		printf '%s\n' "$SHELL_FZF_BACK_LABEL"
+	} | shell::fzf::select --prompt="Select bookmark to rename its directory: ")
+
+	# The user picked the trailing back entry: nothing is renamed.
+	if [ "$selected_display_line" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — nothing was changed"
+		return "$RETURN_BACK"
+	fi
 
 	# Check if a bookmark was selected
 	# This checks if the user selected a bookmark. If not, it displays an error and returns.
