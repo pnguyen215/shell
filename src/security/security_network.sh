@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# @file shield/security_network.sh
+# @file security/security_network.sh
 # @brief Local network state inspection (`shell::security::hunt::network`, `::connections`).
 # @description
 #   Observes this host's own sockets, resolver and proxy configuration. It never scans or contacts

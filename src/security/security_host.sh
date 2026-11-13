@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# @file shield/security_host.sh
+# @file security/security_host.sh
 # @brief Host inventory and account inspection (`shell::security::host::*`).
 # @description
 #   Read-only. Needs no privileges; where a fact needs root (for example a full session list) the

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# @file shield/security_finding.sh
+# @file security/security_finding.sh
 # @brief The finding model: one record format, one store, shared by every security module.
 # @description
 #   A finding is one observation with a severity, a confidence and the evidence behind it. An

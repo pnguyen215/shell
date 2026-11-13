@@ -9,7 +9,7 @@
 #   Works in bash (>= 3.2, i.e. the macOS system bash) and zsh.
 #
 #   Load order: constants first (system.sh before the rest), then each group in
-#   SHELL_MODULE_GROUPS (core, dependency, lib, markdown, skill, lang, devops, shield, bot,
+#   SHELL_MODULE_GROUPS (core, dependency, lib, markdown, skill, lang, devops, security, bot,
 #   alias), files alphabetically within a group.
 #
 #   Unlike the previous loader this one does NOT hide errors: a module that

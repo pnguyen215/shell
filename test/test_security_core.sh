@@ -152,7 +152,7 @@ for fn in capabilities host::info host::users hunt::processes hunt::network hunt
 done
 
 # --- structural rules --------------------------------------------------------
-all_src="$(cat "$SHELL_TEST_ROOT"/src/shield/security_*.sh)"
+all_src="$(cat "$SHELL_TEST_ROOT"/src/security/security_*.sh)"
 public="$(printf '%s\n' "$all_src" | grep -oE '^shell::[a-z_]+::[a-z_:]+\(\)' | sed 's/()//' | sort | tr '\n' ' ')"
 t_eq "public API is exactly the documented six" "shell::security::capabilities shell::security::host::info shell::security::host::users shell::security::hunt::connections shell::security::hunt::network shell::security::hunt::processes " "$public"
 t_rc "no sudo anywhere in the security modules" 1 sh -c 'printf "%s\n" "$1" | grep -qE "(^|[^a-z_#])sudo "' _ "$all_src"

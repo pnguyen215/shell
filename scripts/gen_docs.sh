@@ -20,7 +20,7 @@ index="$out/README.md"
 	echo
 } >"$index"
 
-for group in core dependency lib markdown skill lang devops shield bot; do
+for group in core dependency lib markdown skill lang devops security bot; do
 	echo "## $group" >>"$index"
 	echo >>"$index"
 	for f in "$ROOT"/src/$group/*.sh; do

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# @file shield/security_platform.sh
+# @file security/security_platform.sh
 # @brief Platform and utility detection shared by the security modules.
 # @description
 #   Read-only. Nothing here changes the system or needs root. The module decides at run time which

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # @file constant/security.sh
-# @brief Defaults and fixed strings of the security investigation modules (src/shield/security_*.sh).
+# @brief Defaults and fixed strings of the security investigation modules (src/security/security_*.sh).
 # @description
 #   Every path, threshold and detection list used by `shell::security::*` is a constant here, so a
 #   test (or a container with a relocated /proc) can point it elsewhere before sourcing the library.

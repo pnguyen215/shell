@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# @file shield/security_process.sh
+# @file security/security_process.sh
 # @brief Process inspection and suspicious-process detection (`shell::security::hunt::processes`).
 # @description
 #   Read-only. Every rule is evidence-based and states how ordinary software can trigger it: a

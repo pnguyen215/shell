@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# @file shield/security_render.sh
+# @file security/security_render.sh
 # @brief Renderers for findings and key/value tables: text, JSON, Markdown and CSV.
 # @description
 #   One renderer per format, dependency-free (no jq needed). Data goes to stdout; the logger keeps

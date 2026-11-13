@@ -6,7 +6,7 @@
 
 1. Resolves `SHELL_DIR` from its own path (bash: `BASH_SOURCE`, zsh: `${(%):-%x}`); an exported `SHELL_DIR` wins.
 2. Sources `constant/system.sh` (it defines `SHELL_SRC_DIR` and `SHELL_MODULE_GROUPS`).
-3. Sources each group in `SHELL_MODULE_GROUPS` — `constant core dependency lib markdown skill lang devops shield bot alias` — files alphabetically. Nothing in a group depends on file order _at load time_; functions only call each other at run time.
+3. Sources each group in `SHELL_MODULE_GROUPS` — `constant core dependency lib markdown skill lang devops security bot alias` — files alphabetically. Nothing in a group depends on file order _at load time_; functions only call each other at run time.
 4. Primes the OS cache (`shell::os::type`) in the current shell so later calls fork nothing.
 
 A file that fails to load is reported on stderr and counted in `SHELL_LOAD_ERRORS`; the rest still loads. `SHELL_DEBUG=1` traces every file.
@@ -21,8 +21,8 @@ lib        fs, net, process, permission, strings, conf, ini, profile, bookmark, 
 markdown   Markdown / Telegram MarkdownV2 / plain-text document builder (no dependencies besides core)
 skill      agent-skills installer (install, upgrade, uninstall, sync, list), built on lib/net;
            audit.sh links Cloudflare's security-audit skill from a managed git clone
-lang · devops · shield · bot   domain modules built on lib
-                                (shield: crypto, and the security investigation modules security_*.sh, docs/features/security.md)
+lang · devops · security · bot   domain modules built on lib
+                                (security: crypto, and the security investigation modules security_*.sh, docs/features/security.md)
 alias      aliases onto documented functions
 ```
 
