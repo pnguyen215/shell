@@ -12,31 +12,131 @@
 #
 #   Pressing ESC / Ctrl-C is reported as RETURN_CANCELLED so callers can stop
 #   instead of looping forever (the previous prompts re-asked indefinitely).
+#
+#   Cursor memory: fzf always starts on the first line, so a menu that shows
+#   the same list again after a view or action loses the user's place. Pass the
+#   previously selected line with --initial and the cursor starts on it again.
+#   The line is looked up in the current list by VALUE (so it still works when
+#   the order or content changed); if it is gone, --initial-pos (a 1-based
+#   index) is used, and if that is not usable either, fzf starts on the first
+#   line. Without these options the behavior is unchanged. Needs fzf with the
+#   `start` event (0.35+) when an initial position is applied.
 # @option -h | --help Show help and return.
+# @option --initial <value> Optional. Start on the line equal to <value>.
+# @option --initial-field <N> Optional. Compare <value> with field N of each line (1-based,
+#   split on the --delimiter given to fzf, or on whitespace). Default 0 = the whole line.
+# @option --initial-pos <N> Optional. 1-based line to start on when --initial is not found.
 # @arg $@ string Extra fzf arguments (e.g. --prompt="Pick: ", --multi, --preview=...).
 # @stdin Candidate lines.
 # @stdout The selected line(s).
 # @exitcode 0 A selection was made.
 # @exitcode 9 The user cancelled, or nothing matched.
 # @exitcode 3 fzf is not installed and could not be installed.
+# @exitcode 2 An option is missing its value, or a value is not a number.
 # @example
 #   branch="$(git branch --format='%(refname:short)' | shell::fzf::select --prompt='Branch: ')"
+#   # Re-show the list with the cursor on the previous choice:
+#   branch="$(git branch --format='%(refname:short)' | shell::fzf::select --initial "$branch")"
 #
 shell::fzf::select() {
 	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Run fzf with the library's default look and feel"
-		shell::logger::usage "<candidates> | shell::fzf::select [fzf arguments...]"
+		shell::logger::usage "<candidates> | shell::fzf::select [--initial <value>] [--initial-field <N>] [--initial-pos <N>] [fzf arguments...]"
+		shell::logger::option "--initial <value>" "Start the cursor on the line equal to <value> (cursor memory)"
+		shell::logger::option "--initial-field <N>" "Compare <value> with field N of each line instead of the whole line"
+		shell::logger::option "--initial-pos <N>" "1-based line to start on when --initial is not found"
 		shell::logger::option "-h, --help" "Display this help message"
-		shell::logger::example "printf 'a\\nb\\n' | shell::fzf::select --prompt='Pick: '"
+		shell::logger::example "printf 'a\nb\n' | shell::fzf::select --prompt='Pick: '"
+		shell::logger::example "printf 'a\nb\n' | shell::fzf::select --initial b"
 		return "$RETURN_SUCCESS"
 	fi
 
 	shell::dependency::fzf::ensure || return "$RETURN_NOT_FOUND"
 
+	# Split the cursor-memory options from the plain fzf arguments (CHANGED).
+	local selection has_initial="false" initial="" initial_field=0 initial_pos="" delimiter=""
+	local -a fzf_args=()
+	while [ "$#" -gt 0 ]; do
+		case "$1" in
+		--initial | --initial-field | --initial-pos)
+			if [ "$#" -lt 2 ]; then
+				shell::logger::error "Option $1 requires a value"
+				return "$RETURN_INVALID"
+			fi
+			case "$1" in
+			--initial)
+				has_initial="true"
+				initial="$2"
+				;;
+			--initial-field | --initial-pos)
+				case "$2" in
+				'' | *[!0-9]*)
+					shell::logger::error "Option $1 requires a number"
+					return "$RETURN_INVALID"
+					;;
+				esac
+				if [ "$1" = "--initial-field" ]; then initial_field="$2"; else initial_pos="$2"; fi
+				;;
+			esac
+			shift 2
+			;;
+		--delimiter=*)
+			delimiter="${1#--delimiter=}"
+			fzf_args+=("$1")
+			shift
+			;;
+		--delimiter)
+			if [ "$#" -ge 2 ]; then
+				delimiter="$2"
+				fzf_args+=("$1" "$2")
+				shift 2
+			else
+				fzf_args+=("$1")
+				shift
+			fi
+			;;
+		*)
+			fzf_args+=("$1")
+			shift
+			;;
+		esac
+	done
+
+	# Resolve the start position (CHANGED). Only when asked; otherwise stdin goes straight to fzf.
+	local -a pos_args=()
+	if [ "$has_initial" = "true" ] || [ -n "$initial_pos" ]; then
+		local candidates pos=""
+		candidates="$(cat)"
+		if [ -n "$candidates" ]; then
+			if [ "$has_initial" = "true" ]; then
+				# By value first: ENVIRON (not awk -v) keeps backslashes and spaces intact.
+				# Lines are counted as fzf counts them (empty lines included), 1-based.
+				pos="$(printf '%s\n' "$candidates" | SHELL_FZF_INITIAL="$initial" awk \
+					${delimiter:+-F "$delimiter"} -v f="$initial_field" '
+					{ v = (f > 0 ? $f : $0) }
+					v == ENVIRON["SHELL_FZF_INITIAL"] { print NR; exit }')"
+			fi
+			case "$pos" in
+			'' | *[!0-9]*) pos="$initial_pos" ;; # not found: saved index
+			esac
+			case "$pos" in
+			'' | *[!0-9]* | 0) pos="" ;; # unusable: first line
+			esac
+		fi
+		if [ -n "$pos" ]; then
+			# --sync: fzf reads the whole list before `start` fires, so pos() is applied
+			# to the full list; pos() clamps to its length, so a stale index is harmless.
+			pos_args=(--sync "--bind=start:pos(${pos})")
+		fi
+		# stdin was consumed above: replay it.
+		selection="$(printf '%s\n' "$candidates" | fzf "${SHELL_FZF_OPTS[@]}" ${fzf_args[@]+"${fzf_args[@]}"} ${pos_args[@]+"${pos_args[@]}"})" || return "$RETURN_CANCELLED"
+		printf '%s\n' "$selection"
+		return "$RETURN_SUCCESS"
+	fi
+
 	# fzf exit codes: 0 = selected, 1 = no match, 130 = interrupted (ESC/Ctrl-C).
-	local selection
-	selection="$(fzf "${SHELL_FZF_OPTS[@]}" "$@")" || return "$RETURN_CANCELLED"
+	selection="$(fzf "${SHELL_FZF_OPTS[@]}" ${fzf_args[@]+"${fzf_args[@]}"})" || return "$RETURN_CANCELLED"
 
 	printf '%s\n' "$selection"
 }
@@ -47,7 +147,8 @@ shell::fzf::select() {
 #   the current shell (so it can be a shell function) and the same list is shown
 #   again. The loop ends when the user presses ESC / Ctrl-C or, with `--back`,
 #   picks the "back" entry (`SHELL_FZF_BACK_LABEL`, listed last so that Enter
-#   never lands on it by accident).
+#   never lands on it by accident). When the list comes back, the cursor is on
+#   the item that was chosen last (cursor memory, see shell::fzf::select --initial).
 #
 #   The command is run argv style (no `eval`): the item is passed as one
 #   argument, spaces and quotes included. A command that fails is reported and
@@ -132,11 +233,12 @@ shell::fzf::loop() {
 	fi
 
 	local choice rc
+	local -a initial_args=() # CHANGED: last chosen item, passed back as the start position
 	while true; do
 		if [ "$back" = "true" ]; then
-			choice="$(printf '%s\n%s\n' "$candidates" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select ${fzf_args[@]+"${fzf_args[@]}"})"
+			choice="$(printf '%s\n%s\n' "$candidates" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select ${initial_args[@]+"${initial_args[@]}"} ${fzf_args[@]+"${fzf_args[@]}"})"
 		else
-			choice="$(printf '%s\n' "$candidates" | shell::fzf::select ${fzf_args[@]+"${fzf_args[@]}"})"
+			choice="$(printf '%s\n' "$candidates" | shell::fzf::select ${initial_args[@]+"${initial_args[@]}"} ${fzf_args[@]+"${fzf_args[@]}"})"
 		fi
 		rc=$?
 
@@ -150,6 +252,7 @@ shell::fzf::loop() {
 			return "$RETURN_SUCCESS"
 		fi
 
+		initial_args=(--initial "$choice") # CHANGED: remember the cursor
 		"$@" "$choice" || shell::logger::warn "'$1' exited with status $?"
 
 		if [ "$pause" = "true" ] && [ -r /dev/tty ]; then

@@ -4679,8 +4679,10 @@ _shell::git::commit::scope::pick() {
 			printf "back\t%s  %s\n", back, dim("return to the commit type list")
 		}')"
 
+	local -a initial_args=() # CHANGED: cursor memory across re-shown lists
 	while true; do
 		picked="$(printf '%s\n' "$rows" | shell::fzf::select \
+			${initial_args[@]+"${initial_args[@]}"} \
 			--prompt="Scope for ${label}: " \
 			--header="${header}(<scope>): … — pick (no scope) for a plain '${header}:'" \
 			--delimiter=$'\t' \
@@ -4691,6 +4693,7 @@ _shell::git::commit::scope::pick() {
 			return "$RETURN_CANCELLED"
 		fi
 
+		initial_args=(--initial "$picked") # CHANGED: remember the cursor
 		kind="${picked%%$'\t'*}"
 		case "$kind" in
 		none) return "$RETURN_SUCCESS" ;;
@@ -4866,8 +4869,10 @@ _shell::git::commit::footer::read() {
 			printf "back\t%s  %s\n", back, dim("no more footers")
 		}')"
 
+	local -a initial_args=() # CHANGED: cursor memory across re-shown lists
 	while true; do
 		picked="$(printf '%s\n' "$rows" | shell::fzf::select \
+			${initial_args[@]+"${initial_args[@]}"} \
 			--prompt="Footer: " \
 			--header="Pick a footer token, then type its value — Back when done" \
 			--delimiter=$'\t' \
@@ -4878,6 +4883,7 @@ _shell::git::commit::footer::read() {
 			return "$RETURN_CANCELLED"
 		fi
 
+		initial_args=(--initial "$picked") # CHANGED: remember the cursor
 		kind="${picked%%$'\t'*}"
 		case "$kind" in
 		back) return "$RETURN_BACK" ;;
@@ -10177,6 +10183,7 @@ shell::git::config::fzf() {
 	# Declared once, before the loop.
 	local keys choice key action current new_value confirm rc preview
 	local changed=0 failed=0
+	local -a initial_args=() # CHANGED: last edited key, so the list returns to it
 	local -a flags=()
 	if [ "$scope" = "global" ]; then
 		flags+=(--global)
@@ -10199,13 +10206,14 @@ shell::git::config::fzf() {
 
 		# Step 2 — picker with a value preview.
 		choice="$(printf '%s\n%s\n' "$keys" "$SHELL_FZF_BACK_LABEL" |
-			shell::fzf::select --prompt="Git ${scope} config: " \
+			shell::fzf::select ${initial_args[@]+"${initial_args[@]}"} --prompt="Git ${scope} config: " \
 				--preview="$preview" --preview-window="right:55%:wrap")"
 		rc=$?
 		if [ "$rc" -ne 0 ] || [ -z "$choice" ] || [ "$choice" = "$SHELL_FZF_BACK_LABEL" ]; then
 			break
 		fi
 		key="$choice"
+		initial_args=(--initial "$key") # CHANGED: remember the cursor
 
 		# Step 3 — action menu.
 		action="$(shell::ask::option "Edit value" "Unset (Delete) key" "Cancel")"
@@ -13093,6 +13101,7 @@ shell::git::commit::pick::fzf::conflicts() {
 	fi
 
 	local files choice file action sure side rc editor handled=0 failed=0
+	local -a initial_args=() # CHANGED: last opened file, so the list returns to it
 	local -a res_flags=()
 	if [ "$dry_run" = "true" ]; then res_flags+=(-n); fi
 
@@ -13103,13 +13112,14 @@ shell::git::commit::pick::fzf::conflicts() {
 			break
 		fi
 
-		choice="$(printf '%s\n%s\n' "$files" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --height=60% \
+		choice="$(printf '%s\n%s\n' "$files" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select ${initial_args[@]+"${initial_args[@]}"} --height=60% \
 			--prompt="Conflicted file: " '--preview=git diff --color=always -- {} | head -n 200' \
 			--preview-window='right:60%:wrap')" || break
 		if [ -z "$choice" ] || [ "$choice" = "$SHELL_FZF_BACK_LABEL" ]; then
 			break
 		fi
 		file="$choice"
+		initial_args=(--initial "$file") # CHANGED: remember the cursor
 
 		action="$(shell::ask::option::back --prompt "${file}: " \
 			"Open in editor" "Show diff" "Take ours (current branch) and mark resolved" \
@@ -13831,15 +13841,12 @@ shell::git::diff::fzf() {
 
 	local choice file orig
 
-	# Cursor memory (CHANGED): 1-based fzf position of the row last opened, kept in a local
-	# variable. fzf starts at the top on every invocation, so it is re-applied through pos().
-	# --sync makes fzf read the whole list before `start` fires, so pos() works on every fzf
-	# version that has it (unlike `load`, which needs fzf >= 0.36; Ubuntu 22.04 ships 0.29).
-	local pos=1 found
+	# Cursor memory: the row last opened is passed back to shell::fzf::select (--initial), which
+	# looks it up by value in the list and starts the cursor on it.
+	local -a initial_args=()
 	while true; do
-		# CHANGED: --sync + start:pos($pos) restores the cursor.
 		choice="$(printf '%s' "$rows" | shell::fzf::select \
-			--sync \
+			${initial_args[@]+"${initial_args[@]}"} \
 			--ansi \
 			--prompt="Diff: " \
 			--header="$header" \
@@ -13847,8 +13854,7 @@ shell::git::diff::fzf() {
 			--with-nth=1 \
 			--preview="$preview" \
 			--preview-window="right:65%:wrap" \
-			--bind="ctrl-d:preview-half-page-down,ctrl-u:preview-half-page-up" \
-			--bind="start:pos(${pos})")" || break
+			--bind="ctrl-d:preview-half-page-down,ctrl-u:preview-half-page-up")" || break
 		[ -z "$choice" ] && break
 
 		if [ "${choice%%$tab*}" = "$SHELL_FZF_BACK_LABEL" ]; then
@@ -13859,16 +13865,7 @@ shell::git::diff::fzf() {
 		file="$(printf '%s' "$choice" | cut -f2)"
 		orig="$(printf '%s' "$choice" | cut -f3)"
 		kind="$(printf '%s' "$choice" | cut -f4)"
-
-		# CHANGED: remember the selected row by path (ENVIRON, not awk -v, so backslashes and
-		# spaces survive). If the lookup fails, the previous position is kept; pos() clamps to
-		# the list length, so a stale value can never loop or error.
-		found="$(printf '%s' "$rows" | SHELL_DIFF_FZF_FILE="$file" SHELL_DIFF_FZF_KIND="$kind" \
-			awk -F"$tab" '$2 == ENVIRON["SHELL_DIFF_FZF_FILE"] && $4 == ENVIRON["SHELL_DIFF_FZF_KIND"] { print NR; exit }')"
-		case "$found" in
-		'' | *[!0-9]*) ;;
-		*) pos="$found" ;;
-		esac
+		initial_args=(--initial "$choice") # remember the whole row (the Overview row has no path)
 		{
 			if [ -z "$file" ]; then
 				git -C "$root" diff --stat=100 "$color_flag" "${diff_args[@]}"

@@ -1186,14 +1186,16 @@ _shell::git::history::function::candidates() {
 _shell::git::history::pick() {
 	local root="${1-}" us=$'\037' back="$SHELL_FZF_BACK_LABEL"
 	local whole="(whole repository)" file choice name spec
+	local -a initial_args=() # CHANGED: cursor memory when "Back" returns to the file list
 	while true; do
 		file="$({
 			printf '%s\n' "$whole"
 			git -C "$root" ls-files 2>/dev/null
 			printf '%s\n' "$back"
-		} | shell::fzf::select --prompt="History of: " --preview="git -C $(_shell::git::commit::spec::quote "$root") log -n 8 --format='%h %ad %an  %s' --date=format:'%Y-%m-%d %H:%M:%S' -- {} 2>/dev/null")" || return "$RETURN_CANCELLED"
+		} | shell::fzf::select ${initial_args[@]+"${initial_args[@]}"} --prompt="History of: " --preview="git -C $(_shell::git::commit::spec::quote "$root") log -n 8 --format='%h %ad %an  %s' --date=format:'%Y-%m-%d %H:%M:%S' -- {} 2>/dev/null")" || return "$RETURN_CANCELLED"
 		[ -n "$file" ] || return "$RETURN_CANCELLED"
 		[ "$file" = "$back" ] && return "$RETURN_BACK"
+		initial_args=(--initial "$file") # CHANGED: remember the cursor
 
 		if [ "$file" = "$whole" ]; then
 			choice="$(printf '%s\n' "All commits" "Search code (-S string)" "Search code (-G regex)" "$back" |
@@ -1492,8 +1494,10 @@ shell::git::history::fzf() {
 	preview="$(_shell::git::history::preview::command "$root" "$type" "$spec" "$color_flag" "$hl")"
 
 	local out key sel full fpath opath
+	local -a initial_args=() # CHANGED: last inspected commit row, so the timeline returns to it
 	while true; do
 		out="$(printf '%s\n' "$rows" | shell::fzf::select \
+			${initial_args[@]+"${initial_args[@]}"} \
 			--height=100% \
 			--prompt="History: " \
 			--header="$header" \
@@ -1519,6 +1523,7 @@ shell::git::history::fzf() {
 		fi
 		fpath="$(printf '%s' "$sel" | cut -f2)"
 		opath="$(printf '%s' "$sel" | cut -f3)"
+		initial_args=(--initial "$sel") # CHANGED: remember the cursor
 
 		case "$key" in
 		ctrl-y)
