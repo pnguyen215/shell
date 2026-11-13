@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# @file shield/crypto.sh
+# @file security/crypto.sh
 # @brief AES-256-CBC encryption helpers.
 
 # @description Generates a random encryption key of specified length (in bytes) and outputs it to standard output.

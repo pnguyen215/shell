@@ -4,12 +4,12 @@
 
 > **Status.** This is Phase 1 of a phased roadmap (see [Roadmap](#roadmap)). Forensics, RCA, integrity monitoring, SSH audit, hardening and the unified `investigate` workflow are **not implemented yet**; they are listed as planned, not as available.
 
-| Property    | Value                                                                                                                       |
-| ----------- | --------------------------------------------------------------------------------------------------------------------------- |
-| Audience    | System administrators, DevOps, SRE, security engineers, incident responders                                                 |
-| Last review | 2026-11-13                                                                                                                  |
-| Platforms   | macOS (Intel and Apple Silicon), Linux (Ubuntu 22.04 / 24.04 targeted); bash 3.2+ and zsh                                   |
-| Source      | `src/shield/security_*.sh`, `src/constant/security.sh`; tests in `test/test_security_core.sh`, `test/test_security_hunt.sh` |
+| Property    | Value                                                                                                                         |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Audience    | System administrators, DevOps, SRE, security engineers, incident responders                                                   |
+| Last review | 2026-11-13                                                                                                                    |
+| Platforms   | macOS (Intel and Apple Silicon), Linux (Ubuntu 22.04 / 24.04 targeted); bash 3.2+ and zsh                                     |
+| Source      | `src/security/security_*.sh`, `src/constant/security.sh`; tests in `test/test_security_core.sh`, `test/test_security_hunt.sh` |
 
 ## What a finding is
 

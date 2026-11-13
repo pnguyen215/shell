@@ -1,4 +1,4 @@
-# shield/crypto.sh
+# security/crypto.sh
 
 AES-256-CBC encryption helpers.
 

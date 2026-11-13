@@ -192,7 +192,7 @@ The only exceptions are the four lifecycle functions in [`src/shell.sh`](src/she
     ├── skill/          # agent skills for Claude Code / OpenCode: install, upgrade, uninstall, sync
     ├── lang/           # git, go, python, java, nodejs, nvm, angular
     ├── devops/         # GitHub Actions scaffolding
-    ├── shield/         # AES-256-CBC helpers
+    ├── security/       # AES-256-CBC helpers, security investigation
     ├── bot/            # Telegram
     └── alias/          # short aliases
 ```

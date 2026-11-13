@@ -4,14 +4,14 @@ The reference style is `src/lang/*.sh`. This page is the checklist; `make lint` 
 
 ## 1. Where things go
 
-| What                                                              | Where                                                                         |
-| ----------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| A path, URL, colour, default, return code, list of protected keys | `src/constant/*.sh` — **never** inline in a function                          |
-| Output, logging, prompts, OS detection, command execution         | `src/core/`                                                                   |
-| Installing an external tool                                       | `src/dependency/<tool>.sh`                                                    |
-| Installing / upgrading agent skills (Claude Code, OpenCode)       | `src/skill/`                                                                  |
-| Building Markdown / Telegram MarkdownV2 text                      | `src/markdown/` (`shell::markdown::*`); never write a second escaper          |
-| Everything else                                                   | `src/lib/` (generic) or `src/lang/`, `src/devops/`, `src/shield/`, `src/bot/` |
+| What                                                              | Where                                                                           |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| A path, URL, colour, default, return code, list of protected keys | `src/constant/*.sh` — **never** inline in a function                            |
+| Output, logging, prompts, OS detection, command execution         | `src/core/`                                                                     |
+| Installing an external tool                                       | `src/dependency/<tool>.sh`                                                      |
+| Installing / upgrading agent skills (Claude Code, OpenCode)       | `src/skill/`                                                                    |
+| Building Markdown / Telegram MarkdownV2 text                      | `src/markdown/` (`shell::markdown::*`); never write a second escaper            |
+| Everything else                                                   | `src/lib/` (generic) or `src/lang/`, `src/devops/`, `src/security/`, `src/bot/` |
 
 Files are `lower_snake_case.sh`, start with `#!/usr/bin/env bash` and an `@file` / `@brief` shdoc header. Constants are `UPPER_SNAKE_CASE`, assigned with `: "${VAR:=default}"` when the user may override them, and are **not** `readonly` (the library can be re-sourced).
 

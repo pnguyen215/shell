@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# @file shield/security_table.sh
+# @file security/security_table.sh
 # @brief Generic multi-column table renderer for the security modules (text, JSON, Markdown, CSV).
 # @description
 #   Used for inventories that are data, not findings (for example the connection table). CSV and
