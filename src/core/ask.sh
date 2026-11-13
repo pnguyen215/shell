@@ -514,6 +514,51 @@ shell::ask::options() {
 	printf '\n'
 }
 
+# @description Choose SEVERAL entries from a list with fzf, with a "back" entry at the end.
+#   Like shell::ask::options, plus an extra last entry (`SHELL_FZF_BACK_LABEL`,
+#   "← Back"). Marking it, or pressing Enter on it, is **not** a cancel: it
+#   returns `RETURN_BACK` and prints nothing, even when other entries were marked.
+#   ESC still means "abort" (success, nothing printed), as in shell::ask::options.
+# @option -h | --help Show help and return.
+# @arg $@ string The choices (the back entry is added for you).
+# @stdout The chosen entries joined by single spaces (nothing when back or cancel).
+# @exitcode 0 Entries were chosen, or the user cancelled (ESC).
+# @exitcode 2 No choices were given.
+# @exitcode 11 The user picked the back entry.
+# @see shell::ask::options
+# @see shell::ask::option::back
+# @example
+#   picks="$(shell::ask::options::back alpha beta gamma)"
+#   [ $? -eq "$RETURN_BACK" ] && return "$RETURN_BACK"
+#
+shell::ask::options::back() {
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Choose several entries from a list (fzf) with a back entry"
+		shell::logger::usage "shell::ask::options::back <choice1> [choice2 ...]"
+		shell::logger::option "-h, --help" "Display this help message"
+		shell::logger::example "shell::ask::options::back alpha beta gamma"
+		return "$RETURN_SUCCESS"
+	fi
+
+	if [ "$#" -eq 0 ]; then
+		shell::logger::error "No options provided to shell::ask::options::back."
+		return "$RETURN_INVALID"
+	fi
+
+	local picked
+	picked="$(printf '%s\n' "$@" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --multi \
+		--prompt="Select options (Tab to select, Enter to confirm): ")" || return "$RETURN_SUCCESS"
+
+	if printf '%s\n' "$picked" | grep -qxF "$SHELL_FZF_BACK_LABEL"; then
+		return "$RETURN_BACK"
+	fi
+
+	# Join the selected lines with single spaces.
+	printf '%s\n' "$picked" | tr '\n' ' ' | sed 's/[[:space:]]*$//'
+	printf '\n'
+}
+
 # @description Choose several `label:value` entries; print the values.
 # @option -h | --help Show help and return.
 # @arg $@ string Entries in the form `label:value`.

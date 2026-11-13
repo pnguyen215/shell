@@ -1795,6 +1795,7 @@ shell::git::branch::rename::current() {
 # @option -h | --help Show this help message.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked "← Back" in the list; nothing was changed.
 # @example
 #   shell::git::branch::rename::fzf
 #   shell::git::branch::rename::fzf -n
@@ -1834,7 +1835,13 @@ shell::git::branch::rename::fzf() {
 	fi
 
 	local old_name
-	old_name=$(shell::ask::option "${local_branches[@]}")
+	local rc
+	old_name=$(shell::ask::option::back "${local_branches[@]}")
+	rc=$? # CHANGED: back entry
+	if [ "$rc" -eq "$RETURN_BACK" ]; then
+		shell::logger::info "Back — nothing was renamed"
+		return $RETURN_BACK
+	fi
 
 	if [ -z "$old_name" ]; then
 		shell::logger::warn "No branch selected — aborting"
@@ -1878,6 +1885,7 @@ shell::git::branch::rename::fzf() {
 # @arg $@ string REMOTE            : <branch>  — exists only on origin, not present locally The ' : ' separator uses ':' which is prohibited in git branch names, making it a reliable extraction anchor in the space-joined multiselect output. Action menu (presented after branch selection via shell::ask::option::value): • Checkout                              → shell::git::branch::checkout      (first selected) • View commit history                   → shell::git::commit::spec           (first selected) • Browse commits and copy info          → shell::git::commit::spec::search   (first selected) • Cherry-pick commits onto current      → shell::git::commit::pick::local    (first selected) • Cherry-pick commits then push         → shell::git::commit::pick::remote   (first selected) • Backup selected branch(es)            → shell::git::branch::backup         (each selected) • Push selected branch(es) to remote    → shell::git::branch::push           (each selected) • Remove selected branch(es)            → shell::git::branch::remove         (all selected) • Sync all remote branches to local     → shell::git::branch::sync           (ignores selection) • Exit — noop                           → return immediately
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked "← Back" in the list; nothing was changed.
 # @example
 #   shell::git::branch::all::fzf
 #
@@ -1984,7 +1992,13 @@ shell::git::branch::all::fzf() {
 	# Step 1 — multi-select branch picker (TAB to mark multiple entries, Enter to confirm).
 	# ---------------------------------------------------------------------------
 	local selected_output
-	selected_output=$(shell::ask::options "${branch_lines[@]}")
+	local rc
+	selected_output=$(shell::ask::options::back "${branch_lines[@]}")
+	rc=$? # CHANGED: back entry
+	if [ "$rc" -eq "$RETURN_BACK" ]; then
+		shell::logger::info "Back — nothing was changed"
+		return $RETURN_BACK
+	fi
 
 	if [ -z "$selected_output" ]; then
 		shell::logger::warn "No branches selected — aborting"
@@ -2301,6 +2315,7 @@ shell::git::branch::merge() {
 # @option -h | --help Show this help message.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked "← Back" in the list; nothing was changed.
 # @example
 #   shell::git::branch::merge::fzf
 #   shell::git::branch::merge::fzf -n
@@ -2346,7 +2361,13 @@ shell::git::branch::merge::fzf() {
 	# ---------------------------------------------------------------------------
 	shell::logger::info "Select SOURCE branch (the branch to merge FROM):"
 	local source_branch
-	source_branch=$(shell::ask::option "${all_branches[@]}")
+	local rc
+	source_branch=$(shell::ask::option::back "${all_branches[@]}")
+	rc=$? # CHANGED: back entry
+	if [ "$rc" -eq "$RETURN_BACK" ]; then
+		shell::logger::info "Back — nothing was merged"
+		return $RETURN_BACK
+	fi
 
 	if [ -z "$source_branch" ]; then
 		shell::logger::warn "No source branch selected — aborting"
@@ -2364,7 +2385,13 @@ shell::git::branch::merge::fzf() {
 
 	shell::logger::info "Select TARGET branch (the branch to merge INTO):"
 	local target_branch
-	target_branch=$(shell::ask::option "${target_candidates[@]}")
+	local rc
+	target_branch=$(shell::ask::option::back "${target_candidates[@]}")
+	rc=$? # CHANGED: back entry
+	if [ "$rc" -eq "$RETURN_BACK" ]; then
+		shell::logger::info "Back — nothing was merged"
+		return $RETURN_BACK
+	fi
 
 	if [ -z "$target_branch" ]; then
 		shell::logger::warn "No target branch selected — aborting"
@@ -2468,6 +2495,7 @@ shell::git::branch::stash() {
 # @option -h | --help Show this help message.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked "← Back" in the list; nothing was changed.
 # @example
 #   shell::git::branch::stash::remove::fzf
 #   shell::git::branch::stash::remove::fzf -n
@@ -2515,7 +2543,13 @@ shell::git::branch::stash::remove::fzf() {
 
 	# Step 3 — present single-select picker.
 	local selected_output
-	selected_output=$(shell::ask::option "${stash_lines[@]}")
+	local rc
+	selected_output=$(shell::ask::option::back "${stash_lines[@]}")
+	rc=$? # CHANGED: back entry
+	if [ "$rc" -eq "$RETURN_BACK" ]; then
+		shell::logger::info "Back — nothing was removed"
+		return $RETURN_BACK
+	fi
 
 	if [ -z "$selected_output" ]; then
 		shell::logger::warn "No stash selected — aborting"
@@ -2566,6 +2600,7 @@ shell::git::branch::stash::remove::fzf() {
 # @option -h | --help Show this help message.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked "← Back" in the list; nothing was changed.
 # @example
 #   shell::git::branch::stash::preview::fzf
 #   shell::git::branch::stash::preview::fzf -n
@@ -2612,7 +2647,13 @@ shell::git::branch::stash::preview::fzf() {
 
 	# Step 3 — present single-select picker.
 	local selected_output
-	selected_output=$(shell::ask::option "${stash_lines[@]}")
+	local rc
+	selected_output=$(shell::ask::option::back "${stash_lines[@]}")
+	rc=$? # CHANGED: back entry
+	if [ "$rc" -eq "$RETURN_BACK" ]; then
+		shell::logger::info "Back — nothing was shown"
+		return $RETURN_BACK
+	fi
 
 	if [ -z "$selected_output" ]; then
 		shell::logger::warn "No stash selected — aborting"
@@ -2666,6 +2707,7 @@ shell::git::branch::stash::preview::fzf() {
 # @option -h | --help Show this help message.
 # @exitcode 0 Success.
 # @exitcode 1 The operation failed.
+# @exitcode 11 The user picked "← Back" in the list; nothing was changed.
 # @example
 #   shell::git::branch::stash::apply::fzf
 #   shell::git::branch::stash::apply::fzf -n
@@ -2712,7 +2754,13 @@ shell::git::branch::stash::apply::fzf() {
 
 	# Step 3 — present multi-select picker.
 	local selected_output
-	selected_output=$(shell::ask::options "${stash_lines[@]}")
+	local rc
+	selected_output=$(shell::ask::options::back "${stash_lines[@]}")
+	rc=$? # CHANGED: back entry
+	if [ "$rc" -eq "$RETURN_BACK" ]; then
+		shell::logger::info "Back — nothing was applied"
+		return $RETURN_BACK
+	fi
 
 	if [ -z "$selected_output" ]; then
 		shell::logger::warn "No stashes selected — aborting"
@@ -3536,7 +3584,13 @@ shell::git::commit::spec::fzf() {
 	fi
 
 	local selected_branch
-	selected_branch=$(shell::ask::option "${branch_list[@]}")
+	local rc
+	selected_branch=$(shell::ask::option::back "${branch_list[@]}")
+	rc=$? # CHANGED: back entry
+	if [ "$rc" -eq "$RETURN_BACK" ]; then
+		shell::logger::info "Back — nothing was shown"
+		return $RETURN_BACK
+	fi
 
 	if [ -z "$selected_branch" ]; then
 		shell::logger::warn "No branch selected — aborting"
@@ -3616,7 +3670,13 @@ shell::git::commit::spec::search() {
 
 	# Present multi-select picker via codebase helper (TAB to select multiple).
 	local selected_output
-	selected_output=$(shell::ask::options "${commit_lines[@]}")
+	local rc
+	selected_output=$(shell::ask::options::back "${commit_lines[@]}")
+	rc=$? # CHANGED: back entry
+	if [ "$rc" -eq "$RETURN_BACK" ]; then
+		shell::logger::info "Back — nothing was copied"
+		return $RETURN_BACK
+	fi
 
 	if [ -z "$selected_output" ]; then
 		shell::logger::warn "No commits selected — aborting"
@@ -3716,7 +3776,13 @@ shell::git::commit::all::search() {
 
 	# Present multi-select picker via codebase helper (TAB to select multiple).
 	local selected_output
-	selected_output=$(shell::ask::options "${commit_lines[@]}")
+	local rc
+	selected_output=$(shell::ask::options::back "${commit_lines[@]}")
+	rc=$? # CHANGED: back entry
+	if [ "$rc" -eq "$RETURN_BACK" ]; then
+		shell::logger::info "Back — nothing was copied"
+		return $RETURN_BACK
+	fi
 
 	if [ -z "$selected_output" ]; then
 		shell::logger::warn "No commits selected — aborting"
@@ -3831,7 +3897,13 @@ shell::git::commit::pick::local() {
 
 	# Step 3 — present multi-select picker (TAB to mark commits).
 	local selected_output
-	selected_output=$(shell::ask::options "${commit_lines[@]}")
+	local rc
+	selected_output=$(shell::ask::options::back "${commit_lines[@]}")
+	rc=$? # CHANGED: back entry
+	if [ "$rc" -eq "$RETURN_BACK" ]; then
+		shell::logger::info "Back — nothing was cherry-picked"
+		return $RETURN_BACK
+	fi
 
 	if [ -z "$selected_output" ]; then
 		shell::logger::warn "No commits selected — aborting"
@@ -3986,7 +4058,13 @@ shell::git::commit::pick::remote() {
 
 	# Step 3 — present multi-select picker (TAB to mark commits).
 	local selected_output
-	selected_output=$(shell::ask::options "${commit_lines[@]}")
+	local rc
+	selected_output=$(shell::ask::options::back "${commit_lines[@]}")
+	rc=$? # CHANGED: back entry
+	if [ "$rc" -eq "$RETURN_BACK" ]; then
+		shell::logger::info "Back — nothing was cherry-picked"
+		return $RETURN_BACK
+	fi
 
 	if [ -z "$selected_output" ]; then
 		shell::logger::warn "No commits selected — aborting"
@@ -6850,7 +6928,13 @@ shell::git::commit::checkout::fzf() {
 
 	# Present multi-select picker via codebase helper (TAB to select multiple).
 	local selected_output
-	selected_output=$(shell::ask::options "${commit_lines[@]}")
+	local rc
+	selected_output=$(shell::ask::options::back "${commit_lines[@]}")
+	rc=$? # CHANGED: back entry
+	if [ "$rc" -eq "$RETURN_BACK" ]; then
+		shell::logger::info "Back — nothing was checked out"
+		return $RETURN_BACK
+	fi
 
 	if [ -z "$selected_output" ]; then
 		shell::logger::warn "No commit selected — aborting"
@@ -7312,7 +7396,13 @@ shell::git::tag::checkout::fzf() {
 	# Step 4 — single-select tag picker.
 	# ---------------------------------------------------------------------------
 	local selected_output
-	selected_output=$(shell::ask::option "${tag_lines[@]}")
+	local rc
+	selected_output=$(shell::ask::option::back "${tag_lines[@]}")
+	rc=$? # CHANGED: back entry
+	if [ "$rc" -eq "$RETURN_BACK" ]; then
+		shell::logger::info "Back — nothing was checked out"
+		return $RETURN_BACK
+	fi
 
 	if [ -z "$selected_output" ]; then
 		shell::logger::warn "No tag selected — aborting"
@@ -7632,7 +7722,13 @@ shell::git::tag::remove::fzf() {
 	# Step 4 — single-select tag picker.
 	# ---------------------------------------------------------------------------
 	local selected_output
-	selected_output=$(shell::ask::option "${tag_lines[@]}")
+	local rc
+	selected_output=$(shell::ask::option::back "${tag_lines[@]}")
+	rc=$? # CHANGED: back entry
+	if [ "$rc" -eq "$RETURN_BACK" ]; then
+		shell::logger::info "Back — nothing was removed"
+		return $RETURN_BACK
+	fi
 
 	if [ -z "$selected_output" ]; then
 		shell::logger::warn "No tag selected — aborting"
@@ -7746,7 +7842,13 @@ shell::git::commit::revert::fzf() {
 	# Step 2 — Multi-select commit picker (TAB to mark multiple entries).
 	# ---------------------------------------------------------------------------
 	local selected_output
-	selected_output=$(shell::ask::options "${commit_lines[@]}")
+	local rc
+	selected_output=$(shell::ask::options::back "${commit_lines[@]}")
+	rc=$? # CHANGED: back entry
+	if [ "$rc" -eq "$RETURN_BACK" ]; then
+		shell::logger::info "Back — nothing was reverted"
+		return $RETURN_BACK
+	fi
 
 	if [ -z "$selected_output" ]; then
 		shell::logger::warn "No commits selected — aborting"
@@ -8118,7 +8220,13 @@ shell::git::commit::spec::history::fzf() {
 	# Step 3 — Commit picker via shell::ask::option (fzf wrapper).
 	# ---------------------------------------------------------------------------
 	local selected_line
-	selected_line=$(shell::ask::option "${commit_lines[@]}")
+	local rc
+	selected_line=$(shell::ask::option::back "${commit_lines[@]}")
+	rc=$? # CHANGED: back entry
+	if [ "$rc" -eq "$RETURN_BACK" ]; then
+		shell::logger::info "Back — nothing was shown"
+		return $RETURN_BACK
+	fi
 
 	if [ -z "$selected_line" ]; then
 		shell::logger::warn "No commit selected — aborting"
@@ -12628,6 +12736,7 @@ EOF
 # @exitcode 0 The commits were applied.
 # @exitcode 1 Cancelled, nothing to pick, or the cherry-pick failed.
 # @exitcode 2 Invalid usage.
+# @exitcode 11 The user picked "← Back" in the list; nothing was changed.
 # @see shell::git::commit::pick::fzf
 # @example
 #   shell::git::commit::pick::fzf::branch
@@ -12660,13 +12769,18 @@ shell::git::commit::pick::fzf::branch() {
 		return "$RETURN_FAILURE"
 	fi
 
-	picked="$(printf '%s\n' "$branches" | shell::fzf::select --height=60% --prompt="Source branch: " \
+	# CHANGED: back entry, last so Enter never lands on it by accident.
+	picked="$(printf '%s\n%s\n' "$branches" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select --height=60% --prompt="Source branch: " \
 		'--preview=git log --oneline --color=always -n 15 {}' --preview-window='right:55%:wrap')" || {
 		shell::logger::info "Cancelled — nothing was applied"
 		return "$RETURN_FAILURE"
 	}
 	if [ -z "$picked" ]; then
 		return "$RETURN_FAILURE"
+	fi
+	if [ "$picked" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — nothing was applied"
+		return "$RETURN_BACK"
 	fi
 
 	_shell::git::commit::pick::fzf::engine "$fzf_dry_run" "$fzf_count" "Cherry-pick from ${picked}: " "$picked" --not HEAD
@@ -13516,6 +13630,7 @@ shell::git::patch::create() {
 # @exitcode 1 The patch does not apply cleanly or git apply failed.
 # @exitcode 2 Unknown option.
 # @exitcode 3 The directory does not exist.
+# @exitcode 11 The user picked "← Back" in the list; nothing was changed.
 # @example
 #   shell::git::patch::apply::fzf
 #   shell::git::patch::apply::fzf ~/patches
@@ -13575,7 +13690,8 @@ shell::git::patch::apply::fzf() {
 
 	# Step 3 — picker.
 	local picked
-	picked="$(printf '%s\n' "$candidates" | shell::fzf::select \
+	# CHANGED: back entry, last so Enter never lands on it by accident.
+	picked="$(printf '%s\n%s\n' "$candidates" "$SHELL_FZF_BACK_LABEL" | shell::fzf::select \
 		--prompt="Select patch to apply: " \
 		--preview="git apply --stat -- {} 2>&1; echo; cat {}" \
 		--preview-window="right:60%:wrap")" || {
@@ -13586,6 +13702,10 @@ shell::git::patch::apply::fzf() {
 	if [ -z "$picked" ]; then
 		shell::logger::warn "No patch selected — aborting"
 		return "$RETURN_SUCCESS"
+	fi
+	if [ "$picked" = "$SHELL_FZF_BACK_LABEL" ]; then
+		shell::logger::info "Back — no patch was applied"
+		return "$RETURN_BACK"
 	fi
 
 	if [ "$dry_run" = "true" ]; then
