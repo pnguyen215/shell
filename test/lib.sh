@@ -16,7 +16,9 @@ t_setup() {
 	# Inside the runner's scratch tree ($SHELL_TEST_RUN, removed after the run); the fallback
 	# only matters when a test file is started by hand.
 	T_BASE="${SHELL_TEST_RUN:-${TMPDIR:-/tmp}}"
-	T_HOME="$(mktemp -d "$T_BASE/home.XXXXXX")"
+	# CHANGED: the folder is named after the test file (<test_file>.XXXXXX), so a leftover is traceable.
+	T_NAME="$(basename "${SHELL_TEST_FILE:-${0:-test}}" .sh)"
+	T_HOME="$(mktemp -d "$T_BASE/${T_NAME}.XXXXXX")"
 	# Canonicalise: on macOS $TMPDIR ends in "/" and /var is a symlink to /private/var,
 	# so the logical path ($PWD) and the mktemp path would otherwise differ.
 	T_HOME="$(cd "$T_HOME" && pwd -P)"
@@ -29,8 +31,11 @@ t_setup() {
 
 # Remove the isolated HOME, but only a directory this file created inside the scratch tree.
 t_cleanup() {
+	# CHANGED safety guard: only an absolute, non-empty path strictly inside the scratch base
+	# (which itself must be absolute) can be removed.
+	case "${T_BASE-}" in /?*) ;; *) return 0 ;; esac
 	case "${T_HOME-}" in
-	"${T_BASE:-/nonexistent-never}"/home.*) rm -rf "$T_HOME" 2>/dev/null ;;
+	"$T_BASE"/?*) rm -rf "$T_HOME" 2>/dev/null ;;
 	esac
 	return 0
 }
