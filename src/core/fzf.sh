@@ -112,8 +112,11 @@ shell::fzf::select() {
 			if [ "$has_initial" = "true" ]; then
 				# By value first: ENVIRON (not awk -v) keeps backslashes and spaces intact.
 				# Lines are counted as fzf counts them (empty lines included), 1-based.
+				# An array, not ${delimiter:+-F "$delimiter"}: zsh does not word-split that form.
+				local -a awk_fs=()
+				if [ -n "$delimiter" ]; then awk_fs=(-F "$delimiter"); fi
 				pos="$(printf '%s\n' "$candidates" | SHELL_FZF_INITIAL="$initial" awk \
-					${delimiter:+-F "$delimiter"} -v f="$initial_field" '
+					${awk_fs[@]+"${awk_fs[@]}"} -v f="$initial_field" '
 					# fzf --ansi prints the selection without color codes, so strip them from the list too.
 					{ line = $0; gsub(/\033\[[0-9;]*[A-Za-z]/, "", line); $0 = line; v = (f > 0 ? $f : $0) }
 					v == ENVIRON["SHELL_FZF_INITIAL"] { print NR; exit }')"
