@@ -108,6 +108,7 @@ shell::goto::run webapp                  # jump back to it later
 shell::conf::key::add API_KEY "s3cr3t"   # store a key (Base64, written with mode 600)
 shell::conf::key::get API_KEY
 shell::prompt::manage::fzf               # your AI prompt library: add, preview, edit, copy, history (docs/features/prompt.md)
+shell::prompt::skills::browse::fzf       # browse / install / update shared prompts from github.com/pnguyen215/skills (docs/features/prompt.md#prompt-skills-sync)
 shell::git::branch::create -n feature_x # -n = dry run: print commands without executing
 shell::net::port::kill 3000              # SIGTERM whatever is listening on :3000
 shell::fs::browse ~/docs                 # pick a file with fzf, then act on it
@@ -188,7 +189,7 @@ The only exceptions are the four lifecycle functions in [`src/shell.sh`](src/she
     ├── constant/       # ALL configuration: paths, URLs, colours, defaults, return codes
     ├── core/           # console, logger, os, exec, clipboard, fzf, ask (prompts)
     ├── dependency/     # one installer per external tool (fzf, jq, curl, git, ...), package manager, Homebrew, nvm, Oh My Zsh
-    ├── lib/            # fs, net, process, permission, strings, conf, ini, profile, bookmark, goto, ssh, workspace, prompt (reusable AI prompts, docs/features/prompt.md), brew (Homebrew packages + fzf), system_stats (disk / memory / swap, docs/features/system-stats.md)
+    ├── lib/            # fs, net, process, permission, strings, conf, ini, profile, bookmark, goto, ssh, workspace, prompt + prompt_skills (reusable AI prompts and their sync from the skills repo, docs/features/prompt.md), brew (Homebrew packages + fzf), system_stats (disk / memory / swap, docs/features/system-stats.md)
     ├── markdown/       # Markdown / Telegram MarkdownV2 builder (docs/features/markdown.md)
     ├── skill/          # agent skills for Claude Code / OpenCode: install, upgrade, uninstall, sync
     ├── lang/           # git, go, python, java, nodejs, nvm, angular
