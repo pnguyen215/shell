@@ -285,4 +285,3 @@ _shell::markdown::link_like() {
 		;;
 	esac
 }
-

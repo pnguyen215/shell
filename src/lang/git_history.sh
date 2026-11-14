@@ -699,7 +699,10 @@ _shell::git::history::dashboard() {
 	local width="" color="false"
 	while [ "$#" -gt 0 ]; do
 		case "$1" in
-		-w | --width) width="${2-}"; shift ;;
+		-w | --width)
+			width="${2-}"
+			shift
+			;;
 		-c | --color) color="true" ;;
 		-*)
 			shell::logger::error "Unknown option: $1"
@@ -852,9 +855,18 @@ _shell::git::history::timeline() {
 		case "$1" in
 		-r | --rows) rows="true" ;;
 		-c | --color) color="true" ;;
-		-w | --width) width="${2-}"; shift ;;
-		-s | --selected) selected="${2-}"; shift ;;
-		-t | --type) type="${2-}"; shift ;;
+		-w | --width)
+			width="${2-}"
+			shift
+			;;
+		-s | --selected)
+			selected="${2-}"
+			shift
+			;;
+		-t | --type)
+			type="${2-}"
+			shift
+			;;
 		*)
 			shell::logger::error "Unknown option: $1"
 			return "$RETURN_INVALID"

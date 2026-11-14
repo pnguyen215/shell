@@ -438,4 +438,3 @@ _shell::markdown::frag() {
 	[ -n "${1-}" ] || return "$RETURN_SUCCESS"
 	printf '%s%s%s' "$SHELL_MARKDOWN_FRAG_START" "$1" "$SHELL_MARKDOWN_FRAG_END"
 }
-

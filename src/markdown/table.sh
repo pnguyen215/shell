@@ -210,7 +210,10 @@ _shell::markdown::table_markdown() {
 				fi
 				k=$((k + 1))
 			done
-			if [ "$first_row" = 1 ]; then out="$line"; first_row=0; else out="$out"$'\n'"$line"; fi
+			if [ "$first_row" = 1 ]; then
+				out="$line"
+				first_row=0
+			else out="$out"$'\n'"$line"; fi
 		done
 	done
 	SHELL_MARKDOWN_OUT="$out"
@@ -397,4 +400,3 @@ shell::markdown::table() {
 	SHELL_MARKDOWN_TABLE_STARTED=0
 	_shell::markdown::emit "$block"
 }
-
