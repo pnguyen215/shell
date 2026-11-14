@@ -88,7 +88,7 @@ t_eq "render: defaults" "Hello world, tone: polite. world again. {{}} {{bad name
 t_eq "render: values win" "Hello Bob, tone: polite. Bob again. {{}} {{bad name}} {{aBob" "$(shell::prompt::render greeting who=Bob </dev/null)"
 t_has "render: & and backslash literal" 'x&y\1$HOME' "$(shell::prompt::render greeting 'who=x&y\1$HOME' </dev/null)"
 printf 'need {{required}}\n' | shell::prompt::add "Needs" - >/dev/null 2>&1
-t_rc "render: missing value without default" 2 shell::prompt::render needs
+t_rc "render: missing value without default" 2 shell::prompt::render needs </dev/null
 t_has "render: names the missing value" "required" "$T_OUT"
 t_eq "render: value given" "need ok" "$(shell::prompt::render needs required=ok </dev/null)"
 t_rc "render: bad name=value" 2 shell::prompt::render needs "oops"
@@ -112,7 +112,7 @@ rm -f "$FAKE_CLIP"
 t_rc "copy -n: dry-run" 0 shell::prompt::copy -n code-review
 t_lacks "copy -n: the body is not copied (only the command is shown)" "strict" "$(cat "$FAKE_CLIP" 2>/dev/null)"
 rm -f "$FAKE_CLIP"
-t_rc "copy: missing required value" 2 shell::prompt::copy needs
+t_rc "copy: missing required value" 2 shell::prompt::copy needs </dev/null
 t_eq "copy: failed render leaves clipboard alone" "no" "$([ -e "$FAKE_CLIP" ] && echo yes || echo no)"
 shell::prompt::copy greeting who=Ann </dev/null >/dev/null 2>&1
 t_has "copy: renders before copying" "Hello Ann" "$(cat "$FAKE_CLIP")"
