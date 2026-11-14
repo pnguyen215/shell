@@ -177,4 +177,3 @@ shell::uninstall() {
 	fi
 	SHELL_DIR="$SHELL_DIR" bash "$script" "$@"
 }
-

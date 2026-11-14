@@ -18,7 +18,10 @@ pl() { shell::markdown::init -f plain; }
 t_eq "default format is markdown" "markdown" "$(shell::markdown::get_format)"
 shell::markdown::init
 t_eq "init: empty document renders nothing" "" "$(shell::markdown::render)"
-t_eq "init: render rc" "0" "$(shell::markdown::render >/dev/null 2>&1; echo $?)"
+t_eq "init: render rc" "0" "$(
+	shell::markdown::render >/dev/null 2>&1
+	echo $?
+)"
 shell::markdown::set_format telegram
 t_eq "set_format/get_format" "telegram" "$(shell::markdown::get_format)"
 t_rc "set_format: unknown format" 2 shell::markdown::set_format html

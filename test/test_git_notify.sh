@@ -70,7 +70,10 @@ _shell::git::telegram::notify "Commit created" Branch "feat/x_1" Hash "abc123" M
 msg="$(text_of)"
 t_has "notify: branch with an underscore sits in code" '*Branch:* `feat/x_1`' "$msg"
 t_has "notify: message is escaped as MarkdownV2" '*Message:* fix: handle a\.b \(v1\.2\) \*now\* \[ok\] \_x\_ \\ \! \#1' "$msg"
-t_has "notify: title with special characters" "*Tag v1${bs}.2 created*" "$(_shell::git::telegram::notify "Tag v1.2 created" Tag v1.2 >/dev/null 2>&1; text_of)"
+t_has "notify: title with special characters" "*Tag v1${bs}.2 created*" "$(
+	_shell::git::telegram::notify "Tag v1.2 created" Tag v1.2 >/dev/null 2>&1
+	text_of
+)"
 _shell::git::telegram::notify "T" Message 'line one
 line two' >/dev/null 2>&1
 t_has "notify: newline in a value is flattened" "*Message:* line one line two" "$(text_of)"
