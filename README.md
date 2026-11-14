@@ -107,6 +107,7 @@ shell::bookmark::add webapp              # remember the current directory
 shell::goto::run webapp                  # jump back to it later
 shell::conf::key::add API_KEY "s3cr3t"   # store a key (Base64, written with mode 600)
 shell::conf::key::get API_KEY
+shell::prompt::manage::fzf               # your AI prompt library: add, preview, edit, copy, history (docs/features/prompt.md)
 shell::git::branch::create -n feature_x # -n = dry run: print commands without executing
 shell::net::port::kill 3000              # SIGTERM whatever is listening on :3000
 shell::fs::browse ~/docs                 # pick a file with fzf, then act on it
@@ -177,7 +178,7 @@ The only exceptions are the four lifecycle functions in [`src/shell.sh`](src/she
 ├── Makefile                               # make test | lint | fmt | docs | doctor
 ├── docs/
 │   ├── development/                       # architecture, conventions
-│   ├── features/                          # git-commit-messages, git-history, homebrew, nvm, rsync, security, ssh
+│   ├── features/                          # git-commit-messages, git-history, homebrew, nvm, prompt, rsync, security, ssh
 │   └── api/                               # generated reference (make docs)
 ├── scripts/                               # lint.sh, gen_docs.sh
 ├── test/                                  # run under bash and zsh
@@ -187,7 +188,7 @@ The only exceptions are the four lifecycle functions in [`src/shell.sh`](src/she
     ├── constant/       # ALL configuration: paths, URLs, colours, defaults, return codes
     ├── core/           # console, logger, os, exec, clipboard, fzf, ask (prompts)
     ├── dependency/     # one installer per external tool (fzf, jq, curl, git, ...), package manager, Homebrew, nvm, Oh My Zsh
-    ├── lib/            # fs, net, process, permission, strings, conf, ini, profile, bookmark, goto, ssh, workspace, brew (Homebrew packages + fzf), system_stats (disk / memory / swap, docs/features/system-stats.md)
+    ├── lib/            # fs, net, process, permission, strings, conf, ini, profile, bookmark, goto, ssh, workspace, prompt (reusable AI prompts, docs/features/prompt.md), brew (Homebrew packages + fzf), system_stats (disk / memory / swap, docs/features/system-stats.md)
     ├── markdown/       # Markdown / Telegram MarkdownV2 builder (docs/features/markdown.md)
     ├── skill/          # agent skills for Claude Code / OpenCode: install, upgrade, uninstall, sync
     ├── lang/           # git, go, python, java, nodejs, nvm, angular
@@ -209,7 +210,7 @@ export SHELL_GIT_COMMIT_EMOJI=true              # gitmoji in commit messages (de
 source "$HOME/shell/src/shell.sh"
 ```
 
-User data (keys, bookmarks, workspaces) lives under `SHELL_CONFIG_DIR` with mode 700/600. Settings of a single feature are documented in [`docs/features/`](docs/features), for example [commit messages](docs/features/git-commit-messages.md), [Homebrew](docs/features/homebrew.md), [Markdown builder](docs/features/markdown.md), [nvm](docs/features/nvm.md), [system statistics](docs/features/system-stats.md), [SSH](docs/features/ssh.md) and [rsync](docs/features/rsync.md).
+User data (keys, bookmarks, workspaces, prompts) lives under `SHELL_CONFIG_DIR` with mode 700/600. Settings of a single feature are documented in [`docs/features/`](docs/features), for example [commit messages](docs/features/git-commit-messages.md), [Homebrew](docs/features/homebrew.md), [Markdown builder](docs/features/markdown.md), [prompt store](docs/features/prompt.md), [nvm](docs/features/nvm.md), [system statistics](docs/features/system-stats.md), [SSH](docs/features/ssh.md) and [rsync](docs/features/rsync.md).
 
 ## Dependencies
 

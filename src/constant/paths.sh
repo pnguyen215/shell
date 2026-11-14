@@ -12,6 +12,7 @@
 #     ├── group.conf          group=key1,key2,... definitions
 #     ├── backup/             automatic backups
 #     ├── bookmarks/.bookmarks
+#     ├── prompts/            reusable AI prompts, one <slug>.md each (+ .history/<slug>/<UTC-stamp>.md)
 #     ├── git/
 #     │   ├── git-commit-messages.txt       installed copy of src/data/ (see git::commit::message::sync)
 #     │   └── git-commit-messages.user.txt  your own commit message templates (never overwritten)
@@ -54,3 +55,13 @@ SHELL_GIT_COMMIT_MESSAGES_SOURCE="$SHELL_SRC_DIR/data/git-commit-messages.txt"
 SHELL_GIT_COMMIT_MESSAGES_INSTALLED="$SHELL_CONFIG_DIR/git/git-commit-messages.txt"
 : "${SHELL_GIT_COMMIT_MESSAGES_FILE:=$SHELL_GIT_COMMIT_MESSAGES_INSTALLED}"
 : "${SHELL_GIT_COMMIT_MESSAGES_USER_FILE:=$SHELL_CONFIG_DIR/git/git-commit-messages.user.txt}"
+
+# Prompt store (shell::prompt::*): one Markdown file per prompt.
+#   DIR            global store, available from any directory (dirs 700, files 600).
+#   LOCAL_NAME     name of the optional per-project store, looked up in the current directory.
+#   HISTORY_LIMIT  snapshots kept per prompt (taken before every edit, overwrite and removal).
+#   MAX_BYTES      largest prompt file accepted by add / import.
+: "${SHELL_PROMPT_DIR:=$SHELL_CONFIG_DIR/prompts}"
+: "${SHELL_PROMPT_LOCAL_NAME:=.prompts}"
+: "${SHELL_PROMPT_HISTORY_LIMIT:=20}"
+: "${SHELL_PROMPT_MAX_BYTES:=1048576}"
