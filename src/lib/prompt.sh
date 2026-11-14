@@ -1475,6 +1475,7 @@ _shell::prompt::remove::do() {
 		shell::logger::error "Could not move '${slug}' into its history; nothing was removed."
 		return "$RETURN_FAILURE"
 	fi
+	_shell::prompt::skills::lock::del "$scope" "$slug"
 	shell::logger::success "Removed prompt '${slug}' (restore with: shell::prompt::history ${slug})"
 }
 
@@ -1561,6 +1562,7 @@ _shell::prompt::rename::do() {
 	if [ -d "$dir/.history/$old" ]; then
 		mv -- "$dir/.history/$old" "$dir/.history/$new" || shell::logger::warn "The prompt was renamed but its history stayed under '${old}'."
 	fi
+	_shell::prompt::skills::lock::move "$scope" "$old" "$new"
 	shell::logger::success "Renamed '${old}' to '${new}'"
 }
 

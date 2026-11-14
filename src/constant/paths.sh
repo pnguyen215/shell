@@ -65,3 +65,17 @@ SHELL_GIT_COMMIT_MESSAGES_INSTALLED="$SHELL_CONFIG_DIR/git/git-commit-messages.t
 : "${SHELL_PROMPT_LOCAL_NAME:=.prompts}"
 : "${SHELL_PROMPT_HISTORY_LIMIT:=20}"
 : "${SHELL_PROMPT_MAX_BYTES:=1048576}"
+
+# Prompt Skills Sync (shell::prompt::skills::*): prompts downloaded from a GitHub repository.
+#   REPO        owner/repo that is the source of truth.         BRANCH   branch to read (flag --branch wins).
+#   PATH        directory of the repo that holds the prompts.   CACHE_TTL seconds an index is trusted without asking GitHub.
+#   BULK_MIN    more missing files than this -> one tarball instead of one request per file.   JOBS  parallel downloads.
+#   LOCK_NAME   provenance file kept next to the prompts of each store (never inside the prompt files).
+#   SHELL_PROMPT_SKILLS_LOCAL_DIR (not set here) switches to fixture mode: <dir>/<branch>/<PATH>/... replaces the network.
+: "${SHELL_PROMPT_SKILLS_REPO:=pnguyen215/skills}"
+: "${SHELL_PROMPT_SKILLS_BRANCH:=master}"
+: "${SHELL_PROMPT_SKILLS_PATH:=prompts}"
+: "${SHELL_PROMPT_SKILLS_CACHE_TTL:=300}"
+: "${SHELL_PROMPT_SKILLS_BULK_MIN:=8}"
+: "${SHELL_PROMPT_SKILLS_JOBS:=4}"
+: "${SHELL_PROMPT_SKILLS_LOCK_NAME:=.skills.lock}"
