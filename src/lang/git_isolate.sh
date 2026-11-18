@@ -97,21 +97,32 @@ _shell::git::isolate::unique_branch() {
 }
 
 # @internal
-# @description Prints a snapshot hash of the state the user cares about: HEAD, the checked-out
-#   branch, the status (staged, unstaged, untracked) and both diffs. Read-only (optional locks off).
+# @description Prints a snapshot hash of the state the user cares about, read-only (optional locks off):
+#   HEAD, the checked-out branch, every ref, the index (`ls-files -s`), the status, the CONTENT hash of
+#   every modified and untracked file, both diffs, the stash list and the linked worktrees.
+#   The branch and worktree a session creates are excluded, so only what must NOT change is compared.
+# @arg $1 string Optional. Repository root (default: the current one).
+# @arg $2 string Optional. Branch to leave out (the session's own).
+# @arg $3 string Optional. Worktree directory to leave out (the session's own).
 # @stdout A checksum line.
 # @exitcode 0 Always.
 # @example
-#   before="$(_shell::git::isolate::fingerprint)"
+#   before="$(_shell::git::isolate::fingerprint "$top" "$branch" "$dir")"
 #
 _shell::git::isolate::fingerprint() {
+	local top="${1-}" skip_branch="${2-}" skip_dir="${3-}"
+	[ -n "$top" ] || top="$(git rev-parse --show-toplevel 2>/dev/null)"
 	{
-		git rev-parse HEAD 2>&1
-		git symbolic-ref -q HEAD 2>&1
-		GIT_OPTIONAL_LOCKS=0 git status --porcelain=v1 --untracked-files=all 2>&1
-		git diff --cached --raw --no-abbrev 2>&1
-		git diff --raw --no-abbrev 2>&1
-		git stash list 2>&1
+		git -C "$top" rev-parse HEAD 2>&1
+		git -C "$top" symbolic-ref -q HEAD 2>&1
+		git -C "$top" for-each-ref --format='%(refname) %(objectname)' 2>&1 | grep -v -x -F "refs/heads/${skip_branch:-@none@} $(git -C "$top" rev-parse --verify --quiet "refs/heads/${skip_branch:-@none@}" 2>/dev/null)"
+		git -C "$top" ls-files -s 2>&1
+		GIT_OPTIONAL_LOCKS=0 git -C "$top" status --porcelain=v1 --untracked-files=all 2>&1
+		git -C "$top" -c core.quotepath=off ls-files -m -o --exclude-standard 2>/dev/null | git -C "$top" hash-object --stdin-paths 2>&1
+		git -C "$top" diff --cached --raw --no-abbrev 2>&1
+		git -C "$top" diff --raw --no-abbrev 2>&1
+		git -C "$top" stash list 2>&1
+		git -C "$top" worktree list --porcelain 2>&1 | awk -v RS= -v ORS="\n\n" -v skip="${skip_dir:-@none@}" 'index($0, "worktree " skip "\n") != 1 && $0 != "worktree " skip'
 	} | cksum
 }
 
@@ -246,7 +257,7 @@ _shell::git::isolate::open() {
 		shell::logger::error "Could not create '$(dirname "$dir")'"
 		return "$RETURN_FAILURE"
 	}
-	if ! out="$(git worktree add -q -b "$branch" "$dir" "$start" 2>&1)"; then
+	if ! out="$(git -c core.hooksPath=/dev/null worktree add -q -b "$branch" "$dir" "$start" 2>&1)"; then
 		shell::logger::error "Could not create the worktree: $out"
 		_shell::git::isolate::rollback "$branch" "$dir"
 		return "$RETURN_FAILURE"
@@ -266,7 +277,7 @@ _shell::git::isolate::open() {
 #
 _shell::git::isolate::finish() {
 	local before="${1-}" after
-	after="$(_shell::git::isolate::fingerprint)"
+	after="$(_shell::git::isolate::fingerprint "" "$_SHELL_GIT_ISOLATE_WT_BRANCH" "$_SHELL_GIT_ISOLATE_WT_DIR")"
 	if [ "$before" != "$after" ]; then
 		shell::logger::error "The current repository state changed unexpectedly during the operation; inspect it with 'git status'."
 		return "$RETURN_FAILURE"
@@ -847,5 +858,664 @@ shell::git::isolate::lines() {
 	git -C "$_SHELL_GIT_ISOLATE_WT_DIR" --no-pager diff --cached --stat --no-color
 	_shell::git::isolate::finish "$before"
 	rc=$?
+	return "$rc"
+}
+
+# ==============================================================================================
+# Persistent session: shell::git::isolate
+#
+#   choose source -> choose strategy -> ONE branch + ONE worktree -> action menu (loop)
+#
+# Session state lives in `_SHELL_GIT_ISOLATE_S_*` globals (private, reset by every session):
+#   TOP original repository root       BEFORE fingerprint of the original state
+#   BRANCH / DIR destination branch and worktree   BASE / LABEL start commit and its description
+#   SRC / SRCSHA source ref and its resolved commit  STRATEGY current | parent   PARENT parent ref
+#   APPLIED number of actions applied  UNSAFE set when the original state could not be guaranteed
+# Every write goes through `_shell::git::isolate::session::wt`, i.e. `git -C <worktree>`; the original
+# working directory is only ever READ.
+# ==============================================================================================
+
+# @internal
+# @description Runs git inside the session's isolated worktree (hooks off, literal pathspecs). It
+#   refuses to run when the worktree is unset or is the original repository, so no write can ever
+#   reach the original working tree.
+# @arg $@ string Git arguments.
+# @exitcode 0 Exit status of git.
+# @exitcode 1 No isolated worktree, or it is the original repository.
+# @example
+#   _shell::git::isolate::session::wt checkout "$sha" -- "$path"
+#
+_shell::git::isolate::session::wt() {
+	if [ -z "$_SHELL_GIT_ISOLATE_S_DIR" ] || [ "$_SHELL_GIT_ISOLATE_S_DIR" = "$_SHELL_GIT_ISOLATE_S_TOP" ]; then
+		return "$RETURN_FAILURE"
+	fi
+	git -c core.hooksPath=/dev/null --literal-pathspecs -C "$_SHELL_GIT_ISOLATE_S_DIR" "$@"
+}
+
+# @internal
+# @description Succeeds while the destination worktree is still usable: it exists, is a worktree
+#   other than the original, and still has the destination branch checked out.
+# @exitcode 0 Usable.
+# @exitcode 1 Missing or changed.
+# @example
+#   _shell::git::isolate::session::alive || return "$RETURN_FAILURE"
+#
+_shell::git::isolate::session::alive() {
+	[ -d "$_SHELL_GIT_ISOLATE_S_DIR" ] || return "$RETURN_FAILURE"
+	[ "$(git -C "$_SHELL_GIT_ISOLATE_S_DIR" rev-parse --show-toplevel 2>/dev/null)" != "$_SHELL_GIT_ISOLATE_S_TOP" ] || return "$RETURN_FAILURE"
+	[ "$(git -C "$_SHELL_GIT_ISOLATE_S_DIR" symbolic-ref -q --short HEAD 2>/dev/null)" = "$_SHELL_GIT_ISOLATE_S_BRANCH" ]
+}
+
+# @internal
+# @description Compares the original repository with the fingerprint taken before the session. On a
+#   difference the session is marked unsafe.
+# @exitcode 0 Unchanged.
+# @exitcode 1 The original repository state changed.
+# @example
+#   _shell::git::isolate::session::verify || break
+#
+_shell::git::isolate::session::verify() {
+	local now
+	now="$(_shell::git::isolate::fingerprint "$_SHELL_GIT_ISOLATE_S_TOP" "$_SHELL_GIT_ISOLATE_S_BRANCH" "$_SHELL_GIT_ISOLATE_S_DIR")"
+	if [ "$now" != "$_SHELL_GIT_ISOLATE_S_BEFORE" ]; then
+		_SHELL_GIT_ISOLATE_S_UNSAFE=1
+		shell::logger::error "The original repository state changed during the session; stopping. Inspect it with 'git status'."
+		return "$RETURN_FAILURE"
+	fi
+	return "$RETURN_SUCCESS"
+}
+
+# @internal
+# @description Re-resolves the session's source ref to a commit id; warns when it moved.
+# @stdout The commit id.
+# @exitcode 0 Resolved.
+# @exitcode 3 The source ref no longer exists.
+# @example
+#   sha="$(_shell::git::isolate::session::source_sha)" || return $?
+#
+_shell::git::isolate::session::source_sha() {
+	local sha
+	if ! sha="$(_shell::git::isolate::resolve "$_SHELL_GIT_ISOLATE_S_SRC")"; then
+		shell::logger::error "Source '$_SHELL_GIT_ISOLATE_S_SRC' no longer exists; switch the source branch"
+		return "$RETURN_NOT_FOUND"
+	fi
+	if [ "$sha" != "$_SHELL_GIT_ISOLATE_S_SRCSHA" ]; then
+		shell::logger::warn "Source '$_SHELL_GIT_ISOLATE_S_SRC' moved (${_SHELL_GIT_ISOLATE_S_SRCSHA:0:7} -> ${sha:0:7}); using the new tip" >&2
+		_SHELL_GIT_ISOLATE_S_SRCSHA="$sha"
+	fi
+	printf '%s\n' "$sha"
+}
+
+# @internal
+# @description Discards whatever a failed action left in the DESTINATION worktree (`reset --hard HEAD`
+#   there), restoring the state after the previous action. Never touches the original repository.
+# @exitcode 0 Always.
+# @example
+#   _shell::git::isolate::session::revert
+#
+_shell::git::isolate::session::revert() {
+	_shell::git::isolate::session::wt reset -q --hard HEAD >/dev/null 2>&1
+	return "$RETURN_SUCCESS"
+}
+
+# @internal
+# @description Commits what is staged in the destination worktree as one action of the session.
+# @arg $1 string Commit message.
+# @exitcode 0 Committed (the applied counter is incremented).
+# @exitcode 1 The commit failed (the action is reverted).
+# @exitcode 8 Nothing is staged.
+# @example
+#   _shell::git::isolate::session::commit "isolate: pick 2 file(s) from main"
+#
+_shell::git::isolate::session::commit() {
+	local out
+	if _shell::git::isolate::session::wt diff --cached --quiet; then
+		return "$RETURN_EMPTY"
+	fi
+	if ! out="$(_shell::git::isolate::session::wt commit -q --no-verify -m "$1" 2>&1)"; then
+		shell::logger::error "Could not commit in the destination (is user.name / user.email set?): $out"
+		_shell::git::isolate::session::revert
+		return "$RETURN_FAILURE"
+	fi
+	_SHELL_GIT_ISOLATE_S_APPLIED=$((_SHELL_GIT_ISOLATE_S_APPLIED + 1))
+	return "$RETURN_SUCCESS"
+}
+
+# @internal
+# @description Succeeds when no parent directory of a destination path is a symlink (a link could point
+#   back into the original working tree).
+# @arg $1 string Repository-relative path.
+# @exitcode 0 Safe.
+# @exitcode 1 A parent directory is a symlink.
+# @example
+#   _shell::git::isolate::session::safe_dest "src/a.sh"
+#
+_shell::git::isolate::session::safe_dest() {
+	local walk="$_SHELL_GIT_ISOLATE_S_DIR" rest="${1%/*}" part
+	[ "$rest" = "$1" ] && return "$RETURN_SUCCESS"
+	while [ -n "$rest" ]; do
+		part="${rest%%/*}"
+		walk="$walk/$part"
+		[ -L "$walk" ] && return "$RETURN_FAILURE"
+		case "$rest" in */*) rest="${rest#*/}" ;; *) rest="" ;; esac
+	done
+	return "$RETURN_SUCCESS"
+}
+
+# @internal
+# @description Interactive choice of source branch and target strategy (Back steps back one screen).
+#   Sets `_SHELL_GIT_ISOLATE_S_SRC/SRCSHA/STRATEGY/PARENT/START/BRANCH_OPT/LABEL`.
+# @exitcode 0 Ready to create the destination.
+# @exitcode 9 The user cancelled (ESC).
+# @exitcode 11 The user went Back from the first screen.
+# @example
+#   _shell::git::isolate::session::choose || return $?
+#
+_shell::git::isolate::session::choose() {
+	local step="source" rc picked name current default_name
+	while true; do
+		case "$step" in
+		source)
+			picked="$(_shell::git::isolate::fzf::branch "Source branch: ")"
+			rc=$?
+			[ "$rc" -ne 0 ] && return "$rc"
+			if ! _SHELL_GIT_ISOLATE_S_SRCSHA="$(_shell::git::isolate::resolve "$picked")"; then
+				shell::logger::error "Source '$picked' could not be resolved"
+				continue
+			fi
+			_SHELL_GIT_ISOLATE_S_SRC="$picked"
+			step="strategy"
+			;;
+		strategy)
+			picked="$(_shell::git::isolate::fzf::strategy)"
+			rc=$?
+			if [ "$rc" -eq "$RETURN_BACK" ]; then
+				step="source"
+				continue
+			fi
+			[ "$rc" -ne 0 ] && return "$rc"
+			if [ "$picked" = "current" ]; then
+				_SHELL_GIT_ISOLATE_S_STRATEGY="current"
+				_SHELL_GIT_ISOLATE_S_PARENT=""
+				_SHELL_GIT_ISOLATE_S_START="$(git -C "$_SHELL_GIT_ISOLATE_S_TOP" rev-parse HEAD)"
+				current="$(git -C "$_SHELL_GIT_ISOLATE_S_TOP" symbolic-ref -q --short HEAD 2>/dev/null)"
+				if [ -z "$current" ]; then
+					shell::logger::warn "HEAD is detached; the isolated branch starts at ${_SHELL_GIT_ISOLATE_S_START:0:7}"
+					current="detached"
+				fi
+				_SHELL_GIT_ISOLATE_S_BRANCH_OPT=""
+				_SHELL_GIT_ISOLATE_S_LABEL="$(_shell::git::isolate::slug "$current")-$(git rev-parse --short=7 "$_SHELL_GIT_ISOLATE_S_START")"
+				return "$RETURN_SUCCESS"
+			fi
+			step="parent"
+			;;
+		parent)
+			picked="$(_shell::git::isolate::fzf::branch "Parent branch: ")"
+			rc=$?
+			if [ "$rc" -eq "$RETURN_BACK" ]; then
+				step="strategy"
+				continue
+			fi
+			[ "$rc" -ne 0 ] && return "$rc"
+			if ! _SHELL_GIT_ISOLATE_S_START="$(_shell::git::isolate::resolve "$picked")"; then
+				shell::logger::error "Parent '$picked' could not be resolved"
+				continue
+			fi
+			_SHELL_GIT_ISOLATE_S_STRATEGY="parent"
+			_SHELL_GIT_ISOLATE_S_PARENT="$picked"
+			_SHELL_GIT_ISOLATE_S_LABEL="$(_shell::git::isolate::slug "$picked")-$(git rev-parse --short=7 "$_SHELL_GIT_ISOLATE_S_START")"
+			step="name"
+			;;
+		name)
+			default_name="$(_shell::git::isolate::unique_branch "isolate/session/$_SHELL_GIT_ISOLATE_S_LABEL")"
+			shell::console::print "[e] New branch name, created from '$_SHELL_GIT_ISOLATE_S_PARENT' (empty = ${default_name}, '<' = back):" 208
+			read -r name || return "$RETURN_CANCELLED"
+			case "$name" in
+			'<')
+				step="parent"
+				continue
+				;;
+			'')
+				_SHELL_GIT_ISOLATE_S_BRANCH_OPT=""
+				return "$RETURN_SUCCESS"
+				;;
+			esac
+			if ! git check-ref-format --branch "$name" >/dev/null 2>&1; then
+				shell::logger::error "'$name' is not a valid branch name"
+				continue
+			fi
+			if git show-ref --verify --quiet "refs/heads/$name"; then
+				shell::logger::error "Branch '$name' already exists; it was left untouched. Choose another name."
+				continue
+			fi
+			_SHELL_GIT_ISOLATE_S_BRANCH_OPT="$name"
+			return "$RETURN_SUCCESS"
+			;;
+		esac
+	done
+}
+
+# @internal
+# @description Pick Files: choose files of the source, preview the diff against the DESTINATION, confirm,
+#   apply them in the destination worktree and commit them there as one action.
+#   A file that exists in the destination with different content needs an explicit confirmation.
+# @exitcode 0 Applied.
+# @exitcode 1 The action failed and was reverted.
+# @exitcode 3 Missing source or file.
+# @exitcode 8 Everything is already identical in the destination.
+# @exitcode 9 The user cancelled or went back.
+# @example
+#   _shell::git::isolate::session::act::files
+#
+_shell::git::isolate::session::act::files() {
+	local sha picked rc p kind_of src_id dst_id out question
+	local -a todo=() overwrites=()
+	sha="$(_shell::git::isolate::session::source_sha)" || return $?
+	picked="$(_shell::git::isolate::fzf::files "$sha" true "$_SHELL_GIT_ISOLATE_S_DIR")"
+	rc=$?
+	if [ "$rc" -ne 0 ]; then
+		return "$RETURN_CANCELLED"
+	fi
+	while IFS= read -r p; do
+		[ -n "$p" ] || continue
+		if ! _shell::git::isolate::valid_path "$p"; then
+			shell::logger::error "Invalid path '$p'"
+			return "$RETURN_INVALID"
+		fi
+		kind_of="$(git cat-file -t "$sha:$p" 2>/dev/null)"
+		if [ "$kind_of" != "blob" ]; then
+			shell::logger::error "'$p' is not a file in '$_SHELL_GIT_ISOLATE_S_SRC'"
+			return "$RETURN_NOT_FOUND"
+		fi
+		src_id="$(git rev-parse "$sha:$p")"
+		dst_id="$(_shell::git::isolate::session::wt rev-parse --verify --quiet "HEAD:$p" 2>/dev/null)"
+		if [ "$dst_id" = "$src_id" ]; then
+			shell::logger::info "$p is already identical in the destination — skipped"
+			continue
+		fi
+		_shell::git::isolate::session::safe_dest "$p" || {
+			shell::logger::error "A parent directory of '$p' is a symlink in the destination; refusing to write through it"
+			return "$RETURN_FAILURE"
+		}
+		[ -n "$dst_id" ] && overwrites+=("$p")
+		todo+=("$p")
+	done <<<"$picked"
+	if [ "${#todo[@]}" -eq 0 ]; then
+		shell::logger::warn "Nothing to apply: everything selected is already in the destination"
+		return "$RETURN_EMPTY"
+	fi
+
+	shell::logger::info "From '$_SHELL_GIT_ISOLATE_S_SRC' into '$_SHELL_GIT_ISOLATE_S_BRANCH':"
+	_shell::git::isolate::session::wt --no-pager diff --stat --no-color HEAD "$sha" -- "${todo[@]}"
+	_shell::git::isolate::session::wt --no-pager diff --no-color HEAD "$sha" -- "${todo[@]}"
+	question="Apply ${#todo[@]} file(s) to the isolated destination?"
+	if [ "${#overwrites[@]}" -gt 0 ]; then
+		for p in "${overwrites[@]}"; do
+			shell::logger::warn "Conflict: $p already exists in the destination with different content"
+		done
+		question="${#overwrites[@]} file(s) already exist in the destination with different content. Overwrite them and apply ${#todo[@]} file(s)?"
+	fi
+	shell::ask::accept "$question" || {
+		shell::logger::info "Cancelled — the destination was not changed"
+		return "$RETURN_CANCELLED"
+	}
+	if ! out="$(_shell::git::isolate::session::wt checkout "$sha" -- "${todo[@]}" 2>&1)"; then
+		shell::logger::error "Could not apply the files: $out"
+		_shell::git::isolate::session::revert
+		return "$RETURN_FAILURE"
+	fi
+	_shell::git::isolate::session::commit "isolate: pick ${#todo[@]} file(s) from $_SHELL_GIT_ISOLATE_S_SRC (${sha:0:7})" || return $?
+	shell::logger::success "Applied ${#todo[@]} file(s)"
+	return "$RETURN_SUCCESS"
+}
+
+# @internal
+# @description Pick Commit: choose a commit of the source, preview it and apply ITS CHANGES onto the
+#   existing destination branch (`cherry-pick --no-commit`, then a commit that keeps the original message
+#   and author). It never recreates the destination. Merge commits are refused (ambiguous parent); a
+#   commit already in the destination is reported; conflicts are listed and the destination is restored.
+# @exitcode 0 Applied.
+# @exitcode 1 Conflict or failure (the destination is restored).
+# @exitcode 2 A merge commit, which cannot be applied unambiguously.
+# @exitcode 8 The changes are already in the destination.
+# @exitcode 9 The user cancelled or went back.
+# @example
+#   _shell::git::isolate::session::act::commit
+#
+_shell::git::isolate::session::act::commit() {
+	local sha csha rc out parents conflicts
+	sha="$(_shell::git::isolate::session::source_sha)" || return $?
+	csha="$(_shell::git::isolate::fzf::commit "$sha")"
+	rc=$?
+	[ "$rc" -ne 0 ] && return "$RETURN_CANCELLED"
+	if ! csha="$(_shell::git::isolate::resolve "$csha")"; then
+		shell::logger::error "That commit no longer exists"
+		return "$RETURN_NOT_FOUND"
+	fi
+	parents="$(git rev-list --parents -n 1 "$csha" | wc -w | tr -d ' ')"
+	if [ "$parents" -gt 2 ]; then
+		shell::logger::error "${csha:0:7} is a merge commit: which parent to follow is ambiguous, so it is not applied. Pick one of the commits it merged, or use Pick Files / Pick Lines."
+		return "$RETURN_INVALID"
+	fi
+	if _shell::git::isolate::session::wt merge-base --is-ancestor "$csha" HEAD 2>/dev/null; then
+		shell::logger::info "${csha:0:7} is already part of the destination history — nothing to apply"
+		return "$RETURN_EMPTY"
+	fi
+	_shell::git::history::show "$_SHELL_GIT_ISOLATE_S_TOP" commit "" "$csha" . "" full never
+	shell::ask::accept "Apply the changes of ${csha:0:7} onto '$_SHELL_GIT_ISOLATE_S_BRANCH' (new commit, original message and author kept)?" || {
+		shell::logger::info "Cancelled — the destination was not changed"
+		return "$RETURN_CANCELLED"
+	}
+	if ! out="$(_shell::git::isolate::session::wt cherry-pick --no-commit "$csha" 2>&1)"; then
+		conflicts="$(_shell::git::isolate::session::wt diff --name-only --diff-filter=U 2>/dev/null)"
+		shell::logger::error "The commit does not apply cleanly onto the destination: ${conflicts:-$out}"
+		_shell::git::isolate::session::revert
+		return "$RETURN_FAILURE"
+	fi
+	if _shell::git::isolate::session::wt diff --cached --quiet; then
+		shell::logger::info "The changes of ${csha:0:7} are already present in the destination"
+		_shell::git::isolate::session::revert
+		return "$RETURN_EMPTY"
+	fi
+	if ! out="$(_shell::git::isolate::session::wt commit -q --no-verify -C "$csha" 2>&1)"; then
+		shell::logger::error "Could not commit in the destination (is user.name / user.email set?): $out"
+		_shell::git::isolate::session::revert
+		return "$RETURN_FAILURE"
+	fi
+	_SHELL_GIT_ISOLATE_S_APPLIED=$((_SHELL_GIT_ISOLATE_S_APPLIED + 1))
+	shell::logger::success "Applied ${csha:0:7} onto '$_SHELL_GIT_ISOLATE_S_BRANCH'"
+	return "$RETURN_SUCCESS"
+}
+
+# @internal
+# @description Pick Lines: choose a file and lines of the source, preview the patch against the DESTINATION
+#   content, confirm, apply only those lines (`git apply --unidiff-zero --index` in the destination) and
+#   commit them there. Invalid, empty, out-of-range and overlapping selections, binary files and lines
+#   that change nothing are refused; the rest of the destination file is never replaced.
+# @exitcode 0 Applied.
+# @exitcode 1 The patch did not apply (the destination is unchanged).
+# @exitcode 2 Invalid selection.
+# @exitcode 8 The selected lines are already in the destination.
+# @exitcode 9 The user cancelled or went back.
+# @example
+#   _shell::git::isolate::session::act::lines
+#
+_shell::git::isolate::session::act::lines() {
+	local sha rel spec rc kind_of total ranges tree dst_id empty_tree out
+	local stats patch content full=0 partial=0 skipped=0 new_file="false"
+	sha="$(_shell::git::isolate::session::source_sha)" || return $?
+	rel="$(_shell::git::isolate::fzf::files "$sha" false "$_SHELL_GIT_ISOLATE_S_DIR")"
+	rc=$?
+	[ "$rc" -ne 0 ] && return "$RETURN_CANCELLED"
+	spec="$(_shell::git::isolate::fzf::lines "$sha" "$rel" "$_SHELL_GIT_ISOLATE_S_DIR")"
+	rc=$?
+	[ "$rc" -ne 0 ] && return "$RETURN_CANCELLED"
+
+	if ! _shell::git::isolate::valid_path "$rel"; then
+		shell::logger::error "Invalid path '$rel'"
+		return "$RETURN_INVALID"
+	fi
+	kind_of="$(git cat-file -t "$sha:$rel" 2>/dev/null)"
+	if [ "$kind_of" != "blob" ]; then
+		shell::logger::error "'$rel' is not a file in '$_SHELL_GIT_ISOLATE_S_SRC'"
+		return "$RETURN_NOT_FOUND"
+	fi
+	empty_tree="$(git hash-object -t tree /dev/null)"
+	if git --literal-pathspecs diff --numstat "$empty_tree" "$sha" -- "$rel" | grep -q "$(printf '^-\t-\t')"; then
+		shell::logger::error "'$rel' is a binary file; line selection needs text"
+		return "$RETURN_INVALID"
+	fi
+	total="$(git cat-file blob "$sha:$rel" | awk 'END { print NR }')"
+	if ! ranges="$(_shell::git::isolate::ranges "$spec" "$total")"; then
+		shell::logger::error "$ranges"
+		return "$RETURN_INVALID"
+	fi
+	_shell::git::isolate::session::safe_dest "$rel" || {
+		shell::logger::error "A parent directory of '$rel' is a symlink in the destination; refusing to write through it"
+		return "$RETURN_FAILURE"
+	}
+
+	stats="$(mktemp "${TMPDIR:-/tmp}/shell-isolate-stats.XXXXXX")" || return "$RETURN_FAILURE"
+	patch="$(mktemp "${TMPDIR:-/tmp}/shell-isolate-patch.XXXXXX")" || {
+		rm -f "$stats"
+		return "$RETURN_FAILURE"
+	}
+	content="$(mktemp "${TMPDIR:-/tmp}/shell-isolate-lines.XXXXXX")" || {
+		rm -f "$stats" "$patch"
+		return "$RETURN_FAILURE"
+	}
+
+	tree="$(_shell::git::isolate::session::wt write-tree 2>/dev/null)"
+	dst_id="$(_shell::git::isolate::session::wt rev-parse --verify --quiet ":0:$rel" 2>/dev/null)"
+	if [ -z "$dst_id" ]; then
+		new_file="true"
+		git cat-file blob "$sha:$rel" | awk -v ranges="$ranges" '
+			BEGIN { n = split(ranges, rr, ","); for (i = 1; i <= n; i++) { split(rr[i], p, "-"); for (l = p[1] + 0; l <= p[2] + 0; l++) sel[l] = 1 } }
+			NR in sel' >"$content"
+	else
+		_shell::git::isolate::patch "$tree" "$sha" "$rel" "$ranges" "$stats" >"$patch"
+		read -r full partial skipped <"$stats"
+		if [ ! -s "$patch" ]; then
+			rm -f "$stats" "$patch" "$content"
+			shell::logger::info "The selected lines (${ranges}) change nothing in the destination (already applied, or identical)"
+			return "$RETURN_EMPTY"
+		fi
+		[ "${partial:-0}" -gt 0 ] && shell::logger::warn "${partial} changed block(s) are selected only in part: just the selected lines are inserted and the lines they replace are kept"
+		[ "${skipped:-0}" -gt 0 ] && shell::logger::info "${skipped} changed block(s) outside the selection (or pure deletions) are skipped"
+	fi
+
+	shell::logger::info "Lines ${ranges} of ${rel} from '${_SHELL_GIT_ISOLATE_S_SRC}' into '${_SHELL_GIT_ISOLATE_S_BRANCH}':"
+	if [ "$new_file" = "true" ]; then
+		shell::logger::info "$rel does not exist in the destination; it would be created with the selected lines"
+		sed 's/^/+/' "$content"
+	else
+		cat "$patch"
+	fi
+	if ! shell::ask::accept "Apply only these lines to the isolated destination?"; then
+		rm -f "$stats" "$patch" "$content"
+		shell::logger::info "Cancelled — the destination was not changed"
+		return "$RETURN_CANCELLED"
+	fi
+
+	if [ "$new_file" = "true" ]; then
+		if ! { mkdir -p "$(dirname "$_SHELL_GIT_ISOLATE_S_DIR/$rel")" && cp "$content" "$_SHELL_GIT_ISOLATE_S_DIR/$rel" &&
+			_shell::git::isolate::session::wt add -- "$rel"; } >/dev/null 2>&1; then
+			shell::logger::error "Could not create '$rel' in the destination"
+			_shell::git::isolate::session::revert
+			rm -f "$stats" "$patch" "$content"
+			return "$RETURN_FAILURE"
+		fi
+	elif ! out="$(_shell::git::isolate::session::wt apply --unidiff-zero --index --check "$patch" 2>&1)" ||
+		! out="$(_shell::git::isolate::session::wt apply --unidiff-zero --index "$patch" 2>&1)"; then
+		shell::logger::error "The selected lines do not apply cleanly (conflict): $out"
+		_shell::git::isolate::session::revert
+		rm -f "$stats" "$patch" "$content"
+		return "$RETURN_FAILURE"
+	fi
+	rm -f "$stats" "$patch" "$content"
+	_shell::git::isolate::session::commit "isolate: pick lines ${ranges} of ${rel} from $_SHELL_GIT_ISOLATE_S_SRC (${sha:0:7})" || return $?
+	shell::logger::success "Applied lines ${ranges} of ${rel}"
+	return "$RETURN_SUCCESS"
+}
+
+# @internal
+# @description Switch Source Branch: pick another source. Only the session's source reference changes;
+#   the destination branch, the worktree and everything already applied are kept.
+# @exitcode 0 Switched.
+# @exitcode 9 The user cancelled or went back (the source is unchanged).
+# @example
+#   _shell::git::isolate::session::act::switch
+#
+_shell::git::isolate::session::act::switch() {
+	local picked rc sha
+	picked="$(_shell::git::isolate::fzf::branch "Source branch: ")"
+	rc=$?
+	[ "$rc" -ne 0 ] && return "$RETURN_CANCELLED"
+	if ! sha="$(_shell::git::isolate::resolve "$picked")"; then
+		shell::logger::error "Source '$picked' could not be resolved; the source is unchanged"
+		return "$RETURN_NOT_FOUND"
+	fi
+	_SHELL_GIT_ISOLATE_S_SRC="$picked"
+	_SHELL_GIT_ISOLATE_S_SRCSHA="$sha"
+	shell::logger::info "Source branch is now '$picked' (${sha:0:7}); the destination and its changes are untouched"
+	return "$RETURN_SUCCESS"
+}
+
+# @internal
+# @description The persistent action loop: Pick Files / Pick Commit / Pick Lines / Switch Source Branch /
+#   Back. An action ending in success, cancellation, "nothing to do" or a recoverable failure returns to
+#   the menu; only Back, ESC, an unavailable destination or a changed original state end the loop.
+# @exitcode 0 Left with ESC.
+# @exitcode 1 The session is no longer safe.
+# @exitcode 11 Left with Back.
+# @example
+#   _shell::git::isolate::session::loop
+#
+_shell::git::isolate::session::loop() {
+	local action rc init=""
+	while true; do
+		if ! _shell::git::isolate::session::alive; then
+			_SHELL_GIT_ISOLATE_S_UNSAFE=1
+			shell::logger::error "The isolated worktree '$_SHELL_GIT_ISOLATE_S_DIR' is no longer available (or no longer on '$_SHELL_GIT_ISOLATE_S_BRANCH'); ending the session"
+			return "$RETURN_FAILURE"
+		fi
+		action="$(_shell::git::isolate::fzf::menu "$init")"
+		rc=$?
+		case "$rc" in
+		0) ;;
+		"$RETURN_BACK") return "$RETURN_BACK" ;;
+		*) return "$RETURN_SUCCESS" ;;
+		esac
+		init="$action"
+		case "$action" in
+		files) _shell::git::isolate::session::act::files ;;
+		commit) _shell::git::isolate::session::act::commit ;;
+		lines) _shell::git::isolate::session::act::lines ;;
+		switch) _shell::git::isolate::session::act::switch ;;
+		esac
+		# Every outcome (applied, cancelled, nothing to do, failed and reverted) returns to the menu.
+		_shell::git::isolate::session::verify || return "$RETURN_FAILURE"
+	done
+}
+
+# @description Persistent interactive session: take commits, files and lines of other branches into ONE
+#   isolated branch and worktree, as many times as you like, without touching your checkout.
+#
+#   1. Pick the source branch (local and remote; the current one is marked; log preview).
+#   2. Pick the target strategy, once:
+#        - Apply to the current branch (isolated copy): a new branch at the current HEAD;
+#        - Create a new branch from a parent branch: pick the parent, then a name (empty = generated).
+#      Exactly one branch and one linked worktree (outside the working tree, under SHELL_GIT_ISOLATE_DIR)
+#      are created; the strategy cannot change during the session.
+#   3. The action menu stays open: Pick Files, Pick Commit, Pick Lines, Switch Source Branch, Back.
+#      Each action previews, asks for confirmation, applies inside the worktree and commits there (one
+#      commit per action, so a failed action is reverted without losing earlier ones), then returns to
+#      the menu. Cancelling a picker or a failing action returns to the menu too.
+#   4. Back or ESC leaves. The branch and worktree are KEPT (a summary shows where); only a session that
+#      applied nothing offers to remove its empty worktree, and only after an explicit yes.
+#
+#   The original repository is never written: every write is `git -C <worktree>`. Its HEAD, branch, refs,
+#   index, tracked / modified / untracked file contents, stash and other worktrees are fingerprinted before
+#   the session, after every action and at the end; a difference stops the session.
+# @option -n | --dry-run Optional. Choose source and strategy, print the worktree command, create nothing.
+# @option -h | --help Show this help message.
+# @exitcode 0 The session ended (ESC, or a dry run).
+# @exitcode 1 Not a repository, the worktree could not be created, or the session stopped for safety.
+# @exitcode 2 Unknown option.
+# @exitcode 7 The chosen branch or directory already exists.
+# @exitcode 11 The user went Back.
+# @see shell::git::isolate::commit
+# @see shell::git::isolate::file
+# @see shell::git::isolate::lines
+# @example
+#   shell::git::isolate
+#   shell::git::isolate -n
+#
+shell::git::isolate() {
+	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+		shell::logger::reset_options
+		shell::logger::info "Persistent session: pick files, commits and lines of other branches into one isolated branch and worktree"
+		shell::logger::usage "shell::git::isolate [-n] [-h]"
+		shell::logger::option "-n, --dry-run" "Print the worktree command and stop (nothing is created)"
+		shell::logger::option "-h, --help" "Display this help message"
+		shell::logger::note "Your checkout is never written. The action menu stays open until Back or ESC; the branch and worktree are kept on exit."
+		shell::logger::example "shell::git::isolate"
+		return "$RETURN_SUCCESS"
+	fi
+
+	local dry_run="false"
+	if [ "${1-}" = "-n" ] || [ "${1-}" = "--dry-run" ]; then
+		dry_run="true"
+		shift
+	fi
+	if [ "$#" -gt 0 ]; then
+		shell::logger::error "Unknown argument: $1"
+		return "$RETURN_INVALID"
+	fi
+
+	_shell::git::isolate::guard || return $?
+	shell::dependency::fzf::ensure
+
+	_SHELL_GIT_ISOLATE_S_TOP="$(git rev-parse --show-toplevel)"
+	_SHELL_GIT_ISOLATE_S_BEFORE="$(_shell::git::isolate::fingerprint "$_SHELL_GIT_ISOLATE_S_TOP")"
+	_SHELL_GIT_ISOLATE_S_BRANCH=""
+	_SHELL_GIT_ISOLATE_S_DIR=""
+	_SHELL_GIT_ISOLATE_S_SRC=""
+	_SHELL_GIT_ISOLATE_S_SRCSHA=""
+	_SHELL_GIT_ISOLATE_S_STRATEGY=""
+	_SHELL_GIT_ISOLATE_S_PARENT=""
+	_SHELL_GIT_ISOLATE_S_START=""
+	_SHELL_GIT_ISOLATE_S_BRANCH_OPT=""
+	_SHELL_GIT_ISOLATE_S_LABEL=""
+	_SHELL_GIT_ISOLATE_S_APPLIED=0
+	_SHELL_GIT_ISOLATE_S_UNSAFE=0
+
+	local rc final
+	_shell::git::isolate::session::choose
+	rc=$?
+	if [ "$rc" -eq "$RETURN_BACK" ]; then
+		shell::logger::info "Back — nothing was changed"
+		return "$RETURN_BACK"
+	fi
+	if [ "$rc" -ne 0 ]; then
+		shell::logger::info "Closed"
+		return "$RETURN_SUCCESS"
+	fi
+
+	_shell::git::isolate::open session "$_SHELL_GIT_ISOLATE_S_LABEL" "$_SHELL_GIT_ISOLATE_S_BRANCH_OPT" "" "$dry_run" "$_SHELL_GIT_ISOLATE_S_START" || return $?
+	_SHELL_GIT_ISOLATE_S_BRANCH="$_SHELL_GIT_ISOLATE_WT_BRANCH"
+	_SHELL_GIT_ISOLATE_S_DIR="$_SHELL_GIT_ISOLATE_WT_DIR"
+	if [ "$dry_run" = "true" ]; then
+		shell::logger::info "Dry run: no session was started"
+		return "$RETURN_SUCCESS"
+	fi
+	if ! _shell::git::isolate::session::verify; then
+		_shell::git::isolate::rollback "$_SHELL_GIT_ISOLATE_S_BRANCH" "$_SHELL_GIT_ISOLATE_S_DIR"
+		return "$RETURN_FAILURE"
+	fi
+	shell::logger::success "Isolated destination ready: branch '$_SHELL_GIT_ISOLATE_S_BRANCH' in $_SHELL_GIT_ISOLATE_S_DIR"
+	shell::logger::info "Source '$_SHELL_GIT_ISOLATE_S_SRC'; base ${_SHELL_GIT_ISOLATE_S_START:0:7}${_SHELL_GIT_ISOLATE_S_PARENT:+ (from '$_SHELL_GIT_ISOLATE_S_PARENT')}"
+
+	_shell::git::isolate::session::loop
+	rc=$?
+	final=0
+	_shell::git::isolate::session::verify || final=1
+
+	if [ "$_SHELL_GIT_ISOLATE_S_UNSAFE" -ne 1 ]; then
+		shell::logger::info "Session summary: ${_SHELL_GIT_ISOLATE_S_APPLIED} action(s) applied"
+	fi
+	shell::logger::info "Destination branch: $_SHELL_GIT_ISOLATE_S_BRANCH"
+	shell::logger::info "Worktree: $_SHELL_GIT_ISOLATE_S_DIR"
+	if [ "$_SHELL_GIT_ISOLATE_S_APPLIED" -eq 0 ] && [ "$_SHELL_GIT_ISOLATE_S_UNSAFE" -ne 1 ] && _shell::git::isolate::session::alive; then
+		if shell::ask::accept "Nothing was applied. Remove the empty worktree and branch '$_SHELL_GIT_ISOLATE_S_BRANCH'?"; then
+			_shell::git::isolate::rollback "$_SHELL_GIT_ISOLATE_S_BRANCH" "$_SHELL_GIT_ISOLATE_S_DIR"
+			shell::logger::info "Removed the empty worktree and branch"
+			[ "$final" -eq 0 ] && return "$rc"
+			return "$RETURN_FAILURE"
+		fi
+	fi
+	shell::logger::command "cd $(printf '%q' "$_SHELL_GIT_ISOLATE_S_DIR")"
+	shell::logger::info "Your checkout was left untouched. Remove later with: git worktree remove $(printf '%q' "$_SHELL_GIT_ISOLATE_S_DIR")"
+	[ "$final" -ne 0 ] && return "$RETURN_FAILURE"
 	return "$rc"
 }

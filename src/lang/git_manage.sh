@@ -182,7 +182,7 @@ _shell::git::manage::loop() {
 		diff) actions=(working staged "pick commit") ;;
 		config) actions=(browse) ;;
 		patch) actions=(apply) ;;
-		isolate) actions=("commit / file / lines from another branch") ;;
+		isolate) actions=("persistent session: files / commit / lines from another branch") ;;
 		*) actions=() ;;
 		esac
 
@@ -221,7 +221,7 @@ _shell::git::manage::loop() {
 		"diff:pick commit") shell::git::diff::fzf --pick ${flag[@]+"${flag[@]}"} || true ;;
 		config:browse) shell::git::config::fzf ${flag[@]+"${flag[@]}"} || true ;;
 		patch:apply) shell::git::patch::apply::fzf ${flag[@]+"${flag[@]}"} || true ;;
-		isolate:*) shell::git::isolate::fzf ${flag[@]+"${flag[@]}"} || true ;;
+		isolate:*) shell::git::isolate ${flag[@]+"${flag[@]}"} || true ;;
 		*) shell::logger::error "Invalid action." ;;
 		esac
 	done
