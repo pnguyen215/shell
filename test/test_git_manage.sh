@@ -43,7 +43,7 @@ git -c user.name=t -c user.email=t@t commit -q --allow-empty -m init
 t_eq "ESC at the area list closes" "0" "$(run "" shell::git::manage::fzf)"
 t_eq "Back at the area list returns 11" "11" "$(run "$B" shell::git::manage::fzf)"
 
-printf 'branch\ncommit\ntag\nstash\ndiff\nconfig\npatch\n%s\n' "$B" >"$HOME/want"
+printf 'branch\ncommit\ntag\nstash\ndiff\nconfig\npatch\nisolate\n%s\n' "$B" >"$HOME/want"
 run "" shell::git::manage::fzf >/dev/null
 t_eq "area list" "$(cat "$HOME/want")" "$(cut -f1 "$FAKE_FZF_DIR/stdin.1")"
 

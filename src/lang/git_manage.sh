@@ -4,7 +4,7 @@
 
 # @description Live hub for Git: pick an area, run an action, come back to the list (loop).
 #
-#   Lists the Git areas of the current repository (branch, commit, tag, stash, diff, config, patch)
+#   Lists the Git areas of the current repository (branch, commit, tag, stash, diff, config, patch, isolate)
 #   with a live preview on the right (current branch, upstream, ahead/behind, working tree counts,
 #   recent commits, tags and stashes). Enter opens an action menu for that area; every action is an
 #   existing fzf workflow (shell::git::branch::merge::fzf, shell::git::diff::fzf, ...). When an action
@@ -121,6 +121,7 @@ _shell::git::manage::previews() {
 	} >"$out/git.config"
 
 	printf 'Create patches from commits, or apply a directory of .patch files.\n\nBranch    %s\n' "${branch:-?}" >"$out/git.patch"
+	printf 'Retrieve a commit, files or lines of another branch into a NEW branch in an isolated worktree.\nYour checkout is never touched.\n\nBranch    %s\n' "${branch:-?}" >"$out/git.isolate"
 	printf 'Go back without changing anything\n' >"$out/git.@back"
 }
 
@@ -152,6 +153,7 @@ _shell::git::manage::loop() {
 			printf '%s\t%s\n' "diff" "diff"
 			printf '%s\t%s\n' "config" "config"
 			printf '%s\t%s\n' "patch" "patch"
+			printf '%s\t%s\n' "isolate" "isolate"
 			printf '%s\t%s\n' "$back" "@back"
 		} | shell::fzf::select ${init[@]+"${init[@]}"} \
 			--prompt="Git: " \
@@ -180,6 +182,7 @@ _shell::git::manage::loop() {
 		diff) actions=(working staged "pick commit") ;;
 		config) actions=(browse) ;;
 		patch) actions=(apply) ;;
+		isolate) actions=("commit / file / lines from another branch") ;;
 		*) actions=() ;;
 		esac
 
@@ -218,6 +221,7 @@ _shell::git::manage::loop() {
 		"diff:pick commit") shell::git::diff::fzf --pick ${flag[@]+"${flag[@]}"} || true ;;
 		config:browse) shell::git::config::fzf ${flag[@]+"${flag[@]}"} || true ;;
 		patch:apply) shell::git::patch::apply::fzf ${flag[@]+"${flag[@]}"} || true ;;
+		isolate:*) shell::git::isolate::fzf ${flag[@]+"${flag[@]}"} || true ;;
 		*) shell::logger::error "Invalid action." ;;
 		esac
 	done
