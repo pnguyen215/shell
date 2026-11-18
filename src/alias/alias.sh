@@ -152,9 +152,11 @@ alias sgstshpreview-n="shell::git::branch::stash::preview::fzf -n"
 alias sgmanage="shell::git::manage::fzf"
 alias sgmanage-n="shell::git::manage::fzf -n"
 
-# shell::git::isolate::fzf
-alias sgisof="shell::git::isolate::fzf"
-alias sgisof-n="shell::git::isolate::fzf -n"
+# shell::git::isolate
+alias sgiso="shell::git::isolate"
+alias sgiso-n="shell::git::isolate -n"
+alias sgisof="shell::git::isolate"
+alias sgisof-n="shell::git::isolate -n"
 
 # shell::git::diff::fzf
 alias sgdiff="shell::git::diff::fzf"
