@@ -2,12 +2,12 @@
 
 `shell::git::isolate::*` retrieves **a commit, whole files, or only chosen lines** of another branch into a **new branch in a new `git worktree`**. Your current checkout is never switched, reset, cleaned, merged, rebased or stashed: the branch, `HEAD`, staged changes, unstaged changes and untracked files stay exactly as they are.
 
-| Function                                      | Alias    | What it does                                                                |
-| --------------------------------------------- | -------- | --------------------------------------------------------------------------- |
-| `shell::git::isolate::fzf [-n]`               | `sgisof` | Interactive: mode → source branch → commit / files / lines → preview → confirm |
-| `shell::git::isolate::commit <commit>`        |          | New branch **at that commit**                                               |
-| `shell::git::isolate::file <source> <path>…`  |          | New branch at the current `HEAD`, with the files copied from `<source>`     |
-| `shell::git::isolate::lines <source> <path> <lines>` |   | New branch at the current `HEAD`, with only those source lines applied as a patch |
+| Function                                             | Alias    | What it does                                                                      |
+| ---------------------------------------------------- | -------- | --------------------------------------------------------------------------------- |
+| `shell::git::isolate::fzf [-n]`                      | `sgisof` | Interactive: mode → source branch → commit / files / lines → preview → confirm    |
+| `shell::git::isolate::commit <commit>`               |          | New branch **at that commit**                                                     |
+| `shell::git::isolate::file <source> <path>…`         |          | New branch at the current `HEAD`, with the files copied from `<source>`           |
+| `shell::git::isolate::lines <source> <path> <lines>` |          | New branch at the current `HEAD`, with only those source lines applied as a patch |
 
 All three accept `-n/--dry-run` (print the git commands, create nothing), `-p/--preview` (show the diff, create nothing), `-b/--branch <name>` and `-d/--dir <path>`. `file` also accepts `-o/--overwrite`.
 
