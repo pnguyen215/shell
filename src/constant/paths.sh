@@ -16,12 +16,14 @@
 #     ├── git/
 #     │   ├── git-commit-messages.txt       installed copy of src/data/ (see git::commit::message::sync)
 #     │   └── git-commit-messages.user.txt  your own commit message templates (never overwritten)
+#     ├── git-isolate/        linked worktrees made by shell::git::isolate::* (one folder per repository)
 #     └── workspace/          one INI file per workspace
 
 : "${SHELL_CONFIG_DIR:=$HOME/.shell-config}"
 SHELL_CONFIG_BACKUP_DIR="$SHELL_CONFIG_DIR/backup"
 SHELL_WORKSPACE_DIR="$SHELL_CONFIG_DIR/workspace"
 SHELL_BOOKMARK_DIR="$SHELL_CONFIG_DIR/bookmarks"
+: "${SHELL_GIT_ISOLATE_DIR:=$SHELL_CONFIG_DIR/git-isolate}"
 
 # Key/value store (values are Base64 encoded, newlines stripped).
 SHELL_KEY_FILE="$SHELL_CONFIG_DIR/key.conf"

@@ -108,6 +108,7 @@ shell::goto::run webapp                  # jump back to it later
 shell::conf::key::add API_KEY "s3cr3t"   # store a key (Base64, written with mode 600)
 shell::conf::key::get API_KEY
 shell::git::manage::fzf                  # live Git hub: branch, commit, tag, stash, diff, config, patch (loops back to the list)
+shell::git::isolate::fzf                 # take a commit / files / lines of another branch into a NEW branch in an isolated worktree (docs/features/git-isolate.md)
 shell::prompt::manage::fzf               # your AI prompt library: add, preview, edit, copy, history (docs/features/prompt.md)
 shell::prompt::skills::browse::fzf       # browse / install / update shared prompts from github.com/pnguyen215/skills (docs/features/prompt.md#prompt-skills-sync)
 shell::git::branch::create -n feature_x # -n = dry run: print commands without executing
@@ -180,7 +181,7 @@ The only exceptions are the four lifecycle functions in [`src/shell.sh`](src/she
 ├── Makefile                               # make test | lint | fmt | docs | doctor
 ├── docs/
 │   ├── development/                       # architecture, conventions
-│   ├── features/                          # git-commit-messages, git-history, homebrew, nvm, prompt, rsync, security, ssh
+│   ├── features/                          # git-commit-messages, git-history, git-isolate, homebrew, nvm, prompt, rsync, security, ssh
 │   └── api/                               # generated reference (make docs)
 ├── scripts/                               # lint.sh, gen_docs.sh
 ├── test/                                  # run under bash and zsh
