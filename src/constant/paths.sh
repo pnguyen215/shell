@@ -58,6 +58,11 @@ SHELL_GIT_COMMIT_MESSAGES_INSTALLED="$SHELL_CONFIG_DIR/git/git-commit-messages.t
 : "${SHELL_GIT_COMMIT_MESSAGES_FILE:=$SHELL_GIT_COMMIT_MESSAGES_INSTALLED}"
 : "${SHELL_GIT_COMMIT_MESSAGES_USER_FILE:=$SHELL_CONFIG_DIR/git/git-commit-messages.user.txt}"
 
+# Function discovery (src/lib/function.sh): the awk programs that read the shdoc blocks of the source tree, and the explorer's preview script.
+SHELL_FUNCTION_CATALOG_AWK="$SHELL_SRC_DIR/data/function-catalog.awk"
+SHELL_FUNCTION_DOC_AWK="$SHELL_SRC_DIR/data/function-doc.awk"
+SHELL_FUNCTION_PREVIEW_SH="$SHELL_SRC_DIR/data/function-preview.sh"
+
 # Prompt store (shell::prompt::*): one Markdown file per prompt.
 #   DIR            global store, available from any directory (dirs 700, files 600).
 #   LOCAL_NAME     name of the optional per-project store, looked up in the current directory.

@@ -17,7 +17,8 @@ A file that fails to load is reported on stderr and counted in `SHELL_LOAD_ERROR
 constant   data only; no functions
 core       console → logger → os/command → exec → clipboard → fzf → ask
 dependency package manager, ensure(), one file per tool, Homebrew, Oh My Zsh
-lib        fs, net, process, permission, strings, conf, ini, profile, bookmark, goto, ssh, workspace
+lib        fs, net, process, permission, strings, conf, ini, profile, bookmark, goto, ssh, workspace,
+           function (discovery of the library's own functions)
 markdown   Markdown / Telegram MarkdownV2 / plain-text document builder (no dependencies besides core)
 skill      agent-skills installer (install, upgrade, uninstall, sync, list), built on lib/net;
            audit.sh links Cloudflare's security-audit skill from a managed git clone
@@ -27,6 +28,24 @@ alias      aliases onto documented functions
 ```
 
 `core/logger.sh` is the contract for output: DEBUG/WARN/ERROR/FATAL on **stderr**, INFO/success on **stdout**; the same module renders every `-h` help block.
+
+## Function discovery
+
+`shell::help` (and `shell::function::{list,info,explore}`, in `src/lib/function.sh`) answer "what functions exist and how do I use them". One mechanism feeds all of them: the shdoc block that `make lint` already requires above every function. Nothing is registered by hand.
+
+```
+src/**/*.sh --> data/function-catalog.awk --> _shell::function::catalog --> _shell::function::select
+                  (+ names loaded in the shell)    (8-field records)              |
+                                                       list (text) | info (one page) | explore (fzf) -> shell::help, sfn
+                                                                      info + preview: data/function-doc.awk, data/function-preview.sh
+```
+
+- **Discovery and metadata** live in one place, `data/function-catalog.awk`; the rule it applies (a column-0 `shell::`/`_shell::` definition, documented by the `#` block directly above) is the one the lint checks enforce.
+- **Public vs internal** is the `_shell::` prefix; **loaded** is what the current shell reports (`declare -F` in bash, `typeset +f` in zsh, asked in `_shell::function::loaded` only).
+- `list`, `info` and `explore` are interfaces over the same `_shell::function::catalog` / `_shell::function::select`; do not add a second function list.
+- To add a function to the system, write it with its shdoc block; to extend what is known about functions, extend the catalog record. Details: [function-discovery.md](../features/function-discovery.md).
+
+`src/data/` holds files that are read, not sourced (commit message templates, the function-discovery awk programs and preview script); the loader never sources it.
 
 ## Where data lives
 
