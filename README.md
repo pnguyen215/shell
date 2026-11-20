@@ -107,6 +107,8 @@ shell::bookmark::add webapp              # remember the current directory
 shell::goto::run webapp                  # jump back to it later
 shell::conf::key::add API_KEY "s3cr3t"   # store a key (Base64, written with mode 600)
 shell::conf::key::get API_KEY
+shell::help                              # explore every shell:: function: namespaces, search, documentation, run / copy (docs/features/function-discovery.md; alias sfn)
+shell::function::list git                # the same catalog as plain text; shell::function::info fs::browse shows one function's usage
 shell::git::manage::fzf                  # live Git hub: branch, commit, tag, stash, diff, config, patch (loops back to the list)
 shell::git::isolate                      # persistent session: pick files / commits / lines of other branches into ONE isolated branch + worktree (docs/features/git-isolate.md)
 shell::prompt::manage::fzf               # your AI prompt library: add, preview, edit, copy, history (docs/features/prompt.md)

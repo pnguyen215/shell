@@ -178,3 +178,22 @@ shell::uninstall() {
 	SHELL_DIR="$SHELL_DIR" bash "$script" "$@"
 }
 
+# @description Find your way around the library: explore every `shell::` function.
+#   The short entry point of the function discovery system (see shell::function::explore). On a terminal
+#   with fzf it opens the interactive explorer (namespaces, search, description preview, run / copy);
+#   otherwise it prints the plain list. The arguments are those of shell::function::explore: a
+#   namespace (`git`) or search words.
+# @option -h | --help Show help and return.
+# @arg $@ string Optional namespace or search words.
+# @exitcode 0 Success.
+# @see shell::function::explore
+# @see shell::function::list
+# @see shell::function::info
+# @example
+#   shell::help
+#   shell::help git
+#   shell::help pick commit
+#
+shell::help() {
+	shell::function::explore "$@"
+}

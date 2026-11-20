@@ -88,6 +88,8 @@ shell::category::verb() {
 }
 ```
 
+The shdoc block is also the metadata of the function discovery system (`shell::help`, `shell::function::list`/`info`): the block must be the `#` lines **directly above** `name() {` (a blank line detaches it), and the first line of `@description` must be a complete sentence that makes sense on its own, because it is the summary shown in lists and search. Nothing else needs registering.
+
 shdoc notes: put `@example` **last** and end the block with a lone `#` (an example swallows following lines until a blank comment line); `@option` takes at most two flag forms joined by `|`.
 
 ## 4. Rules

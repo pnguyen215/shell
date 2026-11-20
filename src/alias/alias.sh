@@ -11,6 +11,9 @@
 
 alias sve="shell::version"
 alias sup="shell::upgrade"
+alias sfn="shell::function::explore" # explore the shell:: functions (fzf; plain list without it)
+alias sfl="shell::function::list"    # list the shell:: functions
+alias sfi="shell::function::info"    # show how to use one function
 alias sac="shell::conf::key::add"
 alias sgc="shell::conf::key::get::fzf"
 alias snv="shell::bookmark::list::up::fzf"             # list bookmarks with fzf

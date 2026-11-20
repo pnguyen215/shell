@@ -8,6 +8,7 @@
 
 ## features/
 
+- [function-discovery.md](features/function-discovery.md) — `shell::help`, `shell::function::{list,info,explore}`: find, read and run any `shell::` function
 - [git-commit-messages.md](features/git-commit-messages.md) — Conventional Commits, `create` and `predict`
 - [git-history.md](features/git-history.md) — history explorer for files, functions and line ranges
 - [git-pick.md](features/git-pick.md) — `shell::git::commit::pick::fzf`: pick the source branch, then commits or only some of their files, with state kept between screens
