@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# The fzf group: fzf, ::local, ::remote, ::branch, ::current, ::range, ::backport, ::conflicts,
+# The fzf group: fzf (the guided workflow and --all), ::local, ::remote, ::branch, ::current, ::range, ::backport, ::conflicts,
 # ::continue, ::skip, ::abort. fzf is faked: each call outputs the stdin lines that match the
 # scripted picks (exact line first, then substring), and records what it was given.
 . "$SHELL_TEST_ROOT/test/lib.sh"
@@ -19,19 +19,38 @@ cat >"$FAKE_FZF_DIR/stdin.$n"
 printf '%s\n' "$@" >"$FAKE_FZF_DIR/args.$n"
 rec="$(printf '%s\n' "$FAKE_FZF_PICKS" | awk -v n="$n" 'BEGIN { c = 1 } /^---$/ { c++; next } c == n { print }')"
 [ -z "$rec" ] && exit 130
-printf '%s\n' "$rec" | while IFS= read -r want; do
+# Control lines of a record: @query=<text> is what the user typed; @switch is Ctrl-T (the picker's own
+# binding saves its state, then aborts); @pos=<n> is the cursor row (the focus binding's job).
+query="$(printf '%s\n' "$rec" | sed -n 's/^@query=//p' | head -n 1)"
+want_rows="$(printf '%s\n' "$rec" | grep -v '^@')"
+pq=""
+for a in "$@"; do [ "$a" = "--print-query" ] && pq=1; done
+# Rows are matched on their visible text (colours stripped), exact line first, then substring; the
+# original line (with its hidden id column) is what comes back.
+sed "$(printf 's/\033\\[[0-9;]*[A-Za-z]//g')" "$FAKE_FZF_DIR/stdin.$n" >"$FAKE_FZF_DIR/plain.$n"
+found="$(printf '%s\n' "$want_rows" | while IFS= read -r want; do
 	[ -z "$want" ] && continue
-	line="$(grep -F -x -- "$want" "$FAKE_FZF_DIR/stdin.$n" | head -n 1)"
-	[ -z "$line" ] && line="$(grep -F -- "$want" "$FAKE_FZF_DIR/stdin.$n" | head -n 1)"
-	[ -n "$line" ] && printf '%s\n' "$line"
-done
+	ln="$(grep -n -F -x -- "$want" "$FAKE_FZF_DIR/plain.$n" | head -n 1 | cut -d: -f1)"
+	[ -z "$ln" ] && ln="$(grep -n -F -- "$want" "$FAKE_FZF_DIR/plain.$n" | head -n 1 | cut -d: -f1)"
+	[ -n "$ln" ] && sed -n "${ln}p" "$FAKE_FZF_DIR/stdin.$n"
+done)"
+pos="$(printf '%s\n' "$rec" | sed -n 's/^@pos=//p' | head -n 1)"
+if [ -n "$pos" ] && [ -n "${SHELL_GIT_PICK_STATE-}" ]; then printf '%s' "$pos" >"$SHELL_GIT_PICK_STATE.pos"; fi
+if printf '%s\n' "$rec" | grep -qx '@switch'; then
+	printf '%s' "$query" >"$SHELL_GIT_PICK_STATE.query"
+	printf '%s\n' "$found" | cut -f1 | sed '/^$/d' >"$SHELL_GIT_PICK_STATE.sel"
+	: >"$SHELL_GIT_PICK_STATE.sw"
+	exit 130
+fi
+[ -n "$pq" ] && printf '%s\n' "$query"
+[ -n "$found" ] && printf '%s\n' "$found"
 exit 0
 FAKE
 chmod +x "$HOME/bin/fzf"
 export PATH="$HOME/bin:$PATH" FAKE_FZF_DIR="$HOME" FAKE_FZF_STATE="$HOME/fzf.count" FAKE_FZF_PICKS=""
 
 reset_fzf() {
-	find "$HOME" -maxdepth 1 \( -name 'stdin.*' -o -name 'args.*' \) -delete
+	find "$HOME" -maxdepth 1 \( -name 'stdin.*' -o -name 'args.*' -o -name 'plain.*' \) -delete
 	rm -f "$FAKE_FZF_STATE"
 }
 nl='
@@ -94,7 +113,7 @@ fresh() {
 
 # =============================== fzf (all refs) ==========================================
 fresh
-out="$(run "$(picks "f2: add b${nl}f1: add a" "Cherry-pick")" shell::git::commit::pick::fzf)"
+out="$(run "$(picks "f2: add b${nl}f1: add a" "Cherry-pick")" shell::git::commit::pick::fzf --all)"
 t_has "fzf: exit 0" "RC=0" "$out"
 t_eq "fzf: applied oldest first, whatever the marking order (1)" "f1: add a" "$(subject HEAD~1)"
 t_eq "fzf: ...(2)" "f2: add b" "$(subject)"
@@ -114,47 +133,47 @@ t_eq "fzf: the action menu" "Cherry-pick${nl}Cherry-pick with reference (-x)${nl
 t_has "fzf: shows the plan" "2 commit(s) selected, oldest first" "$out"
 
 fresh
-out="$(run "$(picks "f2: add b" "Cherry-pick with reference (-x)")" shell::git::commit::pick::fzf)"
+out="$(run "$(picks "f2: add b" "Cherry-pick with reference (-x)")" shell::git::commit::pick::fzf --all)"
 t_has "fzf: with reference" "(cherry picked from commit $F2)" "$(git log -1 --format=%B)"
 fresh
-out="$(run "$(picks "f2: add b" "Apply without committing (--no-commit)")" shell::git::commit::pick::fzf)"
+out="$(run "$(picks "f2: add b" "Apply without committing (--no-commit)")" shell::git::commit::pick::fzf --all)"
 t_eq "fzf: --no-commit leaves HEAD" "$M1" "$(git rev-parse HEAD)"
 t_has "fzf: ...and stages" "A  b" "$(git status --short)"
 
 fresh
-out="$(run "$(picks "f1: add a" "Preview only" "Cherry-pick")" shell::git::commit::pick::fzf)"
+out="$(run "$(picks "f1: add a" "Preview only" "Cherry-pick")" shell::git::commit::pick::fzf --all)"
 t_has "fzf: Preview only shows the commit" "diff --git a/a b/a" "$out"
 t_eq "fzf: ...then the menu comes back" "5" "$(lines "$HOME/stdin.3")"
 t_eq "fzf: ...and the commit can still be applied" "f1: add a" "$(subject)"
 t_has "fzf: ...exit 0" "RC=0" "$out"
 
 fresh
-out="$(run "$(picks "f1: add a" "$B" "f2: add b" "Cherry-pick")" shell::git::commit::pick::fzf)"
+out="$(run "$(picks "f1: add a" "$B" "f2: add b" "Cherry-pick")" shell::git::commit::pick::fzf --all)"
 t_eq "fzf: Back returns to the list" "7" "$(lines "$HOME/stdin.3")"
 t_eq "fzf: ...and the second choice is what is applied" "f2: add b" "$(subject)"
 t_eq "fzf: ...f1 was not" "$M1" "$(git rev-parse HEAD~1)"
 
 fresh
-out="$(run "" shell::git::commit::pick::fzf)"
+out="$(run "" shell::git::commit::pick::fzf --all)"
 t_has "fzf: ESC at the list cancels" "Cancelled" "$out"
 t_has "fzf: ...exit 1" "RC=1" "$out"
 t_eq "fzf: ...nothing applied" "$M1" "$(git rev-parse HEAD)"
-out="$(run "$(picks "f1: add a")" shell::git::commit::pick::fzf)"
+out="$(run "$(picks "f1: add a")" shell::git::commit::pick::fzf --all)"
 t_has "fzf: ESC at the menu cancels" "RC=1" "$out"
 t_eq "fzf: ...nothing applied" "$M1" "$(git rev-parse HEAD)"
-out="$(run "$(picks "no-such-text")" shell::git::commit::pick::fzf)"
+out="$(run "$(picks "no-such-text")" shell::git::commit::pick::fzf --all)"
 t_has "fzf: nothing matched = nothing selected" "RC=1" "$out"
 
 fresh
-out="$(run "$(picks "f1: add a${nl}f2: add b" "Cherry-pick")" shell::git::commit::pick::fzf -n)"
+out="$(run "$(picks "f1: add a${nl}f2: add b" "Cherry-pick")" shell::git::commit::pick::fzf --all -n)"
 t_has "fzf -n: prints the command" "git cherry-pick $F1 $F2" "$out"
 t_eq "fzf -n: applies nothing" "$M1" "$(git rev-parse HEAD)"
 t_has "fzf -n: exit 0" "RC=0" "$out"
 
 fresh
-run "" shell::git::commit::pick::fzf -c 2 >/dev/null
+run "" shell::git::commit::pick::fzf --all -c 2 >/dev/null
 t_eq "fzf -c 2: two candidates" "2" "$(lines "$HOME/stdin.1")"
-run "" shell::git::commit::pick::fzf --count=3 >/dev/null
+run "" shell::git::commit::pick::fzf --all --count=3 >/dev/null
 t_eq "fzf --count=3" "3" "$(lines "$HOME/stdin.1")"
 for bad in "-c 0" "-c abc" "-c" "--count=" "--bogus"; do
 	# shellcheck disable=SC2086
@@ -182,29 +201,29 @@ t_has "fzf --include-head: ...nothing applied (exit 1)" "RC=1" "$out"
 t_eq "fzf --include-head: ...nothing left in progress" "no" "$(busy)"
 
 fresh
-out="$(run "$(picks "f3: change f" "Cherry-pick")" shell::git::commit::pick::fzf)"
+out="$(run "$(picks "f3: change f" "Cherry-pick")" shell::git::commit::pick::fzf --all)"
 t_has "fzf: a conflict stops with exit 1" "RC=1" "$out"
 t_eq "fzf: ...leaving a cherry-pick in progress" "yes" "$(busy)"
-out="$(run "" shell::git::commit::pick::fzf)"
+out="$(run "" shell::git::commit::pick::fzf --all)"
 t_has "fzf: refused up front while one is in progress" "already in progress" "$out"
 t_eq "fzf: ...the list was not even shown" "0" "$(calls)"
 shell::git::commit::pick::abort >/dev/null 2>&1
 
 fresh
 echo staged >s2 && git add s2
-out="$(run "$(picks "f1: add a" "Cherry-pick")" shell::git::commit::pick::fzf)"
+out="$(run "$(picks "f1: add a" "Cherry-pick")" shell::git::commit::pick::fzf --all)"
 t_has "fzf: staged changes stop the plain cherry-pick" "staged changes" "$out"
 t_has "fzf: ...exit 1" "RC=1" "$out"
-out="$(run "$(picks "f1: add a" "Apply without committing (--no-commit)")" shell::git::commit::pick::fzf)"
+out="$(run "$(picks "f1: add a" "Apply without committing (--no-commit)")" shell::git::commit::pick::fzf --all)"
 t_has "fzf: ...but --no-commit is fine" "RC=0" "$out"
 
 cd "$HOME" && rm -rf one && mkdir one && cd one || exit 1
 git init -q && echo x >x && git add x && git commit -q -m "only"
-out="$(run "" shell::git::commit::pick::fzf)"
+out="$(run "" shell::git::commit::pick::fzf --all)"
 t_has "fzf: nothing to pick from" "No commits to pick from" "$out"
 t_has "fzf: ...exit 1" "RC=1" "$out"
 cd "$HOME" && rm -rf norepo && mkdir norepo && cd norepo || exit 1
-out="$(run "" shell::git::commit::pick::fzf)"
+out="$(run "" shell::git::commit::pick::fzf --all)"
 t_has "fzf: outside a repo" "Not inside a Git repository" "$out"
 t_rc "fzf -h" 0 shell::git::commit::pick::fzf -h
 
@@ -272,7 +291,7 @@ fresh
 git checkout -q --detach
 run "" shell::git::commit::pick::fzf::branch >/dev/null
 t_has "fzf::branch: on a detached HEAD, main is offered too" "main" "$(cat "$HOME/stdin.1")"
-t_eq "fzf::branch: ...and every other branch" "5" "$(lines "$HOME/stdin.1")"
+t_eq "fzf::branch: ...and every other branch (5, plus the back row)" "6" "$(lines "$HOME/stdin.1")"
 cd "$HOME/one" || exit 1
 out="$(run "" shell::git::commit::pick::fzf::branch)"
 t_has "fzf::branch: no other branch" "There is no other local branch" "$out"
@@ -593,5 +612,334 @@ t_eq "fzf::abort: ...no menu" "0" "$(calls)"
 out="$(run "" shell::git::commit::pick::fzf::abort --bogus)"
 t_has "fzf::abort: unknown option" "RC=2" "$out"
 t_rc "fzf::abort -h" 0 shell::git::commit::pick::fzf::abort -h
+
+# =============================== fzf (guided workflow: source -> mode -> picker -> action) =================
+# One repository with: a branch whose files are changed by several commits, special file names, a remote
+# branch only the remote has, a branch the remote has too (equal and diverged), and a branch with nothing to pick.
+ftpl="$HOME/ftpl"
+rm -rf "$HOME/forigin.git"
+git init -q --bare "$HOME/forigin.git"
+mkdir "$ftpl" && cd "$ftpl" || exit 1
+git init -q && git checkout -q -b main
+echo base >f && git add f && git commit -q -m "base"
+git checkout -q -b old
+git checkout -q -b feature main
+echo one >a && git add a && git commit -q -m "x1: add a"
+echo s1 >"sp ace.txt"
+printf 'tab\n' >"ta${tab}b.txt"
+printf 'nl\n' >"new${nl}line.txt"
+printf 'q\n' >'q"uote.txt'
+echo d >-dash.txt
+echo u >"ünï.txt"
+git add -A && git commit -q -m "x2: specials"
+echo two >>a && git add a && git commit -q -m "x3: a again"
+echo s2 >>"sp ace.txt" && git add -A && git commit -q -m "x4: touch sp"
+git checkout -q -b release/1.0 main
+echo r >rel && git add rel && git commit -q -m "r1: release"
+git checkout -q -b side main
+echo s >s && git add s && git commit -q -m "s1: only on side"
+git remote add origin "$HOME/forigin.git"
+git push -q origin feature release/1.0 side 2>/dev/null
+git fetch -q origin 2>/dev/null
+git checkout -q release/1.0
+git branch -q -D side
+echo r2 >rel2 && git add rel2 && git commit -q -m "r2: local only"
+git checkout -q main
+echo m >m && git add m && git commit -q -m "m1: on main"
+FM1="$(git rev-parse main)"
+X1="$(git rev-parse feature~3)"
+X2="$(git rev-parse feature~2)"
+X3="$(git rev-parse feature~1)"
+X4="$(git rev-parse feature)"
+fresh2() {
+	cd "$HOME" && rm -rf "$HOME/r" && cp -r "$ftpl" "$HOME/r" && cd "$HOME/r" || exit 1
+}
+staged() { git diff --cached --name-only -z | tr '\0' '|'; }
+head_is() { [ "$(git rev-parse HEAD)" = "$1" ] && echo same || echo moved; }
+args_of() { cat "$HOME/args.$1"; }
+rows_of() { cat "$HOME/stdin.$1"; }
+S="Pick by commit"
+F="Pick by files"
+APPLY_F="Apply to the working tree (staged, no commit)"
+
+# --- 3.1 source branch selection -------------------------------------------------------------------------
+fresh2
+out="$(run "$(picks "feature" "$S" "x1: add a" "Cherry-pick")" shell::git::commit::pick::fzf)"
+t_has "flow: exit 0" "RC=0" "$out"
+t_has "flow: local branch listed, once, marked as also on the remote" "[local]  feature (= origin)" "$(rows_of 1)"
+t_lacks "flow: ...its remote twin is not listed again (same commit)" "origin/feature" "$(rows_of 1)"
+t_has "flow: a remote-only branch is listed" "[remote] origin/side" "$(rows_of 1)"
+t_has "flow: a diverged local branch is listed..." "[local]  release/1.0  " "$(rows_of 1)"
+t_has "flow: ...and so is its remote twin" "[remote] origin/release/1.0" "$(rows_of 1)"
+t_lacks "flow: ...the diverged one is not marked equal" "release/1.0 (=" "$(rows_of 1)"
+t_lacks "flow: the current branch is not offered" "[local]  main" "$(rows_of 1)"
+t_lacks "flow: origin/HEAD is not offered" "origin/HEAD" "$(rows_of 1)"
+t_eq "flow: 5 branches (old, feature, release/1.0, origin/release/1.0, origin/side) and the back row" "6" "$(lines "$HOME/stdin.1")"
+t_eq "flow: the back row is last" "${B}${tab}@back" "$(tail -n 1 "$HOME/stdin.1")"
+t_eq "flow: the second column is the full ref" "refs/heads/feature" "$(grep -F 'feature (=' "$HOME/stdin.1" | cut -f2)"
+t_has "flow: the source preview is the branch's log" "git log --oneline --color=always -n 15" "$(args_of 1)"
+t_has "flow: ...on the right" "--preview-window=right:55%:wrap" "$(args_of 1)"
+t_eq "flow: then the mode menu" "Pick by commit${nl}Pick by files${nl}$B" "$(rows_of 2)"
+t_eq "flow: HEAD moved by exactly the pick" "x1: add a" "$(subject)"
+
+fresh2
+run "$(picks "[remote] origin/release/1.0" "$S")" shell::git::commit::pick::fzf >/dev/null
+t_eq "flow: a remote ref is listed from the remote, not from the same-named local branch (r1 only)" "1" "$(lines "$HOME/stdin.3")"
+run "$(picks "[local]  release/1.0" "$S")" shell::git::commit::pick::fzf >/dev/null
+t_eq "flow: ...the local one has its own extra commit (r1, r2)" "2" "$(lines "$HOME/stdin.3")"
+run "$(picks "[remote] origin/side" "$S")" shell::git::commit::pick::fzf >/dev/null
+t_has "flow: a remote-only branch resolves" "s1: only on side" "$(rows_of 3)"
+
+fresh2
+out="$(run "$(picks "$B")" shell::git::commit::pick::fzf)"
+t_has "flow: Back at the source list" "RC=11" "$out"
+t_eq "flow: ...nothing applied" "$FM1" "$(git rev-parse HEAD)"
+out="$(run "" shell::git::commit::pick::fzf)"
+t_has "flow: ESC at the source list" "Cancelled" "$out"
+t_has "flow: ...exit 1" "RC=1" "$out"
+out="$(run "$(picks "feature" "$B" "feature" "$S")" shell::git::commit::pick::fzf)"
+t_eq "flow: Back at the mode menu returns to the source list (shown twice)" "6" "$(lines "$HOME/stdin.3")"
+t_eq "flow: ...the source list is the same" "$(rows_of 1)" "$(rows_of 3)"
+t_has "flow: ...the cursor comes back on the branch chosen" "--bind=start:pos(" "$(args_of 3)"
+out="$(run "$(picks "feature")" shell::git::commit::pick::fzf)"
+t_has "flow: ESC at the mode menu" "RC=1" "$out"
+
+# an empty list of branches, a branch with nothing left to pick, a branch that vanished
+cd "$HOME/one" || exit 1
+out="$(run "" shell::git::commit::pick::fzf)"
+t_has "flow: no other branch" "There is no other branch to pick from" "$out"
+t_has "flow: ...exit 1" "RC=1" "$out"
+t_eq "flow: ...fzf never shown" "0" "$(calls)"
+fresh2
+out="$(run "$(picks "[local]  old")" shell::git::commit::pick::fzf)"
+t_has "flow: a branch with nothing to pick says so" "No commits to pick from 'old'" "$out"
+t_eq "flow: ...and the source list is shown again" "2" "$(calls)"
+orig_sources="$(declare -f _shell::git::commit::pick::fzf::sources 2>/dev/null || functions _shell::git::commit::pick::fzf::sources)"
+_shell::git::commit::pick::fzf::sources() { printf '[local]  ghost\trefs/heads/ghost\n'; }
+out="$(run "$(picks "ghost")" shell::git::commit::pick::fzf)"
+eval "$orig_sources"
+t_has "flow: a branch that is not there any more" "not available any more: 'refs/heads/ghost'" "$out"
+t_has "flow: ...exit 1" "RC=1" "$out"
+out="$(run "" shell::git::commit::pick::fzf --all feature)"
+t_has "flow: --all and a source" "cannot be combined" "$out"
+t_has "flow: ...exit 2" "RC=2" "$out"
+cd "$HOME/norepo" || exit 1
+out="$(run "" shell::git::commit::pick::fzf)"
+t_has "flow: outside a repository" "Not inside a Git repository" "$out"
+fresh2
+git cherry-pick -n "$X1" >/dev/null 2>&1
+git cherry-pick --quit >/dev/null 2>&1
+git reset -q --hard
+git checkout -q -b busy-branch
+git cherry-pick "$X3" >/dev/null 2>&1
+out="$(run "" shell::git::commit::pick::fzf)"
+t_has "flow: refused while a cherry-pick is in progress" "already in progress" "$out"
+t_eq "flow: ...before any list is shown" "0" "$(calls)"
+shell::git::commit::pick::abort >/dev/null 2>&1
+
+# --- 3.2 / 3.3 mode A: pick by commit ---------------------------------------------------------------------
+fresh2
+out="$(run "$(picks "feature" "$S" "x3: a again${nl}x1: add a" "Cherry-pick")" shell::git::commit::pick::fzf)"
+t_has "commit mode: exit 0" "RC=0" "$out"
+t_eq "commit mode: both applied, oldest first whatever the marking order" "x1: add a|x3: a again" "$(subject HEAD~1)|$(subject)"
+t_eq "commit mode: the list is the branch's commits not in HEAD (x1..x4)" "4" "$(lines "$HOME/stdin.3")"
+t_lacks "commit mode: ...none of main's" "m1: on main" "$(rows_of 3)"
+t_eq "commit mode: ...first column is the full hash" "40" "$(head -n 1 "$HOME/stdin.3" | cut -f1 | tr -d '\n' | wc -c | tr -d ' ')"
+t_has "commit mode: multi-select" "--multi" "$(args_of 3)"
+t_has "commit mode: Tab marks without moving the cursor" "--bind=tab:toggle" "$(args_of 3)"
+t_has "commit mode: ...Shift-Tab too" "--bind=btab:toggle" "$(args_of 3)"
+t_has "commit mode: the preview shows the highlighted commit" "--preview=git show --stat --patch --color=always {1} | head -n 300" "$(args_of 3)"
+t_has "commit mode: ...on the right" "--preview-window=right:55%:wrap" "$(args_of 3)"
+t_has "commit mode: the state is saved through the focus binding" "--bind=focus:execute-silent(" "$(args_of 3)"
+t_has "commit mode: Ctrl-T flips to the files" "--bind=ctrl-t:execute-silent(" "$(args_of 3)"
+t_has "commit mode: the query is read back" "--print-query" "$(args_of 3)"
+t_lacks "commit mode: first visit has nothing to restore" "--bind=start:" "$(args_of 3)"
+t_eq "commit mode: the action menu" "Cherry-pick${nl}Cherry-pick with reference (-x)${nl}Apply without committing (--no-commit)${nl}Preview only${nl}$B" "$(rows_of 4)"
+t_has "commit mode: the plan is shown" "2 commit(s) selected, oldest first" "$out"
+
+fresh2
+out="$(run "$(picks "feature" "$S" "x2: specials" "Cherry-pick")" shell::git::commit::pick::fzf)"
+t_eq "commit mode: one commit" "x2: specials" "$(subject)"
+t_eq "commit mode: ...with all its special files (f, m and six more)" "8" "$(git ls-files -z | tr -cd '\0' | wc -c | tr -d ' ')"
+fresh2
+out="$(run "$(picks "feature" "$S" "x4: touch sp" "Cherry-pick")" shell::git::commit::pick::fzf)"
+t_has "commit mode: a pick that cannot apply stops with exit 1" "RC=1" "$out"
+shell::git::commit::pick::abort >/dev/null 2>&1
+fresh2
+out="$(run "$(picks "feature" "$S" "x1: add a" "Cherry-pick")" shell::git::commit::pick::fzf -n)"
+t_has "commit mode -n: prints the command" "git cherry-pick $X1" "$out"
+t_eq "commit mode -n: nothing applied" "same" "$(head_is "$FM1")"
+t_has "commit mode -n: exit 0" "RC=0" "$out"
+fresh2
+run "$(picks "feature" "$S")" shell::git::commit::pick::fzf -c 2 >/dev/null
+t_eq "commit mode -c 2: two candidates" "2" "$(lines "$HOME/stdin.3")"
+run "$(picks "feature" "$S")" shell::git::commit::pick::fzf --include-head >/dev/null
+t_has "commit mode --include-head: commits already in HEAD are listed" "base" "$(rows_of 3)"
+
+# cancellation at each stage
+fresh2
+out="$(run "$(picks "feature" "$S")" shell::git::commit::pick::fzf)"
+t_has "commit mode: ESC at the picker cancels" "Cancelled" "$out"
+t_has "commit mode: ...exit 1" "RC=1" "$out"
+out="$(run "$(picks "feature" "$S" "x1: add a")" shell::git::commit::pick::fzf)"
+t_has "commit mode: ESC at the action menu cancels" "RC=1" "$out"
+t_eq "commit mode: ...nothing applied" "$FM1" "$(git rev-parse HEAD)"
+
+# --- 3.3 mode B: pick by files ----------------------------------------------------------------------------
+fresh2
+out="$(run "$(picks "feature" "$F" "-dash.txt" "$APPLY_F")" shell::git::commit::pick::fzf)"
+t_has "files mode: exit 0" "RC=0" "$out"
+t_eq "files mode: one row per (commit, file): 1 + 6 + 1 + 1" "9" "$(lines "$HOME/stdin.3")"
+t_eq "files mode: a file changed by two commits appears twice (a)" "2" "$(grep -c '^[^	]*	a  ' "$HOME/plain.3")"
+t_eq "files mode: ...and so does sp ace.txt" "2" "$(grep -c 'sp ace.txt  ' "$HOME/plain.3")"
+t_has "files mode: each row names its commit" "T - x3: a again" "$(cat "$HOME/plain.3")"
+t_eq "files mode: the id is <full hash>:<path>" "1" "$(grep -c "^${X3}:a	" "$HOME/stdin.3")"
+t_eq "files mode: a tab in a path is stored as \\002 and shown as \\t" "1" "$(grep -c "^${X2}:ta"$'\002'"b.txt	ta\\\\tb.txt  " "$HOME/plain.3")"
+t_eq "files mode: a newline in a path is stored as \\001 and shown as \\n" "1" "$(grep -c "^${X2}:new"$'\001'"line.txt	new\\\\nline.txt  " "$HOME/plain.3")"
+t_has "files mode: a quote" 'q"uote.txt  ' "$(cat "$HOME/plain.3")"
+t_has "files mode: non-ASCII" "ünï.txt  " "$(cat "$HOME/plain.3")"
+t_has "files mode: a leading dash" "-dash.txt  " "$(cat "$HOME/plain.3")"
+t_eq "files mode: rows of one file are adjacent, newest commit first (a: x3 then x1)" "x3:x1" "$(grep '^[^	]*	a  ' "$HOME/plain.3" | sed -E 's/.*T - (x[0-9]).*/\1/' | tr '\n' ':' | sed 's/:$//')"
+t_has "files mode: multi-select" "--multi" "$(args_of 3)"
+t_has "files mode: Tab marks without moving the cursor" "--bind=tab:toggle" "$(args_of 3)"
+t_has "files mode: the preview is on the right" "--preview-window=right:55%:wrap" "$(args_of 3)"
+t_has "files mode: ...and is fed the row id" "_ {1}" "$(args_of 3)"
+t_eq "files mode: the action menu" "${APPLY_F}${nl}Preview only${nl}$B" "$(rows_of 4)"
+t_eq "files mode: the chosen file is staged" "-dash.txt|" "$(staged)"
+t_eq "files mode: ...nothing is committed" "$FM1" "$(git rev-parse HEAD)"
+t_has "files mode: ...and the plan shows the file with its commit" "-dash.txt  ($(git log -1 --format=%h "$X2") x2: specials)" "$out"
+
+# the preview command, run the way fzf runs it
+prev="$(grep '^--preview=sh' "$HOME/args.3")"
+prev="${prev#--preview=}"
+suffix=' {1}'
+prev="${prev%"$suffix"}"
+id="$(cut -f1 "$HOME/stdin.3" | grep -F "${X4}:sp ace.txt")"
+noansi() { sed "$(printf 's/\033\\[[0-9;]*[A-Za-z]//g')"; }
+pout="$(eval "$prev \"\$id\"" 2>&1 | noansi)"
+t_has "files mode preview: shows the commit" "x4: touch sp" "$pout"
+t_has "files mode preview: ...and only the chosen file's change" "+s2" "$pout"
+t_lacks "files mode preview: ...not the other files" "ünï.txt" "$pout"
+id="$(cut -f1 "$HOME/stdin.3" | grep -F "${X2}:ta")"
+pout="$(eval "$prev \"\$id\"" 2>&1 | noansi)"
+t_has "files mode preview: a path with a tab" '"ta\tb.txt" | 1 +' "$pout"
+t_has "files mode preview: ...its content" "+tab" "$pout"
+id="$(cut -f1 "$HOME/stdin.3" | grep -F "${X2}:new")"
+pout="$(eval "$prev \"\$id\"" 2>&1 | noansi)"
+t_has "files mode preview: a path with a newline" '"new\nline.txt" | 1 +' "$pout"
+t_has "files mode preview: ...its content" "+nl" "$pout"
+
+# several files, special names, exact content
+fresh2
+out="$(run "$(picks "feature" "$F" "sp ace.txt  $(git log -1 --format=%h "$X2")${nl}ta\\tb.txt${nl}new\\nline.txt${nl}q\"uote.txt${nl}ünï.txt${nl}-dash.txt" "$APPLY_F")" shell::git::commit::pick::fzf)"
+t_has "files mode: special names: exit 0" "RC=0" "$out"
+t_eq "files mode: special names: exactly the six files are staged" "-dash.txt|new${nl}line.txt|q\"uote.txt|sp ace.txt|ta${tab}b.txt|ünï.txt|" "$(staged)"
+t_eq "files mode: ...with their content (tab)" "tab" "$(git show ":ta${tab}b.txt")"
+t_eq "files mode: ...with their content (newline)" "nl" "$(git show ":new${nl}line.txt")"
+t_eq "files mode: ...and not the others of the commit" "0" "$(staged | tr '|' '\n' | grep -c '^a$')"
+t_eq "files mode: ...worktree files match" "tab" "$(cat "ta${tab}b.txt")"
+
+fresh2
+out="$(run "$(picks "feature" "$F" "T - x1: add a${nl}T - x3: a again" "$APPLY_F")" shell::git::commit::pick::fzf)"
+t_has "files mode: the same file from two commits: exit 0" "RC=0" "$out"
+t_eq "files mode: ...both changes, oldest first" "one${nl}two" "$(git show :a)"
+t_has "files mode: ...reported per commit" "2 file change(s) from 2 commit(s)" "$out"
+fresh2
+out="$(run "$(picks "feature" "$F" "T - x3: a again" "$APPLY_F")" shell::git::commit::pick::fzf)"
+t_has "files mode: a change whose base is missing does not apply" "RC=1" "$out"
+t_has "files mode: ...and says which commit" "Could not apply the chosen files of $(git log -1 --format=%h "$X3")" "$out"
+t_eq "files mode: ...nothing staged" "" "$(staged)"
+fresh2
+out="$(run "$(picks "feature" "$F" "T - x1: add a${nl}-dash.txt" "$APPLY_F")" shell::git::commit::pick::fzf -n)"
+t_has "files mode -n: prints one command per commit (x1)" "git --literal-pathspecs diff-tree -p --binary --no-renames --root --no-commit-id -r $X1 -- a | git apply --index --3way" "$out"
+t_has "files mode -n: ...(x2: the literal pathspec after --)" "-r $X2 -- -dash.txt | git apply --index --3way" "$out"
+t_eq "files mode -n: nothing staged" "" "$(staged)"
+t_has "files mode -n: exit 0" "RC=0" "$out"
+
+fresh2
+out="$(run "$(picks "feature" "$F" "T - x1: add a" "Preview only" "T - x1: add a" "$APPLY_F")" shell::git::commit::pick::fzf)"
+t_has "files mode: Preview only shows the change" "diff --git a/a b/a" "$out"
+t_eq "files mode: ...then the menu comes back" "${APPLY_F}${nl}Preview only${nl}$B" "$(rows_of 5)"
+fresh2
+out="$(run "$(picks "feature" "$F")" shell::git::commit::pick::fzf)"
+t_has "files mode: ESC at the picker cancels" "RC=1" "$out"
+out="$(run "$(picks "feature" "$F" "-dash.txt")" shell::git::commit::pick::fzf)"
+t_has "files mode: ESC at the action menu cancels" "RC=1" "$out"
+t_eq "files mode: ...nothing staged" "" "$(staged)"
+git checkout -q -b empty-diff main
+git commit -q --allow-empty -m "e1: empty"
+git checkout -q main
+out="$(run "$(picks "empty-diff" "$F" "$S")" shell::git::commit::pick::fzf)"
+t_has "files mode: commits that change no file" "change no files" "$out"
+t_eq "files mode: ...fall back to the commit list (one commit)" "1" "$(lines "$HOME/stdin.3")"
+
+# --- 3.4 cursor, marks and query across screens ----------------------------------------------------------
+fresh2
+out="$(run "$(picks "feature" "$S" "x1: add a${nl}x3: a again${nl}@query=add${nl}@pos=1" "$B" "x1: add a" "Cherry-pick")" shell::git::commit::pick::fzf)"
+t_eq "state: Back from the action menu shows the picker again" "4" "$(lines "$HOME/stdin.5")"
+t_has "state: ...with the marks (rows 2 and 4), the query and the cursor row restored" "--bind=start:pos(2)+toggle+pos(4)+toggle+change-query(add)+pos(1)" "$(args_of 5)"
+t_has "state: ...the marks are applied to the full list, so --sync" "--sync" "$(args_of 5)"
+t_eq "state: ...and the list is the same list" "$(rows_of 3)" "$(rows_of 5)"
+fresh2
+out="$(run "$(picks "feature" "$S" "x2: specials${nl}@pos=3" "$B" "x2: specials")" shell::git::commit::pick::fzf)"
+t_has "state: marks and cursor without a query" "--bind=start:pos(3)+toggle+pos(3)" "$(args_of 5)"
+t_lacks "state: ...no query action" "change-query" "$(args_of 5)"
+
+# a query with brackets and a plus sign
+t_eq "state: the query action avoids a delimiter the query contains" "change-query[fix(a+b)]" "$(_shell::git::commit::pick::fzf::action change-query 'fix(a+b)')"
+t_eq "state: ...plain query" "change-query(abc)" "$(_shell::git::commit::pick::fzf::action change-query 'abc')"
+t_eq "state: ...every bracket kind in the query" "change-query~([{<>}])~" "$(_shell::git::commit::pick::fzf::action change-query '([{<>}])')"
+
+# restore() on its own
+st="$HOME/st"
+rm -f "$st.sel" "$st.query" "$st.pos"
+t_eq "restore: no state, no actions" "" "$(_shell::git::commit::pick::fzf::restore "$st" "a${tab}A")"
+printf 'b\n' >"$st.sel"
+printf 'xy' >"$st.query"
+printf '2' >"$st.pos"
+t_eq "restore: marks, query, cursor" "pos(2)+toggle+change-query(xy)+pos(2)" "$(_shell::git::commit::pick::fzf::restore "$st" "a${tab}A${nl}b${tab}B")"
+printf 'zz\n' >"$st.sel"
+t_eq "restore: a mark that is no longer in the list is dropped" "change-query(xy)+pos(2)" "$(_shell::git::commit::pick::fzf::restore "$st" "a${tab}A${nl}b${tab}B")"
+printf 'x' >"$st.pos"
+printf 'b\n' >"$st.sel"
+rm -f "$st.query"
+t_eq "restore: a garbage cursor is ignored" "pos(2)+toggle" "$(_shell::git::commit::pick::fzf::restore "$st" "a${tab}A${nl}b${tab}B")"
+rm -f "$st.sel" "$st.query" "$st.pos"
+
+# flipping modes keeps each mode's own state
+fresh2
+out="$(run "$(picks "feature" "$S" "x1: add a${nl}@query=add${nl}@pos=2${nl}@switch" "-dash.txt${nl}@query=dash${nl}@pos=1${nl}@switch" "x2: specials${nl}@query=add${nl}@pos=2${nl}@switch" "$B" "$B")" shell::git::commit::pick::fzf)"
+t_has "flip: Ctrl-T in the commit picker opens the files picker" "Files of feature" "$(args_of 4)"
+t_lacks "flip: ...which starts fresh the first time" "--bind=start:" "$(args_of 4)"
+dashrow="$(cut -f1 "$HOME/stdin.4" | grep -n -F -- "-dash.txt" | cut -d: -f1)"
+t_has "flip: back to the commit picker: its marks, query and cursor are restored" "--bind=start:pos(4)+toggle+change-query(add)+pos(2)" "$(args_of 5)"
+t_has "flip: ...it is the commit picker again" "Commits of feature" "$(args_of 5)"
+t_has "flip: and the files picker comes back as it was left (mark, query, cursor)" "--bind=start:pos(${dashrow})+toggle+change-query(dash)+pos(1)" "$(args_of 6)"
+t_has "flip: ...it is the files picker" "Files of feature" "$(args_of 6)"
+
+# --- the rest of the surface ----------------------------------------------------------------------------
+t_rc "fzf -h" 0 shell::git::commit::pick::fzf -h
+t_has "fzf -h mentions --all" "--all" "$(shell::git::commit::pick::fzf -h 2>&1)"
+t_has "fzf -h mentions the workflow" "source branch" "$(shell::git::commit::pick::fzf -h 2>&1)"
+
+# the helpers on their own
+fresh2
+t_eq "sources: refs are full names (local and remote can not be confused)" "refs/heads/feature
+refs/heads/old
+refs/heads/release/1.0
+refs/remotes/origin/release/1.0
+refs/remotes/origin/side" "$(_shell::git::commit::pick::fzf::sources | cut -f2 | LC_ALL=C sort)"
+git checkout -q feature
+t_lacks "sources: on feature, feature is not offered (but main is)" "refs/heads/feature" "$(_shell::git::commit::pick::fzf::sources | cut -f2)"
+t_has "sources: ...main is" "refs/heads/main" "$(_shell::git::commit::pick::fzf::sources | cut -f2)"
+git checkout -q --detach
+t_has "sources: on a detached HEAD every branch is offered" "refs/heads/feature" "$(_shell::git::commit::pick::fzf::sources | cut -f2)"
+git checkout -q main
+t_eq "file_decode: tab and newline" "a${tab}b${nl}c" "$(_shell::git::commit::pick::fzf::file_decode "a"$'\002'"b"$'\001'"c")"
+t_eq "file_decode: plain" "sp ace.txt" "$(_shell::git::commit::pick::fzf::file_decode "sp ace.txt")"
+t_eq "file_rows: no commits, no rows" "" "$(_shell::git::commit::pick::fzf::file_rows 5 main --not main)"
+t_eq "file_rows: -c limits the commits (x4 only: sp ace.txt)" "1" "$(_shell::git::commit::pick::fzf::file_rows 1 feature --not HEAD | wc -l | tr -d ' ')"
+t_eq "oldest_first: order of the list, reversed" "b
+a" "$(_shell::git::commit::pick::fzf::oldest_first "a${tab}x${nl}b${tab}y" "b a")"
 
 t_done

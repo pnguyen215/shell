@@ -12307,32 +12307,19 @@ _shell::git::commit::pick::fzf::candidates() {
 }
 
 # @internal
-# @description Pick several commits with fzf and print their hashes, oldest first.
-#   Multi-select (Tab marks), with a preview of the highlighted commit. The
-#   hashes come back in dependency order (parents before children), which is the
-#   order a cherry-pick must replay them in, whatever order they were marked in.
-# @arg $1 string The candidate lines from _shell::git::commit::pick::fzf::candidates.
-# @arg $2 string Prompt text.
-# @stdout The selected full hashes, one per line, oldest first.
-# @exitcode 0 At least one commit was selected.
-# @exitcode 9 Cancelled (ESC) or nothing selected.
+# @description Order chosen hashes oldest first, by their place in the candidate list.
+#   The candidate list is newest first and in dependency order (parents before
+#   children when read from the bottom), which is the order a cherry-pick must
+#   replay them in, whatever order they were marked in.
+# @arg $1 string The candidate lines (`hash<TAB>...`).
+# @arg $2 string The chosen hashes, separated by spaces.
+# @stdout The chosen hashes that are in the list, one per line, oldest first.
+# @exitcode 0 Always.
 # @example
-#   hashes="$(_shell::git::commit::pick::fzf::choose "$candidates" "Pick: ")" || return $?
+#   _shell::git::commit::pick::fzf::oldest_first "$candidates" "$h1 $h2"
 #
-_shell::git::commit::pick::fzf::choose() {
-	local candidates="${1-}" prompt="${2-Select commits: }" selected hashes
-	local tab
-	tab="$(printf '\t')"
-
-	selected="$(printf '%s\n' "$candidates" | shell::fzf::select --multi --height=80% \
-		"--delimiter=${tab}" --with-nth=2.. --prompt="$prompt" \
-		'--preview=git show --stat --patch --color=always {1} | head -n 300' \
-		--preview-window='right:55%:wrap')" || return "$RETURN_CANCELLED"
-	if [ -z "$selected" ]; then
-		return "$RETURN_CANCELLED"
-	fi
-
-	hashes="$(printf '%s\n' "$selected" | cut -f1 | tr '\n' ' ')"
+_shell::git::commit::pick::fzf::oldest_first() {
+	local candidates="${1-}" hashes="${2-}"
 	printf '%s\n' "$candidates" | awk -F'\t' -v sel="$hashes" '
         BEGIN { n = split(sel, a, " "); for (i = 1; i <= n; i++) s[a[i]] = 1 }
         ($1 in s) { list[++c] = $1 }
@@ -12340,12 +12327,215 @@ _shell::git::commit::pick::fzf::choose() {
 }
 
 # @internal
+# @description Build one fzf action with its argument, e.g. `change-query(text)`.
+#   fzf has no escape for the argument, so the first bracket pair that the value
+#   does not contain is used (`()`, `[]`, `{}`, `<>`, then symmetric characters).
+# @arg $1 string Action name.
+# @arg $2 string Argument.
+# @stdout The action.
+# @exitcode 0 The action was built.
+# @exitcode 1 Every delimiter occurs in the value (practically never).
+# @example
+#   _shell::git::commit::pick::fzf::action change-query "fix(auth)"   # change-query[fix(auth)]
+#
+_shell::git::commit::pick::fzf::action() {
+	local name="${1-}" value="${2-}" pair open close
+	for pair in '()' '[]' '{}' '<>' '~~' '!!' '@@' '##' '%%' '^^' '&&' '**' ';;' '//' '||'; do
+		open="${pair%?}"
+		close="${pair#?}"
+		case "$value" in
+		*"$open"* | *"$close"*) ;;
+		*)
+			printf '%s%s%s%s' "$name" "$open" "$value" "$close"
+			return "$RETURN_SUCCESS"
+			;;
+		esac
+	done
+	return "$RETURN_FAILURE"
+}
+
+# @internal
+# @description Turn a picker's saved state into the actions of fzf's `start` event.
+#   State lives in `<prefix>.sel` (ids marked, one per line), `<prefix>.query`
+#   and `<prefix>.pos` (cursor line, 1-based, in the list the query shows). The
+#   marks are applied on the full list first, then the query, then the cursor,
+#   so a mark hidden by the query is kept and the cursor lands on the same row.
+#   fzf keeps only one `start` binding, so everything is one chained action.
+# @arg $1 string State prefix (path).
+# @arg $2 string The rows (`id<TAB>display`), in the order they are given to fzf.
+# @stdout The chained actions (empty when there is no saved state).
+# @exitcode 0 Always.
+# @example
+#   chain="$(_shell::git::commit::pick::fzf::restore "$state" "$rows")"
+#
+_shell::git::commit::pick::fzf::restore() {
+	local state="${1-}" rows="${2-}" chain="" query pos act
+	if [ -s "${state}.sel" ]; then
+		chain="$(printf '%s\n' "$rows" | awk -F'\t' '
+			NR == FNR { sel[$0] = 1; next }
+			($1 in sel) { printf "pos(%d)+toggle+", FNR }' "${state}.sel" -)"
+	fi
+	query="$(cat "${state}.query" 2>/dev/null)"
+	if [ -n "$query" ]; then
+		act="$(_shell::git::commit::pick::fzf::action change-query "$query")" && chain="${chain}${act}+"
+	fi
+	pos="$(cat "${state}.pos" 2>/dev/null)"
+	case "$pos" in
+	'' | *[!0-9]* | 0) ;;
+	*) chain="${chain}pos(${pos})+" ;;
+	esac
+	printf '%s' "${chain%+}"
+}
+
+# @internal
+# @description Multi-select picker over `id<TAB>display` rows that keeps its state between visits.
+#   Tab marks or unmarks the row under the cursor and leaves the cursor where it
+#   is (fzf's default also moves down); Shift-Tab does the same. With a state
+#   prefix the query, the marks and the cursor row are saved when the picker is
+#   left and applied again the next time it is shown with the same rows. With
+#   `switch`, Ctrl-T leaves the picker with exit code 11 after saving that state,
+#   so the caller can show the other selection mode.
+# @arg $1 string Prompt.
+# @arg $2 string fzf preview command (`{1}` is the id).
+# @arg $3 string Optional. State prefix (path); empty = no state.
+# @arg $4 string Optional. Header line.
+# @arg $5 string Optional. `true` to enable Ctrl-T (needs a state prefix).
+# @stdin Rows `id<TAB>display`; the id is hidden.
+# @stdout The marked ids (or the one under the cursor when none is marked), one per line, in fzf's order.
+# @exitcode 0 At least one id was chosen.
+# @exitcode 9 Cancelled (ESC) or nothing chosen.
+# @exitcode 11 Ctrl-T was pressed (state saved).
+# @example
+#   ids="$(printf 'a\tA\nb\tB\n' | _shell::git::commit::pick::fzf::rows "Pick: " 'echo {1}' "$state")"
+#
+_shell::git::commit::pick::fzf::rows() {
+	local prompt="${1-}" preview="${2-}" state="${3-}" header="${4-}" switch="${5-false}"
+	local tab rows picked rc query chain
+	local -a args=()
+	tab="$(printf '\t')"
+	rows="$(cat)"
+
+	args=(--multi --height=80% "--delimiter=${tab}" --with-nth=2.. "--prompt=${prompt}" "--preview=${preview}"
+		--preview-window='right:55%:wrap' --bind=tab:toggle --bind=btab:toggle)
+	if [ -n "$header" ]; then args+=("--header=${header}"); fi
+	if [ -n "$state" ]; then
+		rm -f "${state}.sw"
+		# $FZF_POS, $FZF_QUERY and $FZF_SELECT_COUNT are set by fzf for `execute`; the
+		# state path travels in the environment so it never has to be quoted into a binding.
+		args+=(--print-query '--bind=focus:execute-silent(printf %s "$FZF_POS" >"$SHELL_GIT_PICK_STATE.pos")')
+		if [ "$switch" = "true" ]; then
+			args+=('--bind=ctrl-t:execute-silent(printf %s "$FZF_QUERY" >"$SHELL_GIT_PICK_STATE.query"; : >"$SHELL_GIT_PICK_STATE.sel"; if [ "$FZF_SELECT_COUNT" -gt 0 ]; then printf "%s\n" {+1} >"$SHELL_GIT_PICK_STATE.sel"; fi; : >"$SHELL_GIT_PICK_STATE.sw")+abort')
+		fi
+		chain="$(_shell::git::commit::pick::fzf::restore "$state" "$rows")"
+		if [ -n "$chain" ]; then args+=(--sync "--bind=start:${chain}"); fi
+		export SHELL_GIT_PICK_STATE="$state"
+	fi
+
+	picked="$(printf '%s\n' "$rows" | shell::fzf::select "${args[@]}")"
+	rc=$?
+	unset SHELL_GIT_PICK_STATE
+	if [ -n "$state" ] && [ -f "${state}.sw" ]; then
+		return "$RETURN_BACK"
+	fi
+	if [ "$rc" -ne 0 ] || [ -z "$picked" ]; then
+		return "$RETURN_CANCELLED"
+	fi
+	if [ -n "$state" ]; then
+		query="$(printf '%s\n' "$picked" | head -n 1)"
+		picked="$(printf '%s\n' "$picked" | sed '1d')"
+		if [ -z "$picked" ]; then
+			return "$RETURN_CANCELLED"
+		fi
+		printf '%s' "$query" >"${state}.query"
+		printf '%s\n' "$picked" | cut -f1 >"${state}.sel"
+	fi
+	printf '%s\n' "$picked" | cut -f1
+}
+
+# @internal
+# @description Pick several commits with fzf and print their hashes, oldest first.
+#   Multi-select (Tab marks, without moving the cursor), with a preview of the
+#   highlighted commit on the right. The hashes come back in dependency order
+#   (parents before children), which is the order a cherry-pick must replay them
+#   in, whatever order they were marked in. With a state prefix the query, marks
+#   and cursor are restored the next time the same list is shown.
+# @arg $1 string The candidate lines from _shell::git::commit::pick::fzf::candidates.
+# @arg $2 string Prompt text.
+# @arg $3 string Optional. State prefix (see _shell::git::commit::pick::fzf::rows).
+# @arg $4 string Optional. `true` to let Ctrl-T leave with exit code 11.
+# @arg $5 string Optional. Header line.
+# @stdout The selected full hashes, one per line, oldest first.
+# @exitcode 0 At least one commit was selected.
+# @exitcode 9 Cancelled (ESC) or nothing selected.
+# @exitcode 11 Ctrl-T was pressed (only when enabled).
+# @example
+#   hashes="$(_shell::git::commit::pick::fzf::choose "$candidates" "Pick: ")" || return $?
+#
+_shell::git::commit::pick::fzf::choose() {
+	local candidates="${1-}" prompt="${2-Select commits: }" state="${3-}" switch="${4-false}" header="${5-}" selected rc
+	selected="$(printf '%s\n' "$candidates" | _shell::git::commit::pick::fzf::rows "$prompt" \
+		'git show --stat --patch --color=always {1} | head -n 300' "$state" "$header" "$switch")"
+	rc=$?
+	if [ "$rc" -ne 0 ]; then
+		return "$rc"
+	fi
+	_shell::git::commit::pick::fzf::oldest_first "$candidates" "$(printf '%s\n' "$selected" | tr '\n' ' ')"
+}
+
+# @internal
+# @description Show the chosen commits, ask how to apply them, and apply them onto HEAD.
+#   The menu: cherry-pick, with `-x`, without committing, or preview (which
+#   returns to the menu). The apply is shell::git::commit::pick::apply.
+# @arg $1 string `true` for a dry-run.
+# @arg $@ string The chosen full hashes, oldest first.
+# @exitcode 0 The commits were applied (or the dry-run commands printed).
+# @exitcode 1 The apply failed or stopped on a conflict.
+# @exitcode 2 Invalid usage (from the apply).
+# @exitcode 9 Cancelled (ESC); nothing was applied.
+# @exitcode 11 The user picked "← Back"; nothing was applied.
+# @example
+#   _shell::git::commit::pick::fzf::actions false "${hashes[@]}"
+#
+_shell::git::commit::pick::fzf::actions() {
+	local dry_run="${1-false}" choice rc hash
+	shift
+	local -a flags=()
+	while true; do
+		shell::logger::info "$# commit(s) selected, oldest first:"
+		for hash in "$@"; do
+			shell::logger::info "  • $(git log -1 --format='%h %s' "$hash")"
+		done
+		choice="$(shell::ask::option::back --prompt "Apply the selected commits: " \
+			"Cherry-pick" "Cherry-pick with reference (-x)" "Apply without committing (--no-commit)" "Preview only")"
+		rc=$?
+		case "$rc" in
+		0) ;;
+		"$RETURN_BACK") return "$RETURN_BACK" ;;
+		*) return "$RETURN_CANCELLED" ;;
+		esac
+
+		flags=()
+		case "$choice" in
+		"Preview only")
+			shell::git::commit::pick::preview -- "$@"
+			continue
+			;;
+		"Cherry-pick with reference (-x)") flags+=(-x) ;;
+		"Apply without committing (--no-commit)") flags+=(--no-commit) ;;
+		esac
+		if [ "$dry_run" = "true" ]; then flags+=(-n); fi
+		shell::git::commit::pick::apply ${flags[@]+"${flags[@]}"} -- "$@"
+		return $?
+	done
+}
+
+# @internal
 # @description Pick commits with fzf, choose how to apply them, and apply them onto HEAD.
 #   The shared engine of shell::git::commit::pick::fzf and its `local`, `remote`,
 #   `branch` and `range` variants. Flow, every step with a way back:
-#   1. a multi-select picker; 2. a menu: cherry-pick, cherry-pick with `-x`, apply
-#   without committing, or preview (which returns to the menu); 3. the apply,
-#   through shell::git::commit::pick::apply. ESC cancels.
+#   1. a multi-select picker; 2. the menu of _shell::git::commit::pick::fzf::actions;
+#   3. the apply, through shell::git::commit::pick::apply. ESC cancels. When the
+#   menu goes back, the picker returns with the same query, marks and cursor row.
 # @arg $1 string `true` for a dry-run.
 # @arg $2 string Maximum number of commits listed.
 # @arg $3 string Picker prompt.
@@ -12361,20 +12551,416 @@ _shell::git::commit::pick::fzf::engine() {
 
 	_shell::git::commit::pick::guard stage || return "$RETURN_FAILURE"
 
-	local candidates step choice rc hash
-	local -a hashes=() flags=()
+	local candidates state rc
 	candidates="$(_shell::git::commit::pick::fzf::candidates "$count" "$@")"
 	if [ -z "$candidates" ]; then
 		shell::logger::warn "No commits to pick from"
 		return "$RETURN_FAILURE"
 	fi
 
-	step="pick"
+	# Scratch space for the picker's saved state; removed on every way out.
+	state="$(mktemp -d "${TMPDIR:-/tmp}/shell-pick.XXXXXX" 2>/dev/null)" || state=""
+	_shell::git::commit::pick::fzf::engine_loop "$dry_run" "$prompt" "$candidates" "${state:+${state}/pick}"
+	rc=$?
+	if [ -n "$state" ]; then rm -rf "$state"; fi
+	return "$rc"
+}
+
+# @internal
+# @description The pick → action loop of _shell::git::commit::pick::fzf::engine.
+# @arg $1 string `true` for a dry-run.
+# @arg $2 string Picker prompt.
+# @arg $3 string The candidate lines.
+# @arg $4 string Optional. State prefix for the picker (empty = no state kept).
+# @exitcode 0 The commits were applied (or the dry-run commands printed).
+# @exitcode 1 Cancelled or the apply failed.
+# @example
+#   _shell::git::commit::pick::fzf::engine_loop false "Pick: " "$candidates" "$dir/pick"
+#
+_shell::git::commit::pick::fzf::engine_loop() {
+	local dry_run="${1-false}" prompt="${2-}" candidates="${3-}" state="${4-}" choice rc hash
+	local -a hashes=()
+	while true; do
+		choice="$(_shell::git::commit::pick::fzf::choose "$candidates" "$prompt" "$state")"
+		rc=$?
+		if [ "$rc" -ne 0 ] || [ -z "$choice" ]; then
+			shell::logger::info "Cancelled — nothing was applied"
+			return "$RETURN_FAILURE"
+		fi
+		hashes=()
+		while IFS= read -r hash; do
+			if [ -n "$hash" ]; then hashes+=("$hash"); fi
+		done <<EOF
+$choice
+EOF
+		_shell::git::commit::pick::fzf::actions "$dry_run" "${hashes[@]}"
+		rc=$?
+		case "$rc" in
+		"$RETURN_BACK") continue ;;
+		"$RETURN_CANCELLED")
+			shell::logger::info "Cancelled — nothing was applied"
+			return "$RETURN_FAILURE"
+			;;
+		*) return "$rc" ;;
+		esac
+	done
+}
+
+# @internal
+# @description List the branches that can be a source: local and remote-tracking, one row each, newest first.
+#   Same rules as _shell::git::commit::pick::branches (the branch you are on and
+#   the symbolic `<remote>/HEAD` refs are left out), but every row keeps the FULL
+#   ref name, so a local `x` and a remote `origin/x` can never be mixed up later.
+#   A remote branch that points at the same commit as the local branch of the
+#   same name is not listed again; the local row says `(= origin)` instead. When
+#   the two differ, both rows are listed.
+# @stdout Rows `display<TAB>full-ref`.
+# @exitcode 0 Always (nothing printed when there is no candidate).
+# @example
+#   _shell::git::commit::pick::fzf::sources
+#
+_shell::git::commit::pick::fzf::sources() {
+	local current
+	current="$(git symbolic-ref --short -q HEAD 2>/dev/null)"
+	git for-each-ref --sort=-committerdate \
+		'--format=%(refname)%09%(objectname)%09%(committerdate:short)%09%(subject)' \
+		refs/heads refs/remotes 2>/dev/null |
+		awk -F'\t' -v cur="$current" '
+			$1 ~ /\/HEAD$/ { next }
+			{ n++; ref[n] = $1; sha[n] = $2; day[n] = $3; subj[n] = $4
+			  if (index($1, "refs/heads/") == 1) loc[substr($1, 12)] = $2 }
+			END {
+				for (i = 1; i <= n; i++) {
+					if (index(ref[i], "refs/remotes/") != 1) continue
+					rest = substr(ref[i], 14); slash = index(rest, "/")
+					if (slash == 0) continue
+					short = substr(rest, slash + 1)
+					if ((short in loc) && loc[short] == sha[i]) {
+						dup[i] = 1; also[short] = also[short] (also[short] == "" ? "" : ",") substr(rest, 1, slash - 1)
+					}
+				}
+				for (i = 1; i <= n; i++) {
+					if (dup[i]) continue
+					if (index(ref[i], "refs/heads/") == 1) {
+						name = substr(ref[i], 12)
+						if (name == cur) continue
+						mark = (name in also) ? " (= " also[name] ")" : ""
+						printf "%-8s %s%s  %s  %s\t%s\n", "[local]", name, mark, day[i], subj[i], ref[i]
+					} else {
+						printf "%-8s %s  %s  %s\t%s\n", "[remote]", substr(ref[i], 14), day[i], subj[i], ref[i]
+					}
+				}
+			}'
+}
+
+# @internal
+# @description List the files changed by the commits of a log, one row per (commit, file).
+#   Rows `id<TAB>display<TAB>path`, grouped by path (so the commits that touch a
+#   file sit together, newest first) and then stripped of the path column. The id
+#   is `<full hash>:<path>`; paths come from `git log -z`, so spaces, quotes and
+#   non-ASCII are exact, and a tab or newline in a path is stored as `\002` /
+#   `\001` (decoded by _shell::git::commit::pick::fzf::file_decode) so a row is
+#   always one line. Merge commits are left out, as in the commit list.
+# @arg $1 string Maximum number of commits.
+# @arg $@ string Arguments for `git log` (revisions, `--not HEAD`, ...).
+# @stdout Rows `id<TAB>display`.
+# @exitcode 0 Always.
+# @example
+#   _shell::git::commit::pick::fzf::file_rows 500 feature --not HEAD
+#
+_shell::git::commit::pick::fzf::file_rows() {
+	local count="${1-500}"
+	shift
+	git log --topo-order --no-merges "--max-count=${count}" -z --name-only --no-renames --date=short \
+		'--format=%x1e%H%x1f%h%x1f%ad%x1f%an%x1f%s' "$@" 2>/dev/null |
+		tr '\000\n\t' '\n\001\002' |
+		awk '
+			function swap(s, from, to,    out, i) {
+				out = ""
+				while ((i = index(s, from)) > 0) { out = out substr(s, 1, i - 1) to; s = substr(s, i + length(from)) }
+				return out s
+			}
+			BEGIN { RS_ = sprintf("%c", 30); US = sprintf("%c", 31); SOH = sprintf("%c", 1); STX = sprintf("%c", 2); ESC = sprintf("%c", 27) }
+			substr($0, 1, 1) == RS_ {
+				split(substr($0, 2), f, US)
+				hash = f[1]; short = f[2]; meta = f[3] " " f[4] " - " f[5]
+				meta = swap(swap(meta, SOH, " "), STX, " ")
+				first = 1
+				next
+			}
+			{
+				p = $0
+				if (first && substr(p, 1, 1) == SOH) p = substr(p, 2)
+				first = 0
+				if (p == "") next
+				vis = swap(swap(p, SOH, "\\n"), STX, "\\t")
+				printf "%s:%s\t%s  %s%s%s %s%s%s\t%s\n", hash, p, vis, ESC "[1;34m", short, ESC "[0m", ESC "[2m", meta, ESC "[0m", vis
+			}' |
+		LC_ALL=C sort -s -t "$(printf '\t')" -k3,3 |
+		cut -f1,2
+}
+
+# @internal
+# @description Decode the path part of a file row id (`\001` → newline, `\002` → tab).
+# @arg $1 string The path as stored in the id (the part after the first `:`).
+# @stdout The path (no trailing newline).
+# @exitcode 0 Always.
+# @example
+#   path="$(_shell::git::commit::pick::fzf::file_decode "${id#*:}")"
+#
+_shell::git::commit::pick::fzf::file_decode() {
+	local enc="${1-}" soh stx nl tab
+	soh="$(printf '\001')"
+	stx="$(printf '\002')"
+	tab="$(printf '\t')"
+	nl='
+'
+	# The control characters go through variables: zsh does not expand $'..' inside "${...}".
+	enc="${enc//"$soh"/"$nl"}"
+	enc="${enc//"$stx"/"$tab"}"
+	printf '%s' "$enc"
+}
+
+# @internal
+# @description Apply only the chosen files of the chosen commits onto the working tree and index.
+#   For each commit, oldest first, the commit's own change to the chosen files
+#   (`git diff-tree -p`, limited to those paths, literal pathspecs) is applied
+#   with `git apply --index --3way`. Nothing is committed. A conflict leaves
+#   conflict markers in the files and stops; the commits applied before it stay staged.
+# @arg $1 string `true` for a dry-run (prints the commands).
+# @arg $2 string The candidate lines (they give the commit order).
+# @arg $3 string The chosen ids (`hash:path`), one per line.
+# @exitcode 0 Applied (or the dry-run commands printed).
+# @exitcode 1 A change did not apply, or the patch could not be built.
+# @example
+#   _shell::git::commit::pick::fzf::files_apply false "$candidates" "$ids"
+#
+_shell::git::commit::pick::fzf::files_apply() {
+	local dry_run="${1-false}" candidates="${2-}" ids="${3-}" hashes ordered c id p patch cmd applied=0 total=0
+	local -a paths=()
+	hashes="$(printf '%s\n' "$ids" | cut -d: -f1 | sort -u | tr '\n' ' ')"
+	ordered="$(_shell::git::commit::pick::fzf::oldest_first "$candidates" "$hashes")"
+	patch="$(mktemp "${TMPDIR:-/tmp}/shell-pick.XXXXXX" 2>/dev/null)" || patch=""
+	while IFS= read -r c; do
+		[ -n "$c" ] || continue
+		paths=()
+		while IFS= read -r id; do
+			case "$id" in
+			"${c}:"*) paths+=("$(_shell::git::commit::pick::fzf::file_decode "${id#*:}")") ;;
+			esac
+		done <<EOF
+$ids
+EOF
+		if [ "${#paths[@]}" -eq 0 ]; then continue; fi
+		total=$((total + ${#paths[@]}))
+		if [ "$dry_run" = "true" ]; then
+			cmd="git --literal-pathspecs diff-tree -p --binary --no-renames --root --no-commit-id -r ${c} --"
+			for p in "${paths[@]}"; do cmd="${cmd} $(_shell::git::commit::spec::quote "$p")"; done
+			shell::logger::command_clip "${cmd} | git apply --index --3way"
+			continue
+		fi
+		if [ -z "$patch" ]; then
+			shell::logger::error "Could not create a temporary file"
+			return "$RETURN_FAILURE"
+		fi
+		if ! git --literal-pathspecs diff-tree -p --binary --no-renames --root --no-commit-id -r "$c" -- "${paths[@]}" >"$patch" 2>/dev/null; then
+			shell::logger::error "Could not read the changes of $(git log -1 --format='%h %s' "$c")"
+			rm -f "$patch"
+			return "$RETURN_FAILURE"
+		fi
+		if [ ! -s "$patch" ]; then
+			shell::logger::warn "No change to apply from $(git log -1 --format='%h' "$c")"
+			continue
+		fi
+		if ! git apply --index --3way "$patch"; then
+			shell::logger::error "Could not apply the chosen files of $(git log -1 --format='%h %s' "$c") ($applied commit(s) applied before it, staged). Resolve with git status, or undo with git reset --hard"
+			rm -f "$patch"
+			return "$RETURN_FAILURE"
+		fi
+		applied=$((applied + 1))
+	done <<EOF
+$ordered
+EOF
+	if [ -n "$patch" ]; then rm -f "$patch"; fi
+	if [ "$dry_run" = "true" ]; then return "$RETURN_SUCCESS"; fi
+	shell::logger::success "Applied ${total} file change(s) from ${applied} commit(s); staged, not committed"
+	shell::logger::info "Next: review with git diff --cached, then git commit"
+	return "$RETURN_SUCCESS"
+}
+
+# @internal
+# @description Show the chosen files, ask what to do with them, and apply them.
+#   The menu: apply (staged, no commit) or preview (which returns to the menu).
+# @arg $1 string `true` for a dry-run.
+# @arg $2 string The candidate lines (commit order).
+# @arg $3 string The chosen ids (`hash:path`), one per line.
+# @exitcode 0 Applied (or the dry-run commands printed).
+# @exitcode 1 The apply failed.
+# @exitcode 9 Cancelled (ESC).
+# @exitcode 11 The user picked "← Back".
+# @example
+#   _shell::git::commit::pick::fzf::files_actions false "$candidates" "$ids"
+#
+_shell::git::commit::pick::fzf::files_actions() {
+	local dry_run="${1-false}" candidates="${2-}" ids="${3-}" choice rc id p vis
+	local n nl tab
+	n="$(printf '%s\n' "$ids" | grep -c .)"
+	tab="$(printf '\t')"
+	nl='
+'
+	while true; do
+		shell::logger::info "${n} file change(s) selected:"
+		while IFS= read -r id; do
+			[ -n "$id" ] || continue
+			p="$(_shell::git::commit::pick::fzf::file_decode "${id#*:}")"
+			vis="${p//"$nl"/\\n}"
+			vis="${vis//"$tab"/\\t}"
+			shell::logger::info "  • ${vis}  ($(git log -1 --format='%h %s' "${id%%:*}"))"
+		done <<EOF
+$ids
+EOF
+		choice="$(shell::ask::option::back --prompt "Apply the selected files: " \
+			"Apply to the working tree (staged, no commit)" "Preview only")"
+		rc=$?
+		case "$rc" in
+		0) ;;
+		"$RETURN_BACK") return "$RETURN_BACK" ;;
+		*) return "$RETURN_CANCELLED" ;;
+		esac
+		case "$choice" in
+		"Preview only")
+			while IFS= read -r id; do
+				[ -n "$id" ] || continue
+				p="$(_shell::git::commit::pick::fzf::file_decode "${id#*:}")"
+				git --literal-pathspecs show --stat --patch "${id%%:*}" -- "$p"
+			done <<EOF
+$ids
+EOF
+			continue
+			;;
+		esac
+		_shell::git::commit::pick::fzf::files_apply "$dry_run" "$candidates" "$ids"
+		return $?
+	done
+}
+
+# @internal
+# @description The interactive workflow of shell::git::commit::pick::fzf without arguments.
+#   Source branch → mode (by commit / by files) → picker → action. Every stage
+#   has a way back, ESC cancels, and Ctrl-T in a picker flips to the other mode.
+#   The query, marks and cursor row of each mode are kept for the whole run, so
+#   going back, or flipping modes, returns to where you were.
+# @arg $1 string `true` for a dry-run.
+# @arg $2 string Maximum number of commits listed.
+# @arg $3 string `true` to also list commits already in HEAD.
+# @exitcode 0 Applied (or the dry-run commands printed).
+# @exitcode 1 Cancelled, nothing to pick, or the apply failed.
+# @exitcode 11 The user picked "← Back" at the source list; nothing was changed.
+# @example
+#   _shell::git::commit::pick::fzf::flow false 500 false
+#
+_shell::git::commit::pick::fzf::flow() {
+	local dry_run="${1-false}" count="${2-500}" include_head="${3-false}" sources dir rc
+	_shell::git::commit::pick::guard stage || return "$RETURN_FAILURE"
+	sources="$(_shell::git::commit::pick::fzf::sources)"
+	if [ -z "$sources" ]; then
+		shell::logger::warn "There is no other branch to pick from"
+		return "$RETURN_FAILURE"
+	fi
+	dir="$(mktemp -d "${TMPDIR:-/tmp}/shell-pick.XXXXXX" 2>/dev/null)" || dir=""
+	_shell::git::commit::pick::fzf::flow_loop "$dry_run" "$count" "$include_head" "$sources" "$dir"
+	rc=$?
+	if [ -n "$dir" ]; then rm -rf "$dir"; fi
+	return "$rc"
+}
+
+# @internal
+# @description The stage machine of _shell::git::commit::pick::fzf::flow.
+# @arg $1 string `true` for a dry-run.
+# @arg $2 string Maximum number of commits listed.
+# @arg $3 string `true` to also list commits already in HEAD.
+# @arg $4 string The source rows from _shell::git::commit::pick::fzf::sources.
+# @arg $5 string Scratch directory for the pickers' state (empty = no state kept).
+# @exitcode 0 Applied (or the dry-run commands printed).
+# @exitcode 1 Cancelled, nothing to pick, or the apply failed.
+# @exitcode 11 The user picked "← Back" at the source list.
+# @example
+#   _shell::git::commit::pick::fzf::flow_loop false 500 false "$sources" "$dir"
+#
+_shell::git::commit::pick::fzf::flow_loop() {
+	local dry_run="${1-false}" count="${2-500}" include_head="${3-false}" sources="${4-}" dir="${5-}"
+	local step="source" mode="" ref="" name="" picked choice rc candidates="" rows="" ids="" hash pv
+	local tab back="$SHELL_FZF_BACK_LABEL" switch="false"
+	local -a log_args=() hashes=() init_args=() mode_args=()
+	tab="$(printf '\t')"
+	if [ -n "$dir" ]; then switch="true"; fi
+	pv='id="$1"; h="${id%%:*}"; p="$(printf "%s" "${id#*:}" | tr "\001\002" "\n\t")"; git --literal-pathspecs show --color=always --stat --patch "$h" -- "$p" | head -n 300'
+
 	while true; do
 		case "$step" in
-		pick)
-			choice="$(_shell::git::commit::pick::fzf::choose "$candidates" "$prompt")"
+		source)
+			picked="$(printf '%s\n%s\t%s\n' "$sources" "$back" "@back" | shell::fzf::select ${init_args[@]+"${init_args[@]}"} \
+				--height=60% "--delimiter=${tab}" --with-nth=1 --prompt="Source branch: " \
+				"--preview=sh -c 'case \"\$1\" in @back) echo \"Go back without changing anything\";; *) git log --oneline --color=always -n 15 \"\$1\" -- ;; esac' _ {2}" \
+				--preview-window='right:55%:wrap')"
 			rc=$?
+			if [ "$rc" -ne 0 ] || [ -z "$picked" ]; then
+				shell::logger::info "Cancelled — nothing was applied"
+				return "$RETURN_FAILURE"
+			fi
+			choice="${picked##*"$tab"}"
+			if [ "$choice" = "@back" ]; then
+				shell::logger::info "Back — nothing was applied"
+				return "$RETURN_BACK"
+			fi
+			if ! git rev-parse --verify --quiet "${choice}^{commit}" >/dev/null 2>&1; then
+				shell::logger::error "The branch is not available any more: '${choice}'"
+				return "$RETURN_FAILURE"
+			fi
+			ref="$choice"
+			name="${ref#refs/heads/}"
+			name="${name#refs/remotes/}"
+			init_args=(--initial "$ref" --initial-field 2) # remembered for when the user comes back
+			log_args=("$ref")
+			if [ "$include_head" = "false" ]; then log_args+=(--not HEAD); fi
+			candidates="$(_shell::git::commit::pick::fzf::candidates "$count" "${log_args[@]}")"
+			if [ -z "$candidates" ]; then
+				shell::logger::warn "No commits to pick from '${name}'"
+				continue
+			fi
+			step="mode"
+			;;
+		mode)
+			mode_args=()
+			if [ -n "$mode" ]; then mode_args=(--initial "$mode"); fi # the menu comes back on the mode used last
+			picked="$(printf '%s\n%s\n%s\n' "Pick by commit" "Pick by files" "$back" | shell::fzf::select ${mode_args[@]+"${mode_args[@]}"} \
+				--height=30% --prompt="Pick from ${name}: ")"
+			rc=$?
+			if [ "$rc" -ne 0 ] || [ -z "$picked" ]; then
+				shell::logger::info "Cancelled — nothing was applied"
+				return "$RETURN_FAILURE"
+			fi
+			case "$picked" in
+			"$back") step="source" ;;
+			"Pick by files")
+				mode="$picked"
+				step="files"
+				;;
+			*)
+				mode="$picked"
+				step="commits"
+				;;
+			esac
+			;;
+		commits)
+			choice="$(_shell::git::commit::pick::fzf::choose "$candidates" "Commits of ${name} (Tab to mark): " \
+				"${dir:+${dir}/commit}" "$switch" "Tab: mark   Ctrl-T: pick by files   ESC: cancel")"
+			rc=$?
+			if [ "$rc" -eq "$RETURN_BACK" ]; then
+				mode="Pick by files"
+				step="files"
+				continue
+			fi
 			if [ "$rc" -ne 0 ] || [ -z "$choice" ]; then
 				shell::logger::info "Cancelled — nothing was applied"
 				return "$RETURN_FAILURE"
@@ -12385,40 +12971,55 @@ _shell::git::commit::pick::fzf::engine() {
 			done <<EOF
 $choice
 EOF
-			step="action"
+			step="commit_action"
 			;;
-		action)
-			shell::logger::info "${#hashes[@]} commit(s) selected, oldest first:"
-			for hash in "${hashes[@]}"; do
-				shell::logger::info "  • $(git log -1 --format='%h %s' "$hash")"
-			done
-			choice="$(shell::ask::option::back --prompt "Apply the selected commits: " \
-				"Cherry-pick" "Cherry-pick with reference (-x)" "Apply without committing (--no-commit)" "Preview only")"
+		commit_action)
+			_shell::git::commit::pick::fzf::actions "$dry_run" "${hashes[@]}"
 			rc=$?
 			case "$rc" in
-			0) ;;
-			"$RETURN_BACK")
-				step="pick"
-				continue
-				;;
-			*)
+			"$RETURN_BACK") step="commits" ;;
+			"$RETURN_CANCELLED")
 				shell::logger::info "Cancelled — nothing was applied"
 				return "$RETURN_FAILURE"
 				;;
+			*) return "$rc" ;;
 			esac
-
-			flags=()
-			case "$choice" in
-			"Preview only")
-				shell::git::commit::pick::preview -- "${hashes[@]}"
+			;;
+		files)
+			if [ -z "$rows" ]; then
+				rows="$(_shell::git::commit::pick::fzf::file_rows "$count" "${log_args[@]}")"
+			fi
+			if [ -z "$rows" ]; then
+				shell::logger::warn "The commits of '${name}' change no files"
+				mode="Pick by commit"
+				step="commits"
 				continue
+			fi
+			ids="$(printf '%s\n' "$rows" | _shell::git::commit::pick::fzf::rows "Files of ${name} (Tab to mark): " \
+				"sh -c '${pv}' _ {1}" "${dir:+${dir}/files}" "Tab: mark   Ctrl-T: pick by commit   ESC: cancel" "$switch")"
+			rc=$?
+			if [ "$rc" -eq "$RETURN_BACK" ]; then
+				mode="Pick by commit"
+				step="commits"
+				continue
+			fi
+			if [ "$rc" -ne 0 ] || [ -z "$ids" ]; then
+				shell::logger::info "Cancelled — nothing was applied"
+				return "$RETURN_FAILURE"
+			fi
+			step="files_action"
+			;;
+		files_action)
+			_shell::git::commit::pick::fzf::files_actions "$dry_run" "$candidates" "$ids"
+			rc=$?
+			case "$rc" in
+			"$RETURN_BACK") step="files" ;;
+			"$RETURN_CANCELLED")
+				shell::logger::info "Cancelled — nothing was applied"
+				return "$RETURN_FAILURE"
 				;;
-			"Cherry-pick with reference (-x)") flags+=(-x) ;;
-			"Apply without committing (--no-commit)") flags+=(--no-commit) ;;
+			*) return "$rc" ;;
 			esac
-			if [ "$dry_run" = "true" ]; then flags+=(-n); fi
-			shell::git::commit::pick::apply ${flags[@]+"${flags[@]}"} -- "${hashes[@]}"
-			return $?
 			;;
 		esac
 	done
@@ -12497,42 +13098,58 @@ _shell::git::commit::pick::fzf::parse() {
 
 # @description Finds commits with fzf and cherry-picks the ones you select.
 #
-#   Lists the commits of all refs (or of one revision) that are not yet in HEAD,
-#   newest first, with a preview of the highlighted one. Mark one or more with
-#   Tab, choose how to apply them (cherry-pick, with `-x`, without committing, or
-#   just preview), and they are replayed oldest first. Merge commits are not
-#   listed. A back entry in the menu returns to the list; ESC cancels.
+#   Without arguments it is a guided workflow. 1. Choose the source branch
+#   (local and remote-tracking, newest first; a remote branch that equals the
+#   local one of the same name is not repeated). 2. Choose a mode: **by commit**
+#   lists the branch's commits that are not yet in HEAD, **by files** lists the
+#   files they changed, one row per commit and file (so a file changed by several
+#   commits appears once per commit, with that commit beside it). The preview is
+#   on the right. Mark with Tab (the cursor stays put); Ctrl-T flips to the other
+#   mode. 3. Choose the action. By commit: cherry-pick, with `-x`, without
+#   committing, or preview, replayed oldest first. By files: apply only those
+#   files' changes from their commits, staged and not committed. Merge commits
+#   are not listed. Every stage has a back entry, and going back, or flipping
+#   modes, restores the query, the marks and the cursor row; ESC cancels.
+#
+#   With a `<source>` or `--all` the workflow is the former one: a single list of
+#   commits (the history of the source, or of all refs), then the action menu.
+# @option --all Optional. Skip the source and mode steps: list the commits of all refs (the former default).
 # @option --include-head Optional. Also list commits already in HEAD (they are skipped when applied).
 # @option -c | --count Optional. Maximum number of commits listed (default 500).
 # @option -n | --dry-run Optional. Print the git command instead of executing it.
 # @option -h | --help Show this help message.
-# @arg $1 string source: Optional. Limit the list to the history of this revision (branch, tag, ...).
+# @arg $1 string source: Optional. Limit the list to the history of this revision (branch, tag, ...); skips the source and mode steps.
 # @exitcode 0 The commits were applied.
 # @exitcode 1 Cancelled, nothing to pick, or the cherry-pick failed or stopped on a conflict.
 # @exitcode 2 Invalid usage.
+# @exitcode 11 The user picked "← Back" at the source list; nothing was changed.
 # @see shell::git::commit::pick::apply
 # @example
 #   shell::git::commit::pick::fzf
 #   shell::git::commit::pick::fzf feature/login
+#   shell::git::commit::pick::fzf --all
 #   shell::git::commit::pick::fzf -c 100 -n
 #
 shell::git::commit::pick::fzf() {
 	if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
 		shell::logger::reset_options
 		shell::logger::info "Find commits with fzf (preview, multi-select) and cherry-pick them"
-		shell::logger::usage "shell::git::commit::pick::fzf [-n] [-c <N>] [--include-head] [<source>]"
-		shell::logger::item "source" "Only the history of this revision (default: all refs)"
+		shell::logger::usage "shell::git::commit::pick::fzf [-n] [-c <N>] [--include-head] [--all | <source>]"
+		shell::logger::item "source" "Only the history of this revision (skips the source and mode steps)"
+		shell::logger::option "--all" "List the commits of all refs (skips the source and mode steps)"
 		shell::logger::option "--include-head" "Also list commits already in HEAD"
 		shell::logger::option "-c, --count <N>" "Maximum commits listed (default 500)"
 		shell::logger::option "-n, --dry-run" "Print the git command instead of executing it"
 		shell::logger::option "-h, --help" "Show this help message"
+		shell::logger::note "Without arguments: pick the source branch, then pick by commit or by files (Ctrl-T flips)."
 		shell::logger::note "Tab marks several commits; they are applied oldest first."
 		shell::logger::example "shell::git::commit::pick::fzf"
 		shell::logger::example "shell::git::commit::pick::fzf feature/login"
+		shell::logger::example "shell::git::commit::pick::fzf --all"
 		return "$RETURN_SUCCESS"
 	fi
 
-	local fzf_dry_run fzf_count fzf_rest include_head="false" source="" item
+	local fzf_dry_run fzf_count fzf_rest include_head="false" all="false" source="" item
 	local fzf_extra_ok="true"
 	_shell::git::commit::pick::fzf::parse "$@" || return $?
 
@@ -12541,6 +13158,7 @@ shell::git::commit::pick::fzf() {
 		case "$item" in
 		'') ;;
 		--include-head) include_head="true" ;;
+		--all) all="true" ;;
 		-*)
 			shell::logger::error "Unknown option: $item"
 			return "$RETURN_INVALID"
@@ -12557,9 +13175,17 @@ shell::git::commit::pick::fzf() {
 $fzf_rest
 EOF
 
+	if [ "$all" = "true" ] && [ -n "$source" ]; then
+		shell::logger::error "--all and a source cannot be combined"
+		return "$RETURN_INVALID"
+	fi
 	if ! git rev-parse --git-dir >/dev/null 2>&1; then
 		shell::logger::error "Not inside a Git repository"
 		return "$RETURN_FAILURE"
+	fi
+	if [ "$all" = "false" ] && [ -z "$source" ]; then
+		_shell::git::commit::pick::fzf::flow "$fzf_dry_run" "$fzf_count" "$include_head"
+		return $?
 	fi
 	if [ -n "$source" ]; then
 		shell::git::commit::pick::validate -q -- "$source" || {

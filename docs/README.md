@@ -10,6 +10,7 @@
 
 - [git-commit-messages.md](features/git-commit-messages.md) — Conventional Commits, `create` and `predict`
 - [git-history.md](features/git-history.md) — history explorer for files, functions and line ranges
+- [git-pick.md](features/git-pick.md) — `shell::git::commit::pick::fzf`: pick the source branch, then commits or only some of their files, with state kept between screens
 - [git-isolate.md](features/git-isolate.md) — take a commit, files or lines of another branch into a new branch in an isolated worktree
 - [homebrew.md](features/homebrew.md) — `shell::brew::*`
 - [markdown.md](features/markdown.md) — `shell::markdown::*`: Markdown, Telegram MarkdownV2 and plain-text builder
