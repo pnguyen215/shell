@@ -583,4 +583,3 @@ shell::logger::style::reset() {
 	}
 	shell::logger::success "Logger style reset to '$SHELL_LOGGER_STYLE_DEFAULT'"
 }
-

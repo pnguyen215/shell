@@ -47,21 +47,25 @@ t_has "preview has the stat for the overview" "--stat" "$args"
 t_lacks "no colour off a terminal" "\033[" "$list"
 
 # --- selecting a file shows its diff (output is not a terminal: plain, no pager)
-reset_fzf; FAKE_FZF_ROW=2
+reset_fzf
+FAKE_FZF_ROW=2
 t_rc "select: file diff" 0 shell::git::diff::fzf HEAD
 t_has "select: shows the change" "+two" "$T_OUT"
 t_eq "select: list comes back until ESC" "2" "$(cat "$HOME/fzf.count")"
-reset_fzf; FAKE_FZF_ROW=1
+reset_fzf
+FAKE_FZF_ROW=1
 t_rc "select: overview" 0 shell::git::diff::fzf HEAD
 t_has "overview: diffstat" "4 files changed" "$T_OUT"
 FAKE_FZF_ROW=""
 
 # --- Back entry: leaves with RETURN_BACK (11), no diff shown
-reset_fzf; FAKE_FZF_ROW=6
+reset_fzf
+FAKE_FZF_ROW=6
 t_rc "back: returns RETURN_BACK" 11 shell::git::diff::fzf HEAD
 t_has "back: says so" "Back" "$T_OUT"
 t_eq "back: list not reopened" "1" "$(cat "$HOME/fzf.count")"
-reset_fzf; FAKE_FZF_ROW=""
+reset_fzf
+FAKE_FZF_ROW=""
 FAKE_FZF_ROW=""
 
 # --- root commit: the empty tree is the parent
@@ -90,7 +94,8 @@ t_rc "unknown option" 2 shell::git::diff::fzf --bogus
 t_rc "dry run" 0 shell::git::diff::fzf -n HEAD
 t_has "dry run: command" "diff --name-status" "$T_OUT"
 t_rc "pick: ESC aborts" 0 shell::git::diff::fzf --pick
-reset_fzf; FAKE_FZF_ROW=3
+reset_fzf
+FAKE_FZF_ROW=3
 t_rc "pick: Back entry" 11 shell::git::diff::fzf --pick
 t_has "pick: back entry is offered last" "Back" "$(tail -n 1 "$HOME/stdin.1")"
 # --- new (untracked) files are listed, and the diff works from a subdirectory
@@ -106,12 +111,13 @@ t_has "untracked: counted as added" "1 added, 1 modified" "$(cat "$HOME/args.1")
 reset_fzf
 shell::git::diff::fzf HEAD >/dev/null 2>&1
 t_lacks "untracked: not part of a commit view" "fresh.txt" "$(cat "$HOME/stdin.1")"
-reset_fzf; FAKE_FZF_ROW=2
+reset_fzf
+FAKE_FZF_ROW=2
 (cd sub && shell::git::diff::fzf >"$HOME/out.txt" 2>&1)
 t_has "subdirectory: the modified file's diff is shown" "+more" "$(cat "$HOME/out.txt")"
-reset_fzf; FAKE_FZF_ROW=3
+reset_fzf
+FAKE_FZF_ROW=3
 (cd sub && shell::git::diff::fzf >"$HOME/out.txt" 2>&1)
 t_has "subdirectory: the new file's diff is shown" "+brand new" "$(cat "$HOME/out.txt")"
 FAKE_FZF_ROW=""
 t_done
-
