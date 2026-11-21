@@ -67,7 +67,12 @@ git checkout -q main
 printf '// HEADER\n// more\npackage main\n\nfunc SignIn() {\n\ta := 4\n}\n\nfunc Logout() {\n\tb := 3\n}\n' >"$F" && commit "main change"
 git merge -q --no-ff feat -m "Merge feat" >/dev/null 2>&1
 # a large diff in another file
-i=0; : >big.txt; while [ "$i" -lt 3000 ]; do echo "line $i" >>big.txt; i=$((i + 1)); done
+i=0
+: >big.txt
+while [ "$i" -lt 3000 ]; do
+	echo "line $i" >>big.txt
+	i=$((i + 1))
+done
 commit "large diff"
 
 # --- context ------------------------------------------------------------------
@@ -85,7 +90,10 @@ t_rc "context: deleted file is still known" 0 _shell::git::history::context "src
 git checkout -q --detach HEAD
 t_has "context: detached HEAD" "(detached at " "$(_shell::git::history::context)"
 git checkout -q main
-t_eq "context: outside a repository fails" "1" "$(cd "$HOME" && _shell::git::history::context >/dev/null 2>&1; echo $?)"
+t_eq "context: outside a repository fails" "1" "$(
+	cd "$HOME" && _shell::git::history::context >/dev/null 2>&1
+	echo $?
+)"
 
 # --- scope --------------------------------------------------------------------
 t_eq "scope: lines are normalized" "lines${US}$F${US}3,5" "$(_shell::git::history::scope lines "$F" 3-5)"
@@ -271,18 +279,23 @@ t_has "fzf: function preview falls back, never blank" "||" "$(cat "$HOME/args.1"
 
 # Enter: the scoped diff of the commit (output is not a terminal: plain, no pager).
 both_row="$(_shell::git::history::log function "$F" Logout | cut -d "$US" -f14 | grep -n 'change both' | cut -d: -f1)"
-reset_fzf; FAKE_FZF_ROW="$both_row"
+reset_fzf
+FAKE_FZF_ROW="$both_row"
 t_rc "fzf: Enter inspects" 0 shell::git::history::fzf --function Logout "$F"
 t_has "fzf: inspect shows the message" "change both" "$T_OUT"
 t_has "fzf: inspect shows the function's change" "+	b := 3" "$T_OUT"
 t_lacks "fzf: inspect leaves out the other function" "a := 3" "$T_OUT"
 t_eq "fzf: the list comes back until ESC" "2" "$(cat "$HOME/fzf.count")"
 # Ctrl-F: the whole commit
-reset_fzf; FAKE_FZF_ROW="$both_row"; FAKE_FZF_KEY=ctrl-f
+reset_fzf
+FAKE_FZF_ROW="$both_row"
+FAKE_FZF_KEY=ctrl-f
 t_rc "fzf: Ctrl-F shows the whole commit" 0 shell::git::history::fzf --function Logout "$F"
 t_has "fzf: whole commit includes the other function" "a := 3" "$T_OUT"
 # Ctrl-B: blame
-reset_fzf; FAKE_FZF_ROW=1; FAKE_FZF_KEY=ctrl-b
+reset_fzf
+FAKE_FZF_ROW=1
+FAKE_FZF_KEY=ctrl-b
 t_rc "fzf: Ctrl-B blames the scope" 0 shell::git::history::fzf --function Logout "$F"
 t_has "fzf: blame shows the author" "tester" "$T_OUT"
 # Ctrl-Y: copy the hash (a fake clipboard tool)
@@ -291,14 +304,17 @@ cat >"$HOME/bin/pbcopy" <<'FAKE'
 cat >"$FAKE_FZF_DIR/clipboard"
 FAKE
 chmod +x "$HOME/bin/pbcopy" "$HOME/bin/xclip" 2>/dev/null
-reset_fzf; FAKE_FZF_ROW=1; FAKE_FZF_KEY=ctrl-y
+reset_fzf
+FAKE_FZF_ROW=1
+FAKE_FZF_KEY=ctrl-y
 t_rc "fzf: Ctrl-Y runs" 0 shell::git::history::fzf "$F"
 want="$(_shell::git::history::log file "$F" | head -n 1 | cut -d "$US" -f1)"
 if [ "$(shell::os::type)" = "macos" ] && [ -f "$HOME/clipboard" ]; then t_eq "fzf: Ctrl-Y copies the full hash" "$want" "$(cat "$HOME/clipboard")"; else t_has "fzf: Ctrl-Y copies the hash" "Copied" "$T_OUT"; fi
 FAKE_FZF_KEY=""
 # Back entry
 n="$(($(_shell::git::history::log file "$F" | grep -c .) + 1))"
-reset_fzf; FAKE_FZF_ROW="$n"
+reset_fzf
+FAKE_FZF_ROW="$n"
 t_rc "fzf: Back returns RETURN_BACK" 11 shell::git::history::fzf "$F"
 t_eq "fzf: Back does not reopen the list" "1" "$(cat "$HOME/fzf.count")"
 FAKE_FZF_ROW=""
@@ -344,9 +360,17 @@ printf '%s\n' "$F" "Line range" >"$HOME/picks"
 t_eq "pick: line range asks for the range" "lines${US}$F${US}5,7" "$(printf '5,7\n' | _shell::git::history::pick "$HOME/repo" 2>/dev/null)"
 
 # --- the repository is never modified ------------------------------------------
-before="$(git status --porcelain; git rev-parse HEAD; git for-each-ref)"
+before="$(
+	git status --porcelain
+	git rev-parse HEAD
+	git for-each-ref
+)"
 shell::git::history::fzf --print --function Logout "$F" >/dev/null 2>&1
 shell::git::history::fzf --print "$F" >/dev/null 2>&1
-t_eq "read-only: working tree, HEAD and refs are unchanged" "$before" "$(git status --porcelain; git rev-parse HEAD; git for-each-ref)"
+t_eq "read-only: working tree, HEAD and refs are unchanged" "$before" "$(
+	git status --porcelain
+	git rev-parse HEAD
+	git for-each-ref
+)"
 
 t_done
