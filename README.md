@@ -37,6 +37,8 @@ source ~/.bash_profile
 source ~/.bashrc
 ```
 
+Already installed and want it in zsh too? `shell::zsh::install` (from bash or zsh) adds the hook to `~/.zshrc` safely and idempotently; `shell::zsh::install -n` shows what it would do first ([docs/features/zsh.md](docs/features/zsh.md)).
+
 ### Customization
 
 | Environment Variable | Default            | Description                       |
@@ -116,6 +118,7 @@ shell::prompt::skills::browse::fzf       # browse / install / update shared prom
 shell::git::branch::create -n feature_x # -n = dry run: print commands without executing
 shell::net::port::kill 3000              # SIGTERM whatever is listening on :3000
 shell::fs::browse ~/docs                 # pick a file with fzf, then act on it
+shell::zsh::install -n                   # wire the installed library into ~/.zshrc (dry run first); szm opens the zsh menu: history, kill, ssh host, bookmark, worktree (docs/features/zsh.md)
 shell::git::history::fzf --function Login src/auth/login.go   # how one function evolved, commit by commit (docs/features/git-history.md)
 ```
 
@@ -183,7 +186,7 @@ The only exceptions are the four lifecycle functions in [`src/shell.sh`](src/she
 ├── Makefile                               # make test | lint | fmt | docs | doctor
 ├── docs/
 │   ├── development/                       # architecture, conventions
-│   ├── features/                          # git-commit-messages, git-history, git-isolate, homebrew, nvm, prompt, rsync, security, ssh
+│   ├── features/                          # git-commit-messages, git-history, git-isolate, homebrew, nvm, prompt, rsync, security, ssh, zsh
 │   └── api/                               # generated reference (make docs)
 ├── scripts/                               # lint.sh, gen_docs.sh
 ├── test/                                  # run under bash and zsh
@@ -215,7 +218,7 @@ export SHELL_GIT_COMMIT_EMOJI=true              # gitmoji in commit messages (de
 source "$HOME/shell/src/shell.sh"
 ```
 
-User data (keys, bookmarks, workspaces, prompts) lives under `SHELL_CONFIG_DIR` with mode 700/600. Settings of a single feature are documented in [`docs/features/`](docs/features), for example [commit messages](docs/features/git-commit-messages.md), [Homebrew](docs/features/homebrew.md), [Markdown builder](docs/features/markdown.md), [prompt store](docs/features/prompt.md), [nvm](docs/features/nvm.md), [system statistics](docs/features/system-stats.md), [SSH](docs/features/ssh.md) and [rsync](docs/features/rsync.md).
+User data (keys, bookmarks, workspaces, prompts) lives under `SHELL_CONFIG_DIR` with mode 700/600. Settings of a single feature are documented in [`docs/features/`](docs/features), for example [commit messages](docs/features/git-commit-messages.md), [Homebrew](docs/features/homebrew.md), [Markdown builder](docs/features/markdown.md), [prompt store](docs/features/prompt.md), [nvm](docs/features/nvm.md), [system statistics](docs/features/system-stats.md), [SSH](docs/features/ssh.md), [rsync](docs/features/rsync.md) and [zsh](docs/features/zsh.md).
 
 ## Dependencies
 

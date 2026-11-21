@@ -676,3 +676,17 @@ alias srrs-n="shell::rsync::resume -n"
 
 # shell::rsync::diff
 alias srdf="shell::rsync::diff"
+
+# ////////////////////
+# zsh helpers (shell::zsh::*)
+# ///////////////////
+
+alias szi="shell::zsh::install"                    # wire the library into ~/.zshrc
+alias szi-n="shell::zsh::install -n"               # same, dry run
+alias szm="shell::zsh::manage::fzf"                # zsh menu
+alias szh="shell::zsh::history::search::fzf"       # search the shell history
+alias szk="shell::zsh::process::kill::fzf"         # pick and stop processes
+alias szs="shell::zsh::ssh::host::pick::fzf"       # pick an ssh host
+alias szg="shell::zsh::bookmark::goto::fzf"        # go to a bookmark
+alias szw="shell::zsh::git::worktree::switch::fzf" # switch git worktree
+alias szc="shell::zsh::cache::clear"               # clear the picker cache

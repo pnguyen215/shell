@@ -18,6 +18,7 @@
 - [nvm.md](features/nvm.md) — `shell::nvm::*`
 - [security.md](features/security.md) — `shell::security::*`: host inventory, threat hunting (processes, network, connections); evidence-based findings in text, JSON, Markdown and CSV
 - [skill-audit.md](features/skill-audit.md) — `shell::skill::audit::*`: Cloudflare's security-audit skill for Claude Code and OpenCode
+- [zsh.md](features/zsh.md) — `shell::zsh::*`: `shell::zsh::install` (wire the library into `~/.zshrc`), fzf pickers for history, processes, ssh hosts, bookmarks and worktrees, optional ZLE widgets
 - [system-stats.md](features/system-stats.md) — `shell::system::stats::*`: disk, memory and swap usage on macOS and Linux
 - [ssh.md](features/ssh.md) — `shell::ssh::*` (see also [rsync.md](features/rsync.md))
 - [rsync.md](features/rsync.md) — `shell::rsync::*`
