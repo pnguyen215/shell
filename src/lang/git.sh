@@ -14416,7 +14416,7 @@ _shell::git::diff::target() {
 #     is syntax-highlighted through `delta` when it is installed, else with git's own colours.
 #   The list keeps the cursor on the item chosen last when it is shown again (shell::fzf::select --initial).
 # @option -s | --staged Optional. Diff the staged changes (`git diff --cached`) instead.
-# @option -p | --pick Optional. Pick the commit in fzf first.
+# @option -p | --pick Optional. Pick the commit in fzf first (coloured list: hash, author, date).
 # @option -n | --dry-run Optional. Print the git commands instead of opening the browser.
 # @option -h | --help Show this help message.
 # @arg $1 string Optional. Commit-ish or `<from>..<to>`. Default: uncommitted changes against HEAD.
@@ -14470,11 +14470,18 @@ shell::git::diff::fzf() {
 
 	# Step 1 — what to diff.
 	if [ "$pick" = "true" ]; then
-		local picked
+		local picked pick_fmt='%h %s (%an, %ar)' pick_color="--color=never"
+		# Coloured only on a terminal that supports it (fzf --ansi strips the codes from the
+		# selection, so the hash is still the first word): hash yellow, author cyan, date green.
+		shell::console::detect_colors
+		if [ -t 1 ] && [ "${_SHELL_CONSOLE_COLORS:-0}" -ge 8 ]; then
+			pick_color="--color=always"
+			pick_fmt='%C(yellow)%h%C(reset) %s %C(dim)(%C(reset)%C(cyan)%an%C(reset)%C(dim),%C(reset) %C(green)%ar%C(reset)%C(dim))%C(reset)'
+		fi
 		picked="$({
-			git log -n 500 --format='%h %s (%an, %ar)' 2>/dev/null
+			git log -n 500 "$pick_color" --format="$pick_fmt" 2>/dev/null
 			printf '%s\n' "$SHELL_FZF_BACK_LABEL"
-		} | shell::fzf::select --prompt="Select commit: ")" || {
+		} | shell::fzf::select --ansi --prompt="Select commit: ")" || {
 			shell::logger::warn "No commit selected — aborting"
 			return "$RETURN_SUCCESS"
 		}
