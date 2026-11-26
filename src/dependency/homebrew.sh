@@ -153,4 +153,3 @@ shell::homebrew::uninstall() {
 
 	shell::logger::success "Homebrew uninstalled."
 }
-

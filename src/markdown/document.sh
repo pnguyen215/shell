@@ -310,4 +310,3 @@ shell::markdown::to_file() {
 	fi
 	return "$RETURN_SUCCESS"
 }
-
