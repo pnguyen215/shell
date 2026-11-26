@@ -86,6 +86,8 @@ _shell::logger::fmt() {
 		return "$RETURN_SUCCESS"
 	fi
 
+	# The style is resolved on the first message, not at shell start (see src/shell.sh).
+	[ -n "${SHELL_LOGGER_STYLE-}" ] || _shell::logger::style::load
 	_shell::logger::style::render "${SHELL_LOGGER_STYLE:-$SHELL_LOGGER_STYLE_DEFAULT}" "$level" "$color" "$stream" "$@"
 	return "$RETURN_SUCCESS"
 }

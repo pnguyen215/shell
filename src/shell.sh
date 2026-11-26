@@ -30,9 +30,17 @@ if [ -z "${SHELL_DIR-}" ]; then
 	else
 		_shell_self="$HOME/shell/src/shell.sh"
 	fi
-	# src/shell.sh -> <root>/src -> <root>
-	SHELL_DIR="$(cd "$(dirname "$_shell_self")/.." 2>/dev/null && pwd)"
-	unset _shell_self
+	# src/shell.sh -> <root>/src -> <root>. Pure parameter expansion for the common
+	# cases (no subshell, no dirname); the subshell form is the fallback for odd paths.
+	_shell_dir="${_shell_self%/*}"
+	[ "$_shell_dir" = "$_shell_self" ] && _shell_dir=.
+	case "$_shell_dir" in
+	/*/src) SHELL_DIR="${_shell_dir%/src}" ;;
+	src) SHELL_DIR="$PWD" ;;
+	./src) SHELL_DIR="$PWD" ;;
+	*) SHELL_DIR="$(cd "$_shell_dir/.." 2>/dev/null && pwd)" ;;
+	esac
+	unset _shell_self _shell_dir
 fi
 
 # --- 2. Directory loader
@@ -88,17 +96,48 @@ if ! source "$SHELL_DIR/src/constant/system.sh"; then
 	return 1 2>/dev/null || exit 1
 fi
 
-for _shell_group in "${SHELL_MODULE_GROUPS[@]}"; do
-	shell::source_directory "$SHELL_SRC_DIR/$_shell_group"
-done
-unset _shell_group
+# shellcheck source=/dev/null
+source "$SHELL_SRC_DIR/loader/lazy.sh"
 
-# Detect the OS once, in the current shell (not a subshell) so the result is
-# cached in SHELL_OS_TYPE and every later shell::os::type call is fork-free.
-shell::os::type >/dev/null 2>&1
+# Lazy loading (default): a cache of one-line stubs replaces the pure function modules, so
+# start-up does not parse the whole library. Falls back to eager loading when disabled
+# (SHELL_LAZY=0, SHELL_DEBUG set), when the cache cannot be built, or when it is unusable.
+_shell_lazy_done=0
+if [ "${SHELL_LAZY-1}" != "0" ] && [ -z "${SHELL_DEBUG-}" ]; then
+	_shell_lazy_cache="${SHELL_SRC_DIR%/*}/.cache/lazy.sh"
+	_shell::lazy::fresh "$_shell_lazy_cache" || _shell::lazy::build "$_shell_lazy_cache"
+	if [ -r "$_shell_lazy_cache" ]; then
+		# shellcheck source=/dev/null
+		source "$_shell_lazy_cache" && _shell_lazy_done=1
+	fi
+	unset _shell_lazy_cache
+fi
 
-# Resolve the logger style once (exported SHELL_LOGGER_STYLE > saved > default).
-_shell::logger::style::load >/dev/null 2>&1
+if [ "$_shell_lazy_done" = "0" ]; then
+	for _shell_group in "${SHELL_MODULE_GROUPS[@]}"; do
+		shell::source_directory "$SHELL_SRC_DIR/$_shell_group"
+	done
+fi
+unset _shell_group _shell_lazy_done
+
+# Detect the OS once, in the current shell (not a subshell) so the result is cached in
+# SHELL_OS_TYPE and every later shell::os::type call is fork-free. $OSTYPE (a shell
+# variable) answers the common cases without running uname; the function stays the
+# fallback for anything else.
+if [ -z "${SHELL_OS_TYPE-}" ]; then
+	case "${OSTYPE-}" in
+	linux*) SHELL_OS_TYPE="linux" ;;
+	darwin*) SHELL_OS_TYPE="macos" ;;
+	cygwin* | msys* | mingw*) SHELL_OS_TYPE="windows" ;;
+	*) shell::os::type >/dev/null 2>&1 ;;
+	esac
+fi
+
+# An exported SHELL_LOGGER_STYLE is validated now; without one the style (saved file or default) is
+# resolved on the first log message, so shell start does no work for it.
+if [ -n "${SHELL_LOGGER_STYLE-}" ]; then
+	_shell::logger::style::load >/dev/null 2>&1
+fi
 
 SHELL_LOADED=1
 

@@ -107,3 +107,5 @@ _build
 Pods
 DerivedData
 .pi-plugins-test*
+# Lazy-load cache (generated at first start, see src/loader/lazy_build.sh)
+.cache/

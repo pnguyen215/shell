@@ -257,7 +257,8 @@ _shell::logger::style::save_hint() {
 
 # @internal
 # @description Resolve the active style once: exported variable, then saved, then default.
-#   Called by the loader (src/shell.sh) after every module is sourced. An
+#   Called by the loader (src/shell.sh) only when SHELL_LOGGER_STYLE is exported, and otherwise
+#   on the first log message or style query. An
 #   invalid `SHELL_LOGGER_STYLE` is ignored.
 # @set SHELL_LOGGER_STYLE string The resolved style name.
 # @exitcode 0 Always.
@@ -294,6 +295,7 @@ shell::logger::style::get() {
 		return "$RETURN_SUCCESS"
 	fi
 
+	[ -n "${SHELL_LOGGER_STYLE-}" ] || _shell::logger::style::load
 	local style="${SHELL_LOGGER_STYLE:-$SHELL_LOGGER_STYLE_DEFAULT}"
 	if ! _shell::logger::style::valid "$style"; then
 		style="$SHELL_LOGGER_STYLE_DEFAULT"
