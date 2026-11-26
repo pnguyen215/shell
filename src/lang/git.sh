@@ -12613,7 +12613,9 @@ EOF
 #   ref name, so a local `x` and a remote `origin/x` can never be mixed up later.
 #   A remote branch that points at the same commit as the local branch of the
 #   same name is not listed again; the local row says `(= origin)` instead. When
-#   the two differ, both rows are listed.
+#   the two differ, both rows are listed. A row is `[local]`/`[remote]`, the
+#   branch name (bold green local, bold cyan remote) padded so the date and time
+#   (dimmed) and the subject line up.
 # @stdout Rows `display<TAB>full-ref`.
 # @exitcode 0 Always (nothing printed when there is no candidate).
 # @example
@@ -12623,13 +12625,14 @@ _shell::git::commit::pick::fzf::sources() {
 	local current
 	current="$(git symbolic-ref --short -q HEAD 2>/dev/null)"
 	git for-each-ref --sort=-committerdate \
-		'--format=%(refname)%09%(objectname)%09%(committerdate:short)%09%(subject)' \
+		'--format=%(refname)%09%(objectname)%09%(committerdate:format:%Y-%m-%d %H:%M)%09%(subject)' \
 		refs/heads refs/remotes 2>/dev/null |
 		awk -F'\t' -v cur="$current" '
 			$1 ~ /\/HEAD$/ { next }
 			{ n++; ref[n] = $1; sha[n] = $2; day[n] = $3; subj[n] = $4
 			  if (index($1, "refs/heads/") == 1) loc[substr($1, 12)] = $2 }
 			END {
+				esc = sprintf("%c", 27)
 				for (i = 1; i <= n; i++) {
 					if (index(ref[i], "refs/remotes/") != 1) continue
 					rest = substr(ref[i], 14); slash = index(rest, "/")
@@ -12644,12 +12647,17 @@ _shell::git::commit::pick::fzf::sources() {
 					if (index(ref[i], "refs/heads/") == 1) {
 						name = substr(ref[i], 12)
 						if (name == cur) continue
+						tag = "[local]"; col = "1;32"
 						mark = (name in also) ? " (= " also[name] ")" : ""
-						printf "%-8s %s%s  %s  %s\t%s\n", "[local]", name, mark, day[i], subj[i], ref[i]
 					} else {
-						printf "%-8s %s  %s  %s\t%s\n", "[remote]", substr(ref[i], 14), day[i], subj[i], ref[i]
+						name = substr(ref[i], 14)
+						tag = "[remote]"; col = "1;36"; mark = ""
 					}
+					m++; tg[m] = tag; cl[m] = col; nm[m] = name; mk[m] = mark; dt[m] = day[i]; sb[m] = subj[i]; full[m] = ref[i]
+					if (length(name mark) > w) w = length(name mark)
 				}
+				for (i = 1; i <= m; i++)
+					printf "%-8s %s\t%s\n", tg[i], esc "[" cl[i] "m" nm[i] esc "[0m" mk[i] sprintf("%" (w - length(nm[i] mk[i])) "s", "") "  " esc "[2m" dt[i] esc "[0m  " sb[i], full[i]
 			}'
 }
 

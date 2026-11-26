@@ -657,7 +657,7 @@ fresh2() {
 staged() { git diff --cached --name-only -z | tr '\0' '|'; }
 head_is() { [ "$(git rev-parse HEAD)" = "$1" ] && echo same || echo moved; }
 args_of() { cat "$HOME/args.$1"; }
-rows_of() { cat "$HOME/stdin.$1"; }
+rows_of() { sed "s/$(printf '\033')\[[0-9;]*m//g" "$HOME/stdin.$1"; }
 S="Pick by commit"
 F="Pick by files"
 APPLY_F="Apply to the working tree (staged, no commit)"
@@ -676,7 +676,7 @@ t_lacks "flow: the current branch is not offered" "[local]  main" "$(rows_of 1)"
 t_lacks "flow: origin/HEAD is not offered" "origin/HEAD" "$(rows_of 1)"
 t_eq "flow: 5 branches (old, feature, release/1.0, origin/release/1.0, origin/side) and the back row" "6" "$(lines "$HOME/stdin.1")"
 t_eq "flow: the back row is last" "${B}${tab}@back" "$(tail -n 1 "$HOME/stdin.1")"
-t_eq "flow: the second column is the full ref" "refs/heads/feature" "$(grep -F 'feature (=' "$HOME/stdin.1" | cut -f2)"
+t_eq "flow: the second column is the full ref" "refs/heads/feature" "$(rows_of 1 | grep -F 'feature (=' | cut -f2)"
 t_has "flow: the source preview is the branch's log" "git log --oneline --color=always -n 15" "$(args_of 1)"
 t_has "flow: ...on the right" "--preview-window=right:55%:wrap" "$(args_of 1)"
 t_eq "flow: then the mode menu" "Pick by commit${nl}Pick by files${nl}$B" "$(rows_of 2)"
