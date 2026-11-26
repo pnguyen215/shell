@@ -2,7 +2,7 @@
 # The fzf group: fzf (the guided workflow and --all), ::local, ::remote, ::branch, ::current, ::range, ::backport, ::conflicts,
 # ::continue, ::skip, ::abort. fzf is faked: each call outputs the stdin lines that match the
 # scripted picks (exact line first, then substring), and records what it was given.
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 
 export GIT_CONFIG_NOSYSTEM=1 GIT_EDITOR=true

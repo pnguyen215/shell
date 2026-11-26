@@ -5,7 +5,7 @@
 # call with line N of $FAKE_FZF_PICKS: the pick is matched as text against the candidate lines
 # and the whole matching line is printed, like fzf; `a;b` picks two lines; an empty line is ESC.
 # Nothing here needs a terminal: _shell::zsh::fzf::has_tty is answered by the test.
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 
 nl='

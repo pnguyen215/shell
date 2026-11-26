@@ -2,7 +2,7 @@
 # shell::git::history::* on a throwaway repository. fzf is faked: call 1 picks FAKE_FZF_ROW (a
 # line number of the list; with FAKE_FZF_KEY it also prints that key first, like --expect),
 # later calls exit 130 (ESC). Stdin and arguments of every call are recorded.
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 
 mkdir "$HOME/bin"
@@ -189,7 +189,8 @@ t_has "timeline: additions and deletions" "+1 -1" "$tl"
 case "$(printf '%s\n' "$tl" | tail -n 1)" in "  tester  +"*) t_ok ;; *) t_bad "timeline: the last block has no connector" "$(printf '%s\n' "$tl" | tail -n 2)" ;; esac
 t_lacks "timeline: no colour off a terminal" "$(printf '\033')" "$tl"
 narrow="$(_shell::git::history::log file "$F" | _shell::git::history::timeline -w 30 | head -n 1)"
-t_eq "timeline: narrow width cuts the subject" "1" "$([ "${#narrow}" -le 40 ] && echo 1 || echo 0)"
+# 32 fixed characters (glyph, "YYYY-MM-DD HH:MM:SS", short hash, spacing) + the 10-character minimum subject.
+t_eq "timeline: narrow width cuts the subject" "1" "$([ "${#narrow}" -le 42 ] && echo 1 || echo 0)"
 colored="$(_shell::git::history::log file "$F" | _shell::git::history::timeline -c -w 80)"
 t_has "timeline: green additions" "$(printf '\033[32m')" "$colored"
 t_has "timeline: red deletions" "$(printf '\033[31m')" "$colored"

@@ -2,7 +2,7 @@
 # Back navigation: shell::ask::option::back, shell::git::commit::message::base --back
 # and the step-by-step shell::git::commit::create. fzf is faked (scripted picks, then
 # ESC) and text prompts read from stdin; every create run uses -n, so nothing is committed.
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 # Emoji are off by default; a SHELL_GIT_COMMIT_EMOJI exported by the person running the tests must not leak in.
 SHELL_GIT_COMMIT_EMOJI=false

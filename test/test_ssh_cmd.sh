@@ -5,7 +5,7 @@
 # ssh, scp, sftp, rsync and ssh-copy-id are fakes. Each logs its name and arguments, one "[arg]" per word,
 # to $FAKE_LOG, copies its standard input to $FAKE_STDIN when that is set, and exits with $FAKE_RC. Nothing
 # here touches the network.
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 
 mkdir -p "$HOME/bin" "$HOME/empty"

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # shell::git::commit::pick::backport: new branch vs in-place, -x by default, remote-tracking
 # targets, conflicts, the clean-up when nothing can be applied, and every refusal.
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 
 export GIT_CONFIG_NOSYSTEM=1 GIT_EDITOR=true

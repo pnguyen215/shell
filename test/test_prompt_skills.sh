@@ -4,7 +4,7 @@
 # dry-run, path traversal, byte-exact bodies, copy. Nothing touches the network: fixture mode reads $HOME/fx/<branch>/prompts,
 # and a fake `curl` on PATH serves canned GitHub answers for the HTTP paths (ETag, tarball fallback, 404, rate limit).
 # The interactive menus are covered by test_prompt_skills_fzf.sh.
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 
 t_lacks() { case "$3" in *"$2"*) t_bad "$1" "[$2] unexpectedly present in [$3]" ;; *) t_ok ;; esac }

@@ -3,7 +3,7 @@
 # guess, the shared helpers extracted from sgcf, and the interactive flow (pick a
 # prediction / enter manually / edit / back). fzf is faked (scripted picks, then ESC) and
 # text prompts read stdin. Most runs use -n; the real-commit cases stub the push/Telegram step.
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 # Emoji are off by default; a SHELL_GIT_COMMIT_EMOJI exported by the person running the tests must not leak in.
 SHELL_GIT_COMMIT_EMOJI=false

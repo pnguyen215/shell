@@ -235,7 +235,7 @@ _shell::git::history::function::resolve() {
 # @arg $4 integer Optional. Most commits (default: SHELL_GIT_HISTORY_MAX).
 # @arg $5 string Optional. `false` leaves merge commits out (default: true).
 # @arg $6 string Optional. Revision to start from (used to reach a function that was deleted).
-# @arg $7 string Optional. Branch to walk. Empty walks every branch (`--all`). Ignored when $6 is set.
+# @arg $7 string Optional. Branch to walk. Empty walks every branch (`--all`), or HEAD for the function and line scopes (`git log -L` takes one tip). Ignored when $6 is set.
 # @stdout The arguments, one per line.
 # @exitcode 0 Success.
 # @exitcode 1 Unsupported scope type.
@@ -267,7 +267,12 @@ _shell::git::history::log::args() {
 	elif [ -n "$branch" ]; then
 		printf '%s\n' "$branch"
 	else
-		printf '%s\n' --all
+		# `git log -L` follows ONE tip ("More than one commit to dig from" with --all), so the
+		# function and line scopes walk HEAD; the other scopes walk every branch.
+		case "$type" in
+		function | lines) printf '%s\n' HEAD ;;
+		*) printf '%s\n' --all ;;
+		esac
 	fi
 	case "$type" in
 	file | search | regex) [ -n "$file" ] && printf '%s\n%s\n' -- "$file" ;;
@@ -871,7 +876,7 @@ _shell::git::history::timeline() {
 	width="$(_shell::git::history::width "$width")"
 
 	local full short author date adds dels files merge fpath opath ra rd rf subject body cbranch
-	local glyph room subj summary track="${SHELL_GLYPH_TRACK:-│}" branch_tag="" cbranch
+	local glyph room subj summary track="${SHELL_GLYPH_TRACK:-│}" branch_tag=""
 	# Read everything first so the last block can drop its connector.
 	local all
 	all="$(cat)"

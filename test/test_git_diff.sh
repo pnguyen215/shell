@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # shell::git::diff::fzf on a throwaway repo. fzf is faked: call 1 picks FAKE_FZF_ROW (a
 # line number of the list), later calls exit 130 (ESC). Stdin and arguments are recorded.
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 
 mkdir "$HOME/bin"

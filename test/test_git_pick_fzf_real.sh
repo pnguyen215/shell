@@ -5,7 +5,7 @@
 # matches nothing), that the preview is on the right, and that the chosen files really get staged.
 #
 # Skipped unless tmux and fzf (0.35+) are installed. It runs the shell that runs this file (bash or zsh).
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 
 nl='

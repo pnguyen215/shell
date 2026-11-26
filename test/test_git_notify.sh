@@ -2,7 +2,7 @@
 # _shell::git::telegram::notify and the git notifications built on shell::markdown::*
 # (src/lang/git.sh), plus shell::telegram::send --parse-mode (src/bot/telegram.sh).
 # curl is a fake that records its arguments; nothing is sent anywhere.
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 
 NL=$'\n'

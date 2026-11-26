@@ -6,7 +6,7 @@
 # number of arguments to $FAKE_NVM_LOG.argc) and answers from files in $FAKE_NVM_DIR. A test can therefore
 # assert what nvm received and, for the refusals, that it was never started. The real nvm is not used here;
 # test_nvm_real.sh runs the same commands against a real nvm.sh when SHELL_TEST_NVM_SRC points at one.
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 
 export NVM_DIR="$HOME/.nvm"

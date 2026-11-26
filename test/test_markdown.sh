@@ -5,7 +5,7 @@
 # normal text escapes _ * [ ] ( ) ~ ` > # + - = | { } . ! \ ; code escapes only ` and \ ;
 # the (...) of a link escapes only ) and \ . They are checked against the documented
 # syntax, not against a live Bot API.
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 
 NL=$'\n'

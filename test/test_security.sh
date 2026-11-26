@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Security regressions: command injection, secret exposure, safe defaults.
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 
 # A fake curl records its arguments and answers like Telegram would.

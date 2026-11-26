@@ -2,7 +2,7 @@
 # shell::ini::*::fzf and shell::profile::conf::* menus (src/lib/ini.sh, src/lib/profile.sh): the
 # trailing "← Back" entry, and that Back changes nothing. fzf is a fake (see test_brew_fzf.sh): the
 # Nth call picks the line of $FAKE_FZF_PICKS matching text; an empty pick is ESC.
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 
 mkdir "$HOME/bin"

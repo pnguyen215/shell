@@ -5,7 +5,7 @@
 # rsync and ssh are fakes. Each logs its name and arguments, one "[arg]" per word, to $FAKE_LOG and exits
 # with the next status of $FAKE_RC_SEQ (one per line) or, when that is empty, with $FAKE_RC. Nothing here
 # touches the network; the real rsync is in test_rsync_real.sh.
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 
 mkdir -p "$HOME/bin" "$HOME/dir" "$HOME/dest" "$HOME/empty"

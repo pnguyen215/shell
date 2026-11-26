@@ -5,7 +5,7 @@
 # fzf is a fake: the Nth call picks, for each text of the Nth line of $FAKE_FZF_PICKS (texts separated by
 # ";"), the first candidate line containing it; an empty line is ESC. $FAKE_FZF_HOOK (eval'ed) runs at call
 # $FAKE_FZF_HOOK_AT. Confirmations and typed names come from stdin.
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 
 mkdir "$HOME/bin"

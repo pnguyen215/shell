@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # shell::git::patch::create and shell::git::patch::apply::fzf on a throwaway repo.
 # fzf is faked: it prints the first candidate, or exits 130 (ESC) when FAKE_FZF_ESC=1.
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 
 mkdir "$HOME/bin"
