@@ -223,6 +223,23 @@ Then ask your agent to "security audit this codebase". A skill of the same name 
 </details>
 
 <details>
+<summary>Git toolkit (interactive, one function per file)</summary>
+
+Thirty-three functions in eight groups: `branch`, `commit`, `stage`, `log`, `remote`, `stash`, `repo`, `flow`. Each works with explicit arguments and, in a terminal without arguments, picks with fzf. Destructive steps are confirmed, `-n` prints the exact command and runs nothing, and history rewrites and discards leave a `refs/shell-backup/...` recovery ref.
+
+```bash
+shell::git::branch::cleanup -n          # what would be deleted (merged branches only, git branch -d)
+shell::git::stage::discard              # pick files, confirm, snapshot, discard
+shell::git::commit::fixup               # fixup + autosquash with a backup ref
+shell::git::log::pick                   # browse history: alt-d diff, alt-p cherry-pick, ? help
+shell::git::repo::health --plain; echo $?   # 0 healthy, 1 warnings, 2 problems
+```
+
+Full reference, key bindings, exit codes, configuration and recovery: [docs/features/git-toolkit.md](docs/features/git-toolkit.md).
+
+</details>
+
+<details>
 <summary>Security &amp; diagnostics (in progress)</summary>
 
 Read-only host triage for machines you are authorised to investigate: `shell::security::capabilities`, `shell::security::host::{info,users}` and `shell::security::hunt::{processes,network,connections}`. Every detection is a **finding** (severity, confidence, evidence source, rationale, investigation and remediation steps) printed as text, JSON, Markdown or CSV; secrets are masked, nothing is changed, and an indicator is never presented as proof. Forensics, RCA, integrity monitoring, SSH audit and hardening are planned. Details and limits: [`docs/features/security.md`](docs/features/security.md).
@@ -266,6 +283,7 @@ export SHELL_CONFIG_DIR="$HOME/.config/shell"   # default: ~/.shell-config
 export SHELL_LOGGER_LEVEL=INFO                  # DEBUG | INFO | WARN | ERROR | FATAL
 export SHELL_AUTO_INSTALL_DEPS=0                # only report missing tools, never install
 export SHELL_GIT_COMMIT_EMOJI=true              # gitmoji in commit messages (default: false)
+export SHELL_LAZY=0                             # load every module at start instead of lazily (default: lazy, ~10 ms start-up)
 source "$HOME/shell/src/shell.sh"
 ```
 
@@ -302,14 +320,14 @@ Required: `git`, `curl`, `fzf`. Optional (installed on demand): `jq`, `openssl`,
 ├── test/                                  # run under bash and zsh
 ├── .github/workflows/                     # CI: lint, test (Linux+macOS), docs
 └── src/
-    ├── shell.sh        # loader / entry point
+    ├── shell.sh        # loader / entry point (loader/lazy.sh: lazy-load cache, see docs/development/architecture.md)
     ├── constant/       # ALL configuration: paths, URLs, colours, defaults, return codes
     ├── core/           # console, logger, os, exec, clipboard, fzf, ask (prompts)
     ├── dependency/     # one installer per external tool (fzf, jq, curl, git, ...), package manager, Homebrew, nvm, Oh My Zsh
     ├── lib/            # fs, net, process, permission, strings, conf, ini, profile, bookmark, goto, ssh, workspace, prompt + prompt_skills (reusable AI prompts and their sync from the skills repo, docs/features/prompt.md), brew (Homebrew packages + fzf), system_stats (disk / memory / swap, docs/features/system-stats.md)
     ├── markdown/       # Markdown / Telegram MarkdownV2 builder (docs/features/markdown.md)
     ├── skill/          # agent skills for Claude Code / OpenCode: install, upgrade, uninstall, sync
-    ├── lang/           # git, go, python, java, nodejs, nvm, angular
+    ├── lang/           # git, go, python, java, nodejs, nvm, angular; lang/git/ = the Git toolkit (docs/features/git-toolkit.md)
     ├── devops/         # GitHub Actions scaffolding
     ├── security/       # AES-256-CBC helpers, security investigation
     ├── bot/            # Telegram
