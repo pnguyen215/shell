@@ -4,12 +4,26 @@
 
 `src/shell.sh` (sourced from `~/.bashrc` / `~/.zshrc`):
 
-1. Resolves `SHELL_DIR` from its own path (bash: `BASH_SOURCE`, zsh: `${(%):-%x}`); an exported `SHELL_DIR` wins.
-2. Sources `constant/system.sh` (it defines `SHELL_SRC_DIR` and `SHELL_MODULE_GROUPS`).
-3. Sources each group in `SHELL_MODULE_GROUPS` — `constant core dependency lib markdown skill lang devops security bot alias` — files alphabetically. Nothing in a group depends on file order _at load time_; functions only call each other at run time.
-4. Primes the OS cache (`shell::os::type`) in the current shell so later calls fork nothing.
+1. Resolves `SHELL_DIR` from its own path by parameter expansion, without a subshell (bash: `BASH_SOURCE`, zsh: `${(%):-%x}`); an exported `SHELL_DIR` wins.
+2. Sources `constant/system.sh` (it defines `SHELL_SRC_DIR` and `SHELL_MODULE_GROUPS`) and `loader/lazy.sh` (the lazy-load machinery; it only defines functions).
+3. Loads the module groups in `SHELL_MODULE_GROUPS` — `constant core dependency lib markdown skill lang lang/git devops security bot alias` — files alphabetically (`lang/git` is the Git toolkit's `index.sh`; its subdirectories are not globbed). Nothing in a group depends on file order _at load time_; functions only call each other at run time. By default this goes through the lazy cache (below); `SHELL_LAZY=0` or `SHELL_DEBUG=1` loads everything eagerly instead.
+4. Sets the OS cache (`SHELL_OS_TYPE`) from `$OSTYPE`, so no `uname` runs at load.
 
 A file that fails to load is reported on stderr and counted in `SHELL_LOAD_ERRORS`; the rest still loads. `SHELL_DEBUG=1` traces every file.
+
+### Start-up cost and lazy loading
+
+Sourcing all modules parsed about 2.5 MB of function bodies on every new shell (about +69 ms in bash and +79 ms in zsh over an empty shell, measured on Apple silicon). The loader now keeps a cache, `<install dir>/.cache/lazy.sh`, generated on the first start:
+
+- every module that **only defines functions** is replaced by one-line stubs; the first call of any of its functions sources the module and repeats the call with the same arguments (`declare -F`, `type` and `shell::function::list` see the stubs as functions from the start);
+- modules with **top-level statements** (constants, aliases, option defaults, widgets) stay eager and run at load exactly as before; a function defined by two modules forces both to stay eager;
+- a function that was **redefined before its module loaded** (a user override, a test mock) is saved and put back after the module is sourced, so overrides behave as they did with eager loading;
+- the staleness check uses the shell builtin `-nt` against every module, group directory and the loader (no fork); a missing or stale cache is rebuilt, written atomically (`mktemp` + `mv`), and any failure falls back to eager loading silently;
+- the cache lives inside the install directory, so an upgrade (which replaces the directory) can never see an old cache and uninstall removes it with the rest; it is git-ignored in a checkout.
+
+Result (median of 100 starts, added over an empty shell): bash 5 about +11 ms, zsh about +10 ms, bash 3.2 about +15 ms, **zero external processes at load**. `make test` runs `test/test_startup.sh`, which asserts the same function set as eager mode, a silent load, no leaked shell options, zero forks, idempotent re-sourcing, a path with spaces and the cache lifecycle.
+
+**Contributor rule: no command substitutions, external commands, file reads or network at the top level of a module.** A module that breaks it silently stays eager and costs start-up time. Load-time work belongs behind a function that computes it on first use.
 
 ## Layers (a layer may call itself and the ones above it)
 
