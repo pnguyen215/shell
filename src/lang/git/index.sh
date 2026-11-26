@@ -32,7 +32,7 @@
 _shell::git::core::boot() {
 	local root="${_SHELL_LAZY_ROOT:-$SHELL_SRC_DIR}/lang/git" name
 	[ "${_SHELL_GIT_BOOTED-}" = "1" ] && return 0
-	for name in env version state ui fzf confirm backup refs; do
+	for name in env version state ui fzf confirm backup refs branch commit stage log remote stash repo flow; do
 		# shellcheck source=/dev/null
 		source "$root/_core/$name.sh" || {
 			printf 'shell: failed to load %s\n' "$root/_core/$name.sh" >&2
