@@ -151,6 +151,49 @@ _shell::lazy::eager() {
 	return 0
 }
 
+# @description List which functions of a module are no longer the cache's stubs (zsh: `functions_source`).
+#   A helper of its own so the word-splitting option it needs is restored when it returns, before the
+#   module's function runs. Result in `_SHELL_LAZY_KEEP` (space separated names).
+# @internal
+# @arg $1 string Space separated function names of the module.
+# @arg $2 string The cache file (where a stub is defined).
+# @exitcode 0 Always.
+# @example
+#   _shell::lazy::scan "$names" "$cache"
+#
+_shell::lazy::scan() {
+	local n
+	_SHELL_LAZY_KEEP=""
+	if [ -n "${ZSH_VERSION-}" ]; then
+		setopt local_options sh_word_split
+	fi
+	for n in $1; do
+		[ "${functions_source[$n]-}" = "$2" ] || _SHELL_LAZY_KEEP="$_SHELL_LAZY_KEEP $n"
+	done
+	return 0
+}
+
+# @description Write the definitions of some functions to a file, to be sourced back after a module loads.
+# @internal
+# @arg $1 string Space separated function names.
+# @arg $2 string Destination file.
+# @exitcode 0 Written.
+# @exitcode 1 The file could not be written.
+# @example
+#   _shell::lazy::save "$keep" "$tmp"
+#
+_shell::lazy::save() {
+	local n
+	: >"$2" 2>/dev/null || return 1
+	if [ -n "${ZSH_VERSION-}" ]; then
+		setopt local_options sh_word_split
+	fi
+	for n in $1; do
+		typeset -f "$n" >>"$2"
+	done
+	return 0
+}
+
 # @description Run a function of a lazily loaded module: source the module, then call the function.
 #   Overrides survive: a function of the module that was redefined (by a user or a test) before the
 #   module loaded is saved and put back after it, exactly as if the module had been loaded at start.
@@ -166,7 +209,7 @@ _shell::lazy::eager() {
 #   _shell::lazy::run lib/goto.sh shell::goto "$@"
 #
 _shell::lazy::run() {
-	local _lz_rel="$1" _lz_fn="$2" _lz_cache="${_SHELL_LAZY_ROOT%/*}/.cache/lazy.sh" _lz_names _lz_keep="" _lz_n _lz_l _lz_f _lz_info _lz_tmp _lz_rest
+	local _lz_rel="$1" _lz_fn="$2" _lz_cache="${_SHELL_LAZY_ROOT%/*}/.cache/lazy.sh" _lz_names _lz_keep="" _lz_n _lz_l _lz_f _lz_info _lz_tmp
 	shift 2
 	case "$_SHELL_LAZY_DONE" in
 	*"|$_lz_rel|"*)
@@ -177,19 +220,23 @@ _shell::lazy::run() {
 	_SHELL_LAZY_DONE="${_SHELL_LAZY_DONE}${_lz_rel}|"
 
 	# Which functions of this module are no longer our stubs? A stub is defined in the cache file.
-	_lz_names="${_SHELL_LAZY_MAP#*$'\n'"$_lz_rel "}"
-	_lz_names="${_lz_names%%$'\n'*}"
+	# One map line per module ("<path> <names...>"); read line by line, because a pattern with a leading
+	# `*` over the whole map is quadratic in zsh (over a second per call).
+	_lz_names=""
+	while IFS= read -r _lz_l; do
+		if [ "${_lz_l%% *}" = "$_lz_rel" ]; then
+			_lz_names="${_lz_l#* }"
+			break
+		fi
+	done <<LZ_MAP
+$_SHELL_LAZY_MAP
+LZ_MAP
 	if [ -n "${ZSH_VERSION-}" ]; then
 		# functions_source (zsh/parameter) names the file a function came from; skip the check when
 		# this zsh does not provide it (the stub being called must have a source).
 		if [ -n "${functions_source[$_lz_fn]-}" ]; then
-			# Walk the names by parameter expansion: no word splitting, so no zsh option to leak.
-			_lz_rest="$_lz_names "
-			while [ -n "$_lz_rest" ]; do
-				_lz_n="${_lz_rest%% *}"
-				_lz_rest="${_lz_rest#* }"
-				[ "${functions_source[$_lz_n]-}" = "$_lz_cache" ] || _lz_keep="$_lz_keep $_lz_n"
-			done
+			_shell::lazy::scan "$_lz_names" "$_lz_cache"
+			_lz_keep="$_SHELL_LAZY_KEEP"
 		fi
 	else
 		_lz_info="$(
@@ -205,14 +252,7 @@ LZ_EOF
 	fi
 	if [ -n "$_lz_keep" ]; then
 		_lz_tmp="${_lz_cache%/*}/ovr.$$"
-		: >"$_lz_tmp" 2>/dev/null || _lz_keep=""
-		_lz_rest="$_lz_keep "
-		while [ -n "$_lz_keep" ] && [ -n "${_lz_rest# }" ]; do
-			_lz_rest="${_lz_rest# }"
-			_lz_n="${_lz_rest%% *}"
-			_lz_rest="${_lz_rest#* }"
-			typeset -f "$_lz_n" >>"$_lz_tmp"
-		done
+		_shell::lazy::save "$_lz_keep" "$_lz_tmp" || _lz_keep=""
 	fi
 
 	# shellcheck source=/dev/null
