@@ -220,6 +220,8 @@ t_eq "paths with spaces are read" "src/lib/s.sh" "$(field shell::sp::ace 5)"
 
 # --- the real library -----------------------------------------------------------------------------------
 use_real
+# The Git toolkit loads its private helpers on first use (src/lang/git/index.sh); boot them like a first call would.
+_shell::git::core::boot
 real="$(_shell::function::catalog)"
 t_eq "real: every record has 8 fields" "8" "$(printf '%s\n' "$real" | awk -F'\t' '{ print NF }' | sort -u)"
 unrelated_fn() { :; }
@@ -230,7 +232,7 @@ t_eq "real: only shell:: names" "0" "$(printf '%s\n' "$real" | cut -f1 | grep -c
 t_eq "real: no duplicates" "" "$(printf '%s\n' "$real" | cut -f1 | sort | uniq -d)"
 
 # the catalog agrees with the source tree (what make lint checks) ...
-defs="$(grep -rhoE '^_?shell::[A-Za-z0-9_:]+\(\)' "$REAL_SRC" --include='*.sh' | sed 's/()//' | sort)"
+defs="$(grep -rhoE '^_?shell::[A-Za-z0-9_:]+\(\)' "$REAL_SRC" --include='*.sh' | sed 's/()//' | sort -u)" # -u: a toolkit function is defined twice by design (index.sh stub + action file)
 t_eq "real: exactly the functions defined in src/" "$defs" "$(printf '%s\n' "$real" | cut -f1 | sort)"
 t_eq "real: public/internal follows the _shell:: prefix" "0" "$(printf '%s\n' "$real" | awk -F'\t' '($1 ~ /^_/) != ($2 == "internal")' | wc -l | tr -d ' ')"
 # ... and with the shell

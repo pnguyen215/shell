@@ -6,7 +6,7 @@ t_setup
 
 TK="$SHELL_TEST_ROOT/src/lang/git"
 # Groups whose action files are not written yet: shrink this list as each group lands (empty at the end).
-PENDING="branch commit stage log remote stash repo flow"
+PENDING=""
 
 manifest="$(grep -oE '^shell::git::[a-z]+::[a-z_]+\(\)' "$TK/index.sh" | sed 's/()$//' | sort)"
 t_eq "manifest: 33 public functions" "33" "$(printf '%s\n' "$manifest" | wc -l | tr -d ' ')"

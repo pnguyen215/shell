@@ -10,7 +10,10 @@
 #     SHELL_GIT_STALE_DAYS          age in days after which a branch is stale (default: 90)
 #     SHELL_GIT_PROTECTED_BRANCHES  space separated names never deleted (default: "main master develop")
 #     SHELL_GIT_FZF_OPTS            extra fzf options appended to every picker
+#     SHELL_GIT_RELEASE_BASE        base of release branches (default: the base branch)
+#     SHELL_GIT_LOG_LIMIT           commits listed by commit::pick / log::pick before "more" (default in the action)
 #   Test and automation hooks:
+#     SHELL_GIT_FORCE_FZF=1         use fzf even without a terminal (fake fzf in tests)
 #     SHELL_GIT_ASSUME_YES=1        confirmations are answered "yes" (what every --yes flag sets)
 #     SHELL_GIT_INPUT=<file>        read prompt answers and numbered choices from <file> instead of /dev/tty
 #     SHELL_GIT_QUIET=1             no info lines on stderr

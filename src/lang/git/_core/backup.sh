@@ -91,7 +91,7 @@ _shell::git::core::backup_snapshot() {
 		}
 	fi
 	if [ "$#" -gt 0 ]; then
-		GIT_INDEX_FILE="$idx" _shell::git::core::git_rw add -A --force -- "$@" 2>/dev/null || {
+		GIT_LITERAL_PATHSPECS=1 GIT_INDEX_FILE="$idx" _shell::git::core::git_rw add -A --force -- "$@" 2>/dev/null || {
 			rm -rf "$idxdir"
 			return 1
 		}

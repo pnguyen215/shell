@@ -166,7 +166,7 @@ _shell::lazy::eager() {
 #   _shell::lazy::run lib/goto.sh shell::goto "$@"
 #
 _shell::lazy::run() {
-	local _lz_rel="$1" _lz_fn="$2" _lz_cache="${_SHELL_LAZY_ROOT%/*}/.cache/lazy.sh" _lz_names _lz_keep="" _lz_n _lz_l _lz_f _lz_info _lz_tmp
+	local _lz_rel="$1" _lz_fn="$2" _lz_cache="${_SHELL_LAZY_ROOT%/*}/.cache/lazy.sh" _lz_names _lz_keep="" _lz_n _lz_l _lz_f _lz_info _lz_tmp _lz_rest
 	shift 2
 	case "$_SHELL_LAZY_DONE" in
 	*"|$_lz_rel|"*)
@@ -180,11 +180,14 @@ _shell::lazy::run() {
 	_lz_names="${_SHELL_LAZY_MAP#*$'\n'"$_lz_rel "}"
 	_lz_names="${_lz_names%%$'\n'*}"
 	if [ -n "${ZSH_VERSION-}" ]; then
-		setopt local_options sh_word_split
 		# functions_source (zsh/parameter) names the file a function came from; skip the check when
 		# this zsh does not provide it (the stub being called must have a source).
 		if [ -n "${functions_source[$_lz_fn]-}" ]; then
-			for _lz_n in $_lz_names; do
+			# Walk the names by parameter expansion: no word splitting, so no zsh option to leak.
+			_lz_rest="$_lz_names "
+			while [ -n "$_lz_rest" ]; do
+				_lz_n="${_lz_rest%% *}"
+				_lz_rest="${_lz_rest#* }"
 				[ "${functions_source[$_lz_n]-}" = "$_lz_cache" ] || _lz_keep="$_lz_keep $_lz_n"
 			done
 		fi
@@ -202,8 +205,14 @@ LZ_EOF
 	fi
 	if [ -n "$_lz_keep" ]; then
 		_lz_tmp="${_lz_cache%/*}/ovr.$$"
-		# shellcheck disable=SC2086
-		typeset -f $_lz_keep >"$_lz_tmp" 2>/dev/null || _lz_keep=""
+		: >"$_lz_tmp" 2>/dev/null || _lz_keep=""
+		_lz_rest="$_lz_keep "
+		while [ -n "$_lz_keep" ] && [ -n "${_lz_rest# }" ]; do
+			_lz_rest="${_lz_rest# }"
+			_lz_n="${_lz_rest%% *}"
+			_lz_rest="${_lz_rest#* }"
+			typeset -f "$_lz_n" >>"$_lz_tmp"
+		done
 	fi
 
 	# shellcheck source=/dev/null

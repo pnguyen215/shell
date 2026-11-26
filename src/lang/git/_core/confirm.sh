@@ -32,7 +32,9 @@ _shell::git::core::readline() {
 	local __name="${1:-REPLY}" __line
 	if [ -n "${SHELL_GIT_INPUT-}" ]; then
 		if [ "${_SHELL_GIT_INPUT_OPEN-}" != "$SHELL_GIT_INPUT" ]; then
-			exec 9<"$SHELL_GIT_INPUT" || return 1
+			# `exec` with no command returns the previous status in zsh: test the descriptor itself.
+			{ exec 9<"$SHELL_GIT_INPUT"; } 2>/dev/null
+			[ -r "$SHELL_GIT_INPUT" ] || return 1
 			_SHELL_GIT_INPUT_OPEN="$SHELL_GIT_INPUT"
 		fi
 		IFS= read -r __line <&9 || return 1

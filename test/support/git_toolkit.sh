@@ -111,6 +111,8 @@ gt_git_counter() {
 		PATH="${PATH#"$HOME"/gt-shim:}"
 		return 0
 	fi
+	# Resolve the real git with the shim directory out of the way (turning it on twice must not loop).
+	PATH="${PATH#"$HOME"/gt-shim:}"
 	real="$(command -v git)"
 	mkdir -p "$HOME/gt-shim"
 	GT_GIT_LOG="$HOME/gt-git.log"
