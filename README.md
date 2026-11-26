@@ -4,19 +4,52 @@
 [![Shell: bash >= 3.2, zsh](https://img.shields.io/badge/Shell-bash%20%3E%3D%203.2%20%7C%20zsh-blue.svg)](https://github.com/pnguyen215/shell)
 [![Platform: Linux, macOS](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS-green.svg)](https://github.com/pnguyen215/shell)
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Usage Examples](#usage-examples)
+- [API / Configuration Reference](#reference)
+- [Architecture Notes](#architecture)
+- [Testing & Benchmarks](#testing)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+- [License](#license)
+
+<a id="overview"></a>
+
+<details>
+<summary><strong>Overview</strong></summary>
+
 A lightweight shell library that streamlines your development environment on **Linux** (Ubuntu 22.04/24.04 and other mainstream distributions) and **macOS**. It provides ~330 documented functions for files, bookmarks, a key/value config store, INI files, SSH (connect, keys, agent, tunnels, scp, `~/.ssh/config`), rsync (sync, mirror, move, resume, diff), workspaces, Git/GitHub, Python/Go project helpers, AES encryption, and Telegram notifications — all with dry-run (`-n`) support.
 
 This is not a framework or a replacement for your shell. It is a personal collection of **routines I use every day when interacting with the terminal as a software engineer** — the small, repeated tasks (jump to a project, cut a branch, connect to a server, sync a build, store a key) wrapped into named functions with help text and a dry-run mode, so they are safe to reach for and easy to remember.
 
 Works when sourced from **bash ≥ 3.2** (including the macOS system bash) and **zsh**.
 
-## Prerequisites
+**Status:** actively developed; the function set grows between releases, and the security investigation tooling is still in progress (see Usage Examples).
+
+**Use it when** you work in a Linux or macOS terminal and want the same small routines (files, SSH, rsync, Git, keys, notifications) under memorable, documented, dry-run-capable names. **Do not use it** as a framework or as a replacement for your shell.
+
+</details>
+
+<a id="installation"></a>
+
+<details>
+<summary><strong>Installation</strong></summary>
+
+<details>
+<summary>Prerequisites</summary>
 
 - `curl` and `tar` (preinstalled on macOS and most Linux distributions)
 - `bash ≥ 3.2` or `zsh`
 - Optional: `git`, `fzf` (required for many interactive workflows). Others are installed on demand.
 
-## Installation
+</details>
+
+<details>
+<summary>Install</summary>
 
 Download and run the installer. This installs to `~/shell` by default and sources it from your shell profile.
 
@@ -39,7 +72,10 @@ source ~/.bashrc
 
 Already installed and want it in zsh too? `shell::zsh::install` (from bash or zsh) adds the hook to `~/.zshrc` safely and idempotently; `shell::zsh::install -n` shows what it would do first ([docs/features/zsh.md](docs/features/zsh.md)).
 
-### Customization
+</details>
+
+<details>
+<summary>Customization</summary>
 
 | Environment Variable | Default            | Description                       |
 | -------------------- | ------------------ | --------------------------------- |
@@ -48,15 +84,18 @@ Already installed and want it in zsh too? `shell::zsh::install` (from bash or zs
 | `SHELL_REPO_BRANCH`  | `master`           | Install from a specific branch    |
 | `SHELL_NO_PROFILE=1` | `0`                | Skip modifying your shell profile |
 
-## Upgrade
+</details>
 
-### Via curl script (works even if shell is not currently sourced)
+<details>
+<summary>Upgrade</summary>
+
+**Via curl script** (works even if shell is not currently sourced)
 
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/pnguyen215/shell/master/upgrade.sh)"
 ```
 
-### From a sourced shell
+**From a sourced shell**
 
 ```bash
 shell::upgrade
@@ -64,21 +103,24 @@ shell::upgrade
 
 The upgrader stages the new version, verifies it, and only then swaps it in (keeping the previous version as `~/shell.bak`).
 
-## Uninstall
+</details>
 
-### Via curl script
+<details>
+<summary>Uninstall</summary>
+
+**Via curl script**
 
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/pnguyen215/shell/master/uninstall.sh)"
 ```
 
-### From a sourced shell
+**From a sourced shell**
 
 ```bash
 shell::uninstall
 ```
 
-### Remove all data too
+**Remove all data too**
 
 By default, user data in `~/.shell-config/` (keys, bookmarks, workspaces) is preserved. To delete it:
 
@@ -90,7 +132,10 @@ shell::uninstall --purge
 
 The uninstaller removes the installation directory, deletes `~/shell.bak` if present, and strips the `source` hook from `~/.zshrc`, `~/.bashrc`, and `~/.bash_profile` (backing up each profile as `*.shell-bak`).
 
-## Check Dependencies
+</details>
+
+<details>
+<summary>Check dependencies</summary>
 
 ```bash
 shell::dependency::doctor
@@ -102,7 +147,14 @@ To report only (without auto-installing):
 SHELL_AUTO_INSTALL_DEPS=0 shell::dependency::doctor
 ```
 
-## Quick Start
+</details>
+
+</details>
+
+<a id="quick-start"></a>
+
+<details>
+<summary><strong>Quick Start</strong></summary>
 
 ```bash
 shell::bookmark::add webapp              # remember the current directory
@@ -126,7 +178,15 @@ shell::git::history::fzf --function Login src/auth/login.go   # how one function
 - Most destructive or state-changing functions support `-n` / `--dry-run` (prints the command and copies it to the clipboard if available).
 - Short aliases are defined in [`src/alias/alias.sh`](src/alias/alias.sh) (e.g., `sgbb` = backup branch).
 
-## Agent Skills
+</details>
+
+<a id="usage-examples"></a>
+
+<details>
+<summary><strong>Usage Examples</strong></summary>
+
+<details>
+<summary>Agent skills for Claude Code / OpenCode</summary>
 
 Install the [pnguyen215/skills](https://github.com/pnguyen215/skills) collection (`SKILL.md` files) into Claude Code and/or OpenCode:
 
@@ -142,7 +202,10 @@ shell::skill::uninstall --tool all --scope all --yes
 
 Add `-n` to print the download command instead of running it, or `--preview` to let the installer show what it would change. Restart your Claude Code / OpenCode session afterwards. Use a fork with `SHELL_SKILL_REPO_SLUG` / `SHELL_SKILL_REPO_BRANCH`. Full reference: [`docs/api/skill-manage.md`](docs/api/skill-manage.md), [`skill-query.md`](docs/api/skill-query.md). Aliases: `ssk-in`, `ssk-up`, `ssk-rm`, `ssk-sync`, `ssk-ls`, `ssk-lsi`.
 
-### Cloudflare security-audit skill
+</details>
+
+<details>
+<summary>Cloudflare security-audit skill</summary>
 
 [`cloudflare/security-audit-skill`](https://github.com/cloudflare/security-audit-skill) is **used in place, not copied**: it is cloned once into `~/.shell-config/skill/security-audit-skill` and its `skills/security-audit` folder is symlinked into Claude Code and OpenCode, so upgrading is a single fetch.
 
@@ -157,7 +220,10 @@ shell::skill::audit::uninstall --scope all --purge
 
 Then ask your agent to "security audit this codebase". A skill of the same name that you wrote is never overwritten (`--force` backs it up first). The skill is third-party instructions your agent follows, so pin a reviewed `--ref` if you do not want to track `main`. Details: [`docs/features/skill-audit.md`](docs/features/skill-audit.md). Aliases: `ssk-au-in`, `ssk-au-up`, `ssk-au-rm`, `ssk-au-st`.
 
-## Security & Diagnostics (in progress)
+</details>
+
+<details>
+<summary>Security &amp; diagnostics (in progress)</summary>
 
 Read-only host triage for machines you are authorised to investigate: `shell::security::capabilities`, `shell::security::host::{info,users}` and `shell::security::hunt::{processes,network,connections}`. Every detection is a **finding** (severity, confidence, evidence source, rationale, investigation and remediation steps) printed as text, JSON, Markdown or CSV; secrets are masked, nothing is changed, and an indicator is never presented as proof. Forensics, RCA, integrity monitoring, SSH audit and hardening are planned. Details and limits: [`docs/features/security.md`](docs/features/security.md).
 
@@ -166,7 +232,17 @@ shell::security::hunt::processes --min-severity MEDIUM
 shell::security::hunt::network --format json
 ```
 
-## Naming
+</details>
+
+</details>
+
+<a id="reference"></a>
+
+<details>
+<summary><strong>API / Configuration Reference</strong></summary>
+
+<details>
+<summary>Naming</summary>
 
 Every function is named **`shell::<category>::<name>`**, with an optional `::fzf` suffix for the interactive variant:
 
@@ -178,7 +254,41 @@ shell::fs::copy                    shell::fs::copy::fzf
 
 The only exceptions are the four lifecycle functions in [`src/shell.sh`](src/shell.sh) (`shell::version`, `shell::upgrade`, `shell::uninstall`, `shell::source_directory`).
 
-## Layout
+</details>
+
+<details>
+<summary>Configuration</summary>
+
+All constants are in [`src/constant/`](src/constant) and can be overridden from the environment **before** sourcing:
+
+```bash
+export SHELL_CONFIG_DIR="$HOME/.config/shell"   # default: ~/.shell-config
+export SHELL_LOGGER_LEVEL=INFO                  # DEBUG | INFO | WARN | ERROR | FATAL
+export SHELL_AUTO_INSTALL_DEPS=0                # only report missing tools, never install
+export SHELL_GIT_COMMIT_EMOJI=true              # gitmoji in commit messages (default: false)
+source "$HOME/shell/src/shell.sh"
+```
+
+User data (keys, bookmarks, workspaces, prompts) lives under `SHELL_CONFIG_DIR` with mode 700/600. Settings of a single feature are documented in [`docs/features/`](docs/features), for example [commit messages](docs/features/git-commit-messages.md), [Homebrew](docs/features/homebrew.md), [Markdown builder](docs/features/markdown.md), [prompt store](docs/features/prompt.md), [nvm](docs/features/nvm.md), [system statistics](docs/features/system-stats.md), [SSH](docs/features/ssh.md), [rsync](docs/features/rsync.md) and [zsh](docs/features/zsh.md).
+
+</details>
+
+<details>
+<summary>Dependencies</summary>
+
+Required: `git`, `curl`, `fzf`. Optional (installed on demand): `jq`, `openssl`, `lsof`, `column`, `ssh` (with `scp`, `sftp`, `ssh-keygen`, `ssh-add`), `rsync`. Installation uses the native package manager (apt, dnf, yum, pacman, zypper, apk, Homebrew) — see [`src/dependency/`](src/dependency). Run `make doctor` for a report.
+
+</details>
+
+</details>
+
+<a id="architecture"></a>
+
+<details>
+<summary><strong>Architecture Notes</strong></summary>
+
+<details>
+<summary>Repository layout</summary>
 
 ```
 .
@@ -206,33 +316,14 @@ The only exceptions are the four lifecycle functions in [`src/shell.sh`](src/she
     └── alias/          # short aliases
 ```
 
-## Configuration
+</details>
 
-All constants are in [`src/constant/`](src/constant) and can be overridden from the environment **before** sourcing:
+</details>
 
-```bash
-export SHELL_CONFIG_DIR="$HOME/.config/shell"   # default: ~/.shell-config
-export SHELL_LOGGER_LEVEL=INFO                  # DEBUG | INFO | WARN | ERROR | FATAL
-export SHELL_AUTO_INSTALL_DEPS=0                # only report missing tools, never install
-export SHELL_GIT_COMMIT_EMOJI=true              # gitmoji in commit messages (default: false)
-source "$HOME/shell/src/shell.sh"
-```
+<a id="testing"></a>
 
-User data (keys, bookmarks, workspaces, prompts) lives under `SHELL_CONFIG_DIR` with mode 700/600. Settings of a single feature are documented in [`docs/features/`](docs/features), for example [commit messages](docs/features/git-commit-messages.md), [Homebrew](docs/features/homebrew.md), [Markdown builder](docs/features/markdown.md), [prompt store](docs/features/prompt.md), [nvm](docs/features/nvm.md), [system statistics](docs/features/system-stats.md), [SSH](docs/features/ssh.md), [rsync](docs/features/rsync.md) and [zsh](docs/features/zsh.md).
-
-## Dependencies
-
-Required: `git`, `curl`, `fzf`. Optional (installed on demand): `jq`, `openssl`, `lsof`, `column`, `ssh` (with `scp`, `sftp`, `ssh-keygen`, `ssh-add`), `rsync`. Installation uses the native package manager (apt, dnf, yum, pacman, zypper, apk, Homebrew) — see [`src/dependency/`](src/dependency). Run `make doctor` for a report.
-
-## Troubleshooting
-
-- **"curl/tar not found"**: Install `curl` and `tar` via your package manager (e.g., `apt install curl tar` or `brew install curl`).
-- **Profile not updated**: Set `SHELL_NO_PROFILE=1` and manually add `source "$HOME/shell/src/shell.sh"` to your shell profile.
-- **Functions not available after upgrade**: Restart your terminal or run `source "$HOME/shell/src/shell.sh"`.
-- **Missing dependencies**: Run `shell::dependency::doctor` to see what's missing. Many can be auto-installed if `SHELL_AUTO_INSTALL_DEPS=1` (default).
-- **Permission issues**: Config files are written with restrictive modes (`~/.shell-config` 700, `key.conf` 600). Ensure your home directory permissions are correct.
-
-## Development
+<details>
+<summary><strong>Testing &amp; Benchmarks</strong></summary>
 
 ```bash
 make test                                   # run bash + zsh test suites
@@ -247,8 +338,37 @@ SHELLS=bash make test T=squash               # skip zsh for a faster loop
 
 Read [docs/development/conventions.md](docs/development/conventions.md) before adding a function. For architecture details, see [docs/development/architecture.md](docs/development/architecture.md).
 
-## License
+</details>
+
+<a id="troubleshooting"></a>
+
+<details>
+<summary><strong>Troubleshooting</strong></summary>
+
+- **"curl/tar not found"**: Install `curl` and `tar` via your package manager (e.g., `apt install curl tar` or `brew install curl`).
+- **Profile not updated**: Set `SHELL_NO_PROFILE=1` and manually add `source "$HOME/shell/src/shell.sh"` to your shell profile.
+- **Functions not available after upgrade**: Restart your terminal or run `source "$HOME/shell/src/shell.sh"`.
+- **Missing dependencies**: Run `shell::dependency::doctor` to see what's missing. Many can be auto-installed if `SHELL_AUTO_INSTALL_DEPS=1` (default).
+- **Permission issues**: Config files are written with restrictive modes (`~/.shell-config` 700, `key.conf` 600). Ensure your home directory permissions are correct.
+
+</details>
+
+<a id="contributing"></a>
+
+<details>
+<summary><strong>Contributing</strong></summary>
+
+Read [docs/development/conventions.md](docs/development/conventions.md) before adding a function (naming, help text, dry-run, tests). Architecture details: [docs/development/architecture.md](docs/development/architecture.md). Run `make lint` and `make test` before opening a pull request.
+
+</details>
+
+<a id="license"></a>
+
+<details>
+<summary><strong>License</strong></summary>
 
 This project is licensed under the [MIT License](LICENSE).
 
 Copyright © 2026 [pnguyen215](https://github.com/pnguyen215).
+
+</details>
