@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Logger styles: default look, the classic fallback, routing and threshold
 # (unchanged by style), saving/loading the choice, and the fzf picker.
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 unset SHELL_LOGGER_STYLE
 

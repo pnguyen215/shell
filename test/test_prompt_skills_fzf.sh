@@ -5,7 +5,7 @@
 #
 # fzf is a fake (same as test_prompt_fzf.sh): call N reads line N of $FAKE_FZF_PICKS. A pick is `[key::]text[|text...]`: each
 # text selects the first stdin line equal to (or containing) it. An empty line is ESC. Confirmations are read from stdin.
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 
 t_lacks() { case "$3" in *"$2"*) t_bad "$1" "[$2] unexpectedly present in [$3]" ;; *) t_ok ;; esac }

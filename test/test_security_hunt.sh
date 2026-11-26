@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2123  # tests narrow PATH on purpose to simulate missing tools
 # Threat-hunting modules against mocked ps / ss / lsof / who / dscl, on both platforms.
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 
 have_jq=0

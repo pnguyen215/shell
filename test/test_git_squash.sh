@@ -2,7 +2,7 @@
 # shell::git::commit::squash::fzf in real temporary repositories. fzf is faked (scripted
 # picks, then ESC); text prompts read from stdin. Checks the resulting history, the tree
 # (must be identical), the message, safety refusals, automatic restore, and -n.
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 
 git config --global user.email "t@example.com"

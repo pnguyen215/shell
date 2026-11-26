@@ -6,7 +6,7 @@
 # fzf is a fake: call N reads line N of $FAKE_FZF_PICKS. A pick is `[key::]text`: the first stdin line equal to (or
 # containing) `text` is printed, preceded by `key` when fzf was given --expect. An empty line is ESC. stdin.N and args.N
 # are logged. pbcopy appends what it gets to $FAKE_CLIP, each copy ended by "|". The editor is $HOME/bin/fake-editor.
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 
 mkdir "$HOME/bin" "$HOME/tmp"

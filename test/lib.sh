@@ -3,7 +3,7 @@
 # subset of bash and zsh so the same tests run under both shells.
 #
 # Usage in a test file:
-#   . "$SHELL_TEST_ROOT/test/lib.sh"; t_setup
+#   . "${SHELL_TEST_ROOT:?}/test/lib.sh"; t_setup
 #   t_eq "name" "expected" "$(some_function)"
 #   t_done
 
@@ -24,6 +24,8 @@ t_setup() {
 	T_HOME="$(cd "$T_HOME" && pwd -P)"
 	export HOME="$T_HOME" NO_COLOR=1 SHELL_AUTO_INSTALL_DEPS=0 SHELL_LOGGER_LEVEL=DEBUG
 	export SHELL_DIR="$SHELL_TEST_ROOT"
+	# Git's global/system config must never be the user's: pin it inside the sandbox.
+	export GIT_CONFIG_GLOBAL="$T_HOME/.gitconfig" GIT_CONFIG_NOSYSTEM=1
 	# shellcheck source=/dev/null
 	. "$SHELL_TEST_ROOT/src/shell.sh"
 	cd "$T_HOME" || exit 1

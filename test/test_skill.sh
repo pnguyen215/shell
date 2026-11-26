@@ -2,7 +2,7 @@
 # Agent-skills integration: option validation, command construction, exit-code
 # mapping, and the read-only queries. Nothing here touches the network: a fake
 # curl serves the "downloaded" scripts and the README.
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 unset XDG_STATE_HOME
 

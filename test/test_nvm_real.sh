@@ -12,7 +12,7 @@
 #
 # Nothing is downloaded: the "Node versions" are tiny scripts that print their version, placed where nvm
 # keeps real ones, in a temporary NVM_DIR under the test's temporary HOME.
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 
 nl='

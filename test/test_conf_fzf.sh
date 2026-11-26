@@ -6,7 +6,7 @@
 # fzf is a fake: call N prints the line(s) of stdin.N equal to the Nth entry of $FAKE_FZF_PICKS (several lines are
 # separated by "|"; an empty entry is ESC) and logs stdin.N / args.N. pbcopy appends what it is given to $FAKE_CLIP,
 # each copy ended by "|".
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 
 mkdir "$HOME/bin"

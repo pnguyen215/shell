@@ -2,7 +2,7 @@
 # Commit message templates: the data file and its rules (shell::git::commit::message::validate),
 # the user's own templates, the menu (shell::git::commit::message::base, fzf is faked), and a guard
 # that every call reads the templates in ONE awk pass however many there are.
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 nl='
 '

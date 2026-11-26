@@ -5,7 +5,7 @@
 # The installer is faked: shell::net::run_remote_script is replaced by a function that records what it was
 # given (URL, interpreter, NVM_DIR, PROFILE) and creates the nvm.sh a real install would. Nothing is
 # downloaded and nothing outside the test's temporary HOME is ever touched.
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 
 NVM="$HOME/.nvm"

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # shell::prompt::* (src/lib/prompt.sh): slugs, front matter, add/get round trip, render, dry-run, history, import/export,
 # local store, permissions. The interactive menus are covered by test_prompt_fzf.sh.
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 
 # Isolated stores: the global one under $HOME, the project one in $HOME/proj/.prompts.

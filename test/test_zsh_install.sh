@@ -2,7 +2,7 @@
 # shell::zsh::install (src/lib/zsh.sh): every state of ~/.zshrc, the resolution order of the
 # installation directory, the dry run and the safety rules. Runs under bash and zsh with an
 # isolated HOME; the package layer, chsh and the user's answers are stubs.
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 
 nl='

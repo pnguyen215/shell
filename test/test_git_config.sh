@@ -2,7 +2,7 @@
 # shell::git::config::{list,get,set,unset,user::setup,fzf} against a real git, with an isolated
 # HOME (so ~/.gitconfig is a temp file). fzf is faked (scripted picks, then ESC) and records its
 # arguments, so the preview command can be checked.
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 
 export GIT_CONFIG_NOSYSTEM=1

@@ -8,7 +8,7 @@
 # and answers the Nth call with line N of $FAKE_FZF_PICKS: a pick is matched as text against the
 # candidate lines and the whole matching line is printed, like fzf; `a;b` picks two lines; an empty
 # line is ESC. Text prompts (y/n) read the standard input of the function under test.
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 
 mkdir "$HOME/bin" "$HOME/fake"

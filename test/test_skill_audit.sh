@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Cloudflare security-audit skill integration. A local git repository stands in
 # for the upstream, so nothing touches the network.
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 unset XDG_STATE_HOME
 

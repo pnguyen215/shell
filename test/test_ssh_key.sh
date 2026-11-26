@@ -5,7 +5,7 @@
 # ssh-keygen is the real one (it is deterministic and local); when it is not installed the parts that need
 # it are skipped. ssh-add, ssh-agent and ssh-keyscan are fakes: they log their arguments to $FAKE_LOG, ssh-add
 # -l exits with $FAKE_ADD_L_RC (0 = keys, 1 = none, 2 = no agent), the others with $FAKE_RC.
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 
 mkdir -p "$HOME/bin"

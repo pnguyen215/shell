@@ -2,7 +2,7 @@
 # shell::git::isolate::commit / file / lines (src/lang/git_isolate.sh): every operation creates a NEW
 # branch in a NEW worktree and leaves the current checkout (branch, HEAD, staged, unstaged, untracked
 # files, other worktrees and branches) exactly as it was. Real temporary repositories, no mocks.
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 
 export SHELL_GIT_ISOLATE_DIR="$HOME/iso"

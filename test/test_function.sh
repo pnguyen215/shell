@@ -2,7 +2,7 @@
 # Function discovery (lib/function.sh): the catalog, list, info and the pieces they share. Two kinds of
 # test: against a small fixture source tree (what is recognised, and attached to the right function, is
 # exactly what the awk programs say), and against the real library (nothing is lost, nothing is invented).
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 
 nl='

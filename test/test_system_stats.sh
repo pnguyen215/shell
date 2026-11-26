@@ -4,7 +4,7 @@
 # Both platforms are tested on any host: SHELL_OS_TYPE picks the platform, the files read from /proc
 # are fixtures (SHELL_STATS_PROC_*), and df, mount, sysctl and vm_stat are shell functions that print
 # a fixture. Nothing here reads or changes the real disks, swap or memory.
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 
 SEP=$'\037'

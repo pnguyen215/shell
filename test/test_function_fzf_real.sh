@@ -5,7 +5,7 @@
 # runs nothing, and that "Run it..." runs the function in the shell the explorer was started from.
 #
 # Skipped unless tmux and fzf are installed. It runs the shell that runs this file (bash or zsh).
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 
 sh_name="bash"

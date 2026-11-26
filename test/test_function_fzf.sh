@@ -2,7 +2,7 @@
 # The function explorer (shell::function::explore, shell::help): namespace list -> function list -> action menu.
 # fzf is faked: each call outputs the stdin lines that match the scripted picks (exact line first, then
 # substring) and records what it was given. What a real fzf draws is in test_function_fzf_real.sh.
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 
 mkdir "$HOME/bin"

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # install.sh / uninstall.sh against a local tarball (no network).
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 T_BASE="${SHELL_TEST_RUN:-${TMPDIR:-/tmp}}"
 T_HOME="$(mktemp -d "$T_BASE/home.XXXXXX")"
 T_HOME="$(cd "$T_HOME" && pwd -P)" # canonical path (macOS: /var -> /private/var)

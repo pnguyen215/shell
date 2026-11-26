@@ -2,7 +2,7 @@
 # shell::git::open::browser: remote URL parsing (scp/ssh/https, credentials, ports,
 # aliases), provider detection, URL building per provider, target resolution, warnings,
 # and the final open command. Nothing touches the network; openers are fakes.
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 
 git config --global user.email "t@example.com"

@@ -2,7 +2,7 @@
 # shell::git::commit::spec and ::spec::current in a real repository with known authors, dates,
 # a merge commit and paths. Covers every option, the default output (unchanged), the dry-run
 # command (must be pasteable), validation, and that nothing a user types is ever executed.
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 
 export GIT_CONFIG_NOSYSTEM=1

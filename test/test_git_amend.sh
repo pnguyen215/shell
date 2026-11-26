@@ -3,7 +3,7 @@
 # GIT_EDITOR is a tiny script that rewrites the message; fzf is faked for the push prompt.
 # Covers: staged vs message-only amends, --no-edit refusal, --force-with-lease (including a
 # stale lease that must NOT overwrite somebody else's push), prompt, dry-run, early failures.
-. "$SHELL_TEST_ROOT/test/lib.sh"
+. "${SHELL_TEST_ROOT:?run tests through test/run_tests.sh (make test), never directly: they would write to your real HOME and ~/.gitconfig}/test/lib.sh"
 t_setup
 
 git config --global user.email "t@example.com"
